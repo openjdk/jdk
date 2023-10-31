@@ -87,7 +87,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-  PSScavengeRootsClosure roots_closure(pm);
   PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (root_type) {
@@ -301,6 +300,11 @@ public:
       _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
     assert(_old_gen != nullptr, "Sanity");
+
+    if (!_is_old_gen_empty) {
+      PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
+      card_table->pre_scavenge(_old_gen->object_space()->bottom(), active_workers);
+    }
   }
 
   virtual void work(uint worker_id) {
@@ -314,8 +318,9 @@ public:
         PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
+        // The top of the old gen changes during scavenge when objects are promoted.
         card_table->scavenge_contents_parallel(_old_gen->start_array(),
-                                               _old_gen->object_space(),
+                                               _old_gen->object_space()->bottom(),
                                                _gen_top,
                                                pm,
                                                worker_id,
@@ -638,11 +643,7 @@ bool PSScavenge::invoke_no_policy() {
       old_gen->verify_object_start_array();
     }
 
-    // Verify all old -> young cards are now precise
     if (VerifyRememberedSets) {
-      // Precise verification will give false positives. Until this is fixed,
-      // use imprecise verification.
-      // heap->card_table()->verify_all_young_refs_precise();
       heap->card_table()->verify_all_young_refs_imprecise();
     }
 

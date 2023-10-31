@@ -24,11 +24,12 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -37,6 +38,8 @@
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
+
+using testing::HasSubstr;
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -144,10 +147,10 @@ TEST(os, test_random) {
 
   ASSERT_EQ(num, 1043618065) << "bad seed";
   // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-  int intmean = mean*100;
+  int intmean = (int)(mean*100);
   ASSERT_EQ(intmean, 50);
   // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-  int intvariance = variance*100;
+  int intvariance = (int)(variance*100);
   ASSERT_EQ(intvariance, 33);
   const double eps = 0.0001;
   t = fabsd(mean - 0.5018);
@@ -169,31 +172,31 @@ static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
-//  tty->print_cr("expected: %s", expected);
-//  tty->print_cr("result: %s", buf);
-  ASSERT_NE(strstr(buf, expected), (char*)NULL);
+  // tty->print_cr("expected: %s", expected);
+  // tty->print_cr("result: %s", buf);
+  EXPECT_THAT(buf, HasSubstr(expected));
 }
 
 TEST_VM(os, test_print_hex_dump) {
   const char* pattern [4] = {
 #ifdef VM_LITTLE_ENDIAN
-    "00 01 02 03 04 05 06 07",
-    "0100 0302 0504 0706",
-    "03020100 07060504",
-    "0706050403020100"
+    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
+    "0100 0302 0504 0706 0908 0b0a 0d0c 0f0e",
+    "03020100 07060504 0b0a0908 0f0e0d0c",
+    "0706050403020100 0f0e0d0c0b0a0908"
 #else
-    "00 01 02 03 04 05 06 07",
-    "0001 0203 0405 0607",
-    "00010203 04050607",
-    "0001020304050607"
+    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
+    "0001 0203 0405 0607 0809 0a0b 0c0d 0e0f",
+    "00010203 04050607 08090a0b 0c0d0e0f",
+    "0001020304050607 08090a0b0c0d0e0f"
 #endif
   };
 
   const char* pattern_not_readable [4] = {
-    "?? ?? ?? ?? ?? ?? ?? ??",
-    "???? ???? ???? ????",
-    "???????? ????????",
-    "????????????????"
+    "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??",
+    "???? ???? ???? ???? ???? ???? ???? ????",
+    "???????? ???????? ???????? ????????",
+    "???????????????? ????????????????"
   };
 
   // On AIX, zero page is readable.
@@ -223,7 +226,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   // Test dumping readable memory
   address arr = (address)os::malloc(100, mtInternal);
-  for (int c = 0; c < 100; c++) {
+  for (u1 c = 0; c < 100; c++) {
     arr[c] = c;
   }
 
@@ -374,7 +377,7 @@ static inline bool can_reserve_executable_memory(void) {
 #endif
 
 // Test that os::release_memory() can deal with areas containing multiple mappings.
-#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
+#define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); tty->cr(); }
 //#define PRINT_MAPPINGS
 
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
@@ -768,7 +771,7 @@ TEST_VM(os, pagesizes_test_print) {
   char buffer[256];
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
-  ASSERT_EQ(strcmp(expected, buffer), 0);
+  EXPECT_STREQ(expected, buffer);
 }
 
 TEST_VM(os, dll_address_to_function_and_library_name) {
@@ -777,9 +780,9 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
   stringStream st(output, sizeof(output));
 
 #define EXPECT_CONTAINS(haystack, needle) \
-  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+  EXPECT_THAT(haystack, HasSubstr(needle));
 #define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
-  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+  EXPECT_THAT(haystack, Not(HasSubstr(needle)));
 // #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
 #define LOG(...)
 
@@ -924,3 +927,47 @@ TEST_VM(os, open_O_CLOEXEC) {
   ::close(fd);
 #endif
 }
+
+TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
+  char* p1 = os::reserve_memory(M, false, mtTest);
+  ASSERT_NE(p1, nullptr);
+  char* p2 = os::attempt_reserve_memory_at(p1, M);
+  ASSERT_EQ(p2, nullptr); // should have failed
+  os::release_memory(p1, M);
+}
+
+TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
+  if (UseLargePages && !os::can_commit_large_page_memory()) { // aka special
+    const size_t lpsz = os::large_page_size();
+    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, false);
+    ASSERT_NE(p1, nullptr);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    ASSERT_EQ(p2, nullptr); // should have failed
+    os::release_memory(p1, M);
+  } else {
+    tty->print_cr("Skipped.");
+  }
+}
+
+#ifdef AIX
+// On Aix, we should fail attach attempts not aligned to segment boundaries (256m)
+TEST_VM(os, aix_reserve_at_non_shmlba_aligned_address) {
+  if (Use64KPages && Use64KPagesThreshold == 0) {
+    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
+    ASSERT_EQ(p, nullptr); // should have failed
+    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
+    ASSERT_EQ(p, nullptr); // should have failed
+  }
+}
+#endif // AIX
+
+TEST_VM(os, vm_min_address) {
+  size_t s = os::vm_min_address();
+  ASSERT_GE(s, M);
+  // Test upper limit. On Linux, its adjustable, so we just test for absurd values to prevent errors
+  // with high vm.mmap_min_addr settings.
+#if defined(_LP64)
+  ASSERT_LE(s, NOT_LINUX(G * 4) LINUX_ONLY(G * 1024));
+#endif
+}
+

@@ -32,6 +32,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_linux.hpp"
 #include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -48,7 +49,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -463,7 +463,7 @@ juint os::cpu_microcode_revision() {
   fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     char data[2048] = {0}; // lines should fit in 2K buf
-    size_t len = sizeof(data);
+    int len = (int)sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != nullptr) {
@@ -571,7 +571,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc);
   st->cr();
 }
 

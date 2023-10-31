@@ -238,7 +238,7 @@ const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 #endif
 
-#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+#if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
@@ -270,7 +270,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
-#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
+#endif // !X86
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -520,7 +520,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
-    return ((UpcallStub*)blob)->exception_handler();
+    return StubRoutines::upcall_stub_exception_handler();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
@@ -685,7 +685,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
 #if INCLUDE_JVMCI
   if (cm->is_compiled_by_jvmci()) {
     // lookup exception handler for this pc
-    int catch_pco = ret_pc - cm->code_begin();
+    int catch_pco = pointer_delta_as_int(ret_pc, cm->code_begin());
     ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != nullptr) {
@@ -744,7 +744,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
   }
 
   // found handling method => lookup exception handler
-  int catch_pco = ret_pc - nm->code_begin();
+  int catch_pco = pointer_delta_as_int(ret_pc, nm->code_begin());
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
@@ -1872,7 +1872,8 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   // nmethod could be deoptimized by the time we get here
   // so no update to the caller is needed.
 
-  if (caller.is_compiled_frame() && !caller.is_deoptimized_frame()) {
+  if ((caller.is_compiled_frame() && !caller.is_deoptimized_frame()) ||
+      (caller.is_native_frame() && ((CompiledMethod*)caller.cb())->method()->is_continuation_enter_intrinsic())) {
 
     address pc = caller.pc();
 
@@ -2309,7 +2310,7 @@ void SharedRuntime::print_statistics() {
 }
 
 inline double percent(int64_t x, int64_t y) {
-  return 100.0 * x / MAX2(y, (int64_t)1);
+  return 100.0 * (double)x / (double)MAX2(y, (int64_t)1);
 }
 
 class MethodArityHistogram {
@@ -2345,13 +2346,13 @@ class MethodArityHistogram {
     const int N = MIN2(9, n);
     double sum = 0;
     double weighted_sum = 0;
-    for (int i = 0; i <= n; i++) { sum += histo[i]; weighted_sum += i*histo[i]; }
-    if (sum >= 1.0) { // prevent divide by zero or divide overflow
+    for (int i = 0; i <= n; i++) { sum += (double)histo[i]; weighted_sum += (double)(i*histo[i]); }
+    if (sum >= 1) { // prevent divide by zero or divide overflow
       double rest = sum;
       double percent = sum / 100;
       for (int i = 0; i <= N; i++) {
-        rest -= histo[i];
-        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], histo[i] / percent);
+        rest -= (double)histo[i];
+        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], (double)histo[i] / percent);
       }
       tty->print_cr("rest: " INT64_FORMAT_W(12) " (%5.1f%%)", (int64_t)rest, rest / percent);
       tty->print_cr("(avg. %s = %3.1f, max = %d)", name, weighted_sum / sum, n);
@@ -3256,16 +3257,24 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      // Inflate so the object's header no longer refers to the BasicLock.
-      if (lock->displaced_header().is_unlocked()) {
-        // The object is locked and the resulting ObjectMonitor* will also be
-        // locked so it can't be async deflated until ownership is dropped.
-        // See the big comment in basicLock.cpp: BasicLock::move_to().
-        ObjectSynchronizer::inflate_helper(kptr2->obj());
+      if (LockingMode == LM_LEGACY) {
+        // Inflate so the object's header no longer refers to the BasicLock.
+        if (lock->displaced_header().is_unlocked()) {
+          // The object is locked and the resulting ObjectMonitor* will also be
+          // locked so it can't be async deflated until ownership is dropped.
+          // See the big comment in basicLock.cpp: BasicLock::move_to().
+          ObjectSynchronizer::inflate_helper(kptr2->obj());
+        }
+        // Now the displaced header is free to move because the
+        // object's header no longer refers to it.
+        buf[i] = (intptr_t)lock->displaced_header().value();
       }
-      // Now the displaced header is free to move because the
-      // object's header no longer refers to it.
-      buf[i++] = (intptr_t)lock->displaced_header().value();
+#ifdef ASSERT
+      else {
+        buf[i] = badDispHeaderOSR;
+      }
+#endif
+      i++;
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

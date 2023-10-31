@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -44,7 +45,7 @@
 //
 CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(num_entries >= 0, "sanity");
   _num_buckets = calculate_num_buckets(num_entries);
   assert(_num_buckets > 0, "no buckets");
@@ -365,8 +366,8 @@ int HashtableTextDump::scan_symbol_prefix() {
   return utf8_length;
 }
 
-jchar HashtableTextDump::unescape(const char* from, const char* end, int count) {
-  jchar value = 0;
+int HashtableTextDump::unescape(const char* from, const char* end, int count) {
+  int value = 0;
 
   corrupted_if(from + count > end, "Truncated");
 
@@ -409,7 +410,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
       switch (c) {
       case 'x':
         {
-          jchar value = unescape(from, end, 2);
+          int value = unescape(from, end, 2);
           from += 2;
           assert(value <= 0xff, "sanity");
           *to++ = (char)(value & 0xff);

@@ -380,6 +380,11 @@ public class Utils {
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
 
+    public boolean isFunctionalInterface(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream()
+                .anyMatch(this::isFunctionalInterface);
+    }
+
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
@@ -660,7 +665,7 @@ public class Utils {
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         typeElements.forEach(set::add);
         return set;
     }
@@ -1317,7 +1322,7 @@ public class Utils {
     public SortedSet<TypeElement> filterOutPrivateClasses(Iterable<TypeElement> classlist,
             boolean javafx) {
         SortedSet<TypeElement> filteredOutClasses =
-                new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
                 if (!hasHiddenTag(te)) {
@@ -1604,7 +1609,7 @@ public class Utils {
     }
 
     public Map<ModuleElement, String> getDependentModules(ModuleElement mdle) {
-        Map<ModuleElement, String> result = new TreeMap<>(comparators.makeModuleComparator());
+        Map<ModuleElement, String> result = new TreeMap<>(comparators.moduleComparator());
         Deque<ModuleElement> queue = new ArrayDeque<>();
         // get all the requires for the element in question
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
@@ -1678,7 +1683,7 @@ public class Utils {
      * @return the interfaces
      */
     public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
         return set;
     }
@@ -1694,7 +1699,7 @@ public class Utils {
     public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
         return cachedClasses.computeIfAbsent(pkg, p_ -> {
             List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
-            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.generalPurposeComparator());
             oset.addAll(clist);
             return oset;
         });
@@ -2736,6 +2741,16 @@ public class Utils {
     }
 
     /**
+     * Checks whether the given ExecutableElement should be marked as a restricted API.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a restricted API
+     */
+    public boolean isRestrictedAPI(Element el) {
+        return configuration.workArounds.isRestrictedAPI(el);
+    }
+
+    /**
      * Return all flags for the given Element.
      *
      * @param el the element to test
@@ -2746,6 +2761,10 @@ public class Utils {
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (el.getKind() == ElementKind.METHOD && configuration.workArounds.isRestrictedAPI((ExecutableElement)el)) {
+            flags.add(ElementFlag.RESTRICTED);
         }
 
         if (previewFlagProvider.isPreview(el)) {
@@ -2761,7 +2780,8 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW
+        PREVIEW,
+        RESTRICTED
     }
 
     private boolean isClassOrInterface(Element el) {

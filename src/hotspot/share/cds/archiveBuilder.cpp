@@ -28,6 +28,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -261,7 +262,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    sort_symbols_and_fix_hash();
+    log_info(cds)("Sorting symbols ... ");
+    _symbols->sort(compare_symbols_by_address);
     sort_klasses();
 
     // TODO -- we need a proper estimate for the archived modules, etc,
@@ -276,16 +278,6 @@ int ArchiveBuilder::compare_symbols_by_address(Symbol** a, Symbol** b) {
   } else {
     assert(a[0] > b[0], "Duplicated symbol %s unexpected", (*a)->as_C_string());
     return 1;
-  }
-}
-
-void ArchiveBuilder::sort_symbols_and_fix_hash() {
-  log_info(cds)("Sorting symbols and fixing identity hash ... ");
-  os::init_random(0x12345678);
-  _symbols->sort(compare_symbols_by_address);
-  for (int i = 0; i < _symbols->length(); i++) {
-    assert(_symbols->at(i)->is_permanent(), "archived symbols must be permanent");
-    _symbols->at(i)->update_identity_hash();
   }
 }
 
@@ -520,12 +512,12 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
-    if (DynamicDumpSharedSpaces) {
-      // Don't support archiving of array klasses for now (WHY???)
-      return true;
-    }
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (bottom->is_instance_klass()) {
+    if (MetaspaceShared::is_shared_static(bottom)) {
+      // The bottom class is in the static archive so it's clearly not excluded.
+      assert(DynamicDumpSharedSpaces, "sanity");
+      return false;
+    } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }
@@ -645,6 +637,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+
+  // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
+  if (DumpSharedSpaces && (src_info->msotype() == MetaspaceObj::SymbolType)) {
+    Symbol* buffered_symbol = (Symbol*)dest;
+    assert(((Symbol*)src)->is_permanent(), "archived symbols must be permanent");
+    buffered_symbol->update_identity_hash();
+  }
+
   {
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);
@@ -792,6 +792,14 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());
+
+  DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
+  SymbolTable::serialize_shared_table_header(soc, false);
+  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  DynamicArchive::serialize_array_klasses(soc);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {

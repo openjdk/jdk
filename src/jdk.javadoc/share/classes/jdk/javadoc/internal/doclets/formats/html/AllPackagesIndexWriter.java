@@ -27,14 +27,13 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -46,31 +45,16 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * Construct AllPackagesIndexWriter object.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
      */
-    public AllPackagesIndexWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
-    }
-
-    /**
-     * Create AllPackagesIndexWriter object.
-     *
-     * @param configuration The current configuration
-     * @throws DocFileIOException
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        generate(configuration, DocPaths.ALLPACKAGES_INDEX);
-    }
-
-    private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
-        AllPackagesIndexWriter allPkgGen = new AllPackagesIndexWriter(configuration, fileName);
-        allPkgGen.buildAllPackagesFile();
+    public AllPackagesIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.ALLPACKAGES_INDEX);
     }
 
     /**
      * Print all the packages in the file.
      */
-    protected void buildAllPackagesFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String label = resources.getText("doclet.All_Packages");
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);

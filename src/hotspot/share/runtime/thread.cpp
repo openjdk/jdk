@@ -34,6 +34,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -45,7 +46,6 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/spinYield.hpp"
 #if INCLUDE_JFR
@@ -169,8 +169,11 @@ void Thread::record_stack_base_and_size() {
   // any members being initialized. Do not rely on Thread::current() being set.
   // If possible, refrain from doing anything which may crash or assert since
   // quite probably those crash dumps will be useless.
-  set_stack_base(os::current_stack_base());
-  set_stack_size(os::current_stack_size());
+  address base;
+  size_t size;
+  os::current_stack_base_and_size(&base, &size);
+  set_stack_base(base);
+  set_stack_size(size);
 
   // Set stack limits after thread is initialized.
   if (is_Java_thread()) {
@@ -450,10 +453,10 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("cpu=%.2fms ",
-              os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
-              _statistical_info.getElapsedTime() / 1000.0
+              (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();

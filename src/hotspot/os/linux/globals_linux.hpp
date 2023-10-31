@@ -44,17 +44,11 @@
   product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
           "enable fast Linux Posix clocks where available")             \
                                                                         \
-  product(bool, UseHugeTLBFS, false,                                    \
-          "Use MAP_HUGETLB for large pages")                            \
-                                                                        \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
                                                                         \
   product(bool, LoadExecStackDllInVMThread, true,                       \
           "Load DLLs with executable-stack attribute in the VM Thread") \
-                                                                        \
-  product(bool, UseSHM, false,                                          \
-          "Use SYSV shared memory for large pages")                     \
                                                                         \
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
@@ -89,10 +83,10 @@
           "to disable both the override and the printouts."             \
           "See prctl(PR_SET_TIMERSLACK) for more info.")                \
                                                                         \
-  product(bool, DisableTHPStackMitigation, false, DIAGNOSTIC,           \
+  product(bool, THPStackMitigation, true, DIAGNOSTIC,                   \
           "If THPs are unconditionally enabled on the system (mode "    \
           "\"always\"), the JVM will prevent THP from forming in "      \
-          "thread stacks. This switch disables that mitigation and "    \
+          "thread stacks. When disabled, the absence of this mitigation"\
           "allows THPs to form in thread stacks.")                      \
                                                                         \
   develop(bool, DelayThreadStartALot, false,                            \

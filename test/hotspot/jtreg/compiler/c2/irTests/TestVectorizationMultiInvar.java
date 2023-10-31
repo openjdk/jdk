@@ -60,7 +60,7 @@ public class TestVectorizationMultiInvar {
     static long baseOffset = 0;
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             long j = Objects.checkIndex(i * 8, (long)(src.length * 8));
@@ -75,7 +75,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest1(byte[] dest, byte[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,
@@ -106,7 +106,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_I, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest2(int[] dest, int[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,

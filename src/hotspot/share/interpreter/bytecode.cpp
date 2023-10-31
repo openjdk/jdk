@@ -136,7 +136,7 @@ Symbol* Bytecode_member_ref::klass() const {
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index(), _code);
+  return constants()->name_ref_at(index(), Bytecodes::java_code(_code));
 }
 
 
@@ -164,6 +164,8 @@ int Bytecode_member_ref::index() const {
   Bytecodes::Code rawc = code();
   if (has_index_u4(rawc))
     return get_index_u4(rawc);
+  else if (Bytecodes::is_field_code(rawc))
+    return get_index_u2(rawc);
   else
     return get_index_u2_cpcache(rawc);
 }
@@ -215,8 +217,8 @@ int Bytecode_loadconstant::pool_index() const {
 }
 
 BasicType Bytecode_loadconstant::result_type() const {
-  int index = pool_index();
-  return _method->constants()->basic_type_for_constant_at(index);
+  int cp_index = pool_index();
+  return _method->constants()->basic_type_for_constant_at(cp_index);
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {

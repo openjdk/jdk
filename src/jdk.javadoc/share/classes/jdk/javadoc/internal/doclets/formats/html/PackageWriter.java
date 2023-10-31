@@ -72,7 +72,7 @@ public class PackageWriter extends HtmlDocletWriter {
     /**
      * The HTML element for the section tag being written.
      */
-    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription);
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -100,12 +100,8 @@ public class PackageWriter extends HtmlDocletWriter {
         computePackageData();
     }
 
-    /**
-     * Build the package summary.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildPackageDoc();
     }
 
@@ -123,7 +119,7 @@ public class PackageWriter extends HtmlDocletWriter {
         printDocument(content);
         var docFilesHandler = configuration
                 .getWriterFactory()
-                .getDocFilesHandler(packageElement);
+                .newDocFilesHandler(packageElement);
         docFilesHandler.copyDocFiles();
     }
 
@@ -132,10 +128,12 @@ public class PackageWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content packageContent = getContentHeader();
-
-        addPackageSignature(packageContent);
-        buildPackageDescription(packageContent);
-        buildPackageTags(packageContent);
+        packageContent.add(new HtmlTree(TagName.HR));
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addPackageSignature(div);
+        buildPackageDescription(div);
+        buildPackageTags(div);
+        packageContent.add(div);
         buildSummary(packageContent);
 
         addPackageContent(packageContent);
@@ -174,7 +172,6 @@ public class PackageWriter extends HtmlDocletWriter {
         addAllClassesAndInterfacesSummary(summariesList);
     }
 
-
     /**
      * Build the description of the summary.
      *
@@ -182,10 +179,9 @@ public class PackageWriter extends HtmlDocletWriter {
      *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
-        if (options.noComment()) {
-            return;
+        if (!options.noComment()) {
+            addPackageDescription(packageContent);
         }
-        addPackageDescription(packageContent);
     }
 
     /**
@@ -194,10 +190,9 @@ public class PackageWriter extends HtmlDocletWriter {
      * @param packageContent the content to which the package tags will be added
      */
     protected void buildPackageTags(Content packageContent) {
-        if (options.noComment()) {
-            return;
+        if (!options.noComment()) {
+            addPackageTags(packageContent);
         }
-        addPackageTags(packageContent);
     }
 
     protected Content getPackageHeader() {
@@ -328,7 +323,6 @@ public class PackageWriter extends HtmlDocletWriter {
                 summaryContent, showModules);
     }
 
-
     /**
      * Add all types to the content.
      *
@@ -369,7 +363,7 @@ public class PackageWriter extends HtmlDocletWriter {
         }
     }
 
-    public void addPackageSummary(List<PackageElement> packages, Content label,
+    protected void addPackageSummary(List<PackageElement> packages, Content label,
                                   TableHeader tableHeader, Content summaryContent,
                                   boolean showModules) {
         if (!packages.isEmpty()) {
@@ -428,7 +422,6 @@ public class PackageWriter extends HtmlDocletWriter {
     }
 
     protected void addPackageSignature(Content packageContent) {
-        packageContent.add(new HtmlTree(TagName.HR));
         packageContent.add(Signatures.getPackageSignature(packageElement, this));
     }
 
@@ -461,5 +454,10 @@ public class PackageWriter extends HtmlDocletWriter {
         return configuration.packages.stream()
                 .filter(p -> p != packageElement && filter.test(p))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 }

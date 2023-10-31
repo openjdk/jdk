@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8060256
  * @summary Test various command line options
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -37,7 +38,7 @@ import java.io.File;
 
 public class TestVMOptions {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:bogus",
         "-XX:+IgnoreUnrecognizedVMOptions",
         "-XX:+PrintFlagsInitial");
@@ -45,7 +46,7 @@ public class TestVMOptions {
     output.shouldHaveExitValue(0);
     output.shouldContain("bool UseSerialGC");
 
-    pb = ProcessTools.createJavaProcessBuilder(
+    pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:-PrintVMOptions", "-version");
     output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
@@ -54,7 +55,7 @@ public class TestVMOptions {
     File dir = new File(System.getProperty("test.src", "."));
     File file = new File(dir, "flagfile.txt");
     String s = file.getAbsolutePath();
-    pb = ProcessTools.createJavaProcessBuilder("-XX:Flags="+s);
+    pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:Flags="+s);
     output = new OutputAnalyzer(pb.start());
     output.shouldNotHaveExitValue(0);
     output.shouldContain("VM option '-IgnoreUnrecognizedVMOptions'");

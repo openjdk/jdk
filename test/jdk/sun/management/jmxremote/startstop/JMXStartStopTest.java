@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,16 +391,14 @@ public class JMXStartStopTest {
     private static TestAppRun doTest(String name, String ... args)
             throws Exception {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
-                "-cp",
-                System.getProperty("test.class.path"),
+                "-Duser.language=en",
+                "-Duser.country=US",
                 "-XX:+UsePerfData"
         ));
         pbArgs.addAll(Arrays.asList(args));
         pbArgs.add(TEST_APP_NAME);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                pbArgs.toArray(new String[pbArgs.size()])
-        );
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(pbArgs);
         TestAppRun s = new TestAppRun(pb, name);
         s.start();
         return s;

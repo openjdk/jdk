@@ -132,6 +132,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -245,6 +246,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
         DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+        DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
         DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
@@ -446,6 +449,7 @@ else
     LIBFREETYPE_LIBS := -lfreetype
   endif
 
+  # gcc_ftobjs.c := maybe-uninitialized required for GCC 7 builds.
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
@@ -454,6 +458,7 @@ else
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
+      DISABLED_WARNINGS_gcc_ftobjs.c := maybe-uninitialized, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -609,7 +614,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CXXFLAGS_JDKLIB) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJAWT_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) \
           $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
@@ -792,6 +799,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
@@ -910,19 +919,6 @@ endif
 
 ################################################################################
 
-# MACOSX_METAL_VERSION_MIN specifies the lowest version of Macosx
-# that should be used to compile Metal shaders. We support Metal
-# pipeline only on Macosx >=10.14. For Macosx versions <10.14 even if
-# we enable Metal pipeline using -Dsun.java2d.metal=true, at
-# runtime we force it to use OpenGL pipeline. And MACOSX_VERSION_MIN
-# for aarch64 has always been >10.14 so we use continue to use
-# MACOSX_VERSION_MIN for aarch64.
-ifeq ($(OPENJDK_TARGET_CPU_ARCH), xaarch64)
-    MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
-else
-    MACOSX_METAL_VERSION_MIN=10.14.0
-endif
-
 ifeq ($(call isTargetOs, macosx), true)
   SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
   SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
@@ -935,7 +931,7 @@ ifeq ($(call isTargetOs, macosx), true)
       OUTPUT_FILE := $(SHADERS_AIR), \
       SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
       COMMAND := $(METAL) -c -std=osx-metal2.0 \
-          -mmacosx-version-min=$(MACOSX_METAL_VERSION_MIN) \
+          -mmacosx-version-min=$(MACOSX_VERSION_MIN) \
           -o $(SHADERS_AIR) $(SHADERS_SRC), \
   ))
 

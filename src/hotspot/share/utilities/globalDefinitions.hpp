@@ -50,7 +50,7 @@ class oopDesc;
 #endif
 
 #ifndef ATTRIBUTE_ALIGNED
-#define ATTRIBUTE_ALIGNED(x)
+#define ATTRIBUTE_ALIGNED(x) alignas(x)
 #endif
 
 #ifndef ATTRIBUTE_FLATTEN
@@ -475,6 +475,16 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
   return pointer_delta(left, right, sizeof(MetaWord));
 }
 
+// pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
+// returns a non-negative int, usually used as a size of a code buffer range.
+// This scales to sizeof(T).
+template <typename T>
+inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
+  size_t delta = pointer_delta(left, right, sizeof(T));
+  assert(delta <= size_t(INT_MAX), "pointer delta out of range: %zu", delta);
+  return static_cast<int>(delta);
+}
+
 //
 // ANSI C++ does not allow casting from one pointer type to a function pointer
 // directly without at best a warning. This macro accomplishes it silently
@@ -490,29 +500,6 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 //
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
 #define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((uintptr_t)(func_ptr)))
-
-// In many places we've added C-style casts to silence compiler
-// warnings, for example when truncating a size_t to an int when we
-// know the size_t is a small struct. Such casts are risky because
-// they effectively disable useful compiler warnings. We can make our
-// lives safer with this function, which ensures that any cast is
-// reversible without loss of information. It doesn't check
-// everything: it isn't intended to make sure that pointer types are
-// compatible, for example.
-template <typename T2, typename T1>
-constexpr T2 checked_cast(T1 thing) {
-  T2 result = static_cast<T2>(thing);
-  assert(static_cast<T1>(result) == thing, "must be");
-  return result;
-}
-
-// pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
-// returns a non-negative int, usually used as a size of a code buffer range.
-// This scales to sizeof(T).
-template <typename T>
-inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
-  return checked_cast<int>(pointer_delta(left, right, sizeof(T)));
-}
 
 // Need the correct linkage to call qsort without warnings
 extern "C" {
@@ -1049,7 +1036,8 @@ const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap
 const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
-
+const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
+const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
 
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
@@ -1057,7 +1045,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
+const uint TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations
@@ -1151,8 +1139,8 @@ static inline julong uabs(jlong n) { return uabs((julong)n); }
 static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
-inline intx byte_size(void* from, void* to) {
-  return (address)to - (address)from;
+inline size_t byte_size(void* from, void* to) {
+  return pointer_delta(to, from, sizeof(char));
 }
 
 // Pack and extract shorts to/from ints:
@@ -1332,6 +1320,10 @@ template<typename K> unsigned primitive_hash(const K& k) {
 
 template<typename K> bool primitive_equals(const K& k0, const K& k1) {
   return k0 == k1;
+}
+
+template<typename K> int primitive_compare(const K& k0, const K& k1) {
+  return ((k0 < k1) ? -1 : (k0 == k1) ? 0 : 1);
 }
 
 //----------------------------------------------------------------------------------------------------

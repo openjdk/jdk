@@ -42,7 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -64,7 +63,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
      * @param writer the writer for the class that the methods belong to.\
      */
     public MethodWriter(ClassWriter writer) {
-        super(writer, writer.typeElement);
+        super(writer, writer.typeElement, VisibleMemberTable.Kind.METHODS);
     }
 
     /**
@@ -74,7 +73,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
      * @param typeElement the class
      */
     public MethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+        super(writer, typeElement, VisibleMemberTable.Kind.METHODS);
     }
 
     /**
@@ -87,7 +86,8 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         super(writer);
     }
 
-    public void build(Content target) throws DocletException {
+    @Override
+    public void buildDetails(Content target) {
         buildMethodDoc(target);
     }
 
@@ -105,13 +105,14 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
                 Content methodContent = getMethodHeader(currentMethod);
-
-                buildSignature(methodContent);
-                buildDeprecationInfo(methodContent);
-                buildPreviewInfo(methodContent);
-                buildMethodComments(methodContent);
-                buildTagInfo(methodContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildRestrictedInfo(div);
+                buildMethodComments(div);
+                buildTagInfo(div);
+                methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
@@ -119,31 +120,28 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         }
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param methodContent the content to which the documentation will be added
-     */
-    protected void buildSignature(Content methodContent) {
-        methodContent.add(getSignature(currentMethod));
+    @Override
+    protected void buildSignature(Content target) {
+        target.add(getSignature(currentMethod));
+    }
+
+    @Override
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentMethod, target);
+    }
+
+    @Override
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentMethod, target);
     }
 
     /**
-     * Build the deprecation information.
+     * Builds the restricted method info.
      *
-     * @param methodContent the content to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildDeprecationInfo(Content methodContent) {
-        addDeprecated(currentMethod, methodContent);
-    }
-
-    /**
-     * Build the preview information.
-     *
-     * @param methodContent the content to which the documentation will be added
-     */
-    protected void buildPreviewInfo(Content methodContent) {
-        addPreview(currentMethod, methodContent);
+    protected void buildRestrictedInfo(Content target) {
+        addRestricted(currentMethod, target);
     }
 
     /**
@@ -174,7 +172,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     }
 
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement, Content target) {
+    public Content getMemberSummaryHeader(Content target) {
         target.add(MarkerComments.START_OF_METHOD_SUMMARY);
         Content memberContent = new ContentBuilder();
         writer.addSummaryHeader(this, memberContent);
@@ -182,7 +180,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.methodSummary,
                 HtmlIds.METHOD_SUMMARY, summariesList, content);
     }
@@ -225,6 +223,10 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     protected void addPreview(ExecutableElement method, Content content) {
         addPreviewInfo(method, content);
+    }
+
+    protected void addRestricted(ExecutableElement method, Content content) {
+        addRestrictedInfo(method, content);
     }
 
     protected void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {
@@ -399,7 +401,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         var enclosing = (TypeElement) method.getEnclosingElement();
         VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
         SortedSet<ExecutableElement> implementedMethods =
-                new TreeSet<>(utils.comparators.makeOverrideUseComparator());
+                new TreeSet<>(utils.comparators.overrideUseComparator());
         implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
@@ -433,9 +435,5 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             return writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, type));
         }
         return new ContentBuilder();
-    }
-
-    protected Content getMemberHeader(){
-        return writer.getMemberHeader();
     }
 }
