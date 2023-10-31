@@ -272,7 +272,8 @@ public final class String
      * characters currently contained in the character array argument. The
      * contents of the character array are copied; subsequent modification of
      * the character array does not affect the newly created string.
-     * The contents of the string are indeterminate if the character array
+     *
+     * <p> The contents of the string are indeterminate if the character array
      * is modified before the constructor returns.
      *
      * @param  value
@@ -289,7 +290,8 @@ public final class String
      * argument specifies the length of the subarray. The contents of the
      * subarray are copied; subsequent modification of the character array does
      * not affect the newly created string.
-     * The contents of the string are indeterminate if the character array
+     *
+     * <p> The contents of the string are indeterminate if the character array
      * is modified before the constructor returns.
      *
      * @param  value
@@ -322,7 +324,8 @@ public final class String
      * length of the subarray.  The contents of the subarray are converted to
      * {@code char}s; subsequent modification of the {@code int} array does not
      * affect the newly created string.
-     * The contents of the string are indeterminate if the array of codepoints
+     *
+     * <p> The contents of the string are indeterminate if the array of codepoints
      * is modified before the constructor returns.
      *
      * @param  codePoints
@@ -1390,7 +1393,8 @@ public final class String
      * in the given charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * The contents of the string are indeterminate if the byte array
+     *
+     * <p> The contents of the string are indeterminate if the byte array
      * is modified before the constructor returns.
      *
      * @param  bytes
@@ -1420,7 +1424,8 @@ public final class String
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * The contents of the string are indeterminate if the byte array
+     *
+     * <p> The contents of the string are indeterminate if the byte array
      * is modified before the constructor returns.
      *
      * @param  bytes
@@ -1446,7 +1451,8 @@ public final class String
      * in the default charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * The contents of the string are indeterminate if the byte array
+     *
+     * <p> The contents of the string are indeterminate if the byte array
      * is modified before the constructor returns.
      *
      * @param  bytes
@@ -1478,7 +1484,8 @@ public final class String
      * in the default charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
-     * The contents of the string are indeterminate if the byte array
+     *
+     * <p> The contents of the string are indeterminate if the byte array
      * is modified before the constructor returns.
      *
      * @param  bytes
@@ -1508,7 +1515,8 @@ public final class String
      * currently contained in the string builder argument. The contents of the
      * string builder are copied; subsequent modification of the string builder
      * does not affect the newly created string.
-     * The contents of the string are indeterminate if the {@code StringBuilder}
+     *
+     * <p> The contents of the string are indeterminate if the {@code StringBuilder}
      * is modified before the constructor returns.
      *
      * <p> This constructor is provided to ease migration to {@code
@@ -4502,7 +4510,8 @@ public final class String
      * argument. The contents of the character array are copied; subsequent
      * modification of the character array does not affect the returned
      * string.
-     * The contents of the string are indeterminate if the character array
+     *
+     * <p> The contents of the string are indeterminate if the character array
      * is modified before the constructor returns.
      *
      * @param   data     the character array.
@@ -4522,7 +4531,8 @@ public final class String
      * specifies the length of the subarray. The contents of the subarray
      * are copied; subsequent modification of the character array does not
      * affect the returned string.
-     * The contents of the string are indeterminate if the character array
+     *
+     * <p> The contents of the string are indeterminate if the character array
      * is modified before the constructor returns.
      *
      * @param   data     the character array.
@@ -4793,8 +4803,8 @@ public final class String
      * the8 low-order bits of the corresponding character, if the char[]
      * contains only latin1 character. Or a byte[] that stores all
      * characters in their byte sequences defined by the {@code StringUTF16}.
-     * <p>
-     * The contents of the string are indeterminate if the character array
+     *
+     * <p> The contents of the string are indeterminate if the character array
      * is modified before the constructor returns.
      */
     private String(char[] value, int off, int len, Void sig) {
