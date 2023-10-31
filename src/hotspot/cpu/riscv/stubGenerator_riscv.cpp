@@ -4510,11 +4510,9 @@ class StubGenerator: public StubCodeGenerator {
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
     __ srli(tmp1, R_0, 2);
-    __ slli(tmp2, tmp1, 2);
-    __ add(RR_0, tmp1, tmp2);
+    __ shadd(RR_0, tmp1, tmp1, tmp2, 2);
     __ srli(tmp1, R_1, 2);
-    __ slli(tmp2, tmp1, 2);
-    __ add(RR_1, tmp1, tmp2);
+    __ shadd(RR_1, tmp1, tmp1, tmp2, 2);
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
@@ -4564,8 +4562,7 @@ class StubGenerator: public StubCodeGenerator {
       __ srli(tmp1, U_2, 2);
       const int64_t bits2 = right_n_bits(2);
       __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
-      __ slli(tmp2, tmp1, 2);
-      __ add(tmp1, tmp1, tmp2); // Impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
+      __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
       __ cad(U_0, U_0, tmp1, tmp3); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp3
       __ cadc(U_1, U_1, zr, tmp3); // Add carry to U_1 with carry output to tmp3
       __ add(U_2, U_2, tmp3);
@@ -4578,8 +4575,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Further reduce modulo 2^130 - 5
     __ srli(tmp1, U_2, 2);
-    __ slli(tmp2, tmp1, 2);
-    __ add(tmp1, tmp1, tmp2); // tmp1 = U_2 * 5
+    __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 = U_2 * 5
     __ cad(U_0, U_0, tmp1, tmp3); // U_0 += U_2 * 5 with carry output to tmp3
     __ cadc(U_1, U_1, zr, tmp3); // Add carry to U_1 with carry output to tmp3
     __ andi(U_2, U_2, 3);
