@@ -81,6 +81,7 @@ public class Debug {
         System.err.println("logincontext  login context results");
         System.err.println("jca           JCA engine class debugging");
         System.err.println("keystore      KeyStore debugging");
+        System.err.println("pcsc          Smartcard library debugging");
         System.err.println("policy        loading and granting");
         System.err.println("provider      security provider debugging");
         System.err.println("pkcs11        PKCS11 session manager debugging");
