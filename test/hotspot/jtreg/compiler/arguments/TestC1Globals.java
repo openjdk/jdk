@@ -25,10 +25,17 @@
  * @test
  * @bug 8318817
  * @requires vm.debug
- * @summary Test flag with large values
+ * @summary Test flag with large value
  *
  * @run main/othervm -XX:NMethodSizeLimit=351658240
  *                   compiler.arguments.TestC1Globals
+ */
+
+/**
+ * @test
+ * @bug 8318817
+ * @requires vm.debug
+ * @summary Test flag with large value
  *
  * @run main/othervm -XX:NMethodSizeLimit=224001703
  *                   compiler.arguments.TestC1Globals
@@ -39,12 +46,22 @@
  * @bug 8318817
  * @requires vm.debug
  * @requires os.family == "linux"
- * @summary Test flag with large values combined with transparent huge pages on
+ * @summary Test flag with large value combined with transparent huge pages on
  *          Linux.
  *
  * @run main/othervm -XX:NMethodSizeLimit=351658240
  *                   -XX:+UseTransparentHugePages
  *                   compiler.arguments.TestC1Globals
+ *
+ */
+
+/**
+ * @test
+ * @bug 8318817
+ * @requires vm.debug
+ * @requires os.family == "linux"
+ * @summary Test flag with large value combined with transparent huge pages on
+ *          Linux.
  *
  * @run main/othervm -XX:NMethodSizeLimit=224001703
  *                   -XX:+UseTransparentHugePages

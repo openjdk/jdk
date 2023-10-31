@@ -201,10 +201,9 @@ void CodeCache::initialize_heaps() {
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
   const size_t ps           = page_size(false, 8);
-  size_t min_size           = MAX3(os::vm_page_size(),
-                                   os::vm_allocation_granularity(),
-                                   ps);
-  size_t cache_size         = ReservedCodeCacheSize;
+  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
+  assert(os::vm_page_size() >= min_size, "page size smaller than min_size");
+  const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
   size_t non_profiled_size  = NonProfiledCodeHeapSize;
@@ -328,7 +327,7 @@ void CodeCache::initialize_heaps() {
 
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(ps, os::vm_allocation_granularity());
+  const size_t alignment = min_size;
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
   non_profiled_size = align_down(non_profiled_size, alignment);
