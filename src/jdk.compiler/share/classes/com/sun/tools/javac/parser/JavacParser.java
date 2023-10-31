@@ -3917,7 +3917,7 @@ public class JavacParser implements Parser {
         }
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
-        boolean isUnnamedClass = false;
+        boolean isImplicitClass = false;
         OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
@@ -3984,9 +3984,9 @@ public class JavacParser implements Parser {
                 // this code speculatively tests to see if a top level method
                 // or field can parse. If the method or field can parse then
                 // it is parsed. Otherwise, parsing continues as though
-                // unnamed classes did not exist and error reporting
+                // implicit classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.UNNAMED_CLASSES.allowedInSource(source) && !isDeclaration()) {
+                if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
@@ -3998,9 +3998,9 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
-                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
+                    checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
-                    isUnnamedClass = true;
+                    isImplicitClass = true;
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -4012,7 +4012,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isUnnamedClass ?  constructUnnamedClass(defs.toList()) : defs.toList();
+        List<JCTree> topLevelDefs = isImplicitClass ?  construcImplictClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.docComment());
@@ -4027,14 +4027,14 @@ public class JavacParser implements Parser {
         return toplevel;
     }
 
-    // Restructure top level to be an unnamed class.
-    private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
+    // Restructure top level to be an implicit class.
+    private List<JCTree> construcImplictClass(List<JCTree> origDefs) {
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(def.pos(), Errors.UnnamedClassShouldNotHavePackageDeclaration);
+                log.error(def.pos(), Errors.ImplicitClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
             } else if (!def.hasTag(Tag.SKIP)) {
@@ -4053,12 +4053,12 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers unnamedMods = F.at(Position.NOPOS)
-                .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
-        JCClassDecl unnamed = F.at(primaryPos).ClassDef(
-                unnamedMods, name, List.nil(), null, List.nil(), List.nil(),
+        JCModifiers implicitMods = F.at(Position.NOPOS)
+                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.IMPLICIT_CLASS, List.nil());
+        JCClassDecl implicit = F.at(primaryPos).ClassDef(
+                implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        topDefs.append(unnamed);
+        topDefs.append(implicit);
         return topDefs.toList();
     }
 

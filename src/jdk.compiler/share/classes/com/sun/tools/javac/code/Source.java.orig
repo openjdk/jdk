@@ -246,7 +246,6 @@ public enum Source {
         RECORD_PATTERNS(JDK21, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
         STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
         UNNAMED_CLASSES(JDK21, Fragments.FeatureUnnamedClasses, DiagKind.PLURAL),
-        IMPLICIT_CLASSES(JDK21, Fragments.FeatureImplicitClasses, DiagKind.PLURAL),
         WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
         UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         ;

@@ -859,7 +859,7 @@ public final class LauncherHelper {
                 }
             }
         } catch (LinkageError le) {
-            abort(le, "java.launcher.cls.error6", cn,
+            abort(le, "java.launcher.cls.error4", cn,
                     le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         return mainClass;
@@ -918,58 +918,34 @@ public final class LauncherHelper {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
-            abort(null, "java.launcher.cls.error4", mainClass.getName(),
+            abort(null, "java.launcher.cls.error2", mainClass.getName(),
                   JAVAFX_APPLICATION_CLASS_NAME);
         } catch (Throwable e) {
             if (mainClass.getModule().isNamed()) {
-                abort(e, "java.launcher.module.error5",
+                abort(e, "java.launcher.module.error3",
                       mainClass.getName(), mainClass.getModule().getName(),
                       e.getClass().getName(), e.getLocalizedMessage());
             } else {
-                abort(e, "java.launcher.cls.error7", mainClass.getName(),
+                abort(e, "java.launcher.cls.error5", mainClass.getName(),
                       e.getClass().getName(), e.getLocalizedMessage());
             }
         }
 
         setMainType(mainMethod);
 
-        /*
-         * findMainMethod (above) will choose the correct method, based
-         * on its name and parameter type, however, we still have to
-         * ensure that the method is static (non-preview) and returns a void.
-         */
-        int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
-
-        if (!PreviewFeatures.isEnabled()) {
-            if (!isStatic || !isPublic || noArgs) {
-                abort(null, "java.launcher.cls.error2", "static",
-                      mainMethod.getDeclaringClass().getName());
-            }
-        }
-
-        if (!isStatic) {
+        if (!Modifier.isStatic(mainMethod.getModifiers())) {
+            String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
-                abort(null, "java.launcher.cls.error9",
-                        mainMethod.getDeclaringClass().getName());
+                abort(null, "java.launcher.cls.error7", className);
             }
             try {
                 Constructor<?> constructor = mainClass.getDeclaredConstructor();
                 if (Modifier.isPrivate(constructor.getModifiers())) {
-                    abort(null, "java.launcher.cls.error8",
-                          mainMethod.getDeclaringClass().getName());
+                    abort(null, "java.launcher.cls.error6", className);
                 }
             } catch (Throwable ex) {
-                abort(null, "java.launcher.cls.error8",
-                      mainMethod.getDeclaringClass().getName());
+                abort(null, "java.launcher.cls.error6", className);
             }
-        }
-
-        if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
-            abort(null, "java.launcher.cls.error3",
-                  mainMethod.getDeclaringClass().getName());
         }
     }
 
@@ -1122,13 +1098,13 @@ public final class LauncherHelper {
             // find the module with the FX launcher
             Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
             if (om.isEmpty()) {
-                abort(null, "java.launcher.cls.error5");
+                abort(null, "java.launcher.cls.error3");
             }
 
             // load the FX launcher class
             fxLauncherClass = Class.forName(om.get(), JAVAFX_LAUNCHER_CLASS_NAME);
             if (fxLauncherClass == null) {
-                abort(null, "java.launcher.cls.error5");
+                abort(null, "java.launcher.cls.error3");
             }
 
             try {
@@ -1149,7 +1125,7 @@ public final class LauncherHelper {
                     abort(null, "java.launcher.javafx.error1");
                 }
             } catch (NoSuchMethodException ex) {
-                abort(ex, "java.launcher.cls.error5", ex);
+                abort(ex, "java.launcher.cls.error3", ex);
             }
 
             fxLaunchName = what;

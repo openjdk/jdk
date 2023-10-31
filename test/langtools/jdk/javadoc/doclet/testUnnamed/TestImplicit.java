@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8309595
- * @summary Allow javadoc to process unnamed classes
+ * @summary Allow javadoc to process implicit classes
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @run main TestUnnamed
+ * @run main TestImplicit
  */
 
 import java.io.File;
@@ -39,18 +39,18 @@ import java.nio.file.Path;
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
-public class TestUnnamed extends JavadocTester {
+public class TestImplicit extends JavadocTester {
 
     private static final String thisVersion = System.getProperty("java.specification.version");
 
     private static final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
-        new TestUnnamed().runTests();
+        new TestImplicit().runTests();
     }
 
     @Test
-    public void testUnnamed(Path base) throws IOException {
+    public void testImplicit(Path base) throws IOException {
         String className = "Sample";
         Files.createDirectories(base);
         Path out = base.resolve("out");

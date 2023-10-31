@@ -564,7 +564,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotStatic { public void main(String... args) { } }");
         testError(base.resolve("NotStatic.java"), "",
-                "error: 'main' method is not declared 'public static'");
+                "error: can't find main(String[]) method in class: NotStatic");
     }
 
     @Test
@@ -572,7 +572,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: 'main' method is not declared with a return type of 'void'");
+                "error: can't find main(String[]) method in class: NotVoid");
     }
 
     @Test

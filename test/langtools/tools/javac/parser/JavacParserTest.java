@@ -2472,7 +2472,7 @@ public class JavacParserTest extends TestCase {
                      result,
                      """
                      \n\
-                     /*synthetic*/ final class Test {
+                     final class Test {
                          \n\
                          void main() {
                              (ERROR);

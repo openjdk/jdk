@@ -177,13 +177,6 @@ public interface Filer {
      * <p>Creating a source file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
      *
-     * <p>If the environment is configured to support {@linkplain
-     * TypeElement#isUnnamed unnamed classes}, the name argument is
-     * used to provide the leading component of the name used for the
-     * output file. For example {@code filer.createSourceFile("Foo")}
-     * to create an unnamed class hosted in {@code Foo.java}. All
-     * unnamed classes must be in an unnamed package.
-     *
      * @apiNote To use a particular {@linkplain
      * java.nio.charset.Charset charset} to encode the contents of the
      * file, an {@code OutputStreamWriter} with the chosen charset can
@@ -262,13 +255,6 @@ public interface Filer {
      *
      * <p>Creating a class file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
-     *
-     * <p>If the environment is configured to support {@linkplain
-     * TypeElement#isUnnamed unnamed classes}, the name argument is
-     * used to provide the leading component of the name used for the
-     * output file. For example {@code filer.createClassFile("Foo")} to
-     * create an unnamed class hosted in {@code Foo.class}. All unnamed
-     * classes must be in an unnamed package.
      *
      * @apiNote To avoid subsequent errors, the contents of the class
      * file should be compatible with the {@linkplain
