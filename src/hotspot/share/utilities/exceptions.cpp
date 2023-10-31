@@ -109,6 +109,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 #endif // ASSERT
 
   if (!thread->can_call_java()) {
+    ResourceMark rm(thread);
     const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
                       h_name != nullptr ? h_name->as_C_string() :
                       "null";
