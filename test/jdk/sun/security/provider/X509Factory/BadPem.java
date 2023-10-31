@@ -28,7 +28,10 @@
  * @modules java.base/sun.security.provider
  */
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.util.Arrays;

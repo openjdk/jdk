@@ -179,7 +179,8 @@ public class SSLCtxAccessToSessCtx  {
 
         sslctx = SSLContext.getInstance("TLS");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance(new File(keyFilename), passwd.toCharArray());
+        KeyStore ks = KeyStore.getInstance(new File(keyFilename),
+                passwd.toCharArray());
         kmf.init(ks, passwd.toCharArray());
         sslctx.init(kmf.getKeyManagers(), null, null);
 

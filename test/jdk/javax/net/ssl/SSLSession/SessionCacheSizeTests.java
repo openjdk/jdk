@@ -317,7 +317,8 @@ public class SessionCacheSizeTests {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         KeyStore ks;
         try (FileInputStream fis = new FileInputStream(keyFilename)) {
-            ks = KeyStore.getInstance(new File(keyFilename), passwd.toCharArray());
+            ks = KeyStore.getInstance(new File(keyFilename),
+                    passwd.toCharArray());
         }
         kmf.init(ks, passwd.toCharArray());
         sslctx.init(kmf.getKeyManagers(), null, null);
