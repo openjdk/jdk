@@ -767,8 +767,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     log_info(cds)("Reading extra data: done.");
   }
 
-  HeapShared::init_for_dumping(CHECK);
-
   // Rewrite and link classes
   log_info(cds)("Rewriting and linking classes ...");
 
@@ -780,14 +778,17 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  StringTable::allocate_shared_strings_array(CHECK);
-  if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
-    log_info(cds)("archivedBootLayer not available, disabling full module graph");
-    disable_full_module_graph();
-  }
-  ArchiveHeapWriter::init();
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
+  if (CDSConfig::is_dumping_heap()) {
+    StringTable::allocate_shared_strings_array(CHECK);
+    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+      log_info(cds)("archivedBootLayer not available, disabling full module graph");
+      disable_full_module_graph();
+    }
+    HeapShared::init_for_dumping(CHECK);
+    ArchiveHeapWriter::init();
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
   }
 #endif
 

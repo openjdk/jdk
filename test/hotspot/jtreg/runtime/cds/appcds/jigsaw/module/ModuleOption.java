@@ -37,8 +37,9 @@ public class ModuleOption {
     public static void main(String[] args) throws Exception {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
-        final String loggingOption = "-Xlog:cds=debug,cds+module=debug,module=trace";
+        final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
         final String versionPattern = "java.[0-9][0-9][-].*";
+        final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         String archiveName = TestCommon.getNewArchiveName("module-option");
         TestCommon.setCurrentArchiveName(archiveName);
 
@@ -66,14 +67,16 @@ public class ModuleOption {
             "-m", "jdk.compiler/com.sun.tools.javac.Main",
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Mismatched modules: runtime jdk.compiler dump time jdk.httpserver");
+          .shouldContain("Mismatched modules: runtime jdk.compiler dump time jdk.httpserver")
+          .shouldContain(subgraphCannotBeUsed);
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.httpserver specified during dump time but not during runtime");
+          .shouldContain("Module jdk.httpserver specified during dump time but not during runtime")
+          .shouldContain(subgraphCannotBeUsed);
 
         // dump an archive without the module option
         archiveName = TestCommon.getNewArchiveName("no-module-option");
@@ -92,7 +95,8 @@ public class ModuleOption {
         oa.shouldHaveExitValue(0)
           .shouldContain("Module jdk.httpserver specified during runtime but not during dump time")
           // version of the jdk.httpserver module, e.g. java 22-ea
-          .shouldMatch(versionPattern);
+          .shouldMatch(versionPattern)
+          .shouldContain(subgraphCannotBeUsed);
 
         // dump an archive with an incubator module, -m jdk.incubator.vector
         archiveName = TestCommon.getNewArchiveName("incubator-module");
@@ -115,6 +119,7 @@ public class ModuleOption {
           // module is not restored from archive
           .shouldContain("define_module(): creation of module: jdk.incubator.vector")
           .shouldContain("WARNING: Using incubator modules: jdk.incubator.vector")
+          .shouldContain("subgraph jdk.internal.module.ArchivedBootLayer is not recorde")
           .shouldContain("module jdk.incubator.vector does not have a ModuleMainClass attribute, use -m <module>/<main-class>")
           .shouldHaveExitValue(1);
     }

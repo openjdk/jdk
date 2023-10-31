@@ -24,6 +24,7 @@
  */
 package jdk.internal.module;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
@@ -41,17 +42,20 @@ class ArchivedModuleGraph {
     private final ModuleFinder finder;
     private final Configuration configuration;
     private final Function<String, ClassLoader> classLoaderFunction;
+    private static String mainModule;
 
     private ArchivedModuleGraph(boolean hasSplitPackages,
                                 boolean hasIncubatorModules,
                                 ModuleFinder finder,
                                 Configuration configuration,
-                                Function<String, ClassLoader> classLoaderFunction) {
+                                Function<String, ClassLoader> classLoaderFunction,
+                                String mainModuleName) {
         this.hasSplitPackages = hasSplitPackages;
         this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
         this.classLoaderFunction = classLoaderFunction;
+        mainModule = mainModuleName;
     }
 
     ModuleFinder finder() {
@@ -77,10 +81,9 @@ class ArchivedModuleGraph {
     /**
      * Returns the ArchivedModuleGraph for the given initial module.
      */
-    static ArchivedModuleGraph get(String mainModule) {
+    static ArchivedModuleGraph get(String mainModuleName) {
         ArchivedModuleGraph graph = archivedModuleGraph;
-        // We only allow the unnamed module (default) case for now
-        if (mainModule == null) {
+        if (Objects.equals(mainModule, mainModuleName)) {
             return graph;
         } else {
             return null;
@@ -94,12 +97,14 @@ class ArchivedModuleGraph {
                         boolean hasIncubatorModules,
                         ModuleFinder finder,
                         Configuration configuration,
-                        Function<String, ClassLoader> classLoaderFunction) {
+                        Function<String, ClassLoader> classLoaderFunction,
+                        String mainModule) {
         archivedModuleGraph = new ArchivedModuleGraph(hasSplitPackages,
                                                       hasIncubatorModules,
                                                       finder,
                                                       configuration,
-                                                      classLoaderFunction);
+                                                      classLoaderFunction,
+                                                      mainModule);
     }
 
     static {
