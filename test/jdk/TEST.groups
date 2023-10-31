@@ -41,7 +41,6 @@ tier1_part3 = \
     :jdk_math \
     :jdk_svc_sanity \
     :jdk_foreign \
-    :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -70,6 +69,7 @@ tier2_part2 = \
     :jdk_time
 
 tier2_part3 = \
+    :jdk_vector_sanity \
     :jdk_net
 
 tier3 = \
