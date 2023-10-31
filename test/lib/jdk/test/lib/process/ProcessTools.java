@@ -612,7 +612,7 @@ public final class ProcessTools {
      * the process output.
      *
      * <p>The process is created using runtime flags set up by:
-     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * {@link #createTestJavaProcessBuilder(String...)}. The
      * jvm process will have exited before this method returns.
      *
      * @param cmds User specified arguments.
@@ -627,7 +627,7 @@ public final class ProcessTools {
      * the process output.
      *
      * <p>The process is created using runtime flags set up by:
-     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * {@link #createTestJavaProcessBuilder(String...)}. The
      * jvm process will have exited before this method returns.
      *
      * @param cmds User specified arguments.
