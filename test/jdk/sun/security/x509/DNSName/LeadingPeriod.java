@@ -74,9 +74,6 @@ public class LeadingPeriod {
         // disable certificate revocation checking
         params.setRevocationEnabled(false);
 
-        // disable CRL checker
-        System.setProperty("com.sun.security.enableCRLDP", "false");
-
         return params;
     }
 
