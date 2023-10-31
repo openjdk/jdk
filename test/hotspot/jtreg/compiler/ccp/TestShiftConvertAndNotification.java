@@ -24,11 +24,23 @@
 /*
  * @test
  * @bug 8313672
- * @summary Test CCP notification for value update of AndL through LShiftI and ConvI2L.
+ * @summary Test CCP notification for value update of AndL through LShiftI and
+ *          ConvI2L.
  * @run main/othervm -XX:RepeatCompilation=20 -XX:-TieredCompilation
  *                   -XX:+StressIGVN -XX:-CICompileOSR -Xcomp
  *                   -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test
  *                   compiler.ccp.TestShiftConvertAndNotification
+ */
+
+/*
+ * @test
+ * @bug 8313672
+ * @summary Test CCP notification for value update of AndL through LShiftI and
+ *          ConvI2L (reduced set of flags).
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test
+ *                   -Xcomp
+ *                   compiler.ccp.TestShiftConvertAndNotification
+ *
  */
 
 package compiler.ccp;
