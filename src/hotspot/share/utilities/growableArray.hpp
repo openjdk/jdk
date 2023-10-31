@@ -406,53 +406,26 @@ private:
     new ((void*)ptr) E();
   }
 public:
-  template<typename Filler = decltype(default_fill),
-           ENABLE_IF(std::is_function<Filler>::value)>
-  E at_grow(int i, Filler filler = default_fill) {
+  template<typename... Args >
+  E at_grow(int i, Args... args) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j <= i; j++)
-        filler(&this->_data[j]);
-      this->_len = i + 1;
-    }
-    return this->_data[i];
-  }
-  template<typename Filler,
-           ENABLE_IF(!std::is_function<Filler>::value)>
-  E at_grow(int i, Filler fill) {
-    assert(0 <= i, "negative index %d", i);
-    if (i >= this->_len) {
-      if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j <= i; j++)
-        this->_data[j] = fill;
+        new (&this->_data[j]) E(args...);
       this->_len = i + 1;
     }
     return this->_data[i];
   }
 
-  template<typename Filler = decltype(default_fill),
-           ENABLE_IF(std::is_function<Filler>::value)>
-  void at_put_grow(int i, const E& elem, Filler filler = default_fill) {
+  template<typename... Args>
+  void at_put_grow(int i, const E& elem, Args... args) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++)
-        filler(&this->_data[j]);
+        new (&this->_data[j]) E(args...);
       this->_len = i+1;
-    }
-    this->_data[i] = elem;
-  }
-
-  template<typename Filler,
-           ENABLE_IF(!std::is_function<Filler>::value)>
-  void at_put_grow(int i, const E& elem, Filler fill) {
-    assert(0 <= i, "negative index %d", i);
-    if (i >= this->_len) {
-      if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j < i; j++)
-        this->_data[j] = fill;
-      this->_len = i + 1;
     }
     this->_data[i] = elem;
   }
