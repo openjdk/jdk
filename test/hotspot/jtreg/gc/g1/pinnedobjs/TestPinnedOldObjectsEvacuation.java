@@ -44,6 +44,7 @@ import jdk.test.whitebox.WhiteBox;
 
 class TestResultTracker {
     private int trackedRegion = -1;
+    private int curGC = -1;
     private String stdout;
     private int expectedMarkingSkipEvents;      // How many times has the region from the "marking" collection set candidate set been "skipped".
     private int expectedRetainedSkipEvents;     // How many times has the region from the "retained" collection set candidate set been "skipped".
@@ -122,7 +123,6 @@ class TestResultTracker {
         Matcher skipDropMatcher = Pattern.compile(skipDropEvents, Pattern.MULTILINE).matcher(stdout);
         Matcher reclaimMatcher = Pattern.compile(reclaimEvents, Pattern.MULTILINE).matcher(stdout);
 
-        int curGC = -1;
         for (int i = 0; i < expectedMarkingSkipEvents; i++) {
             expectMoreMatches(skipDropMatcher, "expectedMarkingSkipEvents");
             curGC = expectIncreasingGC(skipDropMatcher);
@@ -161,7 +161,7 @@ class TestResultTracker {
                 if (reclaimMatcher.group(2).equals("marking")) {
                     continue;
                 }
-                if (Integer.parseInt(reclaimMatcher.group(1)) == cur) {
+                if (Integer.parseInt(reclaimMatcher.group(1)) == curGC) {
                     int actual = Integer.parseInt(reclaimMatcher.group(4));
                     Asserts.assertEQ(actual, 1, "Expected number of unreclaimable to be 1 after retained skip but is " + actual);
                     break;
