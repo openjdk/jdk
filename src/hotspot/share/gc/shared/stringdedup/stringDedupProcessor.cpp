@@ -48,7 +48,7 @@
 
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
-PerfCounter* StringDedup::Processor::_concurrent_dedup_thread_cpu_time = NULL;
+PerfCounter* StringDedup::Processor::_concurrent_dedup_thread_cpu_time = nullptr;
 StringDedup::StorageUse* volatile StringDedup::Processor::_storage_for_requests = nullptr;
 StringDedup::StorageUse* StringDedup::Processor::_storage_for_processing = nullptr;
 
