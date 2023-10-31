@@ -1482,7 +1482,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
 
     // Check whether the predicated gather/scatter node is supported by architecture.
-    VectorMaskUseType mask = (is_scatter || !is_subword_type(elem_bt)) ? (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred) : VecMaskUseLoad;
+    VectorMaskUseType mask = (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred);
     if (!arch_supports_vector(is_scatter ? Op_StoreVectorScatterMasked : Op_LoadVectorGatherMasked, num_elem, elem_bt, mask)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s is_masked_op=1",
