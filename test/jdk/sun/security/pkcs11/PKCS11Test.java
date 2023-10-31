@@ -825,7 +825,7 @@ public abstract class PKCS11Test {
                 return fetchNssLib(LINUX_X64.class);
 
             case "Linux-aarch64-64":
-                throw new SkippedException("Skipping Linux aarch64 platforms.");
+                throw new SkippedException("Per JDK-8319128, skipping Linux aarch64 platforms.");
             default:
                 return null;
         }
