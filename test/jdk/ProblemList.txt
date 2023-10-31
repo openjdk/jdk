@@ -629,6 +629,7 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 generic-
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 generic-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
+sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 
 ############################################################################
 
