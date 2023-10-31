@@ -343,11 +343,12 @@ public class HtmlDoclet extends AbstractDoclet {
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
             case "", "default" -> {
-                // use a dummy resource as a stand-in, because we cannot get the URL for a resources directory
-                var url = HtmlDoclet.class.getResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET).getPath());
+                // use a known resource as a stand-in, because we cannot get the URL for a resources directory
+                var url = HtmlDoclet.class.getResource(
+                        DocPaths.RESOURCES.resolve(DocPaths.LEGAL).resolve(DocPaths.JQUERY_MD).getPath());
                 if (url != null) {
                     try {
-                        legalNoticesDir = Path.of(url.toURI()).getParent().resolve("legal");
+                        legalNoticesDir = Path.of(url.toURI()).getParent();
                     } catch (URISyntaxException e) {
                         // should not happen when running javadoc from a system image
                         return;
