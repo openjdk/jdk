@@ -2316,7 +2316,6 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
-  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -3526,6 +3525,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
       }
+      if (callee->has_monitor_bytecodes()) {
+        compilation()->set_has_monitors(true);
+      }
       return true;
     }
     return false;
@@ -3538,6 +3540,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       print_inlining(callee, "intrinsic");
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
+      }
+      if (callee->has_monitor_bytecodes()) {
+        compilation()->set_has_monitors(true);
       }
       return true;
     }
@@ -3558,6 +3563,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
     if (callee->has_reserved_stack_access()) {
       compilation()->set_has_reserved_stack_access(true);
+    }
+    if (callee->has_monitor_bytecodes()) {
+      compilation()->set_has_monitors(true);
     }
     return true;
   }
