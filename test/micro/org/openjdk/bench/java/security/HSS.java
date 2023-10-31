@@ -53,7 +53,6 @@ import sun.security.util.RawKeySpec;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
@@ -89,6 +88,7 @@ public class HSS {
     }
 
     // RFC 8554 Test Case 1
+    @State(Scope.Thread)
     public static class test01 extends HSS {
         Signature v;
         byte[] pk;
@@ -216,6 +216,7 @@ public class HSS {
     }
 
     // RFC 8554 Test Case 2
+    @State(Scope.Thread)
     public static class test02 extends HSS {
         Signature v;
         byte[] pk;
@@ -380,6 +381,7 @@ public class HSS {
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8);
+    @State(Scope.Thread)
     public static class test03 extends HSS {
         Signature v;
         byte[] pk;
@@ -497,6 +499,7 @@ public class HSS {
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8);
+    @State(Scope.Thread)
     public static class test04 extends HSS {
         Signature v;
         byte[] pk;
@@ -619,6 +622,7 @@ public class HSS {
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test05 extends HSS {
         Signature v;
         byte[] pk;
@@ -769,6 +773,7 @@ public class HSS {
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test06 extends HSS {
         Signature v;
         byte[] pk;
@@ -925,6 +930,7 @@ public class HSS {
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test07 extends HSS {
         Signature v;
         byte[] pk;
@@ -1161,6 +1167,7 @@ public class HSS {
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test08 extends HSS {
         Signature v;
         byte[] pk;
@@ -1402,6 +1409,7 @@ public class HSS {
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test09 extends HSS {
         Signature v;
         byte[] pk;
@@ -1643,6 +1651,7 @@ public class HSS {
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
+    @State(Scope.Thread)
     public static class test10 extends HSS {
         Signature v;
         byte[] pk;
