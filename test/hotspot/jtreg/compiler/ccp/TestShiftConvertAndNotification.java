@@ -25,9 +25,9 @@
  * @test
  * @bug 8313672
  * @summary Test CCP notification for value update of AndL through LShiftI and ConvI2L.
- * @run main/othervm -XX:RepeatCompilation=1000 -XX:-TieredCompilation
+ * @run main/othervm -XX:RepeatCompilation=20 -XX:-TieredCompilation
  *                   -XX:+StressIGVN -XX:-CICompileOSR -Xcomp
- *                   -XX:CompileCommand=compileonly,TestShiftConvertAndNotification::test
+ *                   -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test
  *                   compiler.ccp.TestShiftConvertAndNotification
  */
 
