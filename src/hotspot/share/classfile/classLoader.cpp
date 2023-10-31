@@ -86,22 +86,6 @@ typedef int (*canonicalize_fn_t)(const char *orig, char *out, int len);
 
 static canonicalize_fn_t CanonicalizeEntry  = nullptr;
 
-// Entry points in zip.dll for loading zip/jar file entries
-
-typedef void * * (*ZipOpen_t)(const char *name, char **pmsg);
-typedef void     (*ZipClose_t)(jzfile *zip);
-typedef jzentry* (*FindEntry_t)(jzfile *zip, const char *name, jint *sizeP, jint *nameLen);
-typedef jboolean (*ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
-typedef jint     (*Crc32_t)(jint crc, const jbyte *buf, jint len);
-
-static ZipOpen_t         ZipOpen            = nullptr;
-static ZipClose_t        ZipClose           = nullptr;
-static FindEntry_t       FindEntry          = nullptr;
-static ReadEntry_t       ReadEntry          = nullptr;
-static Crc32_t           Crc32              = nullptr;
-int    ClassLoader::_libzip_loaded          = 0;
-void*  ClassLoader::_zip_handle             = nullptr;
-
 // Entry points for jimage.dll for loading jimage file entries
 
 static JImageOpen_t                    JImageOpen             = nullptr;
@@ -292,7 +276,7 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
-  (*ZipClose)(_zip);
+  ZipLibrary::close(_zip);
   FREE_C_HEAP_ARRAY(char, _zip_name);
 }
 
@@ -301,7 +285,7 @@ u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* f
   ThreadToNativeFromVM ttn(current);
   // check whether zip archive contains name
   jint name_len;
-  jzentry* entry = (*FindEntry)(_zip, name, filesize, &name_len);
+  jzentry* entry = ZipLibrary::find_entry(_zip, name, filesize, &name_len);
   if (entry == nullptr) return nullptr;
   u1* buffer;
   char name_buf[128];
@@ -321,7 +305,9 @@ u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* f
     size++;
   }
   buffer = NEW_RESOURCE_ARRAY(u1, size);
-  if (!(*ReadEntry)(_zip, entry, buffer, filename)) return nullptr;
+  if (!ZipLibrary::read_entry(_zip, entry, buffer, filename)) {
+    return nullptr;
+  }
 
   // return result
   if (nul_terminate) {
@@ -724,8 +710,7 @@ jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg,
   // enable call to C land
   ThreadToNativeFromVM ttn(thread);
   HandleMark hm(thread);
-  load_zip_library_if_needed();
-  return (*ZipOpen)(canonical_path, error_msg);
+  return ZipLibrary::open(canonical_path, error_msg);
 }
 
 ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
@@ -937,32 +922,6 @@ void ClassLoader::load_java_library() {
   CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, dll_lookup(javalib_handle, "JDK_Canonicalize", nullptr));
 }
 
-void ClassLoader::release_load_zip_library() {
-  ConditionalMutexLocker locker(Zip_lock, Zip_lock != nullptr, Monitor::_no_safepoint_check_flag);
-  if (_libzip_loaded == 0) {
-    load_zip_library();
-    Atomic::release_store(&_libzip_loaded, 1);
-  }
-}
-
-void ClassLoader::load_zip_library() {
-  assert(ZipOpen == nullptr, "should not load zip library twice");
-  char path[JVM_MAXPATHLEN];
-  char ebuf[1024];
-  if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
-    _zip_handle = os::dll_load(path, ebuf, sizeof ebuf);
-  }
-  if (_zip_handle == nullptr) {
-    vm_exit_during_initialization("Unable to load zip library", path);
-  }
-
-  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(_zip_handle, "ZIP_Open", path));
-  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(_zip_handle, "ZIP_Close", path));
-  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(_zip_handle, "ZIP_FindEntry", path));
-  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(_zip_handle, "ZIP_ReadEntry", path));
-  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(_zip_handle, "ZIP_CRC32", path));
-}
-
 void ClassLoader::load_jimage_library() {
   assert(JImageOpen == nullptr, "should not load jimage library twice");
   char path[JVM_MAXPATHLEN];
@@ -982,8 +941,7 @@ void ClassLoader::load_jimage_library() {
 }
 
 int ClassLoader::crc32(int crc, const char* buf, int len) {
-  load_zip_library_if_needed();
-  return (*Crc32)(crc, (const jbyte*)buf, len);
+  return ZipLibrary::crc32(crc, (const jbyte*)buf, len);
 }
 
 oop ClassLoader::get_system_package(const char* name, TRAPS) {
