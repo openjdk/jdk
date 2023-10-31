@@ -55,6 +55,9 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -822,12 +825,65 @@ public abstract class PKCS11Test {
                 return fetchNssLib(MACOSX_AARCH64.class);
 
             case "Linux-amd64-64":
-                return fetchNssLib(LINUX_X64.class);
+                if (isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_X64.class);
+                }
 
             case "Linux-aarch64-64":
-                throw new SkippedException("Per JDK-8319128, skipping Linux aarch64 platforms.");
+                if (isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_AARCH64.class);
+                }
             default:
                 return null;
+        }
+    }
+
+    private static boolean isOracleLinux7() {
+        Path oracleReleaseFile = Path.of("/etc/oracle-release");
+        Path osReleaseFile = Path.of("/etc/os-release");
+        String versionString;
+        try {
+            if (Files.exists(oracleReleaseFile)) {
+                System.err.printf("%s exists.%n", oracleReleaseFile);
+                String contents = Files.readString(oracleReleaseFile).strip();
+                System.err.printf("checking: \"%s\"%n", contents);
+                Matcher m = Pattern.compile("Oracle Linux.*(\\d+\\.\\d+)").matcher(contents);
+                if (!m.matches()) {
+                    return false;
+                } else {
+                    versionString = m.group(1);
+                }
+
+            } else if (Files.exists(osReleaseFile)) {
+                    System.err.printf("%s exists.%n", osReleaseFile);
+                    Map<String, String> components = Files.readAllLines(osReleaseFile)
+                            .stream().filter(s -> !s.isBlank())
+                            .peek(System.err::println)
+                            .collect(Collectors.toMap(
+                                    s -> s.split("=")[0],
+                                    s -> s.split("=")[1].strip()
+                            ));
+
+                    String osName = components.getOrDefault("NAME", "");
+                    String version = components.getOrDefault("VERSION", "");
+                    System.err.printf("NAME = %s VERSION = %s%n", osName, version);
+                    if (osName.toLowerCase().contains("oracle")) {
+                        versionString = version.replaceAll("\"", "");
+                    } else {
+                        return false;
+                    }
+
+            } else {
+                return false;
+            }
+
+            return Double.parseDouble(versionString) < 8.0;
+        } catch (IOException exc) {
+            return false;
         }
     }
 
