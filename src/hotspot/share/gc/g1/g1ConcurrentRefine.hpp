@@ -47,7 +47,7 @@ class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefineThread** _threads;
   uint _max_num_threads;
 
-    // Perf data for CPU time consumed by concurrent refine threads.
+  // Perf data for CPU time consumed by concurrent refine threads.
   PerfCounter* _g1_concurrent_refine_threads_cpu_time;
 
   // Create the refinement thread for the given worker id.

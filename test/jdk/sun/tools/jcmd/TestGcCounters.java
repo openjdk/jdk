@@ -56,6 +56,7 @@ public class TestGcCounters {
         output.shouldContain(SUN_THREADS + ".total_gc_cpu_time");
         output.shouldContain(SUN_THREADS_CPUTIME + ".gc_conc_mark");
         output.shouldContain(SUN_THREADS_CPUTIME + ".gc_conc_refine");
+        output.shouldContain(SUN_THREADS_CPUTIME + ".gc_service");
         output.shouldContain(SUN_THREADS_CPUTIME + ".gc_parallel_workers");
         output.shouldContain(SUN_THREADS_CPUTIME + ".vm");
         output.shouldContain(SUN_THREADS_CPUTIME + ".conc_dedup");

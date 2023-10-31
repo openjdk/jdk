@@ -27,6 +27,7 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/perfData.hpp"
 
 class G1ServiceTaskQueue;
 class G1ServiceThread;
@@ -106,6 +107,9 @@ class G1ServiceThread: public ConcurrentGCThread {
   // and allow other threads to signal the service thread to wake up.
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
+
+  // Perf data for CPU time consumed by G1 service thread.
+  PerfCounter* _g1_service_threads_cpu_time;
 
   void run_service();
   void stop_service();
