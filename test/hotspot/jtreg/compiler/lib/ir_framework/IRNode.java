@@ -1121,12 +1121,34 @@ public class IRNode {
         trapNodes(RANGE_CHECK_TRAP,"range_check");
     }
 
-    public static final String REPLICATE = PREFIX + "REPLICATE" + POSTFIX;
+    public static final String REPLICATE_B = VECTOR_PREFIX + "REPLICATE_B" + POSTFIX;
     static {
-        String regex = START + "Replicate" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                  CompilePhase.AFTER_CLOOPS,
-                                                                  CompilePhase.BEFORE_MATCHING));
+        vectorNode(REPLICATE_B, "Replicate", TYPE_BYTE);
+    }
+
+    public static final String REPLICATE_S = VECTOR_PREFIX + "REPLICATE_S" + POSTFIX;
+    static {
+        vectorNode(REPLICATE_S, "Replicate", TYPE_SHORT);
+    }
+
+    public static final String REPLICATE_I = VECTOR_PREFIX + "REPLICATE_I" + POSTFIX;
+    static {
+        vectorNode(REPLICATE_I, "Replicate", TYPE_INT);
+    }
+
+    public static final String REPLICATE_L = VECTOR_PREFIX + "REPLICATE_L" + POSTFIX;
+    static {
+        vectorNode(REPLICATE_L, "Replicate", TYPE_LONG);
+    }
+
+    public static final String REPLICATE_F = VECTOR_PREFIX + "REPLICATE_F" + POSTFIX;
+    static {
+        vectorNode(REPLICATE_F, "Replicate", TYPE_FLOAT);
+    }
+
+    public static final String REPLICATE_D = VECTOR_PREFIX + "REPLICATE_D" + POSTFIX;
+    static {
+        vectorNode(REPLICATE_D, "Replicate", TYPE_DOUBLE);
     }
 
     public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
