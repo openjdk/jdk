@@ -157,7 +157,7 @@ final class SSLConfiguration implements Cloneable {
          * value; otherwise, it defaults to 8 for
          * jdk.tls.server.maxInboundCertificateChainLength
          * and 10 for jdk.tls.client.maxInboundCertificateChainLength.
-         * Usesrs can independently set either
+         * Users can independently set either
          * jdk.tls.server.maxInboundCertificateChainLength or
          * jdk.tls.client.maxInboundCertificateChainLength.
          */
