@@ -392,7 +392,6 @@ private:
 
 public:
   char gc_state() const;
-  static address gc_state_addr();
 
   void set_evacuation_reserve_quantities(bool is_valid);
   void set_concurrent_young_mark_in_progress(bool in_progress);
@@ -420,7 +419,7 @@ public:
   inline bool is_full_gc_in_progress() const;
   inline bool is_full_gc_move_in_progress() const;
   inline bool has_forwarded_objects() const;
-  inline bool is_gc_in_progress_mask(uint mask) const;
+
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;

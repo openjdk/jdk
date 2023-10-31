@@ -36,7 +36,6 @@
 // Mark class does not maintain states. Instead, mark states are
 // maintained by task queues, mark bitmap and SATB buffers (concurrent mark)
 class ShenandoahMark: public StackObj {
-
 protected:
   ShenandoahGeneration* const _generation;
   ShenandoahObjToScanQueueSet* const _task_queues;

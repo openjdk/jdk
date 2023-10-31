@@ -2555,14 +2555,18 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
                                           ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
     ShenandoahIsAliveSelector is_alive;
-    CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
-    ShenandoahGCPhase gc_phase(phase);
-    ShenandoahGCWorkerPhase worker_phase(phase);
-    bool purged_class = SystemDictionary::do_unloading(gc_timer());
+    {
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
+      ShenandoahGCPhase gc_phase(phase);
+      ShenandoahGCWorkerPhase worker_phase(phase);
+      bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
 
-    uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(phase, num_workers, purged_class);
-    _workers->run_task(&unlink_task);
+      uint num_workers = _workers->active_workers();
+      ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);
+      _workers->run_task(&unlink_task);
+    }
+    // Release unloaded nmethods's memory.
+    CodeCache::flush_unlinked_nmethods();
   }
 
   {
@@ -2635,10 +2639,6 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->collection_set() != nullptr, "Sanity");
   return (address) heap->collection_set()->biased_map_address();
-}
-
-address ShenandoahHeap::gc_state_addr() {
-  return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
