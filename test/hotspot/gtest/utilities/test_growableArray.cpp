@@ -637,7 +637,7 @@ TEST(GrowableArrayCHeap, ShouldBeAbleToGrowWithoutCopying) {
 TEST(GrowableArrayCHeap, ShouldBeAbleToGrowByCopying) {
   Elt::copy_calls = 0;
   GrowableArrayCHeap<Elt, mtTest> arr{0};
-  arr.at_put_grow(16, Elt{"final_elt", 16}, Elt{});
+  arr.at_put_grow(16, Elt{"final_elt", 16}, Elt{"",0});
   ASSERT_GE(Elt::copy_calls, 16);
 }
 
