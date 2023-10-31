@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal;
 
-package jdk.jfr.events;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import jdk.jfr.Category;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
-import jdk.jfr.internal.Type;
-
-@Name(Type.EVENT_NAME_PREFIX + "ExceptionStatistics")
-@Label("Exception Statistics")
-@Category({ "Java Application", "Statistics" })
-@Description("Number of objects derived from java.lang.Throwable that have been created")
-@StackTrace(false)
-public final class ExceptionStatisticsEvent extends AbstractPeriodicEvent {
-
-    @Label("Exceptions Created")
-    public long throwables;
+/**
+ * Annotation that can remove the fields "duration", "eventThread" and
+ * "stackTrace".
+ * <p>
+ * Example usage:
+ * {@snippet :
+ *   @RemoveFields({{"duration", "stackTrace"}
+ *   class NonThreadEvent extends Event {
+ *   }
+ * }
+ *
+ * <p>
+ * Calling Event::begin() or Event:end() on an event without a duration field
+ * will result in an {@code IllegalStateException}
+ **/
+@Target({ ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+public @interface RemoveFields {
+    String[] value() default {};
 }
