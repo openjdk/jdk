@@ -3525,7 +3525,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
       }
-      if (callee->has_monitor_bytecodes()) {
+      if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
         compilation()->set_has_monitors(true);
       }
       return true;
@@ -3541,7 +3541,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       if (callee->has_reserved_stack_access()) {
         compilation()->set_has_reserved_stack_access(true);
       }
-      if (callee->has_monitor_bytecodes()) {
+      if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
         compilation()->set_has_monitors(true);
       }
       return true;
@@ -3564,7 +3564,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
     if (callee->has_reserved_stack_access()) {
       compilation()->set_has_reserved_stack_access(true);
     }
-    if (callee->has_monitor_bytecodes()) {
+    if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
       compilation()->set_has_monitors(true);
     }
     return true;
