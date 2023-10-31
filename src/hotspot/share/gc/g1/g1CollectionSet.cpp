@@ -352,14 +352,8 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     // there is progress in the mixed gc phase.
     move_pinned_marking_to_retained(&pinned_marking_regions);
     // Drop pinned retained regions to make progress with retained regions. Regions
-    // in that list have must have been pinned for at least two GCs and hence are
-    // considered "long lived".
-    // Two GCs because:
-    // * the GC the region it has been put in the retained regions list. Either due
-    //   due to being a pinned young region or observing a real evacuation failure.
-    // * (if it started off as marking region, the GC it has been moved to the
-    //   retained candidates)
-    // * the GC it has been detected to be pinned (again), i.e. this GC.
+    // in that list have must have been pinned for at least
+    // G1NumCollectionsKeepUnreclaimable GCs and hence are considered "long lived".
     drop_pinned_retained_regions(&pinned_retained_regions);
 
     candidates()->verify();
