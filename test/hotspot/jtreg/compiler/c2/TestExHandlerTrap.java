@@ -22,6 +22,7 @@
  */
 package compiler.c2;
 
+import java.io.PrintStream;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -40,6 +41,9 @@ import java.util.ArrayList;
  */
 
 public class TestExHandlerTrap {
+
+    private static final String EX_MESSAGE = "Testing trap";
+
     public static void main(String[] args) throws Throwable {
         // warmup, compile payload
         for (int i = 0; i < 20_000; i++) {
@@ -50,7 +54,7 @@ public class TestExHandlerTrap {
             // trigger uncommon trap in pruned catch block
             payload(true);
         } catch (IllegalStateException e) {
-            if (!e.getMessage().equals("Testing trap")) {
+            if (!e.getMessage().equals(EX_MESSAGE)) {
                 throw e;
             }
         }
@@ -66,15 +70,20 @@ public class TestExHandlerTrap {
     }
 
     public static void doIt(boolean shouldThrow) {
+        PrintStream err = System.err;
         try (ConfinedScope r = new ConfinedScope()) {
             r.addCloseAction(dummy);
             maybeThrow(shouldThrow); // out of line to prevent 'payload' from being deoptimized by unstable if
-        } // trap is in the hidden catch block javac generates
+        } catch (IllegalArgumentException e) {
+            // some side effects to see whether deopt is successful
+            err.println("Exception message: " + e.getMessage());
+            err.println("shouldThrow: " + shouldThrow);
+        }
     }
 
     private static void maybeThrow(boolean shouldThrow) {
         if (shouldThrow) {
-            throw new IllegalStateException("Testing trap");
+            throw new IllegalStateException(EX_MESSAGE);
         }
     }
 
