@@ -4422,6 +4422,44 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
   }
 }
 
+void MacroAssembler::compress_bits(Register dst, Register src, Register mask, Register tmp, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be compressed.
+  vsetivli(x0, 1, sew, lmul);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(tmp, len);
+  vsetvli(x0, tmp, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v8, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, lmul);
+  vmv_v_x(v0, mask);
+  // compress the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, tmp, Assembler::e8, lmul);
+  vcompress_vm(v8, v4, v0);
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v8, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, lmul);
+  vmv_x_s(dst, v0);
+}
+
+void MacroAssembler::compress_bits_i(Register dst, Register src, Register mask, Register tmp) {
+  compress_bits(dst, src, mask, tmp, /* is_long */ false);
+}
+
+void MacroAssembler::compress_bits_l(Register dst, Register src, Register mask, Register tmp) {
+  compress_bits(dst, src, mask, tmp, /* is_long */ true);
+}
+
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
                              Register tmp, bool is_signed) {
   if (src1 == src2) {

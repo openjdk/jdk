@@ -113,6 +113,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
-          "Use RVV instructions for left/right shift of BigInteger")
+          "Use RVV instructions for left/right shift of BigInteger")             \
+  product(bool, UseRVVForCompressBitsIntrinsics, true,                           \
+          "Use RVV instructions for bits compressing of Integer and Long")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP
