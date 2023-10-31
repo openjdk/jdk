@@ -403,7 +403,7 @@ public:
   void push(const E& elem) { append(elem); }
 
   template<typename... Args >
-  E at_grow(int i, Args... args) {
+  E& at_grow(int i, Args&... args) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
@@ -415,7 +415,7 @@ public:
   }
 
   template<typename... Args>
-  void at_put_grow(int i, const E& elem, Args... args) {
+  void at_put_grow(int i, const E& elem, Args&... args) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
