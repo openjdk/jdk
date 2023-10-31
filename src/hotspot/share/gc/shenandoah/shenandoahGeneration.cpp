@@ -82,6 +82,8 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
   bool is_thread_safe() { return true; }
 };
 
+// Copy the write-version of the card-table into the read-version, clearing the
+// write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
  private:
   ShenandoahHeap* _heap;
@@ -90,9 +92,8 @@ class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
   ShenandoahMergeWriteTable() : _heap(ShenandoahHeap::heap()), _scanner(_heap->card_scan()) {}
 
   virtual void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_old()) {
-      _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
-    }
+    assert(r->is_old(), "Don't waste time doing this for non-old regions");
+    _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
   virtual bool is_thread_safe() override {
@@ -110,9 +111,8 @@ class ShenandoahSquirrelAwayCardTable: public ShenandoahHeapRegionClosure {
     _scanner(_heap->card_scan()) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) {
-    if (region->is_old()) {
-      _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
-    }
+    assert(region->is_old(), "Don't waste time doing this for non-old regions");
+    _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
   }
 
   bool is_thread_safe() { return true; }
@@ -201,10 +201,9 @@ void ShenandoahGeneration::swap_remembered_set() {
   heap->old_generation()->parallel_heap_region_iterate(&task);
 }
 
-// If a concurrent cycle fails _after_ the card table has been swapped we need to update the read card
-// table with any writes that have occurred during the transition to the degenerated cycle. Without this,
-// newly created objects which are only referenced by old objects could be lost when the remembered set
-// is scanned during the degenerated mark.
+// Copy the write-version of the card-table into the read-version, clearing the
+// write-version. The work is done at a safepoint and in parallel by the GC
+// worker threads.
 void ShenandoahGeneration::merge_write_table() {
   // This should only happen for degenerated cycles
   ShenandoahHeap* heap = ShenandoahHeap::heap();

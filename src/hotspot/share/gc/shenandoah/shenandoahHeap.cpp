@@ -3374,16 +3374,16 @@ void ShenandoahHeap::transfer_old_pointers_from_satb() {
 
 template<>
 void ShenandoahGenerationRegionClosure<YOUNG>::heap_region_do(ShenandoahHeapRegion* region) {
-  // Visit young and free regions
-  if (!region->is_old()) {
+  // Visit young regions
+  if (region->is_young()) {
     _cl->heap_region_do(region);
   }
 }
 
 template<>
 void ShenandoahGenerationRegionClosure<OLD>::heap_region_do(ShenandoahHeapRegion* region) {
-  // Visit old and free regions
-  if (!region->is_young()) {
+  // Visit old regions
+  if (region->is_old()) {
     _cl->heap_region_do(region);
   }
 }
