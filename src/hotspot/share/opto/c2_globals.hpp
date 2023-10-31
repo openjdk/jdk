@@ -779,6 +779,9 @@
                                                                             \
   product(bool, PruneDeadExceptionHandlers, true,                           \
           "Prune exception handlers that are never entered")                \
+                                                                            \
+  develop(bool, StressPrunedExceptionHandlers, false,                       \
+          "Stress pruning of unentered exception handlers")                 \
 
 // end of C2_FLAGS
 
