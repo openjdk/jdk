@@ -26,6 +26,7 @@ package gc.arguments;
 /*
  * @test TestParallelGCThreads
  * @bug 8059527 8081382
+ * @requires vm.gc == null & vm.opt.ParallelGCThreads == null
  * @summary Tests argument processing for ParallelGCThreads
  * @library /test/lib
  * @library /
@@ -56,7 +57,7 @@ public class TestParallelGCThreads {
   private static final String printFlagsFinalPattern = " *uint *" + flagName + " *:?= *(\\d+) *\\{product\\} *";
 
   public static void testDefaultValue()  throws Exception {
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
       "-XX:+UnlockExperimentalVMOptions", "-XX:+PrintFlagsFinal", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -65,10 +66,10 @@ public class TestParallelGCThreads {
     try {
       Asserts.assertNotNull(value, "Couldn't find uint flag " + flagName);
 
-      Long longValue = new Long(value);
+      Long longValue = Long.valueOf(value);
 
       // Sanity check that we got a non-zero value.
-      Asserts.assertNotEquals(longValue, "0");
+      Asserts.assertNotEquals(longValue, 0L);
 
       output.shouldHaveExitValue(0);
     } catch (Exception e) {
@@ -87,6 +88,9 @@ public class TestParallelGCThreads {
     if (GC.Parallel.isSupported()) {
       supportedGC.add("Parallel");
     }
+    if (GC.Z.isSupported()) {
+      supportedGC.add("Z");
+    }
 
     if (supportedGC.isEmpty()) {
       throw new SkippedException("Skipping test because none of G1/Parallel is supported.");
@@ -94,7 +98,7 @@ public class TestParallelGCThreads {
 
     for (String gc : supportedGC) {
       // Make sure the VM does not allow ParallelGCThreads set to 0
-      ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
+      ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
           "-XX:+Use" + gc + "GC",
           "-XX:ParallelGCThreads=0",
           "-XX:+PrintFlagsFinal",
@@ -124,7 +128,7 @@ public class TestParallelGCThreads {
   }
 
   public static long getParallelGCThreadCount(String... flags) throws Exception {
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(flags);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
