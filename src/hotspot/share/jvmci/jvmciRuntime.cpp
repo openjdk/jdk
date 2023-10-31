@@ -824,10 +824,10 @@ oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm, bool phantom_ref) {
 }
 
 void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
-  assert(_nmethod_mirror_index != -1, "cannot set JVMCI mirror for nmethod");
+  guarantee(_nmethod_mirror_index != -1, "cannot set JVMCI mirror for nmethod");
   oop* addr = nm->oop_addr_at(_nmethod_mirror_index);
-  assert(new_mirror != nullptr, "use clear_nmethod_mirror to clear the mirror");
-  assert(*addr == nullptr, "cannot overwrite non-null mirror");
+  guarantee(new_mirror != nullptr, "use clear_nmethod_mirror to clear the mirror");
+  guarantee(*addr == nullptr, "cannot overwrite non-null mirror");
 
   *addr = new_mirror;
 
