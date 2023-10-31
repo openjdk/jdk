@@ -1504,6 +1504,17 @@ void Parse::Block::record_state(Parse* p) {
   set_start_map(p->stop());
 }
 
+static bool has_monitorexit(ciBytecodeStream& iter, int limit) {
+  iter.next(); // prime
+  for (; iter.cur_bci() < limit; iter.next()) {
+    Bytecodes::Code bc = iter.cur_bc();
+    if (bc == Bytecodes::_monitorexit) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 //------------------------------do_one_block-----------------------------------
 void Parse::do_one_block() {
@@ -1532,8 +1543,7 @@ void Parse::do_one_block() {
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
 
-  if (ProfileExceptionHandlers && PruneDeadExceptionHandlers
-     && block()->is_handler() && !C->is_osr_compilation()) {
+  if (ProfileExceptionHandlers && PruneDeadExceptionHandlers && block()->is_handler()) {
     ciMethodData* methodData = method()->method_data();
     if (methodData->is_mature()) {
       ciBitData data = methodData->ex_handler_bci_to_data(block()->start());
@@ -1544,6 +1554,16 @@ void Parse::do_one_block() {
         uncommon_trap(Deoptimization::Reason_unreached,
                       Deoptimization::Action_reinterpret,
                       nullptr, "dead catch block");
+
+        if (C->is_osr_compilation()) {
+          // Continuations need to know if this ex handler has a monitorexit.
+          // We only need to do this for OSR compilations, since we might not see
+          // the monitorenter in that case.
+          if (has_monitorexit(iter(), block()->limit())) {
+            C->set_has_monitors(true);
+          }
+        }
+
         return;
       }
     }
