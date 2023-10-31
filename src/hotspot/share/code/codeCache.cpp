@@ -202,7 +202,7 @@ void CodeCache::initialize_heaps() {
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
   const size_t ps           = page_size(false, 8);
   const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
-  assert(os::vm_page_size() >= min_size, "page size smaller than min_size");
+  assert(os::vm_page_size() <= min_size, "page size larger than min_size");
   const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
