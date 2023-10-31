@@ -401,11 +401,7 @@ public:
   }
 
   void push(const E& elem) { append(elem); }
-private:
-  static void default_fill(E* ptr) {
-    new ((void*)ptr) E();
-  }
-public:
+
   template<typename... Args >
   E at_grow(int i, Args... args) {
     assert(0 <= i, "negative index %d", i);
