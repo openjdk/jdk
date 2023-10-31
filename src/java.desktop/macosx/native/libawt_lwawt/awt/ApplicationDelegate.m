@@ -409,6 +409,10 @@ AWT_ASSERT_APPKIT_THREAD;
     return NSTerminateLater;
 }
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
+    return YES;
+}
+
 + (void)_systemWillPowerOff {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SHUTDOWN];
 }

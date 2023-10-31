@@ -121,6 +121,10 @@
     } copy]];
 }
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
+    return YES;
+}
+
 - (void)application:(NSApplication *)theApplication openFiles:(NSArray *)fileNames
 {
     [self.queue addObject:[^(){
