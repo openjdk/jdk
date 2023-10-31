@@ -423,7 +423,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_reserved_stack_access(true);
   }
 
-  if (parse_method->is_synchronized()) {
+  if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
   }
 
@@ -1504,17 +1504,6 @@ void Parse::Block::record_state(Parse* p) {
   set_start_map(p->stop());
 }
 
-static bool has_monitorexit(ciBytecodeStream& iter, int limit) {
-  iter.next(); // prime
-  for (; iter.cur_bci() < limit; iter.next()) {
-    Bytecodes::Code bc = iter.cur_bc();
-    if (bc == Bytecodes::_monitorexit) {
-      return true;
-    }
-  }
-  return false;
-}
-
 
 //------------------------------do_one_block-----------------------------------
 void Parse::do_one_block() {
@@ -1554,16 +1543,6 @@ void Parse::do_one_block() {
         uncommon_trap(Deoptimization::Reason_unreached,
                       Deoptimization::Action_reinterpret,
                       nullptr, "dead catch block");
-
-        if (C->is_osr_compilation()) {
-          // Continuations need to know if this ex handler has a monitorexit.
-          // We only need to do this for OSR compilations, since we might not see
-          // the monitorenter in that case.
-          if (has_monitorexit(iter(), block()->limit())) {
-            C->set_has_monitors(true);
-          }
-        }
-
         return;
       }
     }
