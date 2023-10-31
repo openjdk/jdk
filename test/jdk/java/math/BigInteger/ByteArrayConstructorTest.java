@@ -29,29 +29,30 @@ import java.util.Random;
 
 /**
  * @test
+ * @summary Exercises minimality of BigInteger.mag field
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @key randomness
- * @summary Exercises minimality of BigInteger.mag field
  * @build java.base/java.math.Accessor
- * @run main ByteArrayConstructor
+ * @key randomness
+ * @run main ByteArrayConstructorTest
  */
-public class ByteArrayConstructor {
+public class ByteArrayConstructorTest {
 
     private static final int DEFAULT_MAX_DURATION_MILLIS = 3_000;
+    public static final int N = 1_024;
 
     private final int maxDurationMillis;
     private final Random r;
     private volatile boolean stop;
 
-    private ByteArrayConstructor(String[] args) {
+    private ByteArrayConstructorTest(String[] args) {
         this.maxDurationMillis = maxDurationMillis(args);
         this.r = RandomFactory.getRandom();
         this.stop = false;
     }
 
     public static void main(String[] args) throws InterruptedException {
-        ByteArrayConstructor instance = new ByteArrayConstructor(args);
+        ByteArrayConstructorTest instance = new ByteArrayConstructorTest(args);
         instance.nonNegative();
         instance.negative();
     }
@@ -95,26 +96,26 @@ public class ByteArrayConstructor {
     }
 
     private byte[] nonNegativeBytes() {
-        byte[] ba = new byte[1 + 1_024];
+        byte[] ba = new byte[1 + N];
         byte b0;
         while ((b0 = (byte) r.nextInt()) < 0);  // empty body
         r.nextBytes(ba);
         ba[0] = b0;
         /* Except for ba[0], fill most significant half with zeros. */
-        for (int i = 1; i <= 512; ++i) {
+        for (int i = 1; i <= N / 2; ++i) {
             ba[i] = 0;
         }
         return ba;
     }
 
     private byte[] negativeBytes() {
-        byte[] ba = new byte[1 + 1_024];
+        byte[] ba = new byte[1 + N];
         byte b0;
         while ((b0 = (byte) r.nextInt()) >= 0);  // empty body
         r.nextBytes(ba);
         ba[0] = b0;
         /* Except for ba[0], fill most significant half with -1 bytes. */
-        for (int i = 1; i <= 512; ++i) {
+        for (int i = 1; i <= N / 2; ++i) {
             ba[i] = -1;
         }
         return ba;
