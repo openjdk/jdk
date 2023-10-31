@@ -192,13 +192,11 @@ public class CertRequestOverflow {
                 "/" + trustStoreFile;
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(new FileInputStream(keyFilename), cpasswd);
+        KeyStore ks = KeyStore.getInstance(new File(keyFilename), cpasswd);
         kmf.init(ks, cpasswd);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ts = KeyStore.getInstance("PKCS12");
-        ts.load(new FileInputStream(trustFilename), cpasswd);
+        KeyStore ts = KeyStore.getInstance(new File(trustFilename), cpasswd);
         tmf.init(ts);
 
         TrustManager tms[] = tmf.getTrustManagers();

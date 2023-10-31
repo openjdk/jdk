@@ -173,15 +173,15 @@ public class SSLSocketSSLEngineCloseInbound {
      */
     public SSLSocketSSLEngineCloseInbound(String protocol) throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        KeyStore ts = KeyStore.getInstance("PKCS12");
+        KeyStore ks;
+        KeyStore ts;
 
         char[] passphrase = "passphrase".toCharArray();
 
         try (FileInputStream keyFile = new FileInputStream(keyFilename);
                 FileInputStream trustFile = new FileInputStream(trustFilename)) {
-            ks.load(keyFile, passphrase);
-            ts.load(trustFile, passphrase);
+            ks = KeyStore.getInstance(new File(keyFilename), passphrase);
+            ts = KeyStore.getInstance(new File(trustFilename), passphrase);
         }
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");

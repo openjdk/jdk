@@ -254,13 +254,10 @@ public class HelloExtensionsTest {
 
         SSLEngine ssle;
 
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        KeyStore ts = KeyStore.getInstance("PKCS12");
-
         char[] passphrase = "passphrase".toCharArray();
 
-        ks.load(new FileInputStream(keyFile), passphrase);
-        ts.load(new FileInputStream(trustFile), passphrase);
+        KeyStore ks = KeyStore.getInstance(new File(keyFile), passphrase);
+        KeyStore ts = KeyStore.getInstance(new File(trustFile), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

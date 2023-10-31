@@ -33,10 +33,7 @@
  *     system properties in samevm/agentvm mode.
  */
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.security.KeyStore;
@@ -68,7 +65,6 @@ public class ClientHelloRead {
     static String keyStoreFile = "keystore";
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
-    static String pkcs12Type = "PKCS12";
 
     volatile private static int serverPort = 0;
 
@@ -147,10 +143,9 @@ public class ClientHelloRead {
 
             ctx = SSLContext.getInstance("TLS");
             kmf = KeyManagerFactory.getInstance("SunX509");
-            ks = KeyStore.getInstance(pkcs12Type);
+            ks = KeyStore.getInstance(new File(System.getProperty(
+                            "javax.net.ssl.keyStore")), passphrase);
 
-            ks.load(new FileInputStream(System.getProperty(
-                        "javax.net.ssl.keyStore")), passphrase);
             kmf.init(ks, passphrase);
             ctx.init(kmf.getKeyManagers(), null, null);
 

@@ -438,10 +438,9 @@ public class ResumeTLS13withSNI {
     private static TrustManagerFactory makeTrustManagerFactory(String tsPath,
             char[] pass) throws GeneralSecurityException, IOException {
         TrustManagerFactory tmf;
-        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         try (FileInputStream fsIn = new FileInputStream(tsPath)) {
-            ts.load(fsIn, pass);
+            KeyStore ts = KeyStore.getInstance(new File(tsPath), pass);
             tmf = TrustManagerFactory.getInstance("SunX509");
             tmf.init(ts);
         }
@@ -463,10 +462,9 @@ public class ResumeTLS13withSNI {
     private static KeyManagerFactory makeKeyManagerFactory(String ksPath,
             char[] pass) throws GeneralSecurityException, IOException {
         KeyManagerFactory kmf;
-        KeyStore ks = KeyStore.getInstance("PKCS12");
 
         try (FileInputStream fsIn = new FileInputStream(ksPath)) {
-            ks.load(fsIn, pass);
+            KeyStore ks = KeyStore.getInstance(new File(ksPath), pass);
             kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, pass);
         }

@@ -62,7 +62,6 @@ public class X509ExtendedTMEnabled {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
     private final static char[] cpasswd = "passphrase".toCharArray();
-    static String pkcs12Type = "PKCS12";
 
     /*
      * Is the server ready to serve?
@@ -182,13 +181,11 @@ public class X509ExtendedTMEnabled {
                 "/" + trustStoreFile;
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance(pkcs12Type);
-        ks.load(new FileInputStream(keyFilename), cpasswd);
+        KeyStore ks = KeyStore.getInstance(new File(keyFilename), cpasswd);
         kmf.init(ks, cpasswd);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ts = KeyStore.getInstance(pkcs12Type);
-        ts.load(new FileInputStream(trustFilename), cpasswd);
+        KeyStore ts = KeyStore.getInstance(new File(trustFilename), cpasswd);
         tmf.init(ts);
 
         TrustManager tms[] = tmf.getTrustManagers();

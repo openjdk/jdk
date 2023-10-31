@@ -264,8 +264,8 @@ public class B8025710 {
         HttpServer() throws Exception {
             super("HttpServer Thread");
 
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            ks.load(new FileInputStream(keystorefile), passphrase.toCharArray());
+            KeyStore ks = KeyStore.getInstance(new File(keystorefile),
+                    passphrase.toCharArray());
             KeyManagerFactory factory = KeyManagerFactory.getInstance("SunX509");
             factory.init(ks, passphrase.toCharArray());
             SSLContext ctx = SSLContext.getInstance("TLS");

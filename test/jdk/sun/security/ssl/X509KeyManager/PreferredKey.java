@@ -71,8 +71,7 @@ public class PreferredKey {
                 "/" + keyStoreFile;
         char [] password = passwd.toCharArray();
 
-        ks = KeyStore.getInstance("PKCS12");
-        ks.load(new FileInputStream(keyFilename), password);
+        ks = KeyStore.getInstance(new File(keyFilename), password);
         kmf = KeyManagerFactory.getInstance("NewSunX509");
         kmf.init(ks, password);
         km = (X509KeyManager) kmf.getKeyManagers()[0];

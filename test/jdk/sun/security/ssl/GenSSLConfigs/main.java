@@ -190,9 +190,8 @@ public class main
             System.setProperty("javax.net.ssl.trustStore", testRoot
                                 + "/../../../../javax/net/ssl/etc/truststore");
 
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            ks.load(new FileInputStream(testRoot
-                                + "/../../../../javax/net/ssl/etc/truststore"),
+            KeyStore ks = KeyStore.getInstance(new File(testRoot
+                    + "/../../../../javax/net/ssl/etc/truststore"),
                     "passphrase".toCharArray());
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, "passphrase".toCharArray());

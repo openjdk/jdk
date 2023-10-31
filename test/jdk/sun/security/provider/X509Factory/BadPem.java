@@ -28,9 +28,7 @@
  * @modules java.base/sun.security.provider
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
@@ -38,7 +36,6 @@ import java.util.Base64;
 
 import sun.security.provider.X509Factory;
 import java.security.cert.CertificateFactory;
-import java.io.ByteArrayInputStream;
 
 public class BadPem {
 
@@ -49,8 +46,8 @@ public class BadPem {
         String alias = "dummy";
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(new FileInputStream(ks), pass.toCharArray());
+        KeyStore keyStore = KeyStore.getInstance(new File(ks),
+                pass.toCharArray());
         byte[] cert = keyStore.getCertificate(alias).getEncoded();
 
         // 8074935

@@ -65,8 +65,7 @@ public class CheckNullEntity {
                 "/" + trustStoreFile;
         char[] passphrase = "passphrase".toCharArray();
 
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(new FileInputStream(trustFilename), passphrase);
+        KeyStore ks = KeyStore.getInstance(new File(trustFilename), passphrase);
 
         for (Enumeration e = ks.aliases() ; e.hasMoreElements() ;) {
             String alias = (String)e.nextElement();

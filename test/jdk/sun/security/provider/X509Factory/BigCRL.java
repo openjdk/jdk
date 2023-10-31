@@ -29,6 +29,7 @@
  * @run main/othervm -Xshare:off -Xmx1024m BigCRL
  */
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.security.KeyStore;
@@ -49,8 +50,8 @@ public class BigCRL {
         String pass = "passphrase";
         String alias = "dummy";
 
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(new FileInputStream(ks), pass.toCharArray());
+        KeyStore keyStore = KeyStore.getInstance(new File(ks),
+                pass.toCharArray());
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);

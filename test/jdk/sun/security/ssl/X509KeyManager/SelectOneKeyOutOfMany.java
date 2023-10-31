@@ -55,7 +55,6 @@ public class SelectOneKeyOutOfMany {
     static String pathToStores = "../../../../javax/net/ssl/etc";
     static String keyStoreFile = "keystore";
     static String passwd = "passphrase";
-    static String pkcs12Type = "PKCS12";
 
     public static void main(String[] args) throws Exception {
         KeyStore ks;
@@ -71,8 +70,7 @@ public class SelectOneKeyOutOfMany {
          * Setup the tests.
          */
         kmf = KeyManagerFactory.getInstance("SunX509");
-        ks = KeyStore.getInstance(pkcs12Type);
-        ks.load(new FileInputStream(keyFilename), passphrase);
+        ks = KeyStore.getInstance(new File(keyFilename), passphrase);
         kmf.init(ks, passphrase);
         km = (X509KeyManager) kmf.getKeyManagers()[0];
 
