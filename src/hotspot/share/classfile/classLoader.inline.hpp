@@ -27,8 +27,8 @@
 
 #include "classfile/classLoader.hpp"
 
+#include "cds/cdsConfig.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/arguments.hpp"
 
 // Next entry in class path
 inline ClassPathEntry* ClassPathEntry::next() const { return Atomic::load_acquire(&_next); }
@@ -58,19 +58,13 @@ inline ClassPathEntry* ClassLoader::classpath_entry(int n) {
   }
 }
 
-inline void ClassLoader::load_zip_library_if_needed() {
-  if (Atomic::load_acquire(&_libzip_loaded) == 0) {
-    release_load_zip_library();
-  }
-}
-
 #if INCLUDE_CDS
 
 // Helper function used by CDS code to get the number of boot classpath
 // entries during shared classpath setup time.
 
 inline int ClassLoader::num_boot_classpath_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(has_jrt_entry(), "must have a java runtime image");
   int num_entries = 1; // count the runtime image
   ClassPathEntry* e = first_append_entry();
@@ -92,7 +86,7 @@ inline ClassPathEntry* ClassLoader::get_next_boot_classpath_entry(ClassPathEntry
 // Helper function used by CDS code to get the number of app classpath
 // entries during shared classpath setup time.
 inline int ClassLoader::num_app_classpath_entries() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int num_entries = 0;
   ClassPathEntry* e= ClassLoader::_app_classpath_entries;
   while (e != nullptr) {

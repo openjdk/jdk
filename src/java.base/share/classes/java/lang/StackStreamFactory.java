@@ -550,16 +550,15 @@ final class StackStreamFactory {
         protected int batchSize(int lastBatchSize) {
             if (lastBatchSize == 0) {
                 // First batch, use estimateDepth if not exceed the large batch size
-                int initialBatchSize = Math.max(walker.estimateDepth()+RESERVED_ELEMENTS, MIN_BATCH_SIZE);
-                return Math.min(initialBatchSize, LARGE_BATCH_SIZE);
+                return walker.estimateDepth() == 0
+                        ? SMALL_BATCH
+                        : Math.min(walker.estimateDepth() + RESERVED_ELEMENTS, LARGE_BATCH_SIZE);
             } else {
                 // expand only if last batch was full and the buffer size <= 32
                 // to minimize the number of unneeded frames decoded.
-                if (lastBatchSize > BATCH_SIZE || !frameBuffer.isFull()) {
-                    return lastBatchSize;
-                } else {
-                    return Math.min(lastBatchSize*2, BATCH_SIZE);
-                }
+                return (lastBatchSize > BATCH_SIZE || !frameBuffer.isFull())
+                        ? lastBatchSize
+                        : Math.min(lastBatchSize*2, BATCH_SIZE);
             }
         }
 

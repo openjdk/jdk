@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class IgnoreModulePropertiesTest {
     // bogus for that property.  But, since the property is ignored no exception is
     // thrown.
     public static void testProperty(String prop, String value) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-D" + prop + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(" version ");
@@ -62,7 +62,7 @@ public class IgnoreModulePropertiesTest {
     public static void testOption(boolean shouldVMFail,
                                   String option, String value,
                                   String prop, String result) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             option + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (shouldVMFail) {

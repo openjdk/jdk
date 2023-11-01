@@ -46,7 +46,7 @@ public class TestArgumentRanges {
     private static void testHeuristics() throws Exception {
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -57,7 +57,7 @@ public class TestArgumentRanges {
             output.shouldHaveExitValue(0);
         }
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -68,7 +68,7 @@ public class TestArgumentRanges {
             output.shouldHaveExitValue(0);
         }
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -83,7 +83,7 @@ public class TestArgumentRanges {
 
     private static void testRange(String option, int min, int max) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -94,7 +94,7 @@ public class TestArgumentRanges {
             output.shouldHaveExitValue(1);
         }
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -105,7 +105,7 @@ public class TestArgumentRanges {
             output.shouldHaveExitValue(0);
         }
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -116,7 +116,7 @@ public class TestArgumentRanges {
             output.shouldHaveExitValue(1);
         }
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",

@@ -25,16 +25,26 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.LayoutPath;
+import jdk.internal.foreign.LayoutPath.PathElementImpl.PathKind;
 import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & MemoryLayout>
         permits AbstractGroupLayout, PaddingLayoutImpl, SequenceLayoutImpl, ValueLayouts.AbstractValueLayout {
@@ -53,8 +63,9 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         return dup(byteAlignment(), Optional.of(name));
     }
 
+    @SuppressWarnings("unchecked")
     public final L withoutName() {
-        return dup(byteAlignment(), Optional.empty());
+        return name.isPresent() ? dup(byteAlignment(), Optional.empty()) : (L) this;
     }
 
     public final Optional<String> name() {
@@ -139,4 +150,76 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         return value;
     }
 
+    public long scale(long offset, long index) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("Negative offset: " + offset);
+        }
+        if (index < 0) {
+            throw new IllegalArgumentException("Negative index: " + index);
+        }
+
+        return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
+    }
+
+    public MethodHandle scaleHandle() {
+        class Holder {
+            static final MethodHandle MH_SCALE;
+            static {
+                try {
+                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
+                            MethodType.methodType(long.class, long.class, long.class));
+                } catch (ReflectiveOperationException e) {
+                    throw new ExceptionInInitializerError(e);
+                }
+            }
+        }
+        return Holder.MH_SCALE.bindTo(this);
+    }
+
+
+    public long byteOffset(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offset,
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
+    }
+
+    public MethodHandle byteOffsetHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::offsetHandle,
+                EnumSet.of(PathKind.DEREF_ELEMENT), elements);
+    }
+
+    public VarHandle varHandle(PathElement... elements) {
+        Objects.requireNonNull(elements);
+        if (this instanceof ValueLayout vl && elements.length == 0) {
+            return vl.varHandle(); // fast path
+        }
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::dereferenceHandle,
+                Set.of(), elements);
+    }
+
+    public VarHandle arrayElementVarHandle(PathElement... elements) {
+        return MethodHandles.collectCoordinates(varHandle(elements), 1, scaleHandle());
+    }
+
+    public MethodHandle sliceHandle(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::sliceHandle,
+                Set.of(PathKind.DEREF_ELEMENT), elements);
+    }
+
+    public MemoryLayout select(PathElement... elements) {
+        return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::layout,
+                EnumSet.of(PathKind.SEQUENCE_ELEMENT_INDEX, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
+    }
+
+    private static <Z> Z computePathOp(LayoutPath path, Function<LayoutPath, Z> finalizer,
+                                       Set<PathKind> badKinds, PathElement... elements) {
+        Objects.requireNonNull(elements);
+        for (PathElement e : elements) {
+            LayoutPath.PathElementImpl pathElem = (LayoutPath.PathElementImpl)Objects.requireNonNull(e);
+            if (badKinds.contains(pathElem.kind())) {
+                throw new IllegalArgumentException(String.format("Invalid %s selection in layout path", pathElem.kind().description()));
+            }
+            path = pathElem.apply(path);
+        }
+        return finalizer.apply(path);
+    }
 }

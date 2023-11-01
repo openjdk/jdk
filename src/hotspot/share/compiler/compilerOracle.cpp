@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/parseInteger.hpp"
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -101,6 +102,7 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
+static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
@@ -325,6 +327,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     tty->print("CompileCommand: %s ", option2name(option));
     matcher->print();
   }
+
   return;
 }
 
@@ -453,6 +456,15 @@ bool CompilerOracle::should_print(const methodHandle& method) {
 
 bool CompilerOracle::should_print_methods() {
   return has_command(CompileCommand::Print);
+}
+
+// Tells whether there are any methods to collect memory statistics for
+bool CompilerOracle::should_collect_memstat() {
+  return has_command(CompileCommand::MemStat) || has_command(CompileCommand::MemLimit);
+}
+
+bool CompilerOracle::should_print_final_memstat_report() {
+  return print_final_memstat_report;
 }
 
 bool CompilerOracle::should_log(const methodHandle& method) {
@@ -623,6 +635,60 @@ void skip_comma(char* &line) {
   }
 }
 
+static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+  // Format:
+  // "<memory size>['~' <suboption>]"
+  // <memory size> can have units, e.g. M
+  // <suboption> one of "crash" "stop", if omitted, "stop" is implied.
+  //
+  // Examples:
+  // -XX:CompileCommand='memlimit,*.*,20m'
+  // -XX:CompileCommand='memlimit,*.*,20m~stop'
+  // -XX:CompileCommand='memlimit,Option::toString,1m~crash'
+  //
+  // The resulting intx carries the size and whether we are to stop or crash:
+  // - neg. value means crash
+  // - pos. value (default) means stop
+  size_t s = 0;
+  char* end;
+  if (!parse_integer<size_t>(line, &end, &s)) {
+    jio_snprintf(errorbuf, buf_size, "MemLimit: invalid value");
+  }
+  bytes_read = (int)(end - line);
+
+  intx v = (intx)s;
+  if ((*end) != '\0') {
+    if (strncasecmp(end, "~crash", 6) == 0) {
+      v = -v;
+      bytes_read += 6;
+    } else if (strncasecmp(end, "~stop", 5) == 0) {
+      // ok, this is the default
+      bytes_read += 5;
+    } else {
+      jio_snprintf(errorbuf, buf_size, "MemLimit: invalid option");
+      return true;
+    }
+  }
+  value = v;
+  return true;
+}
+
+static bool parseEnumValueAsUintx(enum CompileCommand option, const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+  if (option == CompileCommand::MemStat) {
+    if (strncasecmp(line, "collect", 7) == 0) {
+      value = (uintx)MemStatAction::collect;
+    } else if (strncasecmp(line, "print", 5) == 0) {
+      value = (uintx)MemStatAction::print;
+      print_final_memstat_report = true;
+    } else {
+      jio_snprintf(errorbuf, buf_size, "MemStat: invalid value expected 'collect' or 'print' (omitting value means 'collect')");
+    }
+    return true; // handled
+  }
+  return false;
+#undef HANDLE_VALUE
+}
+
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         TypedMethodOptionMatcher* matcher, enum CompileCommand option, char* errorbuf, const int buf_size) {
   int bytes_read = 0;
@@ -632,7 +698,13 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
   total_bytes_read += skipped;
   if (type == OptionType::Intx) {
     intx value;
-    if (sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    // Special handling for memlimit
+    bool success = (option == CompileCommand::MemLimit) && parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+    if (!success) {
+      // Is it a raw number?
+      success = sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1;
+    }
+    if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
@@ -642,7 +714,13 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    if (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    // Is it a named enum?
+    bool success = parseEnumValueAsUintx(option, line, value, bytes_read, errorbuf, buf_size);
+    if (!success) {
+      // Is it a raw number?
+      success = (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1);
+    }
+    if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
@@ -914,9 +992,13 @@ bool CompilerOracle::parse_from_line(char* line) {
     }
     skip_whitespace(line);
     if (*line == '\0') {
-      // if this is a bool option this implies true
       if (option2type(option) == OptionType::Bool) {
+        // if this is a bool option this implies true
         register_command(matcher, option, true);
+        return true;
+      } else if (option == CompileCommand::MemStat) {
+        // MemStat default action is to collect data but to not print
+        register_command(matcher, option, (uintx)MemStatAction::collect);
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));

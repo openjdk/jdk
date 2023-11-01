@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
-import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -391,7 +390,7 @@ public class ElementsTable {
                     "module-info", JavaFileObject.Kind.SOURCE);
             if (jfo != null) {
                 JCCompilationUnit jcu = compiler.parse(jfo);
-                JCModuleDecl module = TreeInfo.getModule(jcu);
+                JCModuleDecl module = jcu.getModule();
                 if (module != null) {
                     return module.getName().toString();
                 }

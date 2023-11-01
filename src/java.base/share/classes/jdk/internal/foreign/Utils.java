@@ -29,7 +29,6 @@ package jdk.internal.foreign;
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -44,10 +43,10 @@ import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
@@ -98,7 +97,19 @@ public final class Utils {
                 VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
                 return prev != null ? prev : handle;
             }
+
+            static VarHandle get(ValueLayout layout) {
+                return HANDLE_MAP.get(layout);
+            }
         }
+        layout = layout.withoutName(); // name doesn't matter
+        // keep the addressee layout as it's used below
+
+        VarHandle handle = VarHandleCache.get(layout);
+        if (handle != null) {
+            return handle;
+        }
+
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -110,7 +121,7 @@ public final class Utils {
             baseCarrier = byte.class;
         }
 
-        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {
@@ -136,29 +147,17 @@ public final class Utils {
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size);
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size);
     }
 
     @ForceInline
     public static MemorySegment longToAddress(long addr, long size, long align, MemorySessionImpl scope) {
         if (!isAligned(addr, align)) {
-            throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
+            throw new IllegalArgumentException("Invalid alignment constraint for address: " + toHexString(addr));
         }
-        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
-    }
-
-    public static void copy(MemorySegment addr, byte[] bytes) {
-        var heapSegment = MemorySegment.ofArray(bytes);
-        addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte)0);
-    }
-
-    public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
-        MemorySegment addr = allocator.allocate(bytes.length + 1);
-        copy(addr, bytes);
-        return addr;
+        return SegmentFactories.makeNativeSegmentUnchecked(addr, size, scope);
     }
 
     @ForceInline
@@ -276,6 +275,38 @@ public final class Utils {
 
     public static String toHexString(long value) {
         return "0x" + Long.toHexString(value);
+    }
+
+    public record BaseAndScale(int base, long scale) {
+
+        public static final BaseAndScale BYTE =
+                new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
+        public static final BaseAndScale CHAR =
+                new BaseAndScale(Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
+        public static final BaseAndScale SHORT =
+                new BaseAndScale(Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
+        public static final BaseAndScale INT =
+                new BaseAndScale(Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
+        public static final BaseAndScale FLOAT =
+                new BaseAndScale(Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
+        public static final BaseAndScale LONG =
+                new BaseAndScale(Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
+        public static final BaseAndScale DOUBLE =
+                new BaseAndScale(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
+
+        public static BaseAndScale of(Object array) {
+            return switch (array) {
+                case byte[]   __ -> BaseAndScale.BYTE;
+                case char[]   __ -> BaseAndScale.CHAR;
+                case short[]  __ -> BaseAndScale.SHORT;
+                case int[]    __ -> BaseAndScale.INT;
+                case float[]  __ -> BaseAndScale.FLOAT;
+                case long[]   __ -> BaseAndScale.LONG;
+                case double[] __ -> BaseAndScale.DOUBLE;
+                default -> throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
+            };
+        }
+
     }
 
 }

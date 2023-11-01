@@ -111,12 +111,12 @@ extern Monitor* Notification_lock;               // a lock used for notification
 extern Monitor* PeriodicTask_lock;               // protects the periodic task structure
 extern Monitor* RedefineClasses_lock;            // locks classes from parallel redefinition
 extern Mutex*   Verify_lock;                     // synchronize initialization of verify library
-extern Monitor* Zip_lock;                        // synchronize initialization of zip library
 extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to take pressure off the Threads_lock
 extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to lazily create the thread id table
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
+extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti

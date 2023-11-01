@@ -38,6 +38,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -63,12 +64,11 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
@@ -801,20 +801,12 @@ void os::free_thread(OSThread* osthread) {
 static jlong first_filetime;
 static jlong initial_performance_count;
 static jlong performance_frequency;
-
-
-jlong as_long(LARGE_INTEGER x) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, x.HighPart);
-  set_low(&result, x.LowPart);
-  return result;
-}
-
+static double nanos_per_count; // NANOSECS_PER_SEC / performance_frequency
 
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
   QueryPerformanceCounter(&count);
-  return as_long(count) - initial_performance_count;
+  return count.QuadPart - initial_performance_count;
 }
 
 
@@ -978,9 +970,10 @@ void os::set_native_thread_name(const char *name) {
 void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   QueryPerformanceFrequency(&count);
-  performance_frequency = as_long(count);
+  performance_frequency = count.QuadPart;
+  nanos_per_count = NANOSECS_PER_SEC / (double)performance_frequency;
   QueryPerformanceCounter(&count);
-  initial_performance_count = as_long(count);
+  initial_performance_count = count.QuadPart;
 }
 
 
@@ -1082,9 +1075,8 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
 jlong os::javaTimeNanos() {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
-    double current = as_long(current_count);
-    double freq = performance_frequency;
-    jlong time = (jlong)((current/freq) * NANOSECS_PER_SEC);
+    double current = current_count.QuadPart;
+    jlong time = (jlong)(current * nanos_per_count);
     return time;
 }
 
@@ -2496,8 +2488,8 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #if defined(_M_ARM64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Sp;
-  assert(pc[0] == 0x83, "not an sdiv opcode"); //Fixme did i get the right opcode?
-  assert(ctx->X4 == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0x83, "not an sdiv opcode(0x83), the actual value = 0x%x", pc[0]); //Fixme did i get the right opcode?
+  guarantee(ctx->X4 == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->X4, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Pc = (uint64_t)pc + 4;        // idiv reg, reg, reg  is 4 bytes
   ctx->X4 = (uint64_t)min_jint;      // result
@@ -2506,8 +2498,10 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7, "not an idiv opcode");
-  assert(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+            "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
+  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+            "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
     ctx->Rip = (DWORD64)pc + 2;        // idiv reg, reg  is 2 bytes
@@ -2522,9 +2516,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  assert(pc[0] == 0xF7, "not an idiv opcode");
-  assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
-  assert(ctx->Eax == min_jint, "unexpected idiv exception");
+  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
+  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
+  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
   // set correct result values and continue after idiv instruction
   ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
   ctx->Eax = (DWORD)min_jint;      // result
@@ -3838,7 +3832,7 @@ void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (numa_node_list_holder.get_count() == 0 && size > 0) {
     // Provide an answer for UMA systems
     ids[0] = 0;
@@ -3847,7 +3841,8 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     // check for size bigger than actual groups_num
     size = MIN2(size, numa_get_groups_num());
     for (int i = 0; i < (int)size; i++) {
-      ids[i] = numa_node_list_holder.get_node_list_entry(i);
+      int node_id = numa_node_list_holder.get_node_list_entry(i);
+      ids[i] = checked_cast<uint>(node_id);
     }
     return size;
   }

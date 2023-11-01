@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package sun.nio.ch;
+
+import jdk.internal.event.SocketWriteEvent;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -55,7 +57,13 @@ class SocketOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        if (!SocketWriteEvent.enabled()) {
+            sc.blockingWriteFully(b, off, len);
+            return;
+        }
+        long start = SocketWriteEvent.timestamp();
         sc.blockingWriteFully(b, off, len);
+        SocketWriteEvent.offer(start, len, sc.remoteAddress());
     }
 
     @Override

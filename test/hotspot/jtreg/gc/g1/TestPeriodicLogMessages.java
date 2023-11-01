@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,22 +40,22 @@ import jdk.test.lib.process.ProcessTools;
 public class TestPeriodicLogMessages {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                                  "-XX:G1PeriodicGCInterval=0",
-                                                                  "-Xlog:gc+init,gc+periodic=debug",
-                                                                  "-Xmx10M",
-                                                                  GCTest.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
+                                                                             "-XX:G1PeriodicGCInterval=0",
+                                                                             "-Xlog:gc+init,gc+periodic=debug",
+                                                                             "-Xmx10M",
+                                                                             GCTest.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Disabled");
         output.shouldNotContain("Checking for periodic GC");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1PeriodicGCInterval=100",
-                                                   "-Xlog:gc+init,gc+periodic=debug",
-                                                   "-Xmx10M",
-                                                   GCTest.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
+                                                              "-XX:G1PeriodicGCInterval=100",
+                                                              "-Xlog:gc+init,gc+periodic=debug",
+                                                              "-Xmx10M",
+                                                              GCTest.class.getName());
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Enabled");

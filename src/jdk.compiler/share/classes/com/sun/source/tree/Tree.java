@@ -230,9 +230,8 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
-         * @since 21
+         * @since 22
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
         ANY_PATTERN(AnyPatternTree.class),
 
         /**

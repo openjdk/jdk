@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class LocalManagementTest {
             args.add(arg);
         }
         args.add("TestApplication");
-        ProcessBuilder server = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder server = ProcessTools.createTestJavaProcessBuilder(
             args.toArray(new String[args.size()])
         );
 
@@ -133,7 +133,7 @@ public class LocalManagementTest {
             System.out.println("  PID           : " + serverPrc.pid());
             System.out.println("  shutdown port : " + port.get());
 
-            ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder client = ProcessTools.createTestJavaProcessBuilder(
                 "-cp",
                 TEST_CLASSPATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",

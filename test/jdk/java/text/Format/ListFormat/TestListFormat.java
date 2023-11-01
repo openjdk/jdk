@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488
+ * @bug 8041488 8316974 8318569
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -201,6 +201,30 @@ public class TestListFormat {
         };
     }
 
+    static Arguments[] getInstance_3Arg_InheritPatterns() {
+        return new Arguments[] {
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.STANDARD, ListFormat.Style.NARROW),
+                arguments(ListFormat.Type.OR, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.OR, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.OR, ListFormat.Style.NARROW),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.FULL),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.SHORT),
+                arguments(ListFormat.Type.UNIT, ListFormat.Style.NARROW),
+        };
+    }
+
+    static Arguments[] getLocale_localeDependent() {
+        return new Arguments[] {
+                arguments(Locale.ROOT),
+                arguments(Locale.US),
+                arguments(Locale.GERMANY),
+                arguments(Locale.JAPAN),
+                arguments(Locale.SIMPLIFIED_CHINESE),
+        };
+    }
+
     @ParameterizedTest
     @MethodSource
     void getInstance_1Arg(String[] patterns, List<String> input, String expected) throws ParseException {
@@ -221,6 +245,33 @@ public class TestListFormat {
     void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
         var f = ListFormat.getInstance(l, type, style);
         compareResult(f, SAMPLE3, expected, roundTrip);
+    }
+
+    @Test
+    void getLocale_invariant() {
+        var f = ListFormat.getInstance(CUSTOM_PATTERNS_FULL);
+        assertEquals(Locale.ROOT, f.getLocale());
+    }
+
+    @Test
+    void getLocale_default() {
+        var f = ListFormat.getInstance();
+        assertEquals(Locale.getDefault(Locale.Category.FORMAT), f.getLocale());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getLocale_localeDependent(Locale l) {
+        var f = ListFormat.getInstance(l, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
+        assertEquals(l, f.getLocale());
+    }
+
+    @Test
+    void getPatterns_immutability() {
+        var f = ListFormat.getInstance(CUSTOM_PATTERNS_FULL);
+        var p = f.getPatterns();
+        p[0] = null;
+        assertArrayEquals(CUSTOM_PATTERNS_FULL, f.getPatterns());
     }
 
     @Test
@@ -287,6 +338,28 @@ public class TestListFormat {
         parsed = f.parseObject(testStr, pp);
         assertNotEquals(input, parsed);
         assertEquals(-1, pp.getErrorIndex());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getInstance_3Arg_InheritPatterns(ListFormat.Type type, ListFormat.Style style) {
+        // No IAE should be thrown for all locales. Some locales in CLDR
+        // have partial patterns (start, middle, end) in it. Lacking ones
+        // should be inherited from parent locales.
+        Locale.availableLocales().forEach(l -> ListFormat.getInstance(l, type, style));
+    }
+    @Test
+    void getInstance_3Arg_InheritanceValidation() {
+        // Tests if inheritance works as expected.
+        // World English ("en-001") has non-Oxford-comma pattern for "end", while
+        // English ("en") has Oxford-comma "end" pattern. Thus missing "standard"/"middle"
+        // should be inherited from "en", but "end" should stay non-Oxford for "en-001"
+        // Note that this test depends on a particular version of CLDR data.
+        var world = Locale.forLanguageTag("en-001");
+        assertEquals("""
+            ListFormat [locale: "%s", start: "{0}, {1}", middle: "{0}, {1}", end: "{0} and {1}", two: "{0} and {1}", three: "{0}, {1} and {2}"]
+            """.formatted(world.getDisplayName()),
+            ListFormat.getInstance(world, ListFormat.Type.STANDARD, ListFormat.Style.FULL).toString());
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {

@@ -64,6 +64,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -73,7 +74,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
@@ -1694,9 +1694,12 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    CodeCache::UnloadingScope scope(&g1_is_alive);
-    bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(purged_classes);
+    {
+      CodeCache::UnlinkingScope scope(&g1_is_alive);
+      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
+      _g1h->complete_cleaning(unloading_occurred);
+    }
+    CodeCache::flush_unlinked_nmethods();
   }
 }
 

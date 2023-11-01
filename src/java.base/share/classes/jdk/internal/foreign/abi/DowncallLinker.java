@@ -28,15 +28,21 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 
 import static java.lang.invoke.MethodHandles.collectArguments;
 import static java.lang.invoke.MethodHandles.foldArguments;
@@ -93,9 +99,8 @@ public class DowncallLinker {
             handle = BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
          } else {
             Map<VMStorage, Integer> argIndexMap = SharedUtils.indexMap(argMoves);
-            Map<VMStorage, Integer> retIndexMap = SharedUtils.indexMap(retMoves);
 
-            InvocationData invData = new InvocationData(handle, argIndexMap, retIndexMap);
+            InvocationData invData = new InvocationData(handle, callingSequence, argIndexMap);
             handle = insertArguments(MH_INVOKE_INTERP_BINDINGS.bindTo(this), 2, invData);
             MethodType interpType = callingSequence.callerMethodType();
             if (callingSequence.needsReturnBuffer()) {
@@ -146,17 +151,17 @@ public class DowncallLinker {
         return Arrays.stream(moves).map(Binding.Move::storage).toArray(VMStorage[]::new);
     }
 
-    private record InvocationData(MethodHandle leaf, Map<VMStorage, Integer> argIndexMap, Map<VMStorage, Integer> retIndexMap) {}
+    private record InvocationData(MethodHandle leaf, CallingSequence callingSequence, Map<VMStorage, Integer> argIndexMap) {}
 
     Object invokeInterpBindings(SegmentAllocator allocator, Object[] args, InvocationData invData) throws Throwable {
         Arena unboxArena = callingSequence.allocationSize() != 0
                 ? SharedUtils.newBoundedArena(callingSequence.allocationSize())
                 : SharedUtils.DUMMY_ARENA;
+        List<MemorySessionImpl> acquiredScopes = new ArrayList<>();
         try (unboxArena) {
             MemorySegment returnBuffer = null;
 
             // do argument processing, get Object[] as result
-            Object[] leafArgs = new Object[invData.leaf.type().parameterCount()];
             if (callingSequence.needsReturnBuffer()) {
                 // we supply the return buffer (argument array does not contain it)
                 Object[] prefixedArgs = new Object[args.length + 1];
@@ -165,10 +170,21 @@ public class DowncallLinker {
                 System.arraycopy(args, 0, prefixedArgs, 1, args.length);
                 args = prefixedArgs;
             }
+
+            Object[] leafArgs = new Object[invData.leaf.type().parameterCount()];
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
+                if (callingSequence.functionDesc().argumentLayouts().get(i) instanceof AddressLayout) {
+                    MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl) arg).sessionImpl();
+                    if (!(callingSequence.needsReturnBuffer() && i == 0)) { // don't acquire unboxArena's scope
+                        sessionImpl.acquire0();
+                        // add this scope _after_ we acquire, so we only release scopes we actually acquired
+                        // in case an exception occurs
+                        acquiredScopes.add(sessionImpl);
+                    }
+                }
                 BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i),
-                        (storage, type, value) -> leafArgs[invData.argIndexMap.get(storage)] = value, unboxArena);
+                    (storage, value) -> leafArgs[invData.argIndexMap.get(storage)] = value, unboxArena);
             }
 
             // call leaf
@@ -193,6 +209,10 @@ public class DowncallLinker {
             } else {
                 return BindingInterpreter.box(callingSequence.returnBindings(), (storage, type) -> o,
                         allocator);
+            }
+        } finally {
+            for (MemorySessionImpl sessionImpl : acquiredScopes) {
+                sessionImpl.release0();
             }
         }
     }
