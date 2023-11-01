@@ -22,51 +22,66 @@
  */
 
 import jdk.test.lib.RandomFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.math.Accessor;
 import java.math.BigInteger;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @test
- * @summary Exercises minimality of BigInteger.mag field
+ * @summary Exercises minimality of BigInteger.mag field (use -Dseed=X to set PRANDOM seed)
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @build java.base/java.math.Accessor
  * @key randomness
- * @run main ByteArrayConstructorTest
+ * @run junit/othervm -DmaxDurationMillis=3000 ByteArrayConstructorTest
  */
 public class ByteArrayConstructorTest {
 
     private static final int DEFAULT_MAX_DURATION_MILLIS = 3_000;
+
     public static final int N = 1_024;
 
-    private final int maxDurationMillis;
-    private final Random r;
-    private volatile boolean stop;
+    private static int maxDurationMillis;
+    private final Random rnd = RandomFactory.getRandom();
+    private volatile boolean stop = false;
 
-    private ByteArrayConstructorTest(String[] args) {
-        this.maxDurationMillis = maxDurationMillis(args);
-        this.r = RandomFactory.getRandom();
-        this.stop = false;
+    @BeforeAll
+    static void setMaxDurationMillis() {
+        maxDurationMillis = Math.max(maxDurationMillis(), 0);
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        ByteArrayConstructorTest instance = new ByteArrayConstructorTest(args);
-        instance.nonNegative();
-        instance.negative();
-    }
-
-    private void nonNegative() throws InterruptedException {
+    @Test
+    public void testNonNegative() throws InterruptedException {
         byte[] ba = nonNegativeBytes();
-        doBigIntegers(ba, ba[0]);
+        doBigIntegers(ba, ba[0]);  // a mask to flip to 0 and back to ba[0]
     }
 
-    private void negative() throws InterruptedException {
+    @Test
+    public void testNegative() throws InterruptedException {
         byte[] ba = negativeBytes();
-        doBigIntegers(ba, (byte) ~ba[0]);
+        doBigIntegers(ba, (byte) ~ba[0]);  // a mask to flip to -1 and back to ba[0]
     }
 
+    /*
+     * Starts a thread th that keeps flipping the "sign" byte in the array ba
+     * from the original value to 0 or -1 and back, depending on ba[0] being
+     * non-negative or negative, resp.
+     * (ba is "big endian", the least significant byte is the one with the
+     * highest index.)
+     *
+     * In the meantime, the current thread keeps creating BigInteger instances
+     * with ba and checks that the internal invariant holds, despite the
+     * attempts by thread th to racily modify ba.
+     * It does so at least as indicated by maxDurationMillis.
+     *
+     * Finally, this thread requests th to stop and joins with it, either
+     * because maxDurationMillis has expired, or because of an invalid invariant.
+     */
     private void doBigIntegers(byte[] ba, byte mask) throws InterruptedException {
         Thread th = new Thread(() -> {
             while (!stop) {
@@ -86,20 +101,19 @@ public class ByteArrayConstructorTest {
     private void createBigIntegers(int maxDurationMillis, byte[] ba) {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < maxDurationMillis) {
-            int[] mag = Accessor.mag(new BigInteger(ba));
-            if (mag.length > 0 && mag[0] == 0) {
-                throw new IllegalStateException(
-                        String.format("inconsistent BigInteger: mag.length=%d, mag[0]=%d",
-                                mag.length, mag[0]));
-            }
+            BigInteger bi = new BigInteger(ba);
+            int[] mag = Accessor.mag(bi);
+            assertTrue(mag.length == 0 || mag[0] != 0,
+                    String.format("inconsistent BigInteger: mag.length=%d, mag[0]=%d",
+                        mag.length, mag[0]));
         }
     }
 
     private byte[] nonNegativeBytes() {
         byte[] ba = new byte[1 + N];
         byte b0;
-        while ((b0 = (byte) r.nextInt()) < 0);  // empty body
-        r.nextBytes(ba);
+        while ((b0 = (byte) rnd.nextInt()) < 0);  // empty body
+        rnd.nextBytes(ba);
         ba[0] = b0;
         /* Except for ba[0], fill most significant half with zeros. */
         for (int i = 1; i <= N / 2; ++i) {
@@ -111,8 +125,8 @@ public class ByteArrayConstructorTest {
     private byte[] negativeBytes() {
         byte[] ba = new byte[1 + N];
         byte b0;
-        while ((b0 = (byte) r.nextInt()) >= 0);  // empty body
-        r.nextBytes(ba);
+        while ((b0 = (byte) rnd.nextInt()) >= 0);  // empty body
+        rnd.nextBytes(ba);
         ba[0] = b0;
         /* Except for ba[0], fill most significant half with -1 bytes. */
         for (int i = 1; i <= N / 2; ++i) {
@@ -121,11 +135,10 @@ public class ByteArrayConstructorTest {
         return ba;
     }
 
-    private static int maxDurationMillis(String[] args) {
+    private static int maxDurationMillis() {
         try {
-            if (args.length > 0) {
-                return Integer.parseInt(args[0]);
-            }
+            return Integer.parseInt(System.getProperty("maxDurationMillis",
+                    Integer.toString(DEFAULT_MAX_DURATION_MILLIS)));
         } catch (NumberFormatException ignore) {
         }
         return DEFAULT_MAX_DURATION_MILLIS;
