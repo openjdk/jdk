@@ -234,14 +234,9 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
     while (tq->pop_overflow(task)) {
-      // In PSCardTable::scavenge_contents_parallel(), when work is distributed
-      // among different workers, an object is never split between multiple workers.
-      // Therefore, if a worker gets owned a large objArray, it may accumulate
-      // many tasks (corresponding to every element in this array) in its
-      // task queue. When there are too many overflow tasks, publishing them
-      // (via try_push_to_taskqueue()) can incur noticeable overhead in Young GC
-      // pause, so it is better to process them locally until large-objArray-splitting is implemented.
-      process_popped_location_depth(task);
+      if (!tq->try_push_to_taskqueue(task)) {
+        process_popped_location_depth(task);
+      }
     }
 
     while (tq->pop_local(task, threshold)) {
