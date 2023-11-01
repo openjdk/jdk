@@ -76,16 +76,17 @@ void MemMapPrinter::pd_print_header(outputStream* st) {
 
 void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {
   FILE* f = os::fopen("/proc/self/maps", "r");
-  if (f != nullptr) {
-    static constexpr size_t linesize = sizeof(ProcMapsInfo);
-    char line[linesize];
-    while(fgets(line, sizeof(line), f) == line) {
-      line[sizeof(line) - 1] = '\0';
-      ProcMapsInfo info;
-      if (info.scan_proc_maps_line(line)) {
-        LinuxMappingPrintInformation mapinfo(info.from, info.to, &info);
-        closure.do_it(&mapinfo);
-      }
+  if (f == nullptr) {
+    return;
+  }
+  constexpr size_t linesize = sizeof(ProcMapsInfo);
+  char line[linesize];
+  while (fgets(line, sizeof(line), f) == line) {
+    line[sizeof(line) - 1] = '\0';
+    ProcMapsInfo info;
+    if (info.scan_proc_maps_line(line)) {
+      LinuxMappingPrintInformation mapinfo(info.from, info.to, &info);
+      closure.do_it(&mapinfo);
     }
     ::fclose(f);
   }
