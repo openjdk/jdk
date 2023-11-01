@@ -337,7 +337,8 @@ static void setup_app_data(struct hsdis_app_data* app_data,
                                  app_data->printf_callback,
                                  native_bfd,
                                  /* On some archs we get warnings, if we pass empty options */
-                                 (app_data->insn_options[0] == '\0') ? NULL : app_data->insn_options);
+                                 ((caller_options == NULL) || (app_data->insn_options[0] == '\0'))
+                                 ? NULL : app_data->insn_options);
 
   /* Finish linking together the various callback blocks. */
   app_data->dinfo.application_data = (void*) app_data;
