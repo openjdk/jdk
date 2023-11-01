@@ -371,7 +371,7 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
@@ -380,7 +380,7 @@ public class MessageFormat extends Format {
      */
     public MessageFormat(String pattern) {
         this.locale = Locale.getDefault(Locale.Category.FORMAT);
-        applyPattern(pattern);
+        applyPatternImpl(pattern);
     }
 
     /**
@@ -389,7 +389,7 @@ public class MessageFormat extends Format {
      * The constructor first sets the locale, then parses the pattern and
      * creates a list of subformats for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @implSpec The default implementation throws a
      * {@code NullPointerException} if {@code locale} is {@code null}
@@ -408,7 +408,7 @@ public class MessageFormat extends Format {
      */
     public MessageFormat(String pattern, Locale locale) {
         this.locale = locale;
-        applyPattern(pattern);
+        applyPatternImpl(pattern);
     }
 
     /**
@@ -447,15 +447,29 @@ public class MessageFormat extends Format {
      * The method parses the pattern and creates a list of subformats
      * for the format elements contained in it.
      * Patterns and their interpretation are specified in the
-     * <a href="#patterns">class description</a>.
+     * {@linkplain ##patterns class description}.
      *
      * @param pattern the pattern for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
      *            {@code null}
      */
-    @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
     public void applyPattern(String pattern) {
+        applyPatternImpl(pattern);
+    }
+
+    /**
+     * Implementation of applying a pattern to this MessageFormat.
+     * This method processes a String pattern in accordance with the MessageFormat
+     * pattern syntax and sets the internal {@code pattern} variable as well as
+     * populating the {@code formats} array with the subformats defined in the
+     * pattern. See the {@linkplain ##patterns} section for further understanding
+     * of certain special characters: "{", "}", ",". See {@linkplain
+     * ##makeFormat(int, int, StringBuilder[])} for the implementation of setting
+     * a subformat.
+     */
+    @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
+    private void applyPatternImpl(String pattern) {
             StringBuilder[] segments = new StringBuilder[4];
             // Allocate only segments[SEG_RAW] here. The rest are
             // allocated on demand.
@@ -509,6 +523,7 @@ public class MessageFormat extends Format {
                         case '}':
                             if (braceStack == 0) {
                                 part = SEG_RAW;
+                                // Set the subformat
                                 makeFormat(i, formatNumber, segments);
                                 formatNumber++;
                                 // throw away other segments
@@ -1592,7 +1607,7 @@ public class MessageFormat extends Format {
         formats[offsetNumber] = newFormat;
     }
 
-    private static final int findKeyword(String s, String[] list) {
+    private static int findKeyword(String s, String[] list) {
         for (int i = 0; i < list.length; ++i) {
             if (s.equals(list[i]))
                 return i;
@@ -1609,8 +1624,8 @@ public class MessageFormat extends Format {
         return -1;
     }
 
-    private static final void copyAndFixQuotes(String source, int start, int end,
-                                               StringBuilder target) {
+    private static void copyAndFixQuotes(String source, int start, int end,
+                                         StringBuilder target) {
         boolean quoted = false;
 
         for (int i = start; i < end; ++i) {
