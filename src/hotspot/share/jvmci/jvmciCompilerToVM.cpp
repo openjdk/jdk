@@ -2779,11 +2779,11 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       } else {
         // Link the new HotSpotNmethod to the nmethod
         PEER_JVMCIENV->initialize_installed_code(result, nm, JVMCI_CHECK_0);
-        // Only HotSpotNmethod instances in the HotSpot heap are tracked directly by the runtime.
-        if (PEER_JVMCIENV->is_hotspot()) {
+        // Only non-default HotSpotNmethod instances in the HotSpot heap are tracked directly by the runtime.
+        if (!isDefault && PEER_JVMCIENV->is_hotspot()) {
           JVMCINMethodData* data = nm->jvmci_nmethod_data();
           if (data == nullptr) {
-            JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot set HotSpotNmethod mirror for default nmethod");
+            JVMCI_THROW_MSG_0(IllegalArgumentException, "Missing HotSpotNmethod data");
           }
           if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
