@@ -850,15 +850,15 @@
 
   <Event name="CompilerQueueUtilization" category="Java Virtual Machine, Compiler" label="Compiler Queue Utilization" period="everyChunk">
     <Field type="CompilerType" name="compiler" label="Compiler" />
-    <Field type="long" contentType="hertz" name="ingress" label="Ingress" description="Number of added requests per second"/>
-    <Field type="long" contentType="hertz" name="egress" label="Egress" description="Number of removed requests per second"/>
-    <Field type="long" name="size" label="Size"/>
-    <Field type="long" name="peak" label="Peak Size"/>
-    <Field type="long" name="added" label="Added"/>
-    <Field type="long" name="removed" label="Removed"/>
-    <Field type="long" name="totalAdded" label="Total Added"/>
-    <Field type="long" name="totalRemoved" label="Total Removed"/>
-    <Field type="int" name="compilerThreadCount" label="Number of Compiler Threads for this queue"/>
+    <Field type="long" contentType="hertz" name="addedRate" label="Requets Added Rate" description="Requests added per second"/>
+    <Field type="long" contentType="hertz" name="removedRate" label="Requests Removed Rate" description="Requests removed per second"/>
+    <Field type="long" name="queueSize" label="Queue Size"/>
+    <Field type="long" name="peakQueueSize" label="Peak Queue Size"/>
+    <Field type="long" name="addedCount" label="Requests Added"/>
+    <Field type="long" name="removedCount" label="Requests Removed"/>
+    <Field type="long" name="totalAddedCount" label="Total Requests Added"/>
+    <Field type="long" name="totalRemovedCount" label="Total Requests Removed"/>
+    <Field type="int" name="compilerThreadCount" label="Compiler Thread Count"/>
   </Event>
 
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">

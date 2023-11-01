@@ -66,19 +66,19 @@ void JfrCompilerQueueUtilization::send_events() {
     if (entry->compilerQueue != nullptr) {
       const uint64_t current_added = entry->compilerQueue->get_total_added();
       const uint64_t current_removed = entry->compilerQueue->get_total_removed();
-      const uint64_t ingress = rate_per_second(current_added, entry->added, interval);
-      const uint64_t egress = rate_per_second(current_removed, entry->removed, interval);
+      const uint64_t addedRate = rate_per_second(current_added, entry->added, interval);
+      const uint64_t removedRate = rate_per_second(current_removed, entry->removed, interval);
 
       EventCompilerQueueUtilization event;
       event.set_compiler(entry->compiler_queue_id);
-      event.set_ingress(ingress);
-      event.set_egress(egress);
-      event.set_size(entry->compilerQueue->size());
-      event.set_peak(entry->compilerQueue->get_peak_size());
-      event.set_added(current_added - entry->added);
-      event.set_removed(current_removed - entry->removed);
-      event.set_totalAdded(current_added);
-      event.set_totalRemoved(current_removed);
+      event.set_addedRate(addedRate);
+      event.set_removedRate(removedRate);
+      event.set_queueSize(entry->compilerQueue->size());
+      event.set_peakQueueSize(entry->compilerQueue->get_peak_size());
+      event.set_addedCount(current_added - entry->added);
+      event.set_removedCount(current_removed - entry->removed);
+      event.set_totalAddedCount(current_added);
+      event.set_totalRemovedCount(current_removed);
       event.set_compilerThreadCount(entry->get_compiler_thread_count());
       event.commit();
 
