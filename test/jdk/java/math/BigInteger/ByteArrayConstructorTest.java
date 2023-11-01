@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @test
+ * @bug 8319174
  * @summary Exercises minimality of BigInteger.mag field (use -Dseed=X to set PRANDOM seed)
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
