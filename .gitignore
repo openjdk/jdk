@@ -23,4 +23,3 @@ NashornProfile.txt
 /.cproject
 /compile_commands.json
 /.cache
-make/hs_err_pid*
