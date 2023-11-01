@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
 
 public class ThreadPoolAccTest {
+
+    public static final int MAX_TRIES = 30;
 
     // MBean class
     public static class ObservedObject implements ObservedObjectMBean {
@@ -137,8 +139,18 @@ public class ThreadPoolAccTest {
                 Subject.doAs(subject, action);
             }
 
-            while(!testPrincipals(monitored, monitorNames, monitor, principals));
-
+            sleep(500); // wait for getX method to be called, which calls setPrincipal
+            boolean ok = false;
+            for (int i = 0; i < MAX_TRIES; i++) {
+                ok = testPrincipals(monitored, monitorNames, monitor, principals);
+                if (ok) {
+                    break;
+                }
+                sleep(1000);
+            }
+            if (!ok) {
+                throw new Exception("Failed: testPrincipals fails repeatedly.");
+            }
         } finally {
             for (int i = 0; i < 6; i++)
                 if (monitor[i] != null)
@@ -151,6 +163,9 @@ public class ThreadPoolAccTest {
         for (int i = 0; i < 6; i++) {
             String principal =  monitored[i].principal;
             String expected = principals[i / 3];
+
+            echo("testPrincipals: monitored: " + monitored[i] + " principal: " + principal + " expected: " + expected);
+
             if (principal == null) {
                 echo("Task not submitted " + new Date() + ". RETRY");
                 return false;
@@ -172,4 +187,12 @@ public class ThreadPoolAccTest {
     private static void echo(String message) {
         System.out.println(message);
     }
+
+    public static void sleep(int ms) {
+        try {
+            Thread.currentThread().sleep(ms);
+        } catch (InterruptedException ie) {
+            // ignore
+        }
+   }
 }
