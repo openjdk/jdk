@@ -136,10 +136,19 @@
 /*
  * @test id=letsencryptisrgx1
  * @bug 8189131
- * @summary Interoperability tests with Let's Encrypt CA
+ * @summary Interoperability tests with Let's Encrypt ISRG Root X1 CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop letsencryptisrgx1 DEFAULT
+ */
+
+/*
+ * @test id=letsencryptisrgx2
+ * @bug 8317374
+ * @summary Interoperability tests with Let's Encrypt ISRG Root X2 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop letsencryptisrgx2 DEFAULT
  */
 
 /*
@@ -455,6 +464,9 @@ public class CAInterop {
             case "letsencryptisrgx1" ->
                     new CATestURLs("https://valid-isrgrootx1.letsencrypt.org",
                             "https://revoked-isrgrootx1.letsencrypt.org");
+            case "letsencryptisrgx2" ->
+                    new CATestURLs("https://valid-isrgrootx2.letsencrypt.org",
+                            "https://revoked-isrgrootx2.letsencrypt.org");
 
             case "globalsignrootcar6" ->
                     new CATestURLs("https://valid.r6.roots.globalsign.com",
