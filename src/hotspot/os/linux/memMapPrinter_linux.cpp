@@ -88,6 +88,6 @@ void MemMapPrinter::pd_iterate_all_mappings(MappingPrintClosure& closure) {
       LinuxMappingPrintInformation mapinfo(info.from, info.to, &info);
       closure.do_it(&mapinfo);
     }
-    ::fclose(f);
   }
+  ::fclose(f);
 }

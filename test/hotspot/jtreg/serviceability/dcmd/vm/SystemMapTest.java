@@ -31,6 +31,7 @@ import java.io.*;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 
 /*
@@ -48,16 +49,15 @@ public class SystemMapTest {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("System.map");
         output.reportDiagnosticSummary();
-        String filename = output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_\\d+\\.txt)\".*", 1);
-        if (filename == null) {
-            throw new RuntimeException("Did not find dump file in output.\n");
-        }
-        File f = new File(filename);
-        if (!f.exists()) {
-            throw new RuntimeException("dump file not found.");
-        }
-        if (f.length() == 0) {
-            throw new RuntimeException("dump file 0.");
+        boolean NMTOff = output.contains("NMT is disabled");
+
+        String regexBase = ".*0x\\p{XDigit}+ - 0x\\p{XDigit}+ +\\d+";
+        output.shouldMatch(regexBase + ".*jvm.*");
+        if (!NMTOff) { // expect VM annotations if NMT is on
+            output.shouldMatch(regexBase + ".*JAVAHEAP.*");
+            output.shouldMatch(regexBase + ".*META.*");
+            output.shouldMatch(regexBase + ".*CODE.*");
+            output.shouldMatch(regexBase + ".*STACK.*main.*");
         }
     }
 

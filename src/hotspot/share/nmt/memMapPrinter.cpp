@@ -275,7 +275,7 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   st->print_cr("Memory mappings:");
   if (!MemTracker::enabled()) {
     st->cr();
-    st->print_cr("Note: NMT is disabled, will not annotate mappings.");
+    st->print_cr(" (NMT is disabled, will not annotate mappings).");
   }
   st->cr();
 
