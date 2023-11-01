@@ -74,17 +74,16 @@ static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
 /// NMT virtual memory
 
 static bool range_intersects(const void* from1, const void* to1, const void* from2, const void* to2) {
-  const void* const min = MAX2(from1, from2);
-  const void* const max = MIN2(to1, to2);
-  return min < max;
+  return MAX2(from1, from2) < MIN2(to1, to2);
 }
 
 // A Cache that correlates range with MEMFLAG, optimized to be iterated quickly
 // (cache friendly).
 class CachedNMTInformation : public VirtualMemoryWalker {
   struct Range { const void* from; const void* to; };
-  // Unfortunately, we need to allocate manually, raw, since we must prevent
-  // NMT deadlocks (ThreadCritical).
+  // We keep ranges apart from flags since that prevents the padding a combined
+  // structure would have, and it allows for faster iteration of ranges since more
+  // of them fit into a cache line.
   Range* _ranges;
   MEMFLAGS* _flags;
   uintx _count, _capacity;
@@ -106,6 +105,7 @@ public:
     if (_count == _capacity) {
       // Enlarge if needed
       const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
+      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
       ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
       if (_ranges == nullptr || _flags == nullptr) {
