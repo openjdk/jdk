@@ -4584,26 +4584,26 @@ class StubGenerator: public StubCodeGenerator {
     __ add(U_2, U_2, tmp3); // Add carry to U_2
 
     // Unpack the sum into five 26-bit limbs and write to memory.
-    const int64_t bits26 = right_n_bits(26);
     // First 26 bits is the first limb
-    __ andi(tmp1, U_0, bits26); // Take lowest 26 bits
+    __ slli(tmp1, U_0, 38); // Take lowest 26 bits
+    __ srli(tmp1, tmp1, 38);
     __ sd(tmp1, Address(acc_start)); // First 26-bit limb
 
     // 27-52 bits of U_0 is the second limb
-    __ srli(tmp2, U_0, 26);
-    __ andi(tmp2, tmp2, bits26); // Take next 27-52 bits
-    __ sd(tmp2, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
+    __ slli(tmp1, U_0, 12); // Take next 27-52 bits
+    __ srli(tmp1, tmp1, 38);
+    __ sd(tmp1, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
 
     // Getting 53-64 bits of U_0 and 1-14 bits of U_1 in one register
     __ srli(tmp1, U_0, 52);
-    __ slli(tmp2, U_1, 12);
-    __ addw(tmp1, tmp1, tmp2);
-    __ andi(tmp3, tmp1, bits26, tmp2); // Take remaining bits of tmp1
-    __ sd(tmp3, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
+    __ slli(tmp2, U_1, 50);
+    __ srli(tmp2, tmp2, 38);
+    __ add(tmp1, tmp1, tmp2);
+    __ sd(tmp1, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
 
     // Storing 15-40 bits of U_1
-    __ srli(tmp3, U_1, 14); // Already used up 14 bits
-    __ andi(tmp1, tmp3, bits26); // Clear all other bits from tmp3
+    __ slli(tmp1, U_1, 24); // Already used up 14 bits
+    __ srli(tmp1, tmp1, 38); // Clear all other bits from tmp3
     __ sd(tmp1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
 
     // Storing 41-64 bits of U_1 and first two bits from U_2 in one register
