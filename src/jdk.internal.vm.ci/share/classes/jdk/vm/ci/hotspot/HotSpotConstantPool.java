@@ -841,7 +841,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         final int holderIndex = getKlassRefIndexAt(rawIndex, opcode);
         JavaType fieldHolder = lookupType(holderIndex, opcode);
 
-        if (fieldHolder instanceof HotSpotResolvedObjectTypeImpl)  {
+        if (fieldHolder instanceof HotSpotResolvedObjectTypeImpl) {
             int[] info = new int[4];
             HotSpotResolvedObjectTypeImpl resolvedHolder;
             try {

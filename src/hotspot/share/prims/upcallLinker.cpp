@@ -79,7 +79,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context, jobject recei
   guarantee(thread->thread_state() == _thread_in_native, "wrong thread state for upcall");
   context->thread = thread;
 
-  assert(thread->can_call_java(), "must be able to call Java");
+  guarantee(thread->can_call_java(), "must be able to call Java");
 
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java,
   // since it can potentially block.
