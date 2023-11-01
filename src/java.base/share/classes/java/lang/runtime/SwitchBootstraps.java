@@ -25,9 +25,6 @@
 
 package java.lang.runtime;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.Enum.EnumDesc;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -386,10 +383,10 @@ public class SwitchBootstraps {
                     .withCode(cb -> {
                         cb.aload(0);
                         Label nonNullLabel = cb.newLabel();
-                        cb.if_nonnull(nonNullLabel)
-                          .iconst_m1()
-                          .ireturn()
-                          .labelBinding(nonNullLabel);
+                        cb.if_nonnull(nonNullLabel);
+                        cb.iconst_m1();
+                        cb.ireturn();
+                        cb.labelBinding(nonNullLabel);
                         if (labels.length == 0) {
                             cb.constantInstruction(0)
                               .ireturn();
@@ -486,7 +483,7 @@ public class SwitchBootstraps {
                                 cb.ldc(integerLabel);
                                 cb.if_icmpne(next);
                             } else {
-                                throw new UnsupportedOperationException("not supported label: " + element.label().getClass());
+                                throw new InternalError("Unsupported label type: " + element.label().getClass());
                             }
                             cb.constantInstruction(idx);
                             cb.ireturn();
@@ -502,14 +499,18 @@ public class SwitchBootstraps {
             // this class is linked at the indy callsite; so define a hidden nestmate
             MethodHandles.Lookup lookup;
             lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
-            MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(), "typeSwitch", MethodType.methodType(int.class, Object.class, int.class, BiFunction.class));
+            MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
+                                                        "typeSwitch",
+                                                        MethodType.methodType(int.class,
+                                                                              Object.class,
+                                                                              int.class,
+                                                                              BiFunction.class));
             return MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(s -> new EnumDesc<?>[s])));
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
         }
     }
 
-    private static int idx = 0;
     //based on src/java.base/share/classes/java/lang/invoke/InnerClassLambdaMetafactory.java:
     private static String typeSwitchClassName(Class<?> targetClass) {
         String name = targetClass.getName();
