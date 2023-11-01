@@ -2898,7 +2898,8 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
     Node* ctrl_s1 = use_store->in(MemNode::Control);
     Node* ctrl_s2 = this->in(MemNode::Control);
     if (!ctrl_s1->is_IfProj() ||
-        !ctrl_s1->in(0)->is_RangeCheck()) {
+        !ctrl_s1->in(0)->is_RangeCheck() ||
+        ctrl_s1->in(0)->outcnt() != 2) {
       return nullptr;
     }
     ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
@@ -2947,7 +2948,8 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
     //s2->dump_bfs(5,0,"#c$");
     // See if we can bypass a RangeCheck
     if (!ctrl_s1->is_IfProj() ||
-        !ctrl_s1->in(0)->is_RangeCheck()) {
+        !ctrl_s1->in(0)->is_RangeCheck() ||
+        ctrl_s1->in(0)->outcnt() != 2) {
       return nullptr;
     }
     ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
