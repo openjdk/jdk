@@ -4034,7 +4034,7 @@ void InstructForm::declare_cisc_version(ArchDesc &AD, FILE *fp_hpp) {
 
 //---------------------------define_cisc_version-------------------------------
 // Build CISC version of this instruction
-bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
+void InstructForm::define_cisc_version(ArchDesc& AD, FILE* fp_cpp) {
   InstructForm *inst_cisc = this->cisc_spill_alternate();
   if( AD.can_cisc_spill() && (inst_cisc != nullptr) ) {
     const char   *name      = inst_cisc->_ident;
@@ -4080,9 +4080,7 @@ bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
     fprintf(fp_cpp, "  return node;\n");
     fprintf(fp_cpp, "}\n");
     fprintf(fp_cpp, "\n");
-    return true;
   }
-  return false;
 }
 
 //---------------------------declare_short_branch_methods----------------------
@@ -4095,7 +4093,7 @@ void InstructForm::declare_short_branch_methods(FILE *fp_hpp) {
 
 //---------------------------define_short_branch_methods-----------------------
 // Build definitions for short branch methods
-bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
+void InstructForm::define_short_branch_methods(ArchDesc& AD, FILE* fp_cpp) {
   if (has_short_branch_form()) {
     InstructForm *short_branch = short_branch_form();
     const char   *name         = short_branch->_ident;
@@ -4124,9 +4122,7 @@ bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
     fprintf(fp_cpp, "  return node;\n");
     fprintf(fp_cpp, "}\n");
     fprintf(fp_cpp,"\n");
-    return true;
   }
-  return false;
 }
 
 
