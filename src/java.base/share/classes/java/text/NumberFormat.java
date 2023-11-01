@@ -950,8 +950,9 @@ public abstract class NumberFormat extends Format  {
     /**
      * Sets the {@link java.math.RoundingMode} used in this NumberFormat.
      *
-     * @implSpec The default implementation throws {@code UnsupportedOperationException}.
-     * Subclasses which handle different rounding modes should override this method.
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}. Subclasses which handle different
+     * rounding modes should override this method.
      * @throws    NullPointerException if {@code roundingMode} is {@code null}
      * @throws    UnsupportedOperationException if the implementation of this
      *            method does not support this operation
