@@ -2532,7 +2532,7 @@ public class ClassReader {
         private <T extends Type> Type reannotate(T t, BiFunction<T, Void, Type> f) {
             // We're relying on object identify of Type instances to record where the annotations
             // need to be added, so we have to retrieve the annotations for each type before
-            // rewriting it, and then add them after it's contained types have been rewritten.
+            // rewriting it, and then add them after its contained types have been rewritten.
             List<Attribute.TypeCompound> attributes = attributesByType.remove(t);
             Type mapped = f.apply(t, null);
             if (attributes == null) {
