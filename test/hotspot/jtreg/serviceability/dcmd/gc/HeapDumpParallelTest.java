@@ -82,7 +82,6 @@ public class HeapDumpParallelTest {
         if (heapDumpFile.exists()) {
             heapDumpFile.delete();
         }
-        
     }
 
     private static LingeredApp launchApp() throws IOException {
