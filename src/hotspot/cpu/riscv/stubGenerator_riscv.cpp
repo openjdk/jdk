@@ -4445,12 +4445,13 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(t4, t3, 40);
     __ add(dest1, dest1, t4);       // dest1 is full
 
-    __ srli(t3, t3, 24);
     if (dest2->is_valid()) {
+      __ srli(t3, t3, 24);
       __ add(dest2, zr, t3);        // 2 bits in dest2
     } else {
 #ifdef ASSERT
       Label OK;
+      __ srli(t3, t3, 24);
       __ beq(zr, t3, OK);           // 2 bits
       __ stop("high bits of Poly1305 integer should be zero");
       __ should_not_reach_here();
