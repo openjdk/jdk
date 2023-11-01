@@ -83,6 +83,9 @@ void ThreadShadow::clear_pending_nonasync_exception() {
 // Implementation of Exceptions
 
 bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Handle h_exception, Symbol* h_name, const char* message) {
+  assert(h_exception.is_null() != (h_name == nullptr), "either exception (" PTR_FORMAT ") or "
+         "symbol (" PTR_FORMAT ") must be non-null but not both", p2i(h_exception()), p2i(h_name));
+
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
     if (h_exception.not_null()) {
