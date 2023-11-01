@@ -2909,23 +2909,21 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (InterceptOSException) {
-    // Do nothing
-  } else {
-    DWORD exceptionCode = exceptionInfo->ExceptionRecord->ExceptionCode;
-#if defined(_M_ARM64)
-    address pc = (address) exceptionInfo->ContextRecord->Pc;
-#elif defined(_M_AMD64)
-    address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-    address pc = (address) exceptionInfo->ContextRecord->Eip;
-#endif
-    Thread* thread = Thread::current_or_null_safe();
+  if (InterceptOSException) return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 
-    if (exceptionCode != EXCEPTION_BREAKPOINT) {
-      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
-                  exceptionInfo->ContextRecord);
-    }
+  DWORD exceptionCode = exceptionInfo->ExceptionRecord->ExceptionCode;
+#if defined(_M_ARM64)
+  address pc = (address) exceptionInfo->ContextRecord->Pc;
+#elif defined(_M_AMD64)
+  address pc = (address) exceptionInfo->ContextRecord->Rip;
+#else
+  address pc = (address) exceptionInfo->ContextRecord->Eip;
+#endif
+  Thread* thread = Thread::current_or_null_safe();
+
+  if (exceptionCode != EXCEPTION_BREAKPOINT) {
+    report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+                exceptionInfo->ContextRecord);
   }
 
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
