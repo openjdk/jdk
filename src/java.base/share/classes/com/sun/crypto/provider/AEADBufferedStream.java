@@ -33,17 +33,23 @@ import java.util.HexFormat;
 /**
  * This class extends ByteArrayOutputStream by optimizing internal buffering.
  * It skips bounds checking, as the buffers are known and input previously
- * checked.  It also returns the internal buffer to avoid an extra copy.  Any
- * subsequent buffers needed by an instances allocates are new byte array.
+ * checked.  toByteArray() returns the internal buffer to avoid an extra copy.
  *
  * This uses `count` to determine the state of `buf`.  `buf` can still
  * point to an array while `count` equals zero.
  */
 final class AEADBufferedStream extends ByteArrayOutputStream {
+    /**
+     * Create an instance with no buffer
+     */
     public AEADBufferedStream() {
         buf = null;
         count = 0;
     }
+
+    /**
+     * Create an instance with the specified buffer
+     */
 
     public AEADBufferedStream(int len) {
         buf = new byte[len];
@@ -51,13 +57,14 @@ final class AEADBufferedStream extends ByteArrayOutputStream {
     }
 
     /**
-     * This method saves memory by sending the caller the internal buffer. If
-     * internal buffer is larger than the data stored, a copy is returned.
+     * This method saves memory by returning the internal buffer. If
+     * internal buffer is larger than the data stored {@code count}, a copy is
+     * returned.
+     *
      * @return internal or new byte array of non-blocksize data.
      */
     @Override
     public synchronized byte[] toByteArray() {
-        //count = 0;
         if (buf.length > count) {
             return Arrays.copyOfRange(buf, 0, count);
         }
