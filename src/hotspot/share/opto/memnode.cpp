@@ -2831,7 +2831,7 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
          "new_value is either int or long, and new_memory_size is small enough");
 
   Node* first = merge_list.at(pow2size-1);
-  Node* new_ctrl = first->in(MemNode::Control);
+  Node* new_ctrl = in(MemNode::Control); // must take last: after all RangeChecks
   Node* new_mem  = first->in(MemNode::Memory);
   Node* new_adr  = first->in(MemNode::Address);
   const TypePtr* atp = TypeRawPtr::BOTTOM;
@@ -2867,25 +2867,58 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
   int opc = Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
 
-  if (outcnt() != 1) {
+  // Uses should be:
+  // 1) the other StoreNode
+  // 2) optionally a MergeMem from the uncommon trap
+  if (outcnt() > 2) {
     return nullptr;
   }
 
-  StoreNode* use = unique_out()->isa_Store();
-  if (use == nullptr || use->Opcode() != opc) {
+  StoreNode* use_store = nullptr;
+  MergeMemNode* merge_mem = nullptr;
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* use = fast_out(i);
+    if (use->Opcode() == opc && use_store == nullptr) {
+      use_store = use->as_Store();
+    } else if (use->is_MergeMem() && merge_mem == nullptr) {
+      merge_mem = use->as_MergeMem();
+    } else {
+      return nullptr;
+    }
+  }
+  if (use_store == nullptr) {
     return nullptr;
+  }
+  if (merge_mem != nullptr) {
+    // Check that merge_mem only leads to the uncommon trap between
+    // the two stores.
+    if (merge_mem->outcnt() != 1) {
+      return nullptr;
+    }
+    Node* ctrl_s1 = use_store->in(MemNode::Control);
+    Node* ctrl_s2 = this->in(MemNode::Control);
+    if (!ctrl_s1->is_IfProj() ||
+        !ctrl_s1->in(0)->is_RangeCheck()) {
+      return nullptr;
+    }
+    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
+    Node* trap = other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check);
+    if (trap != merge_mem->unique_out() ||
+        ctrl_s1->in(0)->in(0) != ctrl_s2) {
+      return nullptr;
+    }
   }
 
   // Having checked "def -> use", we now check "use -> def".
   if (check_def) {
-    StoreNode* use_def = use->can_merge_with_def(phase, false);
+    StoreNode* use_def = use_store->can_merge_with_def(phase, false);
     if (use_def == nullptr) {
       return nullptr;
     }
     assert(use_def == this, "def of use is this");
   }
 
-  return use;
+  return use_store;
 }
 
 StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
@@ -2912,7 +2945,17 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
     //s1->dump_bfs(5,0,"#c$");
     //tty->print_cr("with");
     //s2->dump_bfs(5,0,"#c$");
-    return nullptr;
+    // See if we can bypass a RangeCheck
+    if (!ctrl_s1->is_IfProj() ||
+        !ctrl_s1->in(0)->is_RangeCheck()) {
+      return nullptr;
+    }
+    ProjNode* other_proj = ctrl_s1->as_IfProj()->other_if_proj();
+    if (other_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) == nullptr ||
+        ctrl_s1->in(0)->in(0) != ctrl_s2) {
+      return nullptr;
+    }
+    // Success, we skipped a RangeCheck
   }
 
   // Check value compatibility

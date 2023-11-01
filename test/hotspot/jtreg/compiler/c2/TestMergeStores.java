@@ -115,16 +115,24 @@ public class TestMergeStores {
         test_groups.get("test100").put("test100a", () -> { return test100a(aS.clone(), offset1); });
 
         test_groups.put("test101", new HashMap<String,TestFunction>());
-        test_groups.get("test101").put("test101R", () -> { return test101R(aS.clone(), offset1, vL1, vI1, vS1); });
-        test_groups.get("test101").put("test101a", () -> { return test101a(aS.clone(), offset1, vL1, vI1, vS1); });
+        test_groups.get("test101").put("test101R", () -> { return test101R(aS.clone(), offset1); });
+        test_groups.get("test101").put("test101a", () -> { return test101a(aS.clone(), offset1); });
+
+        test_groups.put("test102", new HashMap<String,TestFunction>());
+        test_groups.get("test102").put("test102R", () -> { return test102R(aS.clone(), offset1, vL1, vI1, vS1); });
+        test_groups.get("test102").put("test102a", () -> { return test102a(aS.clone(), offset1, vL1, vI1, vS1); });
 
         test_groups.put("test200", new HashMap<String,TestFunction>());
         test_groups.get("test200").put("test200R", () -> { return test200R(aI.clone(), offset1); });
         test_groups.get("test200").put("test200a", () -> { return test200a(aI.clone(), offset1); });
 
         test_groups.put("test201", new HashMap<String,TestFunction>());
-        test_groups.get("test201").put("test201R", () -> { return test201R(aI.clone(), offset1, vL1, vI1); });
-        test_groups.get("test201").put("test201a", () -> { return test201a(aI.clone(), offset1, vL1, vI1); });
+        test_groups.get("test201").put("test201R", () -> { return test201R(aI.clone(), offset1); });
+        test_groups.get("test201").put("test201a", () -> { return test201a(aI.clone(), offset1); });
+
+        test_groups.put("test202", new HashMap<String,TestFunction>());
+        test_groups.get("test202").put("test202R", () -> { return test202R(aI.clone(), offset1, vL1, vI1); });
+        test_groups.get("test202").put("test202a", () -> { return test202a(aI.clone(), offset1, vL1, vI1); });
     }
 
     @Run(test = {"test1a",
@@ -143,8 +151,10 @@ public class TestMergeStores {
                  "test6a",
                  "test100a",
                  "test101a",
+                 "test102a",
                  "test200a",
-                 "test201a"})
+                 "test201a",
+                 "test202a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -528,12 +538,12 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4", // 3 (+ 1 for uncommon trap)
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test4a(byte[] a, int offset, long v1, int v2, short v3, byte v4) {
-        a[offset +  0] = (byte)0x00;
+        a[offset +  0] = (byte)0x00; // individual load expected to go into state of RC
         a[offset +  1] = (byte)0xFF;
         a[offset +  2] = v4;
         a[offset +  3] = (byte)0x42;
@@ -653,6 +663,26 @@ public class TestMergeStores {
                   IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"})
     static Object[] test100a(short[] a, int offset) {
+        a[offset +  0] = (short)0x0100; // stays unchanged -> both used for RC and Return path
+        a[offset +  1] = (short)0x0200; //    I
+        a[offset +  2] = (short)0x0311; //    I
+        a[offset +  3] = (short)0x0400; //   L
+        a[offset +  4] = (short)0x1100; //   L
+        a[offset +  5] = (short)0x2233; //   L
+        a[offset +  6] = (short)0x3300; //   L
+        a[offset +  7] = (short)0x4400; //  L
+        a[offset +  8] = (short)0x5599; //  L
+        a[offset +  9] = (short)0x6600; //  L
+        a[offset + 10] = (short)0x7700; //  L
+        a[offset + 11] = (short)0xAACC; // L
+        a[offset + 12] = (short)0xBB00; // L
+        a[offset + 13] = (short)0xCC00; // L
+        a[offset + 14] = (short)0xDDFF; // L
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test101R(short[] a, int offset) {
         a[offset +  0] = (short)0x0100;
         a[offset +  1] = (short)0x0200;
         a[offset +  2] = (short)0x0311;
@@ -667,12 +697,34 @@ public class TestMergeStores {
         a[offset + 11] = (short)0xAACC;
         a[offset + 12] = (short)0xBB00;
         a[offset + 13] = (short)0xCC00;
-        a[offset + 14] = (short)0xDDFF;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // only for RC
+                  IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+                  IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3"})
+    static Object[] test101a(short[] a, int offset) {
+        a[offset +  0] = (short)0x0100; //    I plus kept unchanged for RC
+        a[offset +  1] = (short)0x0200; //    I
+        a[offset +  2] = (short)0x0311; //   L
+        a[offset +  3] = (short)0x0400; //   L
+        a[offset +  4] = (short)0x1100; //   L
+        a[offset +  5] = (short)0x2233; //   L
+        a[offset +  6] = (short)0x3300; //  L
+        a[offset +  7] = (short)0x4400; //  L
+        a[offset +  8] = (short)0x5599; //  L
+        a[offset +  9] = (short)0x6600; //  L
+        a[offset + 10] = (short)0x7700; // L
+        a[offset + 11] = (short)0xAACC; // L
+        a[offset + 12] = (short)0xBB00; // L
+        a[offset + 13] = (short)0xCC00; // L
         return new Object[]{ a };
     }
 
     @DontCompile
-    static Object[] test101R(short[] a, int offset, long v1, int v2, short v3) {
+    static Object[] test102R(short[] a, int offset, long v1, int v2, short v3) {
         a[offset +  0] = (short)0x0000;
         a[offset +  1] = (short)0xFFFF;
         a[offset +  2] = v3;
@@ -695,11 +747,11 @@ public class TestMergeStores {
 
     @Test
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
+                  IRNode.STORE_C_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4", // 3 (+1 that goes into RC)
                   IRNode.STORE_I_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",
                   IRNode.STORE_L_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
-    static Object[] test101a(short[] a, int offset, long v1, int v2, short v3) {
-        a[offset +  0] = (short)0x0000;
+    static Object[] test102a(short[] a, int offset, long v1, int v2, short v3) {
+        a[offset +  0] = (short)0x0000; // store goes into RC
         a[offset +  1] = (short)0xFFFF;
         a[offset +  2] = v3;
         a[offset +  3] = (short)0x4242;
@@ -745,6 +797,26 @@ public class TestMergeStores {
                   IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
                   IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"})
     static Object[] test200a(int[] a, int offset) {
+        a[offset +  0] = 0x01001236; // stays unchanged -> both used for RC and Return path
+        a[offset +  1] = 0x02001284; //       L
+        a[offset +  2] = 0x03111235; //       L
+        a[offset +  3] = 0x04001294; //      L
+        a[offset +  4] = 0x11001234; //      L
+        a[offset +  5] = 0x22331332; //     L
+        a[offset +  6] = 0x33001234; //     L
+        a[offset +  7] = 0x44001432; //    L
+        a[offset +  8] = 0x55991234; //    L
+        a[offset +  9] = 0x66001233; //   L
+        a[offset + 10] = 0x77001434; //   L
+        a[offset + 11] = 0xAACC1234; //  L
+        a[offset + 12] = 0xBB001434; //  L
+        a[offset + 13] = 0xCC001236; // L
+        a[offset + 14] = 0xDDFF1534; // L
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test201R(int[] a, int offset) {
         a[offset +  0] = 0x01001236;
         a[offset +  1] = 0x02001284;
         a[offset +  2] = 0x03111235;
@@ -759,12 +831,34 @@ public class TestMergeStores {
         a[offset + 11] = 0xAACC1234;
         a[offset + 12] = 0xBB001434;
         a[offset + 13] = 0xCC001236;
-        a[offset + 14] = 0xDDFF1534;
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // only for RC
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "7"})
+    static Object[] test201a(int[] a, int offset) {
+        a[offset +  0] = 0x01001236; //       L and also kept unchanged for RC
+        a[offset +  1] = 0x02001284; //       L
+        a[offset +  2] = 0x03111235; //      L
+        a[offset +  3] = 0x04001294; //      L
+        a[offset +  4] = 0x11001234; //     L
+        a[offset +  5] = 0x22331332; //     L
+        a[offset +  6] = 0x33001234; //    L
+        a[offset +  7] = 0x44001432; //    L
+        a[offset +  8] = 0x55991234; //   L
+        a[offset +  9] = 0x66001233; //   L
+        a[offset + 10] = 0x77001434; //  L
+        a[offset + 11] = 0xAACC1234; //  L
+        a[offset + 12] = 0xBB001434; // L
+        a[offset + 13] = 0xCC001236; // L
         return new Object[]{ a };
     }
 
     @DontCompile
-    static Object[] test201R(int[] a, int offset, long v1, int v2) {
+    static Object[] test202R(int[] a, int offset, long v1, int v2) {
         a[offset +  0] = 0x00000000;
         a[offset +  1] = 0xFFFFFFFF;
         a[offset +  2] = v2;
@@ -788,10 +882,10 @@ public class TestMergeStores {
     @Test
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "5",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6", // 5 (+1 that goes into RC)
                   IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6"})
-    static Object[] test201a(int[] a, int offset, long v1, int v2) {
-        a[offset +  0] = 0x00000000;
+    static Object[] test202a(int[] a, int offset, long v1, int v2) {
+        a[offset +  0] = 0x00000000; // merged with store below, but also kept unchanged for RC
         a[offset +  1] = 0xFFFFFFFF;
         a[offset +  2] = v2;
         a[offset +  3] = 0x42424242;
