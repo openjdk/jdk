@@ -4489,6 +4489,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
     Label here;
+    const int64_t bits2 = right_n_bits(2);
 
     RegSet saved_regs = RegSet::range(x18, x25);
     __ push_reg(saved_regs, sp);
@@ -4561,7 +4562,6 @@ class StubGenerator: public StubCodeGenerator {
 
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
       __ srli(tmp1, U_2, 2);
-      const int64_t bits2 = right_n_bits(2);
       __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
       __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
       __ cad(U_0, U_0, tmp1, tmp3); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp3
@@ -4607,7 +4607,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Storing 41-64 bits of U_1 and first two bits from U_2 in one register
     __ srli(tmp1, U_1, 40);
-    __ andi(tmp2, U_2, 3); // Clear all bits in U_2 except for first 2
+    __ andi(tmp2, U_2, bits2); // Clear all bits in U_2 except for first 2
     __ slli(tmp2, tmp2, 24);
     __ addw(tmp1, tmp1, tmp2);
     __ sd(tmp1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
