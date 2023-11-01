@@ -91,9 +91,6 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   size_t tasks_in_queue_set() const;
 
-  // Perform one iteration of spin-master work.
-  void do_delay_step(DelayContext& delay_context);
-
   NONCOPYABLE(TaskTerminator);
 
 public:

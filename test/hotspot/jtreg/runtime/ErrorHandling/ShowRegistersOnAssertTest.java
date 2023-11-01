@@ -55,7 +55,7 @@ public class ShowRegistersOnAssertTest {
     {
         System.out.println("Testing " + (do_assert ? "assert" : "guarantee") +
                            " with " + (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert") + "...");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions", "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=" + (do_assert ? "1" : "2"),
             (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert"),

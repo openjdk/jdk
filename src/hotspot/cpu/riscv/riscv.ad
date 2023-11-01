@@ -983,8 +983,8 @@ definitions %{
   int_def XFER_COST            (  300,  3 * DEFAULT_COST);          // mfc, mtc, fcvt, fmove, fcmp
   int_def BRANCH_COST          (  200,  2 * DEFAULT_COST);          // branch, jmp, call
   int_def IMUL_COST            ( 1000, 10 * DEFAULT_COST);          // imul
-  int_def IDIVSI_COST          ( 3400, 34 * DEFAULT_COST);          // idivdi
-  int_def IDIVDI_COST          ( 6600, 66 * DEFAULT_COST);          // idivsi
+  int_def IDIVSI_COST          ( 3400, 34 * DEFAULT_COST);          // idivsi
+  int_def IDIVDI_COST          ( 6600, 66 * DEFAULT_COST);          // idivdi
   int_def FMUL_SINGLE_COST     (  500,  5 * DEFAULT_COST);          // fmul, fmadd
   int_def FMUL_DOUBLE_COST     (  700,  7 * DEFAULT_COST);          // fmul, fmadd
   int_def FDIV_COST            ( 2000, 20 * DEFAULT_COST);          // fdiv
@@ -2443,7 +2443,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2451,7 +2459,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2459,7 +2475,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2467,7 +2491,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
@@ -6673,6 +6705,15 @@ instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(idiv_reg_reg);
 %}
 
+instruct UdivI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UDivI src1 src2));
+  ins_cost(IDIVSI_COST);
+  format %{ "divuw  $dst, $src1, $src2\t#@UdivI"%}
+
+  ins_encode(riscv_enc_divuw(dst, src1, src2));
+  ins_pipe(idiv_reg_reg);
+%}
+
 instruct signExtract(iRegINoSp dst, iRegIorL2I src1, immI_31 div1, immI_31 div2) %{
   match(Set dst (URShiftI (RShiftI src1 div1) div2));
   ins_cost(ALU_COST);
@@ -6692,6 +6733,16 @@ instruct divL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "div  $dst, $src1, $src2\t#@divL" %}
 
   ins_encode(riscv_enc_div(dst, src1, src2));
+  ins_pipe(ldiv_reg_reg);
+%}
+
+instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UDivL src1 src2));
+  ins_cost(IDIVDI_COST);
+
+  format %{ "divu $dst, $src1, $src2\t#@UdivL" %}
+
+  ins_encode(riscv_enc_divu(dst, src1, src2));
   ins_pipe(ldiv_reg_reg);
 %}
 
@@ -6717,6 +6768,15 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct UmodI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UModI src1 src2));
+  ins_cost(IDIVSI_COST);
+  format %{ "remuw  $dst, $src1, $src2\t#@UmodI" %}
+
+  ins_encode(riscv_enc_moduw(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
 // Long Remainder
 
 instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
@@ -6725,6 +6785,15 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "rem  $dst, $src1, $src2\t#@modL" %}
 
   ins_encode(riscv_enc_mod(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UModL src1 src2));
+  ins_cost(IDIVDI_COST);
+  format %{ "remu  $dst, $src1, $src2\t#@UmodL" %}
+
+  ins_encode(riscv_enc_modu(dst, src1, src2));
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7292,7 +7361,7 @@ instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0010000001);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7307,7 +7376,7 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0010000001);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7322,7 +7391,7 @@ instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7337,7 +7406,7 @@ instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 

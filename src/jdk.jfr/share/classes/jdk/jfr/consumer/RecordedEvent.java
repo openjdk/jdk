@@ -31,8 +31,8 @@ import java.util.List;
 
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.ObjectContext;
+import jdk.jfr.internal.util.ImplicitFields;
 
 /**
  * A recorded event.
@@ -57,7 +57,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return stack trace, or {@code null} if doesn't exist for the event
      */
     public RecordedStackTrace getStackTrace() {
-        return getTyped(Utils.FIELD_STACK_TRACE, RecordedStackTrace.class, null);
+        return getTyped(ImplicitFields.STACK_TRACE, RecordedStackTrace.class, null);
     }
 
     /**
@@ -67,7 +67,7 @@ public final class RecordedEvent extends RecordedObject {
      * @return thread, or {@code null} if doesn't exist for the event
      */
     public RecordedThread getThread() {
-        return getTyped(Utils.FIELD_EVENT_THREAD, RecordedThread.class, null);
+        return getTyped(ImplicitFields.EVENT_THREAD, RecordedThread.class, null);
     }
 
     /**

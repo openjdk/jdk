@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class TestUnrecognizedVMOptionsHandling {
 
   public static void main(String args[]) throws Exception {
     // The first two JAVA processes are expected to fail, but with a correct VM option suggestion
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
       "-XX:+UseDynamicNumberOfGcThreads",
       "-version"
       );
@@ -50,7 +50,7 @@ public class TestUnrecognizedVMOptionsHandling {
       throw new RuntimeException("Not expected to get exit value 0");
     }
 
-    pb = GCArguments.createJavaProcessBuilder(
+    pb = GCArguments.createLimitedTestJavaProcessBuilder(
       "-XX:MaxiumHeapSize=500m",
       "-version"
       );
@@ -61,7 +61,7 @@ public class TestUnrecognizedVMOptionsHandling {
     }
 
     // The last JAVA process should run successfully for the purpose of sanity check
-    pb = GCArguments.createJavaProcessBuilder(
+    pb = GCArguments.createLimitedTestJavaProcessBuilder(
       "-XX:+UseDynamicNumberOfGCThreads",
       "-version"
       );

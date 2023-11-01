@@ -334,10 +334,6 @@ public final class SecuritySupport {
         doPrivileged(() ->  MetadataRepository.getInstance().register(eventClass), new FlightRecorderPermission(REGISTER_EVENT));
     }
 
-    public static void registerMirror(Class<? extends Event> eventClass) {
-        doPrivileged(() ->  MetadataRepository.getInstance().registerMirror(eventClass), new FlightRecorderPermission(REGISTER_EVENT));
-    }
-
     public static void setProperty(String propertyName, String value) {
         doPrivileged(() -> System.setProperty(propertyName, value), new PropertyPermission(propertyName, "write"));
     }

@@ -72,7 +72,7 @@ public final class EventControl {
     private final String idName;
 
     EventControl(PlatformEventType eventType) {
-        if (eventType.hasDuration()) {
+        if (eventType.hasThreshold()) {
             addControl(Threshold.NAME, defineThreshold(eventType));
         }
         if (eventType.hasStackTrace()) {
@@ -289,7 +289,7 @@ public final class EventControl {
                     value = nc.control.getDefaultValue();
                 }
                 if (ActiveSettingEvent.enabled()) {
-                    ActiveSettingEvent.commit(timestamp, 0L, type.getId(), nc.name(), value);
+                    ActiveSettingEvent.commit(timestamp, type.getId(), nc.name(), value);
                 }
             }
         }

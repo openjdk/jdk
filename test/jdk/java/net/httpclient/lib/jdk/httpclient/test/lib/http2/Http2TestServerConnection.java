@@ -1241,10 +1241,10 @@ public class Http2TestServerConnection {
     // simplified output headers class. really just a type safe container
     // for the hashmap.
 
-    static class ResponseHeaders extends Http2Frame {
+    public static class ResponseHeaders extends Http2Frame {
         HttpHeaders headers;
 
-        ResponseHeaders(HttpHeaders headers) {
+        public ResponseHeaders(HttpHeaders headers) {
             super(0, 0);
             this.headers = headers;
         }

@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/vmError.hpp"
 
 void ResourceArea::bias_to(MEMFLAGS new_flags) {

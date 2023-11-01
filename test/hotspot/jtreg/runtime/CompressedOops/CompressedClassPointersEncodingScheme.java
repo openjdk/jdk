@@ -45,7 +45,7 @@ public class CompressedClassPointersEncodingScheme {
     private static void test(long forceAddress, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
         String forceAddressString = String.format("0x%016X", forceAddress).toLowerCase();
         String expectedEncodingBaseString = String.format("0x%016X", expectedEncodingBase).toLowerCase();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xshare:off", // to make CompressedClassSpaceBaseAddress work
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseCompressedOops", // keep VM from optimizing heap location

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import jdk.internal.misc.VM;
 import jdk.jfr.*;
 
 @Category({ "Java Application", "Statistics" })
-public abstract class AbstractBufferStatisticsEvent extends AbstractJDKEvent {
+public abstract class AbstractBufferStatisticsEvent extends AbstractPeriodicEvent {
 
     protected AbstractBufferStatisticsEvent(BufferPool bufferPool) {
         count = bufferPool.getCount();
