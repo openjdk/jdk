@@ -182,9 +182,14 @@ else # not java.base
   endif
 endif
 
-# Set main class of jdk.httpserver module
-ifeq ($(MODULE), jdk.httpserver)
-    JMOD_FLAGS += --main-class sun.net.httpserver.simpleserver.Main
+################################################################################
+# Include module specific build settings
+
+-include Jmod.gmk
+
+# Set main class
+ifneq ($(JMOD_FLAGS_main_class), )
+  JMOD_FLAGS += $(JMOD_FLAGS_main_class)
 endif
 
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.
