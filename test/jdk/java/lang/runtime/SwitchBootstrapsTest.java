@@ -108,9 +108,12 @@ public class SwitchBootstrapsTest {
         } catch (IllegalArgumentException ex) {
             //OK
         }
-        testType("", 0, 0, String.class, String.class, String.class);
-        testType("", 1, 1, String.class, String.class, String.class);
-        testType("", 2, 2, String.class, String.class, String.class);
+        testType("", 0, 0, String.class, String.class, String.class, String.class, String.class);
+        testType("", 1, 1, String.class, String.class, String.class, String.class, String.class);
+        testType("", 2, 2, String.class, String.class, String.class, String.class, String.class);
+        testType("", 3, 3, String.class, String.class, String.class, String.class, String.class);
+        testType("", 3, 3, String.class, String.class, String.class, String.class, String.class);
+        testType("", 4, 4, String.class, String.class, String.class, String.class, String.class);
         testType("", 0, 0);
     }
 
