@@ -333,7 +333,7 @@ public class Lint
         VARARGS("varargs"),
 
         /**
-         * Warn about use of preview features.
+         * Warn about use of preview features and incubating modules.
          */
         PREVIEW("preview"),
 
