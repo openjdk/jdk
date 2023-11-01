@@ -230,7 +230,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
 // Note: The test is not exact. Returns true if the 'x' COULD end up in an inner loop,
-// BUT it can also return true and the clone is in the outer loop
+// BUT it can also return true and the 'x' is in the outer loop
 bool PhaseIdealLoop::can_move_to_inner_loop(Node* n, Node* region, Node* x) {
   assert(region->is_Loop(), "region should be a loop");
   IdealLoopTree* n_loop_tree = get_loop(region);
