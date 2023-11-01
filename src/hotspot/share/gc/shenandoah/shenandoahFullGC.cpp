@@ -190,6 +190,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
     assert((heap->old_generation()->used() + heap->old_generation()->get_humongous_waste())
            <= heap->old_generation()->used_regions_size(), "Old consumed can be no larger than span of affiliated regions");
 
+    // Establish baseline for next old-has-grown trigger.
+    heap->old_generation()->set_live_bytes_after_last_mark(heap->old_generation()->used() +
+                                                           heap->old_generation()->get_humongous_waste());
   }
   if (metrics.is_good_progress()) {
     ShenandoahHeap::heap()->notify_gc_progress();
@@ -421,7 +424,6 @@ void ShenandoahFullGC::phase1_mark_heap() {
     }
   }
   log_info(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
-  heap->old_generation()->set_live_bytes_after_last_mark(live_bytes_in_old);
 }
 
 class ShenandoahPrepareForCompactionTask : public WorkerTask {
