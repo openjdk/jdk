@@ -1026,7 +1026,7 @@ public class Compatibility {
         cmd[3] = JdkUtils.class.getName();
         cmd[4] = method;
         System.arraycopy(args, 0, cmd, 5, args.length);
-        return ProcessTools.executeCommand(cmd).getOutput();
+        return ProcessTools.executeCommand(cmd).getStdout();
     }
 
     // Executes the specified JDK tools, such as keytool and jarsigner, and
