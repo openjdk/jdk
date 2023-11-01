@@ -57,6 +57,7 @@ static void stop_service_thread(G1ServiceThread* thread) {
 // Test that a task that is added during runtime gets run.
 TEST_VM(G1ServiceThread, test_add) {
   // Create thread and let it start.
+  ThreadInVMfromNative tvn(JavaThread::current());
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
@@ -78,6 +79,7 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
   AutoModifyRestore<uintx> f1(G1PeriodicGCInterval, 100000);
 
   // Create thread and let it start.
+  ThreadInVMfromNative tvn(JavaThread::current());
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
@@ -95,6 +97,7 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
 // Test that a task with negative timeout is not rescheduled.
 TEST_VM(G1ServiceThread, test_add_run_once) {
   // Create thread and let it start.
+  ThreadInVMfromNative tvn(JavaThread::current());
   G1ServiceThread* st = new G1ServiceThread();
   os::naked_short_sleep(500);
 
