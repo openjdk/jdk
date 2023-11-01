@@ -1955,7 +1955,9 @@ void DumpMerger::do_merge() {
       merge_file(path);
     }
     // Delete selected segmented heap file nevertheless
-    remove(path);
+    if (remove(path) != 0) {
+      log_info(heapdump)("Remove segment file (%d) failed (%d)", i, errno);
+    }
   }
 
   // restore compressor for further use
@@ -2358,6 +2360,7 @@ void VM_HeapDumper::work(uint worker_id) {
       _dumper_controller->wait_all_dumpers_complete();
     } else {
       _dumper_controller->dumper_complete(local_writer, writer());
+      delete local_writer;
       return;
     }
   }
