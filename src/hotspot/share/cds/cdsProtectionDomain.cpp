@@ -241,7 +241,7 @@ Handle CDSProtectionDomain::get_shared_protection_domain(Handle class_loader,
                                                             TRAPS) {
   Handle protection_domain;
   if (shared_protection_domain(shared_path_index) == nullptr) {
-    Handle pd = get_protection_domain_from_classloader(class_loader, url, THREAD);
+    Handle pd = get_protection_domain_from_classloader(class_loader, url, CHECK_NH);
     atomic_set_shared_protection_domain(shared_path_index, pd());
   }
 

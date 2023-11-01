@@ -295,8 +295,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
   assert((reserved_byte_size & 3) == 0, "bad alignment");
   MemRegion reserved_mr(start, heap_word_size(reserved_byte_size));
-  _bts = new BlockOffsetSharedArray(reserved_mr,
-                                    heap_word_size(initial_byte_size));
+  _bts = new SerialBlockOffsetSharedArray(reserved_mr,
+                                          heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
 
@@ -474,11 +474,10 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
   TenuredSpace* space = _the_space;
-  space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
     size_t word_size = cast_to_oop(start)->size();;
-    space->alloc_block(start, start + word_size);
+    space->update_for_block(start, start + word_size);
     start += word_size;
   }
 }
