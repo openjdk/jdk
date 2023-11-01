@@ -1022,27 +1022,6 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     }
   }
 
-  // Null-check with instptr from abstract class with no subclass
-  const TypeInstPtr* instptr0 = r0->isa_instptr();
-  if (instptr0 != nullptr &&
-      instptr0->is_loaded() &&
-      r1->singleton() &&
-      r1->get_con() == 0) {
-    const TypeKlassPtr* k0 = instptr0->as_klass_type(true);
-    if (k0 != nullptr &&
-        k0->isa_instklassptr() &&
-        k0->klass_is_exact()) {
-      ciKlass* cik0 = k0->exact_klass();
-      if (cik0->is_abstract() &&
-          !cik0->is_interface() &&
-          !cik0->as_instance_klass()->has_subklass()) {
-        Compile::current()->dependencies()->assert_leaf_type(cik0);
-        // The instptr must be null as well
-        return TypeInt::CC_EQ;
-      }
-    }
-  }
-
   // Known constants can be compared exactly
   // Null can be distinguished from any NotNull pointers
   // Unknown inputs makes an unknown result

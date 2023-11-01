@@ -53,8 +53,11 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
         // method would now never be called, because of the leaf-type dependency. Hence,
         // just for consistency with verification, we return EQ.
         return TypeInt::CC_EQ;
+      } else {
+        // subk is either a supertype of superk, or null. In either case, superk is a
+        // subtype.
+        return TypeInt::CC_GT;
       }
-      return TypeInt::CC_GT;
     }
   }
 
