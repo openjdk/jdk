@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,11 +32,13 @@
  * called from Class1, then acquiring ZipFile during the search for a class
  * triggered from JNI.
  */
+
 import java.lang.*;
 
 public class LoadLibraryDeadlock {
 
     public static void main(String[] args) {
+        System.out.println("LoadLibraryDeadlock test started");
         Thread t1 = new Thread() {
             public void run() {
                 try {
@@ -68,7 +70,8 @@ public class LoadLibraryDeadlock {
         try {
             t1.join();
             t2.join();
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
     }
 }

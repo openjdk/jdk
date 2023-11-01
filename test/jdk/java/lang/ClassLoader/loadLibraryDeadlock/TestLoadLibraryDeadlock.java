@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,15 +34,14 @@
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.*;
 import jdk.test.lib.util.FileUtils;
 
 import java.lang.ProcessBuilder;
-import java.lang.Process;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.spi.ToolProvider;
 
 public class TestLoadLibraryDeadlock {
@@ -108,51 +107,13 @@ public class TestLoadLibraryDeadlock {
         );
     }
 
-    private static Process runJavaCommand(String... command) throws Throwable {
+    private static OutputAnalyzer runJavaCommand(String... command) throws Throwable {
         String java = JDKToolFinder.getJDKTool("java");
         List<String> commands = new ArrayList<>();
         Collections.addAll(commands, java);
+        Collections.addAll(commands, Utils.getTestJavaOpts());
         Collections.addAll(commands, command);
-        System.out.println("COMMAND: " + String.join(" ", commands));
-        return new ProcessBuilder(commands.toArray(new String[0]))
-                .redirectErrorStream(true)
-                .directory(new File(testClassPath))
-                .start();
-    }
-
-    private static OutputAnalyzer jcmd(long pid, String command) throws Throwable {
-        String jcmd = JDKToolFinder.getJDKTool("jcmd");
-        return runCommandInTestClassPath(jcmd,
-                String.valueOf(pid),
-                command
-        );
-    }
-
-    private static String readAvailable(final InputStream is) throws Throwable {
-        final List<String> list = Collections.synchronizedList(new ArrayList<String>());
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<String> future = executor.submit(new Callable<String>() {
-            public String call() {
-                String result = new String();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-                try {
-                    while(true) {
-                        String s = reader.readLine();
-                        if (s.length() > 0) {
-                            list.add(s);
-                            result += s + "\n";
-                        }
-                    }
-                } catch (IOException ignore) {}
-                return result;
-            }
-        });
-        try {
-            return future.get(1000, TimeUnit.MILLISECONDS);
-        } catch (Exception ignoreAll) {
-            future.cancel(true);
-            return String.join("\n", list);
-        }
+        return runCommand(new File(testClassPath), commands.toArray(new String[0]));
     }
 
     private final static long countLines(OutputAnalyzer output, String string) {
@@ -194,24 +155,16 @@ public class TestLoadLibraryDeadlock {
                 .shouldHaveExitValue(0);
 
         // load trigger class
-        Process process = runJavaCommand("-cp",
+        OutputAnalyzer outputAnalyzer = runJavaCommand("-cp",
                 "a.jar" + classPathSeparator +
                 "b.jar" + classPathSeparator +
                 "c.jar",
                 "-Djava.library.path=" + testLibraryPath,
                 "LoadLibraryDeadlock");
-
-        // wait for a while to grab some output
-        process.waitFor(5, TimeUnit.SECONDS);
-
         // dump available output
-        String output = readAvailable(process.getInputStream());
-        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(output);
         dump(outputAnalyzer);
 
-        // if the process is still running, get the thread dump
-        OutputAnalyzer outputAnalyzerJcmd = jcmd(process.pid(), "Thread.print");
-        dump(outputAnalyzerJcmd);
+        outputAnalyzer.shouldHaveExitValue(0);
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Java-level deadlock") == 0,
@@ -237,13 +190,5 @@ public class TestLoadLibraryDeadlock {
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Signed jar loaded from native library.") > 0,
                 "Unable to load signed jar from native library.");
-
-        if (!process.waitFor(5, TimeUnit.SECONDS)) {
-            // if the process is still frozen, fail the test even though
-            // the "deadlock" text hasn't been found
-            process.destroyForcibly();
-            Asserts.assertTrue(process.waitFor() == 0,
-                    "Process frozen.");
-        }
     }
 }
