@@ -1937,6 +1937,28 @@ MultipleStackTracesCollector::allocate_and_fill_stacks(jint thread_count) {
          "the last copied frame info must be the last record");
 }
 
+// VM operation to support JvmtiHandshake for unmounted virtual threads.
+// Used by the JvmtiHandshake class only.
+class VM_HandshakeUnmountedVirtualThread : public VM_Operation {
+private:
+  JvmtiUnitedHandshakeClosure* _hs_cl;
+  Handle _target_h;
+
+public:
+  VM_HandshakeUnmountedVirtualThread(JvmtiUnitedHandshakeClosure* hs_cl, Handle target_h)
+    : VM_Operation(),
+      _hs_cl(hs_cl),
+      _target_h(target_h) {}
+  VMOp_Type type() const { return VMOp_HandshakeUnmountedVirtualThread; }
+  void doit() {
+    _hs_cl->do_vthread(_target_h);
+  }
+};
+
+// Supports platform and virtual threads.
+// A VM_op is useed in a case if a JVMTI function implementation needs to walk
+// the stack of an unmounted virtual thread.
+// JvmtiVTMSTransitionDisabler is always set by this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target, bool no_vm_op) {
   JavaThread* current = JavaThread::current();
@@ -1956,6 +1978,12 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target, bool
   execute(hs_cl, &tlh, java_thread, target_h, no_vm_op);
 }
 
+// Supports platform and virtual threads.
+// A VM_op is useed in a case if a JVMTI function implementation needs to walk
+// the stack of an unmounted virtual thread.
+// A virtual thread is always identified by the target_h oop handle.
+// The target_jt is always nullptr for an unmounted virtual thread.
+// JvmtiVTMSTransitionDisabler has to be set before call to this function.
 void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
                         JavaThread* target_jt, Handle target_h, bool no_vm_op) {
@@ -1978,8 +2006,8 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
     }
   }
   if (target_jt != nullptr) {      // mounted virtual or platform thread
-    hs_cl->set_target_h(target_h);   // need this to differentiate between virtual and carrier thread
-    if (self) {                      // target thread is current
+    hs_cl->set_target_h(target_h); // need this to differentiate between virtual and carrier thread
+    if (self) {                    // target thread is current
       hs_cl->do_thread(target_jt); // execute handshake closure callback on current thread directly
     } else {
       Handshake::execute(hs_cl, tlh, target_jt); // delegate to Handshake implementation
@@ -2445,13 +2473,12 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 
 void
 GetStackTraceClosure::do_thread(Thread *target) {
-  Thread* current = Thread::current();
-  ResourceMark rm(current);
-
   if (java_lang_VirtualThread::is_instance(_target_h())) { // virtual thread
     do_vthread(_target_h);
     return;
   }
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
 
   JavaThread *jt = JavaThread::cast(target);
   if (!jt->is_exiting() && jt->threadObj() != nullptr) {

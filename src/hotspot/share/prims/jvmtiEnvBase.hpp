@@ -463,6 +463,8 @@ class JvmtiHandshakeClosure : public HandshakeClosure {
   jvmtiError result() { return _result; }
 };
 
+// Used in combination with the JvmtiHandshake class.
+// It is intended to support both platform and virtual threads.
 class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
  protected:
   Handle _target_h;
@@ -480,24 +482,6 @@ class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
   void set_self(bool val) { _self = val; }
   jvmtiError result() { return _result; }
   virtual void do_vthread(Handle target_h) = 0;
-};
-
-// VM operation o support JvmtiHandshake for unmounted virtual threads
-class VM_HandshakeUnmountedVirtualThread : public VM_Operation {
-private:
-  JvmtiUnitedHandshakeClosure* _hs_cl;
-  Handle _target_h;
-
-public:
-  VM_HandshakeUnmountedVirtualThread(JvmtiUnitedHandshakeClosure* hs_cl, Handle target_h)
-    : VM_Operation(),
-      _hs_cl(hs_cl),
-      _target_h(target_h) {}
-  VMOp_Type type() const { return VMOp_HandshakeUnmountedVirtualThread; }
-  void doit() {
-    _hs_cl->do_vthread(_target_h);
-  }
-
 };
 
 // The JvmtiHandshake supports virtual threads.

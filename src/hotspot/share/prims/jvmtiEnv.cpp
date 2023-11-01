@@ -1711,6 +1711,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
 // count_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetStackTrace(jthread thread, jint start_depth, jint max_frame_count, jvmtiFrameInfo* frame_buffer, jint* count_ptr) {
+  ResourceMark rm;
   GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
   JvmtiHandshake::execute(&op, thread);
   return op.result();
