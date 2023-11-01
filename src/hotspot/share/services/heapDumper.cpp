@@ -389,7 +389,7 @@ enum {
 
 // Supports I/O operations for a dump
 // Base class for dump and parallel dump
-class AbstractDumpWriter : public ResourceObj {
+class AbstractDumpWriter : public CHeapObj<mtInternal> {
  protected:
   enum {
     io_buffer_max_size = 1*M,
