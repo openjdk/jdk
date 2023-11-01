@@ -4419,40 +4419,38 @@ class StubGenerator: public StubCodeGenerator {
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
   // Pack five 26-bit limbs into three 64-bit registers.
-  void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
-    const Register t3 = x28;
-    const Register t4 = x29;
-    assert_different_registers(dest0, dest1, dest2, src, t3, t4);
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src, Regster tmp1, Register tmp2) {
+    assert_different_registers(dest0, dest1, dest2, src, tmp1, tmp2);
 
     // The goal is to have 128-bit value in dest2:dest1:dest0
     __ ld(dest0, Address(src, 0));    // 26 bits in dest0
 
-    __ ld(t3, Address(src, sizeof(jlong)));
-    __ slli(t3, t3, 26);
-    __ add(dest0, dest0, t3);       // 52 bits in dest0
+    __ ld(tmp1, Address(src, sizeof(jlong)));
+    __ slli(tmp1, tmp1, 26);
+    __ add(dest0, dest0, tmp1);       // 52 bits in dest0
 
-    __ ld(t4, Address(src, 2 * sizeof(jlong)));
-    __ slli(t3, t4, 52);
-    __ add(dest0, dest0, t3);       // dest0 is full
+    __ ld(tmp2, Address(src, 2 * sizeof(jlong)));
+    __ slli(tmp1, tmp2, 52);
+    __ add(dest0, dest0, tmp1);       // dest0 is full
 
-    __ srli(dest1, t4, 12);         // 14-bit in dest1
+    __ srli(dest1, tmp2, 12);         // 14-bit in dest1
 
-    __ ld(t3, Address(src, 3 * sizeof(jlong)));
-    __ slli(t3, t3, 14);
-    __ add(dest1, dest1, t3);       // 40-bit in dest1
+    __ ld(tmp1, Address(src, 3 * sizeof(jlong)));
+    __ slli(tmp1, tmp1, 14);
+    __ add(dest1, dest1, tmp1);       // 40-bit in dest1
 
-    __ ld(t3, Address(src, 4 * sizeof(jlong)));
-    __ slli(t4, t3, 40);
-    __ add(dest1, dest1, t4);       // dest1 is full
+    __ ld(tmp1, Address(src, 4 * sizeof(jlong)));
+    __ slli(tmp2, tmp1, 40);
+    __ add(dest1, dest1, tmp2);       // dest1 is full
 
     if (dest2->is_valid()) {
-      __ srli(t3, t3, 24);
-      __ add(dest2, zr, t3);        // 2 bits in dest2
+      __ srli(tmp1, tmp1, 24);
+      __ add(dest2, zr, tmp1);        // 2 bits in dest2
     } else {
 #ifdef ASSERT
       Label OK;
-      __ srli(t3, t3, 24);
-      __ beq(zr, t3, OK);           // 2 bits
+      __ srli(tmp1, tmp1, 24);
+      __ beq(zr, tmp1, OK);           // 2 bits
       __ stop("high bits of Poly1305 integer should be zero");
       __ should_not_reach_here();
       __ bind(OK);
@@ -4462,8 +4460,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // As above, but return only a 128-bit integer, packed into two
   // 64-bit registers.
-  void pack_26(Register dest0, Register dest1, Register src) {
-    pack_26(dest0, dest1, noreg, src);
+  void pack_26(Register dest0, Register dest1, Register src, Register tmp1, Register tmp2) {
+    pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
   }
 
   // Multiply and multiply-accumulate unsigned 64-bit registers.
@@ -4499,16 +4497,14 @@ class StubGenerator: public StubCodeGenerator {
 
     // Arguments
     const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+    // Temporal registers
+    const Register tmp1 = t0, tmp2 = t1, tmp3 = t2;
 
     // R_n is the 128-bit randomly-generated key, packed into two
     // registers. The caller passes this key to us as long[5], with
     // BITS_PER_LIMB = 26.
     const Register R_0 = *++regs, R_1 = *++regs;
-    pack_26(R_0, R_1, r_start);
-
-    const Register tmp1 = t0;
-    const Register tmp2 = t1;
-    const Register tmp3 = t2;
+    pack_26(R_0, R_1, r_start, tmp1, tmp2);
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
@@ -4519,7 +4515,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
-    pack_26(U_0, U_1, U_2, acc_start);
+    pack_26(U_0, U_1, U_2, acc_start, tmp1, tmp2);
 
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
