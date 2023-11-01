@@ -25,13 +25,11 @@
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
- * @compile PrimitivePatterns.java
- * @run main/othervm PrimitivePatterns
+ * @compile PrimitivePatternsSwitch.java
+ * @run main/othervm PrimitivePatternsSwitch
  */
-public class PrimitivePatterns {
+public class PrimitivePatternsSwitch {
     public static void main(String[] args) {
-        assertEquals(42, primitivePattern());
-        assertEquals(42, primitivePatternUnnamed());
         assertEquals(1,  primitiveSwitch(42));
         assertEquals(2,  primitiveSwitch(123));
         assertEquals(1,  primitiveSwitchUnnamed(42));
@@ -109,22 +107,6 @@ public class PrimitivePatterns {
         assertEquals(0, testDoubleInEnhancedSwitchStatement(0.0d));
         assertEquals(1, testLongInEnhancedSwitchStatement(1l));
         assertEquals(0, testLongInEnhancedSwitchStatement(0l));
-    }
-
-    public static int primitivePattern() {
-        int i = 42;
-        if (i instanceof int p) {
-            return p;
-        }
-        return -1;
-    }
-
-    public static int primitivePatternUnnamed() {
-        int i = 42;
-        if (i instanceof int _) {
-            return i;
-        }
-        return -1;
     }
 
     public static int primitiveSwitch(int i) {

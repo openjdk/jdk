@@ -25,10 +25,10 @@
  * @test
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
- * @compile -g --enable-preview -source ${jdk.version} PrimitiveInstanceOf.java
- * @run main/othervm --enable-preview PrimitiveInstanceOf
+ * @compile -g --enable-preview -source ${jdk.version} PrimitiveInstanceOfTypeComparisonOp.java
+ * @run main/othervm --enable-preview PrimitiveInstanceOfTypeComparisonOp
  */
-public class PrimitiveInstanceOf {
+public class PrimitiveInstanceOfTypeComparisonOp {
 
     public static void main(String[] args) {
         assertEquals(true,  identityPrimitiveConversion());

@@ -33,8 +33,8 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
- * @compile PrimitivePatternsComboTest.java
- * @run main PrimitivePatternsComboTest
+ * @compile PrimitiveInstanceOfComboTest.java
+ * @run main PrimitiveInstanceOfComboTest
  */
 
 import combo.ComboInstance;
@@ -43,22 +43,22 @@ import combo.ComboTask;
 import combo.ComboTestHelper;
 import toolbox.ToolBox;
 
-public class PrimitivePatternsComboTest extends ComboInstance<PrimitivePatternsComboTest> {
+public class PrimitiveInstanceOfComboTest extends ComboInstance<PrimitiveInstanceOfComboTest> {
     private static final String JAVA_VERSION = System.getProperty("java.specification.version");
 
     protected ToolBox tb;
 
-    PrimitivePatternsComboTest() {
+    PrimitiveInstanceOfComboTest() {
         super();
         tb = new ToolBox();
     }
 
     public static void main(String... args) throws Exception {
-        new ComboTestHelper<PrimitivePatternsComboTest>()
+        new ComboTestHelper<PrimitiveInstanceOfComboTest>()
                 .withDimension("TYPE1", (x, type1) -> x.type1 = type1, Type.values())
                 .withDimension("TYPE2", (x, type2) -> x.type2 = type2, Type.values())
                 .withFailMode(ComboTestHelper.FailMode.FAIL_FAST)
-                .run(PrimitivePatternsComboTest::new);
+                .run(PrimitiveInstanceOfComboTest::new);
     }
 
     private Type type1;
