@@ -116,9 +116,9 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
     const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
                       h_name != nullptr ? h_name->as_C_string() :
                       "null";
-    log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
-                        "thrown [%s, line %d]\nfor thread " PTR_FORMAT "\n"
-                        "thread cannot call Java, throwing pre-allocated exception: %s",
+    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
+                        "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
+                        "throwing pre-allocated exception: %s",
                         exc_value, message ? ": " : "", message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
