@@ -202,7 +202,6 @@ void CodeCache::initialize_heaps() {
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
   const size_t ps           = page_size(false, 8);
   const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
-  assert(os::vm_page_size() <= min_size, "page size larger than min_size");
   const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
@@ -234,11 +233,9 @@ void CodeCache::initialize_heaps() {
   }
   // Calculate default CodeHeap sizes if not set by user
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
+    const size_t max_non_nmethod_size = cache_size - 2 * min_size;
     // Check if we have enough space for the non-nmethod code heap
-    if (cache_size > non_nmethod_size) {
-      // Ensure at least min_size is available for profiled and non-profiled
-      // methods
-      non_nmethod_size = MIN2(non_nmethod_size, cache_size - 2 * min_size);
+    if (max_non_nmethod_size >= non_nmethod_size) {
       // Use the default value for non_nmethod_size and one half of the
       // remaining size for non-profiled and one half for profiled methods
       size_t remaining_size = cache_size - non_nmethod_size;
@@ -246,7 +243,7 @@ void CodeCache::initialize_heaps() {
       non_profiled_size = remaining_size - profiled_size;
     } else {
       // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = cache_size - 2 * min_size;
+      non_nmethod_size = max_non_nmethod_size;
       profiled_size = min_size;
       non_profiled_size = min_size;
     }
