@@ -493,10 +493,7 @@ protected:
   ~AnyObj();
 #endif // ASSERT
 
- public:
-  void* operator new(size_t size, void* ptr) {
-    return ptr;
-  }
+public:
 
   // CHeap allocations
   void* operator new(size_t size, MEMFLAGS flags) throw();
