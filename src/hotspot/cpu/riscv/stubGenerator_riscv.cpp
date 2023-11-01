@@ -4487,6 +4487,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
     address start = __ pc();
+    __ enter();
     Label here;
 
     RegSet saved_regs = RegSet::range(x18, x25);
@@ -4613,6 +4614,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(DONE);
     __ pop_reg(saved_regs, sp);
+    __ leave(); // Required for proper stackwalking
     __ ret();
 
     return start;
