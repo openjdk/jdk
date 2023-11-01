@@ -160,7 +160,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     if (the_clone != x) {
       _igvn.remove_dead_node(the_clone);
     } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
-               n->is_Load() && can_move_to_inner_loop(n, region, x)) {
+               n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       wins = 0;
       break;
@@ -229,11 +229,10 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 }
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
-// Note: The test is not exact. Returns true if the 'x' COULD end up in an inner loop,
-// BUT it can also return true and the 'x' is in the outer loop
-bool PhaseIdealLoop::can_move_to_inner_loop(Node* n, Node* region, Node* x) {
-  assert(region->is_Loop(), "region should be a loop");
-  IdealLoopTree* n_loop_tree = get_loop(region);
+// Note: The test is not exact. Returns true if 'x' COULD end up in an inner loop,
+// BUT it can also return true and 'x' is in the outer loop
+bool PhaseIdealLoop::can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x) {
+  IdealLoopTree* n_loop_tree = get_loop(n_loop);
   IdealLoopTree* x_loop_tree = get_loop(get_early_ctrl(x));
   // x_loop_tree should be outer or same loop as n_loop_tree
   return !x_loop_tree->is_member(n_loop_tree);
