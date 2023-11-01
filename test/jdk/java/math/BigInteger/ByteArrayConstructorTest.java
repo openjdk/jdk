@@ -48,7 +48,7 @@ public class ByteArrayConstructorTest {
     public static final int N = 1_024;
 
     private static int maxDurationMillis;
-    private final Random rnd = RandomFactory.getRandom();
+    private static final Random rnd = RandomFactory.getRandom();
     private volatile boolean stop = false;
 
     @BeforeAll
