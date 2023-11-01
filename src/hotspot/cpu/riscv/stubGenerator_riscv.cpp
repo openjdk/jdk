@@ -4610,7 +4610,7 @@ class StubGenerator: public StubCodeGenerator {
     __ srli(tmp1, U_1, 40);
     __ andi(tmp2, U_2, bits2); // Clear all bits in U_2 except for first 2
     __ slli(tmp2, tmp2, 24);
-    __ addw(tmp1, tmp1, tmp2);
+    __ add(tmp1, tmp1, tmp2);
     __ sd(tmp1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
 
     __ bind(DONE);
