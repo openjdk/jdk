@@ -34,16 +34,18 @@ import java.util.function.Supplier;
 
 
 /**
- * An intermediate operation that processes input elements, optionally mutating
- * intermediate state, optionally transforming the input elements into a
- * different type of output elements, and optionally applies final actions at
- * end-of-upstream. Gatherer operations can be performed either sequentially,
+ * An intermediate operation that transforms a stream of input elements into a
+ * stream of output elements, optionally applying a final action when the end of
+ * the upstream is reached. The transformation may be stateless or stateful,
+ * and a Gatherer may buffer arbitrarily much input before producing any output.
+ *
+ * <p>Gatherer operations can be performed either sequentially,
  * or be parallelized -- if a combiner function is supplied.
  *
  * <p>Examples of gathering operations include, but is not limited to:
- * grouping elements into batches, also known as windowing functions;
+ * grouping elements into batches (windowing functions);
  * de-duplicating consecutively similar elements; incremental accumulation
- * functions; incremental reordering functions, etc.  The class
+ * functions (prefix scan); incremental reordering functions, etc.  The class
  * {@link java.util.stream.Gatherers} provides implementations of common
  * gathering operations.
  *
@@ -51,7 +53,8 @@ import java.util.function.Supplier;
  * <p>A {@code Gatherer} is specified by four functions that work together to
  * process input elements, optionally using intermediate state, and optionally
  * perform a final operation at the end of input.  They are: <ul>
- *     <li>creation of a new, potentially mutable, state ({@link #initializer()})</li>
+ *     <li>creating a new, potentially mutable, state ({@link #initializer()}
+ *     )</li>
  *     <li>integrating a new input element ({@link #integrator()})</li>
  *     <li>combining two states into one ({@link #combiner()})</li>
  *     <li>performing an optional final operation ({@link #finisher()})</li>
@@ -121,10 +124,7 @@ import java.util.function.Supplier;
  *     BiFunction<? super R, ? super T, ? extends R> scanner) {
  *
  *     class State {
- *         R current;
- *         State() {
- *             current = initial.get();
- *         }
+ *         R current = initial.get();
  *     }
  *
  *     return Gatherer.<T, State, R>ofSequential(
@@ -168,7 +168,7 @@ import java.util.function.Supplier;
  *     evaluated sequentially. All other combiners allow the operation to be
  *     parallelized by initializing each partition in separation, invoking
  *     the integrator until it returns {@code false}, and then joining each
- *     partitions state using the combiner, and then invoking the finalizer on
+ *     partitions state using the combiner, and then invoking the finisher on
  *     the joined state. Outputs and state later in the input sequence will
  *     be discarded if processing an earlier segment short-circuits.</li>
  *     <li>Gatherers whose finisher is {@link #defaultFinisher()} are considered
@@ -495,8 +495,8 @@ public interface Gatherer<T, A, R> {
      * optionally using the supplied state, and optionally sends incremental
      * results downstream.
      *
-     * @param <A> the type of elements this integrator receives
-     * @param <T> the type of initializer this integrator consumes
+     * @param <A> the type of state used by this integrator
+     * @param <T> the type of elements this integrator consumes
      * @param <R> the type of results this integrator can produce
      */
     @FunctionalInterface

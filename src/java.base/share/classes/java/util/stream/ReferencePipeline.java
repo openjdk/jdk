@@ -90,7 +90,9 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * Constructor for appending an intermediate operation onto an existing
      * pipeline.
      *
-     * @param upstream the upstream element source.
+     * @param upstream the upstream element source
+     * @param opFlags The operation flags for this operation, described in
+     *        {@link StreamOpFlag}
      */
     ReferencePipeline(AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
         super(upstream, opFlags);
@@ -100,7 +102,10 @@ abstract class ReferencePipeline<P_IN, P_OUT>
       * Constructor for appending an intermediate operation onto an existing
       * pipeline.
       *
-      * @param upstream the upstream element source.
+      * @param upupstream the upstream of the upstream element source
+      * @param upstream the upstream element source
+      * @param opFlags The operation flags for this operation, described in
+      *        {@link StreamOpFlag}
       */
      protected ReferencePipeline(AbstractPipeline<?, P_IN, ?> upupstream, AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
          super(upupstream, upstream, opFlags);

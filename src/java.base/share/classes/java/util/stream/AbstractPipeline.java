@@ -188,9 +188,13 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * Constructor for appending an intermediate operation stage onto an
      * existing pipeline.
      *
+     * The previous stage must be unlinked and unconsumed.
+     *
      * @param previousStage the upstream pipeline stage
      * @param opFlags the operation flags for the new stage, described in
      * {@link StreamOpFlag}
+     * @throws IllegalStateException if previousStage is already linked or
+     * consumed
      */
     AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed)
@@ -213,6 +217,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param previousStage the upstream pipeline stage
      * @param opFlags the operation flags for the new stage, described in
      * {@link StreamOpFlag}
+     * @throws IllegalStateException if previousStage is already linked or
+     * consumed
      */
     protected AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousPreviousStage, AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed || !previousPreviousStage.linkedOrConsumed || previousPreviousStage.nextStage != previousStage || previousStage.previousStage != previousPreviousStage)
