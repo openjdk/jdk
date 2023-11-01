@@ -407,8 +407,10 @@ public:
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j <= i; j++)
-        new (&this->_data[j]) E(args...);
+      for (int j = this->_len; j <= i; j++) {
+        this->_data[j].~E();
+        ::new (&this->_data[j]) E(args...);
+      }
       this->_len = i + 1;
     }
     return this->_data[i];
@@ -419,8 +421,10 @@ public:
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j < i; j++)
-        new (&this->_data[j]) E(args...);
+      for (int j = this->_len; j < i; j++) {
+        this->_data[j].~E();
+        ::new (&this->_data[j]) E(args...);
+      }
       this->_len = i+1;
     }
     this->_data[i] = elem;
