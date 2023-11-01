@@ -32,7 +32,6 @@
  * called from Class1, then acquiring ZipFile during the search for a class
  * triggered from JNI.
  */
-
 import java.lang.*;
 
 public class LoadLibraryDeadlock {
@@ -45,6 +44,7 @@ public class LoadLibraryDeadlock {
                     // an instance of unsigned class that loads a native library
                     Class<?> c1 = Class.forName("Class1");
                     Object o = c1.newInstance();
+                    System.out.println("Class1 loaded from " + getLocation(c1));
                 } catch (ClassNotFoundException |
                          InstantiationException |
                          IllegalAccessException e) {
@@ -58,7 +58,7 @@ public class LoadLibraryDeadlock {
                 try {
                     // load a class from a signed jar, which locks the JarFile
                     Class<?> c2 = Class.forName("p.Class2");
-                    System.out.println("Signed jar loaded.");
+                    System.out.println("Class2 loaded from " + getLocation(c2));
                 } catch (ClassNotFoundException e) {
                     System.out.println("Class Class2 not found.");
                     throw new RuntimeException(e);
@@ -73,5 +73,11 @@ public class LoadLibraryDeadlock {
         } catch (InterruptedException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static String getLocation(Class<?> c) {
+        var pd = c.getProtectionDomain();
+        var cs = pd != null ? pd.getCodeSource() : null;
+        return cs != null ? cs.getLocation().getPath() : null;
     }
 }

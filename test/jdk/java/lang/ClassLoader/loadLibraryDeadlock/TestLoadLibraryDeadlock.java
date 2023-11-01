@@ -34,15 +34,17 @@
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.*;
 import jdk.test.lib.util.FileUtils;
 
 import java.lang.ProcessBuilder;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.io.*;
 import java.util.*;
 import java.util.spi.ToolProvider;
+
+import static jdk.test.lib.process.ProcessTools.*;
 
 public class TestLoadLibraryDeadlock {
 
@@ -107,15 +109,6 @@ public class TestLoadLibraryDeadlock {
         );
     }
 
-    private static OutputAnalyzer runJavaCommand(String... command) throws Throwable {
-        String java = JDKToolFinder.getJDKTool("java");
-        List<String> commands = new ArrayList<>();
-        Collections.addAll(commands, java);
-        Collections.addAll(commands, Utils.getTestJavaOpts());
-        Collections.addAll(commands, command);
-        return runCommand(new File(testClassPath), commands.toArray(new String[0]));
-    }
-
     private final static long countLines(OutputAnalyzer output, String string) {
         return output.asLines()
                      .stream()
@@ -123,22 +116,17 @@ public class TestLoadLibraryDeadlock {
                      .count();
     }
 
-    private final static void dump(OutputAnalyzer output) {
-        output.asLines()
-              .stream()
-              .forEach(s -> System.out.println(s));
-    }
-
     public static void main(String[] args) throws Throwable {
         genKey()
                 .shouldHaveExitValue(0);
 
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "a.jar"));
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "b.jar"));
-        FileUtils.deleteFileIfExistsWithRetry(
-                Paths.get(testClassPath, "c.jar"));
+        Path aJar = Path.of(testClassPath, "a.jar");
+        Path bJar = Path.of(testClassPath, "b.jar");
+        Path cJar = Path.of(testClassPath, "c.jar");
+
+        FileUtils.deleteFileIfExistsWithRetry(aJar);
+        FileUtils.deleteFileIfExistsWithRetry(bJar);
+        FileUtils.deleteFileIfExistsWithRetry(cJar);
 
         createJar("a.jar",
                 "LoadLibraryDeadlock.class",
@@ -155,15 +143,12 @@ public class TestLoadLibraryDeadlock {
                 .shouldHaveExitValue(0);
 
         // load trigger class
-        OutputAnalyzer outputAnalyzer = runJavaCommand("-cp",
-                "a.jar" + classPathSeparator +
-                "b.jar" + classPathSeparator +
-                "c.jar",
+        OutputAnalyzer outputAnalyzer = executeCommand(createTestJavaProcessBuilder("-cp",
+                aJar.toString() + classPathSeparator +
+                bJar.toString() + classPathSeparator +
+                cJar.toString(),
                 "-Djava.library.path=" + testLibraryPath,
-                "LoadLibraryDeadlock");
-        // dump available output
-        dump(outputAnalyzer);
-
+                "LoadLibraryDeadlock"));
         outputAnalyzer.shouldHaveExitValue(0);
 
         Asserts.assertTrue(
@@ -184,8 +169,12 @@ public class TestLoadLibraryDeadlock {
                 "Unable to load native library.");
 
         Asserts.assertTrue(
-                countLines(outputAnalyzer, "Signed jar loaded.") > 0,
-                "Unable to load signed jar.");
+                countLines(outputAnalyzer, "Class1 loaded from " + bJar) > 0,
+                "Unable to load b.jar.");
+
+        Asserts.assertTrue(
+                countLines(outputAnalyzer, "Class2 loaded from " + cJar) > 0,
+                "Unable to load signed c.jar.");
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Signed jar loaded from native library.") > 0,
