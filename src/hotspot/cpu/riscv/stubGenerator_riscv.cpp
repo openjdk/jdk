@@ -4542,8 +4542,14 @@ class StubGenerator: public StubCodeGenerator {
       // four bits of R_0 and R_1 are zero, we can add together
       // partial products without any risk of needing to propagate a
       // carry out.
-      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1, tmp1, tmp2); wide_madd(U_0, U_0HI, S_2, RR_0, tmp1, tmp2);
-      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0, tmp1, tmp2);  wide_madd(U_1, U_1HI, S_2, RR_1, tmp1, tmp2);
+      wide_mul(U_0, U_0HI, S_0, R_0);
+      wide_madd(U_0, U_0HI, S_1, RR_1, tmp1, tmp2);
+      wide_madd(U_0, U_0HI, S_2, RR_0, tmp1, tmp2);
+
+      wide_mul(U_1, U_1HI, S_0, R_1);
+      wide_madd(U_1, U_1HI, S_1, R_0, tmp1, tmp2);
+      wide_madd(U_1, U_1HI, S_2, RR_1, tmp1, tmp2);
+
       __ andi(U_2, R_0, 3);
       __ mul(U_2, S_2, U_2);
 
