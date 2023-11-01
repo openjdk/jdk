@@ -510,10 +510,6 @@ enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
 [[noreturn]]
 static void exit_process_or_thread(Ept what, int code);
 
-// The handler passed to _beginthreadex().
-// Called with the associated Thread* as the argument.
-static unsigned __stdcall thread_native_entry(void*);
-
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
