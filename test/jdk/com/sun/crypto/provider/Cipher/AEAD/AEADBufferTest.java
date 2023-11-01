@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,18 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 
-public class GCMBufferTest implements Cloneable {
+public class AEADBufferTest implements Cloneable {
 
     // Data type for the operation
     enum dtype { BYTE, HEAP, DIRECT };
@@ -52,7 +54,7 @@ public class GCMBufferTest implements Cloneable {
     // List of enum values for order of operation
     List<dtype> ops;
 
-    static final int AESBLOCK = 16;
+    static final String AES = "AES";
     // The remaining input data length is inserted at the particular index
     // in sizes[] during execution.
     static final int REMAINDER = -1;
@@ -71,20 +73,16 @@ public class GCMBufferTest implements Cloneable {
         int id;
         SecretKey key;
         byte[] iv;
+        int counter;  // for CC20
         byte[] pt;
         byte[] aad;
         byte[] ct;
         byte[] tag;
+        int blockSize;  // 16 for GCM, 0 for CC20
 
         Data(String keyalgo, int id, String key, String iv, byte[] pt, String aad,
             String ct, String tag) {
-            this.id = id;
-            this.key = new SecretKeySpec(HexToBytes(key), keyalgo);
-            this.iv = HexToBytes(iv);
-            this.pt = pt;
-            this.aad = HexToBytes(aad);
-            this.ct = HexToBytes(ct);
-            this.tag = HexToBytes(tag);
+            this(keyalgo, id, key, iv, 0,pt, aad, ct,tag);
         }
 
         Data(String keyalgo, int id, String key, String iv, String pt, String aad,
@@ -92,21 +90,42 @@ public class GCMBufferTest implements Cloneable {
             this(keyalgo, id, key, iv, HexToBytes(pt), aad, ct, tag);
         }
 
-        Data(String keyalgo, int id, String key, int ptlen) {
+        Data(String keyalgo, int id, String key, String iv, int counter, byte[] pt, String aad,
+            String ct, String tag) {
             this.id = id;
             this.key = new SecretKeySpec(HexToBytes(key), keyalgo);
-            iv = new byte[16];
+            this.iv = HexToBytes(iv);
+            this.counter = counter;
+            this.pt = pt;
+            this.aad = HexToBytes(aad);
+            this.ct = HexToBytes(ct);
+            this.tag = HexToBytes(tag);
+            this.blockSize = (keyalgo.equals(AES) ? 16 : 0);
+        }
+
+        Data(String keyalgo, int id, String key, String iv, int counter, String pt, String aad,
+            String ct, String tag) {
+            this(keyalgo, id, key, iv, counter, HexToBytes(pt), aad, ct, tag);
+        }
+
+        Data(String keyalgo, int id, String key, int ivLen, int ptlen) {
+            this.id = id;
+            this.key = new SecretKeySpec(HexToBytes(key), keyalgo);
+            iv = new byte[ivLen];
+            counter = 0;
             pt = new byte[ptlen];
-            tag = new byte[12];
+            tag = new byte[16];
             aad = new byte[0];
+            boolean isGCM = keyalgo.equals(AES);
+            this.blockSize = (isGCM ? 16 : 0);
             byte[] tct = null;
             try {
                 SecureRandom r = new SecureRandom();
                 r.nextBytes(iv);
                 r.nextBytes(pt);
-                Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+                Cipher c = Cipher.getInstance(isGCM ? "AES/GCM/NoPadding": "ChaCha20-Poly1305");
                 c.init(Cipher.ENCRYPT_MODE, this.key,
-                    new GCMParameterSpec(tag.length * 8, this.iv));
+                    getAPS(keyalgo, tag.length, iv));
                 tct = c.doFinal(pt);
             } catch (Exception e) {
                 throw new RuntimeException("Error in generating data for length " +
@@ -117,7 +136,7 @@ public class GCMBufferTest implements Cloneable {
             System.arraycopy(tct, ct.length, tag, 0, tag.length);
         }
 
-        private static final byte[] HexToBytes(String hexVal) {
+        private static byte[] HexToBytes(String hexVal) {
             if (hexVal == null) {
                 return new byte[0];
             }
@@ -133,15 +152,15 @@ public class GCMBufferTest implements Cloneable {
      *            doFinal operation will occur.  If multiple dtypes are
      *            specified, the last is a doFinal, the others are updates.
      */
-    GCMBufferTest(String algo, List<dtype> ops) {
+    AEADBufferTest(String algo, List<dtype> ops) {
         this.algo = algo;
         this.ops = ops;
         theoreticalCheck = true;
         dataSet = datamap.get(algo);
     }
 
-    public GCMBufferTest clone() throws CloneNotSupportedException{
-        return (GCMBufferTest)super.clone();
+    public AEADBufferTest clone() throws CloneNotSupportedException{
+        return (AEADBufferTest)super.clone();
     }
 
     /**
@@ -150,7 +169,7 @@ public class GCMBufferTest implements Cloneable {
      * that index during execution.
      * @param sizes Data sizes for each dtype in the list.
      */
-    GCMBufferTest dataSegments(int[] sizes) {
+    AEADBufferTest dataSegments(int[] sizes) {
         this.sizes = sizes;
         return this;
     }
@@ -158,7 +177,7 @@ public class GCMBufferTest implements Cloneable {
     /**
      * Do not perform in-place operations
      */
-    GCMBufferTest differentBufferOnly() {
+    AEADBufferTest differentBufferOnly() {
         this.same = false;
         return this;
     }
@@ -167,7 +186,7 @@ public class GCMBufferTest implements Cloneable {
      * Enable incrementing through each data size available.  This can only be
      * used when the List has more than one dtype entry.
      */
-    GCMBufferTest incrementalSegments() {
+    AEADBufferTest incrementalSegments() {
         this.incremental = true;
         return this;
     }
@@ -177,7 +196,7 @@ public class GCMBufferTest implements Cloneable {
      *
      * @param id id value for the test data to used in this test.
      */
-    GCMBufferTest dataSet(int id) throws Exception {
+    AEADBufferTest dataSet(int id) throws Exception {
         for (Data d : datamap.get(algo)) {
             if (d.id == id) {
                 dataSet = List.of(d);
@@ -192,7 +211,7 @@ public class GCMBufferTest implements Cloneable {
      * @param offset value for inOfs and outOfs
      * @return
      */
-    GCMBufferTest offset(int offset) {
+    AEADBufferTest offset(int offset) {
         this.inOfs = offset;
         this.outOfs = offset;
         return this;
@@ -201,9 +220,8 @@ public class GCMBufferTest implements Cloneable {
     /**
      * Set the input offset
      * @param offset value for input offset
-     * @return
      */
-    GCMBufferTest inOfs(int offset) {
+    AEADBufferTest inOfs(int offset) {
         this.inOfs = offset;
         return this;
     }
@@ -211,9 +229,8 @@ public class GCMBufferTest implements Cloneable {
     /**
      * Set the output offset
      * @param offset value for output offset
-     * @return
      */
-    GCMBufferTest outOfs(int offset) {
+    AEADBufferTest outOfs(int offset) {
         this.outOfs = offset;
         return this;
     }
@@ -313,7 +330,7 @@ public class GCMBufferTest implements Cloneable {
         // Test with in-place buffers
         if (same) {
             System.err.println("\tinput len: " + input.length + "  inOfs " +
-            inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
+                inOfs + "  outOfs " + outOfs + "  in/out buffer: in-place");
             cryptoSameBuffer(true, data, input, output);
         }
     }
@@ -335,31 +352,40 @@ public class GCMBufferTest implements Cloneable {
         // Test with in-place buffers
         if (same) {
             System.err.println("\tinput len: " + input.length + "  inOfs " +
-            inOfs + "  outOfs " + outOfs + "  in-place: same");
+                inOfs + "  outOfs " + outOfs + "  in-place: same");
             cryptoSameBuffer(false, data, input, output);
         }
+    }
+
+    static AlgorithmParameterSpec getAPS(String algo, int tLen, byte[] iv) {
+        return switch (algo) {
+            case "AES", "AES/GCM/NoPadding" ->
+                new GCMParameterSpec(tLen * 8, iv);
+            case "CC20", "ChaCha20-Poly1305" -> new IvParameterSpec(iv);
+            default -> null;
+        };
     }
 
     /**
      * Perform cipher operation using different input and output buffers.
      *   This method allows mixing of data types (byte, heap, direct).
      */
-     void crypto(boolean encrypt, Data d, byte[] input, byte[] output)
-         throws Exception {
+    void crypto(boolean encrypt, Data d, byte[] input, byte[] output)
+        throws Exception {
         byte[] pt = new byte[input.length + inOfs];
         System.arraycopy(input, 0, pt, inOfs, input.length);
-         byte[] expectedOut = new byte[output.length + outOfs];
-         System.arraycopy(output, 0, expectedOut, outOfs, output.length);
+        byte[] expectedOut = new byte[output.length + outOfs];
+        System.arraycopy(output, 0, expectedOut, outOfs, output.length);
         int plen = input.length / ops.size(); // partial input length
         int theoreticallen;// expected output length
         int dataoffset = 0; // offset of unconsumed data in pt
         int index = 0; // index of which op we are on
         int rlen; // result length
-        int pbuflen = 0; // plen remaining in the GCM internal buffers
+        int pbuflen = 0; // plen remaining in the internal buffers
 
         Cipher cipher = Cipher.getInstance(algo);
         cipher.init((encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE),
-            d.key, new GCMParameterSpec(d.tag.length * 8, d.iv));
+            d.key, getAPS(algo, d.tag.length, d.iv));
         cipher.updateAAD(d.aad);
 
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
@@ -382,10 +408,11 @@ public class GCMBufferTest implements Cloneable {
 
                 /*
                  * The theoretical limit is the length of the data sent to
-                 * update() + any data might be setting in CipherCore or GCM
+                 * update() + any data might be setting in CipherCore or AEAD
                  * internal buffers % the block size.
                  */
-                theoreticallen = (plen + pbuflen) - ((plen + pbuflen) % AESBLOCK);
+                theoreticallen = (plen + pbuflen) - (d.blockSize > 0 ?
+                    (plen + pbuflen) % d.blockSize : 0);
 
                 // Update operations
                 switch (v) {
@@ -525,7 +552,8 @@ public class GCMBufferTest implements Cloneable {
         byte[] expectedOut = new byte[output.length + outOfs];
         System.arraycopy(output, 0, expectedOut, outOfs, output.length);
         int plen = input.length / ops.size(); // partial input length
-        int theorticallen = plen - (plen % AESBLOCK); // output length
+        int theorticallen = plen -
+            (d.blockSize > 0 ? plen % d.blockSize : 0);  // output length
         int dataoffset = 0;
         int index = 0;
         int rlen = 0; // result length
@@ -533,7 +561,7 @@ public class GCMBufferTest implements Cloneable {
 
         Cipher cipher = Cipher.getInstance(algo);
         cipher.init((encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE),
-            d.key, new GCMParameterSpec(d.tag.length * 8, d.iv));
+            d.key, getAPS(algo, d.tag.length, d.iv));
         cipher.updateAAD(d.aad);
 
         // Prepare data
@@ -567,8 +595,8 @@ public class GCMBufferTest implements Cloneable {
                             data, len + outOfs);
                     }
                     case HEAP, DIRECT -> {
-                        theorticallen = bbin.remaining() -
-                            (bbin.remaining() % AESBLOCK);
+                        theorticallen = bbin.remaining() - (d.blockSize > 0 ?
+                            bbin.remaining() % d.blockSize : 0);
                         rlen = cipher.update(bbin, bbout);
                     }
                     default -> throw new Exception("Unknown op: " + v.name());
@@ -620,7 +648,7 @@ public class GCMBufferTest implements Cloneable {
             }
         }
     }
-    static void offsetTests(GCMBufferTest t) throws Exception {
+    static void offsetTests(AEADBufferTest t) throws Exception {
         t.clone().offset(2).test();
         t.clone().inOfs(2).test();
         // Test not designed for overlap situations
@@ -628,105 +656,202 @@ public class GCMBufferTest implements Cloneable {
     }
 
     public static void main(String args[]) throws Exception {
-        GCMBufferTest t;
+        AEADBufferTest t;
 
         initTest();
 
+        // **** GCM Tests
+
         // Test single byte array
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
+        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
         // Test update-doFinal with byte arrays
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)));
+        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)).test();
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)));
         // Test update-update-doFinal with byte arrays
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
 
         // Test single heap bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)));
+        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)));
         // Test update-doFinal with heap bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP)));
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP)));
         // Test update-update-doFinal with heap bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
 
         // Test single direct bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)));
+        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)));
         // Test update-doFinal with direct bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding",
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT)));
         // Test update-update-doFinal with direct bytebuffer
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new GCMBufferTest("AES/GCM/NoPadding",
+        offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
 
         // Test update-update-doFinal with byte arrays and preset data sizes
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
-            new int[] { 1, 1, GCMBufferTest.REMAINDER});
+            new int[] { 1, 1, AEADBufferTest.REMAINDER});
         t.clone().test();
         offsetTests(t.clone());
 
         // Test update-doFinal with a byte array and a direct bytebuffer
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
         t.clone().test();
         offsetTests(t.clone());
         // Test update-doFinal with a byte array and heap and direct bytebuffer
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
         t.clone().test();
         offsetTests(t.clone());
 
         // Test update-doFinal with a direct bytebuffer and a byte array.
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
         t.clone().test();
         offsetTests(t.clone());
 
         // Test update-doFinal with a direct bytebuffer and a byte array with
         // preset data sizes.
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
-            dataSegments(new int[] { 20, GCMBufferTest.REMAINDER });
+            dataSegments(new int[] { 20, AEADBufferTest.REMAINDER });
         t.clone().test();
         offsetTests(t.clone());
         // Test update-update-doFinal with a direct and heap bytebuffer and a
         // byte array with preset data sizes.
-        t = new GCMBufferTest("AES/GCM/NoPadding",
+        t = new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
             differentBufferOnly().dataSet(5).
-            dataSegments(new int[] { 5000, 1000, GCMBufferTest.REMAINDER });
+            dataSegments(new int[] { 5000, 1000, AEADBufferTest.REMAINDER });
         t.clone().test();
         offsetTests(t.clone());
 
         // Test update-update-doFinal with byte arrays, incrementing through
         // every data size combination for the Data set 0
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
             dataSet(0).test();
         // Test update-update-doFinal with direct bytebuffers, incrementing through
         // every data size combination for the Data set 0
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
             incrementalSegments().dataSet(0).test();
 
-        new GCMBufferTest("AES/GCM/NoPadding",
+        new AEADBufferTest("AES/GCM/NoPadding",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+            dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
+
+        // **** CC20P1305 Tests
+
+        // Test single byte array
+        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)));
+        // Test update-doFinal with byte arrays
+        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)));
+        // Test update-update-doFinal with byte arrays
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
+
+        // Test single heap bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)));
+        // Test update-doFinal with heap bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.HEAP, dtype.HEAP)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP)));
+        // Test update-update-doFinal with heap bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
+
+        // Test single direct bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)));
+        // Test update-doFinal with direct bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.DIRECT)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.DIRECT)));
+        // Test update-update-doFinal with direct bytebuffer
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
+        offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
+
+        // Test update-update-doFinal with byte arrays and preset data sizes
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
+            new int[] { 1, 1, AEADBufferTest.REMAINDER});
+        t.clone().test();
+        offsetTests(t.clone());
+
+        // Test update-doFinal with a byte array and a direct bytebuffer
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
+        // Test update-doFinal with a byte array and heap and direct bytebuffer
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
+
+        // Test update-doFinal with a direct bytebuffer and a byte array.
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
+        t.clone().test();
+        offsetTests(t.clone());
+
+        // Test update-doFinal with a direct bytebuffer and a byte array with
+        // preset data sizes.
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
+            dataSegments(new int[] { 20, AEADBufferTest.REMAINDER });
+        t.clone().test();
+        offsetTests(t.clone());
+        // Test update-update-doFinal with a direct and heap bytebuffer and a
+        // byte array with preset data sizes.
+        t = new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
+            differentBufferOnly().dataSet(1).
+            dataSegments(new int[] { 5000, 1000, AEADBufferTest.REMAINDER });
+        t.clone().test();
+        offsetTests(t.clone());
+
+        // Test update-update-doFinal with byte arrays, incrementing through
+        // every data size combination for the Data set 0
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
+            dataSet(0).test();
+        // Test update-update-doFinal with direct bytebuffers, incrementing through
+        // every data size combination for the Data set 0
+        new AEADBufferTest("ChaCha20-Poly1305",
+            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+            incrementalSegments().dataSet(0).test();
+
+        new AEADBufferTest("ChaCha20-Poly1305",
             List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
             dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
     }
 
     // Test data
     static void initTest() {
+
         datamap.put("AES/GCM/NoPadding", List.of(
             // GCM KAT
             new Data("AES", 0,
@@ -746,12 +871,12 @@ public class GCMBufferTest implements Cloneable {
             // GCM KAT
             new Data("AES", 1, "11754cd72aec309bf52f7687212e8957",
                 "3c819d9a9bed087615030b65",
-                (String)null, null, null,
+                new byte[0], null, null,
                 "250327c674aaf477aef2675748cf6971"),
             // GCM KAT
             new Data("AES", 2, "272f16edb81a7abbea887357a58c1917",
                 "794ec588176c703d3d2a7a07",
-                (String)null, null, null,
+                new byte[0], null, null,
                 "b6e6f197168f5049aeda32dafbdaeb"),
             // zero'd test data
             new Data("AES", 3, "272f16edb81a7abbea887357a58c1917",
@@ -836,8 +961,27 @@ public class GCMBufferTest implements Cloneable {
                 "5effdf847472992875e09398457604d04e0bb965db692c0cdcf11a",
                 "687cc09c89298491deb51061d709af"),
             // Randomly generated data at the time of execution.
-            new Data("AES", 5, "11754cd72aec309bf52f7687212e8957", 12345)
-            )
-        );
+            new Data("AES", 5, "11754cd72aec309bf52f7687212e8957",
+                16, 12345)));
+
+        datamap.put("ChaCha20-Poly1305", List.of(
+            new Data("CC20", 0,
+                "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+                "070000004041424344454647",
+                1,
+                "4c616469657320616e642047656e746c656d656e206f662074686520636c6173" +
+                "73206f66202739393a204966204920636f756c64206f6666657220796f75206f" +
+                "6e6c79206f6e652074697020666f7220746865206675747572652c2073756e73" +
+                "637265656e20776f756c642062652069742e",
+                "50515253c0c1c2c3c4c5c6c7",
+                "d31a8d34648e60db7b86afbc53ef7ec2a4aded51296e08fea9e2b5a736ee62d6" +
+                "3dbea45e8ca9671282fafb69da92728b1a71de0a9e060b2905d6a5b67ecd3b36" +
+                "92ddbd7f2d778b8c9803aee328091b58fab324e4fad675945585808b4831d7bc" +
+                "3ff4def08e4b7a9de576d26586cec64b61161ae10b59",
+                "4f09e26a7e902ecbd0600691"),
+                // Randomly generated data at the time of execution.
+            new Data("CC20", 1,
+                "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+                12, 12345)));
     }
 }
