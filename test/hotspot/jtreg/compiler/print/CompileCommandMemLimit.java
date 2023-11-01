@@ -40,7 +40,7 @@
 /*
  * @test id=c1_stop
  * @requires vm.compiler1.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes compilation to stop
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes compilation to stop
  * @library /test/lib
  * @run driver compiler.print.CompileCommandMemLimit stop false
  */
