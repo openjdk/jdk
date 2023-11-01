@@ -4493,10 +4493,10 @@ class StubGenerator: public StubCodeGenerator {
     RegSet saved_regs = RegSet::range(x18, x25);
     __ push_reg(saved_regs, sp);
 
-    RegSetIterator<Register> regs = RegSet::range(x10, x31).begin();
+    RegSetIterator<Register> regs = RegSet::range(x14, x31).begin();
 
     // Arguments
-    const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+    const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
     // Temporal registers
     const Register tmp1 = t0, tmp2 = t1, tmp3 = t2;
 
