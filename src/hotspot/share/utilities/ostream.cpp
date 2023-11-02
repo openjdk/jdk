@@ -1027,17 +1027,12 @@ void bufferedStream::write(const char* s, size_t len) {
       if (end < buffer_length * 2) {
         end = buffer_length * 2;
       }
-      // Impose a cap beyond which the buffer cannot grow - a size which
-      // in all probability indicates a real error, e.g. faulty printing
-      // code looping, while not affecting cases of just-very-large-but-its-normal
-      // output.
+      // We assume that child classes will override flush() and drain the buffer. In case
+      // they don't, or in case bufferedStream is used directly, the buffer will never be
+      // drained. In that case, impose a maximum cap beyond which the buffer would never
+      // grow. Truncate any output beyond that cap.
       const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
       if (end > reasonable_cap) {
-        // In debug VM, assert right away.
-        assert(false, "Exceeded max buffer size for this string.");
-        // Release VM: silently truncate. We do this since these kind of errors
-        // are both difficult to predict with testing (depending on logging content)
-        // and usually not serious enough to kill a production VM for it.
         end = reasonable_cap;
         size_t remaining = end - buffer_pos;
         if (len >= remaining) {

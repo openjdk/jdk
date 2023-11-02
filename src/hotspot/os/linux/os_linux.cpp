@@ -1902,7 +1902,7 @@ static bool _print_ascii_file(const char* filename, outputStream* st, unsigned* 
   ssize_t bytes;
   buf[32] = '\0';
   unsigned lines = 0;
-  while ((bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
+  while (!st->was_truncated() && (bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
     st->print_raw(buf, bytes);
     // count newlines
     if (num_lines != nullptr) {

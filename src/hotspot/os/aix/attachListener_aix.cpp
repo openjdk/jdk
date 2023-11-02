@@ -451,6 +451,10 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
     // Shutdown the socket in the cleanup function to enable more than
     // one agent attach in a sequence (see comments to listener_cleanup()).
     AixAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+    if (st->was_truncated()) {
+      char msg [] = "\n(truncated)\n";
+      AixAttachListener::write_fully(this->socket(), msg, strlen(msg));
+    }
   }
 
   // done

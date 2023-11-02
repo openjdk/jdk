@@ -131,6 +131,9 @@ class outputStream : public CHeapObjBase {
    virtual void rotate_log(bool force, outputStream* out = nullptr) {} // GC log rotation
    virtual ~outputStream() {}   // close properly on deletion
 
+   // child classes may truncate output, e.g. in case of internal buffer exhaustion.
+   virtual bool was_truncated() const { return false; }
+
    // Caller may specify their own scratch buffer to use for printing; otherwise,
    // an automatic buffer on the stack (with O_BUFLEN len) is used.
    void set_scratch_buffer(char* p, size_t len) { _scratch = p; _scratch_len = len; }
@@ -300,6 +303,8 @@ class bufferedStream : public outputStream {
   bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);
   ~bufferedStream();
   virtual void write(const char* c, size_t len);
+  bool was_truncated() const override { return truncated; }
+  // Returns number of characters written, exclusing terminating zero.
   size_t      size() { return buffer_pos; }
   const char* base() { return buffer; }
   void  reset() { buffer_pos = 0; _precount = 0; _position = 0; }

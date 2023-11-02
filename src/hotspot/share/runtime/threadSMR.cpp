@@ -1210,7 +1210,7 @@ void ThreadsSMRSupport::print_info_on(outputStream* st) {
       print_info_elements_on(st, _to_delete_list);
       st->print_cr("}");
       for (ThreadsList *t_list = _to_delete_list->next_list();
-           t_list != nullptr; t_list = t_list->next_list()) {
+          !st->was_truncated() && t_list != nullptr; t_list = t_list->next_list()) {
         st->print("next-> " INTPTR_FORMAT ", length=%u, elements={",
                   p2i(t_list), t_list->length());
         print_info_elements_on(st, t_list);

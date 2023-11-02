@@ -418,6 +418,10 @@ void LinuxAttachOperation::complete(jint result, bufferedStream* st) {
   // write any result data
   if (rc == 0) {
     LinuxAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+    if (st->was_truncated()) {
+      char msg [] = "\n(truncated)\n";
+      LinuxAttachListener::write_fully(this->socket(), msg, strlen(msg));
+    }
     ::shutdown(this->socket(), 2);
   }
 

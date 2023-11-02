@@ -1345,7 +1345,6 @@ void VMError::report(outputStream* st, bool _verbose) {
 // crash and thread specific information.  If output is added above, it should be added
 // here also, if it is safe to call during a running process.
 void VMError::print_vm_info(outputStream* st) {
-
   char buf[O_BUFLEN];
   AIX_ONLY(LoadedLibraries::reload());
 
@@ -1413,6 +1412,7 @@ void VMError::print_vm_info(outputStream* st) {
     st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();
   }
+  if (st->was_truncated()) return;
 
   // STEP("printing metaspace information")
 
@@ -1433,12 +1433,14 @@ void VMError::print_vm_info(outputStream* st) {
 
   Events::print_all(st);
   st->cr();
+  if (st->was_truncated()) return;
 
   // STEP("printing dynamic libraries")
 
   // dynamic libraries, or memory map
   os::print_dll_info(st);
   st->cr();
+  if (st->was_truncated()) return;
 
   // STEP("printing VM options")
 

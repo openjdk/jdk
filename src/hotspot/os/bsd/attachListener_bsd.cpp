@@ -418,6 +418,10 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
   // write any result data
   if (rc == 0) {
     BsdAttachListener::write_fully(this->socket(), (char*) st->base(), st->size());
+    if (st->was_truncated()) {
+      char msg [] = "\n(truncated)\n";
+      BsdAttachListener::write_fully(this->socket(), msg, strlen(msg));
+    }
     ::shutdown(this->socket(), 2);
   }
 

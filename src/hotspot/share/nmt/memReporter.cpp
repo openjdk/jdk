@@ -320,7 +320,7 @@ int MemDetailReporter::report_malloc_sites() {
 
   const MallocSite* malloc_site;
   int num_omitted = 0;
-  while ((malloc_site = malloc_itr.next()) != nullptr) {
+  while (!output()->was_truncated() && (malloc_site = malloc_itr.next()) != nullptr) {
     // Don't report if site has never allocated less than one unit of whatever our scale is
     if (scale() > 1 && amount_in_current_scale(malloc_site->size()) == 0
                        DEBUG_ONLY(&& amount_in_current_scale(malloc_site->peak_size()) == 0)) {
@@ -348,7 +348,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
   outputStream* out = output();
   const VirtualMemoryAllocationSite*  virtual_memory_site;
   int num_omitted = 0;
-  while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
+  while (!output()->was_truncated() && (virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
     // Don't report free sites; does not count toward omitted count.
     if (virtual_memory_site->reserved() == 0) {
       continue;
@@ -378,7 +378,7 @@ void MemDetailReporter::report_virtual_memory_map() {
   const ReservedMemoryRegion* rgn;
 
   output()->print_cr("Virtual memory map:");
-  while ((rgn = itr.next()) != nullptr) {
+  while (!output()->was_truncated() && (rgn = itr.next()) != nullptr) {
     report_virtual_memory_region(rgn);
   }
 }
