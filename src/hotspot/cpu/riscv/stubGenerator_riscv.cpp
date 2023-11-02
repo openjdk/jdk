@@ -4419,7 +4419,7 @@ class StubGenerator: public StubCodeGenerator {
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
   // Pack five 26-bit limbs into three 64-bit registers.
-  void pack_26(Register dest0, Register dest1, Register dest2, Register src, Regster tmp1, Register tmp2) {
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src, Register tmp1, Register tmp2) {
     assert_different_registers(dest0, dest1, dest2, src, tmp1, tmp2);
 
     // The goal is to have 128-bit value in dest2:dest1:dest0
