@@ -40,6 +40,7 @@
                        bool is_latin, Label& DONE);
 
   void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
+  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -167,6 +168,9 @@
   // compress bits, i.e. j.l.Integer/Long::compress.
   void compress_bits_i_v(Register dst, Register src, Register mask);
   void compress_bits_l_v(Register dst, Register src, Register mask);
+  // expand bits, i.e. j.l.Integer/Long::expand.
+  void expand_bits_i_v(Register dst, Register src, Register mask);
+  void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
