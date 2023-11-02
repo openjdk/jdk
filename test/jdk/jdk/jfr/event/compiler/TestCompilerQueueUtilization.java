@@ -52,14 +52,14 @@ public class TestCompilerQueueUtilization {
             for (RecordedEvent event : events) {
                 System.out.println("Event:" + event);
                 Events.assertField(event, "compiler").notEmpty();
-                Events.assertField(event, "ingress").atLeast(0L);
-                Events.assertField(event, "egress").atLeast(0L);
-                Events.assertField(event, "size").atLeast(0L);
-                Events.assertField(event, "peak").atLeast(0L);
-                Events.assertField(event, "added").atLeast(0L);
-                Events.assertField(event, "removed").atLeast(0L);
-                Events.assertField(event, "totalAdded").atLeast(0L);
-                Events.assertField(event, "totalRemoved").atLeast(0L);
+                Events.assertField(event, "addedRate").atLeast(0L);
+                Events.assertField(event, "removedRate").atLeast(0L);
+                Events.assertField(event, "queueSize").atLeast(0L);
+                Events.assertField(event, "peakQueueSize").atLeast(0L);
+                Events.assertField(event, "addedCount").atLeast(0L);
+                Events.assertField(event, "removedCount").atLeast(0L);
+                Events.assertField(event, "totalAddedCount").atLeast(0L);
+                Events.assertField(event, "totalRemovedCount").atLeast(0L);
                 Events.assertField(event, "compilerThreadCount").atLeast(0);
             }
         }
