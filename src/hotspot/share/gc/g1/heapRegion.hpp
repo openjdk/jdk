@@ -544,7 +544,6 @@ public:
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_code_root(nmethod* nm);
-  void add_code_root_locked(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in

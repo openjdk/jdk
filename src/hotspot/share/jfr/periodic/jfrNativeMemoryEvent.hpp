@@ -26,7 +26,7 @@
 #define SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 
 #include "memory/allocation.hpp"
-#include "services/nmtUsage.hpp"
+#include "nmt/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 

@@ -34,7 +34,7 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 
 vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64
 
-serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8303168 linux-x64
+serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8303168 linux-all
 
 serviceability/sa/ClhsdbInspect.java 8283578 windows-x64
 
@@ -43,3 +43,8 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 windows-x64
 
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
+
+gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
+compiler/interpreter/TestVerifyStackAfterDeopt.java 8316392 macosx-aarch64
+
+gc/cslocker/TestCSLocker.java 8310480 linux-x64

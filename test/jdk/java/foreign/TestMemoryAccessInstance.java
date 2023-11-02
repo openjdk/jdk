@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
+ * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT=true --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
 import java.lang.foreign.MemoryLayout;

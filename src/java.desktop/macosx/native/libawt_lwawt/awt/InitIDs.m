@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,6 @@ JNIEXPORT void JNICALL Java_java_awt_AWTEvent_initIDs
 {
 }
 
-JNIEXPORT void JNICALL Java_java_awt_Button_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
 JNIEXPORT void JNICALL Java_java_awt_Checkbox_initIDs
 (JNIEnv *env, jclass cls)
 {
@@ -48,11 +43,6 @@ JNIEXPORT void JNICALL Java_java_awt_CheckboxMenuItem_initIDs
 }
 
 JNIEXPORT void JNICALL Java_java_awt_Choice_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
-JNIEXPORT void JNICALL Java_java_awt_Color_initIDs
 (JNIEnv *env, jclass cls)
 {
 }
@@ -87,11 +77,6 @@ JNIEXPORT void JNICALL Java_java_awt_Event_initIDs
 {
 }
 
-JNIEXPORT void JNICALL Java_java_awt_FileDialog_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
 JNIEXPORT void JNICALL Java_java_awt_Font_initIDs
 (JNIEnv *env, jclass cls)
 {
@@ -108,11 +93,6 @@ JNIEXPORT void JNICALL Java_java_awt_Frame_initIDs
 }
 
 JNIEXPORT void JNICALL Java_java_awt_Insets_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
-JNIEXPORT void JNICALL Java_java_awt_KeyboardFocusManager_initIDs
 (JNIEnv *env, jclass cls)
 {
 }
@@ -142,11 +122,6 @@ JNIEXPORT void JNICALL Java_java_awt_MenuItem_initIDs
 {
 }
 
-JNIEXPORT void JNICALL Java_java_awt_Rectangle_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
 JNIEXPORT void JNICALL Java_java_awt_ScrollPane_initIDs
 (JNIEnv *env, jclass cls)
 {
@@ -163,11 +138,6 @@ JNIEXPORT void JNICALL Java_java_awt_Scrollbar_initIDs
 }
 
 JNIEXPORT void JNICALL Java_java_awt_TextArea_initIDs
-(JNIEnv *env, jclass cls)
-{
-}
-
-JNIEXPORT void JNICALL Java_java_awt_TextField_initIDs
 (JNIEnv *env, jclass cls)
 {
 }

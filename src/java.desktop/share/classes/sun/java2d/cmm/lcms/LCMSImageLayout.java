@@ -42,7 +42,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 final class LCMSImageLayout {
 
-    static int BYTES_SH(int x) {
+    private static int BYTES_SH(int x) {
         return x;
     }
 
@@ -50,13 +50,11 @@ final class LCMSImageLayout {
         return x << 7;
     }
 
-    static int CHANNELS_SH(int x) {
+    private static int CHANNELS_SH(int x) {
         return x << 3;
     }
 
-    static int PREMUL_SH(int x) {
-        return x << 23;
-    }
+    private static final int PREMUL     = 1 << 23;
     private static final int SWAPFIRST  = 1 << 14;
     private static final int DOSWAP     = 1 << 10;
     private static final int PT_GRAY_8        = CHANNELS_SH(1) | BYTES_SH(1);
@@ -64,10 +62,10 @@ final class LCMSImageLayout {
     private static final int PT_RGB_8         = CHANNELS_SH(3) | BYTES_SH(1);
     private static final int PT_RGBA_8        = PT_RGB_8  | EXTRA_SH(1);
     private static final int PT_ARGB_8        = PT_RGBA_8 | SWAPFIRST;
-    private static final int PT_ARGB_8_PREMUL = PT_ARGB_8 | PREMUL_SH(1);
+    private static final int PT_ARGB_8_PREMUL = PT_ARGB_8 | PREMUL;
     private static final int PT_BGR_8         = PT_RGB_8  | DOSWAP;
     private static final int PT_ABGR_8        = PT_BGR_8  | EXTRA_SH(1);
-    private static final int PT_ABGR_8_PREMUL = PT_ABGR_8 | PREMUL_SH(1);
+    private static final int PT_ABGR_8_PREMUL = PT_ABGR_8 | PREMUL;
 //  private static final int PT_BGRA_8        = PT_ABGR_8 | SWAPFIRST;
     private static final int SWAP_ENDIAN =
             ByteOrder.nativeOrder() == LITTLE_ENDIAN ? DOSWAP : 0;
@@ -186,7 +184,8 @@ final class LCMSImageLayout {
                 l.dataArrayLength = 4 * intRaster.getDataStorage().length;
                 l.dataType = DT_INT;
             }
-            case BufferedImage.TYPE_3BYTE_BGR, BufferedImage.TYPE_4BYTE_ABGR,
+            case BufferedImage.TYPE_BYTE_GRAY, BufferedImage.TYPE_3BYTE_BGR,
+                 BufferedImage.TYPE_4BYTE_ABGR,
                  BufferedImage.TYPE_4BYTE_ABGR_PRE ->
             {
                 var byteRaster = (ByteComponentRaster) image.getRaster();
@@ -194,15 +193,6 @@ final class LCMSImageLayout {
                 l.nextPixelOffset = byteRaster.getPixelStride();
                 int firstBand = byteRaster.getSampleModel().getNumBands() - 1;
                 l.offset = byteRaster.getDataOffset(firstBand);
-                l.dataArray = byteRaster.getDataStorage();
-                l.dataArrayLength = byteRaster.getDataStorage().length;
-                l.dataType = DT_BYTE;
-            }
-            case BufferedImage.TYPE_BYTE_GRAY -> {
-                var byteRaster = (ByteComponentRaster) image.getRaster();
-                l.nextRowOffset = byteRaster.getScanlineStride();
-                l.nextPixelOffset = byteRaster.getPixelStride();
-                l.offset = byteRaster.getDataOffset(0);
                 l.dataArray = byteRaster.getDataStorage();
                 l.dataArrayLength = byteRaster.getDataStorage().length;
                 l.dataType = DT_BYTE;
@@ -297,7 +287,7 @@ final class LCMSImageLayout {
             l.pixelType = (hasAlpha ? CHANNELS_SH(numBands - 1) | EXTRA_SH(1)
                                     : CHANNELS_SH(numBands)) | BYTES_SH(1);
             if (hasAlpha && cm.isAlphaPremultiplied()) {
-                l.pixelType |= PREMUL_SH(1);
+                l.pixelType |= PREMUL;
             }
 
             int[] bandOffsets = csm.getBandOffsets();

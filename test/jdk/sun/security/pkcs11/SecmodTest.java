@@ -36,7 +36,7 @@ public class SecmodTest extends PKCS11Test {
     static String DBDIR;
     static char[] password = "test12".toCharArray();
     static String keyAlias = "mykey";
-    static boolean useSqlite = false;
+    static boolean useSqlite = true;
 
     static void useSqlite(boolean b) {
         useSqlite = b;

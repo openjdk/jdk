@@ -187,6 +187,12 @@ import java.util.Arrays;
  *
  * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
  *
+ * <p>If a <i>Relation</i> symbol is to be used within a <i>Format</i> pattern,
+ * it must be single quoted. For example,
+ * {@code new ChoiceFormat("1# '#'1 ").format(1)} returns {@code " #1 "}.
+ * Use two single quotes in a row to produce a literal single quote. For example,
+ * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
+ *
  * <p>Below is an example of constructing a ChoiceFormat with a pattern:
  * <blockquote>
  * {@snippet lang=java :
@@ -229,8 +235,9 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Apply the given pattern to this ChoiceFormat object. The syntax
      * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
-     * Patterns} section.
-     *
+     * Patterns} section. Unlike {@link #setChoices(double[], String[])} this
+     * method will throw an {@code IllegalArgumentException} if the {@code
+     * limits} are not in ascending order.
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
@@ -239,6 +246,17 @@ public class ChoiceFormat extends NumberFormat {
      * @see #ChoiceFormat(String)
      */
     public void applyPattern(String newPattern) {
+        applyPatternImpl(newPattern);
+    }
+
+    /**
+     * Implementation of applying a pattern to this ChoiceFormat.
+     * This method processes a String pattern in accordance with the ChoiceFormat
+     * pattern syntax and populates the internal {@code limits} and {@code formats}
+     * array variables. See the {@linkplain ##patterns} section for
+     * further understanding of certain special characters: "#", "<", "\u2264", "|".
+     */
+    private void applyPatternImpl(String newPattern) {
         StringBuilder[] segments = new StringBuilder[2];
         for (int i = 0; i < segments.length; ++i) {
             segments[i] = new StringBuilder();
@@ -319,8 +337,8 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * {@return a pattern {@code string} that represents the the limits and formats
-     * of this ChoiceFormat object}
+     * {@return a pattern {@code string} that represents the {@code limits} and
+     * {@code formats} of this ChoiceFormat object}
      *
      * The {@code string} returned is not guaranteed to be the same input
      * {@code string} passed to either {@link #applyPattern(String)} or
@@ -389,7 +407,7 @@ public class ChoiceFormat extends NumberFormat {
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
-        applyPattern(newPattern);
+        applyPatternImpl(newPattern);
     }
 
     /**
@@ -404,11 +422,12 @@ public class ChoiceFormat extends NumberFormat {
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
-        setChoices(limits, formats);
+        setChoicesImpl(limits, formats);
     }
 
     /**
      * Set the choices to be used in formatting.
+     *
      * @param limits contains the top value that you want
      * parsed with that format, and should be in ascending sorted order. When
      * formatting X, the choice will be the i, where
@@ -422,6 +441,14 @@ public class ChoiceFormat extends NumberFormat {
      *            and {@code formats} are not equal
      */
     public void setChoices(double[] limits, String[] formats) {
+        setChoicesImpl(limits, formats);
+    }
+
+    /**
+     * Implementation of populating the {@code limits} and
+     * {@code formats} of this ChoiceFormat. Defensive copies are made.
+     */
+    private void setChoicesImpl(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
                     "Input arrays must be of the same length.");
@@ -434,16 +461,14 @@ public class ChoiceFormat extends NumberFormat {
      * {@return the limits of this ChoiceFormat}
      */
     public double[] getLimits() {
-        double[] newLimits = Arrays.copyOf(choiceLimits, choiceLimits.length);
-        return newLimits;
+        return Arrays.copyOf(choiceLimits, choiceLimits.length);
     }
 
     /**
      * {@return the formats of this ChoiceFormat}
      */
     public Object[] getFormats() {
-        Object[] newFormats = Arrays.copyOf(choiceFormats, choiceFormats.length);
-        return newFormats;
+        return Arrays.copyOf(choiceFormats, choiceFormats.length);
     }
 
     // Overrides
@@ -572,7 +597,11 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Generates a hash code for the message format object.
+     * {@return the hash code for this {@code ChoiceFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the values returned by
+     * {@link #getFormats()} and {@link #getLimits()}.
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -585,7 +614,17 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Equality comparison between two
+     * Compares the specified object with this {@code ChoiceFormat} for equality.
+     * Returns true if the object is also a {@code ChoiceFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code ChoiceFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {

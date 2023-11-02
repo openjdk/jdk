@@ -84,7 +84,7 @@ public class TestEnableJVMCIProduct {
         String[] flags = {"-XX:+EnableJVMCIProduct", "-XX:+UseGraalJIT"};
         String cwd = System.getProperty("user.dir");
         for (String flag : flags) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions", flag, "-XX:-UnlockExperimentalVMOptions",
                 explicitFlag,
                 "-XX:+PrintFlagsFinal",

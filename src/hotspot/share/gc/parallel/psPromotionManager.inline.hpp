@@ -131,6 +131,11 @@ inline void PSPromotionManager::push_contents(oop obj) {
   }
 }
 
+inline void PSPromotionManager::push_contents_bounded(oop obj, HeapWord* left, HeapWord* right) {
+  PSPushContentsClosure pcc(this);
+  obj->oop_iterate(&pcc, MemRegion(left, right));
+}
+
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
   assert(should_scavenge(&o), "Sanity");

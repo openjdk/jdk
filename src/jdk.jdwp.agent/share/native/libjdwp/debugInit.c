@@ -102,7 +102,7 @@ static void JNICALL cbEarlyVMDeath(jvmtiEnv*, JNIEnv *);
 static void JNICALL cbEarlyException(jvmtiEnv*, JNIEnv *,
             jthread, jmethodID, jlocation, jobject, jmethodID, jlocation);
 
-static void initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei);
+static void initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei, EventInfo *opt_info);
 static jboolean parseOptions(char *str);
 
 /*
@@ -391,7 +391,7 @@ cbEarlyVMInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread)
         EXIT_ERROR(AGENT_ERROR_INTERNAL,"VM dead at VM_INIT time");
     }
     if (initOnStartup)
-        initialize(env, thread, EI_VM_INIT);
+        initialize(env, thread, EI_VM_INIT, NULL);
     vmInitialized = JNI_TRUE;
     LOG_MISC(("END cbEarlyVMInit"));
 }
@@ -444,6 +444,19 @@ cbEarlyException(jvmtiEnv *jvmti_env, JNIEnv *env,
         LOG_MISC(("VM is not initialized yet"));
         return;
     }
+    EventInfo info;
+    info.ei = EI_EXCEPTION;
+    info.thread = thread;
+    info.clazz = getMethodClass(jvmti_env, method);
+    info.method = method;
+    info.location = location;
+    info.object = exception;
+    if (gdata->vthreadsSupported) {
+        info.is_vthread = isVThread(thread);
+    }
+    info.u.exception.catch_clazz = getMethodClass(jvmti_env, catch_method);
+    info.u.exception.catch_method = catch_method;
+    info.u.exception.catch_location = catch_location;
 
     /*
      * We want to preserve any current exception that might get wiped
@@ -458,24 +471,22 @@ cbEarlyException(jvmtiEnv *jvmti_env, JNIEnv *env,
     if (initOnUncaught && catch_method == NULL) {
 
         LOG_MISC(("Initializing on uncaught exception"));
-        initialize(env, thread, EI_EXCEPTION);
+        initialize(env, thread, EI_EXCEPTION, &info);
 
     } else if (initOnException != NULL) {
 
-        jclass clazz;
-
-        /* Get class of exception thrown */
-        clazz = JNI_FUNC_PTR(env,GetObjectClass)(env, exception);
-        if ( clazz != NULL ) {
+        jclass exception_clazz = JNI_FUNC_PTR(env, GetObjectClass)(env, exception);
+        /* check class of exception thrown */
+        if ( exception_clazz != NULL ) {
             char *signature = NULL;
             /* initing on throw, check */
-            error = classSignature(clazz, &signature, NULL);
+            error = classSignature(exception_clazz, &signature, NULL);
             LOG_MISC(("Checking specific exception: looking for %s, got %s",
                         initOnException, signature));
             if ( (error==JVMTI_ERROR_NONE) &&
                 (strcmp(signature, initOnException) == 0)) {
                 LOG_MISC(("Initializing on specific exception"));
-                initialize(env, thread, EI_EXCEPTION);
+                initialize(env, thread, EI_EXCEPTION, &info);
             } else {
                 error = AGENT_ERROR_INTERNAL; /* Just to cause restore */
             }
@@ -616,9 +627,11 @@ jniFatalError(JNIEnv *env, const char *msg, jvmtiError error, int exit_code)
 
 /*
  * Initialize debugger back end modules
+ *
+ * @param opt_info optional event info to use, might be null
  */
 static void
-initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei)
+initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei, EventInfo *opt_info)
 {
     jvmtiError error;
     EnumerateArg arg;
@@ -706,13 +719,13 @@ initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei)
          * can get in the queue (from other not-yet-suspended threads)
          * before this one does. (Also need to handle allocation error below?)
          */
-        EventInfo info;
         struct bag *initEventBag;
-        LOG_MISC(("triggering_ei != EI_VM_INIT"));
+        LOG_MISC(("triggering_ei == EI_EXCEPTION"));
+        JDI_ASSERT(triggering_ei == EI_EXCEPTION);
+        JDI_ASSERT(opt_info != NULL);
         initEventBag = eventHelper_createEventBag();
-        (void)memset(&info,0,sizeof(info));
-        info.ei = triggering_ei;
-        eventHelper_recordEvent(&info, 0, suspendPolicy, initEventBag);
+        threadControl_onEventHandlerEntry(currentSessionID, opt_info, NULL);
+        eventHelper_recordEvent(opt_info, 0, suspendPolicy, initEventBag);
         (void)eventHelper_reportEvents(currentSessionID, initEventBag);
         bagDestroyBag(initEventBag);
     }
@@ -822,6 +835,9 @@ printUsage(void)
  "transport=<name>                 transport spec                    none\n"
  "address=<listen/attach address>  transport spec                    \"\"\n"
  "server=y|n                       listen for debugger?              n\n"
+ "allow=<IP|IP-list>               If server=y, allows connections only from the IP addresses/subnets specified.\n"
+ "                                 A list of multiple IP address/subnet entries must be separated by \'+\'.\n"
+ "                                                                   * (allows connection from any address)\n"
  "launch=<command line>            run debugger on event             none\n"
  "onthrow=<exception name>         debug on throw                    none\n"
  "onuncaught=y|n                   debug on any uncaught?            n\n"
@@ -1368,7 +1384,7 @@ JNIEXPORT char const* JNICALL debugInit_startDebuggingViaCommand(JNIEnv* env, jt
     if (!startedViaJcmd) {
         startedViaJcmd = JNI_TRUE;
         is_first_start = JNI_TRUE;
-        initialize(env, thread, EI_VM_INIT);
+        initialize(env, thread, EI_VM_INIT, NULL);
     }
 
     bagEnumerateOver(transports, getFirstTransport, &spec);

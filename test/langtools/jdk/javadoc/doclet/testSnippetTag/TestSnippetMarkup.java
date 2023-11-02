@@ -840,6 +840,11 @@ First line // @highlight :
             }
 
             @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... files) {
+                return delegate.getJavaFileObjects(files);
+            }
+
+            @Override
             public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
                 return delegate.getJavaFileObjectsFromStrings(names);
             }

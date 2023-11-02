@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -1064,7 +1065,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       // concurrently doesn't expect a k to have a null java_mirror.
       release_set_array_klass(comp_mirror(), k);
     }
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_heap()) {
       create_scratch_mirror(k, CHECK);
     }
   } else {
@@ -1366,7 +1367,7 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
 #ifdef ASSERT
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     oop mirror = Universe::java_mirror(type);
     oop scratch_mirror = HeapShared::scratch_java_mirror(type);
     assert(java_class == mirror || java_class == scratch_mirror, "must be consistent");
@@ -2452,7 +2453,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       BacktraceElement bte = iter.next(THREAD);
       print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._name);
     }
-    {
+    if (THREAD->can_call_java()) {
       // Call getCause() which doesn't necessarily return the _cause field.
       ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
@@ -2474,6 +2475,9 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
           st->cr();
         }
       }
+    } else {
+      st->print_raw_cr("<<cannot call Java to get cause>>");
+      return;
     }
   }
 }

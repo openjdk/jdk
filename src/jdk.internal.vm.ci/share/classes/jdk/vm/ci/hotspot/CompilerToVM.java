@@ -565,7 +565,8 @@ final class CompilerToVM {
      * The behavior of this method is undefined if {@code rawIndex} is invalid.
      *
      * @param info an array in which the details of the field are returned
-     * @return the type defining the field if resolution is successful, null otherwise
+     * @return the type defining the field if resolution is successful, null if the type cannot be resolved
+     * @throws LinkageError if there were other problems resolving the field
      */
     HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int rawIndex, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info) {
         long methodPointer = method != null ? method.getMethodPointer() : 0L;
@@ -1299,6 +1300,11 @@ final class CompilerToVM {
     }
 
     native boolean isTrustedForIntrinsics(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
+
+    /**
+     * Clears the oop handle in {@code handle}.
+     */
+    native void clearOopHandle(long handle);
 
     /**
      * Releases all oop handles whose referent is null.

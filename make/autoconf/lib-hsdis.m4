@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,8 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
   BINUTILS_SRC="$with_binutils_src"
   UTIL_FIXUP_PATH(BINUTILS_SRC)
 
-  BINUTILS_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils"
+  BINUTILS_BUILD_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils"
+  BINUTILS_INSTALL_DIR="$CONFIGURESUPPORT_OUTPUTDIR/binutils-install"
 
   if ! test -d $BINUTILS_SRC; then
     AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
@@ -143,15 +144,15 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     AC_MSG_ERROR([--with-binutils-src does not look like a binutils source directory])
   fi
 
-  if ! test -d $BINUTILS_DIR; then
-    $MKDIR -p $BINUTILS_DIR
+  if ! test -d $BINUTILS_BUILD_DIR; then
+    $MKDIR -p $BINUTILS_BUILD_DIR
   fi
 
-  if test -e $BINUTILS_DIR/bfd/libbfd.a && \
-      test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
-      test -e $BINUTILS_DIR/libiberty/libiberty.a && \
-      test -e $BINUTILS_DIR/zlib/libz.a; then
-    AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
+  # We don't know the version, not checking for libsframe.a
+  if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
+     test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
+     test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+    AC_MSG_NOTICE([Found binutils binaries in binutils install directory -- not building])
   else
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
     # a separate mingw toolchain.
@@ -190,18 +191,24 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
     binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
 
     AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: cd $BINUTILS_DIR && $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
+    AC_MSG_NOTICE([configure command line: cd $BINUTILS_BUILD_DIR && $BINUTILS_SRC/configure --disable-werror --prefix=$BINUTILS_INSTALL_DIR --enable-install-libiberty --with-system-zlib --without-zstd --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target])
     saved_dir=`pwd`
-    cd "$BINUTILS_DIR"
-    $BINUTILS_SRC/configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
-    if test $? -ne 0 || ! test -e $BINUTILS_DIR/Makefile; then
+    cd "$BINUTILS_BUILD_DIR"
+    $BINUTILS_SRC/configure --disable-werror --prefix=$BINUTILS_INSTALL_DIR --enable-install-libiberty --with-system-zlib --without-zstd --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" AR="$AR" $binutils_target
+    if test $? -ne 0 || ! test -e $BINUTILS_BUILD_DIR/Makefile; then
       AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
     AC_MSG_NOTICE([Running binutils make])
-    $MAKE all-opcodes
+    $MAKE all-opcodes all-libiberty
     if test $? -ne 0; then
       AC_MSG_NOTICE([Automatic building of binutils failed on make. Try building it manually])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    AC_MSG_NOTICE([Running binutils make install])
+    $MAKE install-opcodes install-libiberty
+    if test $? -ne 0; then
+      AC_MSG_NOTICE([Automatic building, install step, of binutils failed on make. Try building it manually])
       AC_MSG_ERROR([Cannot continue])
     fi
     cd $saved_dir
@@ -223,40 +230,66 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
 
   # We need the binutils static libs and includes.
   if test "x$with_binutils_src" != x; then
-    # Try building the source first. If it succeeds, it sets $BINUTILS_DIR.
+    # Try building the source first. If it succeeds, it sets $BINUTILS_INSTALL_DIR.
     LIB_BUILD_BINUTILS
   fi
 
   if test "x$with_binutils" != x; then
-    BINUTILS_DIR="$with_binutils"
+    BINUTILS_INSTALL_DIR="$with_binutils"
   fi
 
   binutils_system_error=""
+  HSDIS_LDFLAGS=""
   HSDIS_LIBS=""
-  if test "x$BINUTILS_DIR" = xsystem; then
+  disasm_header="<dis-asm.h>"
+
+  if test "x$BINUTILS_INSTALL_DIR" = xsystem; then
     AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
     AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
-    AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
     AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+    # libiberty is not required on Ubuntu
+    AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ])
+    AC_CHECK_LIB(sframe, frame, [ HSDIS_LIBS="$HSDIS_LIBS -lsframe" ], )
     HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-  elif test "x$BINUTILS_DIR" != x; then
-    if test -e $BINUTILS_DIR/bfd/libbfd.a && \
-        test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
-        test -e $BINUTILS_DIR/libiberty/libiberty.a && \
-        test -e $BINUTILS_DIR/zlib/libz.a; then
-      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-      if test -n "$BINUTILS_SRC"; then
-        HSDIS_CFLAGS="$HSDIS_CFLAGS -I$BINUTILS_SRC/include -I$BINUTILS_DIR/bfd"
+  elif test "x$BINUTILS_INSTALL_DIR" != x; then
+    disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
+    if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
+       test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
+       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a); then
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
+
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib or $BINUTILS_INSTALL_DIR/lib64
+      # depending on system setup
+      LIBIBERTY_LIB=""
+      if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
       else
-        HSDIS_CFLAGS="$HSDIS_CFLAGS -I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd"
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib64/libiberty.a"
       fi
-      HSDIS_LDFLAGS=""
-      HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
+      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $LIBIBERTY_LIB"
+      # If we have libsframe add it.
+      if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
+        HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"
+      fi
+      AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
+    else
+      AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/lib[64] must contain libbfd.a, libopcodes.a and libiberty.a"])
     fi
   fi
 
+  AC_MSG_CHECKING([Checking binutils API])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+    [
+      AC_MSG_RESULT([New API])
+      HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
+    ],
+    [
+      AC_MSG_RESULT([Old API])
+    ]
+  )
+
   AC_MSG_CHECKING([for binutils to use with hsdis])
-  case "x$BINUTILS_DIR" in
+  case "x$BINUTILS_INSTALL_DIR" in
     xsystem)
       if test "x$OPENJDK_TARGET_OS" != xlinux; then
         AC_MSG_RESULT([invalid])
@@ -279,10 +312,10 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
       ;;
     *)
       if test "x$HSDIS_LIBS" != x; then
-        AC_MSG_RESULT([$BINUTILS_DIR])
+        AC_MSG_RESULT([$BINUTILS_INSTALL_DIR])
       else
         AC_MSG_RESULT([invalid])
-        AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
+        AC_MSG_ERROR([$BINUTILS_INSTALL_DIR does not contain a proper binutils installation])
       fi
       ;;
   esac
