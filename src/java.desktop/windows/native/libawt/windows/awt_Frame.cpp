@@ -1347,67 +1347,68 @@ void AwtFrame::_SetState(void *param)
     AwtFrame *f = NULL;
 
     PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    f = (AwtFrame *)pData;
+    HWND hwnd;
+    hwnd = f->GetHWnd();
+    if (::IsWindow(hwnd)) {
+        DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));
 
-    {
-        JNI_CHECK_PEER_GOTO(self, ret);
-        f = (AwtFrame *)pData;
-        HWND hwnd = f->GetHWnd();
-        if (::IsWindow(hwnd)) {
-            DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));
+        BOOL iconify;
+        BOOL zoom;
 
-            BOOL iconify = (state & java_awt_Frame_ICONIFIED) != 0;
-            BOOL zoom = (state & java_awt_Frame_MAXIMIZED_BOTH)
-                            == java_awt_Frame_MAXIMIZED_BOTH;
+        iconify = (state & java_awt_Frame_ICONIFIED) != 0;
+        zoom = (state & java_awt_Frame_MAXIMIZED_BOTH)
+                        == java_awt_Frame_MAXIMIZED_BOTH;
 
-            DTRACE_PRINTLN4("WFramePeer.setState:%s%s ->%s%s",
-                      f->isIconic() ? " iconic" : "",
-                      f->isZoomed() ? " zoomed" : "",
-                      iconify       ? " iconic" : "",
-                      zoom          ? " zoomed" : "");
+        DTRACE_PRINTLN4("WFramePeer.setState:%s%s ->%s%s",
+                    f->isIconic() ? " iconic" : "",
+                    f->isZoomed() ? " zoomed" : "",
+                    iconify       ? " iconic" : "",
+                    zoom          ? " zoomed" : "");
 
-            if (::IsWindowVisible(hwnd)) {
-                BOOL focusable = f->IsFocusableWindow();
+        if (::IsWindowVisible(hwnd)) {
+            BOOL focusable;
+            focusable = f->IsFocusableWindow();
 
-                WINDOWPLACEMENT wp;
-                ::ZeroMemory(&wp, sizeof(wp));
-                wp.length = sizeof(wp);
-                ::GetWindowPlacement(hwnd, &wp);
+            WINDOWPLACEMENT wp;
+            ::ZeroMemory(&wp, sizeof(wp));
+            wp.length = sizeof(wp);
+            ::GetWindowPlacement(hwnd, &wp);
 
-                // Iconify first.
-                // If both iconify & zoom are TRUE, handle this case
-                // with wp.flags field below.
-                if (iconify) {
-                    wp.showCmd = focusable ? SW_MINIMIZE : SW_SHOWMINNOACTIVE;
-                } else if (zoom) {
-                    wp.showCmd = focusable ? SW_SHOWMAXIMIZED : SW_MAXIMIZE;
-                } else { // zoom == iconify == FALSE
-                    wp.showCmd = focusable ? SW_RESTORE : SW_SHOWNOACTIVATE;
-                }
-                if (zoom && iconify) {
-                    wp.flags |= WPF_RESTORETOMAXIMIZED;
-                } else {
-                    wp.flags &= ~WPF_RESTORETOMAXIMIZED;
-                }
-
-                if (!zoom) {
-                    f->m_forceResetZoomed = TRUE;
-                }
-
-                // The SetWindowPlacement() causes the WmSize() invocation
-                //  which, in turn, actually updates the m_iconic & m_zoomed flags
-                //  as well as sends Java event (WINDOW_STATE_CHANGED.)
-                ::SetWindowPlacement(hwnd, &wp);
-
-                f->m_forceResetZoomed = FALSE;
-            } else {
-                DTRACE_PRINTLN("  not visible, just recording the requested state");
-
-                f->setIconic(iconify);
-                f->setZoomed(zoom);
+            // Iconify first.
+            // If both iconify & zoom are TRUE, handle this case
+            // with wp.flags field below.
+            if (iconify) {
+                wp.showCmd = focusable ? SW_MINIMIZE : SW_SHOWMINNOACTIVE;
+            } else if (zoom) {
+                wp.showCmd = focusable ? SW_SHOWMAXIMIZED : SW_MAXIMIZE;
+            } else { // zoom == iconify == FALSE
+                wp.showCmd = focusable ? SW_RESTORE : SW_SHOWNOACTIVATE;
             }
+            if (zoom && iconify) {
+                wp.flags |= WPF_RESTORETOMAXIMIZED;
+            } else {
+                wp.flags &= ~WPF_RESTORETOMAXIMIZED;
+            }
+
+            if (!zoom) {
+                f->m_forceResetZoomed = TRUE;
+            }
+
+            // The SetWindowPlacement() causes the WmSize() invocation
+            //  which, in turn, actually updates the m_iconic & m_zoomed flags
+            //  as well as sends Java event (WINDOW_STATE_CHANGED.)
+            ::SetWindowPlacement(hwnd, &wp);
+
+            f->m_forceResetZoomed = FALSE;
+        } else {
+            DTRACE_PRINTLN("  not visible, just recording the requested state");
+
+            f->setIconic(iconify);
+            f->setZoomed(zoom);
         }
     }
-
 ret:
     env->DeleteGlobalRef(self);
 
