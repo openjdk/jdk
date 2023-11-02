@@ -4464,18 +4464,6 @@ class StubGenerator: public StubCodeGenerator {
     pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
   }
 
-  // Multiply and multiply-accumulate unsigned 64-bit registers.
-  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
-    __ mul(prod_lo, n, m);
-    __ mulhu(prod_hi, n, m);
-  }
-  void wide_madd(Register sum_lo, Register sum_hi, Register n,
-                 Register m, Register tmp1, Register tmp2) {
-    wide_mul(tmp1, tmp2, n, m);
-    __ cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
-    __ adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
-  }
-
   // Poly1305, RFC 7539
   // Intrinsified version of com.sun.crypto.provider.Poly1305.processMultipleBlocks
 
@@ -4546,13 +4534,13 @@ class StubGenerator: public StubCodeGenerator {
       // four bits of R_0 and R_1 are zero, we can add together
       // partial products without any risk of needing to propagate a
       // carry out.
-      wide_mul(U_0, U_0HI, S_0, R_0);
-      wide_madd(U_0, U_0HI, S_1, RR_1, t1, t2);
-      wide_madd(U_0, U_0HI, S_2, RR_0, t1, t2);
+      __ wide_mul(U_0, U_0HI, S_0, R_0);
+      __ wide_madd(U_0, U_0HI, S_1, RR_1, t1, t2);
+      __ wide_madd(U_0, U_0HI, S_2, RR_0, t1, t2);
 
-      wide_mul(U_1, U_1HI, S_0, R_1);
-      wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
-      wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
+      __ wide_mul(U_1, U_1HI, S_0, R_1);
+      __ wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
+      __ wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
 
       __ andi(U_2, R_0, bits2);
       __ mul(U_2, S_2, U_2);
