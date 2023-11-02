@@ -30,11 +30,18 @@
 import org.junit.jupiter.api.*;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -93,6 +100,87 @@ final class TestSegmentHash {
 
         // Check a closed scope
         assertThrows(IllegalStateException.class, () -> MemorySegment.contentHash(seg, 0, seg.byteSize()));
+    }
+
+    // Apply hash for a segment wrapper class
+
+    public static final GroupLayout POINT = MemoryLayout.structLayout(JAVA_INT.withName("x"), JAVA_INT.withName("y"));
+    public static final VarHandle X = POINT.varHandle(MemoryLayout.PathElement.groupElement("x"));
+    public static final VarHandle Y = POINT.varHandle(MemoryLayout.PathElement.groupElement("y"));
+
+    public interface Point {
+        int x();
+        void x(int x);
+        int y();
+        void y(int y);
+    }
+
+    public class PointImpl implements Point {
+
+        private final MemorySegment segment;
+
+        public PointImpl(Arena arena) {
+            segment = arena.allocate(POINT);
+        }
+
+        @Override
+        public int x() {
+            return (int) X.get(segment, 0);
+        }
+
+        @Override
+        public void x(int x) {
+            X.set(segment, 0, x);
+        }
+
+        @Override
+        public int y() {
+            return (int) Y.get(segment, 0);
+        }
+
+        @Override
+        public void y(int y) {
+            Y.set(segment, 0, y);
+        }
+
+        @Override
+        public String toString() {
+            return "[x=" + x() + ", y=" + y() + "]";
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(MemorySegment.contentHash(segment, 0, POINT.byteSize()));
+        }
+
+        public int hashCode2() {
+            return Objects.hash(x(), y());
+        }
+
+        public int hashCode3() {
+            int result = 0;
+            result = 31 * result + x();
+            result = 31 * result + y();
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof Point other) &&
+                    x() == other.x() &&
+                    y() == other.x();
+        }
+    }
+
+    @Test
+    void testWrapper() {
+        try (Arena arena = Arena.ofConfined()) {
+            Point p = new PointImpl(arena);
+            p.x(3);
+            p.y(4);
+            int h = p.hashCode();
+            assertNotEquals(0, h);
+        }
     }
 
 }
