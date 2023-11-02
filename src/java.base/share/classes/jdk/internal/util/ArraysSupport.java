@@ -221,15 +221,15 @@ public class ArraysSupport {
      * responsibility of the caller to perform such checks before calling this
      * method.
      *
+     * @param result initial hash value (start value)
      * @param segment for which to calculate hash code
-     * @param from start offset
+     * @param from start offset (inclusive)
      * @param to stop offset (non-inclusive)
      *
      * @return the calculated hash value
      */
-    // @IntrinsicCandidate
-    public static long vectorizedHash(MemorySegment segment, long from, long to) {
-        long result = 0;
+    // Todo: Make this an @IntrinsicCandidate
+    public static long vectorizedHash(long result, MemorySegment segment, long from, long to) {
         for (long i = from; i < to; i++) {
             result = 31 * result + (segment.get(ValueLayout.JAVA_BYTE, i) & 0xff);
         }
