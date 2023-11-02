@@ -118,12 +118,16 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   g.generate();
   code.log_section_sizes("nep_invoker_blob");
 
+  bool caller_must_gc_arguments = false;
+  bool alloc_fail_is_fatal = false;
   RuntimeStub* stub =
     RuntimeStub::new_runtime_stub("nep_invoker_blob",
                                   &code,
                                   g.frame_complete(),
                                   g.framesize(),
-                                  g.oop_maps(), false);
+                                  g.oop_maps(),
+                                  caller_must_gc_arguments,
+                                  alloc_fail_is_fatal);
   if (stub == nullptr) {
     return nullptr;
   }
