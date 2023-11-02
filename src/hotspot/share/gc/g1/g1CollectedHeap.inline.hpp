@@ -263,7 +263,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) co
 }
 
 inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
-  assert(obj != NULL, "obj must not be null");
+  assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not pin objects during a GC");
   assert(obj->is_typeArray(), "must be typeArray");
   HeapRegion *r = heap_region_containing(obj);
@@ -271,7 +271,7 @@ inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
 }
 
 inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
-  assert(obj != NULL, "obj must not be null");
+  assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not unpin objects during a GC");
   HeapRegion *r = heap_region_containing(obj);
   r->decrement_pinned_object_count();
