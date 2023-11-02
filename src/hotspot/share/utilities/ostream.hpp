@@ -302,7 +302,7 @@ class bufferedStream : public outputStream {
   bufferedStream(size_t initial_bufsize = 256, size_t bufmax = 1024*1024*10);
   bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);
   ~bufferedStream();
-  virtual void write(const char* c, size_t len);
+  virtual void write(const char* c, size_t len) override;
   bool was_truncated() const override { return truncated; }
   // Returns number of characters written, exclusing terminating zero.
   size_t      size() { return buffer_pos; }
