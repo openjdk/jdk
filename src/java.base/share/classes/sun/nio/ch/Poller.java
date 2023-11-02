@@ -41,7 +41,7 @@ import sun.security.action.GetPropertyAction;
  * until a given file descriptor is ready for I/O.
  */
 abstract class Poller {
-    private static Pollers POLLERS;
+    private static final Pollers POLLERS;
     static {
         try {
             var pollers = new Pollers();
@@ -84,7 +84,7 @@ abstract class Poller {
     }
 
     /**
-     * Returns the poller file descriptor, used when the read and write poller threads
+     * Returns the poller's file descriptor, used when the read and write poller threads
      * are virtual threads.
      *
      * @throws UnsupportedOperationException if not supported
@@ -255,11 +255,11 @@ abstract class Poller {
      * The Pollers used for read and write events.
      */
     private static class Pollers {
+        private final PollerProvider provider;
         private final Poller.Mode pollerMode;
         private final Poller masterPoller;
         private final Poller[] readPollers;
         private final Poller[] writePollers;
-        private final int readMask, writeMask;
 
         // used by start method to executor is kept alive
         private Executor executor;
@@ -302,12 +302,11 @@ abstract class Poller {
                 writePollers[i] = provider.writePoller(mode == Mode.VTHREAD_POLLERS);
             }
 
+            this.provider = provider;
             this.pollerMode = mode;
             this.masterPoller = masterPoller;
             this.readPollers = readPollers;
             this.writePollers = writePollers;
-            this.readMask = readPollers.length - 1;
-            this.writeMask = writePollers.length - 1;
         }
 
         /**
@@ -342,14 +341,16 @@ abstract class Poller {
          * Returns the read poller for the given file descriptor.
          */
         Poller readPoller(int fdVal) {
-            return readPollers[fdVal & readMask];
+            int index = provider.fdValToIndex(fdVal, readPollers.length);
+            return readPollers[index];
         }
 
         /**
          * Returns the write poller for the given file descriptor.
          */
         Poller writePoller(int fdVal) {
-            return writePollers[fdVal & writeMask];
+            int index = provider.fdValToIndex(fdVal, writePollers.length);
+            return writePollers[index];
         }
 
         /**

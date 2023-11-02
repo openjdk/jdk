@@ -66,6 +66,14 @@ abstract class PollerProvider {
     }
 
     /**
+     * Maps a file descriptor to an index from 0 to {@code toIndex}.
+     * @implSpec The default implementation is good for Unix file descriptors.
+     */
+    int fdValToIndex(int fdVal, int toIndex) {
+        return fdVal & (toIndex - 1);
+    }
+
+    /**
      * Creates a Poller for read ops.
      * @param subPoller true to create a sub-poller
      */
