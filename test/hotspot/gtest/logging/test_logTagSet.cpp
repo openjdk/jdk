@@ -32,7 +32,7 @@
 #include "unittest.hpp"
 
 // Test the default level for each tagset
-TEST(LogTagSet, defaults) {
+TEST_VM(LogTagSet, defaults) {
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     char buf[256];
     ts->label(buf, sizeof(buf));
@@ -72,6 +72,7 @@ TEST(LogTagSet, is_level) {
   EXPECT_FALSE(ts.is_level(LogLevel::Trace));
   ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Default);
   EXPECT_TRUE(ts.is_level(LogLevel::Default));
+  ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Off);
 }
 
 TEST(LogTagSet, level_for) {
@@ -83,7 +84,7 @@ TEST(LogTagSet, level_for) {
     ts.set_output_level(output, level);
     EXPECT_EQ(level, ts.level_for(output));
   }
-  ts.set_output_level(output, LogLevel::Default);
+  ts.set_output_level(output, LogLevel::Off);
 }
 
 TEST(LogTagSet, contains) {
