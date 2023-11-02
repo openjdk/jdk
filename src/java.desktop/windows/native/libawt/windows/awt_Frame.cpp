@@ -1362,10 +1362,10 @@ void AwtFrame::_SetState(void *param)
                         == java_awt_Frame_MAXIMIZED_BOTH;
 
         DTRACE_PRINTLN4("WFramePeer.setState:%s%s ->%s%s",
-                    f->isIconic() ? " iconic" : "",
-                    f->isZoomed() ? " zoomed" : "",
-                    iconify       ? " iconic" : "",
-                    zoom          ? " zoomed" : "");
+                  f->isIconic() ? " iconic" : "",
+                  f->isZoomed() ? " zoomed" : "",
+                  iconify       ? " iconic" : "",
+                  zoom          ? " zoomed" : "");
 
         if (::IsWindowVisible(hwnd)) {
             BOOL focusable;
