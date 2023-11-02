@@ -4571,7 +4571,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
-      __ mv(t1, checked_cast<u1>(BLOCK_LENGTH))
+      __ mv(t1, checked_cast<u1>(BLOCK_LENGTH));
       __ bge(length, t1, LOOP);
     }
 
