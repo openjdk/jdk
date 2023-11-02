@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,16 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestSkipRebuildRemsetPhase {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:.",
-                                                                  "-XX:+UseG1GC",
-                                                                  "-XX:+UnlockExperimentalVMOptions",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:+WhiteBoxAPI",
-                                                                  "-XX:G1MixedGCLiveThresholdPercent=20",
-                                                                  "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
-                                                                  "-Xms10M",
-                                                                  "-Xmx10M",
-                                                                  GCTest.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xbootclasspath/a:.",
+                                                                             "-XX:+UseG1GC",
+                                                                             "-XX:+UnlockExperimentalVMOptions",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-XX:+WhiteBoxAPI",
+                                                                             "-XX:G1MixedGCLiveThresholdPercent=20",
+                                                                             "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
+                                                                             "-Xms10M",
+                                                                             "-Xmx10M",
+                                                                             GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Skipping Remembered Set Rebuild.");
         output.shouldContain("No Remembered Sets to update after rebuild");

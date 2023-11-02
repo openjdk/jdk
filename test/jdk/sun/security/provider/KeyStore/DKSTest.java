@@ -80,7 +80,7 @@ public class DKSTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             // Environment variable and system properties referred in domains.cfg used by this Test.
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(List.of(
                     "-Dtest.src=" + TEST_SRC , "-Duser.dir=" + USER_DIR, "DKSTest", "run"));
             pb.environment().putAll(System.getenv());
             pb.environment().put("KEYSTORE_PWD", "test12");

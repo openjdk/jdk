@@ -448,6 +448,15 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
+  char* print_throwable_to_buffer(Handle throwable, jlong buffer, int buffer_size) {
+    char* char_buffer = (char*) buffer + 4;
+    stringStream st(char_buffer, (size_t) buffer_size - 4);
+    java_lang_Throwable::print_stack_trace(throwable, &st);
+    u4 len = (u4) st.size();
+    *((u4*) buffer) = len;
+    return char_buffer;
+  }
+
   bool handle_pending_exception(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (HAS_PENDING_EXCEPTION) {
       Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
@@ -457,11 +466,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
         JVMCI_event_1("error translating exception: OutOfMemoryError");
         decode(THREAD, _encode_oome_fail, 0L);
       } else {
-        char* char_buffer = (char*) buffer + 4;
-        stringStream st(char_buffer, (size_t) buffer_size - 4);
-        java_lang_Throwable::print_stack_trace(throwable, &st);
-        u4 len = (u4) st.size();
-        *((u4*) buffer) = len;
+        char* char_buffer = print_throwable_to_buffer(throwable, buffer, buffer_size);
         JVMCI_event_1("error translating exception: %s", char_buffer);
         decode(THREAD, _encode_fail, buffer);
       }
@@ -471,6 +476,13 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   }
 
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    if (!THREAD->can_call_java()) {
+      char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
+      const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
+      JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
+      decode(THREAD, _encode_fail, buffer);
+      return 0;
+    }
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
     if (handle_pending_exception(THREAD, buffer, buffer_size)) {
       return 0;
@@ -1311,6 +1323,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   jboolean exception = false;
   if (is_hotspot()) {
+    CompilerThreadCanCallJava ccj(THREAD, true);
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long(pointer);

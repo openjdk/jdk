@@ -83,6 +83,7 @@ public class IREncodingPrinter {
     private static final List<String> verifiedCPUFeatures = new ArrayList<String>( Arrays.asList(
         // x86
         "fma",
+        "f16c",
         // Intel SSE
         "sse",
         "sse2",

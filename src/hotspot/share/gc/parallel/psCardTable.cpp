@@ -48,7 +48,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
-        !_card_table->addr_is_marked_imprecise(p)) {
+        !_card_table->is_dirty_for_addr(p)) {
       // Don't overwrite the first missing card mark
       if (_unmarked_addr == nullptr) {
         _unmarked_addr = (HeapWord*)p;
@@ -90,7 +90,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
-      guarantee(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
+      guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
     }
   }
 };
@@ -387,22 +387,9 @@ void PSCardTable::verify_all_young_refs_imprecise() {
   old_gen->object_iterate(&check);
 }
 
-bool PSCardTable::addr_is_marked_imprecise(void *addr) {
+bool PSCardTable::is_dirty_for_addr(void *addr) {
   CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_dirty(val))
-    return true;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
+  return is_dirty(p);
 }
 
 bool PSCardTable::is_in_young(const void* p) const {

@@ -114,13 +114,13 @@ public class TestPhiDuplicatedConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.CONV, "1"}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.CONV, "1"}, applyIfCPUFeatureOr = {"f16c", "true", "avx512vl", "true", "asimd", "true"})
     public static short float2HalfFloat(boolean c, float a, float b) {
         return c ? Float.floatToFloat16(a) : Float.floatToFloat16(b);
     }
 
     @Test
-    @IR(counts = {IRNode.CONV, "1"}, applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.CONV, "1"}, applyIfCPUFeatureOr = {"f16c", "true", "avx512vl", "true", "asimd", "true"})
     public static float halfFloat2Float(boolean c, short a, short b) {
         return c ? Float.float16ToFloat(a) : Float.float16ToFloat(b);
     }

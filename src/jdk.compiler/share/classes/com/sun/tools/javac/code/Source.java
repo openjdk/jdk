@@ -247,7 +247,7 @@ public enum Source {
         STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
         UNNAMED_CLASSES(JDK21, Fragments.FeatureUnnamedClasses, DiagKind.PLURAL),
         WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
-        UNNAMED_VARIABLES(JDK21, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
+        UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         ;
 
         enum DiagKind {

@@ -3439,9 +3439,9 @@ public final class String
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table></blockquote>

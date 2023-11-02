@@ -54,12 +54,14 @@ import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
 import jdk.jfr.Enabled;
+import jdk.jfr.Event;
 import jdk.jfr.Name;
 import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.Bytecode;
+import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.Bytecode.FieldDesc;
 import jdk.jfr.internal.util.Bytecode.MethodDesc;
 import static jdk.jfr.internal.util.Bytecode.invokevirtual;
@@ -77,15 +79,18 @@ final class EventInstrumentation {
     private record SettingDesc(ClassDesc paramType, String methodName) {
     }
 
-    private static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, Utils.FIELD_DURATION);
+    private static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, ImplicitFields.DURATION);
     private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of(Object.class, "eventConfiguration");;
-    private static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, Utils.FIELD_START_TIME);
+    private static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, ImplicitFields.START_TIME);
     private static final ClassDesc ANNOTATION_ENABLED = classDesc(Enabled.class);
     private static final ClassDesc ANNOTATION_NAME = classDesc(Name.class);
     private static final ClassDesc ANNOTATION_REGISTERED = classDesc(Registered.class);
+    private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
+    private static final ClassDesc TYPE_ISE = Bytecode.classDesc(IllegalStateException.class);
     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
     private static final ClassDesc TYPE_EVENT_WRITER_FACTORY = ClassDesc.of("jdk.jfr.internal.event.EventWriterFactory");
+    private static final ClassDesc TYPE_MIRROR_EVENT = Bytecode.classDesc(MirrorEvent.class);
     private static final ClassDesc TYPE_OBJECT = Bytecode.classDesc(Object.class);
     private static final ClassDesc TYPE_SETTING_DEFINITION = Bytecode.classDesc(SettingDefinition.class);
     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
@@ -106,6 +111,7 @@ final class EventInstrumentation {
     private final List<SettingDesc> settingDescs;
     private final List<FieldDesc> fieldDescs;;
     private final String eventName;
+    private final String className;
     private final Class<?> superClass;
     private final boolean untypedEventConfiguration;
     private final MethodDesc staticCommitMethod;
@@ -113,15 +119,19 @@ final class EventInstrumentation {
     private final boolean guardEventConfiguration;
     private final boolean isJDK;
     private final Map<MethodDesc, Consumer<CodeBuilder>> methodUpdates = new LinkedHashMap<>();
+    private final ImplicitFields implicitFields;
 
     EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean isJDK, boolean guardEventConfiguration) {
         this.eventTypeId = id;
         this.superClass = superClass;
+        this.isJDK = isJDK;
         this.classModel = createClassModel(bytes);
+        this.className = classModel.thisClass().asInternalName().replace("/", ".");
+        String name = annotationValue(classModel, ANNOTATION_NAME, String.class);
+        this.eventName = name == null ? className : name;
+        this.implicitFields = determineImplicitFields();
         this.settingDescs = buildSettingDescs(superClass, classModel);
         this.fieldDescs = buildFieldDescs(superClass, classModel);
-        String n = annotationValue(classModel, ANNOTATION_NAME, String.class);
-        this.eventName = n == null ? classModel.thisClass().asInternalName().replace("/", ".") : n;
         this.staticCommitMethod = isJDK ? findStaticCommitMethod(classModel, fieldDescs) : null;
         this.untypedEventConfiguration = hasUntypedConfiguration();
         // Corner case when we are forced to generate bytecode
@@ -130,7 +140,23 @@ final class EventInstrumentation {
         // been registered,
         // so we add a guard against a null reference.
         this.guardEventConfiguration = guardEventConfiguration;
-        this.isJDK = isJDK;
+    }
+
+    private ImplicitFields determineImplicitFields() {
+        if (isJDK) {
+            // For now, only support mirror events in java.base
+            String fullName = "java.base:" + className;
+            Class<?> eventClass = MirrorEvents.find(fullName);
+            if (eventClass != null) {
+                return new ImplicitFields(eventClass);
+            }
+        }
+        ImplicitFields ifs = new ImplicitFields(superClass);
+        String[] value = annotationValue(classModel, ANNOTATION_REMOVE_FIELDS, String[].class);
+        if (value != null) {
+            ifs.removeFields(value);
+        }
+        return ifs;
     }
 
     static MethodDesc findStaticCommitMethod(ClassModel classModel, List<FieldDesc> fields) {
@@ -195,8 +221,22 @@ final class EventInstrumentation {
         return true;
     }
 
+    boolean isMirrorEvent() {
+        String typeDescriptor = TYPE_MIRROR_EVENT.descriptorString();
+        for (ClassElement ce : classModel.elements()) {
+            if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
+                for (var annotation : rvaa.annotations()) {
+                    if (annotation.className().equalsString(typeDescriptor)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
-    // Only supports String and Boolean values
+    // Only supports String, String[] and Boolean values
     private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
         for (ClassElement ce : classModel.elements()) {
@@ -213,6 +253,16 @@ final class EventInstrumentation {
                                 if (ae.value() instanceof AnnotationValue.OfString ofs && type.equals(String.class)) {
                                     String s = ofs.stringValue();
                                     return (T)s;
+                                }
+                                if (ae.value() instanceof AnnotationValue.OfArray ofa && type.equals(String[].class)) {
+                                    List<AnnotationValue> list = ofa.values();
+                                    String[] array = new String[list.size()];
+                                    int index = 0;
+                                    for (AnnotationValue av : list) {
+                                        var avs = (AnnotationValue.OfString)av;
+                                        array[index++] = avs.stringValue();
+                                    }
+                                    return (T)array;
                                 }
                             }
                         }
@@ -287,7 +337,7 @@ final class EventInstrumentation {
         return settingDescs;
     }
 
-    private static List<FieldDesc> buildFieldDescs(Class<?> superClass, ClassModel classModel) {
+    private List<FieldDesc> buildFieldDescs(Class<?> superClass, ClassModel classModel) {
         Set<String> fieldSet = new HashSet<>();
         List<FieldDesc> fieldDescs = new ArrayList<>(classModel.fields().size());
         // These two fields are added by native as 'transient' so they will be
@@ -297,7 +347,9 @@ final class EventInstrumentation {
         // in Java, instead of in native. It also means code for adding implicit
         // fields for native can be reused by Java.
         fieldDescs.add(FIELD_START_TIME);
-        fieldDescs.add(FIELD_DURATION);
+        if (implicitFields.hasDuration()) {
+            fieldDescs.add(FIELD_DURATION);
+        }
         for (FieldModel field : classModel.fields()) {
             if (!fieldSet.contains(field.fieldName().stringValue()) && isValidField(field.flags().flagsMask(), field.fieldTypeSymbol())) {
                 FieldDesc fi = FieldDesc.of(field.fieldTypeSymbol(), field.fieldName().stringValue());
@@ -368,26 +420,39 @@ final class EventInstrumentation {
         return toByteArray();
     }
 
+    private void throwMissingDuration(CodeBuilder codeBuilder, String method) {
+        String message = "Cannot use method " + method + " when event lacks duration field";
+        Bytecode.throwException(codeBuilder, TYPE_ISE, message);
+    }
+
     private void makeInstrumented() {
         // MyEvent#isEnabled()
         updateEnabledMethod(METHOD_IS_ENABLED);
 
         // MyEvent#begin()
         updateMethod(METHOD_BEGIN, codeBuilder -> {
-            codeBuilder.aload(0);
-            invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
-            putfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
-            codeBuilder.return_();
+            if (!implicitFields.hasDuration()) {
+                throwMissingDuration(codeBuilder, "begin");
+            } else {
+                codeBuilder.aload(0);
+                invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
+                putfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
+                codeBuilder.return_();
+            }
         });
 
         // MyEvent#end()
         updateMethod(METHOD_END, codeBuilder -> {
-            codeBuilder.aload(0);
-            codeBuilder.aload(0);
-            getfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
-            invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
-            putfield(codeBuilder, getEventClassDesc(), FIELD_DURATION);
-            codeBuilder.return_();
+            if (!implicitFields.hasDuration()) {
+                throwMissingDuration(codeBuilder, "end");
+            } else {
+                codeBuilder.aload(0);
+                codeBuilder.aload(0);
+                getfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
+                invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
+                putfield(codeBuilder, getEventClassDesc(), FIELD_DURATION);
+                codeBuilder.return_();
+            }
         });
 
         // MyEvent#commit() or static MyEvent#commit(...)
@@ -451,7 +516,6 @@ final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 codeBuilder.aload(0);
                 getEventConfiguration(codeBuilder);
-                codeBuilder.checkcast(TYPE_EVENT_CONFIGURATION);
                 codeBuilder.ldc(index);
                 invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
                 MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
@@ -529,27 +593,33 @@ final class EventInstrumentation {
         // stack: [EW], [EW], [long]
         slotIndex += tk.slotSize();
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
-        // stack: [EW]
         fieldIndex++;
-        // write duration
-        blockCodeBuilder.dup();
-        // stack: [EW], [EW]
-        tk = TypeKind.from(argumentTypes[argIndex++]);
-        blockCodeBuilder.loadInstruction(tk, slotIndex);
-        // stack: [EW], [EW], [long]
-        slotIndex += tk.slotSize();
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
         // stack: [EW]
-        fieldIndex++;
-        // write eventThread
-        blockCodeBuilder.dup();
-        // stack: [EW], [EW]
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        if (implicitFields.hasDuration()) {
+            // write duration
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            tk = TypeKind.from(argumentTypes[argIndex++]);
+            blockCodeBuilder.loadInstruction(tk, slotIndex);
+            // stack: [EW], [EW], [long]
+            slotIndex += tk.slotSize();
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+            fieldIndex++;
+        }
         // stack: [EW]
-        // write stackTrace
-        blockCodeBuilder.dup();
-        // stack: [EW], [EW]
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        if (implicitFields.hasEventThread()) {
+            // write eventThread
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        }
+        // stack: [EW]
+        if (implicitFields.hasStackTrace()) {
+            // write stackTrace
+            blockCodeBuilder.dup();
+            // stack: [EW], [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        }
         // stack: [EW]
         // write custom fields
         while (fieldIndex < fieldDescs.size()) {
@@ -634,24 +704,33 @@ final class EventInstrumentation {
         blockCodeBuilder.lload(1);
         // stack: [EW] [EW] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
-        // stack: [EW]
         fieldIndex++;
-        blockCodeBuilder.dup();
-        // stack: [EW] [EW]
-        blockCodeBuilder.aload(0);
-        // stack: [EW] [EW] [this]
-        getfield(blockCodeBuilder, getEventClassDesc(), FIELD_DURATION);
-        // stack: [EW] [EW] [long]
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
         // stack: [EW]
-        fieldIndex++;
-        blockCodeBuilder.dup();
-        // stack: [EW] [EW]
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        if (implicitFields.hasDuration()) {
+            // write duration
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            blockCodeBuilder.aload(0);
+            // stack: [EW] [EW] [this]
+            getfield(blockCodeBuilder, getEventClassDesc(), FIELD_DURATION);
+            // stack: [EW] [EW] [long]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+            fieldIndex++;
+        }
         // stack: [EW]
-        blockCodeBuilder.dup();
-        // stack: [EW] [EW]
-        invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        if (implicitFields.hasEventThread()) {
+            // write eventThread
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_EVENT_THREAD.method());
+        }
+        // stack: [EW]
+        if (implicitFields.hasStackTrace()) {
+            // write stack trace
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
+        }
         // stack: [EW]
         while (fieldIndex < fieldDescs.size()) {
             FieldDesc field = fieldDescs.get(fieldIndex);
@@ -712,6 +791,7 @@ final class EventInstrumentation {
     private void getEventConfiguration(CodeBuilder codeBuilder) {
         if (untypedEventConfiguration) {
             codeBuilder.getstatic(getEventClassDesc(), FIELD_EVENT_CONFIGURATION.name(), TYPE_OBJECT);
+            codeBuilder.checkcast(TYPE_EVENT_CONFIGURATION);
         } else {
             codeBuilder.getstatic(getEventClassDesc(), FIELD_EVENT_CONFIGURATION.name(), TYPE_EVENT_CONFIGURATION);
         }
