@@ -6554,6 +6554,7 @@ static void _GetInsets(void* param)
     component = (AwtComponent *) pData;
 
     component->GetInsets(gis->insets);
+
   ret:
     env->DeleteGlobalRef(self);
     delete gis;
