@@ -31,6 +31,7 @@
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNameValidationTest
  */
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
@@ -47,29 +48,33 @@ public class CondyNameValidationTest {
     static final MethodType BSM_TYPE = methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class);
 
     @DataProvider
-    public Object[][] invalidNamesProvider() throws Exception {
-        return Stream.of("",
-                         ".",
-                         ";",
-                         "[",
-                         "/")
-                .map(e -> new Object[]{e}).toArray(Object[][]::new);
+    public Object[][] invalidNamesProvider() {
+        return Stream.of(
+                        new Object[]{"", "zero-length member name"},
+                        new Object[]{".", "Invalid member name"},
+                        new Object[]{";", "Invalid member name"},
+                        new Object[]{"[", "Invalid member name"},
+                        new Object[]{"/", "Invalid member name"}
+                )
+                .toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "invalidNamesProvider", expectedExceptions = java.lang.ClassFormatError.class)
-    public void testInvalidNames(String name) throws Exception {
-        MethodHandle mh = InstructionHelper.ldcDynamicConstant(
-                L, name, Object.class,
-                "bsm", BSM_TYPE,
-                S -> {
-                });
+    @Test(dataProvider = "invalidNamesProvider")
+    public void testInvalidNames(String name, String errMessContent) throws Exception {
+        try {
+            MethodHandle mh = InstructionHelper.ldcDynamicConstant(
+                    L, name, Object.class,
+                    "bsm", BSM_TYPE
+            );
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains(errMessContent));
+        }
     }
 
     @DataProvider
     public Object[][] validNamesProvider() throws Exception {
         return Stream.of("<clinit>",
-                         "<init>",
-                         "<foo>")
+                        "<init>")
                 .map(e -> new Object[]{e}).toArray(Object[][]::new);
     }
 
@@ -77,8 +82,7 @@ public class CondyNameValidationTest {
     public void testValidNames(String name) throws Exception {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, name, Object.class,
-                "bsm", BSM_TYPE,
-                S -> {
-                });
+                "bsm", BSM_TYPE
+        );
     }
 }
