@@ -282,10 +282,12 @@ public class FormView extends ComponentView implements ActionListener {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
                 @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
-                ImageIcon icon = new ImageIcon(srcURL);
-                button = icon.getImageLoadStatus() == MediaTracker.COMPLETE ? new JButton(icon) : new JButton(altAtt);
+                ImageIcon icon = new ImageIcon(srcURL, altAtt);
+                button = icon.getImageLoadStatus() == MediaTracker.COMPLETE
+                         ? new JButton(icon)
+                         : new JButton(altAtt);
             } catch (MalformedURLException e) {
-                button = new JButton(altAtt == null ? srcAtt : altAtt);
+                button = new JButton(altAtt);
             }
             if (model != null) {
                 button.setModel((ButtonModel)model);
