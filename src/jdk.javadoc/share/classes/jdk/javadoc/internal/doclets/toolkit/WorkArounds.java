@@ -128,68 +128,6 @@ public class WorkArounds {
         return ((PackageSymbol)packageElement).sourcefile;
     }
 
-    // TODO: needs to ported to jx.l.m.
-    public TypeElement searchClass(TypeElement klass, String className) {
-        TypeElement te;
-
-        // search by qualified name in current module first
-        ModuleElement me = utils.containingModule(klass);
-        if (me != null) {
-            te = elementUtils.getTypeElement(me, className);
-            if (te != null) {
-                return te;
-            }
-        }
-
-        // search inner classes
-        for (TypeElement ite : utils.getClasses(klass)) {
-            TypeElement innerClass = searchClass(ite, className);
-            if (innerClass != null) {
-                return innerClass;
-            }
-        }
-
-        // check in this package
-        te = utils.findClassInPackageElement(utils.containingPackage(klass), className);
-        if (te != null) {
-            return te;
-        }
-
-        ClassSymbol tsym = (ClassSymbol)klass;
-        // make sure that this symbol has been completed
-        // TODO: do we need this anymore ?
-        if (tsym.completer != null) {
-            tsym.complete();
-        }
-
-        // search imports
-        if (tsym.sourcefile != null) {
-
-            //### This information is available only for source classes.
-            Env<AttrContext> compenv = toolEnv.getEnv(tsym);
-            if (compenv == null) {
-                return null;
-            }
-            Names names = tsym.name.table.names;
-            Scope s = compenv.toplevel.namedImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-
-            s = compenv.toplevel.starImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-        }
-
-        // finally, search by qualified name in all modules
-        return elementUtils.getTypeElement(className);
-    }
-
     // TODO: jx.l.m ?
     public Location getLocationForModule(ModuleElement mdle) {
         ModuleSymbol msym = (ModuleSymbol)mdle;

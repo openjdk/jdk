@@ -806,20 +806,6 @@ public class Utils {
     }
 
     /**
-     * Lookup for a class within this package.
-     *
-     * @return TypeElement of found class, or null if not found.
-     */
-    public TypeElement findClassInPackageElement(PackageElement pkg, String className) {
-        for (TypeElement c : getAllClasses(pkg)) {
-            if (getSimpleName(c).equals(className)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
      * @param type the type
      * @return {@code true} if type arguments were found
@@ -832,30 +818,6 @@ public class Utils {
             type = dt.getEnclosingType();
         }
         return false;
-    }
-
-    /**
-     * TODO: FIXME: port to javax.lang.model
-     * Find a class within the context of this class. Search order: qualified name, in this class
-     * (inner), in this package, in the class imports, in the package imports. Return the
-     * TypeElement if found, null if not found.
-     */
-    //### The specified search order is not the normal rule the
-    //### compiler would use.  Leave as specified or change it?
-    public TypeElement findClass(Element element, String className) {
-        TypeElement encl = getEnclosingTypeElement(element);
-        TypeElement searchResult = configuration.workArounds.searchClass(encl, className);
-        if (searchResult == null) {
-            encl = getEnclosingTypeElement(encl);
-            //Expand search space to include enclosing class.
-            while (encl != null && getEnclosingTypeElement(encl) != null) {
-                encl = getEnclosingTypeElement(encl);
-            }
-            searchResult = encl == null
-                    ? null
-                    : configuration.workArounds.searchClass(encl, className);
-        }
-        return searchResult;
     }
 
     /**
@@ -1561,17 +1523,6 @@ public class Utils {
      */
     public List<VariableElement> getFieldsUnfiltered(TypeElement te) {
         return getAllItems(te, FIELD, VariableElement.class);
-    }
-
-    /**
-     * Returns the documented classes in an element,
-     * such as a package element or type element.
-     *
-     * @param e the element
-     * @return the classes
-     */
-    public List<TypeElement> getClasses(Element e) {
-        return getDocumentedItems(e, CLASS, TypeElement.class);
     }
 
     /**
