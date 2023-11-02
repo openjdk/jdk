@@ -709,8 +709,7 @@ public final class LauncherHelper {
     /**
      * This method:
      * 1. Loads the main class from the module or class path
-     * 2. Checks the public static void main method.
-     * 3. If the main class extends FX Application then call on FXHelper to
+     * 2. If the main class extends FX Application then call on FXHelper to
      * perform the launch.
      *
      * @param printToStderr if set, all output will be routed to stderr

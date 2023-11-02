@@ -30,7 +30,7 @@ import java.lang.reflect.Modifier;
 
 public class MainMethodFinder {
     /**
-     * {@return true if method mets the requirements of a main method}
+     * {@return true if the method meets the requirements of a main method}
      *
      * @param method    method to test
      * @param argCount  number of expected arguments (0 or 1)
