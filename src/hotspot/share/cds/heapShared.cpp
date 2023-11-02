@@ -112,7 +112,6 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {"java/util/jar/Attributes$Name",               "KNOWN_NAMES"},
   {"sun/util/locale/BaseLocale",                  "constantBaseLocales"},
   {"jdk/internal/module/ArchivedModuleGraph",     "archivedModuleGraph"},
-  {"jdk/internal/module/ArchivedModuleGraph",     "mainModule"},
   {"java/util/ImmutableCollections",              "archivedObjects"},
   {"java/lang/ModuleLayer",                       "EMPTY_LAYER"},
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},

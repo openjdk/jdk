@@ -42,20 +42,20 @@ class ArchivedModuleGraph {
     private final ModuleFinder finder;
     private final Configuration configuration;
     private final Function<String, ClassLoader> classLoaderFunction;
-    private static String mainModule;
+    private final String mainModule;
 
     private ArchivedModuleGraph(boolean hasSplitPackages,
                                 boolean hasIncubatorModules,
                                 ModuleFinder finder,
                                 Configuration configuration,
                                 Function<String, ClassLoader> classLoaderFunction,
-                                String mainModuleName) {
+                                String mainModule) {
         this.hasSplitPackages = hasSplitPackages;
         this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
         this.classLoaderFunction = classLoaderFunction;
-        mainModule = mainModuleName;
+        this.mainModule = mainModule;
     }
 
     ModuleFinder finder() {
@@ -81,9 +81,9 @@ class ArchivedModuleGraph {
     /**
      * Returns the ArchivedModuleGraph for the given initial module.
      */
-    static ArchivedModuleGraph get(String mainModuleName) {
+    static ArchivedModuleGraph get(String mainModule) {
         ArchivedModuleGraph graph = archivedModuleGraph;
-        if (Objects.equals(mainModule, mainModuleName)) {
+        if ((graph != null) && Objects.equals(graph.mainModule, mainModule)) {
             return graph;
         } else {
             return null;
