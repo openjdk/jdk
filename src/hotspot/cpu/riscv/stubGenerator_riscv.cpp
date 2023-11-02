@@ -4498,7 +4498,7 @@ class StubGenerator: public StubCodeGenerator {
     // Arguments
     const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
     // Temporal registers
-    const Register tmp1 = t0, tmp2 = t1, tmp3 = t2;
+    const Register tmp1 = t1, tmp2 = t2;
 
     // R_n is the 128-bit randomly-generated key, packed into two
     // registers. The caller passes this key to us as long[5], with
@@ -4567,9 +4567,9 @@ class StubGenerator: public StubCodeGenerator {
       __ srli(tmp1, U_2, 2);
       __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
       __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
-      __ cad(U_0, U_0, tmp1, tmp3); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp3
-      __ cad(U_1, U_1, tmp3, tmp3); // Add carry to U_1 with carry output to tmp3
-      __ add(U_2, U_2, tmp3);
+      __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp2
+      __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+      __ add(U_2, U_2, tmp2);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
@@ -4580,10 +4580,10 @@ class StubGenerator: public StubCodeGenerator {
     // Further reduce modulo 2^130 - 5
     __ srli(tmp1, U_2, 2);
     __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 = U_2 * 5
-    __ cad(U_0, U_0, tmp1, tmp3); // U_0 += U_2 * 5 with carry output to tmp3
-    __ cad(U_1, U_1, tmp3, tmp3); // Add carry to U_1 with carry output to tmp3
+    __ cad(U_0, U_0, tmp1, tmp2); // U_0 += U_2 * 5 with carry output to tmp2
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
     __ andi(U_2, U_2, bits2);
-    __ add(U_2, U_2, tmp3); // Add carry to U_2
+    __ add(U_2, U_2, tmp2); // Add carry to U_2
 
     // Unpack the sum into five 26-bit limbs and write to memory.
     // First 26 bits is the first limb
@@ -4605,7 +4605,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Storing 15-40 bits of U_1
     __ slli(tmp1, U_1, 24); // Already used up 14 bits
-    __ srli(tmp1, tmp1, 38); // Clear all other bits from tmp3
+    __ srli(tmp1, tmp1, 38); // Clear all other bits from tmp1
     __ sd(tmp1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
 
     // Storing 41-64 bits of U_1 and first two bits from U_2 in one register
