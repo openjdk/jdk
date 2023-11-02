@@ -37,6 +37,8 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Delivered as a {@link jdk.internal.classfile.instruction.LineNumber} when traversing the
  * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
  * {@link jdk.internal.classfile.Classfile.LineNumbersOption} option.
+ * <p>
+ * The attribute permits multiple instances in a given location.
  */
 public sealed interface LineNumberTableAttribute
         extends Attribute<LineNumberTableAttribute>

@@ -29,7 +29,6 @@ import java.nio.ByteOrder;
 
 /*
  * @test
- * @enablePreview
  * @bug 8262998
  * @summary Vector API intrinsincs should not modify IR when bailing out
  * @modules jdk.incubator.vector

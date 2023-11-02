@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -32,6 +30,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.impl.LabelContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -70,5 +69,14 @@ class LimitsTest {
     void testEmptyCode() {
         assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
                 "emptyMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {})));
+    }
+
+    @Test
+    void testCodeRange() {
+        var cf = Classfile.of();
+        var lc = (LabelContext)cf.parse(cf.build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
+                "aMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> cob.return_()))).methods().get(0).code().get();
+        assertThrows(IllegalArgumentException.class, () -> lc.getLabel(-1));
+        assertThrows(IllegalArgumentException.class, () -> lc.getLabel(10));
     }
 }

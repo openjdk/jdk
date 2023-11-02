@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcStats.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "gc/shared/gc_globals.hpp"
 
 GCStats::GCStats() : _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)) {}

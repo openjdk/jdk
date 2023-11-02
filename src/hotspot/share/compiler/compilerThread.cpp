@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
@@ -39,6 +40,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _counters = counters;
   _buffer_blob = nullptr;
   _compiler = nullptr;
+  _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
 
   // Compiler uses resource area for compilation, let's bias it to mtCompiler
   resource_area()->bias_to(mtCompiler);
@@ -51,6 +53,7 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 CompilerThread::~CompilerThread() {
   // Delete objects which were allocated on heap.
   delete _counters;
+  delete _arena_stat;
 }
 
 void CompilerThread::thread_entry(JavaThread* thread, TRAPS) {

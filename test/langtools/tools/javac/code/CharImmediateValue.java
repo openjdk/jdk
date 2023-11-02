@@ -34,7 +34,12 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
  * @compile CharImmediateValue.java
@@ -53,11 +58,8 @@ import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Opcode;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
@@ -134,12 +136,11 @@ public class CharImmediateValue implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassFile cf = ClassFile.read(testClass);
-        Code_attribute codeAttr =
-                (Code_attribute) cf.methods[1].attributes.get(Attribute.Code);
+        ClassModel cf = Classfile.of().parse(testClass);
+        CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
         boolean seenCast = false;
-        for (Instruction i : codeAttr.getInstructions()) {
-            if (i.getOpcode() == Opcode.I2C) {
+        for (CodeElement i : codeAttr.elementList()) {
+            if (i instanceof Instruction ins && ins.opcode() == Opcode.I2C) {
                 seenCast = true;
             }
         }

@@ -31,7 +31,12 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox ElementStructureTest
  * @run main ElementStructureTest
@@ -93,8 +98,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.Classfile;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;
@@ -213,14 +217,11 @@ public class ElementStructureTest {
                         return;
                     StringBuilder targetPattern;
                     switch (line.charAt(0)) {
-                        case '+':
-                            targetPattern = acceptPattern;
-                            break;
-                        case '-':
-                            targetPattern = rejectPattern;
-                            break;
-                        default:
-                            return ;
+                        case '+' -> targetPattern = acceptPattern;
+                        case '-' -> targetPattern = rejectPattern;
+                        default -> {
+                            return;
+                        }
                     }
                     line = line.substring(1);
                     if (line.endsWith("/")) {
@@ -256,7 +257,7 @@ public class ElementStructureTest {
 
     void run(Writer output, String version) throws Exception {
         List<String> options = Arrays.asList("--release", version, "-classpath", "");
-        List<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource("Test", ""));
+        List<ToolBox.JavaSource> files = List.of(new ToolBox.JavaSource("Test", ""));
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, null, files);
 
@@ -288,10 +289,10 @@ public class ElementStructureTest {
                 }
                 JavaFileObject file = new ByteArrayJavaFileObject(data.toByteArray());
                 try (InputStream in = new ByteArrayInputStream(data.toByteArray())) {
-                    String name = ClassFile.read(in).getName().replace("/", ".");
+                    String name = Classfile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
                     className2File.put(name, file);
                     file2ClassName.put(file, name);
-                } catch (IOException | ConstantPoolException ex) {
+                } catch (IOException ex) {
                     throw new IllegalStateException(ex);
                 }
             }

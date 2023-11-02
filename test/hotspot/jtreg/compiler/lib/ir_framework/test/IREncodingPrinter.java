@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.*;
+import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
@@ -54,6 +55,27 @@ public class IREncodingPrinter {
     private final StringBuilder output = new StringBuilder();
     private Method method;
     private int ruleIndex;
+
+    // Platforms for use in IR preconditions. Please verify that e.g. there is
+    // a corresponding use in a jtreg @requires annotation before adding new platforms,
+    // as adding non-existent platforms can lead to skipped tests.
+    private static final List<String> irTestingPlatforms = new ArrayList<String>(Arrays.asList(
+        // os.family
+        "linux",
+        "mac",
+        "windows",
+        // vm.simpleArch
+        "aarch64",
+        "arm",
+        "ppc",
+        "riscv64",
+        "s390",
+        "x64",
+        "x86",
+        // corresponds to vm.bits
+        "32-bit",
+        "64-bit"
+    ));
 
     // Please verify new CPU features before adding them. If we allow non-existent features
     // on this list, we will ignore tests and never execute them. Consult CPU_FEATURE_FLAGS
@@ -132,6 +154,15 @@ public class IREncodingPrinter {
         checkIRAnnotations(irAnno);
         if (isIRNodeUnsupported(irAnno)) {
             return false;
+        } else if (irAnno.applyIfPlatform().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatform())) {
+            printDisableReason(m, "Constraint not met (applyIfPlatform)", irAnno.applyIfPlatform(), ruleIndex, ruleMax);
+            return false;
+        } else if (irAnno.applyIfPlatformAnd().length != 0 && !hasAllRequiredPlatform(irAnno.applyIfPlatformAnd())) {
+            printDisableReason(m, "Not all constraints are met (applyIfPlatformAnd)", irAnno.applyIfPlatformAnd(), ruleIndex, ruleMax);
+            return false;
+        } else if (irAnno.applyIfPlatformOr().length != 0 && !hasAnyRequiredPlatform(irAnno.applyIfPlatformOr())) {
+            printDisableReason(m, "None of the constraints are met (applyIfPlatformOr)", irAnno.applyIfPlatformOr(), ruleIndex, ruleMax);
+            return false;
         } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature())) {
             printDisableReason(m, "Feature constraint not met (applyIfCPUFeature)", irAnno.applyIfCPUFeature(), ruleIndex, ruleMax);
             return false;
@@ -163,6 +194,7 @@ public class IREncodingPrinter {
         TestFormat.checkNoThrow(irAnno.counts().length != 0 || irAnno.failOn().length != 0,
                                 "Must specify either counts or failOn constraint" + failAt());
         int flagConstraints = 0;
+        int platformConstraints = 0;
         int cpuFeatureConstraints = 0;
         if (irAnno.applyIfAnd().length != 0) {
             flagConstraints++;
@@ -178,6 +210,21 @@ public class IREncodingPrinter {
             flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIf().length <= 2,
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIf" + failAt());
+        }
+        if (irAnno.applyIfPlatform().length != 0) {
+            platformConstraints++;
+            TestFormat.checkNoThrow(irAnno.applyIfPlatform().length == 2,
+                                    "applyIfPlatform expects single platform pair" + failAt());
+        }
+        if (irAnno.applyIfPlatformAnd().length != 0) {
+            platformConstraints++;
+            TestFormat.checkNoThrow(irAnno.applyIfPlatformAnd().length % 2 == 0,
+                                    "applyIfPlatformAnd expects more than one platform pair" + failAt());
+        }
+        if (irAnno.applyIfPlatformOr().length != 0) {
+            platformConstraints++;
+            TestFormat.checkNoThrow(irAnno.applyIfPlatformOr().length % 2 == 0,
+                                    "applyIfPlatformOr expects more than one platform pair" + failAt());
         }
         if (irAnno.applyIfCPUFeature().length != 0) {
             cpuFeatureConstraints++;
@@ -200,6 +247,7 @@ public class IREncodingPrinter {
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
         }
         TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
+        TestFormat.checkNoThrow(platformConstraints <= 1, "Can only specify one platform constraint" + failAt());
         TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
     }
 
@@ -231,6 +279,82 @@ public class IREncodingPrinter {
             }
         }
         return returnValue;
+    }
+
+    private boolean hasAllRequiredPlatform(String[] andRules) {
+        boolean returnValue = true;
+        for (int i = 0; i < andRules.length; i++) {
+            String platform = andRules[i].trim();
+            i++;
+            String value = andRules[i].trim();
+            returnValue &= checkPlatform(platform, value);
+        }
+        return returnValue;
+    }
+
+    private boolean hasAnyRequiredPlatform(String[] orRules) {
+        boolean returnValue = false;
+        for (int i = 0; i < orRules.length; i++) {
+            String platform = orRules[i].trim();
+            i++;
+            String value = orRules[i].trim();
+            returnValue |= checkPlatform(platform, value);
+        }
+        return returnValue;
+    }
+
+    private boolean checkPlatform(String platform, String value) {
+        if (platform.isEmpty()) {
+            TestFormat.failNoThrow("Provided empty platform" + failAt());
+            return false;
+        }
+        if (value.isEmpty()) {
+            TestFormat.failNoThrow("Provided empty value for platform " + platform + failAt());
+            return false;
+        }
+
+        if (!irTestingPlatforms.contains(platform)) {
+            TestFormat.failNoThrow("Provided platform is not in verified list: " + platform + failAt());
+            return false;
+        }
+
+        boolean trueValue = value.contains("true");
+        boolean falseValue = value.contains("false");
+
+        if (!trueValue && !falseValue) {
+            TestFormat.failNoThrow("Provided incorrect value for platform " + platform + failAt());
+            return false;
+        }
+
+        String os = "";
+        if (Platform.isLinux()) {
+            os = "linux";
+        } else if (Platform.isOSX()) {
+            os = "mac";
+        } else if (Platform.isWindows()) {
+            os = "windows";
+        }
+
+        String arch = "";
+        if (Platform.isAArch64()) {
+            arch = "aarch64";
+        } else if (Platform.isARM()) {
+            arch = "arm";
+        } else if (Platform.isPPC()) {
+            arch = "ppc";
+        } else if (Platform.isRISCV64()) {
+            arch = "riscv64";
+        } else if (Platform.isS390x()) {
+            arch = "s390";
+        } else if (Platform.isX64()) {
+            arch = "x64";
+        } else if (Platform.isX86()) {
+            arch = "x86";
+        }
+
+        String currentPlatform = os + " " + arch + " " + (Platform.is32bit() ? "32-bit" : "64-bit");
+
+        return (trueValue && currentPlatform.contains(platform)) || (falseValue && !currentPlatform.contains(platform));
     }
 
     private boolean hasAllRequiredCPUFeature(String[] andRules) {

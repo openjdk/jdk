@@ -152,8 +152,23 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 
 // By default, gcc always saves frame pointer rfp on this stack. This
 // may get turned off by -fomit-frame-pointer.
+// The "Procedure Call Standard for the Arm 64-bit Architecture" doesn't
+// specify a location for the frame record within a stack frame (6.4.6).
+// GCC currently chooses to save it at the top of the frame (lowest address).
+// This means that using fr->sender_sp() to set the caller's frame _unextended_sp,
+// as we do in x86, is wrong. Using fr->link() instead only makes sense for
+// native frames. Setting a correct value for _unextended_sp is important
+// if this value is later used to get that frame's caller. This will happen
+// if we end up calling frame::sender_for_compiled_frame(), which will be the
+// case if the _pc is associated with a CodeBlob that has a _frame_size > 0
+// (nmethod, runtime stub, safepoint stub, etc).
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  address pc = fr->sender_pc();
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  bool use_codeblob = cb != nullptr && cb->frame_size() > 0;
+  assert(!use_codeblob || !Interpreter::contains(pc), "should not be an interpreter frame");
+  intptr_t* sender_sp = use_codeblob ? (fr->link() + frame::metadata_words - cb->frame_size()) : fr->link();
+  return frame(sender_sp, sender_sp, fr->link(), pc, cb, true /* allow_cb_null */);
 }
 
 NOINLINE frame os::current_frame() {

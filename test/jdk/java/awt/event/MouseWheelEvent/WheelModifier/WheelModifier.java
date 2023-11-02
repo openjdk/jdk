@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,22 @@
    @key headful
    @bug 8041470
    @summary JButtons stay pressed after they have lost focus if you use the mouse wheel
-   @author Anton Nashatyrev
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTEvent;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 public class WheelModifier {
 
@@ -43,6 +52,9 @@ public class WheelModifier {
     CountDownLatch exitSema = new CountDownLatch(1);
     CountDownLatch releaseSema = new CountDownLatch(1);
     volatile CountDownLatch wheelSema;
+
+    private volatile Point sLoc;
+    private volatile Dimension bSize;
 
     void createGui() {
         f = new JFrame("frame");
@@ -98,10 +110,13 @@ public class WheelModifier {
         r.waitForIdle();
         System.out.println("# Started");
 
-        Point sLoc = fb.getLocationOnScreen();
-        Dimension bSize = fb.getSize();
+        SwingUtilities.invokeAndWait(() -> {
+            sLoc = fb.getLocationOnScreen();
+            bSize = fb.getSize();
+        });
+
         r.mouseMove(sLoc.x + bSize.width / 2, sLoc.y + bSize.height / 2);
-        r.mousePress(MouseEvent.BUTTON1_MASK);
+        r.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
         pressSema.await();
         System.out.println("# Pressed");
 
@@ -119,7 +134,7 @@ public class WheelModifier {
         wheelSema.await();
         System.out.println("# Wheeled 2");
 
-        r.mouseRelease(MouseEvent.BUTTON1_MASK);
+        r.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
         releaseSema.await();
         System.out.println("# Released!");
     }

@@ -27,6 +27,8 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
@@ -397,18 +400,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     /**
-     * Gets the name of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by another
-     * entry denoted by {@code which}.
-     *
-     * @param rawIndex rewritten index in the bytecode stream
-     * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return name as {@link String}
-     */
-    private String getNameOf(int rawIndex, int opcode) {
-        return compilerToVM().lookupNameInPool(this, rawIndex, opcode);
-    }
-
-    /**
      * Gets the name reference index of a {@code JVM_CONSTANT_NameAndType} constant pool entry at
      * index {@code index}.
      *
@@ -421,17 +412,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return refIndex & 0xFFFF;
     }
 
-    /**
-     * Gets the signature of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by
-     * another entry denoted by {@code which}.
-     *
-     * @param rawIndex rewritten index in the bytecode stream
-     * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return signature as {@link String}
-     */
-    private String getSignatureOf(int rawIndex, int opcode) {
-        return compilerToVM().lookupSignatureInPool(this, rawIndex, opcode);
-    }
 
     /**
      * Gets the signature reference index of a {@code JVM_CONSTANT_NameAndType} constant pool entry
@@ -449,12 +429,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     /**
      * Gets the klass reference index constant pool entry at index {@code index}.
      *
-     * @param rawIndex rewritten index in the bytecode stream
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return klass reference index
      */
-    private int getKlassRefIndexAt(int rawIndex, int opcode) {
-        return compilerToVM().lookupKlassRefIndexInPool(this, rawIndex, opcode);
+    private int getKlassRefIndexAt(int which, int opcode) {
+        return compilerToVM().lookupKlassRefIndexInPool(this, which, opcode);
     }
 
     /**
@@ -524,6 +505,60 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     private int flags() {
         return UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolFlagsOffset);
+    }
+
+    /**
+     * Represents a list of static arguments from a {@link BootstrapMethodInvocation} of the form
+     * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved
+     * and that the JDK has to lookup the arguments when they are needed. The {@code bssIndex}
+     * corresponds to {@code pool_index} and the {@code size} corresponds to {@code arg_count}.
+     */
+    static class CachedBSMArgs extends AbstractList<JavaConstant> {
+        private final JavaConstant[] cache;
+        private final HotSpotConstantPool cp;
+        private final int bssIndex;
+
+        CachedBSMArgs(HotSpotConstantPool cp, int bssIndex, int size) {
+            this.cp = cp;
+            this.bssIndex = bssIndex;
+            this.cache = new JavaConstant[size];
+        }
+
+        /**
+         * Lazily resolves and caches the argument at the given index and returns it. The method
+         * {@link CompilerToVM#bootstrapArgumentIndexAt} is used to obtain the constant pool
+         * index of the entry and the method {@link ConstantPool#lookupConstant} is used to
+         * resolve it. If the resolution failed, the index is returned as a
+         * {@link PrimitiveConstant}.
+         *
+         * @param index index of the element to return
+         * @return A {@link JavaConstant} corresponding to the static argument requested. A return
+         * value of type {@link PrimitiveConstant} represents an unresolved constant pool entry
+         */
+        @Override
+        public JavaConstant get(int index) {
+            JavaConstant res = cache[index];
+            if (res == null) {
+                int argCpi = compilerToVM().bootstrapArgumentIndexAt(cp, bssIndex, index);
+                Object object = cp.lookupConstant(argCpi, false);
+                if (object instanceof PrimitiveConstant primitiveConstant) {
+                    res = runtime().getReflection().boxPrimitive(primitiveConstant);
+                } else if (object instanceof JavaConstant javaConstant) {
+                    res = javaConstant;
+                } else if (object instanceof JavaType type) {
+                    res = runtime().getReflection().forObject(type);
+                } else {
+                    res = JavaConstant.forInt(argCpi);
+                }
+                cache[index] = res;
+            }
+            return res;
+        }
+
+        @Override
+        public int size() {
+            return cache.length;
+        }
     }
 
     static class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
@@ -604,8 +639,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     staticArgumentsList = List.of((JavaConstant[]) staticArguments);
                 } else {
                     int[] bsciArgs = (int[]) staticArguments;
-                    String message = String.format("Resolving bootstrap static arguments for %s using BootstrapCallInfo %s not supported", method.format("%H.%n(%p)"), Arrays.toString(bsciArgs));
-                    throw new IllegalArgumentException(message);
+                    int argCount = bsciArgs[0];
+                    int bss_index = bsciArgs[1];
+                    staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
                 }
                 return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
             default:
@@ -719,18 +755,26 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaMethod lookupMethod(int rawIndex, int opcode, ResolvedJavaMethod caller) {
-        final int cpci = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
-        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, cpci, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
+        int which; // interpretation depends on opcode
+        if (opcode == Bytecodes.INVOKEDYNAMIC) {
+            if (!isInvokedynamicIndex(rawIndex)) {
+                throw new IllegalArgumentException("expected a raw index for INVOKEDYNAMIC but got " + rawIndex);
+            }
+            which = rawIndex;
+        } else {
+            which = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
+        }
+        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, which, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
         if (method != null) {
             return method;
         } else {
             // Get the method's name and signature.
-            String name = getNameOf(cpci, opcode);
-            HotSpotSignature signature = new HotSpotSignature(runtime(), getSignatureOf(cpci, opcode));
+            String name = compilerToVM().lookupNameInPool(this, which, opcode);
+            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, which, opcode));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 return new UnresolvedJavaMethod(name, signature, runtime().getMethodHandleClass());
             } else {
-                final int klassIndex = getKlassRefIndexAt(cpci, opcode);
+                final int klassIndex = getKlassRefIndexAt(which, opcode);
                 final Object type = compilerToVM().lookupKlassInPool(this, klassIndex);
                 return new UnresolvedJavaMethod(name, signature, getJavaType(type));
             }

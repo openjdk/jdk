@@ -299,7 +299,8 @@ inline void clear_anchor(JavaThread* thread) {
 }
 
 static void set_anchor(JavaThread* thread, intptr_t* sp) {
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
   assert(pc != nullptr, "");
 
   JavaFrameAnchor* anchor = thread->frame_anchor();
@@ -592,7 +593,14 @@ void FreezeBase::freeze_fast_existing_chunk() {
   if (chunk->sp() < chunk->stack_size()) { // we are copying into a non-empty chunk
     DEBUG_ONLY(_empty = false;)
     assert(chunk->sp() < (chunk->stack_size() - chunk->argsize()), "");
-    assert(*(address*)(chunk->sp_address() - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (chunk->sp_address()
+                                - frame::sender_sp_ret_address_offset());
+      assert(ContinuationHelper::return_address_at(retaddr_slot) == chunk->pc(),
+             "unexpected saved return address");
+    }
+#endif
 
     // the chunk's sp before the freeze, adjusted to point beyond the stack-passed arguments in the topmost frame
     // we overlap; we'll overwrite the chunk's top frame's callee arguments
@@ -606,8 +614,15 @@ void FreezeBase::freeze_fast_existing_chunk() {
     assert(bottom_sp == _bottom_address, "");
     // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
     // should have a return barrier (installed back when we thawed it).
-    assert(*(address*)(bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(),
-           "should be the continuation return barrier");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (bottom_sp
+                                - frame::sender_sp_ret_address_offset());
+      assert(ContinuationHelper::return_address_at(retaddr_slot)
+             == StubRoutines::cont_returnBarrier(),
+             "should be the continuation return barrier");
+    }
+#endif
     // We copy the fp from the chunk back to the stack because it contains some caller data,
     // including, possibly, an oop that might have gone stale since we thawed.
     patch_stack_pd(bottom_sp, chunk->sp_address());
@@ -675,7 +690,14 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   assert(!(_fast_freeze_size > 0) || _orig_chunk_sp - (chunk->start_address() + chunk_new_sp) == _fast_freeze_size, "");
 
   intptr_t* chunk_top = chunk->start_address() + chunk_new_sp;
-  assert(_empty || *(address*)(_orig_chunk_sp - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+#ifdef ASSERT
+  if (!_empty) {
+    intptr_t* retaddr_slot = (_orig_chunk_sp
+                              - frame::sender_sp_ret_address_offset());
+    assert(ContinuationHelper::return_address_at(retaddr_slot) == chunk->pc(),
+           "unexpected saved return address");
+  }
+#endif
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
@@ -684,15 +706,27 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
   // Because we're not patched yet, the chunk is now in a bad state
 
-  // patch return pc of the bottom-most frozen frame (now in the chunk) with the actual caller's return address
-  intptr_t* chunk_bottom_sp = chunk_top + cont_size() - _cont.argsize() - frame::metadata_words_at_top;
-  assert(_empty || *(address*)(chunk_bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(), "");
-  *(address*)(chunk_bottom_sp - frame::sender_sp_ret_address_offset()) = chunk->pc();
+  // patch return pc of the bottom-most frozen frame (now in the chunk)
+  // with the actual caller's return address
+  intptr_t* chunk_bottom_retaddr_slot = (chunk_top + cont_size()
+                                         - _cont.argsize()
+                                         - frame::metadata_words_at_top
+                                         - frame::sender_sp_ret_address_offset());
+#ifdef ASSERT
+  if (!_empty) {
+    assert(ContinuationHelper::return_address_at(chunk_bottom_retaddr_slot)
+           == StubRoutines::cont_returnBarrier(),
+           "should be the continuation return barrier");
+  }
+#endif
+  ContinuationHelper::patch_return_address_at(chunk_bottom_retaddr_slot,
+                                              chunk->pc());
 
   // We're always writing to a young chunk, so the GC can't see it until the next safepoint.
   chunk->set_sp(chunk_new_sp);
   // set chunk->pc to the return address of the topmost frame in the chunk
-  chunk->set_pc(*(address*)(_cont_stack_top - frame::sender_sp_ret_address_offset()));
+  chunk->set_pc(ContinuationHelper::return_address_at(
+                  _cont_stack_top - frame::sender_sp_ret_address_offset()));
 
   _cont.write();
 
@@ -1846,7 +1880,15 @@ inline void ThawBase::clear_chunk(stackChunkOop chunk) {
     chunk->set_max_thawing_size(chunk->max_thawing_size() - frame_size);
     // We set chunk->pc to the return pc into the next frame
     chunk->set_pc(f.pc());
-    assert(f.pc() == *(address*)(chunk_sp + frame_size - frame::sender_sp_ret_address_offset()), "unexpected pc");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (chunk_sp
+                                + frame_size
+                                - frame::sender_sp_ret_address_offset());
+      assert(f.pc() == ContinuationHelper::return_address_at(retaddr_slot),
+             "unexpected pc");
+    }
+#endif
   }
   assert(empty == chunk->is_empty(), "");
   // returns the size required to store the frame on stack, and because it is a
@@ -1866,7 +1908,9 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
   log_develop_trace(continuations)("thaw_fast patching -- sp: " INTPTR_FORMAT, p2i(sp));
 
   address pc = !is_last ? StubRoutines::cont_returnBarrier() : _cont.entryPC();
-  *(address*)(sp - frame::sender_sp_ret_address_offset()) = pc;
+  ContinuationHelper::patch_return_address_at(
+    sp - frame::sender_sp_ret_address_offset(),
+    pc);
 }
 
 template <typename ConfigT>
@@ -2403,7 +2447,6 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
-  address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
   set_anchor(thread, sp0);
   log_frames(thread);
   if (LoomVerifyAfterThaw) {

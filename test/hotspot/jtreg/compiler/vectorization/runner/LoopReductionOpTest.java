@@ -36,7 +36,7 @@
  *                   compiler.vectorization.runner.LoopReductionOpTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  *
  */
 

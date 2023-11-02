@@ -23,7 +23,7 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
+DISABLED_WARNINGS_java += this-escape restricted
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'

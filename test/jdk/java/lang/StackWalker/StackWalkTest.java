@@ -55,6 +55,7 @@ public class StackWalkTest {
     private static final int MAX_RANDOM_DEPTH = 1000;
 
     static final Set<String> infrastructureClasses = new TreeSet<>(Arrays.asList(
+            "jdk.internal.reflect.DirectMethodHandleAccessor",
             "java.lang.reflect.Method",
             "com.sun.javatest.regtest.MainWrapper$MainThread",
             "com.sun.javatest.regtest.agent.MainWrapper$MainThread",

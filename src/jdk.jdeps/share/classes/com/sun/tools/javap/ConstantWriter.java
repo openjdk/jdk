@@ -25,11 +25,8 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-
-import static com.sun.tools.classfile.ConstantPool.*;
+import jdk.internal.classfile.constantpool.*;
+import static jdk.internal.classfile.Classfile.*;
 
 /*
  *  Write a constant pool entry.
@@ -55,122 +52,11 @@ public class ConstantWriter extends BasicWriter {
     }
 
     protected void writeConstantPool() {
-        ConstantPool constant_pool = classWriter.getClassFile().constant_pool;
+        var constant_pool = classWriter.getClassModel().constantPool();
         writeConstantPool(constant_pool);
     }
 
     protected void writeConstantPool(ConstantPool constant_pool) {
-        ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<>() {
-            public Integer visitClass(CONSTANT_Class_info info, Void p) {
-                print("#" + info.name_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitDouble(CONSTANT_Double_info info, Void p) {
-                println(stringValue(info));
-                return 2;
-            }
-
-            public Integer visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitFloat(CONSTANT_Float_info info, Void p) {
-                println(stringValue(info));
-                return 1;
-            }
-
-            public Integer visitInteger(CONSTANT_Integer_info info, Void p) {
-                println(stringValue(info));
-                return 1;
-            }
-
-            public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Void p) {
-                print("#" + info.bootstrap_method_attr_index + ":#" + info.name_and_type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitDynamicConstant(CONSTANT_Dynamic_info info, Void p) {
-                print("#" + info.bootstrap_method_attr_index + ":#" + info.name_and_type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitLong(CONSTANT_Long_info info, Void p) {
-                println(stringValue(info));
-                return 2;
-            }
-
-            public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
-                print(info.reference_kind.tag + ":#" + info.reference_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitMethodType(CONSTANT_MethodType_info info, Void p) {
-                print("#" + info.descriptor_index);
-                tab();
-                println("//  " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitModule(CONSTANT_Module_info info, Void p) {
-                print("#" + info.name_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-                print("#" + info.name_index + ":#" + info.type_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitPackage(CONSTANT_Package_info info, Void p) {
-                print("#" + info.name_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitString(CONSTANT_String_info info, Void p) {
-                print("#" + info.string_index);
-                tab();
-                println("// " + stringValue(info));
-                return 1;
-            }
-
-            public Integer visitUtf8(CONSTANT_Utf8_info info, Void p) {
-                println(stringValue(info));
-                return 1;
-            }
-
-        };
         println("Constant pool:");
         indent(+1);
         int width = String.valueOf(constant_pool.size()).length() + 1;
@@ -178,321 +64,228 @@ public class ConstantWriter extends BasicWriter {
         while (cpx < constant_pool.size()) {
             print(String.format("%" + width + "s", ("#" + cpx)));
             try {
-                CPInfo cpInfo = constant_pool.get(cpx);
-                print(String.format(" = %-18s ", cpTagName(cpInfo)));
-                cpx += cpInfo.accept(v, null);
-            } catch (ConstantPool.InvalidIndex ex) {
-                // should not happen
+                var cpInfo = constant_pool.entryByIndex(cpx);
+                print(String.format(" = %-18s ", cpTagName(cpInfo.tag())));
+                switch (cpInfo) {
+                    case ClassEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case AnnotationConstantValueEntry info -> {
+                        println(() -> stringValue(info));
+                    }
+                    case MemberRefEntry info -> {
+                        print(() -> "#" + info.owner().index() + ".#"
+                                + info.nameAndType().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case DynamicConstantPoolEntry info -> {
+                        print(() -> "#" + info.bootstrapMethodIndex() + ":#"
+                                + info.nameAndType().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case MethodHandleEntry info -> {
+                        print(() -> info.kind() + ":#" + info.reference().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case MethodTypeEntry info -> {
+                        print(() -> "#" + info.descriptor().index());
+                        tab();
+                        println(() -> "//  " + stringValue(info));
+                    }
+                    case ModuleEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case NameAndTypeEntry info -> {
+                        print(() -> "#" + info.name().index() + ":#" + info.type().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    case PackageEntry info -> {
+                        print(() -> "#" + info.name().index());
+                        tab();
+                        println("// " + stringValue(info));
+                    }
+                    case StringEntry info -> {
+                        print(() -> "#" + info.utf8().index());
+                        tab();
+                        println(() -> "// " + stringValue(info));
+                    }
+                    default ->
+                        throw new IllegalArgumentException("unknown entry: "+ cpInfo);
+                }
+                cpx += cpInfo.width();
+            } catch (IllegalArgumentException e) {
+                println(report(e));
+                cpx++;
             }
         }
         indent(-1);
     }
 
     protected void write(int cpx) {
-        ClassFile classFile = classWriter.getClassFile();
         if (cpx == 0) {
             print("#0");
             return;
         }
+        var classModel = classWriter.getClassModel();
 
-        CPInfo cpInfo;
-        try {
-            cpInfo = classFile.constant_pool.get(cpx);
-        } catch (ConstantPoolException e) {
-            print("#" + cpx);
-            return;
-        }
-
-        int tag = cpInfo.getTag();
-        switch (tag) {
-            case CONSTANT_Methodref:
-            case CONSTANT_InterfaceMethodref:
-            case CONSTANT_Fieldref:
-                // simplify references within this class
-                CPRefInfo ref = (CPRefInfo) cpInfo;
-                try {
-                    if (ref.class_index == classFile.this_class)
-                         cpInfo = classFile.constant_pool.get(ref.name_and_type_index);
-                } catch (ConstantPool.InvalidIndex e) {
-                    // ignore, for now
-                }
+        var cpInfo = classModel.constantPool().entryByIndex(cpx);
+        var tag = cpInfo.tag();
+        if (cpInfo instanceof MemberRefEntry ref) {
+            // simplify references within this class
+            if (ref.owner().index() == classModel.thisClass().index())
+                 cpInfo = ref.nameAndType();
         }
         print(tagName(tag) + " " + stringValue(cpInfo));
     }
 
-    String cpTagName(CPInfo cpInfo) {
-        String n = cpInfo.getClass().getSimpleName();
-        return n.replace("CONSTANT_", "").replace("_info", "");
+    String cpTagName(int tag) {
+        return switch (tag) {
+            case TAG_UTF8 -> "Utf8";
+            case TAG_INTEGER -> "Integer";
+            case TAG_FLOAT -> "Float";
+            case TAG_LONG -> "Long";
+            case TAG_DOUBLE -> "Double";
+            case TAG_CLASS -> "Class";
+            case TAG_STRING -> "String";
+            case TAG_FIELDREF -> "Fieldref";
+            case TAG_METHODHANDLE -> "MethodHandle";
+            case TAG_METHODTYPE -> "MethodType";
+            case TAG_METHODREF -> "Methodref";
+            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
+            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+            case TAG_CONSTANTDYNAMIC -> "Dynamic";
+            case TAG_NAMEANDTYPE -> "NameAndType";
+            default -> "Unknown";
+        };
     }
 
     String tagName(int tag) {
-        switch (tag) {
-            case CONSTANT_Utf8:
-                return "Utf8";
-            case CONSTANT_Integer:
-                return "int";
-            case CONSTANT_Float:
-                return "float";
-            case CONSTANT_Long:
-                return "long";
-            case CONSTANT_Double:
-                return "double";
-            case CONSTANT_Class:
-                return "class";
-            case CONSTANT_String:
-                return "String";
-            case CONSTANT_Fieldref:
-                return "Field";
-            case CONSTANT_MethodHandle:
-                return "MethodHandle";
-            case CONSTANT_MethodType:
-                return "MethodType";
-            case CONSTANT_Methodref:
-                return "Method";
-            case CONSTANT_InterfaceMethodref:
-                return "InterfaceMethod";
-            case CONSTANT_InvokeDynamic:
-                return "InvokeDynamic";
-            case CONSTANT_Dynamic:
-                return "Dynamic";
-            case CONSTANT_NameAndType:
-                return "NameAndType";
-            default:
-                return "(unknown tag " + tag + ")";
+        return switch (tag) {
+            case TAG_UTF8 -> "Utf8";
+            case TAG_INTEGER -> "int";
+            case TAG_FLOAT -> "float";
+            case TAG_LONG -> "long";
+            case TAG_DOUBLE -> "double";
+            case TAG_CLASS -> "class";
+            case TAG_STRING -> "String";
+            case TAG_FIELDREF -> "Field";
+            case TAG_METHODHANDLE -> "MethodHandle";
+            case TAG_METHODTYPE -> "MethodType";
+            case TAG_METHODREF -> "Method";
+            case TAG_INTERFACEMETHODREF -> "InterfaceMethod";
+            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+            case TAG_CONSTANTDYNAMIC -> "Dynamic";
+            case TAG_NAMEANDTYPE -> "NameAndType";
+            default -> "(unknown tag " + tag + ")";
+        };
+    }
+
+    String booleanValue(PoolEntry info) {
+        if (info instanceof IntegerEntry ie) {
+           switch (ie.intValue()) {
+               case 0: return "false";
+               case 1: return "true";
+           }
         }
+        return "#" + info.index();
     }
 
     String booleanValue(int constant_pool_index) {
-        ClassFile classFile = classWriter.getClassFile();
-        try {
-            CPInfo info = classFile.constant_pool.get(constant_pool_index);
-            if (info instanceof CONSTANT_Integer_info) {
-                int value = ((CONSTANT_Integer_info) info).value;
-               switch (value) {
-                   case 0: return "false";
-                   case 1: return "true";
-               }
-            }
-            return "#" + constant_pool_index;
-        } catch (ConstantPool.InvalidIndex e) {
-            return report(e);
+        var info = classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index);
+        if (info instanceof IntegerEntry ie) {
+           switch (ie.intValue()) {
+               case 0: return "false";
+               case 1: return "true";
+           }
+        }
+        return "#" + constant_pool_index;
+    }
+
+    String charValue(PoolEntry info) {
+        if (info instanceof IntegerEntry ie) {
+            int value = ie.intValue();
+            return String.valueOf((char) value);
+        } else {
+            return "#" + info.index();
         }
     }
 
     String charValue(int constant_pool_index) {
-        ClassFile classFile = classWriter.getClassFile();
-        try {
-            CPInfo info = classFile.constant_pool.get(constant_pool_index);
-            if (info instanceof CONSTANT_Integer_info) {
-                int value = ((CONSTANT_Integer_info) info).value;
-                return String.valueOf((char) value);
-            } else {
-                return "#" + constant_pool_index;
-            }
-        } catch (ConstantPool.InvalidIndex e) {
-            return report(e);
+        var info = classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index);
+        if (info instanceof IntegerEntry ie) {
+            int value = ie.intValue();
+            return String.valueOf((char) value);
+        } else {
+            return "#" + constant_pool_index;
         }
     }
 
     String stringValue(int constant_pool_index) {
-        ClassFile classFile = classWriter.getClassFile();
-        try {
-            return stringValue(classFile.constant_pool.get(constant_pool_index));
-        } catch (ConstantPool.InvalidIndex e) {
-            return report(e);
-        }
+        return stringValue(classWriter.getClassModel().constantPool()
+                .entryByIndex(constant_pool_index));
     }
 
-    String stringValue(CPInfo cpInfo) {
-        return stringValueVisitor.visit(cpInfo);
-    }
-
-    StringValueVisitor stringValueVisitor = new StringValueVisitor();
-
-    private class StringValueVisitor implements ConstantPool.Visitor<String, Void> {
-        public String visit(CPInfo info) {
-            return info.accept(this, null);
-        }
-
-        public String visitClass(CONSTANT_Class_info info, Void p) {
-            return getCheckedName(info);
-        }
-
-        String getCheckedName(CONSTANT_Class_info info) {
-            try {
-                return checkName(info.getName());
-            } catch (ConstantPoolException e) {
-                return report(e);
+    String stringValue(PoolEntry cpInfo) {
+        return switch (cpInfo) {
+            case ClassEntry info -> checkName(info.asInternalName());
+            case DoubleEntry info -> info.doubleValue() + "d";
+            case MemberRefEntry info -> checkName(info.owner().asInternalName())
+                + '.' + stringValue(info.nameAndType());
+            case FloatEntry info -> info.floatValue()+ "f";
+            case IntegerEntry info -> String.valueOf(info.intValue());
+            case DynamicConstantPoolEntry info -> "#" + info.bootstrapMethodIndex()
+                + ":" + stringValue(info.nameAndType());
+            case LongEntry info -> info.longValue()+ "l";
+            case ModuleEntry info -> checkName(info.name().stringValue());
+            case NameAndTypeEntry info -> checkName(info.name().stringValue())
+                + ':' + info.type().stringValue();
+            case PackageEntry info -> checkName(info.name().stringValue());
+            case MethodHandleEntry info -> {
+                String kind = switch (info.asSymbol().kind()) {
+                    case STATIC, INTERFACE_STATIC -> "REF_invokeStatic";
+                    case VIRTUAL -> "REF_invokeVirtual";
+                    case INTERFACE_VIRTUAL -> "REF_invokeInterface";
+                    case SPECIAL, INTERFACE_SPECIAL -> "REF_invokeSpecial";
+                    case CONSTRUCTOR -> "REF_newInvokeSpecial";
+                    case GETTER -> "REF_getField";
+                    case SETTER -> "REF_putField";
+                    case STATIC_GETTER -> "REF_getStatic";
+                    case STATIC_SETTER -> "REF_putStatic";
+                };
+                yield kind + " " + stringValue(info.reference());
             }
-        }
-
-        public String visitDouble(CONSTANT_Double_info info, Void p) {
-            return info.value + "d";
-        }
-
-        public String visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-            return visitRef(info, p);
-        }
-
-        public String visitFloat(CONSTANT_Float_info info, Void p) {
-            return info.value + "f";
-        }
-
-        public String visitInteger(CONSTANT_Integer_info info, Void p) {
-            return String.valueOf(info.value);
-        }
-
-        public String visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-            return visitRef(info, p);
-        }
-
-        public String visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, Void p) {
-            try {
-                String callee = stringValue(info.getNameAndTypeInfo());
-                return "#" + info.bootstrap_method_attr_index + ":" + callee;
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitDynamicConstant(CONSTANT_Dynamic_info info, Void p) {
-            try {
-                String callee = stringValue(info.getNameAndTypeInfo());
-                return "#" + info.bootstrap_method_attr_index + ":" + callee;
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitLong(CONSTANT_Long_info info, Void p) {
-            return info.value + "l";
-        }
-
-        public String visitModule(CONSTANT_Module_info info, Void p) {
-            try {
-                return checkName(info.getName());
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-            return getCheckedName(info) + ":" + getType(info);
-        }
-
-        String getCheckedName(CONSTANT_NameAndType_info info) {
-            try {
-                return checkName(info.getName());
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitPackage(CONSTANT_Package_info info, Void p) {
-            try {
-                return checkName(info.getName());
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        String getType(CONSTANT_NameAndType_info info) {
-            try {
-                return info.getType();
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitMethodHandle(CONSTANT_MethodHandle_info info, Void p) {
-            try {
-                return info.reference_kind + " " + stringValue(info.getCPRefInfo());
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitMethodType(CONSTANT_MethodType_info info, Void p) {
-            try {
-                return info.getType();
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitMethodref(CONSTANT_Methodref_info info, Void p) {
-            return visitRef(info, p);
-        }
-
-        public String visitString(CONSTANT_String_info info, Void p) {
-            try {
-                ClassFile classFile = classWriter.getClassFile();
-                int string_index = info.string_index;
-                return stringValue(classFile.constant_pool.getUTF8Info(string_index));
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
-
-        public String visitUtf8(CONSTANT_Utf8_info info, Void p) {
-            String s = info.value;
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < s.length(); i++) {
-                char c = s.charAt(i);
-                switch (c) {
-                    case '\t':
-                        sb.append('\\').append('t');
-                        break;
-                    case '\n':
-                        sb.append('\\').append('n');
-                        break;
-                    case '\r':
-                        sb.append('\\').append('r');
-                        break;
-                    case '\b':
-                        sb.append('\\').append('b');
-                        break;
-                    case '\f':
-                        sb.append('\\').append('f');
-                        break;
-                    case '\"':
-                        sb.append('\\').append('\"');
-                        break;
-                    case '\'':
-                        sb.append('\\').append('\'');
-                        break;
-                    case '\\':
-                        sb.append('\\').append('\\');
-                        break;
-                    default:
-                        if (Character.isISOControl(c)) {
-                            sb.append(String.format("\\u%04x", (int) c));
-                            break;
-                        }
-                        sb.append(c);
+            case MethodTypeEntry info -> info.descriptor().stringValue();
+            case StringEntry info -> stringValue(info.utf8());
+            case Utf8Entry info -> {
+                StringBuilder sb = new StringBuilder();
+                for (char c : info.stringValue().toCharArray()) {
+                    sb.append(switch (c) {
+                        case '\t' -> "\\t";
+                        case '\n' -> "\\n";
+                        case '\r' -> "\\r";
+                        case '\b' -> "\\b";
+                        case '\f' -> "\\f";
+                        case '\"' -> "\\\"";
+                        case '\'' -> "\\\'";
+                        case '\\' -> "\\\\";
+                        default -> Character.isISOControl(c)
+                                ? String.format("\\u%04x", (int) c) : c;
+                    });
                 }
+                yield sb.toString();
             }
-            return sb.toString();
-        }
-
-        String visitRef(CPRefInfo info, Void p) {
-            String cn = getCheckedClassName(info);
-            String nat;
-            try {
-                nat = stringValue(info.getNameAndTypeInfo());
-            } catch (ConstantPoolException e) {
-                nat = report(e);
-            }
-            return cn + "." + nat;
-        }
-
-        String getCheckedClassName(CPRefInfo info) {
-            try {
-                return checkName(info.getClassName());
-            } catch (ConstantPoolException e) {
-                return report(e);
-            }
-        }
+            default -> throw new IllegalArgumentException("unknown " + cpInfo);
+        };
     }
 
     /* If name is a valid binary name, return it; otherwise quote it. */

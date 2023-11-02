@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,34 +104,6 @@ class GroupEntry extends BaseEntry {
 
         public boolean prefer(String prefer) {
             return literal.equals(prefer);
-        }
-    }
-
-    /**
-     * PreferType represents possible values of the resolve property
-     */
-    public static enum ResolveType {
-        STRICT(CatalogFeatures.RESOLVE_STRICT),
-        CONTINUE(CatalogFeatures.RESOLVE_CONTINUE),
-        IGNORE(CatalogFeatures.RESOLVE_IGNORE);
-
-        final String literal;
-
-        ResolveType(String literal) {
-            this.literal = literal;
-        }
-
-        static public ResolveType getType(String resolveType) {
-            for (ResolveType type : ResolveType.values()) {
-                if (type.isType(resolveType)) {
-                    return type;
-                }
-            }
-            return null;
-        }
-
-        public boolean isType(String type) {
-            return literal.equals(type);
         }
     }
 

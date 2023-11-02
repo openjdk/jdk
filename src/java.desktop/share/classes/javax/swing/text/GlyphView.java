@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -973,7 +973,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
     }
 
     /**
-     * Class to hold data needed to justify this GlyphView in a PargraphView.Row
+     * Class to hold data needed to justify this GlyphView in a ParagraphView.Row
      */
     static class JustificationInfo {
         //justifiable content start

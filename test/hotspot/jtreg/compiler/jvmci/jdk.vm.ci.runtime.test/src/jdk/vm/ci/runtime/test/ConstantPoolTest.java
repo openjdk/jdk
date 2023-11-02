@@ -160,6 +160,11 @@ public class ConstantPoolTest {
         return a + b;
     }
 
+    // We never call this method, so its indy is never resolved.
+    static String concatString3_never_call(String a, String b) {
+        return a + b;
+    }
+
     static void invokeHandle(MethodHandle mh) throws Throwable  {
         mh.invokeExact(0);
     }
@@ -184,7 +189,7 @@ public class ConstantPoolTest {
         lookupAppendixTest_virtual();
     }
 
-    public void lookupAppendixTest_dynamic(String methodName) throws Exception {
+    private void lookupAppendixTest_dynamic(String methodName) throws Exception {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
         ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
         Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
@@ -209,7 +214,7 @@ public class ConstantPoolTest {
         Assert.assertTrue(constant.toString().startsWith("Object["), "wrong appendix: " + constant);
     }
 
-    public void lookupAppendixTest_virtual() throws Exception {
+    private void lookupAppendixTest_virtual() throws Exception {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
         ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
         Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/invoke/MethodHandle;)V");
@@ -232,5 +237,92 @@ public class ConstantPoolTest {
         JavaConstant constant = m.getConstantPool().lookupAppendix(rawIndex, INVOKEVIRTUAL);
         //System.out.println("constant = " + constant);
         Assert.assertTrue(constant.toString().startsWith("Object["), "wrong appendix: " + constant);
+    }
+
+    static void invokeVirtual(Object o) {
+        o.hashCode();
+    }
+
+    @Test
+    public void lookupMethodTest_dynamic() throws Exception {
+        concatString1("aaa", "bbb"); // force the indy to be resolved
+
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
+        Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+        ResolvedJavaMethod m = type.findMethod("concatString1", methodSig);
+        Assert.assertNotNull(m);
+
+        // Expected:
+        // aload_0;
+        // aload_1;
+        // invokedynamic ...StringConcatFactory.makeConcatWithConstants...
+        byte[] bytecode = m.getCode();
+        Assert.assertNotNull(bytecode);
+        Assert.assertEquals(8, bytecode.length);
+        Assert.assertEquals(ALOAD_0, beU1(bytecode, 0));
+        Assert.assertEquals(ALOAD_1, beU1(bytecode, 1));
+        Assert.assertEquals(INVOKEDYNAMIC, beU1(bytecode, 2));
+
+        // Note: internally HotSpot stores the indy index as a native int32, but m.getCode() byte-swaps all such
+        // indices so they appear to be big-endian.
+        int rawIndex = beS4(bytecode, 3);
+        System.out.println("rawIndex = " + rawIndex);
+        JavaMethod callee = m.getConstantPool().lookupMethod(rawIndex, INVOKEDYNAMIC, /*caller=*/m);
+        System.out.println("callee = " + callee);
+        Assert.assertTrue(callee.toString().equals("HotSpotMethod<Invokers$Holder.linkToTargetMethod(Object, Object, Object)>"),
+                          "wrong method: " + callee);
+    }
+
+    @Test
+    public void lookupMethodTest_dynamic_unresolved() throws Exception {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
+        Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
+        ResolvedJavaMethod m = type.findMethod("concatString3_never_call", methodSig);
+        Assert.assertNotNull(m);
+
+        // Expected:
+        // aload_0;
+        // aload_1;
+        // invokedynamic ...StringConcatFactory.makeConcatWithConstants...
+        byte[] bytecode = m.getCode();
+        Assert.assertNotNull(bytecode);
+        Assert.assertEquals(8, bytecode.length);
+        Assert.assertEquals(ALOAD_0, beU1(bytecode, 0));
+        Assert.assertEquals(ALOAD_1, beU1(bytecode, 1));
+        Assert.assertEquals(INVOKEDYNAMIC, beU1(bytecode, 2));
+
+        // Note: internally HotSpot stores the indy index as a native int32, but m.getCode() byte-swaps all such
+        // indices so they appear to be big-endian.
+        int rawIndex = beS4(bytecode, 3);
+        System.out.println("rawIndex = " + rawIndex);
+        JavaMethod callee = m.getConstantPool().lookupMethod(rawIndex, INVOKEDYNAMIC, /*caller=*/m);
+        System.out.println("callee = " + callee);
+        Assert.assertTrue(callee.toString().startsWith("jdk.vm.ci.meta.UnresolvedJavaMethod"),
+                          "wrong method: " + callee);
+    }
+
+    @Test
+    public void lookupMethodTest_virtual() throws Exception {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
+        Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/Object;)V");
+        ResolvedJavaMethod m = type.findMethod("invokeVirtual", methodSig);
+        Assert.assertNotNull(m);
+
+        // Expected
+        // 0: aload_0
+        // 1: invokevirtual #rawIndex // Method Method java/lang/Object.hashCode:()I
+        byte[] bytecode = m.getCode();
+        Assert.assertNotNull(bytecode);
+        Assert.assertEquals(ALOAD_0, beU1(bytecode, 0));
+        Assert.assertEquals(INVOKEVIRTUAL, beU1(bytecode, 1));
+        int rawIndex = beU2(bytecode, 2);
+        System.out.println("rawIndex = " + rawIndex);
+        JavaMethod callee = m.getConstantPool().lookupMethod(rawIndex, INVOKEVIRTUAL, /*caller=*/m);
+        System.out.println("callee = " + callee);
+        Assert.assertTrue(callee.toString().equals("HotSpotMethod<Object.hashCode()>"),
+                          "wrong method: " + callee);
     }
 }

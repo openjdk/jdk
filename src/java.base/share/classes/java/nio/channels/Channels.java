@@ -541,7 +541,9 @@ public final class Channels {
                                    int minBufferCap)
     {
         Objects.requireNonNull(ch, "ch");
-        return StreamEncoder.forEncoder(ch, enc.reset(), minBufferCap);
+        Objects.requireNonNull(enc, "enc");
+        OutputStream out = newOutputStream(ch);
+        return StreamEncoder.forOutputStreamWriter(out, enc.reset());
     }
 
     /**

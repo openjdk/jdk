@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,15 @@ public class TrayIconScalingTest {
             System.out.println("SystemTray is not supported");
             return;
         }
-        PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
-                "Test Instructions", INSTRUCTIONS, 8, 25, 85);
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("TrayIcon Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .testTimeOut(8)
+                .rows(25)
+                .columns(70)
+                .screenCapture()
+                .build();
+
         createAndShowGUI();
         // does not have a test window,
         // hence only the instruction frame is positioned

@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.List;
 
 import jdk.internal.foreign.FunctionDescriptorImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A function descriptor models the signature of a foreign function. A function descriptor is made up of zero or more
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
  * @see MemoryLayout
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
 
     /**

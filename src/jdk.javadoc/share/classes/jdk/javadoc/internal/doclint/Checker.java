@@ -1147,8 +1147,15 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 || k == DocTree.Kind.UNKNOWN_INLINE_TAG;
         assert !getStandardTags().contains(tagName);
         // report an unknown tag only if custom tags are set, see 8314213
-        if (env.customTags != null && !env.customTags.contains(tagName))
-            env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+        if (env.customTags != null && !env.customTags.contains(tagName)) {
+            var suggestions = DocLint.suggestSimilar(env.customTags, tagName);
+            if (suggestions.isEmpty()) {
+                env.messages.error(SYNTAX, tree, "dc.unknown.javadoc.tag");
+            } else {
+                env.messages.error(SYNTAX, tree, "dc.unknown.javadoc.tag.with.hint",
+                        String.join(", ", suggestions)); // TODO: revisit after 8041488
+            }
+        }
     }
 
     private Set<String> getStandardTags() {

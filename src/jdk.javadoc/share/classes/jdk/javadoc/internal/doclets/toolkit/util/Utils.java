@@ -2741,6 +2741,16 @@ public class Utils {
     }
 
     /**
+     * Checks whether the given ExecutableElement should be marked as a restricted API.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a restricted API
+     */
+    public boolean isRestrictedAPI(Element el) {
+        return configuration.workArounds.isRestrictedAPI(el);
+    }
+
+    /**
      * Return all flags for the given Element.
      *
      * @param el the element to test
@@ -2751,6 +2761,10 @@ public class Utils {
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (el.getKind() == ElementKind.METHOD && configuration.workArounds.isRestrictedAPI((ExecutableElement)el)) {
+            flags.add(ElementFlag.RESTRICTED);
         }
 
         if (previewFlagProvider.isPreview(el)) {
@@ -2766,7 +2780,8 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW
+        PREVIEW,
+        RESTRICTED
     }
 
     private boolean isClassOrInterface(Element el) {

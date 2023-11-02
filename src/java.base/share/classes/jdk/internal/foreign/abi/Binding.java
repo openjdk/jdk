@@ -32,7 +32,6 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -57,7 +56,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
  * the CONVERT_ADDRESS operator 'unboxes' a MemoryAddress to a long, but 'boxes' a long to a MemoryAddress.
  *
  * Here are some examples of binding recipes derived from C declarations, and according to the Windows ABI (recipes are
- * ABI-specific). Note that each argument has it's own recipe, which is indicated by '[number]:' (though, the only
+ * ABI-specific). Note that each argument has its own recipe, which is indicated by '[number]:' (though, the only
  * example that has multiple arguments is the one using varargs).
  *
  * --------------------
@@ -276,6 +275,18 @@ public sealed interface Binding {
         return Dup.INSTANCE;
     }
 
+    static ShiftLeft shiftLeft(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftLeft(shiftAmount);
+    }
+
+    static ShiftRight shiftRight(int shiftAmount) {
+        if (shiftAmount <= 0)
+            throw new IllegalArgumentException("shiftAmount must be positive");
+        return new ShiftRight(shiftAmount);
+    }
+
     static Binding cast(Class<?> fromType, Class<?> toType) {
         if (fromType == int.class) {
             if (toType == boolean.class) {
@@ -286,6 +297,8 @@ public sealed interface Binding {
                 return Cast.INT_TO_SHORT;
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
+            } else if (toType == long.class) {
+                return Cast.INT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
@@ -296,6 +309,24 @@ public sealed interface Binding {
                 return Cast.SHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
+            } else if (fromType == long.class) {
+                return Cast.LONG_TO_INT;
+            }
+        } else if (fromType == long.class) {
+            if (toType == byte.class) {
+                return Cast.LONG_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.LONG_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.LONG_TO_CHAR;
+            }
+        } else if (toType == long.class) {
+            if (fromType == byte.class) {
+                return Cast.BYTE_TO_LONG;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_LONG;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_LONG;
             }
         }
         throw new IllegalArgumentException("Unknown conversion: " + fromType + " -> " + toType);
@@ -387,6 +418,24 @@ public sealed interface Binding {
             return this;
         }
 
+        // Converts to long if needed then shifts left by the given number of Bytes.
+        public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
+            if (type != long.class) {
+                bindings.add(Binding.cast(type, long.class));
+            }
+            bindings.add(Binding.shiftLeft(shiftAmount));
+            return this;
+        }
+
+        // Shifts right by the given number of Bytes then converts from long if needed.
+        public Binding.Builder shiftRight(int shiftAmount, Class<?> type) {
+            bindings.add(Binding.shiftRight(shiftAmount));
+            if (type != long.class) {
+                bindings.add(Binding.cast(long.class, type));
+            }
+            return this;
+        }
+
         public List<Binding> build() {
             return List.copyOf(bindings);
         }
@@ -414,7 +463,7 @@ public sealed interface Binding {
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            storeFunc.store(storage(), type(), stack.pop());
+            storeFunc.store(storage(), stack.pop());
         }
     }
 
@@ -671,6 +720,52 @@ public sealed interface Binding {
     }
 
     /**
+     * ShiftLeft([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts left by the given number of Bytes.
+     */
+    record ShiftLeft(int shiftAmount) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l <<= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
+     * ShiftRight([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
+     *   Shifts right by the given number of Bytes.
+     */
+    record ShiftRight(int shiftAmount) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            SharedUtils.checkType(last, long.class);
+            stack.push(long.class);
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            long l = (long) stack.pop();
+            l >>>= (shiftAmount * Byte.SIZE);
+            stack.push(l);
+        }
+    }
+
+    /**
      * CAST([fromType], [toType])
      *   Pop a [fromType] from the stack, convert it to [toType], and push the resulting
      *   value onto the stack.
@@ -690,10 +785,21 @@ public sealed interface Binding {
         INT_TO_BYTE(int.class, byte.class),
         INT_TO_CHAR(int.class, char.class),
         INT_TO_SHORT(int.class, short.class),
+        INT_TO_LONG(int.class, long.class),
+
         BOOLEAN_TO_INT(boolean.class, int.class),
         BYTE_TO_INT(byte.class, int.class),
         CHAR_TO_INT(char.class, int.class),
-        SHORT_TO_INT(short.class, int.class);
+        SHORT_TO_INT(short.class, int.class),
+        LONG_TO_INT(long.class, int.class),
+
+        LONG_TO_BYTE(long.class, byte.class),
+        LONG_TO_SHORT(long.class, short.class),
+        LONG_TO_CHAR(long.class, char.class),
+
+        BYTE_TO_LONG(byte.class, long.class),
+        SHORT_TO_LONG(short.class, long.class),
+        CHAR_TO_LONG(char.class, long.class);
 
         private final Class<?> fromType;
         private final Class<?> toType;

@@ -38,6 +38,8 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
  * abstractly (by passing a {@link ClassfileElement} to {@link #with(ClassfileElement)}
  * or concretely by calling the various {@code withXxx} methods.
  *
+ * @param <E> the element type
+ * @param <B> the builder type
  * @see ClassfileTransform
  */
 public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends ClassfileBuilder<E, B>>

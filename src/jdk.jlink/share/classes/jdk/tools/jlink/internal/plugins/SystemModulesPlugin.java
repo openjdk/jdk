@@ -148,7 +148,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             if (split.length != 2) {
                 throw new IllegalArgumentException(getName() + ": " + arg);
             }
-            if (split[0].equals("batch-size")) {
+            if (!split[0].equals("batch-size")) {
                 throw new IllegalArgumentException(getName() + ": " + arg);
             }
             this.moduleDescriptorsPerMethod = Integer.parseInt(split[1]);

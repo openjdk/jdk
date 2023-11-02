@@ -419,11 +419,7 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr)  entries++;
   }
-#if INCLUDE_JVMCI
-  st->print_cr("count(%u) nonprofiled_count(%u) entries(%u)", count(), nonprofiled_count(), entries);
-#else
   st->print_cr("count(%u) entries(%u)", count(), entries);
-#endif
   int total = count();
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr) {

@@ -211,7 +211,12 @@
  * builders for the constructor and {@code main} method, and in turn use the
  * method builders to create a {@code Code} attribute and use the code builders
  * to generate the instructions:
- * {@snippet lang="java" class="PackageSnippets" region="helloWorld"}
+ * {@snippet lang="java" class="PackageSnippets" region="helloWorld1"}
+ * <p>
+ * The convenience methods {@code ClassBuilder.buildMethodBody} allows us to ask
+ * {@link ClassBuilder} to create code builders to build method bodies directly,
+ * skipping the method builder custom lambda:
+ * {@snippet lang="java" class="PackageSnippets" region="helloWorld2"}
  * <p>
  * Builders often support multiple ways of expressing the same entity at
  * different levels of abstraction.  For example, the {@code invokevirtual}
@@ -276,9 +281,13 @@
  * builder and an element, and an implementation "flatMap"s elements
  * into the builder.  We could express the above as:
  * {@snippet lang="java" class="PackageSnippets" region="stripDebugMethods2"}
+ * <p>
+ * {@code ClassTransform.dropping} convenience method allow us to simplify the same
+ * transformation construction and express the above as:
+ * {@snippet lang="java" class="PackageSnippets" region="stripDebugMethods3"}
  *
  * <h3>Lifting transforms</h3>
- * While the second example is only slightly shorter than the first, the
+ * While the example using transformations are only slightly shorter, the
  * advantage of expressing transformation in this way is that the transform
  * operations can be more easily combined.  Suppose we want to redirect
  * invocations of static methods on {@code Foo} to the corresponding method on
@@ -299,6 +308,11 @@
  * elements:
  * {@snippet lang=java :
  * ClassTransform ct = ClassTransform.transformingMethods(mt);
+ * }
+ * <p>
+ * or lift the code transform into the class transform directly:
+ * {@snippet lang=java :
+ * ClassTransform ct = ClassTransform.transformingMethodBodiess(fooToBar);
  * }
  * <p>
  * and then transform the classfile:

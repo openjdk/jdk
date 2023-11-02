@@ -35,6 +35,12 @@ class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
 
+enum class InliningResult { SUCCESS, FAILURE };
+
+inline InliningResult inlining_result_of(bool success) {
+  return success ? InliningResult::SUCCESS : InliningResult::FAILURE;
+}
+
 // CompileTask
 //
 // An entry in the compile queue.  It represents a pending or current
@@ -225,11 +231,11 @@ public:
 
   bool         check_break_at_flags();
 
-  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
-  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
-    print_inlining_inner(tty, method, inline_level, bci, msg);
+  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
+    print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }
-  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
+  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
 };
 
 #endif // SHARE_COMPILER_COMPILETASK_HPP

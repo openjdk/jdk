@@ -99,6 +99,17 @@ void VM_Version::initialize() {
     }
   }
 
+  // Enable vendor specific features
+
+  if (mvendorid.enabled()) {
+    // Rivos
+    if (mvendorid.value() == RIVOS) {
+      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
+        FLAG_SET_DEFAULT(UseConservativeFence, false);
+      }
+    }
+  }
+
   if (UseZic64b) {
     if (CacheLineSize != 64) {
       assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
@@ -171,8 +182,21 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVV) {
@@ -210,6 +234,14 @@ void VM_Version::initialize() {
       unaligned_access.value() == MISALIGNED_FAST);
   }
 
+#ifdef __riscv_ztso
+  // Hotspot is compiled with TSO support, it will only run on hardware which
+  // supports Ztso
+  if (FLAG_IS_DEFAULT(UseZtso)) {
+    FLAG_SET_DEFAULT(UseZtso, true);
+  }
+#endif
+
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
@@ -228,6 +260,16 @@ void VM_Version::initialize() {
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
+  }
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
 #ifdef COMPILER2

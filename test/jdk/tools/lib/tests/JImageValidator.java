@@ -22,19 +22,16 @@
  */
 package tests;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.Classfile;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageLocation;
 
@@ -224,11 +221,13 @@ public class JImageValidator {
         return moduleExecutionTime;
     }
 
-    public static void readClass(byte[] clazz) throws IOException {
-        try (InputStream stream = new ByteArrayInputStream(clazz)) {
-            ClassFile.read(stream);
-        } catch (ConstantPoolException e) {
-            throw new IOException(e);
+    public static void readClass(byte[] clazz) throws IOException{
+        var errors = Classfile.of().parse(clazz).verify(null);
+        if (!errors.isEmpty()) {
+            var itr = errors.iterator();
+            var thrown = itr.next();
+            itr.forEachRemaining(thrown::addSuppressed);
+            throw new IOException(thrown);
         }
     }
 }

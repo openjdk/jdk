@@ -75,6 +75,8 @@ public final class JDKEvents {
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         SecurityProviderServiceEvent.class,
+        SocketReadEvent.class,
+        SocketWriteEvent.class,
         ThreadSleepEvent.class,
         TLSHandshakeEvent.class,
         VirtualThreadStartEvent.class,
@@ -100,6 +102,8 @@ public final class JDKEvents {
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
+        jdk.internal.event.SocketReadEvent.class,
+        jdk.internal.event.SocketWriteEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.VirtualThreadStartEvent.class,
@@ -118,10 +122,7 @@ public final class JDKEvents {
         FileInputStreamInstrumentor.class,
         FileOutputStreamInstrumentor.class,
         RandomAccessFileInstrumentor.class,
-        FileChannelImplInstrumentor.class,
-        SocketInputStreamInstrumentor.class,
-        SocketOutputStreamInstrumentor.class,
-        SocketChannelImplInstrumentor.class
+        FileChannelImplInstrumentor.class
     };
 
     private static final Class<?>[] targetClasses = new Class<?>[instrumentationClasses.length];

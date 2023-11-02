@@ -26,7 +26,12 @@
  * @bug 8194978
  * @summary Verify than an appropriate number of close method invocations is generated.
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox TwrSimpleClose
  * @run main TwrSimpleClose
  */
@@ -52,14 +57,10 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_NameAndType_info;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Opcode;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.constantpool.MemberRefEntry;
+import jdk.internal.classfile.instruction.InvokeInstruction;
 
 import toolbox.ToolBox;
 
@@ -101,17 +102,14 @@ public class TwrSimpleClose {
             }
 
             byte[] data = fm.classBytes.values().iterator().next();
-            ClassFile cf = ClassFile.read(new ByteArrayInputStream(data));
+            ClassModel cf = Classfile.of().parse(new ByteArrayInputStream(data).readAllBytes());
 
-            for (Method m : cf.methods) {
-                Code_attribute codeAttr = (Code_attribute) m.attributes.map.get(Attribute.Code);
-                for (Instruction i : codeAttr.getInstructions()) {
-                    if (i.getOpcode() == Opcode.INVOKEVIRTUAL) {
-                        CONSTANT_Methodref_info method =
-                                (CONSTANT_Methodref_info) cf.constant_pool.get(i.getShort(1));
-                        CONSTANT_NameAndType_info nameAndType =
-                                cf.constant_pool.getNameAndTypeInfo(method.name_and_type_index);
-                        if ("close".equals(nameAndType.getName())) {
+            for (MethodModel m : cf.methods()) {
+                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                for (CodeElement ce : codeAttr.elementList()) {
+                    if (ce instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKEVIRTUAL) {
+                        MemberRefEntry method = ins.method();
+                        if (method.name().equalsString("close")) {
                             closeCount++;
                         }
                     }

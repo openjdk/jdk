@@ -74,8 +74,8 @@ class DeferredStepTestTarg {
 
         jj1 obj1 = new jj1();
         jj2 obj2 = new jj2();
-        Thread thread1 = TestScaffold.newThread(obj1, "jj1");
-        Thread thread2 = TestScaffold.newThread(obj2, "jj2");
+        Thread thread1 = DebuggeeWrapper.newThread(obj1, "jj1");
+        Thread thread2 = DebuggeeWrapper.newThread(obj2, "jj2");
         thread1.start();
         thread2.start();
         // Threads might be deamon threads, so wait here for them to complete.

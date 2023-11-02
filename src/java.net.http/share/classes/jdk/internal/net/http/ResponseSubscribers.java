@@ -780,7 +780,7 @@ public class ResponseSubscribers {
                 subscriber.onComplete();
             } finally {
                 try {
-                    cf.complete(finisher.apply(subscriber));
+                    cf.completeAsync(() -> finisher.apply(subscriber));
                 } catch (Throwable throwable) {
                     cf.completeExceptionally(throwable);
                 }

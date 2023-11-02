@@ -25,7 +25,7 @@
 
 package jdk.jfr.internal.consumer;
 
-import static jdk.jfr.internal.EventInstrumentation.FIELD_DURATION;
+import static jdk.jfr.internal.util.Utils.FIELD_DURATION;
 
 import java.io.IOException;
 import java.util.List;

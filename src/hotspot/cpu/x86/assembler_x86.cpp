@@ -1332,6 +1332,11 @@ void Assembler::addb(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::addb(Register dst, int imm8) {
+  (void) prefix_and_encode(dst->encoding(), true);
+  emit_arith_b(0x80, 0xC0, dst, imm8);
+}
+
 void Assembler::addw(Register dst, Register src) {
   emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
@@ -5319,6 +5324,18 @@ void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
   emit_int16(0x00, (0xC0 | encode));
 }
 
+void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+         vector_len == AVX_256bit ? VM_Version::supports_avx2() :
+         vector_len == AVX_512bit ? VM_Version::supports_avx512bw() : 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  simd_prefix(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x00);
+  emit_operand(dst, src, 0);
+}
+
 void Assembler::pshufb(XMMRegister dst, Address src) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionMark im(this);
@@ -6232,11 +6249,17 @@ void Assembler::subss(XMMRegister dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
-void Assembler::testb(Register dst, int imm8) {
+void Assembler::testb(Register dst, int imm8, bool use_ral) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   if (dst == rax) {
-    emit_int8((unsigned char)0xA8);
-    emit_int8(imm8);
+    if (use_ral) {
+      emit_int8((unsigned char)0xA8);
+      emit_int8(imm8);
+    } else {
+      emit_int8((unsigned char)0xF6);
+      emit_int8((unsigned char)0xC4);
+      emit_int8(imm8);
+    }
   } else {
     (void) prefix_and_encode(dst->encoding(), true);
     emit_arith_b(0xF6, 0xC0, dst, imm8);
@@ -10967,6 +10990,36 @@ void Assembler::emit_operand32(Register reg, Address adr, int post_addr_length) 
   emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp, adr._rspec, post_addr_length);
 }
 
+void Assembler::fld_d(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDD);
+  emit_operand32(rax, adr, 0);
+}
+
+void Assembler::fprem() {
+  emit_int16((unsigned char)0xD9, (unsigned char)0xF8);
+}
+
+void Assembler::fnstsw_ax() {
+  emit_int16((unsigned char)0xDF, (unsigned char)0xE0);
+}
+
+void Assembler::fstp_d(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDD);
+  emit_operand32(rbx, adr, 0);
+}
+
+void Assembler::fstp_d(int index) {
+  emit_farith(0xDD, 0xD8, index);
+}
+
+void Assembler::emit_farith(int b1, int b2, int i) {
+  assert(isByte(b1) && isByte(b2), "wrong opcode");
+  assert(0 <= i &&  i < 8, "illegal stack offset");
+  emit_int16(b1, b2 + i);
+}
+
 #ifndef _LP64
 // 32bit only pieces of the assembler
 
@@ -11009,12 +11062,6 @@ void Assembler::decl(Register dst) {
 }
 
 // 64bit doesn't use the x87
-
-void Assembler::emit_farith(int b1, int b2, int i) {
-  assert(isByte(b1) && isByte(b2), "wrong opcode");
-  assert(0 <= i &&  i < 8, "illegal stack offset");
-  emit_int16(b1, b2 + i);
-}
 
 void Assembler::fabs() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xE1);
@@ -11177,12 +11224,6 @@ void Assembler::fld1() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xE8);
 }
 
-void Assembler::fld_d(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDD);
-  emit_operand32(rax, adr, 0);
-}
-
 void Assembler::fld_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
@@ -11266,14 +11307,6 @@ void Assembler::fnstcw(Address src) {
   emit_operand32(rdi, src, 0);
 }
 
-void Assembler::fnstsw_ax() {
-  emit_int16((unsigned char)0xDF, (unsigned char)0xE0);
-}
-
-void Assembler::fprem() {
-  emit_int16((unsigned char)0xD9, (unsigned char)0xF8);
-}
-
 void Assembler::fprem1() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xF5);
 }
@@ -11302,16 +11335,6 @@ void Assembler::fst_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
   emit_operand32(rdx, adr, 0);
-}
-
-void Assembler::fstp_d(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDD);
-  emit_operand32(rbx, adr, 0);
-}
-
-void Assembler::fstp_d(int index) {
-  emit_farith(0xDD, 0xD8, index);
 }
 
 void Assembler::fstp_s(Address adr) {

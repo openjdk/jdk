@@ -25,20 +25,17 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.TypeAnnotation;
-import com.sun.tools.classfile.TypeAnnotation.Position;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeTypeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import com.sun.tools.javac.util.StringUtils;
+import java.util.Optional;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.TypeAnnotation;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 /**
  * Annotate instructions with details about type annotations.
@@ -74,28 +71,37 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         classWriter = ClassWriter.instance(context);
     }
 
-    public void reset(Code_attribute attr) {
-        Method m = classWriter.getMethod();
+    public void reset(CodeAttribute attr) {
+        MethodModel m = attr.parent().get();
         pcMap = new HashMap<>();
-        check(NoteKind.VISIBLE, (RuntimeVisibleTypeAnnotations_attribute) m.attributes.get(Attribute.RuntimeVisibleTypeAnnotations));
-        check(NoteKind.INVISIBLE, (RuntimeInvisibleTypeAnnotations_attribute) m.attributes.get(Attribute.RuntimeInvisibleTypeAnnotations));
+        codeAttribute = attr;
+        check(NoteKind.VISIBLE,
+                m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
+                        .map(a -> a.annotations()));
+        check(NoteKind.INVISIBLE,
+                m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
+                        .map(a -> a.annotations()));
     }
 
-    private void check(NoteKind kind, RuntimeTypeAnnotations_attribute attr) {
-        if (attr == null)
+    private void check(NoteKind kind, Optional<List<TypeAnnotation>> annos) {
+        if (annos.isEmpty())
             return;
 
-        for (TypeAnnotation anno: attr.annotations) {
-            Position p = anno.position;
-            Note note = null;
-            if (p.offset != -1)
-                addNote(p.offset, note = new Note(kind, anno));
-            if (p.lvarOffset != null) {
-                for (int i = 0; i < p.lvarOffset.length; i++) {
-                    if (note == null)
-                        note = new Note(kind, anno);
-                    addNote(p.lvarOffset[i], note);
+        for (TypeAnnotation anno: annos.get()) {
+            switch (anno.targetInfo()) {
+                case TypeAnnotation.LocalVarTarget p -> {
+                    Note note = null;
+                    for (var lvar : p.table()) {
+                        if (note == null)
+                            note = new Note(kind, anno);
+                        addNote(codeAttribute.labelToBci(lvar.startLabel()), note);
+                    }
                 }
+                case TypeAnnotation.OffsetTarget p ->
+                    addNote(codeAttribute.labelToBci(p.target()), new Note(kind, anno));
+                case TypeAnnotation.TypeArgumentTarget p ->
+                    addNote(codeAttribute.labelToBci(p.target()), new Note(kind, anno));
+                default -> {}
             }
         }
     }
@@ -108,17 +114,16 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
     }
 
     @Override
-    void writeDetails(Instruction instr) {
+    void writeDetails(int pc, Instruction instr) {
         String indent = space(2); // get from Options?
-        int pc = instr.getPC();
         List<Note> notes = pcMap.get(pc);
         if (notes != null) {
             for (Note n: notes) {
                 print(indent);
                 print("@");
-                annotationWriter.write(n.anno, false, true);
+                annotationWriter.write(n.anno, false, true, codeAttribute);
                 print(", ");
-                println(StringUtils.toLowerCase(n.kind.toString()));
+                println(n.kind.toString().toLowerCase(Locale.US));
             }
         }
     }
@@ -126,4 +131,5 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
     private AnnotationWriter annotationWriter;
     private ClassWriter classWriter;
     private Map<Integer, List<Note>> pcMap;
+    private CodeAttribute codeAttribute;
 }

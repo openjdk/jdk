@@ -1782,21 +1782,24 @@ public final class SSLSocketImpl
             if (conContext.inputRecord instanceof
                     SSLSocketInputRecord inputRecord && isConnected) {
                 if (appInput.readLock.tryLock()) {
-                    int soTimeout = getSoTimeout();
                     try {
-                        // deplete could hang on the skip operation
-                        // in case of infinite socket read timeout.
-                        // Change read timeout to avoid deadlock.
-                        // This workaround could be replaced later
-                        // with the right synchronization
-                        if (soTimeout == 0)
-                            setSoTimeout(DEFAULT_SKIP_TIMEOUT);
-                        inputRecord.deplete(false);
-                    } catch (java.net.SocketTimeoutException stEx) {
-                        // skip timeout exception during deplete
+                        int soTimeout = getSoTimeout();
+                        try {
+                            // deplete could hang on the skip operation
+                            // in case of infinite socket read timeout.
+                            // Change read timeout to avoid deadlock.
+                            // This workaround could be replaced later
+                            // with the right synchronization
+                            if (soTimeout == 0)
+                                setSoTimeout(DEFAULT_SKIP_TIMEOUT);
+                            inputRecord.deplete(false);
+                        } catch (java.net.SocketTimeoutException stEx) {
+                            // skip timeout exception during deplete
+                        } finally {
+                            if (soTimeout == 0)
+                                setSoTimeout(soTimeout);
+                        }
                     } finally {
-                        if (soTimeout == 0)
-                            setSoTimeout(soTimeout);
                         appInput.readLock.unlock();
                     }
                 }

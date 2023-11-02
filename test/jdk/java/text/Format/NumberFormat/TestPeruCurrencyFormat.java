@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,31 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8206879
- * @summary Currency decimal marker incorrect for Peru.
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=JRE TestPeruCurrencyFormat
+ * @summary Currency decimal marker incorrect for Peru (COMPAT).
+ * @run junit/othervm -Djava.locale.providers=COMPAT TestPeruCurrencyFormat
  */
 
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class TestPeruCurrencyFormat {
 
-    public static void main(String[] args) {
+    // Confirm correct decimal marker for Peru locale on COMPAT
+    @Test
+    public void peruDecimalMarketCOMPAT() {
         final String expected = "S/.1,234.56";
         NumberFormat currencyFmt =
                 NumberFormat.getCurrencyInstance(Locale.of("es", "PE"));
         String s = currencyFmt.format(1234.56);
-
-        if (!s.equals(expected)) {
-            throw new RuntimeException("Currency format for Peru failed, expected " + expected + ", got " + s);
-        }
+        assertEquals(expected, s,
+                "Currency format for Peru failed, expected " + expected + ", got " + s);
     }
 }
