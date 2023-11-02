@@ -4531,7 +4531,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ cad(S_0, S_0, U_0, tmp1); // Add U_0 to S_0 with carry output to tmp1
       __ cadc(S_1, S_1, U_1, tmp1); // Add U_1 with carry to S_1 with carry output to tmp1
-      __ adc(S_2, zr, U_2, tmp1);
+      __ add(S_2, U_2, tmp1);
 
       __ addi(S_2, S_2, 1);
 
