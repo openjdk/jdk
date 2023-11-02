@@ -4479,6 +4479,12 @@ class StubGenerator: public StubCodeGenerator {
   // Poly1305, RFC 7539
   // Intrinsified version of com.sun.crypto.provider.Poly1305.processMultipleBlocks
 
+  // Arguments:
+  //    c_rarg0:   input_start -- where the input is stored
+  //    c_rarg1:   length
+  //    c_rarg2:   acc_start -- where the output will be stored
+  //    c_rarg3:   r_start -- where the randomly generated 128-bit key is stored
+
   // See https://loup-vaillant.fr/tutorials/poly1305-design for a
   // description of the tricks used to simplify and accelerate this
   // computation.
