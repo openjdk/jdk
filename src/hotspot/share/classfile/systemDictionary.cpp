@@ -611,7 +611,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   InstanceKlass* loaded_class = nullptr;
   SymbolHandle superclassname; // Keep alive while loading in parallel thread.
 
-  assert(THREAD->can_call_java(),
+  guarantee(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
          name->as_C_string(),
          class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
@@ -2056,7 +2056,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                      Klass* accessing_klass,
                                                      Handle* appendix_result,
                                                      TRAPS) {
-  assert(THREAD->can_call_java() ,"");
+  guarantee(THREAD->can_call_java(), "");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
 

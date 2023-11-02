@@ -2453,7 +2453,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       BacktraceElement bte = iter.next(THREAD);
       print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._name);
     }
-    {
+    if (THREAD->can_call_java()) {
       // Call getCause() which doesn't necessarily return the _cause field.
       ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
@@ -2475,6 +2475,9 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
           st->cr();
         }
       }
+    } else {
+      st->print_raw_cr("<<cannot call Java to get cause>>");
+      return;
     }
   }
 }
