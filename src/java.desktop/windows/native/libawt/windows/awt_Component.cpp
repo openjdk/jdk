@@ -6368,20 +6368,20 @@ void AwtComponent::_SetParent(void * param)
         AwtComponent *awtComponent = NULL;
         AwtComponent *awtParent = NULL;
 
-        {
-            PDATA pData;
-            JNI_CHECK_PEER_GOTO(self, ret);
-            awtComponent = (AwtComponent *)pData;
-            JNI_CHECK_PEER_GOTO(parent, ret);
-            awtParent = (AwtComponent *)pData;
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        awtComponent = (AwtComponent *)pData;
+        JNI_CHECK_PEER_GOTO(parent, ret);
+        awtParent = (AwtComponent *)pData;
 
-            HWND selfWnd = awtComponent->GetHWnd();
-            HWND parentWnd = awtParent->GetHWnd();
-            if (::IsWindow(selfWnd) && ::IsWindow(parentWnd)) {
-                // Shouldn't trigger native focus change
-                // (only the proxy may be the native focus owner).
-                ::SetParent(selfWnd, parentWnd);
-            }
+        HWND selfWnd;
+        HWND parentWnd;
+        selfWnd = awtComponent->GetHWnd();
+        parentWnd = awtParent->GetHWnd();
+        if (::IsWindow(selfWnd) && ::IsWindow(parentWnd)) {
+            // Shouldn't trigger native focus change
+            // (only the proxy may be the native focus owner).
+            ::SetParent(selfWnd, parentWnd);
         }
 
 ret:
