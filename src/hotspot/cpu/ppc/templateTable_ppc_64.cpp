@@ -4189,7 +4189,7 @@ void TemplateTable::monitorenter() {
   // ------------------------------------------------------------------------------
   // Find a free slot in the monitor block.
   // Note: The order of the monitors is important for C2 OSR which derives the
-  //       unlock order from it.
+  //       unlock order from it (see comments for interpreter_frame_monitor_*).
   {
     Label Lloop, LnotFree, Lexit;
 
