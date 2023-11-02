@@ -182,6 +182,7 @@ public class TestLoadLibraryDeadlock {
     }
 
     private static String toLocationString(Path path) {
+        // same format as returned by LoadLibraryDeadlock::getLocation
         return path.toUri().getPath();
     }
 }
