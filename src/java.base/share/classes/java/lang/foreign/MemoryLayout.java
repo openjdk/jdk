@@ -778,7 +778,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @param start the index of the first sequence element to be selected.
          * @param step the step factor at which subsequence sequence elements are to be selected.
          * @return a path element which selects the sequence element layout with the given index.
-         * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}.
+         * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
             if (start < 0) {
@@ -885,10 +885,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements The member layouts of the struct layout.
      * @return a struct layout with the given member layouts.
-     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes} of the member layouts
-     * overflows.
-     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset (relative to the start
-     * of the struct layout) which is not compatible with its alignment constraint.
+     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes} of the member
+     *         layouts overflows
+     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset
+     *         (relative to the start of the struct layout) which is not compatible with its alignment constraint
      *
      * @apiNote This factory does not automatically align element layouts, by inserting additional {@linkplain PaddingLayout
      * padding layout} elements. As such, the following struct layout creation will fail with an exception:
