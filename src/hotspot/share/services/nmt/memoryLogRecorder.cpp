@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "runtime/globals.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/nmt/memoryLogRecorder.hpp"
 #include "services/mallocHeader.hpp"
@@ -436,7 +438,7 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
 void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
   size_t threads_max = 4;
   size_t thread_count = 0;
-  address* threads = (address*)calloc(threads_max, sizeof(address));
+  intx *threads = (intx*)calloc(threads_max, sizeof(intx));
   assert(threads != nullptr, "threads != nullptr");
   for (size_t c=0; c<count; c++) {
     Entry* e = access_non_empty(entries, c);
@@ -444,7 +446,7 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
       bool found = false;
       while (!found) {
         for (size_t i=0; i<threads_max; i++) {
-          if ((threads[i] == nullptr) || (threads[i] == e->thread)) {
+          if ((threads[i] == 0L) || (threads[i] == e->thread)) {
             found = true;
             threads[i] = e->thread;
             thread_count = MAX(thread_count, i);
@@ -453,7 +455,7 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
         }
         if (!found) {
           threads_max *= 2;
-          threads = (address*)realloc(threads, threads_max*sizeof(address));
+          threads = (intx*)realloc(threads, threads_max*sizeof(intx));
           assert(threads != nullptr, "threads != nullptr");
           memset(&threads[threads_max/2], 0, threads_max*sizeof(size_t)/2);
         }
@@ -529,18 +531,15 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
   fprintf(stderr, "                                     (count)   (count)   (count)      (bytes)      (bytes)     (bytes)\n");
   fprintf(stderr, "------------------------------------------------------------------------------------------------------\n");
   for (size_t i=0; i<thread_count; i++) {
-    if (threads[i] != nullptr) {
+    if (threads[i] != 0L) {
       char buf[32] = { 0 };
-#if defined(LINUX) || defined(__APPLE__)
-      pthread_getname_np((pthread_t)threads[i], &buf[0], sizeof(buf));
-#elif defined(WINDOWS)
-      // ???
-#endif
+      strncpy(buf, Thread::recall_thread_name(threads[i]), 31);
+      buf[31] = '\0';
       if (strlen(&buf[0]) == 0) {
         if (i==0) {
           strcpy(&buf[0], "Main");
         } else {
-          strcpy(&buf[0], "???");
+          strcpy(&buf[0], "?");
         }
       }
       fprintf(stderr, "%33s %9ld %9ld %9ld %12ld %12ld %12ld\n", buf,
@@ -912,11 +911,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
   }
 
   if (_entry != nullptr) {
-#if defined(LINUX) || defined(__APPLE__)
-    _entry->thread = (address)pthread_self();
-#elif defined(WINDOWS)
-    _entry->thread = nullptr; // ???
-#endif
+    _entry->thread = os::current_thread_id();
     _entry->ptr = ptr;
     _entry->old = old;
     _entry->requested = requested;

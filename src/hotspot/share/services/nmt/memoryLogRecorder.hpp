@@ -34,7 +34,7 @@ class NMT_MemoryLogRecorder : public StackObj {
 
 private:
   struct Entry {
-    address thread;
+    intx thread;
     address ptr;
     address old;
     address stack[NMT_TrackingStackDepth];
