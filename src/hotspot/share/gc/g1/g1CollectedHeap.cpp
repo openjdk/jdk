@@ -2949,8 +2949,8 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
   nm->oops_do(&reg_cl, true);
 }
 
-void G1CollectedHeap::update_used_after_gc(bool retained) {
-  if (retained) {
+void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
+  if (evacuation_failed) {
     // Reset the G1EvacuationFailureALot counters and flags
     evac_failure_injector()->reset();
 

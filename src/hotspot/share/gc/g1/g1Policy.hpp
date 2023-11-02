@@ -301,7 +301,7 @@ public:
 
   // Record the start and end of the young gc pause.
   void record_young_gc_pause_start();
-  void record_young_gc_pause_end(bool evacuation_retained);
+  void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 

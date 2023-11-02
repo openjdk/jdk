@@ -1258,7 +1258,7 @@ public:
 
   // Recalculate amount of used memory after GC. Must be called after all allocation
   // has finished.
-  void update_used_after_gc(bool retained);
+  void update_used_after_gc(bool evacuation_failed);
 
   // Rebuild the code root lists for each region
   // after a full GC.

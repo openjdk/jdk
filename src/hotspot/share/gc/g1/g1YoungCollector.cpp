@@ -35,6 +35,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -83,7 +84,7 @@ class G1YoungGCTraceTime {
              G1GCPauseTypeHelper::to_string(_pause_type),
              GCCause::to_string(_pause_cause),
              _collector->evacuation_pinned() ? " (Pinned)" : "",
-             _collector->evacuation_failed() ? " (Evacuation Failure)" : "");
+             _collector->evacuation_alloc_failed() ? " (Allocation Failure)" : "");
     return _young_gc_name_data;
   }
 
@@ -114,7 +115,7 @@ public:
   }
 
   ~G1YoungGCNotifyPauseMark() {
-    G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(_collector->evacuation_retained());
+    G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(_collector->evacuation_failed());
   }
 };
 
@@ -165,7 +166,7 @@ public:
   ~G1YoungGCVerifierMark() {
     // Inject evacuation failure tag into type if needed.
     G1HeapVerifier::G1VerifyType type = _type;
-    if (_collector->evacuation_retained()) {
+    if (_collector->evacuation_failed()) {
       type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
     }
     G1CollectedHeap::heap()->verify_after_young_collection(type);
@@ -766,7 +767,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
-  while (!evacuation_failed() && collection_set()->optional_region_length() > 0) {
+  while (!evacuation_alloc_failed() && collection_set()->optional_region_length() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
@@ -1016,16 +1017,16 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   _g1h->expand_heap_after_young_collection();
 }
 
-bool G1YoungCollector::evacuation_retained() const {
-  return _evac_failure_regions.has_regions_retained();
+bool G1YoungCollector::evacuation_failed() const {
+  return _evac_failure_regions.has_regions_evac_failed();
 }
 
 bool G1YoungCollector::evacuation_pinned() const {
   return _evac_failure_regions.has_regions_evac_pinned();
 }
 
-bool G1YoungCollector::evacuation_failed() const {
-  return _evac_failure_regions.has_regions_evac_failed();
+bool G1YoungCollector::evacuation_alloc_failed() const {
+  return _evac_failure_regions.has_regions_alloc_failed();
 }
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
@@ -1098,7 +1099,7 @@ void G1YoungCollector::collect() {
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed());
   }
   TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

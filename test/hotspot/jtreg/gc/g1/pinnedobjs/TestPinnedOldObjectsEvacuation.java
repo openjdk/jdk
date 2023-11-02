@@ -267,8 +267,9 @@ public class TestPinnedOldObjectsEvacuation {
                                                                   "-XX:MarkSweepDeadRatio=0",
                                                                   "-XX:G1NumCollectionsKeepUnreclaimable=3",
                                                                   "-XX:+UnlockExperimentalVMOptions",
-                                                                  // We only want the one region containing the pinned object to be part of the collection set.
-                                                                  "-XX:G1MixedGCLiveThresholdPercent=2",
+                                                                  // Take all old regions to make sure that the pinned one is included in the collection set.
+                                                                  "-XX:G1MixedGCLiveThresholdPercent=100",
+                                                                  "-XX:G1HeapWastePercent=0",
                                                                   "-XX:+VerifyAfterGC",
                                                                   "-Xlog:gc,gc+ergo+cset=trace",
                                                                   TestObjectPin.class.getName(),

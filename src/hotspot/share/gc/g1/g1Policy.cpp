@@ -1049,9 +1049,9 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::record_young_gc_pause_end(bool evacuation_retained) {
+void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
   phase_times()->record_gc_pause_end();
-  phase_times()->print(evacuation_retained);
+  phase_times()->print(evacuation_failed);
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards,

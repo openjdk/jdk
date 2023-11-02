@@ -30,8 +30,9 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
-#include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
@@ -55,17 +56,17 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
-  bool _retained;
+  bool _evacuation_failed;
 
 public:
-  RecalculateUsedTask(bool retained) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _retained(retained) { }
+  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
 
   double worker_cost() const override {
     // If there is no evacuation failure, the work to perform is minimal.
-    return _retained ? 1.0 : AlmostNoWork;
+    return _evacuation_failed ? 1.0 : AlmostNoWork;
   }
 
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_retained); }
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
@@ -104,10 +105,10 @@ public:
   }
 
   double worker_cost() const override {
-    assert(_evac_failure_regions->has_regions_retained(), "Should not call this if not executed");
+    assert(_evac_failure_regions->has_regions_evac_failed(), "Should not call this if there were no evacuation failures");
 
     double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
-    return workers_per_region * _evac_failure_regions->num_regions_retained();
+    return workers_per_region * _evac_failure_regions->num_regions_evac_failed();
   }
 
   void do_work(uint worker_id) override {
@@ -119,15 +120,15 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
-  bool retained = evac_failure_regions->has_regions_retained();
+  bool evac_failed = evac_failure_regions->has_regions_evac_failed();
 
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask(retained));
+  add_serial_task(new RecalculateUsedTask(evac_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
-  if (retained) {
+  if (evac_failed) {
     add_parallel_task(new RestoreRetainedRegionsTask(evac_failure_regions));
   }
 }
@@ -380,7 +381,7 @@ public:
   }
 
   double worker_cost() const override {
-    return _evac_failure_regions->num_regions_retained();
+    return _evac_failure_regions->num_regions_evac_failed();
   }
 
   void do_work(uint worker_id) override {
@@ -568,13 +569,10 @@ class FreeCSetClosure : public HeapRegionClosure {
     G1GCPhaseTimes* p = _g1h->phase_times();
     assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
-    bool is_pinned = r->has_pinned_objects();
-
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,
                                       1,
-                                      is_pinned ? G1GCPhaseTimes::RestoreRetainedRegionsPinnedNum
-                                                : G1GCPhaseTimes::RestoreRetainedRegionsFailedNum);
+                                      G1GCPhaseTimes::RestoreRetainedRegionsEvacFailedNum);
 
     bool retain_region = _g1h->policy()->should_retain_evac_failed_region(r);
     // Update the region state due to the failed evacuation.
@@ -658,6 +656,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1
   const size_t*     _surviving_young_words;
   uint              _active_workers;
   G1EvacFailureRegions* _evac_failure_regions;
+  volatile uint     _num_retained_regions;
 
   FreeCSetStats* worker_stats(uint worker) {
     return &_worker_stats[worker];
@@ -683,7 +682,8 @@ public:
     _claimer(0),
     _surviving_young_words(surviving_young_words),
     _active_workers(0),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _num_retained_regions(0) {
 
     _g1h->clear_eden();
   }
@@ -691,10 +691,7 @@ public:
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
 
-    G1GCPhaseTimes* p = _g1h->phase_times();
-    bool has_new_retained_regions =
-      p->sum_thread_work_items(G1GCPhaseTimes::RestoreRetainedRegions, G1GCPhaseTimes::RestoreRetainedRegionsRetainedNum) != 0;
-
+    bool has_new_retained_regions = Atomic::load(&_num_retained_regions) != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
       candidates->sort_by_efficiency();
@@ -705,7 +702,10 @@ public:
       _worker_stats[worker].~FreeCSetStats();
     }
     FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
+
+    G1GCPhaseTimes* p = _g1h->phase_times();
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
+
     _g1h->clear_collection_set();
   }
 
@@ -725,10 +725,18 @@ public:
     _g1h->collection_set_par_iterate_all(&cl, &_claimer, worker_id);
     // Report per-region type timings.
     cl.report_timing();
-    _g1h->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
-                                                        worker_id,
-                                                        cl.num_retained_regions(),
-                                                        G1GCPhaseTimes::RestoreRetainedRegionsRetainedNum);
+
+    G1GCPhaseTimes* p = _g1h->phase_times();
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                      worker_id,
+                                      _evac_failure_regions->num_regions_pinned(),
+                                      G1GCPhaseTimes::RestoreRetainedRegionsPinnedNum);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                      worker_id,
+                                      _evac_failure_regions->num_regions_alloc_failed(),
+                                      G1GCPhaseTimes::RestoreRetainedRegionsAllocFailedNum);
+
+    Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }
 };
 
@@ -769,7 +777,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (evac_failure_regions->has_regions_retained()) {
+  if (evac_failure_regions->has_regions_evac_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }

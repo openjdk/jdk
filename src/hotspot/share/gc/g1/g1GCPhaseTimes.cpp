@@ -132,9 +132,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards", MergePSSEvacFailExtra);
 
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreRetainedRegionsFailedNum);
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreRetainedRegionsEvacFailedNum);
   _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Pinned Regions:", RestoreRetainedRegionsPinnedNum);
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Retained Regions:", RestoreRetainedRegionsRetainedNum);
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Allocation Failed Regions:", RestoreRetainedRegionsAllocFailedNum);
 
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Chunks:", RemoveSelfForwardChunksNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Empty Forward Chunks:", RemoveSelfForwardEmptyChunksNum);

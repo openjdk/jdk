@@ -27,7 +27,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
-#include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -194,7 +194,7 @@ G1RemoveSelfForwardsTask::G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_fa
   _evac_failure_regions(evac_failure_regions),
   _chunk_bitmap(mtGC) {
 
-  _num_evac_fail_regions = _evac_failure_regions->num_regions_retained();
+  _num_evac_fail_regions = _evac_failure_regions->num_regions_evac_failed();
   _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
 
   _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);

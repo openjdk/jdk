@@ -147,9 +147,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsFailedNum,
-    RestoreRetainedRegionsPinnedNum,
-    RestoreRetainedRegionsRetainedNum
+    RestoreRetainedRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
+    RestoreRetainedRegionsPinnedNum,           // How many regions were found as pinned.
+    RestoreRetainedRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
   };
 
   enum RemoveSelfForwardsWorkItems {
