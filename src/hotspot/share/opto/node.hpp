@@ -1129,7 +1129,7 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-  // Visit all non-cast uses of the node and apply callback, bypassing nodes
+  // Visit all uses of the node and apply callback, bypassing nodes
   // according to bypass. Note: definition appears after complete type
   // definition of Unique_Node_List
   template <typename Callback, typename Bypass>
