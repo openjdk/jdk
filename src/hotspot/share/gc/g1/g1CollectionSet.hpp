@@ -192,8 +192,8 @@ class G1CollectionSet {
   // can use them.
   void finalize_incremental_building();
 
-  // Select the old regions of the initial collection set and determine how many optional
-  // regions we might be able to evacuate in this pause.
+  // Select the regions comprising the initial and optional collection set from marking
+  // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
 
   // Iterate the part of the collection set given by the offset and length applying the given

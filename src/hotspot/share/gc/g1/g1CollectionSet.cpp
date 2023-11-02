@@ -270,6 +270,9 @@ void G1CollectionSet::print(outputStream* st) {
 }
 #endif // !PRODUCT
 
+// Always evacuate out pinned regions (apart from object types that can actually be
+// pinned by JNI) to allow faster future evacuation. We already "paid" for this work
+// when sizing the young generation.
 double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors) {
   Ticks start_time = Ticks::now();
 
@@ -317,6 +320,19 @@ static int compare_region_idx(const uint a, const uint b) {
   return static_cast<int>(a-b);
 }
 
+// The current mechanism skips evacuation of pinned old regions like g1 does for
+// young regions:
+// * evacuating pinned marking collection set candidate regions (available during mixed
+//   gc) like young regions would not result in any memory gain but only take additional
+//   time away from processing regions that would actually result in memory being freed.
+//   To advance mixed gc progress (we committed to evacuate all marking collection set
+//   candidate regions within the maximum number of mixed gcs in the phase), move them
+//   to the optional collection set candidates to reclaim them asap as time permits.
+// * evacuating out retained collection set candidates would also just take up time with
+//   no actual space freed in old gen. Better to concentrate on others.
+//   Retained collection set candidates are aged out, ie. made to regular old regions
+//   without remembered sets after a few attempts to save computation costs of keeping
+//   them candidates for very long living pinned regions.
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
