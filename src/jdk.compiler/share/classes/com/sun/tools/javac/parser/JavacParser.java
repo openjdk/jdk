@@ -4054,7 +4054,7 @@ public class JavacParser implements Parser {
 
         Name name = names.fromString(simplename);
         JCModifiers implicitMods = F.at(Position.NOPOS)
-                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.IMPLICIT_CLASS, List.nil());
+                .Modifiers(Flags.FINAL|Flags.IMPLICIT_CLASS, List.nil());
         JCClassDecl implicit = F.at(primaryPos).ClassDef(
                 implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
