@@ -53,7 +53,7 @@ public class TestG1HeapRegionSize {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = GCArguments.createTestJvm(flagList);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flagList);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(exitValue);
 

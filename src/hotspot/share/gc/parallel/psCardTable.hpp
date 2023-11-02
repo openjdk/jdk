@@ -33,71 +33,68 @@ class ObjectStartArray;
 class PSPromotionManager;
 
 class PSCardTable: public CardTable {
- private:
+  friend class PSStripeShadowCardTable;
+  static constexpr size_t num_cards_in_stripe = 128;
+  static_assert(num_cards_in_stripe >= 1, "progress");
 
-  void verify_all_young_refs_precise_helper(MemRegion mr);
+  volatile int _preprocessing_active_workers;
 
-  enum ExtendedCardValue {
-    youngergen_card   = CT_MR_BS_last_reserved + 1,
-    verify_card       = CT_MR_BS_last_reserved + 5
-  };
+  bool is_dirty(CardValue* card) {
+    return !is_clean(card);
+  }
 
-  CardValue* find_first_dirty_card(CardValue* const start_card,
-                                   CardValue* const end_card);
+  bool is_clean(CardValue* card) {
+    return *card == clean_card_val();
+  }
 
-  CardValue* find_first_clean_card(ObjectStartArray* start_array,
-                                   CardValue* const start_card,
-                                   CardValue* const end_card);
+  // Iterate the stripes with the given index and copy imprecise card marks of
+  // objects reaching into a stripe to its first card.
+  template <typename Func>
+  void preprocess_card_table_parallel(Func&& object_start,
+                                      HeapWord* old_gen_bottom,
+                                      HeapWord* old_gen_top,
+                                      uint stripe_index,
+                                      uint n_stripes);
 
-  void clear_cards(CardValue* const start, CardValue* const end);
+  // Scavenge contents on dirty cards of the given stripe [start, end).
+  template <typename Func>
+  void process_range(Func&& object_start,
+                     PSPromotionManager* pm,
+                     HeapWord* const start,
+                     HeapWord* const end);
 
-  void scan_objects_in_range(PSPromotionManager* pm,
-                             HeapWord* start,
-                             HeapWord* end);
+  void scan_obj_with_limit(PSPromotionManager* pm,
+                           oop obj,
+                           HeapWord* start,
+                           HeapWord* end);
 
  public:
-  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
-
-  static CardValue youngergen_card_val() { return youngergen_card; }
-  static CardValue verify_card_val()     { return verify_card; }
+  PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
+                                      _preprocessing_active_workers(0) {}
 
   // Scavenge support
+  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
+  // Scavenge contents of stripes with the given index.
   void scavenge_contents_parallel(ObjectStartArray* start_array,
-                                  MutableSpace* sp,
-                                  HeapWord* space_top,
+                                  HeapWord* old_gen_bottom,
+                                  HeapWord* old_gen_top,
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);
 
-  bool addr_is_marked_imprecise(void *addr);
-  bool addr_is_marked_precise(void *addr);
-
-  void set_card_newgen(void* addr)   { CardValue* p = byte_for(addr); *p = verify_card; }
-
-  // Testers for entries
-  static bool card_is_dirty(int value)      { return value == dirty_card; }
-  static bool card_is_newgen(int value)     { return value == youngergen_card; }
-  static bool card_is_clean(int value)      { return value == clean_card; }
-  static bool card_is_verify(int value)     { return value == verify_card; }
+  bool is_dirty_for_addr(void *addr);
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
-    *byte = youngergen_card;
+    *byte = dirty_card_val();
   }
 
   // ReduceInitialCardMarks support
   bool is_in_young(const void* p) const override;
 
-#ifdef ASSERT
-  bool is_valid_card_address(CardValue* addr) {
-    return (addr >= _byte_map) && (addr < _byte_map + _byte_map_size);
-  }
-#endif // ASSERT
-
   // Verification
   void verify_all_young_refs_imprecise();
-  void verify_all_young_refs_precise();
 };
 
 #endif // SHARE_GC_PARALLEL_PSCARDTABLE_HPP

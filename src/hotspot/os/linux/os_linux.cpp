@@ -36,10 +36,11 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "osContainer_linux.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -64,24 +65,24 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
-#include "signals_posix.hpp"
 #include "semaphore_posix.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
+#include "signals_posix.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here
@@ -1800,15 +1801,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return nullptr;
 }
 
-void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
-                                int ebuflen) {
-  void * result = ::dlopen(filename, RTLD_LAZY);
-
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(filename);
-#endif
-
+void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = ::dlopen(filename, RTLD_LAZY);
   if (result == nullptr) {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -1820,19 +1816,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
   }
   return result;
 }

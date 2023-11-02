@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.security.interfaces;
 
 import java.security.PrivateKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Optional;
 
 /**
@@ -53,5 +54,19 @@ public interface XECPrivateKey extends XECKey, PrivateKey {
      *     and the private key is not allowed to leave the crypto boundary).
      */
     Optional<byte[]> getScalar();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     * @since 22
+     */
+    @Override
+    default AlgorithmParameterSpec getParams() {
+        return null;
+    }
 }
 

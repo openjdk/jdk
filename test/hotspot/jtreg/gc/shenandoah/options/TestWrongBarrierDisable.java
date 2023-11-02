@@ -63,7 +63,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -81,7 +81,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldPassAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",

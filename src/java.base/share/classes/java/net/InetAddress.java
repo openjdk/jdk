@@ -136,7 +136,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *
  * <p> <i>Global</i> addresses are unique across the internet.
  *
- * <h3> Textual representation of IP addresses </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * The textual representation of an IP address is address family specific.
  *
@@ -1417,7 +1417,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             byte[] addrArray;
             // check if IPV4 address - most likely
             try {
-                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr);
+                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr, false);
             } catch (IllegalArgumentException iae) {
                 return null;
             }
@@ -1644,51 +1644,29 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // Check and try to parse host string as an IP address literal
         if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr = null;
-            int numericZone = -1;
-            String ifname = null;
-
+            InetAddress inetAddress = null;
             if (!ipv6Expected) {
                 // check if it is IPv4 address only if host is not wrapped in '[]'
                 try {
-                    addr = IPAddressUtil.validateNumericFormatV4(host);
+                    // Here we check the address string for ambiguity only
+                    inetAddress = Inet4Address.parseAddressString(host, false);
                 } catch (IllegalArgumentException iae) {
                     var uhe = new UnknownHostException(host);
                     uhe.initCause(iae);
                     throw uhe;
                 }
             }
-            if (addr == null) {
-                // Try to parse host string as an IPv6 literal
-                // Check if a numeric or string zone id is present first
-                int pos;
-                if ((pos = host.indexOf('%')) != -1) {
-                    numericZone = checkNumericZone(host);
-                    if (numericZone == -1) { /* remainder of string must be an ifname */
-                        ifname = host.substring(pos + 1);
-                    }
-                }
-                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null &&
+            if (inetAddress == null) {
+                // This is supposed to be an IPv6 literal
+                // Check for presence of a numeric or string zone id
+                // is done in Inet6Address.parseAddressString
+                if ((inetAddress = Inet6Address.parseAddressString(host, false)) == null &&
                         (host.contains(":") || ipv6Expected)) {
                     throw invalidIPv6LiteralException(host, ipv6Expected);
                 }
             }
-            if(addr != null) {
-                InetAddress[] ret = new InetAddress[1];
-                if (addr.length == Inet4Address.INADDRSZ) {
-                    if (numericZone != -1 || ifname != null) {
-                        // IPv4-mapped address must not contain zone-id
-                        throw new UnknownHostException(host + ": invalid IPv4-mapped address");
-                    }
-                    ret[0] = new Inet4Address(null, addr);
-                } else {
-                    if (ifname != null) {
-                        ret[0] = new Inet6Address(null, addr, ifname);
-                    } else {
-                        ret[0] = new Inet6Address(null, addr, numericZone);
-                    }
-                }
-                return ret;
+            if (inetAddress != null) {
+                return new InetAddress[]{inetAddress};
             }
         } else if (ipv6Expected) {
             // We were expecting an IPv6 Literal since host string starts
@@ -1718,45 +1696,44 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         return impl.loopbackAddress();
     }
 
-
-    /**
-     * check if the literal address string has %nn appended
-     * returns -1 if not, or the numeric value otherwise.
-     *
-     * %nn may also be a string that represents the displayName of
-     * a currently available NetworkInterface.
-     */
-    private static int checkNumericZone (String s) throws UnknownHostException {
-        int percent = s.indexOf ('%');
-        int slen = s.length();
-        int digit, zone=0;
-        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
-        if (percent == -1) {
-            return -1;
-        }
-        for (int i=percent+1; i<slen; i++) {
-            char c = s.charAt(i);
-            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
-                return -1;
-            }
-            if (zone > multmax) {
-                return -1;
-            }
-            zone = (zone * 10) + digit;
-            if (zone < 0) {
-                return -1;
-            }
-
-        }
-        return zone;
-    }
-
     /**
      * package private so SocketPermission can call it
      */
     static InetAddress[] getAllByName0 (String host, boolean check)
         throws UnknownHostException  {
         return getAllByName0(host, check, true);
+    }
+
+    /**
+     * Creates an {@code InetAddress} based on the provided {@linkplain InetAddress##format
+     * textual representation} of an IP address.
+     * <p> The provided IP address literal is parsed as
+     * {@linkplain Inet4Address#ofLiteral(String) an IPv4 address literal} first.
+     * If it cannot be parsed as an IPv4 address literal, then the method attempts
+     * to parse it as {@linkplain Inet6Address#ofLiteral(String) an IPv6 address literal}.
+     * If neither attempts succeed an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
+     *
+     * @param ipAddressLiteral the textual representation of an IP address.
+     * @return an {@link InetAddress} object with no hostname set, and constructed
+     *         from the provided IP address literal.
+     * @throws IllegalArgumentException if the {@code ipAddressLiteral} cannot be parsed
+     *         as an IPv4 or IPv6 address literal.
+     * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.
+     * @see Inet4Address#ofLiteral(String)
+     * @see Inet6Address#ofLiteral(String)
+     */
+    public static InetAddress ofLiteral(String ipAddressLiteral) {
+        Objects.requireNonNull(ipAddressLiteral);
+        InetAddress inetAddress;
+        try {
+            // First try to parse the input as an IPv4 address literal
+            inetAddress = Inet4Address.ofLiteral(ipAddressLiteral);
+        } catch (IllegalArgumentException iae) {
+            // If it fails try to parse the input as an IPv6 address literal
+            inetAddress = Inet6Address.ofLiteral(ipAddressLiteral);
+        }
+        return inetAddress;
     }
 
     /**

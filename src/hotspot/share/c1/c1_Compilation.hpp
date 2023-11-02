@@ -85,6 +85,7 @@ class Compilation: public StackObj {
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _install_code;
   const char*        _bailout_msg;
+  bool               _oom;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
   ImplicitExceptionTable _implicit_exception_table;
@@ -202,6 +203,10 @@ class Compilation: public StackObj {
     return _cfg_printer_output;
   }
 #endif // PRODUCT
+
+  // MemLimit handling
+  bool oom() const { return _oom; }
+  void set_oom() { _oom = true; }
 
   // error handling
   void bailout(const char* msg);

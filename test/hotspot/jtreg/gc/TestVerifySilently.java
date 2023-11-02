@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class TestVerifySilently {
                                              "-XX:+VerifyAfterGC",
                                              (verifySilently ? "-Xlog:gc":"-Xlog:gc+verify=debug"),
                                              TestVerifySilentlyRunSystemGC.class.getName()});
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOpts);
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmOpts);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());

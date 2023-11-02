@@ -522,7 +522,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # do this on s390x also for libjvm (where serviceability agent is not supported)
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
-      if test "x$OPENJDK_TARGET_CPU" = xs390x; then
+      if test "x$OPENJDK_TARGET_CPU" = xs390x && test "x$DEBUG_LEVEL" == xrelease; then
         TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
       fi
     fi
@@ -562,7 +562,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
     # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -permissive- -utf-8 -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -Zc:wchar_t-"
   fi
 
