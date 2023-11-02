@@ -70,9 +70,9 @@ public @interface PreviewFeature {
 
         @JEP(number=430, title="String Templates")
         STRING_TEMPLATES,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
         UNNAMED_CLASSES,
-        @JEP(number=999, title="Implicit Classes and Instance Main Methods")
+        @JEP(number=463, title="Implicit Classes and Instance Main Methods", status="Preview")
         IMPLICIT_CLASSES,
         @JEP(number=446, title="Scoped Values", status="Preview")
         SCOPED_VALUES,
