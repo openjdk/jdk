@@ -215,7 +215,7 @@ void AwtCanvas::_SetEraseBackground(void *param)
     JNI_CHECK_PEER_GOTO(canvas, ret);
 
     AwtCanvas *c;
-    c = (AwtCanvas*)pData;
+    c = (AwtCanvas*) pData;
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
 
