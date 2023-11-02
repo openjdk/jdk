@@ -4477,6 +4477,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Poly1305, RFC 7539
+  // Intrinsified version of com.sun.crypto.provider.Poly1305.processMultipleBlocks
 
   // See https://loup-vaillant.fr/tutorials/poly1305-design for a
   // description of the tricks used to simplify and accelerate this
