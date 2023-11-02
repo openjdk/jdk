@@ -1262,8 +1262,7 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   }
 
 #if INCLUDE_CDS
-  if (is_internal_module_property(key) ||
-      strcmp(key, "jdk.module.main") == 0) {
+  if (is_internal_module_property(key)) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
