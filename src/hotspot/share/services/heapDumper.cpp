@@ -1956,7 +1956,7 @@ void DumpMerger::do_merge() {
     }
     // Delete selected segmented heap file nevertheless
     if (remove(path) != 0) {
-      log_info(heapdump)("Remove segment file (%d) failed (%d)", i, errno);
+      log_info(heapdump)("Removal of segment file (%d) failed (%d)", i, errno);
     }
   }
 
