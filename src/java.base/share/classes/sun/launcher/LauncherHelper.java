@@ -753,7 +753,6 @@ public final class LauncherHelper {
             mainClass = FXHelper.class;
         }
 
-        validateMainClass(mainClass);
         return mainClass;
     }
 
@@ -895,24 +894,20 @@ public final class LauncherHelper {
      */
     private static final int MAIN_WITHOUT_ARGS = 1;
     private static final int MAIN_NONSTATIC = 2;
-    private static int mainType = 0;
 
     /*
      * Return type so that launcher invokes the correct main
      */
-    public static int getMainType() {
-        return mainType;
-    }
-
-    private static void setMainType(Method mainMethod) {
+    public static int getMainType(Method mainMethod) {
         int mods = mainMethod.getModifiers();
         boolean isStatic = Modifier.isStatic(mods);
         boolean noArgs = mainMethod.getParameterCount() == 0;
-        mainType = (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
+        return (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
     }
 
     // Check the existence and signature of main and abort if incorrect
-    static void validateMainClass(Class<?> mainClass) {
+    // Return main method.
+    public static Method validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);
@@ -931,22 +926,25 @@ public final class LauncherHelper {
             }
         }
 
-        setMainType(mainMethod);
-
         if (!Modifier.isStatic(mainMethod.getModifiers())) {
             String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);
+                mainMethod = null;
             }
             try {
                 Constructor<?> constructor = mainClass.getDeclaredConstructor();
                 if (Modifier.isPrivate(constructor.getModifiers())) {
                     abort(null, "java.launcher.cls.error6", className);
+                    mainMethod = null;
                 }
             } catch (Throwable ex) {
                 abort(null, "java.launcher.cls.error6", className);
+                mainMethod = null;
             }
         }
+
+        return mainMethod;
     }
 
     private static final String encprop = "sun.jnu.encoding";

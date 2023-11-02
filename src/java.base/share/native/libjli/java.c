@@ -403,7 +403,11 @@ JavaMain(void* _args)
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
     jobjectArray mainArgs;
+    jclass helperClass;
+    jmethodID validateMainMethod;
+    jobject mainMethod;
     jmethodID mainID;
+    int mainType;
     jmethodID constructor;
     jobject mainObject;
     int ret = 0;
@@ -525,6 +529,17 @@ JavaMain(void* _args)
     appClass = GetApplicationClass(env);
     NULL_CHECK_RETURN_VALUE(appClass, -1);
 
+    /*  Get launcher helper class. */
+    helperClass = GetLauncherHelperClass(env);
+
+    /*  Validate and fetch main method from application class. */
+    validateMainMethod = (*env)->GetStaticMethodID(env, helperClass,
+                                         "validateMainMethod",
+                                         "(Ljava/lang/Class;)Ljava/lang/reflect/Method;");
+    CHECK_EXCEPTION_NULL_LEAVE(validateMainMethod);
+    mainMethod = (*env)->CallStaticObjectMethod(env, helperClass, validateMainMethod, mainClass);
+    NULL_CHECK_RETURN_VALUE(mainMethod, -1);
+
     /* Build platform specific argument array */
     mainArgs = CreateApplicationArgs(env, argv, argc);
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
@@ -545,21 +560,19 @@ JavaMain(void* _args)
     CHECK_EXCEPTION_LEAVE(1);
 
     /*
-     * The LoadMainClass not only loads the main class, it will also ensure
-     * that the main method's signature is correct, therefore further checking
-     * is not required. The main method is invoked here so that extraneous java
-     * stacks are not in the application stack trace.
+     * validateMainMethod ensures that the main method's signature is correct,
+     * therefore further checking is not required. The main method is invoked
+     * here so that extraneous java stacks are not in the application stack trace.
      */
 #define MAIN_WITHOUT_ARGS 1
 #define MAIN_NONSTATIC 2
 
-    jclass helperClass = GetLauncherHelperClass(env);
     jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
                                                       "getMainType",
-                                                      "()I");
+                                                      "(Ljava/lang/reflect/Method;)I");
     CHECK_EXCEPTION_NULL_LEAVE(getMainType);
-    int mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType);
-    CHECK_EXCEPTION_LEAVE(mainType);
+    mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType, mainMethod);
+    CHECK_EXCEPTION_LEAVE(-1);
 
     switch (mainType) {
     case 0: {
