@@ -4568,7 +4568,7 @@ class StubGenerator: public StubCodeGenerator {
       __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
       __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
       __ cad(U_0, U_0, tmp1, tmp3); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp3
-      __ cadc(U_1, U_1, zr, tmp3); // Add carry to U_1 with carry output to tmp3
+      __ cad(U_1, U_1, tmp3, tmp3); // Add carry to U_1 with carry output to tmp3
       __ add(U_2, U_2, tmp3);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
@@ -4581,7 +4581,7 @@ class StubGenerator: public StubCodeGenerator {
     __ srli(tmp1, U_2, 2);
     __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 = U_2 * 5
     __ cad(U_0, U_0, tmp1, tmp3); // U_0 += U_2 * 5 with carry output to tmp3
-    __ cadc(U_1, U_1, zr, tmp3); // Add carry to U_1 with carry output to tmp3
+    __ cad(U_1, U_1, tmp3, tmp3); // Add carry to U_1 with carry output to tmp3
     __ andi(U_2, U_2, bits2);
     __ add(U_2, U_2, tmp3); // Add carry to U_2
 
