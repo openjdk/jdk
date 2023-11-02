@@ -37,21 +37,24 @@ private:
   private:
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
 
-    Semaphore _sem_barrier;
+    Semaphore _sem;
 
-    // The number of threads in the wait path.
-    volatile int _wait_threads;
+    // Cell state, tracks the arming + waiter status
+    //   <= -1: disarmed, have abs(n)-1 unreported waiters
+    //       0: forbidden value
+    //   >=  1: armed, have abs(n)-1 waiters
+    volatile int _state;
 
-    // The number of waits that need to be signalled.
-    volatile int _unsignaled_waits;
+    // Wakeups to deliver for current waiters
+    volatile int _outstanding_wakeups;
 
     DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
 
-  public:
-    Cell() : _sem_barrier(0), _wait_threads(0), _unsignaled_waits(0) {}
-    NONCOPYABLE(Cell);
-
     int wake_if_needed(int max);
+
+  public:
+    Cell() : _sem(0), _state(-1), _outstanding_wakeups(0) {}
+    NONCOPYABLE(Cell);
   };
 
   // Should be enough for most uses without exploding the footprint.
