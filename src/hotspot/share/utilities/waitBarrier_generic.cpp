@@ -31,10 +31,7 @@
 
 // Implements the striped semaphore wait barrier.
 //
-// In addition to the barrier tag, it uses the counter to track how many waiters
-// need to be notified on disarm.
-//
-// To guarantee progress and safety, we should make sure that new barrier tag
+// To guarantee progress and safety, we need to make sure that new barrier tag
 // starts with the completely empty set of waiters and free semaphore. This
 // requires either waiting for all threads to leave wait() for current barrier
 // tag on disarm(), or waiting for all threads to leave the previous tag before
@@ -42,14 +39,19 @@
 //
 // When there are multiple threads, it is normal for some threads to take
 // significant time to leave the barrier. Waiting for these threads introduces
-// stalls on barrier reuse. If wait on disarm(), this stall is nearly guaranteed
-// to happen if some threads are stalled. If we wait on arm(), we can get lucky
-// that most threads would be able to catch up, exit wait(), and so we arrive
-// to arm() with semaphore ready for reuse.
+// stalls on barrier reuse.
 //
-// However, that is insufficient in practice. Therefore, this implementation goes
-// a step further and implements the _striped_ semaphores. We maintain several
-// semaphores (along with aux counter) in cells. The barrier tags are assigned
+// If wait on disarm(), this stall is nearly guaranteed to happen if some threads
+// are de-scheduled by prior wait(). It would be especially bad if there are more
+// waiting threads than CPUs: every thread would need to wake up and register itself
+// as leaving.
+//
+// If we wait on arm(), we can get lucky that most threads would be able to catch up,
+// exit wait(), and so we arrive to arm() with semaphore ready for reuse. However,
+// that is still insufficient in practice.
+//
+// Therefore, this implementation goes a step further and implements the _striped_
+// semaphores. We maintain several semaphores in cells. The barrier tags are assigned
 // to cells in some simple manner. Most of the current uses have sequential barrier
 // tags, so simple modulo works well.
 //
@@ -58,18 +60,18 @@
 // maintaining just a few cells, we have enough window for threads to catch up.
 //
 // The correctness is guaranteed by using a single atomic state variable per cell,
-// with updates always done with CASes. Positive values mean the cell is armed and
-// maybe has waiters. Negative values mean the cell is disarmed and maybe has
-// returning waiters. The cell starts with "-1". Arming the cell swings from "-1"
-// to "+1". Every new waiter swings from (n) to (n+1), as long as "n" is positive.
-// Disarm swings from (n) to (-n). Every returning waiter swings from (n) to (n+1),
-// where "n" is guaranteed to stay negative. When all waiters return, the cell
-// ends up at "-1" again. This allows accurate tracking of how many signals to
-// issue and does not race with disarm.
+// with updates always done with CASes. For the cell state, positive values mean
+// the cell is armed and maybe has waiters. Negative values mean the cell is disarmed
+// and maybe has completing waiters. The cell starts with "-1". Arming a cell swings
+// from "-1" to "+1". Every new waiter swings from (n) to (n+1), as long as "n" is
+// positive. Disarm swings from (n) to (-n). Every completing waiter swings from (n)
+// to (n+1), where "n" is guaranteed to stay negative. When all waiters complete,
+// a cell ends up at "-1" again. This allows accurate tracking of how many signals
+// to issue and does not race with disarm.
 //
-// For extra generality, the implementation uses the strongest (default) barriers
-// for extra safety, even when not strictly required to do so for correctness.
-// Extra barrier overhead is dominated by the actual wait/notify latency.
+// The implementation uses the strongest (default) barriers for extra safety, even
+// when not strictly required to do so for correctness. Extra barrier overhead is
+// dominated by the actual wait/notify latency anyway.
 //
 
 void GenericWaitBarrier::arm(int barrier_tag) {
@@ -79,25 +81,22 @@ void GenericWaitBarrier::arm(int barrier_tag) {
 
   Cell& cell = tag_to_cell(barrier_tag);
 
-  // Prepare target cell for arming.
-  // New waiters would still return immediately until barrier is fully armed.
-
   assert(Atomic::load_acquire(&cell._state) < 0, "Pre arm: should be disarmed");
 
   // Before we continue to arm, we need to make sure that all threads
-  // have left the previous cell. This means the status have rolled to -1.
+  // have left the previous cell. This means the cell status have rolled to -1.
   SpinYield sp;
   while (Atomic::load_acquire(&cell._state) < -1) {
     sp.wait();
   }
 
-  // Try to swing to armed. This should always succeed after the check above.
+  // Try to swing cell to armed. This should always succeed after the check above.
   int ps = Atomic::cmpxchg(&cell._state, -1, 1);
   if (ps != -1) {
     fatal("Mid arm: Cannot arm the wait barrier. State: %d", ps);
   }
 
-  // API specifies disarm() must provide a trailing fence.
+  // API specifies arm() must provide a trailing fence.
   OrderAccess::fence();
 
   assert(Atomic::load(&cell._state) > 0, "Post arm: should be armed");
@@ -115,7 +114,7 @@ int GenericWaitBarrier::Cell::wake_if_needed(int max) {
 
     int prev = Atomic::cmpxchg(&_outstanding_wakeups, cur, cur - 1);
     if (prev != cur) {
-      // Contention! Return to caller for early return or backoff.
+      // Contention, return to caller for early return or backoff.
       return prev;
     }
 
@@ -141,7 +140,8 @@ void GenericWaitBarrier::disarm() {
     int s = Atomic::load_acquire(&cell._state);
     assert(s > 0, "Mid disarm: Should be armed. State: %d", s);
     if (Atomic::cmpxchg(&cell._state, s, -s) == s) {
-      // Wake up waiters, if we have at least one.
+      // Successfully disarmed. Wake up waiters, if we have at least one.
+      // Allow other threads to assist with wakeups, if possible.
       int waiters = s - 1;
       if (waiters > 0) {
         Atomic::release_store(&cell._outstanding_wakeups, waiters);
@@ -166,8 +166,8 @@ void GenericWaitBarrier::wait(int barrier_tag) {
 
   Cell& cell = tag_to_cell(barrier_tag);
 
-  // Try to register ourselves as waiter. If we got disarmed while trying
-  // to wait, return immediately.
+  // Try to register ourselves as pending waiter. If we got disarmed while
+  // trying to register, return immediately.
   {
     int s;
     do {
