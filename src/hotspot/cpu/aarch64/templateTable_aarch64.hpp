@@ -26,7 +26,7 @@
 #ifndef CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP
 #define CPU_AARCH64_TEMPLATETABLE_AARCH64_HPP
 
-  static void prepare_invoke(Register recv);
+  static void prepare_invoke(Register cache, Register recv);
   static void invokevirtual_helper(Register index, Register recv,
                                    Register flags);
 

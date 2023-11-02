@@ -2371,9 +2371,8 @@ void TemplateTable::load_resolved_method_entry_special_or_static(Register cache,
                                                                  Register flags) {
 
   // setup registers
-  const Register index = r4;
-  assert_different_registers(method, flags);
-  assert_different_registers(method, cache, index);
+  const Register index = flags;
+  assert_different_registers(method, cache, flags);
 
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f1_byte, cache, index);
@@ -2386,7 +2385,7 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
                                                       Register ref_index,
                                                       Register flags) {
   // setup registers
-  const Register index = r4;
+  const Register index = ref_index;
   assert_different_registers(method, flags);
   assert_different_registers(method, cache, index);
 
@@ -2404,10 +2403,10 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
-  __ push(r19);
-  __ mov(r19, ref_index);
-  __ load_resolved_reference_at_index(ref_index, r19);
-  __ pop(r19);
+  __ push(method);
+  __ mov(method, ref_index);
+  __ load_resolved_reference_at_index(ref_index, method);
+  __ pop(method);
   __ push(ref_index);  // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
 }
@@ -2417,7 +2416,7 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
                                                          Register method_or_table_index,
                                                          Register flags) {
   // setup registers
-  const Register index = r4;
+  const Register index = method_or_table_index;
   assert_different_registers(method_or_table_index, cache, flags);
 
   // determine constant pool cache field offsets
@@ -2450,9 +2449,8 @@ void TemplateTable::load_resolved_method_entry_virtual(Register cache,
                                                        Register method_or_table_index,
                                                        Register flags) {
   // setup registers
-  const Register index = r4;
-  assert_different_registers(method_or_table_index, flags);
-  assert_different_registers(method_or_table_index, cache, index);
+  const Register index = flags;
+  assert_different_registers(method_or_table_index, cache, flags);
 
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f2_byte, cache, index);
@@ -3288,9 +3286,8 @@ void TemplateTable::fast_xaccess(TosState state)
 //-----------------------------------------------------------------------------
 // Calls
 
-void TemplateTable::prepare_invoke(Register recv) {
+void TemplateTable::prepare_invoke(Register cache, Register recv) {
 
-  const Register cache = r2;
   Bytecodes::Code code = bytecode();
   const bool load_receiver       = (code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);
 
@@ -3367,7 +3364,7 @@ void TemplateTable::invokevirtual(int byte_no)
   load_resolved_method_entry_virtual(r2,      // ResolvedMethodEntry*
                                      rmethod, // Method* or itable index
                                      r3);     // flags
-  prepare_invoke(r2); // recv
+  prepare_invoke(r2, r2); // recv
 
   // rmethod: index (actually a Method*)
   // r2: receiver
@@ -3384,7 +3381,7 @@ void TemplateTable::invokespecial(int byte_no)
   load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
                                                rmethod, // Method*
                                                r3);     // flags
-  prepare_invoke(r2);  // get receiver also for null check
+  prepare_invoke(r2, r2);  // get receiver also for null check
   __ verify_oop(r2);
   __ null_check(r2);
   // do the call
@@ -3401,7 +3398,7 @@ void TemplateTable::invokestatic(int byte_no)
   load_resolved_method_entry_special_or_static(r2,      // ResolvedMethodEntry*
                                                rmethod, // Method*
                                                r3);     // flags
-  prepare_invoke(r2);  // get receiver also for null check
+  prepare_invoke(r2, r2);  // get receiver also for null check
 
   // do the call
   __ profile_call(r0);
@@ -3422,7 +3419,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                                        r0,      // Klass*
                                        rmethod, // Method* or itable/vtable index
                                        r3);     // flags
-  prepare_invoke(r2); // receiver
+  prepare_invoke(r2, r2); // receiver
 
   // r0: interface klass (from f1)
   // rmethod: method (from f2)
@@ -3545,7 +3542,7 @@ void TemplateTable::invokehandle(int byte_no) {
                                     rmethod, // Method*
                                     r0,      // Resolved reference
                                     r3);     // flags
-  prepare_invoke(r2);
+  prepare_invoke(r2, r2);
 
   __ verify_method_ptr(r2);
   __ verify_oop(r2);
