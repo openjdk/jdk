@@ -260,11 +260,11 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @param byteSize the size (in bytes) of the off-heap region of memory backing the native memory segment.
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region of memory backing the native memory segment.
      * @return a new native memory segment.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
-     * is not a power of 2.
-     * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}.
+     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0},
+     *         or if {@code byteAlignment} is not a power of 2
+     * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}
      * @throws WrongThreadException if this arena is confined, and this method is called from a thread
-     * other than the arena's owner thread.
+     *         other than the arena's owner thread
      */
     @Override
     MemorySegment allocate(long byteSize, long byteAlignment);
@@ -289,12 +289,12 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *
      * @see Scope#isAlive()
      *
-     * @throws IllegalStateException if the arena has already been closed.
+     * @throws IllegalStateException if the arena has already been closed
      * @throws IllegalStateException if a segment associated with this arena is being accessed concurrently, e.g.
-     * by a {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}.
+     *         by a {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}
      * @throws WrongThreadException if this arena is confined, and this method is called from a thread
-     * other than the arena's owner thread.
-     * @throws UnsupportedOperationException if this arena cannot be closed explicitly.
+     *         other than the arena's owner thread
+     * @throws UnsupportedOperationException if this arena cannot be closed explicitly
      */
     @Override
     void close();

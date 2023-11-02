@@ -525,10 +525,10 @@ public sealed interface Linker permits AbstractLinker {
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      *
      * @see SymbolLookup
      */
@@ -575,9 +575,9 @@ public sealed interface Linker permits AbstractLinker {
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
@@ -610,14 +610,14 @@ public sealed interface Linker permits AbstractLinker {
      * @param arena the arena associated with the returned upcall stub segment.
      * @param options  the linker options associated with this linkage request.
      * @return a zero-length segment whose address is the address of the upcall stub.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
      * @throws IllegalArgumentException if the type of {@code target} is incompatible with the
-     * type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}.
-     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception.
+     *         type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}
+     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
-     * thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *         thread {@code T}, other than the arena's owner thread
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
@@ -726,7 +726,7 @@ public sealed interface Linker permits AbstractLinker {
          *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
-         *                                  is unsupported on the current platform.
+         *         is unsupported on the current platform
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
