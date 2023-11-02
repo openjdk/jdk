@@ -71,6 +71,7 @@
 
 class GrowableArrayBase : public AnyObj {
   friend class VMStructs;
+  friend class GrowableArrayTest;
 
 protected:
   // Current number of accessible elements
@@ -115,6 +116,7 @@ template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator
 // of GrowableArrayWithAllocator.
 template <typename E>
 class GrowableArrayView : public GrowableArrayBase {
+  friend class GrowableArrayTest;
 protected:
   E* _data; // data array
 
@@ -362,9 +364,10 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E> {
   friend class VMStructs;
 
   void expand_to(int j);
-  void grow(int j);
 
 protected:
+  void grow(int j);
+
   GrowableArrayWithAllocator(E* data, int capacity) :
       GrowableArrayView<E>(data, capacity, 0) {
     for (int i = 0; i < capacity; i++) {
@@ -792,8 +795,6 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
   }
 
-  NONCOPYABLE(GrowableArrayCHeap);
-
   E* allocate() {
     return allocate(this->_capacity, F);
   }
@@ -815,6 +816,26 @@ public:
 
   ~GrowableArrayCHeap() {
     this->clear_and_deallocate();
+  }
+
+  GrowableArrayCHeap(GrowableArrayCHeap<E,F>& other)
+  : GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F>>(allocate(0, F), 0) {
+    this->grow(other._len);
+    for (int i = 0; i < other._len; i++) {
+      this->_data[i] = other._data[i];
+    }
+    this->_len = other._len;
+  }
+
+  GrowableArrayCHeap<E,F>& operator=(GrowableArrayCHeap<E,F>& other) {
+    assert(&other != this, "must be different");
+    this->clear_and_deallocate();
+    this->grow(other._len);
+    for (int i = 0; i < other._len; i++) {
+      this->_data[i] = other._data[i];
+    }
+    this->_len = other._len;
+    return *this;
   }
 
   void* operator new(size_t size) {

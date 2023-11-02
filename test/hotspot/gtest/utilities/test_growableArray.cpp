@@ -44,6 +44,10 @@ struct WithEmbeddedArray {
 // Test fixture to work with TEST_VM_F
 class GrowableArrayTest : public ::testing::Test {
 protected:
+  template<typename E>
+  void* data_array(const GrowableArrayView<E>& array) {
+    return array._data;
+  }
   // friend -> private accessors
   template <typename E>
   static bool elements_on_C_heap(const GrowableArray<E>* array) {
@@ -558,6 +562,63 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
 }
 
 #endif
+
+TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldNotShareUnderlyingDataArray) {
+  GrowableArrayCHeap<int, mtTest> a(0);
+  GrowableArrayCHeap<int, mtTest> b(a);
+  ASSERT_TRUE(this->data_array(a) != this->data_array(b))
+    << "A copied GrowableArrayCHeap should not share its underlying array with the original one";
+}
+
+TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCopyTrivialElementsWhenCopyConstructed) {
+  GrowableArrayCHeap<int, mtTest> a(4);
+  a.push(0); a.push(1); a.push(2); a.push(3);
+  GrowableArrayCHeap<int, mtTest> b(a);
+  for (int i = 0; i < 4; i++) {
+    ASSERT_TRUE(a.at(i) == b.at(i)) << "Should be the same";
+  }
+}
+
+TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCopyTrivialElementsWhenCopyAssigned) {
+  GrowableArrayCHeap<int, mtTest> a(4);
+  a.push(0); a.push(1); a.push(2); a.push(3);
+  GrowableArrayCHeap<int, mtTest> b(0);
+  b = a;
+  for (int i = 0; i < 4; i++) {
+    ASSERT_TRUE(a.at(i) == b.at(i)) << "Should be the same";
+  }
+}
+
+struct IncrementingCopying {
+  static int current_id;
+public:
+  int id;
+  IncrementingCopying() {
+    this->id = 0;
+  }
+  IncrementingCopying(const IncrementingCopying&) {
+    this->id = IncrementingCopying::current_id++;
+  }
+  IncrementingCopying& operator=(const IncrementingCopying&) {
+    this->id = IncrementingCopying::current_id++;
+    return *this;
+  }
+};
+int IncrementingCopying::current_id = 0;
+TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCallCopyConstructorWhenCopyConstructed) {
+  GrowableArrayCHeap<IncrementingCopying, mtTest> a(1);
+  a.push(IncrementingCopying{});
+  GrowableArrayCHeap<IncrementingCopying, mtTest> b(a);
+  ASSERT_TRUE(a.at(0).id != b.at(0).id) << "The copy constructor should have been called but wasn't";
+}
+
+TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCallCopyConstructorWhenCopyAssigned) {
+  GrowableArrayCHeap<IncrementingCopying, mtTest> a(1);
+  a.push(IncrementingCopying{});
+  GrowableArrayCHeap<IncrementingCopying, mtTest> b(0);
+  b = a;
+  ASSERT_TRUE(a.at(0).id != b.at(0).id) << "The copy constructor should have been called but wasn't";
+}
 
 TEST(GrowableArrayCHeap, sanity) {
   // Stack/CHeap
