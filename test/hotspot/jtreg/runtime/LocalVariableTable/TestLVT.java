@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,17 +41,17 @@ public class TestLVT {
     public static void main(String[] args) throws Exception {
         test();  // Test good LVT in this test
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("DuplicateLVT");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("DuplicateLVT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTable attribute entry for 'by' in class file DuplicateLVT")
             .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("DuplicateLVTT");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("DuplicateLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTypeTable attribute entry for 'list' in class file DuplicateLVTT")
             .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("NotFoundLVTT");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("NotFoundLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("LVTT entry for 'list' in class file NotFoundLVTT does not match any LVT entry")
             .shouldHaveExitValue(1);

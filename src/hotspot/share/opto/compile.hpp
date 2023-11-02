@@ -460,6 +460,9 @@ private:
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  // "MemLimit" directive was specified and the memory limit was hit during compilation
+  bool                          _oom;
+
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
@@ -502,6 +505,8 @@ private:
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
+
+  void record_method_not_compilable_oom();
 
  public:
 
@@ -814,6 +819,10 @@ private:
     record_failure(reason);
   }
   bool check_node_count(uint margin, const char* reason) {
+    if (oom()) {
+      record_method_not_compilable_oom();
+      return true;
+    }
     if (live_nodes() + margin > max_node_limit()) {
       record_method_not_compilable(reason);
       return true;
@@ -821,6 +830,8 @@ private:
       return false;
     }
   }
+  bool oom() const { return _oom; }
+  void set_oom()   { _oom = true; }
 
   // Node management
   uint         unique() const              { return _unique; }

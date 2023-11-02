@@ -38,6 +38,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -63,12 +64,11 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
@@ -505,12 +505,17 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return nullptr;
 }
 
+enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
+// Wrapper around _endthreadex(), exit() and _exit()
+[[noreturn]]
+static void exit_process_or_thread(Ept what, int code);
+
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-unsigned __stdcall os::win32::thread_native_entry(void* t) {
+static unsigned __stdcall thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
@@ -558,7 +563,8 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
-  return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
+  exit_process_or_thread(EPT_THREAD, res);
+  return res;
 }
 
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
@@ -745,7 +751,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
-                             &os::win32::thread_native_entry,
+                             &thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -801,20 +807,12 @@ void os::free_thread(OSThread* osthread) {
 static jlong first_filetime;
 static jlong initial_performance_count;
 static jlong performance_frequency;
-
-
-jlong as_long(LARGE_INTEGER x) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, x.HighPart);
-  set_low(&result, x.LowPart);
-  return result;
-}
-
+static double nanos_per_count; // NANOSECS_PER_SEC / performance_frequency
 
 jlong os::elapsed_counter() {
   LARGE_INTEGER count;
   QueryPerformanceCounter(&count);
-  return as_long(count) - initial_performance_count;
+  return count.QuadPart - initial_performance_count;
 }
 
 
@@ -978,9 +976,10 @@ void os::set_native_thread_name(const char *name) {
 void os::win32::initialize_performance_counter() {
   LARGE_INTEGER count;
   QueryPerformanceFrequency(&count);
-  performance_frequency = as_long(count);
+  performance_frequency = count.QuadPart;
+  nanos_per_count = NANOSECS_PER_SEC / (double)performance_frequency;
   QueryPerformanceCounter(&count);
-  initial_performance_count = as_long(count);
+  initial_performance_count = count.QuadPart;
 }
 
 
@@ -1082,9 +1081,8 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
 jlong os::javaTimeNanos() {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
-    double current = as_long(current_count);
-    double freq = performance_frequency;
-    jlong time = (jlong)((current/freq) * NANOSECS_PER_SEC);
+    double current = current_count.QuadPart;
+    jlong time = (jlong)(current * nanos_per_count);
     return time;
 }
 
@@ -1210,7 +1208,7 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (dumpFile != nullptr) {
       CloseHandle(dumpFile);
     }
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+    exit_process_or_thread(EPT_PROCESS, 1);
   }
 
   dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData |
@@ -1234,12 +1232,12 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);
-  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+  exit_process_or_thread(EPT_PROCESS, 1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
+  exit_process_or_thread(EPT_PROCESS_DIE, -1);
 }
 
 void  os::dll_unload(void *lib) {
@@ -4105,7 +4103,7 @@ static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   return TRUE;
 }
 
-int os::win32::exit_process_or_thread(Ept what, int exit_code) {
+static void exit_process_or_thread(Ept what, int exit_code) {
   // Basic approach:
   //  - Each exiting thread registers its intent to exit and then does so.
   //  - A thread trying to terminate the process must wait for all
@@ -4283,7 +4281,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  return exit_code;
+  os::infinite_sleep();
 }
 
 #undef EXIT_TIMEOUT
@@ -4861,11 +4859,11 @@ ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
 }
 
 void os::exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+  exit_process_or_thread(EPT_PROCESS, num);
 }
 
 void os::_exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
+  exit_process_or_thread(EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?

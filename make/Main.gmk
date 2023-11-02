@@ -1053,6 +1053,9 @@ else
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
 
+  # jdk.javadoc uses an internal copy of the main license files from java.base.
+  jdk.javadoc-copy: java.base-copy
+
   zip-security: $(filter jdk.crypto%, $(JAVA_TARGETS))
 
   ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
