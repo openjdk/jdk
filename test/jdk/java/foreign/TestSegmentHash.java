@@ -48,7 +48,7 @@ final class TestSegmentHash {
     void testZeroLengthHash() {
         // This test assumes zero is returned for zero length hashes
         for (int i = 0; i <SEGMENT.byteSize(); i++) {
-            assertEquals(0, MemorySegment.hash(SEGMENT, i, i));
+            assertEquals(0, MemorySegment.contentHash(SEGMENT, i, i));
         }
     }
 
@@ -57,7 +57,7 @@ final class TestSegmentHash {
         // This test is extremely likely to pass
         Set<Long> seen = new HashSet<>();
         for (int i = 0; i <SEGMENT.byteSize(); i++) {
-            assertTrue(seen.add(MemorySegment.hash(SEGMENT, 0, i)));
+            assertTrue(seen.add(MemorySegment.contentHash(SEGMENT, 0, i)));
         }
     }
 
@@ -65,18 +65,18 @@ final class TestSegmentHash {
     void testSlices() {
         for (int i = 0; i <SEGMENT.byteSize(); i++) {
             MemorySegment slice = SEGMENT.asSlice(i);
-            long expected = MemorySegment.hash(SEGMENT, i, SEGMENT.byteSize());
-            long actual = MemorySegment.hash(slice, 0, slice.byteSize());
+            long expected = MemorySegment.contentHash(SEGMENT, i, SEGMENT.byteSize());
+            long actual = MemorySegment.contentHash(slice, 0, slice.byteSize());
             assertEquals(expected, actual);
         }
     }
 
     @Test
     void testInvariants() throws InterruptedException {
-        assertThrows(NullPointerException.class, () -> MemorySegment.hash(null, 0, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.hash(SEGMENT, -1, 0));
-        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.hash(SEGMENT, 2, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.hash(SEGMENT, SEGMENT.byteSize(), SEGMENT.byteSize() + 1));
+        assertThrows(NullPointerException.class, () -> MemorySegment.contentHash(null, 0, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.contentHash(SEGMENT, -1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.contentHash(SEGMENT, 2, 1));
+        assertThrows(IndexOutOfBoundsException.class, () -> MemorySegment.contentHash(SEGMENT, SEGMENT.byteSize(), SEGMENT.byteSize() + 1));
 
         MemorySegment seg;
         try (var arena = Arena.ofConfined()) {
@@ -85,14 +85,14 @@ final class TestSegmentHash {
             AtomicReference<WrongThreadException> e = new AtomicReference<>();
             Thread t = Thread.ofPlatform().start(() ->
                     e.set(assertThrows(WrongThreadException.class, () -> {
-                        MemorySegment.hash(seg, 0, seg.byteSize());
+                        MemorySegment.contentHash(seg, 0, seg.byteSize());
                     })));
             t.join();
             assertNotNull(e.get());
         }
 
         // Check a closed scope
-        assertThrows(IllegalStateException.class, () -> MemorySegment.hash(seg, 0, seg.byteSize()));
+        assertThrows(IllegalStateException.class, () -> MemorySegment.contentHash(seg, 0, seg.byteSize()));
     }
 
 }
