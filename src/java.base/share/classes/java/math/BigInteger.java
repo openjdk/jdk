@@ -340,17 +340,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         two's-complement binary representation of a BigInteger.
      * @param  off the start offset of the binary representation.
      * @param  len the number of bytes to use.
-     * @throws NumberFormatException {@code val} is zero bytes long.
+     * @throws NumberFormatException {@code val} is zero bytes long,
+     *         or {@code len} is zero.
      * @throws IndexOutOfBoundsException if the provided array offset and
      *         length would cause an index into the byte array to be
      *         negative or greater than or equal to the array length.
      * @since 9
      */
     public BigInteger(byte[] val, int off, int len) {
-        Objects.checkFromIndexSize(off, len, val.length);
-        if (len == 0) {
+        if (val.length == 0 || len == 0) {
             throw new NumberFormatException("Zero length BigInteger");
         }
+        Objects.checkFromIndexSize(off, len, val.length);
 
         int b = val[off];
         if (b < 0) {
