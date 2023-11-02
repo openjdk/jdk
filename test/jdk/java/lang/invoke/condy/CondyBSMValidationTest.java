@@ -31,6 +31,7 @@
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMValidationTest
  */
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
@@ -49,19 +50,22 @@ public class CondyBSMValidationTest {
     @DataProvider
     public Object[][] invalidSignaturesProvider() throws Exception {
         return Stream.of(BSM_TYPE.replace("(", ""),
-                         BSM_TYPE.replace(")", ""),
-                         BSM_TYPE.replace("(", "").replace(")", ""),
-                         BSM_TYPE.replace(";)", ")"),
-                         BSM_TYPE.replace(";", ""))
+                        BSM_TYPE.replace(")", ""),
+                        BSM_TYPE.replace("(", "").replace(")", ""),
+                        BSM_TYPE.replace(";)", ")"),
+                        BSM_TYPE.replace(";", ""))
                 .map(e -> new Object[]{e}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "invalidSignaturesProvider", expectedExceptions = ClassFormatError.class)
+    @Test(dataProvider = "invalidSignaturesProvider")
     public void testInvalidBSMSignature(String sig) throws Exception {
-        MethodHandle mh = InstructionHelper.ldcDynamicConstant(
-                L, "name", "Ljava/lang/Object;",
-                "bsm", sig,
-                S -> {
-                });
+        try {
+            MethodHandle mh = InstructionHelper.ldcDynamicConstant(
+                    L, "name", "Ljava/lang/Object;",
+                    "bsm", sig
+            );
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Bad method descriptor"));
+        }
     }
 }
