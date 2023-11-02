@@ -45,7 +45,6 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
-import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -2176,11 +2175,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * The general contract of this method is:
      * <ul>
-     * <li>Whenever invoked on the same segment with the same offset parameters (i.e. range)
+     * <li>Whenever invoked on the same segment with the same offset parameters (i.e. region)
      *     more than once during an execution of a Java application, the method
      *     consistently return the same long value, provided no information
-     *     in the segments range is modified.
-     * <li>Whenever invoked on different segments with ranges who's content are equal,
+     *     in the segment's region is modified.
+     * <li>Whenever invoked on different segments with regions who's sizes and contents are equal,
      *     during an execution of a Java application, the method will constantly return the same long value.
      * <li>The returned long value need not remain consistent from one execution of an
      *     application to another execution of the same application.
