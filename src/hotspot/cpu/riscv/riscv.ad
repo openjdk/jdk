@@ -2318,7 +2318,7 @@ encode %{
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(flag, oop);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
+      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
       __ bnez(flag, cont, true /* is_far */);
     }
 
