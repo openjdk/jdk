@@ -4550,7 +4550,7 @@ class StubGenerator: public StubCodeGenerator {
       wide_madd(U_1, U_1HI, S_1, R_0, tmp1, tmp2);
       wide_madd(U_1, U_1HI, S_2, RR_1, tmp1, tmp2);
 
-      __ andi(U_2, R_0, 3);
+      __ andi(U_2, R_0, bits2);
       __ mul(U_2, S_2, U_2);
 
       // Recycle registers S_0, S_1, S_2
@@ -4582,7 +4582,7 @@ class StubGenerator: public StubCodeGenerator {
     __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 = U_2 * 5
     __ cad(U_0, U_0, tmp1, tmp3); // U_0 += U_2 * 5 with carry output to tmp3
     __ cadc(U_1, U_1, zr, tmp3); // Add carry to U_1 with carry output to tmp3
-    __ andi(U_2, U_2, 3);
+    __ andi(U_2, U_2, bits2);
     __ add(U_2, U_2, tmp3); // Add carry to U_2
 
     // Unpack the sum into five 26-bit limbs and write to memory.
