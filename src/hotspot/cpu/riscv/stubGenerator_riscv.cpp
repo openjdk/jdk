@@ -4445,7 +4445,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (dest2->is_valid()) {
       __ srli(tmp1, tmp1, 24);
-      __ add(dest2, zr, tmp1);        // 2 bits in dest2
+      __ mv(dest2, tmp1);               // 2 bits in dest2
     } else {
 #ifdef ASSERT
       Label OK;
@@ -4520,7 +4520,7 @@ class StubGenerator: public StubCodeGenerator {
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
 
-    __ addi(tmp1, zr, checked_cast<u1>(BLOCK_LENGTH));
+    __ mv(tmp1, checked_cast<u1>(BLOCK_LENGTH));
     __ blt(length, tmp1, DONE); {
       __ bind(LOOP);
 
@@ -4573,7 +4573,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
-      __ addi(tmp1, zr, checked_cast<u1>(BLOCK_LENGTH));
+      __ mv(tmp1, checked_cast<u1>(BLOCK_LENGTH))
       __ bge(length, tmp1, LOOP);
     }
 
