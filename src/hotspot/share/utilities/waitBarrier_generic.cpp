@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,30 +76,57 @@
 
 void GenericWaitBarrier::arm(int barrier_tag) {
   assert(barrier_tag != 0, "Pre arm: Should be arming with armed value");
-  assert(Atomic::load(&_barrier_tag) == 0, "Pre arm: Should not be already armed. Tag: %d", Atomic::load(&_barrier_tag));
+  assert(Atomic::load(&_barrier_tag) == 0,
+         "Pre arm: Should not be already armed. Tag: %d",
+         Atomic::load(&_barrier_tag));
   Atomic::release_store(&_barrier_tag, barrier_tag);
 
-  Cell& cell = tag_to_cell(barrier_tag);
+  Cell &cell = tag_to_cell(barrier_tag);
+  cell.arm();
 
-  assert(Atomic::load_acquire(&cell._state) < 0, "Pre arm: should be disarmed");
+  // API specifies arm() must provide a trailing fence.
+  OrderAccess::fence();
+}
+
+void GenericWaitBarrier::disarm() {
+  int tag = Atomic::load_acquire(&_barrier_tag);
+  assert(tag != 0, "Pre disarm: Should be armed. Tag: %d", tag);
+  Atomic::release_store(&_barrier_tag, 0);
+
+  Cell &cell = tag_to_cell(tag);
+  cell.disarm();
+
+  // API specifies disarm() must provide a trailing fence.
+  OrderAccess::fence();
+}
+
+void GenericWaitBarrier::wait(int barrier_tag) {
+  assert(barrier_tag != 0, "Pre wait: Should be waiting on armed value");
+
+  Cell &cell = tag_to_cell(barrier_tag);
+  cell.wait();
+
+  // API specifies wait() must provide a trailing fence.
+  OrderAccess::fence();
+}
+
+void GenericWaitBarrier::Cell::arm() {
+  assert(Atomic::load_acquire(&_state) < 0, "Pre arm: should be disarmed");
 
   // Before we continue to arm, we need to make sure that all threads
-  // have left the previous cell. This means the cell status have rolled to -1.
+  // have left the previous cell. This means the cell state has rolled to -1.
   SpinYield sp;
-  while (Atomic::load_acquire(&cell._state) < -1) {
+  while (Atomic::load_acquire(&_state) < -1) {
     sp.wait();
   }
 
   // Try to swing cell to armed. This should always succeed after the check above.
-  int ps = Atomic::cmpxchg(&cell._state, -1, 1);
+  int ps = Atomic::cmpxchg(&_state, -1, 1);
   if (ps != -1) {
     fatal("Mid arm: Cannot arm the wait barrier. State: %d", ps);
   }
 
-  // API specifies arm() must provide a trailing fence.
-  OrderAccess::fence();
-
-  assert(Atomic::load(&cell._state) > 0, "Post arm: should be armed");
+  assert(Atomic::load(&_state) > 0, "Post arm: should be armed");
 }
 
 int GenericWaitBarrier::Cell::wake_if_needed(int max) {
@@ -127,24 +155,18 @@ int GenericWaitBarrier::Cell::wake_if_needed(int max) {
   }
 }
 
-void GenericWaitBarrier::disarm() {
-  int tag = Atomic::load_acquire(&_barrier_tag);
-  assert(tag != 0, "Pre disarm: Should be armed. Tag: %d", tag);
-  Atomic::release_store(&_barrier_tag, 0);
-
-  Cell& cell = tag_to_cell(tag);
-
+void GenericWaitBarrier::Cell::disarm() {
   SpinYield sp;
   while (true) {
-    int s = Atomic::load_acquire(&cell._state);
+    int s = Atomic::load_acquire(&_state);
     assert(s > 0, "Mid disarm: Should be armed. State: %d", s);
-    if (Atomic::cmpxchg(&cell._state, s, -s) == s) {
+    if (Atomic::cmpxchg(&_state, s, -s) == s) {
       // Successfully disarmed. Wake up waiters, if we have at least one.
       // Allow other threads to assist with wakeups, if possible.
       int waiters = s - 1;
       if (waiters > 0) {
-        Atomic::release_store(&cell._outstanding_wakeups, waiters);
-        while (cell.wake_if_needed(INT_MAX) > 0) {
+        Atomic::release_store(&_outstanding_wakeups, waiters);
+        while (wake_if_needed(INT_MAX) > 0) {
           sp.wait();
         }
       }
@@ -153,35 +175,26 @@ void GenericWaitBarrier::disarm() {
     sp.wait();
   }
 
-  assert(Atomic::load(&cell._outstanding_wakeups) == 0, "Post disarm: Should not have outstanding wakeups");
-  assert(Atomic::load(&cell._state) < 0, "Post disarm: Should be disarmed");
-
-  // API specifies disarm() must provide a trailing fence.
-  OrderAccess::fence();
+  assert(Atomic::load(&_outstanding_wakeups) == 0, "Post disarm: Should not have outstanding wakeups");
+  assert(Atomic::load(&_state) < 0, "Post disarm: Should be disarmed");
 }
 
-void GenericWaitBarrier::wait(int barrier_tag) {
-  assert(barrier_tag != 0, "Pre wait: Should be waiting on armed value");
-
-  Cell& cell = tag_to_cell(barrier_tag);
-
+void GenericWaitBarrier::Cell::wait() {
   // Try to register ourselves as pending waiter. If we got disarmed while
   // trying to register, return immediately.
   {
     int s;
     do {
-      s = Atomic::load_acquire(&cell._state);
+      s = Atomic::load_acquire(&_state);
       if (s < 0) {
-        // API specifies disarm() must provide a trailing fence.
-        OrderAccess::fence();
         return;
       }
       assert(s > 0, "Before wait: Should be armed. State: %d", s);
-    } while (Atomic::cmpxchg(&cell._state, s, s + 1) != s);
+    } while (Atomic::cmpxchg(&_state, s, s + 1) != s);
   }
 
   // Wait for notification.
-  cell._sem.wait();
+  _sem.wait();
 
   // Unblocked! We help out with waking up two siblings. This allows to avalanche
   // the wakeups for many threads, even if some threads are lagging behind.
@@ -189,17 +202,14 @@ void GenericWaitBarrier::wait(int barrier_tag) {
   // otherwise we might prematurely wake up threads for another barrier tag.
   // Current arm() sequence protects us from this trouble by waiting until all waiters
   // leave.
-  cell.wake_if_needed(2);
+  wake_if_needed(2);
 
   // Register ourselves as completed waiter before leaving.
   {
     int s;
     do {
-      s = Atomic::load_acquire(&cell._state);
+      s = Atomic::load_acquire(&_state);
       assert(s < -1, "After wait: Should be disarmed and have returning waiters. State: %d", s);
-    } while (Atomic::cmpxchg(&cell._state, s, s + 1) != s);
+    } while (Atomic::cmpxchg(&_state, s, s + 1) != s);
   }
-
-  // API specifies wait() must provide a trailing fence.
-  OrderAccess::fence();
 }

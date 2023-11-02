@@ -33,7 +33,6 @@
 class GenericWaitBarrier : public CHeapObj<mtInternal> {
 private:
   class Cell : public CHeapObj<mtInternal> {
-    friend GenericWaitBarrier;
   private:
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
 
@@ -55,6 +54,10 @@ private:
   public:
     Cell() : _sem(0), _state(-1), _outstanding_wakeups(0) {}
     NONCOPYABLE(Cell);
+
+    void arm();
+    void disarm();
+    void wait();
   };
 
   // Should be enough for most uses without exploding the footprint.
