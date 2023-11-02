@@ -128,7 +128,7 @@ public class MemberEnter extends JCTree.Visitor {
             memberEnter(recvparam, env);
             recvtype = recvparam.vartype.type;
         } else {
-            recvtype = null;
+            recvtype = msym.implicitReceiverType();
         }
 
         // Attribute thrown exceptions.

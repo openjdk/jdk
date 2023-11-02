@@ -2339,6 +2339,7 @@ public class ClassReader {
         }
         validateMethodType(name, m.type);
         setParameters(m, type);
+        m.type.asMethodType().recvtype = m.implicitReceiverType();
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
             throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
