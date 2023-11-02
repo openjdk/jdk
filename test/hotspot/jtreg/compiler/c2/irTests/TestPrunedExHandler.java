@@ -67,10 +67,12 @@ public class TestPrunedExHandler {
     }
 
     @Run(test = "testNoTrap", mode = RunMode.STANDALONE)
-    public static void runNoTrap() {
+    public static void runNoTrap(RunInfo info) {
         for (int i = 0; i < 2_000; i++) { // tier 3
             testNoTrap(false);
         }
+
+        TestFramework.assertCompiledAtLevel(info.getTest(), CompLevel.C1_FULL_PROFILE);
 
         testNoTrap(true); // mark ex handler as entered
 
@@ -90,14 +92,16 @@ public class TestPrunedExHandler {
     }
 
     @Run(test = "testNoTrapAfterDeopt", mode = RunMode.STANDALONE)
-    public static void runNoTrapAfterDeopt() {
+    public static void runNoTrapAfterDeopt(RunInfo info) {
         for (int i = 0; i < 20_000; i++) { // tier 4
             testNoTrapAfterDeopt(false);
         }
 
-        // should have trap
+        TestFramework.assertCompiledByC2(info.getTest());
 
         testNoTrapAfterDeopt(true); // deopt + mark ex handler as entered
+
+        TestFramework.assertDeoptimizedByC2(info.getTest());
 
         for (int i = 0; i < 20_000; i++) { // tier 4 again
             testNoTrapAfterDeopt(false); // should have no trap
