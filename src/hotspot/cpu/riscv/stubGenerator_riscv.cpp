@@ -4490,10 +4490,9 @@ class StubGenerator: public StubCodeGenerator {
     Label here;
     const int64_t bits2 = right_n_bits(2);
 
-    RegSet saved_regs = RegSet::range(x18, x25);
+    RegSet saved_regs = RegSet::range(x18, x21);
+    RegSetIterator<Register> regs = (RegSet::range(x13, x31) - RegSet::range(x22, x27)).begin();
     __ push_reg(saved_regs, sp);
-
-    RegSetIterator<Register> regs = RegSet::range(x13, x31).begin();
 
     // Arguments
     const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
