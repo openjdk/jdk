@@ -4497,31 +4497,29 @@ class StubGenerator: public StubCodeGenerator {
 
     // Arguments
     const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
-    // Temporal registers
-    const Register tmp1 = t1, tmp2 = t2;
 
     // R_n is the 128-bit randomly-generated key, packed into two
     // registers. The caller passes this key to us as long[5], with
     // BITS_PER_LIMB = 26.
     const Register R_0 = *++regs, R_1 = *++regs;
-    pack_26(R_0, R_1, r_start, tmp1, tmp2);
+    pack_26(R_0, R_1, r_start, t1, t2);
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
-    __ srli(tmp1, R_0, 2);
-    __ shadd(RR_0, tmp1, tmp1, tmp2, 2);
-    __ srli(tmp1, R_1, 2);
-    __ shadd(RR_1, tmp1, tmp1, tmp2, 2);
+    __ srli(t1, R_0, 2);
+    __ shadd(RR_0, t1, t1, t2, 2);
+    __ srli(t1, R_1, 2);
+    __ shadd(RR_1, t1, t1, t2, 2);
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
-    pack_26(U_0, U_1, U_2, acc_start, tmp1, tmp2);
+    pack_26(U_0, U_1, U_2, acc_start, t1, t2);
 
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
 
-    __ mv(tmp1, checked_cast<u1>(BLOCK_LENGTH));
-    __ blt(length, tmp1, DONE); {
+    __ mv(t1, checked_cast<u1>(BLOCK_LENGTH));
+    __ blt(length, t1, DONE); {
       __ bind(LOOP);
 
       // S_n is to be the sum of U_n and the next block of data
@@ -4529,9 +4527,9 @@ class StubGenerator: public StubCodeGenerator {
       __ ld(S_0, Address(input_start, 0));
       __ ld(S_1, Address(input_start, wordSize));
 
-      __ cad(S_0, S_0, U_0, tmp1); // Add U_0 to S_0 with carry output to tmp1
-      __ cadc(S_1, S_1, U_1, tmp1); // Add U_1 with carry to S_1 with carry output to tmp1
-      __ add(S_2, U_2, tmp1);
+      __ cad(S_0, S_0, U_0, t1); // Add U_0 to S_0 with carry output to t1
+      __ cadc(S_1, S_1, U_1, t1); // Add U_1 with carry to S_1 with carry output to t1
+      __ add(S_2, U_2, t1);
 
       __ addi(S_2, S_2, 1);
 
@@ -4543,12 +4541,12 @@ class StubGenerator: public StubCodeGenerator {
       // partial products without any risk of needing to propagate a
       // carry out.
       wide_mul(U_0, U_0HI, S_0, R_0);
-      wide_madd(U_0, U_0HI, S_1, RR_1, tmp1, tmp2);
-      wide_madd(U_0, U_0HI, S_2, RR_0, tmp1, tmp2);
+      wide_madd(U_0, U_0HI, S_1, RR_1, t1, t2);
+      wide_madd(U_0, U_0HI, S_2, RR_0, t1, t2);
 
       wide_mul(U_1, U_1HI, S_0, R_1);
-      wide_madd(U_1, U_1HI, S_1, R_0, tmp1, tmp2);
-      wide_madd(U_1, U_1HI, S_2, RR_1, tmp1, tmp2);
+      wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
+      wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
 
       __ andi(U_2, R_0, bits2);
       __ mul(U_2, S_2, U_2);
@@ -4557,63 +4555,63 @@ class StubGenerator: public StubCodeGenerator {
       regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
 
       // Partial reduction mod 2**130 - 5
-      __ cad(U_1, U_1, U_0HI, tmp1); // Add U_0HI to U_1 with carry output to tmp1
-      __ adc(U_2, U_2, U_1HI, tmp1);
+      __ cad(U_1, U_1, U_0HI, t1); // Add U_0HI to U_1 with carry output to t1
+      __ adc(U_2, U_2, U_1HI, t1);
       // Sum now in U_2:U_1:U_0.
       // Dead: U_0HI, U_1HI.
       regs = (regs.remaining() + U_0HI + U_1HI).begin();
 
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
-      __ srli(tmp1, U_2, 2);
+      __ srli(t1, U_2, 2);
       __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
-      __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
-      __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp2
-      __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
-      __ add(U_2, U_2, tmp2);
+      __ shadd(t1, t1, t1, t2, 2); // t1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(t1, U_2, 2)'
+      __ cad(U_0, U_0, t1, t2); // Add t1 (= (U_2 >> 2) * 5) to U_0 with carry output to t2
+      __ cad(U_1, U_1, t2, t2); // Add carry to U_1 with carry output to t2
+      __ add(U_2, U_2, t2);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
-      __ mv(tmp1, checked_cast<u1>(BLOCK_LENGTH))
-      __ bge(length, tmp1, LOOP);
+      __ mv(t1, checked_cast<u1>(BLOCK_LENGTH))
+      __ bge(length, t1, LOOP);
     }
 
     // Further reduce modulo 2^130 - 5
-    __ srli(tmp1, U_2, 2);
-    __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 = U_2 * 5
-    __ cad(U_0, U_0, tmp1, tmp2); // U_0 += U_2 * 5 with carry output to tmp2
-    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ srli(t1, U_2, 2);
+    __ shadd(t1, t1, t1, t2, 2); // t1 = U_2 * 5
+    __ cad(U_0, U_0, t1, t2); // U_0 += U_2 * 5 with carry output to t2
+    __ cad(U_1, U_1, t2, t2); // Add carry to U_1 with carry output to t2
     __ andi(U_2, U_2, bits2);
-    __ add(U_2, U_2, tmp2); // Add carry to U_2
+    __ add(U_2, U_2, t2); // Add carry to U_2
 
     // Unpack the sum into five 26-bit limbs and write to memory.
     // First 26 bits is the first limb
-    __ slli(tmp1, U_0, 38); // Take lowest 26 bits
-    __ srli(tmp1, tmp1, 38);
-    __ sd(tmp1, Address(acc_start)); // First 26-bit limb
+    __ slli(t1, U_0, 38); // Take lowest 26 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start)); // First 26-bit limb
 
     // 27-52 bits of U_0 is the second limb
-    __ slli(tmp1, U_0, 12); // Take next 27-52 bits
-    __ srli(tmp1, tmp1, 38);
-    __ sd(tmp1, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
+    __ slli(t1, U_0, 12); // Take next 27-52 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
 
     // Getting 53-64 bits of U_0 and 1-14 bits of U_1 in one register
-    __ srli(tmp1, U_0, 52);
-    __ slli(tmp2, U_1, 50);
-    __ srli(tmp2, tmp2, 38);
-    __ add(tmp1, tmp1, tmp2);
-    __ sd(tmp1, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
+    __ srli(t1, U_0, 52);
+    __ slli(t2, U_1, 50);
+    __ srli(t2, t2, 38);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
 
     // Storing 15-40 bits of U_1
-    __ slli(tmp1, U_1, 24); // Already used up 14 bits
-    __ srli(tmp1, tmp1, 38); // Clear all other bits from tmp1
-    __ sd(tmp1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
+    __ slli(t1, U_1, 24); // Already used up 14 bits
+    __ srli(t1, t1, 38); // Clear all other bits from t1
+    __ sd(t1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
 
     // Storing 41-64 bits of U_1 and first two bits from U_2 in one register
-    __ srli(tmp1, U_1, 40);
-    __ andi(tmp2, U_2, bits2); // Clear all bits in U_2 except for first 2
-    __ slli(tmp2, tmp2, 24);
-    __ add(tmp1, tmp1, tmp2);
-    __ sd(tmp1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
+    __ srli(t1, U_1, 40);
+    __ andi(t2, U_2, bits2); // Clear all bits in U_2 except for first 2
+    __ slli(t2, t2, 24);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
 
     __ bind(DONE);
     __ pop_reg(saved_regs, sp);
