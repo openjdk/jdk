@@ -81,6 +81,7 @@ import static com.sun.tools.javac.jvm.ByteCodes.iadd;
 import static com.sun.tools.javac.jvm.ByteCodes.ishll;
 import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
 import static com.sun.tools.javac.jvm.ByteCodes.lxor;
+import static com.sun.tools.javac.jvm.ByteCodes.ret;
 import static com.sun.tools.javac.jvm.ByteCodes.string_add;
 
 /** Root class for Java symbols. It contains subclasses
@@ -2277,6 +2278,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public Type implicitReceiverType() {
+            ClassSymbol enclosingClass = enclClass();
+            if (enclosingClass == null) {
+                return null;
+            }
             Type enclosingType = enclClass().type;
             if (isConstructor()) {
                 return enclosingType.getEnclosingType();
@@ -2284,7 +2289,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             if (!isStatic()) {
                 return enclosingType;
             }
-            return Type.noType;
+            return null;
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
