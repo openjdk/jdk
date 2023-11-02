@@ -45,6 +45,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -2167,6 +2168,43 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
         return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
                 dstSegment, dstFromOffset, dstToOffset);
+    }
+
+    /**
+     * {@return a 64-bit {@code long} hash of the contents in the provided {@code segment}
+     * from the provided {@code fromOffset} (inclusive) to the provided {@code toOffset} (exclusive)}
+     * <p>
+     * The general contract of this method is:
+     * <ul>
+     * <li>Whenever invoked on the same segment with the same offset parameters (i.e. range)
+     *     more than once during an execution of a Java application, the method
+     *     consistently return the same long value, provided no information
+     *     in the segments range is modified.
+     * <li>Whenever invoked on different segments with ranges who's content are equal,
+     *     during an execution of a Java application, the method will constantly return the same long value.
+     * <li>The returned long value need not remain consistent from one execution of an
+     *     application to another execution of the same application.
+     *</ul>
+     * <p>
+     * Applications utilizing {@code int} values as hash codes (e.g. when implementing a {@linkplain Object#hashCode()}
+     * method) can provide the returned {@code long} value to the method {@linkplain Long#hashCode(long)} thereby
+     * obtaining a well distributed {@code int} hash value.
+     *
+     * @param segment the segment to use for hash computation.
+     * @param fromOffset the offset (inclusive) of the first byte in the source segment to be used.
+     * @param toOffset the offset (exclusive) of the last byte in the source segment to be used.
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with {@code segment} is not
+     * {@linkplain Scope#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code srcSegment.isAccessibleBy(T) == false}.
+     * @throws IndexOutOfBoundsException if {@code fromOffset < 0}, {@code toOffset < fromOffset} or
+     * {@code toOffset > segment.byteSize()}
+     *
+     * @see Object#hashCode()
+     * @see Long#hashCode(long)
+     */
+    static long hash(MemorySegment segment, long fromOffset, long toOffset) {
+        return AbstractMemorySegmentImpl.hash(segment, fromOffset, toOffset);
     }
 
     /**

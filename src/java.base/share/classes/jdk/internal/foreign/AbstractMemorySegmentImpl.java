@@ -731,6 +731,13 @@ public abstract sealed class AbstractMemorySegmentImpl
         };
     }
 
+    public static long hash(MemorySegment segment, long fromOffset, long toOffset) {
+        AbstractMemorySegmentImpl impl = (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+        long bytes = toOffset - fromOffset;
+        impl.checkAccess(fromOffset, bytes, true);
+        return SCOPED_MEMORY_ACCESS.vectorizedHash((MemorySessionImpl) segment.scope(), segment, fromOffset, toOffset);
+    }
+
     // accessors
 
     @ForceInline
