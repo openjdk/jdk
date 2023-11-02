@@ -41,10 +41,10 @@
 // significant time to leave the barrier. Waiting for these threads introduces
 // stalls on barrier reuse.
 //
-// If wait on disarm(), this stall is nearly guaranteed to happen if some threads
+// If we wait on disarm(), this stall is nearly guaranteed to happen if some threads
 // are de-scheduled by prior wait(). It would be especially bad if there are more
 // waiting threads than CPUs: every thread would need to wake up and register itself
-// as leaving.
+// as leaving, before we can unblock from disarm().
 //
 // If we wait on arm(), we can get lucky that most threads would be able to catch up,
 // exit wait(), and so we arrive to arm() with semaphore ready for reuse. However,
@@ -53,11 +53,10 @@
 // Therefore, this implementation goes a step further and implements the _striped_
 // semaphores. We maintain several semaphores in cells. The barrier tags are assigned
 // to cells in some simple manner. Most of the current uses have sequential barrier
-// tags, so simple modulo works well.
-//
-// We then operate on a cell like we would operate on a single semaphore: we wait
-// at arm() for all threads to catch up before reusing the cell. For the cost of
-// maintaining just a few cells, we have enough window for threads to catch up.
+// tags, so simple modulo works well. We then operate on a cell like we would operate
+// on a single semaphore: we wait at arm() for all threads to catch up before reusing
+// the cell. For the cost of maintaining just a few cells, we have enough window for
+// threads to catch up.
 //
 // The correctness is guaranteed by using a single atomic state variable per cell,
 // with updates always done with CASes. For the cell state, positive values mean
