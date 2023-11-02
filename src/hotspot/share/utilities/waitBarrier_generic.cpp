@@ -83,9 +83,10 @@ void GenericWaitBarrier::arm(int barrier_tag) {
   }
 
   // Announce the barrier is ready to accept waiters.
-  Atomic::release_store_fence(&_barrier_tag, barrier_tag);
-
+  // Make sure accesses to barrier tag are fully ordered.
   // API specifies arm() must provide a trailing fence.
+  OrderAccess::fence();
+  Atomic::release_store(&_barrier_tag, barrier_tag);
   OrderAccess::fence();
 }
 
@@ -124,7 +125,10 @@ void GenericWaitBarrier::disarm() {
   assert(tag != 0, "Pre-condition: should be armed");
 
   // Announce the barrier is disarmed. New waiters would start to return immediately.
-  Atomic::release_store_fence(&_barrier_tag, 0);
+  // Make sure accesses to barrier tag are fully ordered.
+  OrderAccess::fence();
+  Atomic::release_store(&_barrier_tag, 0);
+  OrderAccess::fence();
 
   Cell& cell = tag_to_cell(tag);
 
@@ -134,16 +138,16 @@ void GenericWaitBarrier::disarm() {
     sp.wait();
   }
 
-  assert(Atomic::load(&cell._unsignaled_waits) == 0, "Post-condition: no unsignaled waits");
-
   // API specifies disarm() must provide a trailing fence.
   OrderAccess::fence();
+
+  assert(Atomic::load(&cell._unsignaled_waits) == 0, "Post-condition: no unsignaled waits");
 }
 
 void GenericWaitBarrier::wait(int barrier_tag) {
   assert(barrier_tag != 0, "Pre-condition: should be waiting on armed value");
 
-  if (Atomic::load(&_barrier_tag) != barrier_tag) {
+  if (Atomic::load_acquire(&_barrier_tag) != barrier_tag) {
     // Not our current barrier at all, return right away without touching
     // anything. Chances are we catching up with disarm() disarming right now.
     // API specifies wait() must provide a trailing fence.
@@ -166,7 +170,10 @@ void GenericWaitBarrier::wait(int barrier_tag) {
   // the disarming code might not notice that we are about to wait, and not deliver
   // additional signal to wake us up. (This is a Dekker-like step in disguise.)
 
-  if (Atomic::load(&_barrier_tag) == barrier_tag) {
+  // Make sure accesses to barrier tag are fully ordered.
+  OrderAccess::fence();
+
+  if (Atomic::load_acquire(&_barrier_tag) == barrier_tag) {
     Atomic::add(&cell._unsignaled_waits, 1);
 
     // Wait for notification.
