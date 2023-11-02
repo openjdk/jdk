@@ -1359,7 +1359,7 @@ void AwtFrame::_SetState(void *param)
 
         iconify = (state & java_awt_Frame_ICONIFIED) != 0;
         zoom = (state & java_awt_Frame_MAXIMIZED_BOTH)
-                        == java_awt_Frame_MAXIMIZED_BOTH;
+                   == java_awt_Frame_MAXIMIZED_BOTH;
 
         DTRACE_PRINTLN4("WFramePeer.setState:%s%s ->%s%s",
                   f->isIconic() ? " iconic" : "",
