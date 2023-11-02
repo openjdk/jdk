@@ -37,9 +37,7 @@
  * @bug 8313672
  * @summary Test CCP notification for value update of AndL through LShiftI and
  *          ConvI2L (reduced set of flags).
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test
- *                   -Xcomp
- *                   compiler.ccp.TestShiftConvertAndNotification
+ * @run main/othervm compiler.ccp.TestShiftConvertAndNotification
  *
  */
 

@@ -169,6 +169,7 @@ class SubNode;
 class SubTypeCheckNode;
 class Type;
 class TypeNode;
+class Unique_Node_List;
 class UnlockNode;
 class UnorderedReductionNode;
 class VectorNode;
@@ -1128,6 +1129,21 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
+  // Visit all non-cast uses of the node and apply callback, bypassing nodes
+  // according to bypass. Note: definition appears after complete type
+  // definition of Unique_Node_List
+  template <typename Callback, typename Bypass>
+  void visit_uses(Callback callback, Bypass bypass);
+
+  // Visit all non-cast uses of the node, bypassing ConstraintCasts.
+  // Pattern: this (-> ConstraintCast)* -> non_cast
+  // In other words: find all non_cast nodes such that
+  // non_cast->uncast() == this.
+  template <typename Callback>
+  void visit_uncasted_uses(Callback callback) {
+     visit_uses(callback, [](Node* n){ return n->is_ConstraintCast(); });
+  }
+
 //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
@@ -1711,6 +1727,25 @@ public:
   void print_set() const { _in_worklist.print(); }
 #endif
 };
+
+// Definition must appear after complete type definition of Unique_Node_List
+template <typename Callback, typename Bypass>
+void Node::visit_uses(Callback callback, Bypass bypass) {
+  ResourceMark rm;
+  Unique_Node_List internals;
+  internals.push(this); // start traversal
+  for (uint j = 0; j < internals.size(); ++j) {
+    Node* internal = internals.at(j); // for every internal
+    for (DUIterator_Fast kmax, k = internal->fast_outs(kmax); k < kmax; k++) {
+      Node* internal_use = internal->fast_out(k);
+      if (bypass(internal_use)) {
+        internals.push(internal_use); // traverse this also
+      } else {
+        callback(internal_use);
+      }
+    }
+  }
+}
 
 // Unique_Mixed_Node_List
 // unique: nodes are added only once

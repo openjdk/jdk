@@ -1605,7 +1605,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           _worklist.push(n);
         }
       };
-      ConstraintCastNode::visit_uncasted_uses(use, push_the_uses_to_worklist);
+      use->visit_uncasted_uses(push_the_uses_to_worklist);
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
     if( use_op == Op_LShiftI ) {
@@ -1875,7 +1875,7 @@ void PhaseCCP::push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) cons
 
 // For some nodes, we need to propagate the type change to grandchildren or even further down.
 // Add them back to the worklist.
-void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const {
+void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, Node* use) const {
   push_phis(worklist, use);
   push_catch(worklist, use);
   push_cmpu(worklist, use);
@@ -1974,8 +1974,8 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
 // Pattern: parent -> LShift (use) -> ConstraintCast* -> And
-// Pattern: parent -> LShift (use) -> ConstraintCast* -> ConvI2L -> ConstraintCast* -> And
-void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+// Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> ConstraintCast* -> And
+void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, Node* use) const {
   uint use_op = use->Opcode();
   if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
       && use->in(2) == parent) { // is shift value (right-hand side of LShift)
@@ -1985,17 +1985,10 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
         push_if_not_bottom_type(worklist, n);
       }
     };
-    auto push_and_uses_to_worklist_skip_conv = [&](Node* n){
-      uint opc = n->Opcode();
-      if (opc == Op_ConvI2L) {
-        // Step over a single ConvI2L in search for And. Inverse of the logic
-        // in MulNode::AndIL_shift_and_mask_is_always_zero.
-        ConstraintCastNode::visit_uncasted_uses(n, push_and_uses_to_worklist);
-      } else {
-        push_and_uses_to_worklist(n);
-      }
+    auto bypass = [](Node* n) {
+      return n->is_ConstraintCast() || n->Opcode() == Op_ConvI2L;
     };
-    ConstraintCastNode::visit_uncasted_uses(use, push_and_uses_to_worklist_skip_conv);
+    use->visit_uses(push_and_uses_to_worklist, bypass);
   }
 }
 
