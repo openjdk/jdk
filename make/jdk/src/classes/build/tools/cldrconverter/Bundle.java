@@ -513,6 +513,7 @@ class Bundle {
                     value = new String[] {"", value[0]};
                     break;
                 }
+
                 map.put(realKey, value);
                 map.put("java.time." + realKey, value);
             }

@@ -144,8 +144,10 @@ public abstract class LocaleProviderAdapter {
             // Default preference list.
             typeList.add(Type.CLDR);
         }
+
         // always append FALLBACK
         typeList.add(Type.FALLBACK);
+
         adapterPreference = Collections.unmodifiableList(typeList);
 
         // Emit logs, if any, after 'adapterPreference' is initialized which is needed

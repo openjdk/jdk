@@ -51,7 +51,7 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
         return switch (category) {
             case "BreakIteratorInfo", "BreakIteratorRules", "CollationData"
                     -> super.createLanguageTagSet(category);
-            case "FormatData" -> Set.of("ja-JP", "ja", "und");
+            case "FormatData" -> Set.of("ja", "und");
             default -> Set.of("und");
         };
     }
