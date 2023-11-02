@@ -78,4 +78,29 @@ public class TestPrunedExHandler {
             testNoTrap(false); // should have no trap
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.UNREACHED_TRAP, "0"})
+    public static void testNoTrapAfterDeopt(boolean shouldThrow) {
+        try {
+            outOfLine(shouldThrow);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Run(test = "testNoTrapAfterDeopt", mode = RunMode.STANDALONE)
+    public static void runNoTrapAfterDeopt() {
+        for (int i = 0; i < 20_000; i++) { // tier 4
+            testNoTrapAfterDeopt(false);
+        }
+
+        // should have trap
+
+        testNoTrapAfterDeopt(true); // deopt + mark ex handler as entered
+
+        for (int i = 0; i < 20_000; i++) { // tier 4 again
+            testNoTrapAfterDeopt(false); // should have no trap
+        }
+    }
 }
