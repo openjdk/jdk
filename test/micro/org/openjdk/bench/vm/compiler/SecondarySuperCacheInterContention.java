@@ -35,14 +35,16 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Threads(Threads.MAX)
 @State(Scope.Benchmark)
-public class SecondarySuperCacheContention {
+public class SecondarySuperCacheInterContention {
 
     // This test targets C1 specifically, to enter the interesting code path
     // without heavily optimizing compiler like C2 optimizing based on profiles,
     // or folding the instanceof checks.
 
     // The test verifies what happens on unhappy path, when we contend a lot over
-    // the secondary super cache.
+    // the secondary super cache, where different threads want to update the cache
+    // with different value. In tihs test, every thread comes with its own stable
+    // cached value. Meaning, this tests the INTER-thread contention.
 
     interface IA {}
     interface IB {}
@@ -59,20 +61,20 @@ public class SecondarySuperCacheContention {
     }
 
     @Benchmark
-    @OperationsPerInvocation(4)
-    public void contended(Blackhole bh) {
+    @OperationsPerInvocation(2)
+    @Group("test")
+    @GroupThreads(1)
+    public void t1(Blackhole bh) {
         bh.consume(o1 instanceof IA);
         bh.consume(o2 instanceof IA);
-        bh.consume(o1 instanceof IB);
-        bh.consume(o2 instanceof IB);
     }
 
     @Benchmark
-    @OperationsPerInvocation(4)
-    public void uncontended(Blackhole bh) {
-        bh.consume(o1 instanceof IA);
-        bh.consume(o1 instanceof IA);
-        bh.consume(o2 instanceof IB);
+    @OperationsPerInvocation(2)
+    @Group("test")
+    @GroupThreads(1)
+    public void t2(Blackhole bh) {
+        bh.consume(o1 instanceof IB);
         bh.consume(o2 instanceof IB);
     }
 

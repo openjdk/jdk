@@ -143,6 +143,7 @@ class JavaThread: public Thread {
   Metadata*     _vm_result_2;  // non-oop result
 
   // Used to back off on secondary super cache updates to mitigate contention on it.
+  void*         _backoff_secondary_super_value;
   uint32_t      _backoff_secondary_super_miss;
 
   // See ReduceInitialCardMarks: this holds the precise space interval of
@@ -745,6 +746,7 @@ private:
 
   // Backoff counters support
   static ByteSize backoff_secondary_super_miss_offset() { return byte_offset_of(JavaThread, _backoff_secondary_super_miss); }
+  static ByteSize backoff_secondary_super_value_offset() { return byte_offset_of(JavaThread, _backoff_secondary_super_value); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }

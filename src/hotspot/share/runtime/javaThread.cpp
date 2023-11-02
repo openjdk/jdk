@@ -414,6 +414,7 @@ JavaThread::JavaThread() :
   _vm_result(nullptr),
   _vm_result_2(nullptr),
 
+  _backoff_secondary_super_value(nullptr),
   _backoff_secondary_super_miss(SecondarySuperMissBackoff),
 
   _current_pending_monitor(nullptr),

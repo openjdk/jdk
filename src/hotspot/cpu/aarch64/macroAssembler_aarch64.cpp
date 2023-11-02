@@ -1534,17 +1534,34 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // Success. Try to cache the super we found and proceed in triumph.
   uint32_t super_cache_backoff = checked_cast<uint32_t>(SecondarySuperMissBackoff);
   if (super_cache_backoff > 0) {
-    Label L_skip;
+    Label L_skip_same, L_skip_different;
 
+    // Are we trying to store the same value in the global cache?
+    ldr(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_value_offset()));
+    cmp(rscratch1, super_klass);
+    br(Assembler::NE, L_skip_different);
+
+    // Trying to store the same value, have we tried enough times?
     ldrw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
     subw(rscratch1, rscratch1, 1);
-    tbz(rscratch1, 31, L_skip);
+    tbz(rscratch1, 31, L_skip_same);
 
+    // Store!
     str(super_klass, super_cache_addr);
-    movw(rscratch1, super_cache_backoff);
 
-    bind(L_skip);
+    // Store the current attempted value and reset the backoff count.
+    bind(L_skip_different);
+    movw(rscratch1, super_cache_backoff);
+    str(super_klass, Address(rthread, JavaThread::backoff_secondary_super_value_offset()));
+
+    // Store the new value for backoff count: either decremented
+    // for the same class, or re-initialized for the different class.
+    bind(L_skip_same);
     strw(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
+
+    // The operations above destroy condition codes set by scan.
+    // This is the success path, restore them ourselves.
+    cmp(zr, zr); // Set Z flag
   } else {
     str(super_klass, super_cache_addr);
   }
