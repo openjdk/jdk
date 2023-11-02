@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.events;
 
-#include "java_awt_Color.h"
+import jdk.jfr.internal.RemoveFields;
 
-/************************************************************************
- * Color native methods
- */
-
-extern "C" {
-
-/*
- * Class:     java_awt_Color
- * Method:    initIDs
- * Signature: ()V;
- */
-JNIEXPORT void JNICALL
-Java_java_awt_Color_initIDs(JNIEnv *env, jclass cls)
-{
+@RemoveFields({"duration", "eventThread", "stackTrace"})
+abstract class AbstractPeriodicEvent extends AbstractJDKEvent {
 }
-
-} /* extern "C" */

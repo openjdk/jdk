@@ -255,16 +255,25 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
        test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-       test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
-      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $BINUTILS_INSTALL_DIR/lib/libiberty.a"
+
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib or $BINUTILS_INSTALL_DIR/lib64
+      # depending on system setup
+      LIBIBERTY_LIB=""
+      if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
+      else
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib64/libiberty.a"
+      fi
+      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $LIBIBERTY_LIB"
       # If we have libsframe add it.
       if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
         HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"
       fi
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
     else
-      AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/libs/ must contain libbfd.a, libopcodes.a, libiberty.a"])
+      AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/lib[64] must contain libbfd.a, libopcodes.a and libiberty.a"])
     fi
   fi
 
