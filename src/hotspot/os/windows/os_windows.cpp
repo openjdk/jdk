@@ -6140,7 +6140,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   if (fattr == 0xffffffff) {
     return nullptr;
   }
-  const DWORD len = GetFullPathName(filename, outbuflen, outbuf, nullptr);
+  const DWORD len = GetFullPathName(filename, (DWORD) outbuflen, outbuf, nullptr);
   if (len > 0) {
     if (len >= outbuflen) {
       errno = ENAMETOOLONG;
