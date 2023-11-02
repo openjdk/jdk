@@ -181,40 +181,6 @@ public class GatherersTest {
 
     @ParameterizedTest
     @MethodSource("configurations")
-    public void testPeekOrderedAPIandContract(Config config) {
-        // Verify prereqs
-        assertThrows(NullPointerException.class, () -> Gatherers.<String>peekOrdered(null));
-
-        final var expectedResult = config.list();
-
-        final var peeked = new ConcurrentLinkedQueue();
-        final var result = config.stream()
-                                 .gather(Gatherers.peekOrdered(peeked::add))
-                                 .toList();
-
-        assertEquals(expectedResult, result);
-        assertEquals(List.of(peeked.toArray()), result);
-    }
-
-    @ParameterizedTest
-    @MethodSource("configurations")
-    public void testPeekAPIandContract(Config config) {
-        // Verify prereqs
-        assertThrows(NullPointerException.class, () -> Gatherers.<String>peek(null));
-
-        final var expectedResult = Set.of(config.stream().toArray());
-
-        final var peeked = new ConcurrentLinkedQueue();
-        final var result = config.stream()
-                                 .gather(Gatherers.peek(peeked::add))
-                                 .collect(Collectors.toSet());
-
-        assertEquals(expectedResult, result);
-        assertEquals(Set.of(peeked.toArray()), result);
-    }
-
-    @ParameterizedTest
-    @MethodSource("configurations")
     public void testMapConcurrentAPIandContract(Config config) throws InterruptedException {
         // Verify prereqs
         assertThrows(IllegalArgumentException.class, () -> Gatherers.<String, String>mapConcurrent(0, s -> s));
