@@ -2202,7 +2202,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see Object#hashCode()
      * @see Long#hashCode(long)
      */
-    static long hash(MemorySegment segment, long fromOffset, long toOffset) {
+    static long contentHash(MemorySegment segment, long fromOffset, long toOffset) {
         return AbstractMemorySegmentImpl.hash(segment, fromOffset, toOffset);
     }
 
