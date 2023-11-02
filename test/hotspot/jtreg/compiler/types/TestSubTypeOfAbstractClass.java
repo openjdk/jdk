@@ -27,7 +27,7 @@
  * @test
  * @bug 8316533
  * @summary Oop of abstract class A with no subclass is subtype checked after null-check
- * @run driver compiler.types.TestSubTypeOfAsbtractClass
+ * @run driver compiler.types.TestSubTypeOfAbstractClass
  */
 
 /**
@@ -35,15 +35,14 @@
  * @bug 8316533
  * @summary Oop of abstract class A is subtype checked after null-check
  * @requires vm.compiler2.enabled
- * @run main/othervm -XX:CompileCommand=printcompilation,*A::test
- *                   -XX:CompileCommand=compileonly,*A::test
+ * @run main/othervm -XX:CompileCommand=compileonly,*A::test
  *                   -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
- *                   compiler.types.TestSubTypeOfAsbtractClass
+ *                   compiler.types.TestSubTypeOfAbstractClass
  */
 
 package compiler.types;
 
-public class TestSubTypeOfAsbtractClass {
+public class TestSubTypeOfAbstractClass {
 
     abstract class A {
         public static A get_null() {
@@ -63,5 +62,3 @@ public class TestSubTypeOfAsbtractClass {
         }
     }
 }
-
-
