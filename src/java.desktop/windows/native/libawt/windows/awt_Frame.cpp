@@ -1581,65 +1581,67 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 
     PDATA pData;
 
-    {
-        JNI_CHECK_PEER_GOTO(peer, ret);
-        AwtFrame *f = (AwtFrame *)pData;
+    JNI_CHECK_PEER_GOTO(peer, ret);
+    AwtFrame *f;
+    f = (AwtFrame *) pData;
 
-        // dialog here may be NULL, for example, if the blocker is a native dialog
-        // however, we need to install/unistall modal hooks anyway
-        JNI_CHECK_PEER_GOTO(blockerPeer, ret);
-        AwtDialog *d = (AwtDialog *)pData;
+    // dialog here may be NULL, for example, if the blocker is a native dialog
+    // however, we need to install/unistall modal hooks anyway
+    JNI_CHECK_PEER_GOTO(blockerPeer, ret);
+    AwtDialog *d;
+    d = (AwtDialog *) pData;
 
-        if ((f != NULL) && ::IsWindow(f->GetHWnd())) {
-            // get an HWND of the toplevel window this embedded frame is within
-            HWND fHWnd = f->GetHWnd();
-            while (::GetParent(fHWnd) != NULL) {
-                fHWnd = ::GetParent(fHWnd);
-            }
-            // we must get a toplevel hwnd here, however due to some strange
-            // behaviour of Java Plugin (a bug?) when running in IE at
-            // this moment the embedded frame hasn't been placed into the
-            // browser yet and fHWnd is not a toplevel, so we shouldn't install
-            // the hook here
-            if ((::GetWindowLong(fHWnd, GWL_STYLE) & WS_CHILD) == 0) {
-                // if this toplevel is created in another thread, we should install
-                // the modal hook into it to track window activation and mouse events
-                DWORD fThread = ::GetWindowThreadProcessId(fHWnd, NULL);
-                if (fThread != AwtToolkit::GetInstance().MainThread()) {
-                    // check if this thread has been already blocked
-                    BlockedThreadStruct *blockedThread = (BlockedThreadStruct *)sm_BlockedThreads.get((void *)((intptr_t)fThread));
-                    if (blocked) {
-                        if (blockedThread == NULL) {
-                            blockedThread = new BlockedThreadStruct;
-                            blockedThread->framesCount = 1;
-                            blockedThread->modalHook = ::SetWindowsHookEx(WH_CBT, (HOOKPROC)AwtDialog::ModalFilterProc,
-                                                                          0, fThread);
-                            blockedThread->mouseHook = ::SetWindowsHookEx(WH_MOUSE, (HOOKPROC)AwtDialog::MouseHookProc_NonTT,
-                                                                          0, fThread);
-                            sm_BlockedThreads.put((void *)((intptr_t)fThread), blockedThread);
-                        } else {
-                            blockedThread->framesCount++;
-                        }
+    if ((f != NULL) && ::IsWindow(f->GetHWnd())) {
+        // get an HWND of the toplevel window this embedded frame is within
+        HWND fHWnd;
+        fHWnd = f->GetHWnd();
+        while (::GetParent(fHWnd) != NULL) {
+            fHWnd = ::GetParent(fHWnd);
+        }
+        // we must get a toplevel hwnd here, however due to some strange
+        // behaviour of Java Plugin (a bug?) when running in IE at
+        // this moment the embedded frame hasn't been placed into the
+        // browser yet and fHWnd is not a toplevel, so we shouldn't install
+        // the hook here
+        if ((::GetWindowLong(fHWnd, GWL_STYLE) & WS_CHILD) == 0) {
+            // if this toplevel is created in another thread, we should install
+            // the modal hook into it to track window activation and mouse events
+            DWORD fThread;
+            fThread = ::GetWindowThreadProcessId(fHWnd, NULL);
+            if (fThread != AwtToolkit::GetInstance().MainThread()) {
+                // check if this thread has been already blocked
+                BlockedThreadStruct *blockedThread;
+                blockedThread = (BlockedThreadStruct *) sm_BlockedThreads.get((void *)((intptr_t)fThread));
+                if (blocked) {
+                    if (blockedThread == NULL) {
+                        blockedThread = new BlockedThreadStruct;
+                        blockedThread->framesCount = 1;
+                        blockedThread->modalHook = ::SetWindowsHookEx(WH_CBT, (HOOKPROC)AwtDialog::ModalFilterProc,
+                                                                      0, fThread);
+                        blockedThread->mouseHook = ::SetWindowsHookEx(WH_MOUSE, (HOOKPROC)AwtDialog::MouseHookProc_NonTT,
+                                                                      0, fThread);
+                        sm_BlockedThreads.put((void *)((intptr_t)fThread), blockedThread);
                     } else {
-                        // see the comment above: if Java Plugin behaviour when running in IE
-                        // was right, blockedThread would be always not NULL here
-                        if (blockedThread != NULL) {
-                            DASSERT(blockedThread->framesCount > 0);
-                            if ((blockedThread->framesCount) == 1) {
-                                ::UnhookWindowsHookEx(blockedThread->modalHook);
-                                ::UnhookWindowsHookEx(blockedThread->mouseHook);
-                                sm_BlockedThreads.remove((void *)((intptr_t)fThread));
-                                delete blockedThread;
-                            } else {
-                                blockedThread->framesCount--;
-                            }
+                        blockedThread->framesCount++;
+                    }
+                } else {
+                    // see the comment above: if Java Plugin behaviour when running in IE
+                    // was right, blockedThread would be always not NULL here
+                    if (blockedThread != NULL) {
+                        DASSERT(blockedThread->framesCount > 0);
+                        if ((blockedThread->framesCount) == 1) {
+                            ::UnhookWindowsHookEx(blockedThread->modalHook);
+                            ::UnhookWindowsHookEx(blockedThread->mouseHook);
+                            sm_BlockedThreads.remove((void *)((intptr_t)fThread));
+                            delete blockedThread;
+                        } else {
+                            blockedThread->framesCount--;
                         }
                     }
                 }
             }
         }
     }
-
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(peer);
