@@ -96,6 +96,7 @@ public:
   }
 
   bool add(const void* from, const void* to, MEMFLAGS f) {
+    // We rely on NMT regions being sorted by base
     assert(_count == 0 || (from >= _ranges[_count - 1].to), "NMT regions unordered?");
     // we can just fold two regions if they are adjacent and have the same flag.
     if (_count > 0 && from == _ranges[_count - 1].to && f == _flags[_count - 1]) {
@@ -115,8 +116,7 @@ public:
       _capacity = new_capacity;
     }
     assert(_capacity > _count, "Sanity");
-    _ranges[_count].from = from;
-    _ranges[_count].to = to;
+    _ranges[_count] = Range { from, to };
     _flags[_count] = f;
     _count++;
     return true;
