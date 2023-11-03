@@ -837,7 +837,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
