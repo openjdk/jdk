@@ -1354,12 +1354,9 @@ void AwtFrame::_SetState(void *param)
     if (::IsWindow(hwnd)) {
         DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));
 
-        BOOL iconify;
-        BOOL zoom;
-
-        iconify = (state & java_awt_Frame_ICONIFIED) != 0;
-        zoom = (state & java_awt_Frame_MAXIMIZED_BOTH)
-                   == java_awt_Frame_MAXIMIZED_BOTH;
+        BOOL iconify = (state & java_awt_Frame_ICONIFIED) != 0;
+        BOOL zoom = (state & java_awt_Frame_MAXIMIZED_BOTH)
+                        == java_awt_Frame_MAXIMIZED_BOTH;
 
         DTRACE_PRINTLN4("WFramePeer.setState:%s%s ->%s%s",
                   f->isIconic() ? " iconic" : "",
@@ -1368,8 +1365,7 @@ void AwtFrame::_SetState(void *param)
                   zoom          ? " zoomed" : "");
 
         if (::IsWindowVisible(hwnd)) {
-            BOOL focusable;
-            focusable = f->IsFocusableWindow();
+            BOOL focusable = f->IsFocusableWindow();
 
             WINDOWPLACEMENT wp;
             ::ZeroMemory(&wp, sizeof(wp));
