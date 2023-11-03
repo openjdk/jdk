@@ -128,8 +128,8 @@ public class Debuggee implements Closeable {
         public Debuggee launch(String name) {
             return new Debuggee(prepare(), name,
                 onthrow.isEmpty() ?
-                JDWP::parseListenAddress :
-                Launcher::parseLaunchEchoListenAddress
+                    JDWP::parseListenAddress :
+                    Launcher::parseLaunchEchoListenAddress
             );
         }
         public Debuggee launch() {
