@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8281969
+ * @bug 8266666 8281969 8319339
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -629,7 +629,7 @@ First line // @highlight :
     }
 
     @Test
-    public void testPositiveInlineTagMarkup_FalseMarkup(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_SpuriousMarkup(Path base) throws Exception {
         var testCases = List.of(
                 new TestCase(
                         """
@@ -665,6 +665,19 @@ First line // @highlight :
                         """)
         );
         testPositive(base, testCases);
+        checkOutput(Output.OUT, true, """
+                A.java:6: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:9: warning: spurious markup
+                    // @formatter:on
+                      ^""","""
+                A.java:17: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:22: warning: spurious markup
+                    // @formatter:on
+                      ^""");
     }
 
     @Test
