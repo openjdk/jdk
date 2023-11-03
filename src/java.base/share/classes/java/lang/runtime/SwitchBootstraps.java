@@ -71,7 +71,7 @@ public class SwitchBootstraps {
     private static final MethodHandle CHECK_INDEX;
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
 
-    private static final MethodTypeDesc typesSwitchDescriptor =
+    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
             MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
 
     static {
@@ -385,7 +385,7 @@ public class SwitchBootstraps {
         byte[] classBytes = Classfile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
             clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                .withMethodBody("typeSwitch",
-                               typesSwitchDescriptor,
+                               TYPES_SWITCH_DESCRIPTOR,
                                Classfile.ACC_FINAL | Classfile.ACC_PUBLIC | Classfile.ACC_STATIC,
                                cb -> {
                     cb.aload(0);
