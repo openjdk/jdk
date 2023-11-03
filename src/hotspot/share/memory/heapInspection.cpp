@@ -213,6 +213,10 @@ KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
 // Return false if the entry could not be recorded on account
 // of running out of space required to create a new entry.
 bool KlassInfoTable::record_instance(const oop obj) {
+  if (obj->is_forwarded()) {
+    // We will see the forwardee instead, don't count this object as missed.
+    return true;
+  }
   Klass*        k = obj->klass();
   KlassInfoEntry* elt = lookup(k);
   // elt may be null if it's a new klass for which we
