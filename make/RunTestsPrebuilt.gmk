@@ -157,6 +157,10 @@ ifeq ($(UNAME_OS), CYGWIN)
   OPENJDK_TARGET_OS := windows
   OPENJDK_TARGET_OS_TYPE := windows
   OPENJDK_TARGET_OS_ENV := windows.cygwin
+else ifeq ($(UNAME_OS), MINGW64)
+  OPENJDK_TARGET_OS := windows
+  OPENJDK_TARGET_OS_TYPE := windows
+  OPENJDK_TARGET_OS_ENV := windows.msys2
 else
   OPENJDK_TARGET_OS_TYPE:=unix
   ifeq ($(UNAME_OS), Linux)
@@ -168,6 +172,9 @@ else
   endif
   OPENJDK_TARGET_OS_ENV := $(OPENJDK_TARGET_OS)
 endif
+
+# Sanity check env detection
+$(info Detected target OS, type and env: [$(OPENJDK_TARGET_OS)] [$(OPENJDK_TARGET_OS_TYPE)] [$(OPENJDK_TARGET_OS_ENV)])
 
 # Assume little endian unless otherwise specified
 OPENJDK_TARGET_CPU_ENDIAN := little
