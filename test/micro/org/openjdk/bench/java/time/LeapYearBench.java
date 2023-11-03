@@ -38,8 +38,10 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Year;
+import java.time.ZonedDateTime;
 import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoUnit;
+import java.util.GregorianCalendar;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -57,6 +59,8 @@ public class LeapYearBench {
 
     private long[] years;
 
+    private GregorianCalendar calendar;
+
     @Setup
     public void createInstants() {
         // Large enough number of years to guarantee that the distribution of
@@ -66,6 +70,7 @@ public class LeapYearBench {
         for (int i = 0; i < years.length; i++) {
             years[i] = random.nextLong(2000) + 2000;
         }
+        calendar = GregorianCalendar.from(ZonedDateTime.now());
     }
 
     @Benchmark
@@ -79,6 +84,13 @@ public class LeapYearBench {
     public void isLeapYearChrono(Blackhole bh) {
         for (long year : years) {
             bh.consume(IsoChronology.INSTANCE.isLeapYear(year));
+        }
+    }
+
+    @Benchmark
+    public void isLeapYearGregorian(Blackhole bh) {
+        for (long year : years) {
+            bh.consume(calendar.isLeapYear((int)year));
         }
     }
 
