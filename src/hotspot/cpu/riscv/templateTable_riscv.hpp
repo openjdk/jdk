@@ -27,7 +27,7 @@
 #ifndef CPU_RISCV_TEMPLATETABLE_RISCV_HPP
 #define CPU_RISCV_TEMPLATETABLE_RISCV_HPP
 
-static void prepare_invoke(Register recv);
+static void prepare_invoke(Register cache, Register recv);
 static void invokevirtual_helper(Register index, Register recv,
                                  Register flags);
 
