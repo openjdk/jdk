@@ -495,9 +495,6 @@ JavaMain(void* _args)
     ret = 1;
 
     /*
-     * Get the application's main class. It also checks if the main
-     * method exists.
-     *
      * See bugid 5030265.  The Main-Class name has already been parsed
      * from the manifest, but not parsed properly for UTF-8 support.
      * Hence the code here ignores the value previously extracted and
@@ -540,9 +537,31 @@ JavaMain(void* _args)
     mainMethod = (*env)->CallStaticObjectMethod(env, helperClass, validateMainMethod, mainClass);
     NULL_CHECK_RETURN_VALUE(mainMethod, -1);
 
+    /*
+     * validateMainMethod ensures that the main method's signature is correct,
+     * therefore further checking is not required.
+     */
+#define MAIN_WITHOUT_ARGS 1
+#define MAIN_NONSTATIC 2
+
+    /*
+     * getMainType determines whether the main method is static and whether it has a
+     * String[] argument.
+     */
+    jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
+                                                      "getMainType",
+                                                      "(Ljava/lang/reflect/Method;)I");
+    CHECK_EXCEPTION_NULL_LEAVE(getMainType);
+    mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType, mainMethod);
+    CHECK_EXCEPTION_LEAVE(-1);
+
     /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
-    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+    if ((mainType & MAIN_WITHOUT_ARGS) == 0) {
+        mainArgs = CreateApplicationArgs(env, argv, argc);
+        CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+    } else {
+        mainArgs = NULL;
+    }
 
     if (dryRun) {
         ret = 0;
@@ -560,19 +579,10 @@ JavaMain(void* _args)
     CHECK_EXCEPTION_LEAVE(1);
 
     /*
-     * validateMainMethod ensures that the main method's signature is correct,
-     * therefore further checking is not required. The main method is invoked
-     * here so that extraneous java stacks are not in the application stack trace.
+     * The main method is invoked here so that extraneous java stacks are not in
+     * the application stack trace.
      */
-#define MAIN_WITHOUT_ARGS 1
-#define MAIN_NONSTATIC 2
 
-    jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
-                                                      "getMainType",
-                                                      "(Ljava/lang/reflect/Method;)I");
-    CHECK_EXCEPTION_NULL_LEAVE(getMainType);
-    mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType, mainMethod);
-    CHECK_EXCEPTION_LEAVE(-1);
 
     switch (mainType) {
     case 0: {
