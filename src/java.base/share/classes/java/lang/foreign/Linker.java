@@ -224,7 +224,7 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations support at least so called <em>naturally aligned layouts</em>. More formally,
+ * All native linker implementations support a well-defined subset of layouts. More formally,
  * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
