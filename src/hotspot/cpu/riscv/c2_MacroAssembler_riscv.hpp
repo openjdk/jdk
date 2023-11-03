@@ -38,6 +38,9 @@
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
+
+  void compress_bits_v(Register dst, Register src, Register mask, Register tmp, bool is_long);
+
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in macroAssembler_riscv.cpp.
@@ -161,6 +164,11 @@
                  bool is_double);
 
   // intrinsic methods implemented by rvv instructions
+
+  // compress bits, i.e. j.l.Integer/Long::compress.
+  void compress_bits_i_v(Register dst, Register src, Register mask, Register tmp);
+  void compress_bits_l_v(Register dst, Register src, Register mask, Register tmp);
+
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
                        int elem_size);

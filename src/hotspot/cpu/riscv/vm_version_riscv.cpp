@@ -316,10 +316,6 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  if (!UseRVV || MaxVectorSize < 16) {
-    FLAG_SET_DEFAULT(UseRVVForCompressBitsIntrinsics, false);
-  }
-
   if (!UseZicbop) {
     if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
       warning("Zicbop is not available on this CPU");

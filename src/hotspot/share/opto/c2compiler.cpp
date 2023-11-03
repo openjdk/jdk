@@ -283,7 +283,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_compress_i:
   case vmIntrinsics::_compress_l:
-    if (!UseRVVForCompressBitsIntrinsics || !Matcher::match_rule_supported(Op_CompressBits)) return false;
+    if (!Matcher::match_rule_supported(Op_CompressBits)) return false;
     break;
   case vmIntrinsics::_expand_i:
   case vmIntrinsics::_expand_l:
