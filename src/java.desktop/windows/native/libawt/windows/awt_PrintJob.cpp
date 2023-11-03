@@ -529,186 +529,183 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
     setup.lStructSize = sizeof(setup);
 
-    {
-        HWND parentID = AwtPrintControl::getParentID(env, self);
-        if (parentID != NULL && ::IsWindow(parentID)) {
-            // windows native modality is requested (used by JavaFX).
-            setup.hwndOwner = parentID;
-        }
-        /*
-          Fix for 6488834.
-          To disable Win32 native parent modality we have to set
-          hwndOwner field to either NULL or some hidden window. For
-          parentless dialogs we use NULL to show them in the taskbar,
-          and for all other dialogs AwtToolkit's HWND is used.
-        */
-        else if (awtParent != NULL)
-        {
-            setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
-        }
-        else
-        {
-            setup.hwndOwner = NULL;
-        }
+    HWND parentID = AwtPrintControl::getParentID(env, self);
+    if (parentID != NULL && ::IsWindow(parentID)) {
+        // windows native modality is requested (used by JavaFX).
+        setup.hwndOwner = parentID;
+    }
+    /*
+      Fix for 6488834.
+      To disable Win32 native parent modality we have to set
+      hwndOwner field to either NULL or some hidden window. For
+      parentless dialogs we use NULL to show them in the taskbar,
+      and for all other dialogs AwtToolkit's HWND is used.
+    */
+    else if (awtParent != NULL) {
+        setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
+    } else {
+        setup.hwndOwner = NULL;
+    }
 
-        setup.hDevMode = NULL;
-        setup.hDevNames = NULL;
-        setup.Flags = PSD_RETURNDEFAULT | PSD_DEFAULTMINMARGINS;
-        // setup.ptPaperSize =
-        // setup.rtMinMargin =
-        // setup.rtMargin =
-        setup.hInstance = NULL;
-        setup.lCustData = (LPARAM)peerGlobalRef;
-        setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
-        setup.lpfnPagePaintHook = NULL;
-        setup.lpPageSetupTemplateName = NULL;
-        setup.hPageSetupTemplate = NULL;
+    setup.hDevMode = NULL;
+    setup.hDevNames = NULL;
+    setup.Flags = PSD_RETURNDEFAULT | PSD_DEFAULTMINMARGINS;
+    // setup.ptPaperSize =
+    // setup.rtMinMargin =
+    // setup.rtMargin =
+    setup.hInstance = NULL;
+    setup.lCustData = (LPARAM)peerGlobalRef;
+    setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
+    setup.lpfnPagePaintHook = NULL;
+    setup.lpPageSetupTemplateName = NULL;
+    setup.hPageSetupTemplate = NULL;
 
 
-        /* Because the return default flag is set, this first call
-         * will not display the dialog but will return default values, inc
-         * including hDevMode, hDevName, ptPaperSize, and rtMargin values.
-         * We can use the devmode to set the orientation of the page
-         * and the size of the page.
-         * The units used by the user is also needed.
+    /* Because the return default flag is set, this first call
+     * will not display the dialog but will return default values, inc
+     * including hDevMode, hDevName, ptPaperSize, and rtMargin values.
+     * We can use the devmode to set the orientation of the page
+     * and the size of the page.
+     * The units used by the user is also needed.
+     */
+    if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
+        AwtPrintControl::getPrintHDName(env,self) == NULL) {
+        static_cast<void>(::PageSetupDlg(&setup));
+        /* check if hDevMode and hDevNames are set.
+         * If both are null, then there is no default printer.
          */
-        if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
-            AwtPrintControl::getPrintHDName(env,self) == NULL) {
-            (void)::PageSetupDlg(&setup);
-            /* check if hDevMode and hDevNames are set.
-             * If both are null, then there is no default printer.
-             */
-            if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-                doIt = JNI_FALSE;
-                goto done;
-            }
-        } else {
-            int measure = PSD_INTHOUSANDTHSOFINCHES;
-            int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
-            if (sz > 0) {
-              LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
-              if (str != NULL) {
-                sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
-                if (sz > 0) {
-                  if (_tcscmp(TEXT("0"), str) == 0) {
-                    measure = PSD_INHUNDREDTHSOFMILLIMETERS;
-                  }
-                }
-                free((LPTSTR)str);
-              }
-            }
-            setup.Flags |= measure;
-            setup.hDevMode = AwtPrintControl::getPrintHDMode(env, self);
-            setup.hDevNames = AwtPrintControl::getPrintHDName(env, self);
-        }
-        /* Move page size and orientation from the PageFormat object
-         * into the Windows setup structure so that the format can
-         * be displayed in the dialog.
-         */
-        pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
-        if (env->ExceptionCheck()) {
+        if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
             doIt = JNI_FALSE;
             goto done;
         }
-
-        setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
-        setup.Flags = PSD_ENABLEPAGESETUPHOOK | PSD_MARGINS;
-
-        AwtDialog::CheckInstallModalHook();
-
-        BOOL ret = ::PageSetupDlg(&setup);
-        if (ret) {
-
-            jobject paper = getPaper(env, page);
-            if (paper == NULL) {
-                doIt = JNI_FALSE;
-                goto done;
+    } else {
+        int measure = PSD_INTHOUSANDTHSOFINCHES;
+        int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
+        if (sz > 0) {
+          LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
+          if (str != NULL) {
+            sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
+            if (sz > 0) {
+              if (_tcscmp(TEXT("0"), str) == 0) {
+                measure = PSD_INHUNDREDTHSOFMILLIMETERS;
+              }
             }
-            int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
-                                                    MM_HIENGLISH :
-                                                    MM_HIMETRIC;
-            POINT paperSize;
-            RECT margins;
-            jint orientation;
+            free((LPTSTR)str);
+          }
+        }
+        setup.Flags |= measure;
+        setup.hDevMode = AwtPrintControl::getPrintHDMode(env, self);
+        setup.hDevNames = AwtPrintControl::getPrintHDName(env, self);
+    }
+    /* Move page size and orientation from the PageFormat object
+     * into the Windows setup structure so that the format can
+     * be displayed in the dialog.
+     */
+    pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
+    if (env->ExceptionCheck()) {
+        doIt = JNI_FALSE;
+        goto done;
+    }
 
-            /* The printer may have been changed, and we track that change,
-             * but then need to get a new DC for the current printer so that
-             * we validate the paper size correctly
-             */
-            if (setup.hDevNames != NULL) {
-                DEVNAMES* names = (DEVNAMES*)::GlobalLock(setup.hDevNames);
-                if (names != NULL) {
-                    LPTSTR printer = (LPTSTR)names+names->wDeviceOffset;
-                    SAVE_CONTROLWORD
-                    HDC newDC = ::CreateDC(TEXT("WINSPOOL"), printer, NULL, NULL);
-                    RESTORE_CONTROLWORD
-                    if (newDC != NULL) {
-                        HDC oldDC = AwtPrintControl::getPrintDC(env, self);
-                        if (oldDC != NULL) {
-                             ::DeleteDC(oldDC);
-                        }
-                    }
-                    AwtPrintControl::setPrintDC(env, self, newDC);
-                }
-                ::GlobalUnlock(setup.hDevNames);
-            }
+    setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
+    setup.Flags = PSD_ENABLEPAGESETUPHOOK | PSD_MARGINS;
 
-            /* Get the Windows paper and margins description.
-            */
-            retrievePaperInfo(&setup, &paperSize, &margins, &orientation,
-                              AwtPrintControl::getPrintDC(env, self));
+    AwtDialog::CheckInstallModalHook();
 
-            /* Convert the Windows' paper and margins description
-             * and place them into a Paper instance.
-             */
-            setPaperValues(env, paper, &paperSize, &margins, units);
-             if (env->ExceptionCheck()) {
-                 doIt = JNI_FALSE;
-                 goto done;
-             }
-            /*
-             * Put the updated Paper instance and the orientation into
-             * the PageFormat.
-             */
-            setPaper(env, page, paper);
-            if (env->ExceptionCheck()) {
-                 doIt = JNI_FALSE;
-                 goto done;
-            }
-            setPageFormatOrientation(env, page, orientation);
-            if (env->ExceptionCheck()) {
-                 doIt = JNI_FALSE;
-                 goto done;
-            }
-            if (setup.hDevMode != NULL) {
-                DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
-                if (devmode != NULL) {
-                    if (devmode->dmFields & DM_PAPERSIZE) {
-                        jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
-                        if (err) {
-                            doIt = JNI_FALSE;
-                            goto done;
-                        }
+    BOOL result;
+    result = ::PageSetupDlg(&setup);
+    if (result) {
+
+        jobject paper = getPaper(env, page);
+        if (paper == NULL) {
+            doIt = JNI_FALSE;
+            goto done;
+        }
+        int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
+                                                MM_HIENGLISH :
+                                                MM_HIMETRIC;
+        POINT paperSize;
+        RECT margins;
+        jint orientation;
+
+        /* The printer may have been changed, and we track that change,
+         * but then need to get a new DC for the current printer so that
+         * we validate the paper size correctly
+         */
+        if (setup.hDevNames != NULL) {
+            DEVNAMES* names = (DEVNAMES*)::GlobalLock(setup.hDevNames);
+            if (names != NULL) {
+                LPTSTR printer = (LPTSTR)names+names->wDeviceOffset;
+                SAVE_CONTROLWORD
+                HDC newDC = ::CreateDC(TEXT("WINSPOOL"), printer, NULL, NULL);
+                RESTORE_CONTROLWORD
+                if (newDC != NULL) {
+                    HDC oldDC = AwtPrintControl::getPrintDC(env, self);
+                    if (oldDC != NULL) {
+                         ::DeleteDC(oldDC);
                     }
                 }
-                ::GlobalUnlock(setup.hDevMode);
+                AwtPrintControl::setPrintDC(env, self, newDC);
             }
-            doIt = JNI_TRUE;
+            ::GlobalUnlock(setup.hDevNames);
         }
 
-        AwtDialog::CheckUninstallModalHook();
+        /* Get the Windows paper and margins description.
+        */
+        retrievePaperInfo(&setup, &paperSize, &margins, &orientation,
+                          AwtPrintControl::getPrintDC(env, self));
 
-        AwtDialog::ModalActivateNextWindow(NULL, target, peer);
-
-        HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
-        if (setup.hDevMode != oldG) {
-            AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
+        /* Convert the Windows' paper and margins description
+         * and place them into a Paper instance.
+         */
+        setPaperValues(env, paper, &paperSize, &margins, units);
+         if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
+         }
+        /*
+         * Put the updated Paper instance and the orientation into
+         * the PageFormat.
+         */
+        setPaper(env, page, paper);
+        if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
         }
-
-        oldG = AwtPrintControl::getPrintHDName(env, self);
-        if (setup.hDevNames != oldG) {
-            AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
+        setPageFormatOrientation(env, page, orientation);
+        if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
         }
+        if (setup.hDevMode != NULL) {
+            DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
+            if (devmode != NULL) {
+                if (devmode->dmFields & DM_PAPERSIZE) {
+                    jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
+                    if (err) {
+                        doIt = JNI_FALSE;
+                        goto done;
+                    }
+                }
+            }
+            ::GlobalUnlock(setup.hDevMode);
+        }
+        doIt = JNI_TRUE;
+    }
+
+    AwtDialog::CheckUninstallModalHook();
+
+    AwtDialog::ModalActivateNextWindow(NULL, target, peer);
+
+    HGLOBAL oldG;
+    oldG = AwtPrintControl::getPrintHDMode(env, self);
+    if (setup.hDevMode != oldG) {
+        AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
+    }
+
+    oldG = AwtPrintControl::getPrintHDName(env, self);
+    if (setup.hDevNames != oldG) {
+        AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
     }
 
 done:
