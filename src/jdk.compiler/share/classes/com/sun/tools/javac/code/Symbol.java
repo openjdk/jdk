@@ -2282,7 +2282,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             if (enclosingClass == null) {
                 return null;
             }
-            Type enclosingType = enclClass().type;
+            Type enclosingType = enclosingClass.type;
             if (isConstructor()) {
                 return enclosingType.getEnclosingType();
             }
