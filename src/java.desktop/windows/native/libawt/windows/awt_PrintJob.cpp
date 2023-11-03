@@ -919,147 +919,163 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         }
     }
 
-    {
-        JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
+    /* We try to mitigate the effects of floating point rounding errors
+     * by only setting a value if it would differ from the value in the
+     * target by at least 0.10 points = 1/720 inches.
+     * eg if the values present in the target are close to the calculated
+     * values then we accept the target.
+     */
+    const double epsilon = 0.10;
 
-        /* We try to mitigate the effects of floating point rounding errors
-         * by only setting a value if it would differ from the value in the
-         * target by at least 0.10 points = 1/720 inches.
-         * eg if the values present in the target are close to the calculated
-         * values then we accept the target.
-         */
-        const double epsilon = 0.10;
+    JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
 
-        jdouble paperWidth, paperHeight;
-        jboolean err;
-        WORD dmPaperSize = getPrintPaperSize(env, &err, self);
-        if (err) goto done;
+    jdouble paperWidth, paperHeight;
+    jboolean err;
+    WORD dmPaperSize;
+    dmPaperSize = getPrintPaperSize(env, &err, self);
+    if (err) goto done;
 
-        double ix, iy, iw, ih, pw, ph;
+    double ix, iy, iw, ih, pw, ph;
 
-        DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
-        jmethodID getID;
+    DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
+    jmethodID getID;
 
-        jclass paperClass = env->GetObjectClass(origPaper);
-        JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
-        getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
-        pw = env->CallDoubleMethod(origPaper, getID);
-        getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
-        ph = env->CallDoubleMethod(origPaper, getID);
-        getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
-        ix = env->CallDoubleMethod(origPaper, getID);
-        getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
-        iy = env->CallDoubleMethod(origPaper, getID);
-        getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
-        iw = env->CallDoubleMethod(origPaper, getID);
-        getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
-        JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
-        ih = env->CallDoubleMethod(origPaper, getID);
+    jclass paperClass;
+    paperClass = env->GetObjectClass(origPaper);
+    JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
+    getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
+    pw = env->CallDoubleMethod(origPaper, getID);
+    getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
+    ph = env->CallDoubleMethod(origPaper, getID);
+    getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
+    ix = env->CallDoubleMethod(origPaper, getID);
+    getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
+    iy = env->CallDoubleMethod(origPaper, getID);
+    getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
+    iw = env->CallDoubleMethod(origPaper, getID);
+    getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
+    ih = env->CallDoubleMethod(origPaper, getID);
 
-        matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
-                       &paperWidth, &paperHeight, &dmPaperSize);
+    matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
+                   &paperWidth, &paperHeight, &dmPaperSize);
 
-        /* Validate margins and imageable area */
+    /* Validate margins and imageable area */
 
-        // pixels per inch in x and y direction
-        jint xPixelRes = GetDeviceCaps(printDC, LOGPIXELSX);
-        jint yPixelRes = GetDeviceCaps(printDC, LOGPIXELSY);
+    // pixels per inch in x and y direction
+    jint xPixelRes;
+    jint yPixelRes;
 
-        // x & y coord of printable area in pixels
-        jint xPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);
-        jint yPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETY);
+    // x & y coord of printable area in pixels
+    jint xPixelOrg;
+    jint yPixelOrg;
 
-        // width & height of printable area in pixels
-        jint imgPixelWid = GetDeviceCaps(printDC, HORZRES);
-        jint imgPixelHgt = GetDeviceCaps(printDC, VERTRES);
+    // width & height of printable area in pixels
+    jint imgPixelWid;
+    jint imgPixelHgt;
 
-        // The DC may be obtained when we first selected the printer as a
-        // result of a call to setNativePrintService.
-        // If the Devmode was obtained later on from the DocumentProperties dialog
-        // the DC won't have been updated and its settings may be for PORTRAIT.
-        // This may happen in other cases too, but was observed for the above.
-        // To get a DC compatible with this devmode we should really call
-        // CreateDC() again to get a DC for the devmode we are using.
-        // The changes for that are a lot more risk, so to minimize that
-        // risk, assume its not LANDSCAPE unless width > height, even if the
-        // devmode says its LANDSCAPE.
-        // if the values were obtained from a rotated device, swap.
-        if ((getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) &&
-            (imgPixelWid > imgPixelHgt)) {
-          jint tmp;
-          tmp = xPixelRes;
-          xPixelRes = yPixelRes;
-          yPixelRes = tmp;
+    xPixelRes = GetDeviceCaps(printDC, LOGPIXELSX);
+    yPixelRes = GetDeviceCaps(printDC, LOGPIXELSY);
 
-          tmp = xPixelOrg;
-          xPixelOrg = yPixelOrg;
-          yPixelOrg = tmp;
+    xPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);
+    yPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETY);
 
-          tmp = imgPixelWid;
-          imgPixelWid = imgPixelHgt;
-          imgPixelHgt = tmp;
-        }
+    imgPixelWid = GetDeviceCaps(printDC, HORZRES);
+    imgPixelHgt = GetDeviceCaps(printDC, VERTRES);
 
-        // page imageable area in 1/72"
-        jdouble imgX = (jdouble)((xPixelOrg * 72)/(jdouble)xPixelRes);
-        jdouble imgY = (jdouble)((yPixelOrg * 72)/(jdouble)yPixelRes);
-        jdouble imgWid = (jdouble)((imgPixelWid * 72)/(jdouble)xPixelRes);
-        jdouble imgHgt = (jdouble)((imgPixelHgt * 72)/(jdouble)yPixelRes);
+    // The DC may be obtained when we first selected the printer as a
+    // result of a call to setNativePrintService.
+    // If the Devmode was obtained later on from the DocumentProperties dialog
+    // the DC won't have been updated and its settings may be for PORTRAIT.
+    // This may happen in other cases too, but was observed for the above.
+    // To get a DC compatible with this devmode we should really call
+    // CreateDC() again to get a DC for the devmode we are using.
+    // The changes for that are a lot more risk, so to minimize that
+    // risk, assume its not LANDSCAPE unless width > height, even if the
+    // devmode says its LANDSCAPE.
+    // if the values were obtained from a rotated device, swap.
+    if ((getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) &&
+        (imgPixelWid > imgPixelHgt)) {
+      jint tmp;
+      tmp = xPixelRes;
+      xPixelRes = yPixelRes;
+      yPixelRes = tmp;
 
-        /* Check each of the individual values is within range.
-         * Then make sure imageable area is placed within imageable area.
-         * Allow for a small floating point error in the comparisons
-         */
+      tmp = xPixelOrg;
+      xPixelOrg = yPixelOrg;
+      yPixelOrg = tmp;
 
-        if (ix < 0.0 ) {
-            ix = 0.0;
-        }
-        if (iy < 0.0 ) {
-            iy = 0.0;
-        }
-        if (iw < 0.0) {
-            iw = 0.0;
-        }
-        if (ih < 0.0) {
-            ih = 0.0;
-        }
-        if ((ix + epsilon) < imgX) {
-             ix = imgX;
-        }
-        if ((iy + epsilon) < imgY) {
-             iy = imgY;
-        }
-        if (iw + epsilon > imgWid) {
-            iw = imgWid;
-        }
-        if (ih + epsilon > imgHgt) {
-            ih = imgHgt;
-        }
-        if ((ix + iw + epsilon) > (imgX+imgWid)) {
-            ix = (imgX+imgWid) - iw;
-        }
-        if ((iy + ih + epsilon) > (imgY+imgHgt)) {
-            iy = (imgY+imgHgt) - ih;
-        }
-
-        DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
-
-        jmethodID setSizeID = env->GetMethodID(paperClass,
-                                        SETSIZE_STR, SETSIZE_SIG);
-        JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
-
-        jmethodID setImageableID = env->GetMethodID(paperClass,
-                                            SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
-        JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
-
-        env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
-        env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
+      tmp = imgPixelWid;
+      imgPixelWid = imgPixelHgt;
+      imgPixelHgt = tmp;
     }
+
+    // page imageable area in 1/72"
+    jdouble imgX;
+    jdouble imgY;
+    jdouble imgWid;
+    jdouble imgHgt;
+
+    imgX = (jdouble)((xPixelOrg * 72)/(jdouble)xPixelRes);
+    imgY = (jdouble)((yPixelOrg * 72)/(jdouble)yPixelRes);
+    imgWid = (jdouble)((imgPixelWid * 72)/(jdouble)xPixelRes);
+    imgHgt = (jdouble)((imgPixelHgt * 72)/(jdouble)yPixelRes);
+
+    /* Check each of the individual values is within range.
+     * Then make sure imageable area is placed within imageable area.
+     * Allow for a small floating point error in the comparisons
+     */
+
+    if (ix < 0.0 ) {
+        ix = 0.0;
+    }
+    if (iy < 0.0 ) {
+        iy = 0.0;
+    }
+    if (iw < 0.0) {
+        iw = 0.0;
+    }
+    if (ih < 0.0) {
+        ih = 0.0;
+    }
+    if ((ix + epsilon) < imgX) {
+         ix = imgX;
+    }
+    if ((iy + epsilon) < imgY) {
+         iy = imgY;
+    }
+    if (iw + epsilon > imgWid) {
+        iw = imgWid;
+    }
+    if (ih + epsilon > imgHgt) {
+        ih = imgHgt;
+    }
+    if ((ix + iw + epsilon) > (imgX+imgWid)) {
+        ix = (imgX+imgWid) - iw;
+    }
+    if ((iy + ih + epsilon) > (imgY+imgHgt)) {
+        iy = (imgY+imgHgt) - ih;
+    }
+
+    DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
+
+    jmethodID setSizeID;
+    setSizeID = env->GetMethodID(paperClass,
+                              SETSIZE_STR, SETSIZE_SIG);
+    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
+
+    jmethodID setImageableID;
+    setImageableID = env->GetMethodID(paperClass,
+                              SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
+    JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
+
+    env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
+    env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
 
 done:
     /* Free any resources allocated */
