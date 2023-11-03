@@ -680,6 +680,121 @@ First line // @highlight :
                       ^""");
     }
 
+    /*
+     * If spurious markup appears in an external snippet or either side of a
+     * hybrid snippet, then all of the below is true:
+     *
+     *   - no error is raised
+     *   - relevant warnings are emitted
+     *   - spurious markup is output literally
+     */
+    @Test
+    public void testPositiveExternalHybridTagMarkup_SpuriousMarkup(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        var plain = "plain.txt";
+        var withRegion = "withRegion.txt";
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void external() { }")
+                                .setComments("""
+                                             {@snippet file="%s"}
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid1() { }")
+                                .setComments("""
+                                             {@snippet file="%s":
+                                                First line
+                                                // @formatter:off
+                                                  Second Line
+                                                    Third line
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid2() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                             Second Line
+                                               Third line
+                                             }
+                                             """.formatted(withRegion)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid3() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                                First line
+                                                // @formatter:off
+                                                  Second Line // @start region=showThis
+                                                    Third line
+                                                    // @end
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(withRegion)))
+                .write(srcDir);
+
+        addSnippetFile(srcDir, "pkg", plain, """
+   First line
+   // @formatter:off
+     Second Line
+       Third line
+       // @formatter:on
+         Fourth line
+""");
+        addSnippetFile(srcDir, "pkg", withRegion, """
+   First line
+   // @formatter:off
+     Second Line // @start region=showThis
+       Third line
+     // @end
+       // @formatter:on
+         Fourth line
+""");
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.OK);
+        checkNoCrashes();
+        checkOutput(Output.OUT, true, """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                A.java:11: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:14: warning: spurious markup
+                       // @formatter:on
+                         ^""", """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(withRegion), """
+                %s:6: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(withRegion), """
+                A.java:31: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:35: warning: spurious markup
+                       // @formatter:on
+                         ^""");
+    }
+
     @Test
     public void testPositiveInlineTagMarkup_NextLineTwoTags(Path base) throws Exception {
         var firstTag = new String[]{
