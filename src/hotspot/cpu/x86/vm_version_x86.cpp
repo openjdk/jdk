@@ -857,6 +857,12 @@ void VM_Version::get_processor_features() {
   }
 #endif
 
+  // Check if processor has Intel Ecore
+  if (FLAG_IS_DEFAULT(DoEcoreOpt) && is_intel() && cpu_family() == 6 &&
+    (_model == 0x97 || _model == 0xAC || _model == 0xAF)) {
+    FLAG_SET_DEFAULT(DoEcoreOpt, true);
+  }
+
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
     _features &= ~CPU_SSE4_2;
