@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 /**
  * @test
- * @bug 4823811 8008577
+ * @bug 4823811 8008577 8174269
  * @summary Confirm that text which includes numbers with a trailing minus sign is parsed correctly.
  * @modules jdk.localedata
- * @run main/othervm -Duser.timezone=GMT+09:00 -Djava.locale.providers=JRE,SPI Bug4823811
+ * @run main/othervm -Duser.timezone=GMT+09:00 Bug4823811
  */
 
 import java.text.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Bug4823811 {
 
@@ -316,7 +317,7 @@ public class Bug4823811 {
             /*
              * Test SimpleDateFormat.parse() and format() for modified
              * SimpleDateFormat instances using an original minus sign,
-             * pattern, and diffenrent month names in DecimalFormat
+             * pattern, and different month names in DecimalFormat
              */
             testDateFormat2();
 
@@ -494,6 +495,9 @@ public class Bug4823811 {
                               .replaceAll("JULY", (useEnglishMonthName ?
                                                    JulyInEnglish : JulyInArabic))
                               .replaceAll(" ", delimiters[delimiter]);
+            if (!useEnglishMonthName) {
+                expected = convertLocalDigits(expected);
+            }
             testDateFormatFormatting(sdf, pattern, datesEG[basePattern][i],
                 expected, locale.toString());
         }
@@ -522,6 +526,9 @@ public class Bug4823811 {
                               .replaceAll("JULY", (useEnglishMonthName ?
                                                    JulyInEnglish : JulyInArabic))
                               .replaceAll(" ", delimiters[delimiter]);
+            if (!useEnglishMonthName) {
+                expected = convertLocalDigits(expected);
+            }
             testDateFormatFormatting(sdf, pattern, datesUS[basePattern][i],
                 expected, locale.toString());
         }
@@ -573,6 +580,9 @@ public class Bug4823811 {
             String given = datesToParse[basePattern][i]
                            .replaceAll("  ", specialDelimiters[0][delimiter])
                            .replaceAll(" ", delimiters[delimiter]);
+            if (!useEnglishMonthName) {
+                given = convertLocalDigits(given);
+            }
 
             testDateFormatParsing(sdf, pattern,
                 given.replaceAll("JULY", (useEnglishMonthName ?
@@ -597,6 +607,9 @@ public class Bug4823811 {
             String given = datesToParse[basePattern][i]
                            .replaceAll("  ", specialDelimiters[1][delimiter])
                            .replaceAll(" ", delimiters[delimiter]);
+            if (!useEnglishMonthName) {
+                given = convertLocalDigits(given);
+            }
 
             testDateFormatParsing(sdf, pattern,
                 given.replaceAll("JULY", (useEnglishMonthName ?
@@ -788,4 +801,10 @@ public class Bug4823811 {
         }
     }
 
+    private static String convertLocalDigits(String input) {
+        return input.codePoints()
+                .map(cp -> (cp < '0' || cp > '9' ? cp : cp + 0x630))
+                .mapToObj(Character::toString)
+                .collect(Collectors.joining());
+    }
 }
