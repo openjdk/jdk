@@ -159,7 +159,7 @@ public class MonitorUnlinkBatchTest {
         opts.addAll(Arrays.asList(args));
         opts.add("MonitorUnlinkBatchTest$Test");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(opts);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(opts);
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         if (expectPass) {
             oa.shouldHaveExitValue(0);
