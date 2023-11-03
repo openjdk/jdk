@@ -753,59 +753,6 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         }
     }
 
-    // PENDING(hmuller) - the next three methods should be removed
-
-    /**
-     * The scrollbar is flexible along it's scrolling axis and
-     * rigid along the other axis.
-     * Unlike most components, JScrollBar will derive the minimum size from
-     * the preferred size in one axis and a fixed minimum size in the other.
-     * Thus, it overrides {@code JComponent.setMinimumSize} contract
-     * that subsequent calls to getMinimumSize will return the
-     * same value as set in {@code JComponent.setMinimumSize}
-     */
-    public Dimension getMinimumSize() {
-        Dimension pref = getPreferredSize();
-        if (orientation == VERTICAL) {
-            return new Dimension(pref.width, 5);
-        } else {
-            return new Dimension(5, pref.height);
-        }
-    }
-
-    /**
-     * The scrollbar is flexible along it's scrolling axis and
-     * rigid along the other axis.
-     * Unlike most components, JScrollBar will derive the maximum size from
-     * the preferred size in one axis and a fixed maximum size in the other.
-     * Thus, it overrides {@code JComponent.setMaximumSize} contract
-     * that subsequent calls to getMaximumSize will return the
-     * same value as set in {@code JComponent.setMaximumSize}
-     */
-    public Dimension getMaximumSize() {
-        Dimension pref = getPreferredSize();
-        if (getOrientation() == VERTICAL) {
-            return new Dimension(pref.width, Short.MAX_VALUE);
-        } else {
-            return new Dimension(Short.MAX_VALUE, pref.height);
-        }
-    }
-
-    /**
-     * Enables the component so that the knob position can be changed.
-     * When the disabled, the knob position cannot be changed.
-     *
-     * @param x a boolean value, where true enables the component and
-     *          false disables it
-     */
-    public void setEnabled(boolean x)  {
-        super.setEnabled(x);
-        Component[] children = getComponents();
-        for (Component child : children) {
-            child.setEnabled(x);
-        }
-    }
-
     /**
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
