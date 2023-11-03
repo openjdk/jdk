@@ -374,6 +374,8 @@ public:
     return align_up(byte_size, SharedSpaceObjectAlignment);
   }
 
+  char* ro_strdup(const char* s);
+
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
