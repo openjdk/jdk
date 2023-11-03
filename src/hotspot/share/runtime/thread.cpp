@@ -598,28 +598,3 @@ void Thread::SpinRelease(volatile int * adr) {
   // more than covers this on all platforms.
   *adr = 0;
 }
-
-#ifdef ASSERT
-
-volatile size_t Thread::_threads_names_counter = 0;
-volatile Thread::thread_name_info Thread::_threads_names[Thread::_threads_names_capacity];
-void Thread::remember_thread_name(const char* name) {
-  if (_threads_names_counter < _threads_names_capacity) {
-    size_t counter = _threads_names_counter++;
-    if (counter < _threads_names_capacity) {
-      strncpy((char*)_threads_names[counter].name, name, _threads_name_length-1);
-      _threads_names[counter].thread = os::current_thread_id();
-    }
-  }
-}
-
-const char* Thread::recall_thread_name(intx tid) {
-  for (size_t i=0; i<_threads_names_counter; i++) {
-    if (_threads_names[i].thread == tid) {
-      return (const char*)_threads_names[i].name;
-    }
-  }
-  return "";
-}
-
-#endif

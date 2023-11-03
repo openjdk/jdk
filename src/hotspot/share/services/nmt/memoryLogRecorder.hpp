@@ -42,25 +42,20 @@ private:
     size_t actual;
     MEMFLAGS flags;
   };
+
+  static const char* recall_thread_name(intx tid);
+
   static bool is_empty(Entry* e)   { return (e->ptr == nullptr); };
   static bool is_nmt(Entry* e)     { return !is_empty(e) && (e->flags == MEMFLAGS::mtNMT); };
   static bool is_free(Entry* e)    { return !is_empty(e) && (e->requested == 0) && (e->old == nullptr); };
   static bool is_realloc(Entry* e) { return !is_empty(e) && (e->requested > 0)  && (e->old != nullptr); };
   static bool is_malloc(Entry* e)  { return !is_empty(e) && (e->requested > 0)  && (e->old == nullptr); };
+
   static bool is_alloc(Entry* e)   { return is_malloc(e) || is_realloc(e); };
   static Entry* find_free_entry(Entry* entries, size_t count);
   static Entry* find_realloc_entry(Entry* entries, size_t count);
   static void print_entry(Entry* entries);
   static void calculate_good_sizes(Entry* entries, size_t count);
-  static void print_histogram(Entry* entries, size_t count, double cutoff = 0.0);
-  static void print_records(Entry* entries, size_t count);
-  static void report_by_component(Entry* entries, size_t count);
-  static void report_by_thread(Entry* entries, size_t count);
-  static void print_summary(Entry* entries, size_t count);
-  static void consolidate(Entry* entries, size_t count, size_t start = 0);
-  static void dump(Entry* entries, size_t count);
-  static size_t _malloc_good_size_stats(size_t size);
-  static size_t _malloc_good_size(size_t size);
   static void find_malloc_requests_buckets_sizes(Entry* entries, size_t count);
   static Entry* access_non_empty(Entry* entries, size_t count) {
     Entry* e = &entries[count];
@@ -69,14 +64,19 @@ private:
     else
       return nullptr;
   };
-  static size_t* malloc_requests_buckets;
-  static size_t malloc_requests_count;
-  static size_t* good_sizes_counts;
-  static size_t* good_sizes_totals;
+
+  static void print_histogram(Entry* entries, size_t count, double cutoff = 0.0);
+  static void print_records(Entry* entries, size_t count);
+  static void report_by_component(Entry* entries, size_t count);
+  static void report_by_thread(Entry* entries, size_t count);
+  static void print_summary(Entry* entries, size_t count);
+  static void consolidate(Entry* entries, size_t count, size_t start = 0);
+  static void dump(Entry* entries, size_t count);
 
 public:
   static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr, address old = nullptr,
                   const NativeCallStack *stack = nullptr);
+  static void remember_thread_name(const char* name);
 };
 
 #endif // ASSERT

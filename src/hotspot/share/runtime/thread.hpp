@@ -37,6 +37,7 @@
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
 #include "runtime/unhandledOops.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -304,21 +305,6 @@ class Thread: public ThreadShadow {
   RunState _run_state;  // for lifecycle checks
 #endif
 
-#ifdef ASSERT
- private:
-  static constexpr size_t _threads_name_length = 64;
-  static constexpr size_t _threads_names_capacity = 128;
-  static volatile size_t _threads_names_counter;
-  typedef struct thread_name_info {
-    char name[_threads_name_length];
-    intx thread;
-  } thread_name_info;
-  static volatile thread_name_info _threads_names[_threads_names_capacity];
-  static void remember_thread_name(const char* name);
- public:
-  static const char* recall_thread_name(intx tid);
-#endif
-
  public:
   // invokes <ChildThreadClass>::run(), with common preparations and cleanups.
   void call_run();
@@ -375,7 +361,7 @@ class Thread: public ThreadShadow {
     os::set_native_thread_name(name);
 #ifdef ASSERT
     if (RecordNMTEntries > 0) {
-      remember_thread_name(name);
+      NMT_MemoryLogRecorder::remember_thread_name(name);
     }
 #endif
   }
