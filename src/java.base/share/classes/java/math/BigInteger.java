@@ -4644,7 +4644,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          *      b, a[from+1], ..., a[to-1]    (len > 0)
          * Shortest means first skipping leading zeros.
          */
-        for (; b == 0 && from < to; b = a[from++]);  //empty body
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
         if (b == 0) {
             /* Here, from == to as well. All bytes are zeros. */
             return ZERO.mag;
@@ -4704,7 +4705,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         /* b == a[from] has been read exactly once, skip to next index. */
         ++from;
         /* Skip leading -1 bytes. */
-        for (; b == -1 && from < to; b = a[from++]);  //empty body
+        for (; b == -1 && from < to; b = a[from++])
+            ;  //empty body
         /*
          * A "digit" is a group of 4 adjacent bytes aligned w.r.t. index to.
          * b is the most significant byte not -1, or -1 only if from == to.
@@ -4718,7 +4720,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
         int f = from;  // keeps the current from for sizing purposes later
         /* Skip zeros adjacent to d0, if at all. */
-        for (; b == 0 && from < to; b = a[from++]);  //empty body
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
         /*
          * b is the most significant non-zero byte at or after (f - 1),
          * or 0 only if from == to.
@@ -4757,7 +4760,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     | (a[from++] & 0xFF) << 8 | (a[from++] & 0xFF);
         }
         /* Convert to two's complement. Here, i == res.length */
-        while (--i >= 0 && res[i] == 0);  // empty body
+        while (--i >= 0 && res[i] == 0)
+            ;  // empty body
         res[i] = -res[i];
         while (--i >= 0) {
             res[i] = ~res[i];
