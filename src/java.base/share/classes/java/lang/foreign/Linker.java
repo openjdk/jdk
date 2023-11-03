@@ -246,7 +246,7 @@ import java.util.stream.Stream;
  *
  * Linker implementations may optionally support additional layouts, such as <em>packed</em> struct layouts.
  * A packed struct is a struct in which there is at least one member layout {@code L} that has an alignment
- * constraint less than its natural alignment. This allows avoiding padding between member layouts,
+ * constraint less strict than its natural alignment. This allows avoiding padding between member layouts,
  * as well as avoiding padding at the end of the struct layout. For example:
  * {@snippet lang = java:
  * // No padding between the 2 element layouts:
