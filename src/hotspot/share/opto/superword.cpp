@@ -2712,7 +2712,7 @@ bool SuperWord::output() {
           C->record_failure(C2Compiler::retry_no_superword());
           return false; // bailout
         }
-        if (VectorNode::is_invariant_vector(in1) && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
+        if (in1->Opcode() == Op_Replicate && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
           // Move invariant vector input into second position to avoid register spilling.
           Node* tmp = in1;
           in1 = in2;

@@ -108,7 +108,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
-  static bool is_invariant_vector(Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
