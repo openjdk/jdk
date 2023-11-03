@@ -211,7 +211,8 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     const uint8_t* here = align_down(addr, smallest_possible_alignment);
     const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
-      if (!os::is_readable_pointer(here)) {
+      // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
+      if (!os::is_readable_range(here, here + sizeof(MallocHeader) - 1)) {
         // Probably OOB, give up
         break;
       }
