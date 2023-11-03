@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class NMethod extends CompiledMethod {
   public OopHandle getOopAt(int index) {
     if (index == 0) return null;
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(index > 0 && index <= getOopsLength(), "must be a valid non-zero index");
+      Assert.that(index > 0 && index <= getOopsLength(), "must be a valid non-zero index: " + index);
     }
     return oopsBegin().getOopHandleAt((index - 1) * VM.getVM().getOopSize());
   }
@@ -187,7 +187,7 @@ public class NMethod extends CompiledMethod {
   public Address getMetadataAt(int index) {
     if (index == 0) return null;
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(index > 0 && index <= getMetadataLength(), "must be a valid non-zero index");
+      Assert.that(index > 0 && index <= getMetadataLength(), "must be a valid non-zero index: " + index);
     }
     return metadataBegin().getAddressAt((index - 1) * VM.getVM().getOopSize());
   }
@@ -275,6 +275,19 @@ public class NMethod extends CompiledMethod {
       }
     }
     return null;
+  }
+
+  /**
+   * Attempt to decode all the debug info in this nmethod.  This is intended purely for testing.
+   */
+  public void decodeAllScopeDescs() {
+    for (Address p = scopesPCsBegin(); p.lessThan(scopesPCsEnd()); p = p.addOffsetTo(pcDescSize)) {
+      PCDesc pd = new PCDesc(p);
+      if (pd.getPCOffset()  == -1) {
+        break;
+      }
+      ScopeDesc sd = new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getObjDecodeOffset(), pd.getReexecute());
+    }
   }
 
   /** ScopeDesc for an instruction */
