@@ -128,6 +128,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
     assert(rgn->base() >= _last_base, "region unordered?");
+    _last_base = rgn->base();
     if (rgn->size() > 0) {
       if (_virtual_memory_regions.add(*rgn) != nullptr) {
         _count ++;
