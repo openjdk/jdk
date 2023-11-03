@@ -24,12 +24,16 @@
 import java.io.Serializable;
 import java.lang.Enum.EnumDesc;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessFlag;
 import java.lang.runtime.SwitchBootstraps;
 import java.util.concurrent.atomic.AtomicBoolean;
+import jdk.internal.classfile.Classfile;
 
 import org.testng.annotations.Test;
 
@@ -41,6 +45,7 @@ import static org.testng.Assert.fail;
 /**
  * @test
  * @enablePreview
+ * @modules java.base/jdk.internal.classfile
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
  */
@@ -319,4 +324,32 @@ public class SwitchBootstrapsTest {
         }
     }
 
+    public void testHiddenClassAsCaseLabel() throws Throwable {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        byte[] classBytes = createClass();
+        Class<?> classA = lookup.defineHiddenClass(classBytes, false).lookupClass();
+        Class<?> classB = lookup.defineHiddenClass(classBytes, false).lookupClass();
+        Object[] labels = new Object[] {
+            classA,
+            classB,
+        };
+        testType(classA.getConstructor().newInstance(), 0, 0, labels);
+        testType(classB.getConstructor().newInstance(), 0, 1, labels);
+    }
+
+    private static byte[] createClass() {
+        return Classfile.of().build(ClassDesc.of("C"), clb -> {
+            clb.withFlags(AccessFlag.SYNTHETIC)
+               .withMethodBody("<init>",
+                               MethodTypeDesc.of(ConstantDescs.CD_void),
+                               Classfile.ACC_PUBLIC,
+                               cb -> {
+                                   cb.aload(0);
+                                   cb.invokespecial(ConstantDescs.CD_Object,
+                                                    "<init>",
+                                                    MethodTypeDesc.of(ConstantDescs.CD_void));
+                                   cb.return_();
+                               });
+                    });
+    }
 }
