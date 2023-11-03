@@ -25,8 +25,6 @@
  * @test
  * @bug 8186046
  * @summary Test for condy BSMs returning primitive values or null
- * @library /lib/testlibrary/bytecode
- * @build jdk.experimental.bytecode.BasicClassBuilder
  * @run testng CondyReturnPrimitiveTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyReturnPrimitiveTest
  */

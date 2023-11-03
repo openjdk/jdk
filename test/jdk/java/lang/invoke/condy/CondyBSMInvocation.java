@@ -25,8 +25,8 @@
  * @test
  * @bug 8186046 8199875
  * @summary Test basic invocation of bootstrap methods
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
  * @run testng CondyBSMInvocation
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMInvocation
  */
