@@ -272,7 +272,7 @@ private:
   void record_pause(G1GCPauseType gc_type,
                     double start,
                     double end,
-                    bool alloocation_failure = false);
+                    bool allocation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
@@ -311,7 +311,7 @@ public:
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool alllocation_failure);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
