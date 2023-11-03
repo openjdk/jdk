@@ -203,11 +203,22 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
 }
 
 bool DirectiveSet::should_collect_memstat() const {
-  return MemStatOption > 0;
+  // MemLimit requires the memory statistic to be active
+  return MemStatOption > 0 || MemLimitOption != 0;
 }
 
 bool DirectiveSet::should_print_memstat() const {
   return MemStatOption == (uintx)MemStatAction::print;
+}
+
+size_t DirectiveSet::mem_limit() const {
+  return MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
+}
+
+bool DirectiveSet::should_crash_at_mem_limit() const {
+  // The sign encodes the action to be taken when reaching
+  // the memory limit (+ stop - crash)
+  return MemLimitOption < 0;
 }
 
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:

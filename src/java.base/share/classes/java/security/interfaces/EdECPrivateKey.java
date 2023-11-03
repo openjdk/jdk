@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.security.interfaces;
 
 import java.security.PrivateKey;
+import java.security.spec.NamedParameterSpec;
 import java.util.Optional;
 
 /**
@@ -52,4 +53,18 @@ public interface EdECPrivateKey extends EdECKey, PrivateKey {
      * If the key is not available, then an empty {@code Optional}.
      */
     Optional<byte[]> getBytes();
+
+    /**
+     * {@inheritDoc java.security.AsymmetricKey}
+     *
+     * @implSpec
+     * The default implementation returns {@code null}.
+     *
+     * @return {@inheritDoc java.security.AsymmetricKey}
+     * @since 22
+     */
+    @Override
+    default NamedParameterSpec getParams() {
+        return null;
+    }
 }
