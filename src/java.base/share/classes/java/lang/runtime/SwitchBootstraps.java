@@ -290,7 +290,7 @@ public class SwitchBootstraps {
             }
             return label;
         } else if (labelClass == String.class) {
-            return EnumDesc.of(enumClassTemplate.describeConstable().get(), (String) label);
+            return EnumDesc.of(enumClassTemplate.describeConstable().orElseThrow(), (String) label);
         } else {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
@@ -452,7 +452,7 @@ public class SwitchBootstraps {
                                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
                                                               ConstantDescs.CD_int));
                             cb.aload(0);
-                            cb.invokeinterface(BiPredicate.class.describeConstable().get(),
+                            cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
                                                "test",
                                                MethodTypeDesc.of(ConstantDescs.CD_boolean,
                                                                  ConstantDescs.CD_Object,
