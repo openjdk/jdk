@@ -147,9 +147,6 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
-gtest/GTestWrapper.java 8306561 aix-ppc64
-gtest/NMTGtests.java#nmt-detail 8306561 aix-ppc64
-gtest/NMTGtests.java#nmt-summary 8306561 aix-ppc64
 
 #############################################################################
 
