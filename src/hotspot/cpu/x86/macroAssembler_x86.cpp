@@ -318,6 +318,10 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj, Register rscratch)
   mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
+void MacroAssembler::mov_ptrslot(Register dst, intptr_t value) {
+  movptr(dst, value);
+}
+
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
   if (src.is_lval()) {
     mov_literal32(dst, (intptr_t)src.target(), src.rspec());
@@ -672,6 +676,11 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
 void MacroAssembler::mov_metadata(Address dst, Metadata* obj, Register rscratch) {
   mov_literal64(rscratch, (intptr_t)obj, metadata_Relocation::spec_for_immediate());
   movq(dst, rscratch);
+}
+
+void MacroAssembler::mov_ptrslot(Register dst, intptr_t value) {
+  // Should never be shortened. Need full 64-immediate.
+  mov64(dst, value);
 }
 
 void MacroAssembler::movptr(Register dst, AddressLiteral src) {
@@ -1339,7 +1348,7 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  movptr(rax, (intptr_t)Universe::non_oop_word());
+  mov_ptrslot(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }
 
@@ -2562,7 +2571,15 @@ void MacroAssembler::movptr(Register dst, Address src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
-  LP64_ONLY(mov64(dst, src)) NOT_LP64(movl(dst, src));
+#ifdef _LP64
+  if (is_simm32(src)) {
+    movslq(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(dst, src);
+  }
+#else
+  movl(dst, src);
+#endif
 }
 
 void MacroAssembler::movptr(Address dst, Register src) {
