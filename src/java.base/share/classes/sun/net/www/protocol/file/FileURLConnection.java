@@ -135,10 +135,6 @@ public class FileURLConnection extends URLConnection {
         }
     }
 
-    public File getFile() {
-        return file;
-    }
-
     public Map<String,List<String>> getHeaderFields() {
         initializeHeaders();
         return super.getHeaderFields();

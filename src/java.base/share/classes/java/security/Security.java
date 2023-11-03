@@ -28,7 +28,6 @@ package java.security;
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -40,7 +39,6 @@ import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
-import sun.net.www.protocol.file.FileURLConnection;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -132,37 +130,61 @@ public final class Security {
 
         private static void loadExtraHelper(String propFile, LoadingMode mode)
                 throws Exception {
-            Path path = null;
-            Exception pathError = null;
-
             propFile = PropertyExpander.expand(propFile);
             if (propFile.isEmpty()) {
                 throw new IOException("Empty extra properties file path");
             }
 
-            // Try to interpret propFile as a Path (local)
+            // Try to interpret propFile as a path
+            Exception error;
+            if ((error = loadExtraFromPath(propFile, mode)) == null) {
+                return;
+            }
+
+            // Try to interpret propFile as a file URL
+            URI uri = new URI(propFile);
+            if ("file".equalsIgnoreCase(uri.getScheme()) &&
+                    (error = loadExtraFromFileUrl(uri, mode)) == null) {
+                return;
+            }
+
+            // Try to interpret propFile as a URL
+            URL url;
+            try {
+                url = uri.toURL();
+            } catch (IllegalArgumentException ignore) {
+                // URL has no scheme: previous error is more accurate
+                throw error;
+            }
+            loadFromUrl(url, mode);
+        }
+
+        private static Exception loadExtraFromPath(String propFile,
+                LoadingMode mode) throws Exception {
+            Path path;
             try {
                 path = Path.of(propFile);
                 if (!path.toFile().exists()) {
-                    pathError = new FileNotFoundException(propFile);
+                    return new FileNotFoundException(propFile);
                 }
             } catch (InvalidPathException e) {
-                pathError = e;
+                return e;
             }
+            loadFromPath(path, mode);
+            return null;
+        }
 
-            if (pathError == null) {
-                loadFromPath(path, mode);
-            } else {
-                // Try to interpret propFile as a URL (local or remote)
-                URL url;
-                try {
-                    url = new URI(propFile).toURL();
-                } catch (IllegalArgumentException ignore) {
-                    // URL has no scheme: pathError is more accurate
-                    throw pathError;
-                }
-                loadFromUrl(url, mode);
+
+        private static Exception loadExtraFromFileUrl(URI uri, LoadingMode mode)
+                throws Exception {
+            Path path;
+            try {
+                path = Path.of(uri);
+            } catch (Exception e) {
+                return e;
             }
+            loadFromPath(path, mode);
+            return null;
         }
 
         private static void reset(LoadingMode mode) {
@@ -237,17 +259,11 @@ public final class Security {
 
         private static void loadFromUrl(URL url, LoadingMode mode)
                 throws IOException {
-            URLConnection connection = url.openConnection();
-            if (connection instanceof FileURLConnection fileConnection) {
-                // A local file URL can be interpreted as a Path
-                loadFromPath(fileConnection.getFile().toPath(), mode);
-            } else {
-                try (InputStream is = connection.getInputStream()) {
-                    reset(mode);
-                    debugLoad(true, url);
-                    props.load(is);
-                    debugLoad(false, url);
-                }
+            try (InputStream is = url.openStream()) {
+                reset(mode);
+                debugLoad(true, url);
+                props.load(is);
+                debugLoad(false, url);
             }
         }
 
