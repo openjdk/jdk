@@ -573,10 +573,4 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=4, annoType = TB.class, expect = "100")
     class Inner100<T extends Inner100<@TB(100) T>> {
     }
-
-    // receiver parameters
-    class Inner110 {
-        @Test(posn=2, annoType = TA.class, expect = "110")
-        void f(@TA(110) Inner110 this) {}
-    }
 }

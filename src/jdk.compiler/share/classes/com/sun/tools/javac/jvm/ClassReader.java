@@ -2333,9 +2333,8 @@ public class ClassReader {
             }
             mt.thrown = thrown.toList();
             mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
-            if (attributes.stream().anyMatch(a -> a.position.type == TargetType.METHOD_RECEIVER)) {
-                Assert.checkNull(mt.recvtype);
-                mt.recvtype = addTypeAnnotations(s.owner.type, TargetType.METHOD_RECEIVER);
+            if (mt.recvtype != null) {
+                mt.recvtype = addTypeAnnotations(mt.recvtype, TargetType.METHOD_RECEIVER);
             }
             return null;
         }
