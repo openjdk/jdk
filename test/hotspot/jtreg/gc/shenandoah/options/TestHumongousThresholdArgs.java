@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestHumongousThresholdArgs {
     public static void main(String[] args) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -51,7 +51,7 @@ public class TestHumongousThresholdArgs {
         int[] invalid = new int[] {-100, -1, 0, 101, 1000};
 
         for (int v : valid) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -62,7 +62,7 @@ public class TestHumongousThresholdArgs {
         }
 
         for (int v : invalid) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",

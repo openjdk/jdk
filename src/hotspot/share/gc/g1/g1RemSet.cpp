@@ -1186,23 +1186,17 @@ class G1MergeHeapRootsTask : public WorkerTask {
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-
       _cl.merge_card_set_for_region(r);
 
       // We should only clear the card based remembered set here as we will not
       // implicitly rebuild anything else during eager reclaim. Note that at the moment
       // (and probably never) we do not enter this path if there are other kind of
       // remembered sets for this region.
-      r->rem_set()->clear(true /* only_cardset */);
-      // Clear_locked() above sets the state to Empty. However we want to continue
-      // collecting remembered set entries for humongous regions that were not
-      // reclaimed.
-      r->rem_set()->set_state_complete();
-#ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
-      assert(region_attr.remset_is_tracked(), "must be");
-#endif
-      assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
+      // We want to continue collecting remembered set entries for humongous regions
+      // that were not reclaimed.
+      r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+
+      assert(r->rem_set()->is_empty() && r->rem_set()->is_complete(), "must be for eager reclaim candidates");
 
       return false;
     }

@@ -157,6 +157,9 @@
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
 
+  void signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one,
+                 bool is_double);
+
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,

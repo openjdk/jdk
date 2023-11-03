@@ -412,6 +412,20 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return true if the page written by this writer should be indexed,
+     * false otherwise}
+     *
+     * Some pages merely aggregate filtered information available on other pages
+     * and, thus, have no indexing value. In fact, if indexed, they would
+     * clutter the index and mislead the reader.
+     *
+     * @implSpec The default implementation returns {@code false}.
+     */
+    public boolean isIndexable() {
+        return false;
+    }
+
+    /**
      * Generates the HTML document tree and prints it out.
      *
      * @param metakeywords Array of String keywords for META tag. Each element
@@ -504,7 +518,7 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+    protected Content getHeader(Navigation.PageMode pageMode) {
         return getHeader(pageMode, null);
     }
 
@@ -517,10 +531,10 @@ public abstract class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+    protected Content getHeader(Navigation.PageMode pageMode, Element element) {
         return HtmlTree.HEADER()
-                .add(RawHtml.of(replaceDocRootDir(options.top())))
-                .add(getNavBar(pageMode, element).getContent());
+                        .add(RawHtml.of(replaceDocRootDir(options.top())))
+                        .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
@@ -1369,7 +1383,8 @@ public abstract class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                    if (node.getName().toString().matches("(?i)h[1-6]")
+                            && isIndexable()) {
                         createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
@@ -2053,6 +2068,14 @@ public abstract class HtmlDocletWriter {
         }
     }
 
+    public void addRestrictedSummary(Element forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            var div = HtmlTree.DIV(HtmlStyle.block);
+            div.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel, contents.restrictedPhrase));
+            target.add(div);
+        }
+    }
+
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
@@ -2201,6 +2224,26 @@ public abstract class HtmlDocletWriter {
             specURI = baseURI.resolve(specURI);
         }
         return specURI;
+    }
+
+    public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            //in Java platform:
+            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
+            String name = forWhat.getSimpleName().toString();
+            var nameCode = HtmlTree.CODE(Text.of(name));
+            String leadingNoteKey = "doclet.RestrictedLeadingNote";
+            Content leadingNote =
+                    contents.getContent(leadingNoteKey, nameCode);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+                    leadingNote));
+            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            target.add(restrictedDiv);
+        }
     }
 
 }
