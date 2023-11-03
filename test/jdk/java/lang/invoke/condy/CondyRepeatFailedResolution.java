@@ -26,6 +26,11 @@
  * @bug 8186211
  * @summary Test basic invocation of multiple ldc's of the same dynamic constant that fail resolution
  * @library /java/lang/invoke/common
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyRepeatFailedResolution
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyRepeatFailedResolution
  */

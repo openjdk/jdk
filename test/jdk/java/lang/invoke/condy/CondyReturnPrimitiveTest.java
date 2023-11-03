@@ -25,6 +25,11 @@
  * @test
  * @bug 8186046
  * @summary Test for condy BSMs returning primitive values or null
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyReturnPrimitiveTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyReturnPrimitiveTest
  */

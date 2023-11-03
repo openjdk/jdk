@@ -27,6 +27,11 @@
  * @summary Test basic invocation of bootstrap methods
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyBSMInvocation
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMInvocation
  */

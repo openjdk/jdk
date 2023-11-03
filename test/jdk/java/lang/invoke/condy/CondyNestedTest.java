@@ -26,6 +26,11 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyNestedTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */
