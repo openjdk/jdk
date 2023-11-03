@@ -224,8 +224,8 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
- * is supported by a native linker {@code NL} if:
+ * All native linker implementations support at least so called <em>naturally aligned layouts</em>. More formally,
+ * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
@@ -244,6 +244,8 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  *
+ * Linker implementations may optionally support additional layouts, such as 'packed' struct layouts.
+ * <p>
  * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
  * and are not sequence layouts.
  *
