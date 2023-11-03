@@ -475,9 +475,7 @@ public final class IsoChronology extends AbstractChronology implements Serializa
      */
     @Override
     public boolean isLeapYear(long prolepticYear) {
-        return (prolepticYear & 15) == 0
-                ? (prolepticYear & 3) == 0
-                : (prolepticYear & 3) == 0 && prolepticYear % 100 != 0;
+        return Year.isLeap(prolepticYear);
     }
 
     @Override

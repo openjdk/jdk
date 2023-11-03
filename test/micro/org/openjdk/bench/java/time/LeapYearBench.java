@@ -81,4 +81,16 @@ public class LeapYearBench {
             bh.consume(IsoChronology.INSTANCE.isLeapYear(year));
         }
     }
+
+    public static boolean isLeapNeriSchneider(long year) {
+        int d = year % 100 != 0 ? 4 : 16;
+        return (year & (d - 1)) == 0;
+    }
+
+    @Benchmark
+    public void isLeapYearNS(Blackhole bh) {
+        for (long year : years) {
+            bh.consume(isLeapNeriSchneider(year));
+        }
+    }
 }
