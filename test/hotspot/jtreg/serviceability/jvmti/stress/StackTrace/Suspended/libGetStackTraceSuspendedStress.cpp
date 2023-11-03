@@ -121,10 +121,6 @@ check_vthread_consistency_suspended(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthrea
   //const char* cname = (cthread == NULL) ? "<no cthread>" : get_thread_name(jvmti, jni, cthread);
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, vthread);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE ||
-      err == JVMTI_ERROR_WRONG_PHASE) {
-    return;
-  }
   check_jvmti_status(jni, err, "Error in JVMTI SetEventNotificationMode: enable SINGLE_STEP");
 
   if (cthread != NULL) { // pre-condition for reliable testing
@@ -133,10 +129,6 @@ check_vthread_consistency_suspended(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthrea
   }
 
   err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, vthread);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE ||
-      err == JVMTI_ERROR_WRONG_PHASE) {
-    return;
-  }
   check_jvmti_status(jni, err, "Error in JVMTI SetEventNotificationMode: disable SINGLE_STEP");
 }
 
