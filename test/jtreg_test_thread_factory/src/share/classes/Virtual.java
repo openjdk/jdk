@@ -30,16 +30,6 @@ public class Virtual implements ThreadFactory {
         try {
             // This property is used by ProcessTools and some tests
             System.setProperty("test.thread.factory", "Virtual");
-            // Temporary workaround until CODETOOLS-7903526 is fixed in jtreg
-            // The jtreg run main() in the ThreadGroup and catch only exceptions in this group.
-            // The virtual threads don't belong to any group and need global handler.
-            Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-                    if (e instanceof ThreadDeath) {
-                        return;
-                    }
-                    e.printStackTrace(System.err);
-                    System.exit(1);
-                });
         } catch (Throwable t) {
             // might be thrown by security manager
         }
@@ -47,8 +37,45 @@ public class Virtual implements ThreadFactory {
 
     static final ThreadFactory VIRTUAL_TF = Thread.ofVirtual().factory();
 
+    private static volatile Throwable uncaughtException;
+
+    private static synchronized void handleException(Throwable e) {
+        if (e instanceof ThreadDeath) {
+            return;
+        }
+        e.printStackTrace(System.err);
+        uncaughtException = e;
+    }
+
     @Override
     public Thread newThread(Runnable task) {
-        return VIRTUAL_TF.newThread(task);
+        return VIRTUAL_TF.newThread(() -> {
+                // Temporary workaround until CODETOOLS-7903526 is fixed in jtreg.
+                // The jtreg run main() in the ThreadGroup and catch only exceptions in this group.
+                // However with test thread factory all platform threads started from virtual main thread
+                // don't belong to any group and need global handler.
+                try {
+                    Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+                            handleException(e);
+                        });
+                } catch (Throwable t) {
+                    // might be thrown by security manager
+                }
+
+
+                try {
+                    task.run();
+
+                    if (uncaughtException != null) {
+                        throw new RuntimeException(uncaughtException);
+                    }
+                } finally {
+                    synchronized (Virtual.class) {
+                        uncaughtException = null;
+                        Thread.setDefaultUncaughtExceptionHandler(null);
+                    }
+                }
+            });
     }
+
 }
