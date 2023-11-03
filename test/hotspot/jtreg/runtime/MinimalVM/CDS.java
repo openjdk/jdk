@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,17 @@ public class CDS {
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:dump");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-Xshare:dump");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:on");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-Xshare:on");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:auto", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-minimal", "-Xshare:auto", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(0);

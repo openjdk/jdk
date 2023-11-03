@@ -502,7 +502,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
-java/io/File/createTempFile/SpecialTempFile.java                8274122 windows11
 
 ############################################################################
 
@@ -585,6 +584,7 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
 
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
 java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
@@ -629,6 +629,7 @@ sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 generic-
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 generic-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
+sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 
 ############################################################################
 
@@ -724,8 +725,8 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 
-java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
-java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
+java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
+sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 
 ############################################################################
 
