@@ -315,7 +315,7 @@ public final class Year
      * @return true if the year is leap, false otherwise
      */
     public static boolean isLeap(long year) {
-        return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+        return (year & 15) == 0 ? (year & 3) == 0 : (year & 3) == 0 && year % 100 != 0;
     }
 
     //-----------------------------------------------------------------------
