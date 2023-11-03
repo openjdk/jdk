@@ -369,7 +369,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     move_pinned_marking_to_retained(&pinned_marking_regions);
     // Drop pinned retained regions to make progress with retained regions. Regions
     // in that list have must have been pinned for at least
-    // G1NumCollectionsKeepUnreclaimable GCs and hence are considered "long lived".
+    // G1NumCollectionsKeepPinned GCs and hence are considered "long lived".
     drop_pinned_retained_regions(&pinned_retained_regions);
 
     candidates()->verify();

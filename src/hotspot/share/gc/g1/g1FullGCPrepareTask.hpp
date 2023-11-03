@@ -54,8 +54,6 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
 
   inline void add_to_compaction_queue(HeapRegion* hr);
 
-  inline bool has_pinned_objects(HeapRegion* hr) const;
-
 public:
   G1DetermineCompactionQueueClosure(G1FullCollector* collector);
 

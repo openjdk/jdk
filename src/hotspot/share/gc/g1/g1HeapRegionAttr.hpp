@@ -36,11 +36,14 @@ public:
   // remset_is_tracked_t is essentially bool, but we need precise control
   // on the size, and sizeof(bool) is implementation specific.
   typedef uint8_t remset_is_tracked_t;
+  // _is_pinned_t is essentially bool, but we want precise control
+  // on the size, and sizeof(bool) is implementation specific.
+  typedef uint8_t is_pinned_t;
 
 private:
   remset_is_tracked_t _remset_is_tracked;
   region_type_t _type;
-  bool _is_pinned;
+  is_pinned_t _is_pinned;
 
 public:
   // Selection of the values for the _type field were driven to micro-optimize the
@@ -61,7 +64,7 @@ public:
   static const region_type_t Num          =   2;
 
   G1HeapRegionAttr(region_type_t type = NotInCSet, bool remset_is_tracked = false, bool is_pinned = false) :
-    _remset_is_tracked(remset_is_tracked), _type(type), _is_pinned(is_pinned) {
+    _remset_is_tracked(remset_is_tracked ? 1 : 0), _type(type), _is_pinned(is_pinned ? 1 : 0) {
     assert(is_valid(), "Invalid type %d", _type);
   }
 
@@ -82,7 +85,7 @@ public:
   bool remset_is_tracked() const     { return _remset_is_tracked != 0; }
 
   void set_new_survivor()              { _type = NewSurvivor; }
-  bool is_pinned() const               { return _is_pinned; }
+  bool is_pinned() const               { return _is_pinned != 0; }
 
   void set_old()                       { _type = Old; }
   void clear_humongous_candidate()               {
@@ -91,7 +94,7 @@ public:
   }
 
   void set_remset_is_tracked(bool value)      { _remset_is_tracked = value ? 1 : 0; }
-  void set_is_pinned(bool value)       { _is_pinned = value; }
+  void set_is_pinned(bool value)       { _is_pinned = value ? 1 : 0; }
 
   bool is_in_cset_or_humongous_candidate() const { return is_in_cset() || is_humongous_candidate(); }
   bool is_in_cset() const              { return type() >= Young; }

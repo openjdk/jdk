@@ -73,7 +73,7 @@ inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegio
   cp->add(hr);
 }
 
-inline bool G1DetermineCompactionQueueClosure::has_pinned_objects(HeapRegion* hr) const {
+static bool has_pinned_objects(HeapRegion* hr) {
   return hr->has_pinned_objects() ||
       (hr->is_humongous() && hr->humongous_start_region()->has_pinned_objects());
 }

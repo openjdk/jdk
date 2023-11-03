@@ -99,7 +99,7 @@ class TestResultTracker {
     //
     // and
     //
-    //   2) GC(<x>) Finish adding retained/marking candidates to collection set. Initial: <y> ... unreclaimable: <z>
+    //   2) GC(<x>) Finish adding retained/marking candidates to collection set. Initial: <y> ... pinned: <z>
     //
     // 1) reports about whether the given region has been added to the collection set or not. The last word indicates whether the
     // region has been removed from the collection set candidates completely ("Dropping"), or just skipped for this collection
@@ -109,8 +109,7 @@ class TestResultTracker {
     // in one of the collection set candidate sets, there will be only one message per GC.
     //
     // 2) reports statistics about how many regions were added to the initial collection set, optional collection set (not shown
-    // here) and the amount of unreclaimable (pinned regions) for every kind of collection set candidate sets ("marking" or
-    // "retained").
+    // here) and the amount of pinned regions for every kind of collection set candidate sets ("marking" or "retained").
     //
     // There are two such messages per GC.
     //
@@ -118,7 +117,7 @@ class TestResultTracker {
     //
     public void verify() throws Exception {
         final String skipDropEvents = "GC\\((\\d+)\\).*(Marking|Retained) candidate (\\d+) can not be reclaimed currently\\. (Skipping|Dropping)";
-        final String reclaimEvents = "GC\\((\\d+)\\) Finish adding (retained|marking) candidates to collection set\\. Initial: (\\d+).*unreclaimable: (\\d+)";
+        final String reclaimEvents = "GC\\((\\d+)\\) Finish adding (retained|marking) candidates to collection set\\. Initial: (\\d+).*pinned: (\\d+)";
 
         Matcher skipDropMatcher = Pattern.compile(skipDropEvents, Pattern.MULTILINE).matcher(stdout);
         Matcher reclaimMatcher = Pattern.compile(reclaimEvents, Pattern.MULTILINE).matcher(stdout);
@@ -140,7 +139,7 @@ class TestResultTracker {
                 }
                 if (Integer.parseInt(reclaimMatcher.group(1)) == curGC) {
                     int actual = Integer.parseInt(reclaimMatcher.group(4));
-                    Asserts.assertEQ(actual, 1, "Expected number of unreclaimable to be 1 after marking skip but is " + actual);
+                    Asserts.assertEQ(actual, 1, "Expected number of pinned to be 1 after marking skip but is " + actual);
                     break;
                 }
             }
@@ -163,7 +162,7 @@ class TestResultTracker {
                 }
                 if (Integer.parseInt(reclaimMatcher.group(1)) == curGC) {
                     int actual = Integer.parseInt(reclaimMatcher.group(4));
-                    Asserts.assertEQ(actual, 1, "Expected number of unreclaimable to be 1 after retained skip but is " + actual);
+                    Asserts.assertEQ(actual, 1, "Expected number of pinned to be 1 after retained skip but is " + actual);
                     break;
                 }
             }
@@ -187,7 +186,7 @@ class TestResultTracker {
                 if (Integer.parseInt(reclaimMatcher.group(1)) == curGC) {
                     int actual = Integer.parseInt(reclaimMatcher.group(4));
                     if (actual != 1) {
-                        Asserts.fail("Expected number of unreclaimable to be 1 after dropping but is " + actual);
+                        Asserts.fail("Expected number of pinned to be 1 after dropping but is " + actual);
                     }
                     break;
                 }
@@ -206,7 +205,7 @@ class TestResultTracker {
             if (Integer.parseInt(reclaimMatcher.group(1)) == nextGC) {
                 int actual = Integer.parseInt(reclaimMatcher.group(4));
                 if (actual != 0) {
-                    Asserts.fail("Expected number of unreclaimable to be 0 after marking reclaim but is " + actual);
+                    Asserts.fail("Expected number of pinned to be 0 after marking reclaim but is " + actual);
                 }
             }
         }
@@ -223,7 +222,7 @@ class TestResultTracker {
             if (Integer.parseInt(reclaimMatcher.group(1)) == nextGC) {
                 int actual = Integer.parseInt(reclaimMatcher.group(4));
                 if (actual != 0) {
-                    Asserts.fail("Expected number of unreclaimable to be 0 after retained reclaim but is " + actual);
+                    Asserts.fail("Expected number of pinned to be 0 after retained reclaim but is " + actual);
                 }
             }
         }
@@ -265,7 +264,7 @@ public class TestPinnedOldObjectsEvacuation {
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
                                                                   "-XX:MarkSweepDeadRatio=0",
-                                                                  "-XX:G1NumCollectionsKeepUnreclaimable=3",
+                                                                  "-XX:G1NumCollectionsKeepPinned=3",
                                                                   "-XX:+UnlockExperimentalVMOptions",
                                                                   // Take all old regions to make sure that the pinned one is included in the collection set.
                                                                   "-XX:G1MixedGCLiveThresholdPercent=100",

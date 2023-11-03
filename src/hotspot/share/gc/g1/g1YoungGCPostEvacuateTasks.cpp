@@ -93,13 +93,13 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask1::RestoreRetainedRegionsTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : public G1AbstractSubTask {
   G1RemoveSelfForwardsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RestoreRetainedRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
+  RestoreEvacFailureRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::RestoreEvacuationFailedRegions),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) {
   }
@@ -129,7 +129,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evac_failed) {
-    add_parallel_task(new RestoreRetainedRegionsTask(evac_failure_regions));
+    add_parallel_task(new RestoreEvacFailureRegionsTask(evac_failure_regions));
   }
 }
 
@@ -569,10 +569,10 @@ class FreeCSetClosure : public HeapRegionClosure {
     G1GCPhaseTimes* p = _g1h->phase_times();
     assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
                                       _worker_id,
                                       1,
-                                      G1GCPhaseTimes::RestoreRetainedRegionsEvacFailedNum);
+                                      G1GCPhaseTimes::RestoreEvacFailureRegionsEvacFailedNum);
 
     bool retain_region = _g1h->policy()->should_retain_evac_failed_region(r);
     // Update the region state due to the failed evacuation.
@@ -727,14 +727,14 @@ public:
     cl.report_timing();
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
                                       worker_id,
                                       _evac_failure_regions->num_regions_pinned(),
-                                      G1GCPhaseTimes::RestoreRetainedRegionsPinnedNum);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                      G1GCPhaseTimes::RestoreEvacFailureRegionsPinnedNum);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
                                       worker_id,
                                       _evac_failure_regions->num_regions_alloc_failed(),
-                                      G1GCPhaseTimes::RestoreRetainedRegionsAllocFailedNum);
+                                      G1GCPhaseTimes::RestoreEvacFailureRegionsAllocFailedNum);
 
     Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }

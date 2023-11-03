@@ -70,7 +70,7 @@ public class TestPinnedObjectsEvacuation {
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
-                                                                  "-XX:G1NumCollectionsKeepUnreclaimable=2",
+                                                                  "-XX:G1NumCollectionsKeepPinned=2",
                                                                   "-XX:+VerifyAfterGC",
                                                                   "-Xlog:gc,gc+ergo+cset=trace",
                                                                   TestObjectPin.class.getName(),

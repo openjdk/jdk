@@ -97,7 +97,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
-  _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
+  _gc_par_phases[RestoreEvacuationFailedRegions] = new WorkerDataArray<double>("RestoreEvacuationFailedRegions", "Restore Evacuation Failed Regions (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwards] = new WorkerDataArray<double>("RemoveSelfForwards", "Remove Self Forwards (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
@@ -132,9 +132,9 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards", MergePSSEvacFailExtra);
 
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreRetainedRegionsEvacFailedNum);
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Pinned Regions:", RestoreRetainedRegionsPinnedNum);
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Allocation Failed Regions:", RestoreRetainedRegionsAllocFailedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreEvacFailureRegionsEvacFailedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Pinned Regions:", RestoreEvacFailureRegionsPinnedNum);
+  _gc_par_phases[RestoreEvacuationFailedRegions]->create_thread_work_items("Allocation Failed Regions:", RestoreEvacFailureRegionsAllocFailedNum);
 
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Chunks:", RemoveSelfForwardChunksNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Empty Forward Chunks:", RemoveSelfForwardEmptyChunksNum);
@@ -479,7 +479,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   return _cur_collection_initial_evac_time_ms + _cur_merge_heap_roots_time_ms;
 }
 
-double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_retained) const {
+double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
@@ -502,13 +502,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_retain
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
-  if (evacuation_retained) {
-    debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
+  if (evacuation_failed) {
+    debug_phase(_gc_par_phases[RestoreEvacuationFailedRegions], 1);
     debug_phase(_gc_par_phases[RemoveSelfForwards], 2);
   }
 
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
-  if (evacuation_retained) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
     debug_phase(_gc_par_phases[ProcessEvacuationFailedRegions], 1);

@@ -732,10 +732,15 @@ void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
   // ranges passed in here corresponding to the space between live objects, it is
   // possible that there is a pinned object that is not any more referenced by
   // Java code (only by native).
+  //
   // In this case we must not zap contents of such an array but we can overwrite
   // the header; since only pinned typearrays are allowed, this fits nicely with
   // putting filler arrays into the dead range as the object header sizes match and
   // no user data is overwritten.
+  //
+  // In particular String Deduplication might change the reference to the character
+  // array of the j.l.String after native code obtained a raw reference to it (via
+  // GetStringCritical()).
   CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
   HeapWord* current = start;
   do {

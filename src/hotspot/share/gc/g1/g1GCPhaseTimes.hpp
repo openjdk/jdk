@@ -79,7 +79,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
-    RestoreRetainedRegions,
+    RestoreEvacuationFailedRegions,
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
@@ -146,10 +146,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSEvacFailExtra
   };
 
-  enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
-    RestoreRetainedRegionsPinnedNum,           // How many regions were found as pinned.
-    RestoreRetainedRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
+  enum RestoreEvacFailureRegionsWorkItems {
+    RestoreEvacFailureRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
+    RestoreEvacFailureRegionsPinnedNum,           // How many regions were found as pinned.
+    RestoreEvacFailureRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
   };
 
   enum RemoveSelfForwardsWorkItems {
@@ -241,7 +241,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double print_merge_heap_roots_time() const;
   double print_evacuate_initial_collection_set() const;
   double print_evacuate_optional_collection_set() const;
-  double print_post_evacuate_collection_set(bool evacuation_retained) const;
+  double print_post_evacuate_collection_set(bool evacuation_failed) const;
   void print_other(double accounted_ms) const;
 
  public:

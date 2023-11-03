@@ -520,7 +520,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
 
 double G1Policy::predict_retained_regions_evac_time() const {
   uint num_regions = 0;
-  uint num_unreclaimable_regions = 0;
+  uint num_pinned_regions = 0;
 
   double result = 0.0;
 
@@ -533,7 +533,7 @@ double G1Policy::predict_retained_regions_evac_time() const {
     // We optimistically assume that any of these marking candidate regions will
     // be reclaimable the next gc, so just consider them as normal.
     if (r->has_pinned_objects()) {
-      num_unreclaimable_regions++;
+      num_pinned_regions++;
     }
     if (min_regions_left == 0) {
       // Minimum amount of regions considered. Exit.
@@ -544,8 +544,8 @@ double G1Policy::predict_retained_regions_evac_time() const {
     num_regions++;
   }
 
-  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates (unreclaimable %u) taking %1.3fms additional time",
-                            num_regions, list.length(), num_unreclaimable_regions, result);
+  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates (pinned %u) taking %1.3fms additional time",
+                            num_regions, list.length(), num_pinned_regions, result);
   return result;
 }
 
@@ -791,7 +791,7 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
   double start_time_sec = phase_times()->cur_collection_start_sec();
@@ -817,7 +817,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   // Evacuation failures skew the timing too much to be considered for some statistics updates.
   // We make the assumption that these are rare.
-  bool update_stats = !evacuation_failure;
+  bool update_stats = !allocation_failure;
 
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator
@@ -833,7 +833,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec, evacuation_failure);
+  record_pause(this_pause, start_time_sec, end_time_sec, allocation_failure);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -1365,13 +1365,13 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
 void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
                             double end,
-                            bool evacuation_failure) {
+                            bool allocation_failure) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
-  if (!evacuation_failure) {
+  if (!allocation_failure) {
     update_gc_pause_time_ratios(gc_type, start, end);
   }
 
@@ -1473,7 +1473,7 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
 
   uint num_initial_regions_selected = 0;
   uint num_optional_regions_selected = 0;
-  uint num_unreclaimable_regions = 0;
+  uint num_pinned_regions = 0;
 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
@@ -1503,7 +1503,7 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
     // Also prepare to move them to retained regions to be evacuated optionally later
     // to not impact the mixed phase too much.
     if (hr->has_pinned_objects()) {
-      num_unreclaimable_regions++;
+      num_pinned_regions++;
       (*iter)->update_num_unreclaimed();
       log_trace(gc, ergo, cset)("Marking candidate %u can not be reclaimed currently. Skipping.", hr->hrm_index());
       pinned_old_regions->append(hr);
@@ -1552,9 +1552,9 @@ double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marki
                               num_expensive_regions);
   }
 
-  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u, optional: %u, unreclaimable: %u, "
+  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2fms",
-                            num_initial_regions_selected, num_optional_regions_selected, num_unreclaimable_regions,
+                            num_initial_regions_selected, num_optional_regions_selected, num_pinned_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
 
   assert(initial_old_regions->length() == num_initial_regions_selected, "must be");
@@ -1573,7 +1573,7 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
   uint num_initial_regions_selected = 0;
   uint num_optional_regions_selected = 0;
   uint num_expensive_regions_selected = 0;
-  uint num_unreclaimable_regions = 0;
+  uint num_pinned_regions = 0;
 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
@@ -1597,7 +1597,7 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
     bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
     // If we can't reclaim that region ignore it for now.
     if (r->has_pinned_objects()) {
-      num_unreclaimable_regions++;
+      num_pinned_regions++;
       if (ci->update_num_unreclaimed()) {
         log_trace(gc, ergo, cset)("Retained candidate %u can not be reclaimed currently. Skipping.", r->hrm_index());
       } else {
@@ -1635,10 +1635,10 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
                               num_expensive_regions_selected);
   }
 
-  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, unreclaimable: %u, "
+  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
                             "time remaining: %1.2fms optional time remaining %1.2fms",
-                            num_initial_regions_selected, num_optional_regions_selected, num_unreclaimable_regions,
+                            num_initial_regions_selected, num_optional_regions_selected, num_pinned_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 

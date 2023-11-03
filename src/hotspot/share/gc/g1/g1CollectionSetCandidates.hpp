@@ -76,7 +76,7 @@ struct G1CollectionSetCandidateInfo {
 
   bool update_num_unreclaimed() {
     ++_num_unreclaimed;
-    return _num_unreclaimed < G1NumCollectionsKeepUnreclaimable;
+    return _num_unreclaimed < G1NumCollectionsKeepPinned;
   }
 };
 
