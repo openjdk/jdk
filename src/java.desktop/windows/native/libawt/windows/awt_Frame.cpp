@@ -1584,13 +1584,12 @@ void AwtFrame::_NotifyModalBlocked(void *param)
     // dialog here may be NULL, for example, if the blocker is a native dialog
     // however, we need to install/unistall modal hooks anyway
     JNI_CHECK_PEER_GOTO(blockerPeer, ret);
-    AwtDialog *d;
-    d = (AwtDialog *) pData;
+    AwtDialog *dialog;
+    dialog = (AwtDialog *) pData;
 
     if ((f != NULL) && ::IsWindow(f->GetHWnd())) {
         // get an HWND of the toplevel window this embedded frame is within
-        HWND fHWnd;
-        fHWnd = f->GetHWnd();
+        HWND fHWnd = f->GetHWnd();
         while (::GetParent(fHWnd) != NULL) {
             fHWnd = ::GetParent(fHWnd);
         }
@@ -1602,12 +1601,10 @@ void AwtFrame::_NotifyModalBlocked(void *param)
         if ((::GetWindowLong(fHWnd, GWL_STYLE) & WS_CHILD) == 0) {
             // if this toplevel is created in another thread, we should install
             // the modal hook into it to track window activation and mouse events
-            DWORD fThread;
-            fThread = ::GetWindowThreadProcessId(fHWnd, NULL);
+            DWORD fThread = ::GetWindowThreadProcessId(fHWnd, NULL);
             if (fThread != AwtToolkit::GetInstance().MainThread()) {
                 // check if this thread has been already blocked
-                BlockedThreadStruct *blockedThread;
-                blockedThread = (BlockedThreadStruct *) sm_BlockedThreads.get((void *)((intptr_t)fThread));
+                BlockedThreadStruct *blockedThread = (BlockedThreadStruct *) sm_BlockedThreads.get((void *)((intptr_t)fThread));
                 if (blocked) {
                     if (blockedThread == NULL) {
                         blockedThread = new BlockedThreadStruct;
