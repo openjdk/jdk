@@ -70,8 +70,6 @@ public @interface PreviewFeature {
 
         @JEP(number=430, title="String Templates")
         STRING_TEMPLATES,
-        @JEP(number=443, title="Unnamed Patterns and Variables")
-        UNNAMED,
         @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
         UNNAMED_CLASSES,
         @JEP(number=446, title="Scoped Values", status="Preview")

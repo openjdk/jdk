@@ -63,7 +63,7 @@ public class UpcallTestHelper extends NativeTestHelper {
         ));
         command.addAll(Arrays.asList(programArgs));
 
-        Process process = ProcessTools.createTestJvm(command).start();
+        Process process = ProcessTools.createTestJavaProcessBuilder(command).start();
 
         int result = process.waitFor();
         assertNotEquals(result, 0);

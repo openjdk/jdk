@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package java.net;
 
+import sun.net.util.IPAddressUtil;
+
 import java.io.ObjectStreamException;
+import java.util.Objects;
 
 /**
  * This class represents an Internet Protocol version 4 (IPv4) address.
@@ -36,7 +39,7 @@ import java.io.ObjectStreamException;
  * and <a href="http://www.ietf.org/rfc/rfc2365.txt"><i>RFC&nbsp;2365:
  * Administratively Scoped IP Multicast</i></a>
  *
- * <h2> <a id="format">Textual representation of IP addresses</a> </h2>
+ * <h2> <a id="format">Textual representation of IPv4 addresses</a> </h2>
  *
  * Textual representation of IPv4 address used as input to methods
  * takes one of the following forms:
@@ -55,7 +58,7 @@ import java.io.ObjectStreamException;
  * <p> When a three part address is specified, the last part is
  * interpreted as a 16-bit quantity and placed in the right most two
  * bytes of the network address. This makes the three part address
- * format convenient for specifying Class B net- work addresses as
+ * format convenient for specifying Class B network addresses as
  * 128.net.host.
  *
  * <p> When a two part address is supplied, the last part is
@@ -66,6 +69,29 @@ import java.io.ObjectStreamException;
  *
  * <p> When only one part is given, the value is stored directly in
  * the network address without any byte rearrangement.
+ *
+ * <p> These forms support parts specified in decimal format only.
+ * For example, the following forms are supported by methods capable
+ * of parsing textual representations of IPv4 addresses:
+ * {@snippet :
+ *  // Dotted-decimal 'd.d.d.d' form with four part address literal
+ *  InetAddress.getByName("007.008.009.010"); // ==> /7.8.9.10
+ *  InetAddress.getByName("127.0.1.1");       // ==> /127.0.1.1
+ *
+ *  // Dotted-decimal 'd.d.d' form with three part address literal,
+ *  // the last part is placed in the right most two bytes
+ *  // of the constructed address
+ *  InetAddress.getByName("127.0.257"); // ==> /127.0.1.1
+ *
+ *  // Dotted-decimal 'd.d' form with two part address literal,
+ *  // the last part is placed in the right most three bytes
+ *  // of the constructed address
+ *  Inet4Address.ofLiteral("127.257"); // ==> /127.0.1.1
+ *
+ *  // 'd' form with one decimal value that is stored directly in
+ *  // the constructed address bytes without any rearrangement
+ *  Inet4Address.ofLiteral("02130706689"); // ==> /127.0.1.1
+ * }
  *
  * <p> For methods that return a textual representation as output
  * value, the first form, i.e. a dotted-quad string, is used.
@@ -132,6 +158,57 @@ class Inet4Address extends InetAddress {
         holder().family = IPv4;
         holder().address = address;
         holder().originalHostName = hostName;
+    }
+
+    /**
+     * Creates an {@code Inet4Address} based on the provided {@linkplain
+     * Inet4Address##format textual representation} of an IPv4 address.
+     * <p> If the provided IPv4 address literal cannot represent a {@linkplain
+     * Inet4Address##format valid IPv4 address} an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
+     *
+     * @param ipv4AddressLiteral the textual representation of an IPv4 address.
+     * @return an {@link Inet4Address} object with no hostname set, and constructed
+     *         from the provided IPv4 address literal.
+     * @throws IllegalArgumentException if the {@code ipv4AddressLiteral} cannot be
+     *         parsed as an IPv4 address literal.
+     * @throws NullPointerException if the {@code ipv4AddressLiteral} is {@code null}.
+     */
+    public static Inet4Address ofLiteral(String ipv4AddressLiteral) {
+        Objects.requireNonNull(ipv4AddressLiteral);
+        return parseAddressString(ipv4AddressLiteral, true);
+    }
+
+    /**
+     * Parses the given string as an IPv4 address literal.
+     * If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * and {@code throwIAE} is {@code false}, {@code null} is returned.
+     * If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * and {@code throwIAE} is {@code true}, an {@code IllegalArgumentException} is thrown.
+     * Otherwise, if it can be considered as {@linkplain IPAddressUtil#validateNumericFormatV4(String,
+     * boolean) an ambiguous literal} - {@code IllegalArgumentException} is thrown irrelevant to
+     * {@code throwIAE} value.
+     *
+     * @apiNote
+     * The given {@code addressLiteral} string is considered ambiguous if it cannot be parsed as
+     * a valid IPv4 address literal using decimal notation, but could be
+     * interpreted as an IPv4 address in some other representation (octal, hexadecimal, or mixed).
+     * @param addressLiteral IPv4 address literal to parse
+     * @param throwIAE whether to throw {@code IllegalArgumentException} if the
+     *                 given {@code addressLiteral} string cannot be parsed as
+     *                 an IPv4 address literal.
+     * @return {@code Inet4Address} object constructed from the address literal;
+     *         or {@code null} if the literal cannot be parsed as an IPv4 address
+     * @throws IllegalArgumentException if the given {@code addressLiteral} string
+     * cannot be parsed as an IPv4 address literal and {@code throwIAE} is {@code true},
+     * or if it is considered ambiguous, regardless of the value of {@code throwIAE}.
+     */
+    static Inet4Address parseAddressString(String addressLiteral, boolean throwIAE) {
+        byte [] addrBytes= IPAddressUtil.validateNumericFormatV4(addressLiteral, throwIAE);
+        if (addrBytes == null) {
+            return null;
+        }
+        return new Inet4Address(null, addrBytes);
     }
 
     /**

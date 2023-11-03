@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class TestCheckedReleaseArrayElements {
             // Uses executeProcess() instead of executeTestJvm() to avoid passing options
             // that might generate output on stderr (which should be empty for this test).
             ProcessBuilder pb =
-                ProcessTools.createJavaProcessBuilder("-Xcheck:jni",
-                                                      "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                                      "TestCheckedReleaseArrayElements");
+                ProcessTools.createLimitedTestJavaProcessBuilder("-Xcheck:jni",
+                                                                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                                                 "TestCheckedReleaseArrayElements");
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
             output.stderrShouldBeEmpty();
