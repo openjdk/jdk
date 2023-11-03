@@ -38,6 +38,7 @@ import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
@@ -71,7 +72,7 @@ public class SwitchBootstraps {
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
 
     private static final MethodTypeDesc typesSwitchDescriptor =
-            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;[Ljava/lang/Class;)I");
+            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
 
     static {
         try {
@@ -382,7 +383,7 @@ public class SwitchBootstraps {
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
         byte[] classBytes = Classfile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
-            clb.withFlags(AccessFlag.FINAL, AccessFlag.SYNTHETIC)
+            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                .withMethodBody("typeSwitch",
                                typesSwitchDescriptor,
                                Classfile.ACC_FINAL | Classfile.ACC_PUBLIC | Classfile.ACC_STATIC,
@@ -426,22 +427,28 @@ public class SwitchBootstraps {
                         Element element = cases.get(idx);
                         Label next = element.next();
                         cb.labelBinding(element.target());
-                        if (element.caseLabel() instanceof Class<?> classLabel &&
-                            classLabel.describeConstable().isPresent()) {
-                            cb.aload(0);
-                            cb.instanceof_(classLabel.describeConstable().orElseThrow());
-                            cb.ifeq(next);
-                        } else if (element.caseLabel() instanceof Class<?> classLabel) {
-                            cb.aload(3);
-                            cb.constantInstruction(extraClassLabels.size());
-                            cb.aaload();
-                            cb.aload(0);
-                            cb.invokevirtual(ConstantDescs.CD_Class,
-                                             "isInstance",
-                                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                                               ConstantDescs.CD_Object));
-                            cb.ifeq(next);
-                            extraClassLabels.add(classLabel);
+                        if (element.caseLabel() instanceof Class<?> classLabel) {
+                            Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
+                            if (classLabelConstableOpt.isPresent()) {
+                                cb.aload(0);
+                                cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                                cb.ifeq(next);
+                            } else {
+                                cb.aload(3);
+                                cb.constantInstruction(extraClassLabels.size());
+                                cb.invokeinterface(ConstantDescs.CD_List,
+                                                   "get",
+                                                   MethodTypeDesc.of(ConstantDescs.CD_Object,
+                                                                     ConstantDescs.CD_int));
+                                cb.checkcast(ConstantDescs.CD_Class);
+                                cb.aload(0);
+                                cb.invokevirtual(ConstantDescs.CD_Class,
+                                                 "isInstance",
+                                                 MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                                                   ConstantDescs.CD_Object));
+                                cb.ifeq(next);
+                                extraClassLabels.add(classLabel);
+                            }
                         } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
                             int enumIdx = enumDescs.size();
                             enumDescs.add(enumLabel);
@@ -513,9 +520,9 @@ public class SwitchBootstraps {
                                                                               Object.class,
                                                                               int.class,
                                                                               BiPredicate.class,
-                                                                              Class[].class));
-            return MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(s -> new EnumDesc<?>[s])),
-                                                                extraClassLabels.toArray(s -> new Class<?>[s]));
+                                                                              List.class));
+            return MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(EnumDesc[]::new)),
+                                                                List.copyOf(extraClassLabels));
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
         }
