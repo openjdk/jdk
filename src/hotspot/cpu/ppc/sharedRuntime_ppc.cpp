@@ -48,6 +48,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #ifdef COMPILER1
@@ -2463,9 +2464,18 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for locking.
-    // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-    __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    __ beq(CCR0, locked);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // TODO: Is the fast_lock optimization needed for native wrappers?
+      //       Deviates from other platforms.
+      Label slow;
+      __ lightweight_lock(r_oop, r_temp_1, r_temp_2, slow);
+      __ b(locked);
+      __ bind(slow);
+    } else {
+      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+      __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+      __ beq(CCR0, locked);
+    }
 
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter. Inline a special case of call_VM that
@@ -2674,8 +2684,17 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
-    __ beq(CCR0, done);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // TODO: Is the fast_unlock optimization needed for native wrappers?
+      //       Deviates from other platforms.
+      Label slow;
+      __ lightweight_unlock(r_oop, r_temp_1, r_temp_2, slow);
+      __ b(done);
+      __ bind(slow);
+    } else {
+      __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+      __ beq(CCR0, done);
+    }
 
     // Save and restore any potential method result value around the unlocking operation.
     save_native_result(masm, ret_type, workspace_slot_offset);
