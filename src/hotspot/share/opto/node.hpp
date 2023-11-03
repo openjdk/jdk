@@ -169,7 +169,6 @@ class SubNode;
 class SubTypeCheckNode;
 class Type;
 class TypeNode;
-class Unique_Node_List;
 class UnlockNode;
 class UnorderedReductionNode;
 class VectorNode;
@@ -1129,11 +1128,14 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
-  // Visit all uses of the node and apply callback, bypassing nodes
-  // according to bypass. Note: definition appears after complete type
-  // definition of Unique_Node_List
-  template <typename Callback, typename Bypass>
-  void visit_uses(Callback callback, Bypass bypass);
+  // Visit boundary uses of the node and apply a callback function for each.
+  // Recursively traverse uses, stopping and applying the callback when
+  // reaching a boundary node, defined by is_boundary. Does NOT guarantee that
+  // we visit boundary nodes only once.
+  // Note: the function definition appears after the complete type definition
+  // of Unique_Node_List.
+  template <typename Callback, typename Check>
+  void visit_uses(Callback callback, Check is_boundary);
 
   // Visit all non-cast uses of the node, bypassing ConstraintCasts.
   // Pattern: this (-> ConstraintCast)* -> non_cast
@@ -1141,7 +1143,7 @@ public:
   // non_cast->uncast() == this.
   template <typename Callback>
   void visit_uncasted_uses(Callback callback) {
-     visit_uses(callback, [](Node* n){ return n->is_ConstraintCast(); });
+     visit_uses(callback, [](Node* n){ return !n->is_ConstraintCast(); });
   }
 
 //----------------- Code Generation
@@ -1729,8 +1731,8 @@ public:
 };
 
 // Definition must appear after complete type definition of Unique_Node_List
-template <typename Callback, typename Bypass>
-void Node::visit_uses(Callback callback, Bypass bypass) {
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) {
   ResourceMark rm;
   Unique_Node_List internals;
   internals.push(this); // start traversal
@@ -1738,10 +1740,10 @@ void Node::visit_uses(Callback callback, Bypass bypass) {
     Node* internal = internals.at(j); // for every internal
     for (DUIterator_Fast kmax, k = internal->fast_outs(kmax); k < kmax; k++) {
       Node* internal_use = internal->fast_out(k);
-      if (bypass(internal_use)) {
-        internals.push(internal_use); // traverse this also
-      } else {
+      if (is_boundary(internal_use)) {
         callback(internal_use);
+      } else {
+        internals.push(internal_use); // continue traversal
       }
     }
   }

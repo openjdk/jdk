@@ -1985,10 +1985,10 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, Node* us
         push_if_not_bottom_type(worklist, n);
       }
     };
-    auto bypass = [](Node* n) {
-      return n->is_ConstraintCast() || n->Opcode() == Op_ConvI2L;
+    auto is_boundary = [](Node* n) {
+      return !(n->is_ConstraintCast() || n->Opcode() == Op_ConvI2L);
     };
-    use->visit_uses(push_and_uses_to_worklist, bypass);
+    use->visit_uses(push_and_uses_to_worklist, is_boundary);
   }
 }
 
