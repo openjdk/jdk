@@ -390,6 +390,7 @@ public class SwitchBootstraps {
                         if (labels.length == 0) {
                             cb.constantInstruction(0)
                               .ireturn();
+                            return ;
                         }
                         cb.iload(1);
                         Label dflt = cb.newLabel();
