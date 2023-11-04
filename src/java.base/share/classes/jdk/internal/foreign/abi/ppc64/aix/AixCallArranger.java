@@ -23,15 +23,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi.ppc64;
+package jdk.internal.foreign.abi.ppc64.aix;
+
+import jdk.internal.foreign.abi.ppc64.CallArranger;
 
 /**
- * PPC64 CallArranger specialized for ABI v1.
+ * PPC64 CallArranger specialized for AIX.
  */
-public class ABIv1CallArranger extends CallArranger {
+public class AixCallArranger extends CallArranger {
 
     @Override
     protected boolean useABIv2() {
         return false;
+    }
+
+    @Override
+    protected boolean isAIX() {
+        return true;
     }
 }
