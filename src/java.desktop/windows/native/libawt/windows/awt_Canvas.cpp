@@ -202,26 +202,20 @@ MsgRouting AwtCanvas::HandleEvent(MSG *msg, BOOL synthetic)
     return AwtComponent::HandleEvent(msg, synthetic);
 }
 
-void AwtCanvas::_SetEraseBackground(void *param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtCanvas::_SetEraseBackground(void *param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetEraseBackgroundStruct *sebs = (SetEraseBackgroundStruct *)param;
-    jobject canvas = sebs->canvas;
+    std::unique_ptr<SetEraseBackgroundStruct> sebs(static_cast<SetEraseBackgroundStruct *>(param));
+    std::unique_ptr<_jobject, void (*) ()> canvas(sebs->canvas, [&env] (jobject canvas) -> void { env->DeleteGlobalRef(canvas); });
     jboolean doErase = sebs->doErase;
     jboolean doEraseOnResize = sebs->doEraseOnResize;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(canvas, ret);
+    JNI_CHECK_PEER_RETURN(canvas);
 
-    AwtCanvas *c;
-    c = (AwtCanvas*) pData;
+    AwtCanvas *c = (AwtCanvas*) pData;
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
-
-ret:
-    env->DeleteGlobalRef(canvas);
-    delete sebs;
 }
 
 
