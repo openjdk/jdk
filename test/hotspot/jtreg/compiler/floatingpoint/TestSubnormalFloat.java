@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,23 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
-
-import java.io.IOException;
 
 /**
- * Default PollerProvider for AIX.
+ * @test
+ * @bug 8295159
+ * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
+ * @run main/othervm/native compiler.floatingpoint.TestSubnormalFloat
  */
-class DefaultPollerProvider extends PollerProvider {
-    DefaultPollerProvider() { }
 
-    @Override
-    Poller readPoller(boolean subPoller) throws IOException {
-        return new PollsetPoller(true);
+package compiler.floatingpoint;
+
+import static java.lang.System.loadLibrary;
+
+public class TestSubnormalFloat {
+    static volatile float lastFloat;
+
+    private static void testFloats() {
+        lastFloat = 0x1.0p-149f;
+        for (float x = lastFloat * 2; x <= 0x1.0p127f; x *= 2) {
+            if (x != x || x <= lastFloat) {
+                throw new RuntimeException("TEST FAILED: " + x);
+            }
+            lastFloat = x;
+        }
     }
 
-    @Override
-    Poller writePoller(boolean subPoller) throws IOException {
-        return new PollsetPoller(false);
+    public static void main(String[] args) {
+        testFloats();
+        System.out.println("Loading libfast-math.so");
+        loadLibrary("fast-math");
+        testFloats();
+        System.out.println("Test passed.");
     }
 }
