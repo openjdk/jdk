@@ -1418,7 +1418,7 @@ public sealed interface Classfile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_22_VERSION;
+        return JAVA_23_VERSION;
     }
 
     /**
