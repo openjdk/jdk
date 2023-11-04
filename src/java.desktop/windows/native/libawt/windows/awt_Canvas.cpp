@@ -23,9 +23,6 @@
  * questions.
  */
 
-#include <functional>
-#include <memory>
-
 #include "awt_Toolkit.h"
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsConfig.h"
@@ -208,13 +205,31 @@ MsgRouting AwtCanvas::HandleEvent(MSG *msg, BOOL synthetic)
 void AwtCanvas::_SetEraseBackground(void *param) {
     JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    std::unique_ptr<SetEraseBackgroundStruct> sebs(static_cast<SetEraseBackgroundStruct *>(param));
-    std::unique_ptr<_jobject, std::function<void (const jobject)>> canvas(sebs->canvas, [&env] (const jobject canvas) -> void { env->DeleteGlobalRef(canvas); });
+    class ResourceGuard final {
+        JNIEnv* env;
+    	SetEraseBackgroundStruct* background;
+    	jobject canvas;
+
+    public:
+    	ResourceGuard(JNIEnv* env, SetEraseBackgroundStruct* background, jobject canvas)
+            : env(env), background(background), canvas(canvas) {
+
+        }
+        ~ResourceGuard() {
+        	env->DeleteGlobalRef(canvas);
+            delete background;
+        }
+    };
+
+    SetEraseBackgroundStruct *sebs = static_cast<SetEraseBackgroundStruct *>(param);
+    jobject canvas = sebs->canvas;
     jboolean doErase = sebs->doErase;
     jboolean doEraseOnResize = sebs->doEraseOnResize;
 
+    ResourceGuard guard(env, sebs, canvas);
+
     PDATA pData;
-    JNI_CHECK_PEER_RETURN(canvas.get());
+    JNI_CHECK_PEER_RETURN(canvas);
 
     AwtCanvas *c = (AwtCanvas*) pData;
     c->m_eraseBackground = doErase;
