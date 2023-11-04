@@ -206,7 +206,7 @@ void AwtCanvas::_SetEraseBackground(void *param) {
     JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     std::unique_ptr<SetEraseBackgroundStruct> sebs(static_cast<SetEraseBackgroundStruct *>(param));
-    std::unique_ptr<_jobject, void (*) ()> canvas(sebs->canvas, [&env] (jobject canvas) -> void { env->DeleteGlobalRef(canvas); });
+    std::unique_ptr<_jobject, void (*) (jobject)> canvas(sebs->canvas, [&env] (jobject canvas) -> void { env->DeleteGlobalRef(canvas); });
     jboolean doErase = sebs->doErase;
     jboolean doEraseOnResize = sebs->doEraseOnResize;
 
