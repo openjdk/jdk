@@ -729,10 +729,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #bitLength()
      */
     public BigInteger(int numBits, Random rnd) {
-        int[] magnitude = randomBits(numBits, rnd);
-
-        // trustedStripLeadingZeroInts() returns a zero length array if len == 0
-        this.mag = trustedStripLeadingZeroInts(magnitude);
+        // randomBits() returns a zero length array if len == 0
+        this.mag = randomBits(numBits, rnd);
 
         if (this.mag.length == 0) {
             this.signum = 0;
@@ -750,14 +748,26 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (numBits == 0)
             return new int[0];
 
-        int[] randomBits = new int[((numBits - 1) >> 5) + 1];
-        // randomBits.length >= 1, since numBits > 0
+        final int numInts = ((numBits - 1) >> 5) + 1;
+        // numInts >= 1, since numBits > 0
 
-        // Generate random ints and mask out any excess bits
-        for (int i = 0; i < randomBits.length; i++)
-            randomBits[i] = rnd.nextInt();
+        // Skip any leading zero ints
+        int word = 0;
+        int len;
+        for (len = numInts; len > 0 && (word = rnd.nextInt()) == 0; len--);
 
-        randomBits[0] &= -1 >>> -numBits;
+        int[] randomBits = new int[len];
+        if (randomBits.length > 0) {
+            randomBits[0] = word; // word != 0
+            // Generate random ints
+            for (int i = 1; i < randomBits.length; i++)
+                randomBits[i] = rnd.nextInt();
+
+            // Mask out any excess bits if required
+            if (randomBits.length == numInts)
+                randomBits[0] &= -1 >>> -numBits;
+        }
+        
         return randomBits;
     }
 
