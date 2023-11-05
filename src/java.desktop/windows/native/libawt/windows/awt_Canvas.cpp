@@ -207,16 +207,16 @@ void AwtCanvas::_SetEraseBackground(void *param) {
 
     class ResourceGuard final {
         JNIEnv* env;
-    	SetEraseBackgroundStruct* background;
-    	jobject canvas;
+        SetEraseBackgroundStruct* background;
+        jobject canvas;
 
     public:
-    	ResourceGuard(JNIEnv* env, SetEraseBackgroundStruct* background, jobject canvas)
+        ResourceGuard(JNIEnv* env, SetEraseBackgroundStruct* background, jobject canvas)
             : env(env), background(background), canvas(canvas) {
 
         }
         ~ResourceGuard() {
-        	env->DeleteGlobalRef(canvas);
+            env->DeleteGlobalRef(canvas);
             delete background;
         }
     };
