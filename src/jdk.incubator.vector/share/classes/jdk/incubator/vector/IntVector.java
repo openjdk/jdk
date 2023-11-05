@@ -3021,7 +3021,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *         for any lane {@code N} in the vector
      * @see IntVector#toIntArray()
      */
-
     @ForceInline
     public static
     IntVector fromArray(VectorSpecies<Integer> species,

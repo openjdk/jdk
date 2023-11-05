@@ -2841,7 +2841,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      *         for any lane {@code N} in the vector
      * @see DoubleVector#toIntArray()
      */
-
     @ForceInline
     public static
     DoubleVector fromArray(VectorSpecies<Double> species,

@@ -1504,6 +1504,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   // Check that the vector holding indices is supported by architecture
+  // For sub-word gathers expander receive index array.
   if (!is_subword_type(elem_bt) && !arch_supports_vector(Op_LoadVector, num_elem, T_INT, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=%d op=%s/loadindex vlen=%d etype=int is_masked_op=%d",

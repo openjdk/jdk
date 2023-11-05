@@ -13562,7 +13562,7 @@ void Assembler::notq(Register dst) {
 
 void Assembler::bt(Register dst, Register src) {
   int encode = prefixq_and_encode(src->encoding(), dst->encoding());
-  emit_int24(0x0F, 0xA3, (encode | 0xC0));
+  emit_int24(0x0F, (unsigned char)0xA3, (encode | 0xC0));
 }
 
 void Assembler::btsq(Address dst, int imm8) {

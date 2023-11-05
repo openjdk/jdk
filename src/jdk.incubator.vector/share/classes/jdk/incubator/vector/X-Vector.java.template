@@ -3627,7 +3627,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         Objects.requireNonNull(indexMap);
         Class<? extends $abstractvectortype$> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
@@ -3654,7 +3653,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             s.vOp(n -> c[idx + iMap[idy+n]]));
     }
 #else[byteOrShort]
-
     @ForceInline
     public static
     $abstractvectortype$ fromArray(VectorSpecies<$Boxtype$> species,
@@ -4833,7 +4831,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         m.check(vsp);
         Class<? extends $abstractvectortype$> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.

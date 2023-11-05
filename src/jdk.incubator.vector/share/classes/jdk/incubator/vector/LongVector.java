@@ -2882,7 +2882,6 @@ public abstract class LongVector extends AbstractVector<Long> {
      *         for any lane {@code N} in the vector
      * @see LongVector#toIntArray()
      */
-
     @ForceInline
     public static
     LongVector fromArray(VectorSpecies<Long> species,

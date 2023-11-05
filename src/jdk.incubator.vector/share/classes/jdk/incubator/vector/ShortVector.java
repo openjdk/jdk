@@ -3055,7 +3055,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.requireNonNull(indexMap);
         Class<? extends ShortVector> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
@@ -3801,7 +3800,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(vsp);
         Class<? extends ShortVector> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.

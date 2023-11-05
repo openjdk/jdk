@@ -3054,7 +3054,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         Objects.requireNonNull(indexMap);
         Class<? extends ByteVector> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
@@ -3815,7 +3814,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(vsp);
         Class<? extends ByteVector> vectorType = vsp.vectorType();
 
-        int loopIncr = 0;
         VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.

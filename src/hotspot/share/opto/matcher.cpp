@@ -2492,7 +2492,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
         n->del_req(MemNode::ValueIn+2);
         n->del_req(MemNode::ValueIn+1);
         break;
-      }
+      } // fall-through
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);

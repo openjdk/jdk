@@ -1524,7 +1524,7 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vpgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register mask, Register midx, Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
@@ -1553,7 +1553,7 @@ void C2_MacroAssembler::vpgather8b_masked(BasicType elem_bt, XMMRegister dst, Re
   }
 }
 
-void C2_MacroAssembler::vpgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                                  Register offset, Register mask, Register midx, Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
@@ -1585,7 +1585,7 @@ void C2_MacroAssembler::vpgather8b_masked_offset(BasicType elem_bt, XMMRegister 
 }
 #endif // _LP64
 
-void C2_MacroAssembler::vpgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc) {
+void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
@@ -1601,7 +1601,7 @@ void C2_MacroAssembler::vpgather8b(BasicType elem_bt, XMMRegister dst, Register 
   }
 }
 
-void C2_MacroAssembler::vpgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
+void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register offset, Register rtmp, int vlen_enc) {
   vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
@@ -1635,15 +1635,15 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,  Reg
   bind(GATHER8_LOOP);
     if (offset == noreg) {
       if (mask == noreg) {
-        vpgather8b(elem_ty, xtmp3, base, idx_base, rtmp, vlen_enc);
+        vgather8b(elem_ty, xtmp3, base, idx_base, rtmp, vlen_enc);
       } else {
-        LP64_ONLY(vpgather8b_masked(elem_ty, xtmp3, base, idx_base, mask, midx, rtmp, vlen_enc));
+        LP64_ONLY(vgather8b_masked(elem_ty, xtmp3, base, idx_base, mask, midx, rtmp, vlen_enc));
       }
     } else {
       if (mask == noreg) {
-        vpgather8b_offset(elem_ty, xtmp3, base, idx_base, offset, rtmp, vlen_enc);
+        vgather8b_offset(elem_ty, xtmp3, base, idx_base, offset, rtmp, vlen_enc);
       } else {
-        LP64_ONLY(vpgather8b_masked_offset(elem_ty, xtmp3, base, idx_base, offset, mask, midx, rtmp, vlen_enc));
+        LP64_ONLY(vgather8b_masked_offset(elem_ty, xtmp3, base, idx_base, offset, mask, midx, rtmp, vlen_enc));
       }
     }
     vpermd(xtmp3, xtmp1, xtmp3, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);

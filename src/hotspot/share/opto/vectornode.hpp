@@ -883,9 +883,11 @@ class LoadVectorGatherNode : public LoadVectorNode {
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
+    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
+    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(is_subword || !offset, "");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
     if (offset) {
-      assert(is_subword_type(vect_type()->element_basic_type()), "");
       add_req(offset);
     }
   }
