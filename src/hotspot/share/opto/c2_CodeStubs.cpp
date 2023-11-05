@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "opto/output.hpp"
 
 C2CodeStubList::C2CodeStubList() :
-  _stubs(Compile::current()->comp_arena(), 2, 0, NULL) {}
+  _stubs(Compile::current()->comp_arena(), 2, 0, nullptr) {}
 
 void C2CodeStubList::emit(CodeBuffer& cb) {
   C2_MacroAssembler masm(&cb);
@@ -39,7 +39,7 @@ void C2CodeStubList::emit(CodeBuffer& cb) {
     C2CodeStub* stub = _stubs.at(i);
     int max_size = stub->max_size();
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(max_size) && cb.blob() == NULL) {
+    if (cb.insts()->maybe_expand_to_ensure_remaining(max_size) && cb.blob() == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -50,5 +50,12 @@ void C2CodeStubList::emit(CodeBuffer& cb) {
 
     DEBUG_ONLY(int actual_size = cb.insts_size() - size_before;)
     assert(max_size >= actual_size, "Expected stub size (%d) must be larger than or equal to actual stub size (%d)", max_size, actual_size);
+  }
+}
+
+// move here to avoid circular dependency between c2_CodeStubs.hpp and output.hpp
+void C2CodeStub::add_to_stub_list() {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    Compile::current()->output()->add_stub(this);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,8 @@ public final class OffsetDateTime
      *
      * @param datetime1  the first date-time to compare, not null
      * @param datetime2  the other date-time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if {@code datetime1} is before {@code datetime2},
+     *          zero if they are equal, greater than zero if {@code datetime1} is after {@code datetime2}
      */
     private static int compareInstant(OffsetDateTime datetime1, OffsetDateTime datetime2) {
         if (datetime1.getOffset().equals(datetime2.getOffset())) {
@@ -1801,11 +1802,20 @@ public final class OffsetDateTime
      * consistent with {@code equals()}.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is the comparison with the {@code other}'s instant, if they are not equal;
+     *          and if equal to the {@code other}'s instant, the comparison of the {@code other}'s local date-time
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(OffsetDateTime other) {
-        int cmp = compareInstant(this, other);
+        int cmp = getOffset().compareTo(other.getOffset());
+        if (cmp != 0) {
+            cmp = Long.compare(toEpochSecond(), other.toEpochSecond());
+            if (cmp == 0) {
+                cmp = toLocalTime().getNano() - other.toLocalTime().getNano();
+            }
+        }
         if (cmp == 0) {
             cmp = toLocalDateTime().compareTo(other.toLocalDateTime());
         }

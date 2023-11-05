@@ -203,7 +203,7 @@ public:
   size_t plab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
-  // allocating a new PLAB. Returns the address of the allocated memory, NULL if
+  // allocating a new PLAB. Returns the address of the allocated memory, null if
   // not successful. Plab_refill_failed indicates whether an attempt to refill the
   // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(G1HeapRegionAttr dest,
@@ -212,7 +212,7 @@ public:
                                         uint node_index);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
-  // allocated memory, NULL if not successful.
+  // allocated memory, null if not successful.
   inline HeapWord* plab_allocate(G1HeapRegionAttr dest,
                                  size_t word_sz,
                                  uint node_index);

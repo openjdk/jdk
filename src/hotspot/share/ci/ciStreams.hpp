@@ -110,9 +110,9 @@ public:
   }
 
   address cur_bcp() const       { return _bc_start; }  // Returns bcp to current instruction
-  int next_bci() const          { return _pc - _start; }
-  int cur_bci() const           { return _bc_start - _start; }
-  int instruction_size() const  { return _pc - _bc_start; }
+  int next_bci() const          { return pointer_delta_as_int(_pc, _start); }
+  int cur_bci() const           { return pointer_delta_as_int(_bc_start, _start); }
+  int instruction_size() const  { return pointer_delta_as_int(_pc, _bc_start); }
 
   Bytecodes::Code cur_bc() const{ return check_java(_bc); }
   Bytecodes::Code cur_bc_raw() const { return check_defined(_raw_bc); }
@@ -229,7 +229,7 @@ public:
   // object (ciConstant.as_object()->is_loaded() == false).
   ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
-  BasicType   get_basic_type_for_constant_at(int index) const;
+  BasicType   get_basic_type_for_constant_at(int cp_index) const;
 
   constantTag get_raw_pool_tag_at(int index) const;
 

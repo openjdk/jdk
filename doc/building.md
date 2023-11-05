@@ -126,6 +126,8 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+
 ### Building on aarch64
 
 At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM.
@@ -162,11 +164,11 @@ This table lists the OS versions used by Oracle when building the JDK. Such
 information is always subject to change, but this table is up to date at the
 time of writing.
 
- Operating system   Vendor/version used
- -----------------  -------------------------------------------------------
- Linux              Oracle Enterprise Linux 6.4 / 7.6
- macOS              Mac OS X 10.13 (High Sierra)
- Windows            Windows Server 2012 R2
+| Operating system  | Vendor/version used                |
+| ----------------- | ---------------------------------- |
+| Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
+| macOS             | macOS 13 (Ventura)                 |
+| Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
 used at Oracle, where header files and external libraries from an older version
@@ -198,6 +200,8 @@ rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
+
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
 
 #### Cygwin
 
@@ -266,8 +270,8 @@ difficult for a project such as the JDK to keep pace with a continuously updated
 machine running macOS. See the section on [Apple Xcode](#apple-xcode) on some
 strategies to deal with this.
 
-It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time
-of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).
+It is recommended that you use at least macOS 13 (Ventura) and Xcode
+14, but earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -333,7 +337,7 @@ issues.
 | Operating system   | Toolchain version                          |
 | ------------------ | ------------------------------------------ |
 | Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
 | Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
@@ -470,6 +474,19 @@ rather than bundling the JDK's own copy.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
+
+### Fontconfig
+
+Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
+on all platforms except Windows and macOS.
+
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    libfontconfig-dev`.
+  * To install on an rpm-based Linux, try running `sudo yum install
+    fontconfig-devel`.
+
+Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>`
+if `configure` does not automatically locate the platform Fontconfig files.
 
 ### CUPS
 
@@ -609,11 +626,13 @@ automatically, it will exit and inform you about the problem.
 Some command line examples:
 
   * Create a 32-bit build for Windows with FreeType2 in `C:\freetype-i586`:
+
     ```
     bash configure --with-freetype=/cygdrive/c/freetype-i586 --with-target-bits=32
     ```
 
   * Create a debug build with the `server` JVM and DTrace enabled:
+
     ```
     bash configure --enable-debug --with-jvm-variants=server --enable-dtrace
     ```
@@ -867,11 +886,11 @@ Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 Building of Hotspot Gtest suite requires the source code of Google
 Test framework.  The top directory, which contains both `googletest`
 and `googlemock` directories, should be specified via `--with-gtest`.
-The minimum supported version of Google Test is 1.13.0, whose source
+The minimum supported version of Google Test is 1.14.0, whose source
 code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
- * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.14.0)
+ * or by checking out `v1.14.0` tag of `googletest` project: `git clone -b v1.14.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -970,14 +989,14 @@ https://sourceware.org/autobook/autobook/autobook_17.html). If no
 targets are given, a native toolchain for the current platform will be
 created. Currently, at least the following targets are known to work:
 
- Supported devkit targets
- -------------------------
- x86_64-linux-gnu
- aarch64-linux-gnu
- arm-linux-gnueabihf
- ppc64-linux-gnu
- ppc64le-linux-gnu
- s390x-linux-gnu
+| Supported devkit targets |
+| ------------------------ |
+| x86_64-linux-gnu         |
+| aarch64-linux-gnu        |
+| arm-linux-gnueabihf      |
+| ppc64-linux-gnu          |
+| ppc64le-linux-gnu        |
+| s390x-linux-gnu          |
 
 `BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or
 "Fedora" (if not specified "OEL6" will be the default). If the base OS
@@ -1083,11 +1102,12 @@ Note that alsa is needed even if you only want to build a headless JDK.
     system. Download them to /tmp.
 
   * Install the libraries into the cross-compilation toolchain. For instance:
-```
-cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
-dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
-dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .
-```
+
+    ```
+    cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
+    dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
+    dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .
+    ```
 
   * If alsa is not properly detected by `configure`, you can point it out by
     `--with-alsa`.
@@ -1123,6 +1143,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
       * libxext-dev
 
   * Install the libraries into the cross-compilation toolchain. For instance:
+
     ```
     cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
     mkdir X11R6
@@ -1147,7 +1168,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
 ### Cross compiling with Debian sysroots
 
 Fortunately, you can create sysroots for foreign architectures with tools
-provided by your OS. On Debian/Ubuntu systems, one could use `qemu-deboostrap` to
+provided by your OS. On Debian/Ubuntu systems, one could use `debootstrap` to
 create the *target* system chroot, which would have the native libraries and headers
 specific to that *target* system. After that, we can use the cross-compiler on the *build*
 system, pointing into chroot to get the build dependencies right. This allows building
@@ -1156,13 +1177,15 @@ for foreign architectures with native compilation speed.
 For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Install cross-compiler on the *build* system:
+
     ```
     apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
     ```
 
   * Create chroot on the *build* system, configuring it for *target* system:
+
     ```
-    sudo qemu-debootstrap \
+    sudo debootstrap \
       --arch=arm64 \
       --verbose \
       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
@@ -1170,14 +1193,33 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       buster \
       ~/sysroot-arm64 \
       http://httpredir.debian.org/debian/
+    # If the target architecture is `riscv64`,
+    # the path should be `debian-ports` instead of `debian`.
+    ```
+
+  * To create a Ubuntu-based chroot:
+
+    ```
+    sudo debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --components=main,universe \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+      --resolve-deps \
+      jammy \
+      ~/sysroot-arm64 \
+      http://ports.ubuntu.com/ubuntu-ports/
+    # symlinks is in the universe repository
     ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:
+
     ```
     sudo chroot ~/sysroot-arm64 symlinks -cr .
     ```
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
+
     ```
     sh ./configure \
       --openjdk-target=aarch64-linux-gnu \
@@ -1202,21 +1244,22 @@ it might require a little nudge with:
 
 Architectures that are known to successfully cross-compile like this are:
 
-  Target        Debian tree  Debian arch   `--openjdk-target=...`   `--with-jvm-variants=...`
-  ------------  ------------ ------------- ------------------------ --------------
-  x86           buster       i386          i386-linux-gnu           (all)
-  arm           buster       armhf         arm-linux-gnueabihf      (all)
-  aarch64       buster       arm64         aarch64-linux-gnu        (all)
-  ppc64le       buster       ppc64el       powerpc64le-linux-gnu    (all)
-  s390x         buster       s390x         s390x-linux-gnu          (all)
-  mipsle        buster       mipsel        mipsel-linux-gnu         zero
-  mips64le      buster       mips64el      mips64el-linux-gnueabi64 zero
-  armel         buster       arm           arm-linux-gnueabi        zero
-  ppc           sid          powerpc       powerpc-linux-gnu        zero
-  ppc64be       sid          ppc64         powerpc64-linux-gnu      (all)
-  m68k          sid          m68k          m68k-linux-gnu           zero
-  alpha         sid          alpha         alpha-linux-gnu          zero
-  sh4           sid          sh4           sh4-linux-gnu            zero
+| Target       | Debian tree  | Debian arch   | `--openjdk-target=...`   | `--with-jvm-variants=...` |
+| ------------ | ------------ | ------------- | ------------------------ | ------------------------- |
+| x86          | buster       | i386          | i386-linux-gnu           | (all)                     |
+| arm          | buster       | armhf         | arm-linux-gnueabihf      | (all)                     |
+| aarch64      | buster       | arm64         | aarch64-linux-gnu        | (all)                     |
+| ppc64le      | buster       | ppc64el       | powerpc64le-linux-gnu    | (all)                     |
+| s390x        | buster       | s390x         | s390x-linux-gnu          | (all)                     |
+| mipsle       | buster       | mipsel        | mipsel-linux-gnu         | zero                      |
+| mips64le     | buster       | mips64el      | mips64el-linux-gnueabi64 | zero                      |
+| armel        | buster       | arm           | arm-linux-gnueabi        | zero                      |
+| ppc          | sid          | powerpc       | powerpc-linux-gnu        | zero                      |
+| ppc64be      | sid          | ppc64         | powerpc64-linux-gnu      | (all)                     |
+| m68k         | sid          | m68k          | m68k-linux-gnu           | zero                      |
+| alpha        | sid          | alpha         | alpha-linux-gnu          | zero                      |
+| sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
+| riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
 ### Building for ARM/aarch64
 
@@ -1225,6 +1268,47 @@ useful to set the ABI profile. A number of pre-defined ABI profiles are
 available using `--with-abi-profile`: arm-vfp-sflt, arm-vfp-hflt, arm-sflt,
 armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer
 properly supported by the JDK.
+
+### Building for RISC-V
+
+The RISC-V community provides a basic
+[GNU compiler toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain),
+but the [external libraries](#External-Library-Requirements) required by OpenJDK
+complicate the building process. The placeholder `<toolchain-installed-path>`
+shown below is the path where you want to install the toolchain.
+
+  * Install the RISC-V GNU compiler toolchain:
+
+    ```
+    git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
+    cd riscv-gnu-toolchain
+    ./configure --prefix=<toolchain-installed-path>
+    make linux
+    export PATH=<toolchain-installed-path>/bin:$PATH
+    ```
+
+  * Cross-compile all the required libraries:
+
+    ```
+    # An example for libffi
+    git clone https://github.com/libffi/libffi
+    cd libffi
+    ./configure --host=riscv64-unknown-linux-gnu --prefix=<toolchain-installed-path>/sysroot/usr
+    make
+    make install
+    ```
+
+  * Configure and build OpenJDK:
+
+    ```
+    bash configure \
+      --with-boot-jdk=$BOOT_JDK \
+      --openjdk-target=riscv64-linux-gnu \
+      --with-sysroot=<toolchain-installed-path>/sysroot \
+      --with-toolchain-path=<toolchain-installed-path>/bin \
+      --with-extra-path=<toolchain-installed-path>/bin
+    make images
+    ```
 
 ### Building for musl
 
@@ -1974,20 +2058,7 @@ First of all: Thank you! We gladly welcome your contribution.
 However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
-The official place to start is the ['How to contribute' page](
-http://openjdk.org/contribute/). There is also an official (but somewhat
-outdated and skimpy on details) [Developer's Guide](
-http://openjdk.org/guide/).
-
-If this seems overwhelming to you, the Adoption Group is there to help you! A
-good place to start is their ['New Contributor' page](
-https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
-reading the comprehensive [Getting Started Kit](
-https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
-Adoption Group will also happily answer any questions you have about
-contributing. Contact them by [mail](
-http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.org/irc/).
+The official place to start is the [OpenJDK Developers’ Guide](https://openjdk.org/guide/).
 
 ## Editing this document
 

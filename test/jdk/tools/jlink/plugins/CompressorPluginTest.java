@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,67 @@ public class CompressorPluginTest {
                 new ResourceDecompressorFactory[]{
                     new ZipDecompressorFactory(),
                 }, Collections.singletonList(".*Exception.class"));
+
+        // compress level zip-0 == no compression
+        Properties optionsZip0 = new Properties();
+        DefaultCompressPlugin compressPluginZip0 = new DefaultCompressPlugin();
+        optionsZip0.setProperty(compressPluginZip0.getName(), "zip-0");
+        checkCompress(classes, compressPluginZip0,
+                optionsZip0,
+                new ResourceDecompressorFactory[]{
+                });
+
+        // compress level zip-[1-9] == varied compression levels
+        for(int i = 1; i < 10; i++) {
+            Properties optionsZip = new Properties();
+            compressPlugin = new DefaultCompressPlugin();
+            optionsZip.setProperty(compressPlugin.getName(), "zip-" + i);
+            checkCompress(classes, compressPlugin,
+                    optionsZip,
+                    new ResourceDecompressorFactory[]{
+                            new ZipDecompressorFactory(),
+                    });
+        }
+
+        // compress level zip-[1-9] == varied compression levels + filter
+        for(int i = 1; i < 10; i++) {
+            Properties optionsZip = new Properties();
+            compressPlugin = new DefaultCompressPlugin();
+            optionsZip.setProperty(DefaultCompressPlugin.FILTER, "**Exception.class");
+            optionsZip.setProperty(compressPlugin.getName(), "zip-" + i);
+            checkCompress(classes, compressPlugin,
+                    optionsZip,
+                    new ResourceDecompressorFactory[]{
+                            new ZipDecompressorFactory(),
+                    }, Collections.singletonList(".*Exception.class"));
+        }
+
+        testBadCompressProps(classes, "zip-10");
+        testBadCompressProps(classes, "zip-badarg");
+        testBadCompressProps(classes, "zip-10000000");
+
+    }
+
+    private void testBadCompressProps(ResourcePool classes, String compressArg) throws Exception {
+        Properties badProps = new Properties();
+        DefaultCompressPlugin compressPlugin = new DefaultCompressPlugin();
+        badProps.setProperty(compressPlugin.getName(), compressArg);
+        try {
+            checkCompress(classes, compressPlugin,
+                    badProps,
+                    new ResourceDecompressorFactory[]{
+                            new ZipDecompressorFactory(),
+                    });
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("Invalid compression level")) {
+                return;
+            } else {
+                throw e;
+            }
+        }
+
+        throw new Exception("Expected compression IAE with " + compressArg + " but didn't get one.");
+
     }
 
     private ResourcePool gatherResources(Path module) throws Exception {

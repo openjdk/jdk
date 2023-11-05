@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class SubjectDelegation3Test {
             //
             System.out.println("Start RMI registry...");
             Registry reg = null;
-            int port = 5800;
-            while (port++ < 6000) {
+            int port = 5900;
+            while (port++ < 5920) {
                 try {
                     reg = LocateRegistry.createRegistry(port);
                     System.out.println("RMI registry running on port " + port);

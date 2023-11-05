@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * A representation of the XML <code>DigestMethod</code> element as
- * defined in the <a href="http://www.w3.org/TR/xmldsig-core/">
+ * defined in the <a href="https://www.w3.org/TR/xmldsig-core/">
  * W3C Recommendation for XML-Signature Syntax and Processing</a>.
  * The XML Schema Definition is defined as:
  * <pre>
@@ -51,6 +51,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * A <code>DigestMethod</code> instance may be created by invoking the
  * {@link XMLSignatureFactory#newDigestMethod newDigestMethod} method
  * of the {@link XMLSignatureFactory} class.
+ * <p>
+ * The digest method algorithm URIs defined in this class are specified
+ * in the <a href="https://www.w3.org/TR/xmldsig-core/">
+ * W3C Recommendation for XML-Signature Syntax and Processing</a>
+ * and <a href="https://www.rfc-editor.org/info/rfc9231">
+ * RFC 9231: Additional XML Security Uniform Resource Identifiers (URIs)</a>
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -58,8 +64,6 @@ import java.security.spec.AlgorithmParameterSpec;
  * @see XMLSignatureFactory#newDigestMethod(String, DigestMethodParameterSpec)
  */
 public interface DigestMethod extends XMLStructure, AlgorithmMethod {
-
-    // All methods can be found in RFC 6931.
 
     /**
      * The <a href="http://www.w3.org/2000/09/xmldsig#sha1">

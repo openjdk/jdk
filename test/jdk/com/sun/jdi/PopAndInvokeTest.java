@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
  * @summary JDWP: Cannot do an invokeMethod after a popFrames operation
  * @author jjh
  *
- * @ignore 6951287
- *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g PopAndInvokeTest.java
  * @run driver PopAndInvokeTest
@@ -52,8 +50,9 @@ class PopAndInvokeTarg {
         if (waiting) {
             return;
         }
-        waiting = true;
         System.out.println("    debuggee: in waiter");
+        // No printlns or other calls allowed after this point.
+        waiting = true;
         while (true) {
         }
     }

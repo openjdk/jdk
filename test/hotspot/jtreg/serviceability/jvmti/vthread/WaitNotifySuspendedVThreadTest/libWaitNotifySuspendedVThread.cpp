@@ -30,6 +30,8 @@ jrawMonitorID monitor_completed;
 
 jvmtiEnv *jvmti_env;
 
+// Accessed using 'monitor' monitor.
+bool is_breakpoint_reached = JNI_FALSE;
 
 static void
 set_breakpoint(JNIEnv *jni, jclass klass, const char *mname) {
@@ -42,8 +44,6 @@ set_breakpoint(JNIEnv *jni, jclass klass, const char *mname) {
   }
   err = jvmti_env->SetBreakpoint(method, location);
   check_jvmti_status(jni, err, "set_or_clear_breakpoint: error in JVMTI SetBreakpoint");
-
-
 }
 
 extern "C" {
@@ -60,16 +60,25 @@ Java_WaitNotifySuspendedVThreadTask_setBreakpoint(JNIEnv *jni, jclass klass) {
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
   LOG("setBreakpoint: finished\n");
-
 }
 
 JNIEXPORT void JNICALL
 Java_WaitNotifySuspendedVThreadTask_notifyRawMonitors(JNIEnv *jni, jclass klass, jthread thread) {
+
+  // Wait until virtual thread reach breakpoint and lock 'montior' monitor
+  bool is_breakpoint_reached_local = JNI_FALSE;
+  while (!is_breakpoint_reached_local) {
+    RawMonitorLocker rml(jvmti_env, jni, monitor);
+    is_breakpoint_reached_local = is_breakpoint_reached;
+  }
+
   LOG("Main thread: suspending virtual and carrier threads\n");
 
   check_jvmti_status(jni, jvmti_env->SuspendThread(thread), "SuspendThread thread");
   jthread cthread = get_carrier_thread(jvmti_env, jni, thread);
   check_jvmti_status(jni, jvmti_env->SuspendThread(cthread), "SuspendThread thread");
+
+  RawMonitorLocker completed(jvmti_env, jni, monitor_completed);
 
   {
     RawMonitorLocker rml(jvmti_env, jni, monitor);
@@ -77,8 +86,6 @@ Java_WaitNotifySuspendedVThreadTask_notifyRawMonitors(JNIEnv *jni, jclass klass,
     LOG("Main thread: calling monitor.notifyAll()\n");
     rml.notify_all();
   }
-
-  RawMonitorLocker completed(jvmti_env, jni, monitor_completed);
 
   LOG("Main thread: resuming virtual thread\n");
   check_jvmti_status(jni, jvmti_env->ResumeThread(thread), "ResumeThread thread");
@@ -104,6 +111,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
     fatal(jni, "Error in breakpoint");
     return;
   }
+
   char* tname = get_thread_name(jvmti, jni, thread);
   const char* virt = jni->IsVirtualThread(thread) ? "virtual" : "carrier";
 
@@ -111,6 +119,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
     RawMonitorLocker rml(jvmti, jni, monitor);
 
     LOG("Breakpoint: before monitor.wait(): %s in %s thread\n", mname, virt);
+    is_breakpoint_reached = JNI_TRUE;
     rml.wait();
     LOG("Breakpoint: after monitor.wait(): %s in %s thread\n", mname, virt);
   }

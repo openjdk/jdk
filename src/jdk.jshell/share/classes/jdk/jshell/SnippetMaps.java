@@ -101,7 +101,7 @@ final class SnippetMaps {
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(REPL_PACKAGE).append(";\n");
         for (Snippet si : keyIndexToSnippet) {
-            if (si != null && si.status().isDefined() && (except == null || !except.contains(si.key()))) {
+            if (si != null && si.status().isDefined() && (except == null || !except.contains(si.key())) && si.name() != null && !si.name().isEmpty()) {
                 sb.append(si.importLine(state));
             }
         }

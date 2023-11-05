@@ -316,10 +316,11 @@ public abstract class ZoneRulesProvider {
             Objects.requireNonNull(zoneId, "zoneId");
             ZoneRulesProvider old = ZONES.putIfAbsent(zoneId, provider);
             if (old != null) {
-                // restore old state
-                ZONES.put(zoneId, old);
-                provider.provideZoneIds().stream()
-                    .forEach(id -> ZONES.remove(id, provider));
+                if (!old.equals(provider)) {
+                    // restore old state
+                    ZONES.put(zoneId, old);
+                    provider.provideZoneIds().forEach(id -> ZONES.remove(id, provider));
+                }
                 throw new ZoneRulesException(
                     "Unable to register zone as one already registered with that ID: " + zoneId +
                     ", currently loading from provider: " + provider);

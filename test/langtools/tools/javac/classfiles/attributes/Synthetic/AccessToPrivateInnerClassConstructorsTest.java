@@ -27,7 +27,12 @@
  * @summary Synthetic anonymous class used as access constructor tag conflicting with a top level class.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult
  * @build AccessToPrivateInnerClassConstructorsTest SyntheticTestDriver ExpectedClass ExpectedClasses

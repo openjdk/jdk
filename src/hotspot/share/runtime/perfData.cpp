@@ -192,17 +192,9 @@ PerfLong::PerfLong(CounterNS ns, const char* namep, Units u, Variability v)
 }
 
 PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
-                                 Variability v, jlong* sampled)
-                                : PerfLong(ns, namep, u, v),
-                                  _sampled(sampled), _sample_helper(nullptr) {
-
-  sample();
-}
-
-PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
                                  Variability v, PerfLongSampleHelper* helper)
                                 : PerfLong(ns, namep, u, v),
-                                  _sampled(nullptr), _sample_helper(helper) {
+                                  _sample_helper(helper) {
 
   sample();
 }

@@ -65,6 +65,8 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
@@ -670,24 +672,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0),
+        httpTestServer = HttpTestServer.create(HTTP_1_1, null,
                 executorFor("HTTP/1.1 Server Thread"));
         httpTestServer.addHandler(new HttpTestEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer,
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext,
                 executorFor("HTTPS/1.1 Server Thread"));
         httpsTestServer.addHandler(new HttpTestEchoHandler(),"/https1/echo");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new HttpTestEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 

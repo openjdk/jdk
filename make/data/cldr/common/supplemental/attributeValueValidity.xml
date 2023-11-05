@@ -11,7 +11,7 @@
 			<!-- and is maintained manually by the CLDR TC -->
 			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
 			<variable id='$language' type='choice'>
-				af agq ak am ann ar as asa ast az
+				af agq ak am ann apc ar as asa ast az
 				bas be bem bez bg bgc bho bm bn bo br brx bs
 				ca ccp ce ceb cgg chr ckb cs cu cv cy
 				da dav de dje doi dsb dua dyo dz
@@ -22,13 +22,13 @@
 				ia id ig ii is it
 				ja jgo jmc jv
 				ka kab kam kde kea kgp khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh ku kw ky
-				lag lb lg lij lkt ln lo lrc lt lu luo luy lv
+				lag lb lg lij lkt lmo ln lo lrc lt lu luo luy lv
 				mai mas mer mfe mg mgh mgo mi mk ml mn mni mr ms mt mua my mzn
 				naq nb nd nds ne nl nmg nn nnh no nus nyn
 				om or os
-				pa pcm pis pl prg ps pt
+				pa pap pcm pis pl prg ps pt
 				qu
-				raj rm rn ro rof
+				raj rif rm rn ro rof
 				und
 				ru rw rwk
 				sa sah saq sat sbp sc sd se seh ses sg shi si sk sl smn sms sn so sq sr su sv sw
@@ -57,7 +57,7 @@
 				mad mag mak mdf men mh mic min moe moh mos mus mwl myv
 				na nap new ng nia niu nog nqo nr nso nv ny
 				oc ojb ojc ojs ojw oka
-				pag pam pap pau pqm
+				pag pam pau pqm
 				rap rar rhg rup
 				sad sba scn sco shn slh sm snk srn ss st str suk swb syr
 				tce tem tet tgx tht tig tlh tli tn tpi trv ts ttm tum tvl ty tyv

@@ -26,8 +26,11 @@
 #include "code/nmethod.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
@@ -62,44 +65,35 @@ void DependencyContext::init() {
 //
 // Walk the list of dependent nmethods searching for nmethods which
 // are dependent on the changes that were passed in and mark them for
-// deoptimization.  Returns the number of nmethods found.
+// deoptimization.
 //
-int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
-  int found = 0;
+void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0) {
-      if (nm->is_marked_for_deoptimization()) {
-        // Also count already (concurrently) marked nmethods to make sure
-        // deoptimization is triggered before execution in this thread continues.
-        found++;
-      } else if (nm->check_dependency_on(changes)) {
-        if (TraceDependencies) {
-          ResourceMark rm;
-          tty->print_cr("Marked for deoptimization");
-          changes.print();
-          nm->print();
-          nm->print_dependencies();
-        }
-        changes.mark_for_deoptimization(nm);
-        found++;
+    if (nm->is_marked_for_deoptimization()) {
+      deopt_scope->dependent(nm);
+    } else if (nm->check_dependency_on(changes)) {
+      LogTarget(Info, dependencies) lt;
+      if (lt.is_enabled()) {
+        ResourceMark rm;
+        LogStream ls(&lt);
+        ls.print_cr("Marked for deoptimization");
+        changes.print_on(&ls);
+        nm->print_on(&ls);
+        nm->print_dependencies_on(&ls);
       }
+      deopt_scope->mark(nm, !changes.is_call_site_change());
     }
   }
-  return found;
 }
 
 //
 // Add an nmethod to the dependency context.
-// It's possible that an nmethod has multiple dependencies on a klass
-// so a count is kept for each bucket to guarantee that creation and
-// deletion of dependencies is consistent.
 //
 void DependencyContext::add_dependent_nmethod(nmethod* nm) {
   assert_lock_strong(CodeCache_lock);
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     if (nm == b->get_nmethod()) {
-      b->increment();
       return;
     }
   }
@@ -189,21 +183,16 @@ void DependencyContext::remove_all_dependents() {
   assert(b == nullptr, "All dependents should be unloading");
 }
 
-int DependencyContext::remove_and_mark_for_deoptimization_all_dependents() {
+void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope) {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(nullptr);
-  int marked = 0;
   while (b != nullptr) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0) {
-      // Also count already (concurrently) marked nmethods to make sure
-      // deoptimization is triggered before execution in this thread continues.
-      nm->mark_for_deoptimization();
-      marked++;
-    }
+    // Also count already (concurrently) marked nmethods to make sure
+    // deoptimization is triggered before execution in this thread continues.
+    deopt_scope->mark(nm);
     b = release_and_get_next_not_unloading(b);
   }
-  return marked;
 }
 
 #ifndef PRODUCT
@@ -211,13 +200,13 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
   int idx = 0;
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
-    tty->print("[%d] count=%d { ", idx++, b->count());
+    tty->print("[%d] { ", idx++);
     if (!verbose) {
       nm->print_on(tty, "nmethod");
       tty->print_cr(" } ");
     } else {
       nm->print();
-      nm->print_dependencies();
+      nm->print_dependencies_on(tty);
       tty->print_cr("--- } ");
     }
   }
@@ -227,18 +216,10 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
 bool DependencyContext::is_dependent_nmethod(nmethod* nm) {
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {
     if (nm == b->get_nmethod()) {
-#ifdef ASSERT
-      int count = b->count();
-      assert(count >= 0, "count shouldn't be negative: %d", count);
-#endif
       return true;
     }
   }
   return false;
-}
-
-int nmethodBucket::decrement() {
-  return Atomic::sub(&_count, 1);
 }
 
 // We use a monotonically increasing epoch counter to track the last epoch a given

@@ -390,8 +390,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "19";
-    common.boot_jdk_build_number = "36";
+    common.boot_jdk_version = "21";
+    common.boot_jdk_build_number = "35";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -426,9 +426,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--with-jvm-variants=minimal,server", "--with-zlib=system"),
+            dependencies: ["devkit", "gtest", "libffi"],
+            configure_args: concat(common.configure_args_32bit, [
+                "--with-jvm-variants=minimal,server",
+                "--with-zlib=system",
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
+                "--enable-fallback-linker"
+            ])
         },
 
         "macosx-x64": {
@@ -436,7 +441,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.12.00",
+                "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
@@ -463,7 +468,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit),
+            configure_args: concat(common.configure_args_32bit,
+                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -587,21 +593,23 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64-zero": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
-                "--enable-libffi-bundling"
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
             ])
         },
 
         "linux-aarch64-zero": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args: concat(common.configure_args_64bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
+                "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
             ])
         },
@@ -610,10 +618,11 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
+            dependencies: ["devkit", "gtest", "libffi"],
             configure_args:  concat(common.configure_args_32bit, [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
+                "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
             ])
         }
@@ -744,6 +753,40 @@ var getJibProfilesProfiles = function (input, common, data) {
             common.debug_profile_artifacts(artifactData[name]));
     });
 
+    // Define artifact just for linux-x64-zero, which is the only one we test on
+    ["linux-x64"].forEach(function (name) {
+        var o = artifactData[name]
+        var pf = o.platform
+        var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
+        var zeroName = name + "-zero";
+        profiles[zeroName].artifacts = {
+            jdk: {
+                local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
+                remote: [
+                    "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero." + jdk_suffix,
+                ],
+                subdir: jdk_subdir,
+                exploded: "images/jdk",
+            },
+            test: {
+                    local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero-tests.tar.gz",
+                    ],
+                    exploded: "images/test"
+            },
+            jdk_symbols: {
+                    local: "bundles/\\(jdk.*bin-symbols.tar.gz\\)",
+                    remote: [
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-zero-symbols.tar.gz",
+                    ],
+                    subdir: jdk_subdir,
+                    exploded: "images/jdk"
+                },
+            };
+    });
+
     buildJdkDep = input.build_os + "-" + input.build_cpu + ".jdk";
     docsProfiles = {
         "docs": {
@@ -851,7 +894,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     [ "linux-aarch64", "linux-x64", "macosx-x64", "macosx-aarch64", "windows-x64" ]
         .forEach(function (name) {
             var o = artifactData[name]
-            var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+            var jdk_subdir = "jdk-" + data.version;
             var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
             var pf = o.platform
             var jcovName = name + "-jcov";
@@ -907,10 +950,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
-            labels: "test",
-            environment: {
-                "JT_JAVA": common.boot_jdk_home
-            }
+            labels: "test"
         }
     };
     profiles = concatObjects(profiles, testOnlyProfiles);
@@ -1046,9 +1086,9 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.1",
+        macosx: "Xcode14.3.1+1.0",
         windows_x64: "VS2022-17.1.0+1.1",
-        linux_aarch64: "gcc11.2.0-OL7.6+1.0",
+        linux_aarch64: input.build_cpu == "x64" ? "gcc11.2.0-OL7.6+1.1" : "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",
@@ -1150,9 +1190,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.1.1",
+            version: "7.3.1",
             build_number: "1",
-            file: "bundles/jtreg-7.1.1+1.zip",
+            file: "bundles/jtreg-7.3.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1161,12 +1201,12 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.35+1.0"
+            revision: "1.37+1.0"
         },
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-14-jdk-asm+1.0",
+            revision: "3.0-15-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1232,7 +1272,14 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.13.0+1.0"
+            revision: "1.14.0+1.0"
+        },
+
+        libffi: {
+            organization: common.organization,
+            module: "libffi-" + input.target_platform,
+            ext: "tar.gz",
+            revision: "3.4.2+1.0"
         },
     };
 
@@ -1475,7 +1522,7 @@ var getVersionNumbers = function () {
 var isWsl = function (input) {
     return ( input.build_osenv == "wsl"
              || (input.build_os == "linux"
-                 && java.lang.System.getProperty("os.version").contains("Microsoft")));
+                 && java.lang.System.getProperty("os.version").toLowerCase().contains("microsoft")));
 }
 
 var error = function (s) {

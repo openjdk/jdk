@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,10 @@ public interface Watchable {
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     watchable.{@link #register(WatchService,WatchEvent.Kind[],WatchEvent.Modifier[]) register}(watcher, events, new WatchEvent.Modifier[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="register" target=#register(WatchService,WatchEvent.Kind[],WatchEvent.Modifier[]) :
+     *     register.watcher, events, new WatchEvent.Modifier[0]);
+     * }
      *
      * @param   watcher
      *          the watch service to which this object is to be registered

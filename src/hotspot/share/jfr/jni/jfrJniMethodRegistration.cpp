@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
-  assert(env != NULL, "invariant");
+  assert(env != nullptr, "invariant");
   jclass jfr_clz = env->FindClass("jdk/jfr/internal/JVM");
-  if (jfr_clz != NULL) {
+  if (jfr_clz != nullptr) {
     JNINativeMethod method[] = {
       (char*)"beginRecording", (char*)"()V", (void*)jfr_begin_recording,
       (char*)"isRecording", (char*)"()Z", (void*)jfr_is_recording,
@@ -71,7 +71,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTypeId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_type_id,
       (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_get_event_writer,
       (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_new_event_writer,
-      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)Z", (void*)jfr_event_writer_flush,
+      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)V", (void*)jfr_event_writer_flush,
+      (char*)"commit", (char*)"(J)J", (void*)jfr_commit,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,
       (char*)"setRepositoryLocation", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_repository_location,
       (char*)"setDumpPath", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_dump_path,
@@ -95,13 +96,14 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
-      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory
+      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
+      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
     if (env->RegisterNatives(jfr_clz, method, (jint)method_array_length) != JNI_OK) {
       JavaThread* jt = JavaThread::thread_from_jni_environment(env);
-      assert(jt != NULL, "invariant");
+      assert(jt != nullptr, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
       ThreadInVMfromNative transition(jt);
       log_error(jfr, system)("RegisterNatives for JVM class failed!");

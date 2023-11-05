@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284299 8287379 8298525
+ * @bug 8284299 8287379 8298525 6934301
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
@@ -72,11 +72,29 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
                             @Override
                             public void x() { }
                         }
+                        """,
+                """
+                        public class C extends A {
+                            /**
+                             * {@summary {@inheritDoc A}}
+                             *
+                             * {@link Object#hashCode() {@inheritDoc A}}
+                             * {@linkplain Object#hashCode() {@inheritDoc A}}
+                             *
+                             * {@index term {@inheritDoc A}}
+                             *
+                             * @see A {@inheritDoc A}
+                             * @spec http://example.com {@inheritDoc A}
+                             */
+                            @Override
+                            public void x() { }
+                        }
                         """);
         javadoc("-Xdoclint:none",
                 "-d", base.resolve("out").toString(),
                 src.resolve("A.java").toString(),
-                src.resolve("B.java").toString());
+                src.resolve("B.java").toString(),
+                src.resolve("C.java").toString());
         checkExit(Exit.OK);
         new OutputChecker(Output.OUT).setExpectOrdered(false).check(
                 """
@@ -107,6 +125,35 @@ public class TestInheritDocWithinInappropriateTag extends JavadocTester {
                 """
                         warning: @inheritDoc cannot be used within this tag
                              * @spec http://example.com {@inheritDoc}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * {@summary {@inheritDoc A}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * {@link Object#hashCode() {@inheritDoc A}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * {@linkplain Object#hashCode() {@inheritDoc A}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * {@index term {@inheritDoc A}}
+                               ^
+                        """, """
+                        warning: @inheritDoc cannot be used within this tag
+                             * @see A {@inheritDoc A}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used within this tag
+                             * @spec http://example.com {@inheritDoc A}
                                ^
                         """);
     }

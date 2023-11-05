@@ -199,13 +199,9 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     default:
       ShouldNotReachHere();
     }
-  } else {
+  } else if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
     // Not in global storage.  Might be a local handle.
-    if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
-      result = JNILocalRefType;
-    } else {
-      ShouldNotReachHere();
-    }
+    result = JNILocalRefType;
   }
   return result;
 }
@@ -378,7 +374,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
       Atomic::dec(&_blocks_allocated);
-      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be nullptr");
+      assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;
     }

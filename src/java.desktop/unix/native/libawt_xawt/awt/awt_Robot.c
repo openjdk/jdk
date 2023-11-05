@@ -243,7 +243,7 @@ Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButton
     DTRACE_PRINTLN("RobotPeer: setup()");
 
     num_buttons = numberOfButtons;
-    tmp = (*env)->GetIntArrayElements(env, buttonDownMasks, JNI_FALSE);
+    tmp = (*env)->GetIntArrayElements(env, buttonDownMasks, NULL);
     CHECK_NULL(tmp);
 
     masks = (jint *)SAFE_SIZE_ARRAY_ALLOC(malloc, sizeof(jint), num_buttons);

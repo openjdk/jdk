@@ -118,7 +118,7 @@ CallingConvention* FrameMap::c_calling_convention(const BasicTypeArray* signatur
     }
   }
 
-  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, NULL, sizeargs);
+  intptr_t out_preserve = SharedRuntime::c_calling_convention(sig_bt, regs, nullptr, sizeargs);
   LIR_OprList* args = new LIR_OprList(signature->length());
   for (i = 0; i < sizeargs;) {
     BasicType t = sig_bt[i];
@@ -238,7 +238,7 @@ bool FrameMap::locations_for_slot  (int index, Location::Type loc_type,
   if (!location_for_sp_offset(offset_from_sp, loc_type, loc)) {
     return false;
   }
-  if (second != NULL) {
+  if (second != nullptr) {
     // two word item
     offset_from_sp = offset_from_sp + in_ByteSize(4);
     return location_for_sp_offset(offset_from_sp, loc_type, second);
@@ -289,12 +289,12 @@ ByteSize FrameMap::sp_offset_for_monitor_base(const int index) const {
 
 ByteSize FrameMap::sp_offset_for_monitor_lock(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::lock_offset_in_bytes());;
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::lock_offset();
 }
 
 ByteSize FrameMap::sp_offset_for_monitor_object(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::obj_offset_in_bytes());
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::obj_offset();
 }
 
 

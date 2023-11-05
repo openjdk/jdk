@@ -24,6 +24,7 @@
  */
 package jdk.jshell.execution;
 
+import jdk.jshell.execution.impl.PipeInputStream;
 import jdk.jshell.spi.ExecutionEnv;
 
 import java.io.IOException;
@@ -105,27 +106,36 @@ public class Util {
         for (Entry<String, Consumer<InputStream>> e : inputStreamMap.entrySet()) {
             OutputStream inputSignal = multiplexingOutputStream("$" + e.getKey() + "-input-requested", outStream);
             PipeInputStream inputPipe = new PipeInputStream() {
+                private boolean inputNeeded;
                 @Override protected void inputNeeded() throws IOException {
-                    inputSignal.write('1');
-                    inputSignal.flush();
+                    if (inputNeeded) {
+                        inputSignal.write('1');
+                        inputSignal.flush();
+                    }
                 }
                 @Override
                 public synchronized int read() throws IOException {
-                    int tag = super.read();
-                    switch (tag) {
-                        case TAG_DATA: return super.read();
-                        case TAG_CLOSED: close(); return -1;
-                        case TAG_EXCEPTION:
-                            int len = (super.read() << 0) + (super.read() << 8) + (super.read() << 16) + (super.read() << 24);
-                            byte[] message = new byte[len];
-                            for (int i = 0; i < len; i++) {
-                                message[i] = (byte) super.read();
-                            }
-                            throw new IOException(new String(message, UTF_8));
-                        case -1:
-                            return -1;
-                        default:
-                            throw new IOException("Internal error: unrecognized message tag: " + tag);
+                    inputNeeded = true;
+                    try {
+                        int tag = super.read();
+                        inputNeeded = false;
+                        switch (tag) {
+                            case TAG_DATA: return super.read();
+                            case TAG_CLOSED: close(); return -1;
+                            case TAG_EXCEPTION:
+                                int len = (super.read() << 0) + (super.read() << 8) + (super.read() << 16) + (super.read() << 24);
+                                byte[] message = new byte[len];
+                                for (int i = 0; i < len; i++) {
+                                    message[i] = (byte) super.read();
+                                }
+                                throw new IOException(new String(message, UTF_8));
+                            case -1:
+                                return -1;
+                            default:
+                                throw new IOException("Internal error: unrecognized message tag: " + tag);
+                        }
+                    } finally {
+                        inputNeeded = false;
                     }
                 }
             };

@@ -30,6 +30,7 @@
  * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.MaxGCPauseMillis == "null"
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

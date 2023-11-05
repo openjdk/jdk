@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutput.hpp"
@@ -39,18 +40,18 @@ TEST(LogTagSet, defaults) {
     EXPECT_TRUE(ts->is_level(LogLevel::Error));
     EXPECT_TRUE(ts->is_level(LogLevel::Warning));
     EXPECT_FALSE(ts->is_level(LogLevel::Info));
-    EXPECT_TRUE(ts->has_output(StdoutLog));
-    EXPECT_FALSE(ts->has_output(StderrLog));
+    EXPECT_TRUE(ts->has_output(LogConfiguration::StdoutLog));
+    EXPECT_FALSE(ts->has_output(LogConfiguration::StderrLog));
   }
 }
 
 TEST(LogTagSet, has_output) {
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
-  ts.set_output_level(StderrLog, LogLevel::Trace);
-  EXPECT_TRUE(ts.has_output(StderrLog));
+  ts.set_output_level(LogConfiguration::StderrLog, LogLevel::Trace);
+  EXPECT_TRUE(ts.has_output(LogConfiguration::StderrLog));
   EXPECT_FALSE(ts.has_output(NULL));
-  ts.set_output_level(StderrLog, LogLevel::Off);
-  EXPECT_FALSE(ts.has_output(StderrLog));
+  ts.set_output_level(LogConfiguration::StderrLog, LogLevel::Off);
+  EXPECT_FALSE(ts.has_output(LogConfiguration::StderrLog));
 }
 
 TEST(LogTagSet, ntags) {
@@ -63,18 +64,18 @@ TEST(LogTagSet, ntags) {
 TEST(LogTagSet, is_level) {
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   // Set info level on stdout and verify that is_level() reports correctly
-  ts.set_output_level(StdoutLog, LogLevel::Info);
+  ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Info);
   EXPECT_TRUE(ts.is_level(LogLevel::Error));
   EXPECT_TRUE(ts.is_level(LogLevel::Warning));
   EXPECT_TRUE(ts.is_level(LogLevel::Info));
   EXPECT_FALSE(ts.is_level(LogLevel::Debug));
   EXPECT_FALSE(ts.is_level(LogLevel::Trace));
-  ts.set_output_level(StdoutLog, LogLevel::Default);
+  ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Default);
   EXPECT_TRUE(ts.is_level(LogLevel::Default));
 }
 
 TEST(LogTagSet, level_for) {
-  LogOutput* output = StdoutLog;
+  LogOutput* output = LogConfiguration::StdoutLog;
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   for (uint i = 0; i < LogLevel::Count; i++) {
     LogLevelType level = static_cast<LogLevelType>(i);

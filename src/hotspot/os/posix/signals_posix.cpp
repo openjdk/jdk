@@ -42,8 +42,10 @@
 #include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "suspendResume_posix.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/vmError.hpp"
 
 #include <signal.h>
@@ -681,7 +683,7 @@ static void UserHandler(int sig, siginfo_t* siginfo, void* context) {
 
 static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
   // We demangle, but omit arguments - signal handlers should have always the same prototype.
-  os::print_function_and_library_name(os, handler, buf, buflen,
+  os::print_function_and_library_name(os, handler, buf, checked_cast<int>(buflen),
                                        true, // shorten_path
                                        true, // demangle
                                        true  // omit arguments
@@ -1726,13 +1728,14 @@ int SR_initialize() {
   char *s;
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
-    int sig = ::strtol(s, 0, 10);
-    if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
+    int sig;
+    bool result = parse_integer(s, &sig);
+    if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
       PosixSignals::SR_signum = sig;
     } else {
-      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
-              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
+      warning("You set _JAVA_SR_SIGNUM=%s. It must be a number in range [%d, %d]. Using %d instead.",
+              s, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }
 

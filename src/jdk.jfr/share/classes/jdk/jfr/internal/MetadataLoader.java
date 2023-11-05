@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import jdk.jfr.Threshold;
 import jdk.jfr.TransitionFrom;
 import jdk.jfr.TransitionTo;
 import jdk.jfr.Unsigned;
+import jdk.jfr.internal.util.Utils;
 
 public final class MetadataLoader {
 

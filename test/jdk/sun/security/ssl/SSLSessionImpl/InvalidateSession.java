@@ -37,7 +37,7 @@ import java.util.*;
 
 import jdk.test.lib.security.SecurityUtils;
 
-public class InvalidateSession implements SSLContextTemplate {
+public class InvalidateSession extends SSLContextTemplate {
 
     static ServerSocketFactory serverSsf = null;
     static SSLSocketFactory clientSsf = null;

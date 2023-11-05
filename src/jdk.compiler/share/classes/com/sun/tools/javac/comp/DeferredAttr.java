@@ -109,6 +109,7 @@ public class DeferredAttr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected DeferredAttr(Context context) {
         context.put(deferredAttrKey, this);
         annotate = Annotate.instance(context);
@@ -221,15 +222,10 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null, TypeMetadata.EMPTY);
+            super(null, List.nil());
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
-        }
-
-        @Override
-        public DeferredType cloneWithMetadata(TypeMetadata md) {
-            throw new AssertionError("Cannot add metadata to a deferred type");
         }
 
         @Override

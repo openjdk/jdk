@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144287 8273244 8284908
+ * @bug 8144287 8273244 8284908 8305620
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -155,12 +155,12 @@ DocComment[DOC_COMMENT, pos:1
 */
 
     /**
-     * abc {@index {@xyz} "{@see xyz}" def}
+     * abc {@index {@xyz} "{@see xyz}"} def
      */
     void term_and_description_with_nested_tag() {}
 /*
 DocComment[DOC_COMMENT, pos:1
-  firstSentence: 2
+  firstSentence: 3
     Text[TEXT, pos:1, abc_]
     Index[INDEX, pos:5
       term:
@@ -172,8 +172,9 @@ DocComment[DOC_COMMENT, pos:1
           content: 1
             Text[TEXT, pos:27, xyz]
         ]
-        Text[TEXT, pos:31, "_def]
+        Text[TEXT, pos:31, "]
     ]
+    Text[TEXT, pos:33, _def]
   body: empty
   block tags: empty
 ]

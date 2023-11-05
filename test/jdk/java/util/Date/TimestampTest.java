@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,24 @@
  * @bug 5008227
  * @summary Make sure that changes to the Date class don't break java.sql.Timestamp.
  * @modules java.sql
- * @library /java/text/testlib
+ * @run junit TimestampTest
  */
 
 import java.util.*;
 import java.sql.Timestamp;
 
-public class TimestampTest extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new TimestampTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class TimestampTest {
 
     /**
      * 5008227: java.sql.Timestamp.after() is not returning correct result
      *
      * Test before(), after(), equals(), compareTo() and getTime().
      */
+    @Test
     public void Test5008227() {
         long t = System.currentTimeMillis();
         Timestamp ts1 = new Timestamp(t), ts2 = new Timestamp(t);
@@ -88,28 +89,28 @@ public class TimestampTest extends IntlTest {
         boolean expectedResult = expected > 0;
         boolean result = ts1.after(ts2);
         if (result != expectedResult) {
-            errln("ts1.after(ts2) returned " + result
+            fail("ts1.after(ts2) returned " + result
                   + ". (ts1=" + ts1 + ", ts2=" + ts2 + ")");
         }
 
         expectedResult = expected < 0;
         result = ts1.before(ts2);
         if (result != expectedResult) {
-            errln("ts1.before(ts2) returned " + result
+            fail("ts1.before(ts2) returned " + result
                   + ". (ts1=" + ts1 + ", ts2=" + ts2 + ")");
         }
 
         expectedResult = expected == 0;
         result = ts1.equals(ts2);
         if (result != expectedResult) {
-            errln("ts1.equals(ts2) returned " + result
+            fail("ts1.equals(ts2) returned " + result
                   + ". (ts1=" + ts1 + ", ts2=" + ts2 + ")");
         }
 
         int x = ts1.compareTo(ts2);
         int y = (x > 0) ? 1 : (x < 0) ? -1 : 0;
         if (y != expected) {
-            errln("ts1.compareTo(ts2) returned " + x + ", expected "
+            fail("ts1.compareTo(ts2) returned " + x + ", expected "
                   + relation(expected, "") + "0"
                   + ". (ts1=" + ts1 + ", ts2=" + ts2 + ")");
         }
@@ -122,7 +123,7 @@ public class TimestampTest extends IntlTest {
             z = (n1 > n2) ? 1 : (n1 < n2) ? -1 : 0;
         }
         if (z != expected) {
-            errln("ts1.getTime() " + relation(z, "==") + " ts2.getTime(), expected "
+            fail("ts1.getTime() " + relation(z, "==") + " ts2.getTime(), expected "
                   + relation(expected, "==")
                   + ". (ts1=" + ts1 + ", ts2=" + ts2 + ")");
         }

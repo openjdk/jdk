@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -52,12 +52,15 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-protected:
   Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t      _pretenure_size_threshold_words;
+
+  // ("Weak") Reference processing support
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  ReferenceProcessor* _ref_processor;
 
   AgeTable*   age_table() { return &_age_table; }
 
@@ -140,12 +143,6 @@ protected:
 
   StringDedup::Requests _string_dedup_requests;
 
-  enum SomeProtectedConstants {
-    // Generations are GenGrain-aligned and have size that are multiples of
-    // GenGrain.
-    MinFreeScratchWords = 100
-  };
-
   // Return the size of a survivor space if this generation were of size
   // gen_size.
   size_t compute_survivor_size(size_t gen_size, size_t alignment) const {
@@ -162,12 +159,16 @@ protected:
 
   virtual Generation::Name kind() { return Generation::DefNew; }
 
+  // allocate and initialize ("weak") refs processing support
+  void ref_processor_init();
+  ReferenceProcessor* ref_processor() { return _ref_processor; }
+
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual CompactibleSpace* first_compaction_space() const;
+  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;
@@ -241,13 +242,12 @@ protected:
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
-  // For non-youngest collection, the DefNewGeneration can contribute
-  // "to-space".
-  virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                          size_t max_alloc_words);
+  // For Old collection (part of running Full GC), the DefNewGeneration can
+  // contribute the free part of "to-space" as the scratch space.
+  void contribute_scratch(void*& scratch, size_t& num_words);
 
   // Reset for contribution of "to-space".
-  virtual void reset_scratch();
+  void reset_scratch();
 
   // GC support
   virtual void compute_new_size();

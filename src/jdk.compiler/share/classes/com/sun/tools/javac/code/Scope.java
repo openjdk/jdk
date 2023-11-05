@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,14 +113,14 @@ public abstract class Scope {
     public abstract Iterable<Symbol> getSymbolsByName(final Name name, final Predicate<Symbol> sf,
             final LookupKind lookupKind);
 
-    /** Return the first Symbol from this or outward scopes with the given name.
+    /** Returns the first Symbol from this or outward scopes with the given name.
      * Returns null if none.
      */
     public final Symbol findFirst(Name name) {
         return findFirst(name, noFilter);
     }
 
-    /** Return the first Symbol from this or outward scopes with the given name that matches the
+    /** Returns the first Symbol from this or outward scopes with the given name that matches the
      *  given filter. Returns null if none.
      */
     public Symbol findFirst(Name name, Predicate<Symbol> sf) {
@@ -128,7 +128,7 @@ public abstract class Scope {
         return it.hasNext() ? it.next() : null;
     }
 
-    /** Returns true iff there are is at least one Symbol in this scope matching the given filter.
+    /** Returns true iff there is at least one Symbol in this scope matching the given filter.
      *  Does not inspect outward scopes.
      */
     public boolean anyMatch(Predicate<Symbol> filter) {
@@ -153,7 +153,7 @@ public abstract class Scope {
         return !getSymbols(NON_RECURSIVE).iterator().hasNext();
     }
 
-    /** Returns the Scope from which the givins Symbol originates in this scope.
+    /** Returns the Scope from which the given Symbol originates in this scope.
      */
     public abstract Scope getOrigin(Symbol byName);
 
@@ -232,7 +232,7 @@ public abstract class Scope {
         public abstract void remove(Symbol c);
 
         /** Construct a fresh scope within this scope, with same owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -241,7 +241,7 @@ public abstract class Scope {
         }
 
         /** Construct a fresh scope within this scope, with new owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -276,7 +276,7 @@ public abstract class Scope {
          */
         private boolean shared;
 
-        /** Next enclosing scope (with whom this scope may share a hashtable)
+        /** Next enclosing scope (with whom this scope may share a hash table)
          */
         public ScopeImpl next;
 

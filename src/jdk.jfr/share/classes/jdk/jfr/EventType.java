@@ -36,10 +36,15 @@ import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes an event, its fields, settings and annotations.
+ * <p>
+ * The following example shows how the {@code EventType} class can
+ * be used to print metadata about an event.
+ *
+ * {@snippet class="Snippets" region="EventTypeOverview"}
  *
  * @since 9
  */

@@ -546,7 +546,7 @@ The printed version of ISO-4217:2001
         </region>
         <region iso3166="HR">
             <currency iso4217="EUR" from="2023-01-01" />
-            <currency iso4217="HRK" from="1994-05-30" to="2023-01-15"/>
+            <currency iso4217="HRK" from="1994-05-30" to="2023-01-14"/>
             <currency iso4217="HRD" from="1991-12-23" to="1995-01-01"/>
             <currency iso4217="YUN" from="1990-01-01" to="1991-12-23"/>
             <currency iso4217="YUD" from="1966-01-01" to="1990-01-01"/>
@@ -958,7 +958,7 @@ The printed version of ISO-4217:2001
         </region>
         <region iso3166="SL">
             <currency iso4217="SLE" from="2022-07-01"/>
-            <currency iso4217="SLL" from="1964-08-04" to="2023-03-31"/>
+            <currency iso4217="SLL" from="1964-08-04" to="2023-12-31"/>
             <currency iso4217="GBP" from="1808-11-30" to="1966-02-04"/>
         </region>
         <region iso3166="SM">
@@ -1238,7 +1238,7 @@ XXX Code for transations where no currency is involved
         <group type="150" contains="154 155 151 039"/> <!--Europe -->
         <group type="151" contains="BG BY CZ HU MD PL RO RU SK UA"/> <!--Eastern Europe -->
         <group type="151" contains="SU" status="deprecated"/> <!--Eastern Europe -->
-        <group type="154" contains="GG IM JE AX DK EE FI FO GB IE IS LT LV NO SE SJ"/> <!--Northern Europe -->
+        <group type="154" contains="GG IM JE AX DK EE FI FO GB IE IS LT LV NO SE SJ CQ"/> <!--Northern Europe. Note: CQ is a part of GG -->
         <group type="155" contains="AT BE CH DE FR LI LU MC NL"/> <!--Western Europe -->
         <group type="155" contains="DD FX" status="deprecated"/> <!--Western Europe -->
         <group type="017" contains="AO CD CF CG CM GA GQ ST TD"/> <!--Middle Africa -->
@@ -1311,6 +1311,7 @@ XXX Code for transations where no currency is involved
 		<language type="ann" scripts="Latn"/>
 		<language type="anp" scripts="Deva"/>
 		<language type="aoz" scripts="Latn"/>
+		<language type="apc" territories="IL JO LB PS SY TR" alt="secondary"/>
 		<language type="ar" scripts="Arab" territories="AE BH DJ DZ EG EH ER IL IQ JO KM KW LB LY MA MR OM PS QA SA SD SO SY TD TN YE"/>
 		<language type="ar" scripts="Syrc" territories="IR SS" alt="secondary"/>
 		<language type="arc" scripts="Armi Nbat Palm" alt="secondary"/>
@@ -1532,7 +1533,7 @@ XXX Code for transations where no currency is involved
 		<language type="eka" scripts="Latn"/>
 		<language type="eky" scripts="Kali"/>
 		<language type="el" scripts="Grek" territories="CY GR"/>
-		<language type="en" scripts="Latn" territories="AG AI AS AU BB BI BM BS BW BZ CA CC CK CM CX DG DM ER FJ FK FM GB GD GG GH GI GM GU GY HK IE IM IN IO JE JM KE KI KN KY LC LR LS MG MH MP MS MT MU MW NA NF NG NR NU NZ PG PH PK PN PR PW RW SB SC SD SG SH SL SS SX SZ TC TK TO TT TV TZ UG UM US VC VG VI VU WS ZA ZM ZW"/>
+		<language type="en" scripts="Latn" territories="AG AI AS AU BB BI BM BS BW BZ CA CC CK CM CQ CX DG DM ER FJ FK FM GB GD GG GH GI GM GU GY HK IE IM IN IO JE JM KE KI KN KY LC LR LS MG MH MP MS MT MU MW NA NF NG NR NU NZ PG PH PK PN PR PW RW SB SC SD SG SH SL SS SX SZ TC TK TO TT TV TZ UG UM US VC VG VI VU WS ZA ZM ZW"/>
 		<language type="en" scripts="Dsrt Shaw" territories="AC AE AR AT BA BD BE BG BR CH CL CY CZ DE DK DZ EE EG ES ET FI FR GR HR HU IL IQ IT JO KZ LB LK LT LU LV MA MV MX MY NL PL PT RO SE SI SK TA TH TR YE" alt="secondary"/>
 		<language type="enm" scripts="Latn" alt="secondary"/>
 		<language type="eo" scripts="Latn"/>
@@ -1847,6 +1848,7 @@ XXX Code for transations where no currency is involved
 		<language type="lmn" scripts="Telu"/>
 		<language type="lmn" territories="IN" alt="secondary"/>
 		<language type="lmo" scripts="Latn"/>
+		<language type="lmo" territories="IT" alt="secondary"/>
 		<language type="ln" scripts="Latn"/>
 		<language type="ln" territories="CD" alt="secondary"/>
 		<language type="lo" scripts="Laoo" territories="LA"/>
@@ -2804,6 +2806,9 @@ XXX Code for transations where no currency is involved
 		<territory type="CP" gdp="42090" literacyPercent="99" population="1">	<!--Clipperton Island-->
 			<languagePopulation type="und" populationPercent="100" references="R1062"/>	<!--Unknown language-->
 		</territory>
+		<territory type="CQ" gdp="21940000" literacyPercent="99" population="492">	<!--Sark-->
+			<languagePopulation type="en" populationPercent="98" officialStatus="official" references="R1166"/>	<!--English-->
+		</territory>
 		<territory type="CR" gdp="83940000000" literacyPercent="96.3" population="5097990">	<!--Costa Rica-->
 			<languagePopulation type="es" populationPercent="95" officialStatus="official" references="R1193"/>	<!--Spanish-->
 		</territory>
@@ -3209,6 +3214,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="he" populationPercent="100" officialStatus="official"/>	<!--Hebrew-->
 			<languagePopulation type="en" populationPercent="85"/>	<!--English-->
 			<languagePopulation type="ar" populationPercent="20" officialStatus="official"/>	<!--Arabic-->
+			<languagePopulation type="apc" populationPercent="17"/>	<!--Levantine Arabic-->
 			<languagePopulation type="ru" populationPercent="11"/>	<!--Russian-->
 			<languagePopulation type="ro" populationPercent="3.7"/>	<!--Romanian-->
 			<languagePopulation type="yi" populationPercent="3"/>	<!--Yiddish-->
@@ -3346,6 +3352,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="it" populationPercent="95" officialStatus="official"/>	<!--Italian-->
 			<languagePopulation type="en" populationPercent="34"/>	<!--English-->
 			<languagePopulation type="fr" populationPercent="6.3" officialStatus="official_regional" references="R1252"/>	<!--French-->
+			<languagePopulation type="lmo" populationPercent="5.7" references="R1172"/>	<!--Lombard-->
 			<languagePopulation type="sc" populationPercent="1.7"/>	<!--Sardinian-->
 			<languagePopulation type="de" populationPercent="1.6" references="R1251"/>	<!--German-->
 			<languagePopulation type="vec" populationPercent="1.3" officialStatus="official_regional" references="R1295"/>	<!--Venetian-->
@@ -3358,7 +3365,6 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="egl" populationPercent="0.05" references="R1302"/>	<!--Emilian-->
 			<languagePopulation type="ca" populationPercent="0.035"/>	<!--Catalan-->
 			<languagePopulation type="el" populationPercent="0.035"/>	<!--Greek-->
-			<languagePopulation type="lmo" populationPercent="0.03"/>	<!--Lombard-->
 			<languagePopulation type="pms" populationPercent="0.0099"/>	<!--Piedmontese-->
 			<languagePopulation type="hr" populationPercent="0.0056"/>	<!--Croatian-->
 			<languagePopulation type="rgn" populationPercent="0" references="R1150"/>	<!--Romagnol-->
@@ -3372,6 +3378,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="JO" gdp="89000000000" literacyPercent="95.9" population="10820600">	<!--Jordan-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official" references="R1036"/>	<!--Arabic-->
+			<languagePopulation type="apc" populationPercent="66" references="R1173"/>	<!--Levantine Arabic-->
 			<languagePopulation type="en" populationPercent="45" references="R1036"/>	<!--English-->
 		</territory>
 		<territory type="JP" gdp="5443000000000" literacyPercent="99" population="125507000">	<!--Japan-->
@@ -3449,6 +3456,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="kdt" populationPercent="0.96" references="R1231"/>	<!--Kuy-->
 		</territory>
 		<territory type="LB" gdp="88250000000" literacyPercent="89.6" population="5469610">	<!--Lebanon-->
+			<languagePopulation type="apc" populationPercent="100" references="R1173"/>	<!--Levantine Arabic-->
 			<languagePopulation type="ar" populationPercent="86" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="en" populationPercent="40"/>	<!--English-->
 			<languagePopulation type="hy" populationPercent="5.2"/>	<!--Armenian-->
@@ -3517,7 +3525,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="shi" populationPercent="8.7"/>	<!--Tachelhit-->
 			<languagePopulation type="shi_Latn" populationPercent="8.7" references="R1181"/>	<!--Tachelhit (Latin)-->
 			<languagePopulation type="rif" writingPercent="5" populationPercent="4.9"/>	<!--Riffian-->
-			<languagePopulation type="rif_Latn" writingPercent="5" populationPercent="4.9"/>	<!--Riffian (Latin)-->
+			<languagePopulation type="rif_Tfng" writingPercent="5" populationPercent="4.9"/>	<!--Riffian (Tifinagh)-->
 			<languagePopulation type="es" populationPercent="0.065"/>	<!--Spanish-->
 		</territory>
 		<territory type="MC" gdp="7672000000" literacyPercent="99" population="39000">	<!--Monaco-->
@@ -3732,7 +3740,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="gos" writingPercent="5" populationPercent="3.6"/>	<!--Gronings-->
 			<languagePopulation type="id" populationPercent="1.8"/>	<!--Indonesian-->
 			<languagePopulation type="zea" populationPercent="1.4"/>	<!--Zeelandic-->
-			<languagePopulation type="rif_Latn" populationPercent="1.2"/>	<!--Riffian (Latin)-->
+			<languagePopulation type="rif" populationPercent="1.2"/>	<!--Riffian-->
 			<languagePopulation type="tr" populationPercent="1.2"/>	<!--Turkish-->
 		</territory>
 		<territory type="NO" gdp="381200000000" literacyPercent="100" population="5467440">	<!--Norway-->
@@ -3882,6 +3890,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="PS" gdp="21220000000" literacyPercent="95.3" population="4818260">	<!--Palestinian Territories-->
 			<languagePopulation type="ar" populationPercent="100" officialStatus="official"/>	<!--Arabic-->
+			<languagePopulation type="apc" populationPercent="87" references="R1173"/>	<!--Levantine Arabic-->
 		</territory>
 		<territory type="PT" gdp="314100000000" literacyPercent="95.4" population="10302700">	<!--Portugal-->
 			<languagePopulation type="pt" populationPercent="96" officialStatus="official"/>	<!--Portuguese-->
@@ -4102,6 +4111,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="nl" populationPercent="3.6" officialStatus="official" references="R1238"/>	<!--Dutch-->
 		</territory>
 		<territory type="SY" gdp="50280000000" literacyPercent="84.1" population="19398400">	<!--Syria-->
+			<languagePopulation type="apc" populationPercent="85" references="R1173"/>	<!--Levantine Arabic-->
 			<languagePopulation type="ar" populationPercent="80" officialStatus="official"/>	<!--Arabic-->
 			<languagePopulation type="ku" populationPercent="8"/>	<!--Kurdish-->
 			<languagePopulation type="fr" populationPercent="5.9" officialStatus="official" references="R1088"/>	<!--French-->
@@ -4177,10 +4187,11 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="to" populationPercent="95" officialStatus="official"/>	<!--Tongan-->
 			<languagePopulation type="en" populationPercent="28" officialStatus="official" references="R1078"/>	<!--English-->
 		</territory>
-		<territory type="TR" gdp="2186000000000" literacyPercent="94.1" population="82017500">	<!--Turkey-->
+		<territory type="TR" gdp="2186000000000" literacyPercent="94.1" population="82017500">	<!--Türkiye-->
 			<languagePopulation type="tr" populationPercent="93" officialStatus="official" references="R1206"/>	<!--Turkish-->
 			<languagePopulation type="en" populationPercent="17"/>	<!--English-->
 			<languagePopulation type="ku" populationPercent="5.5"/>	<!--Kurdish-->
+			<languagePopulation type="apc" populationPercent="5.2" references="R1173"/>	<!--Levantine Arabic-->
 			<languagePopulation type="zza" populationPercent="1.4"/>	<!--Zaza-->
 			<languagePopulation type="kbd" populationPercent="0.77"/>	<!--Kabardian-->
 			<languagePopulation type="az" populationPercent="0.74"/>	<!--Azerbaijani-->
@@ -4398,14 +4409,15 @@ XXX Code for transations where no currency is involved
         <calendar type="gregorian">
            <calendarSystem type="solar" />
            <eras>
-               <era type="0" end="0-12-31" />
-               <era type="1" start="1-01-01" />
+               <era type="0" end="0-12-31" code="gregory-inverse" aliases="bc bce"/>
+               <era type="1" start="1-01-01" code="gregory" aliases="ad ce"/>
            </eras>
         </calendar>
         <calendar type="generic"/>
                 <!-- gregorian territories are assumed, so these are all in addition -->
         <calendar type="japanese">
           <calendarSystem type="solar" />
+          <inheritEras calendar="gregorian" />
           <eras>
               <era type="0" start="645-6-19"/>
               <era type="1" start="650-2-15"/>
@@ -4639,101 +4651,101 @@ XXX Code for transations where no currency is involved
               <era type="229" start="1861-2-19"/>
               <era type="230" start="1864-2-20"/>
               <era type="231" start="1865-4-7"/>
-              <era type="232" start="1868-9-8"/>
-              <era type="233" start="1912-7-30"/>
-              <era type="234" start="1926-12-25"/>
-              <era type="235" start="1989-1-8"/>
-              <era type="236" start="2019-5-1"/>
+              <era type="232" start="1868-9-8" code="meiji"/>
+              <era type="233" start="1912-7-30" code="taisho"/>
+              <era type="234" start="1926-12-25" code="showa"/>
+              <era type="235" start="1989-1-8" code="heisei"/>
+              <era type="236" start="2019-5-1" code="reiwa"/>
           </eras>
         </calendar>
         <calendar type="islamic">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-civil">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-16"/>
+              <era type="0" start="622-7-16" code="islamic-civil" aliases="islamicc ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-rgsa">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-rgsa" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-tbla">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-tbla" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="islamic-umalqura">
           <calendarSystem type="lunar" />
           <eras>
-              <era type="0" start="622-7-15"/>
+              <era type="0" start="622-7-15" code="islamic-umalqura" aliases="ah"/>
           </eras>
         </calendar>
         <calendar type="chinese">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2636-01-01"/> <!-- 'sequential' year -->
+              <era type="0" start="-2636-01-01" code="chinese"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="hebrew">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-3760-10-7"/>
+              <era type="0" start="-3760-10-7" code="hebrew" aliases="am"/>
           </eras>
         </calendar>
         <calendar type="buddhist">
           <calendarSystem type="solar" />
           <eras>
-              <era type="0" start="-542-01-01"/>
+              <era type="0" start="-542-01-01" code="buddhist" aliases="be"/>
           </eras>
         </calendar>
         <calendar type="coptic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="284-08-28"/>
-              <era type="1" start="284-08-29"/>
+              <era type="0" end="284-08-28" code="coptic-inverse"/>
+              <era type="1" start="284-08-29" code="coptic"/>
           </eras>
         </calendar>
         <calendar type="persian">
           <calendarSystem type="solar"/>
           <eras>
-              <era type="0" start="622-01-01"/>
+              <era type="0" start="622-01-01" code="persian" aliases="ap"/>
           </eras>
         </calendar>
         <calendar type="dangi">
           <calendarSystem type="lunisolar"/>
           <eras>
-              <era type="0" start="-2332-01-01"/> <!-- 'sequential' year -->
+              <era type="0" start="-2332-01-01" code="dangi"/> <!-- 'sequential' year -->
           </eras>
         </calendar>
         <calendar type="ethiopic">
           <calendarSystem type="other"/>
           <eras>
-              <era type="0" end="8-08-28"/>
-              <era type="1" start="8-08-29"/>
+              <era type="0" end="8-08-28" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
+              <era type="1" start="8-08-29" code="ethiopic" aliases="incar"/>
           </eras>
         </calendar>
         <calendar type="ethiopic-amete-alem">
           <eras>
-              <era type="0" end="-5492-08-29"/>
+              <era type="0" end="-5492-08-29" code="ethioaa" aliases="ethiopic-amete-alem mundi"/>
           </eras>
         </calendar>
         <calendar type="indian">
           <eras>
-              <era type="0" start="79-01-01"/>
+              <era type="0" start="79-01-01" code="indian" aliases="saka"/>
           </eras>
         </calendar>
         <calendar type="roc">
           <eras>
-              <era type="0" end="1911-12-31"/>
-              <era type="1" start="1912-01-01"/>
+              <era type="0" end="1911-12-31" code="roc-inverse" aliases="before-roc"/>
+              <era type="1" start="1912-01-01" code="roc" aliases="minguo"/>
           </eras>
         </calendar>
 
@@ -4868,7 +4880,7 @@ XXX Code for transations where no currency is involved
 		<hours preferred="H" allowed="H K h" regions="JP"/>
 		<hours preferred="H" allowed="H hb hB h" regions="AF LA"/>
 		<hours preferred="H" allowed="H hB"
-			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SR ST TG TR WF YT"/>
+			regions="AD AM AO AT AW BE BF BJ BL BR CG CI CV CW DE EE FR GA GF GN GP GW HR IL IT KZ MC MD MF MQ MZ NC NL PM PT RE RO SI SR ST TG TR WF YT"/>
 		<hours preferred="H" allowed="H hB h" regions="AZ BA BG CH GE LI ME RS UA UZ XK"/>
 		<hours preferred="H" allowed="H hB h hb" regions="BO EC ES GQ PE"/>
 		<hours preferred="H" allowed="H hB hb h" regions="CN LV TL zu_ZA"/>
@@ -5407,9 +5419,22 @@ XXX Code for transations where no currency is involved
 		<parentLocale parent="en_IN" locales="hi_Latn"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
 		<parentLocale parent="fr_HT" locales="ht"/>
-		<parentLocale parent="no" locales="nb nn"/>
+		<parentLocale parent="no" locales="nb nn no_NO"/>
 		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
+	</parentLocales>
+
+	<parentLocales component="segmentations">
+		<parentLocale parent="zh" locales="zh_Hant"/>
+	</parentLocales>
+
+	<parentLocales component="collations">
+		<parentLocale parent="bs" locales="bs_Cyrl"/>
+		<parentLocale parent="sr" locales="sr_Latn"/>
+		<parentLocale parent="sr_ME" locales="sr_Cyrl_ME"/>
+		<parentLocale parent="zh" locales="zh_Hant"/>
+		<parentLocale parent="zh_Hant" locales="yue yue_Hant"/>
+		<parentLocale parent="zh_Hans" locales="yue_CN yue_Hans yue_Hans_CN"/>
 	</parentLocales>
 
 	<personNamesDefaults>
@@ -5584,11 +5609,14 @@ XXX Code for transations where no currency is involved
 		<reference type="R1163" uri="http://en.wikipedia.org/wiki/Suriname#Languages">Dutch is spoken as a mother tongue by about 60% of the Surinamese, while most others speak it as a second or third language.</reference>
 		<reference type="R1164" uri="http://en.wikipedia.org/wiki/Isan_language">main language of trade and comm. in Isan region, except ... media where it gives way to Thai; now largely an unwritten language. 10% writing pop estimated in absence of other data</reference>
 		<reference type="R1165" uri="http://en.wikipedia.org/wiki/Uyghur_language">- primarily written using an Arabic-derived alphabet</reference>
+		<reference type="R1166" uri="https://en.wikipedia.org/wiki/Sark#Economy">and https://islandstudies.com/files/2016/11/Guernsey-Herm-Sark.pdf - extrapolated GDP from per capita x population</reference>
 		<reference type="R1167" uri="http://www.ethnologue.com/show_language.asp?code=nds">understood by 10 million, perhaps. Figure is questionable writing pop artificially set to 5% see also: http://en.wikipedia.org/wiki/Low_German (understood by 10 million people, and native to about 3 million people all around northern Germany)</reference>
 		<reference type="R1168" uri="http://en.wikipedia.org/wiki/Wallis_and_futuna#Languages">[missing]</reference>
 		<reference type="R1169" uri="http://en.wikipedia.org/wiki/Mayotte#Languages">See the 2006 language survey data for 2nd langs = Shimaore</reference>
 		<reference type="R1170" uri="http://en.wikipedia.org/wiki/Mayotte#Languages">See the 2006 language survey data for 2nd langs</reference>
 		<reference type="R1171">Common lingua franca, widely used. High literacy.</reference>
+		<reference type="R1172" uri="https://en.wikipedia.org/wiki/Lombard_language#Usage">but subtracting 270,000 per https://en.wikipedia.org/wiki/Swiss_Italian</reference>
+		<reference type="R1173" uri="https://en.wikipedia.org/wiki/Levantine_Arabic#Speakers_by_country">[missing]</reference>
 		<reference type="R1174" uri="http://www.ethnologue.com/show_language.asp?code=ksh">[missing]</reference>
 		<reference type="R1175" uri="http://en.wikipedia.org/wiki/Saho_language">[missing]</reference>
 		<reference type="R1176" uri="http://en.wikipedia.org/wiki/Spanish_language#Spain">98.8% speak Spanish. Also, https://www.cia.gov/library/publications/the-world-factbook/geos/sp.html</reference>

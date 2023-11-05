@@ -620,7 +620,7 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 
 // Shared singleton data for all ThreadsList(0) instances.
 // Used by _bootstrap_list to avoid static init time heap allocation.
-// No real entries, just the final nullptr terminator.
+// No real entries, just the final null terminator.
 static JavaThread* const empty_threads_list_data[1] = {};
 
 // Result has 'entries + 1' elements, with the last being the null terminator.
@@ -815,19 +815,20 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
     *thread_oop_p = thread_oop;
   }
 
-  JavaThread *java_thread = java_lang_Thread::thread(thread_oop);
+  JavaThread *java_thread = java_lang_Thread::thread_acquire(thread_oop);
   if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
+    // The java.lang.Thread does not contain a JavaThread* so it has not
+    // run enough to be put on a ThreadsList or it has exited enough to
+    // make it past ensure_join() where the JavaThread* is cleared.
     return false;
   }
   // Looks like a live JavaThread at this point.
 
   if (java_thread != JavaThread::current()) {
-    // jthread is not for the current JavaThread so have to verify
-    // the JavaThread * against the ThreadsList.
-    if (EnableThreadSMRExtraValidityChecks && !includes(java_thread)) {
-      // Not on the JavaThreads list so it is not alive.
+    // java_thread is not the current JavaThread so we have to verify it
+    // against the ThreadsList.
+    if (!includes(java_thread)) {
+      // Not on this ThreadsList so it is not protected.
       return false;
     }
   }
@@ -836,6 +837,20 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
   // ThreadsListHandle in the caller.
   *jt_pp = java_thread;
   return true;
+}
+
+FastThreadsListHandle::FastThreadsListHandle(oop thread_oop, JavaThread* java_thread) : _protected_java_thread(nullptr) {
+  assert(thread_oop != nullptr, "must be");
+  if (java_thread != nullptr) {
+    // We captured a non-null JavaThread* before the _tlh was created
+    // so that covers the early life stage of the target JavaThread.
+    _protected_java_thread = java_lang_Thread::thread(thread_oop);
+    assert(_protected_java_thread == nullptr || _tlh.includes(_protected_java_thread), "must be");
+    // If we captured a non-null JavaThread* after the _tlh was created
+    // then that covers the end life stage of the target JavaThread and we
+    // we know that _tlh protects the JavaThread*. The underlying atomic
+    // load is sufficient (no acquire necessary here).
+  }
 }
 
 void ThreadsSMRSupport::add_thread(JavaThread *thread){

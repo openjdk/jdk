@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Int256VectorLoadStoreTests
  *
@@ -32,7 +31,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorMask;
@@ -54,7 +53,7 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withBitAlignment(8);
+    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
@@ -479,8 +478,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "intByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -508,8 +507,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "intByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -572,8 +571,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "intByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -603,8 +602,8 @@ public class Int256VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "intByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Integer.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Integer.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
 

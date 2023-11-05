@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -47,6 +49,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/stringUtils.hpp"
 
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
@@ -60,14 +63,18 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   if (UseSharedSpaces) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
   }
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
 
 void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
-  _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
-  char* app_class_path = os::strdup(Arguments::get_appclasspath());
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  int start_index = ClassLoader::num_boot_classpath_entries();
+  _app_class_paths_start_index = checked_cast<jshort>(start_index);
+  char* app_class_path = os::strdup_check_oom(Arguments::get_appclasspath(), mtClass);
 
   if (strcmp(app_class_path, ".") == 0) {
     // This doesn't make any sense, even for AppCDS, so let's skip it. We
@@ -78,6 +85,8 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
     trace_class_path("app loader class path=", app_class_path);
     ClassLoader::setup_app_search_path(current, app_class_path);
   }
+
+  os::free(app_class_path);
 }
 
 void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
@@ -113,9 +122,10 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 }
 
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
-  Arguments::assert_is_dumping_archive();
-  _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
-                              ClassLoader::num_app_classpath_entries();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  int start_index = ClassLoader::num_boot_classpath_entries() +
+                    ClassLoader::num_app_classpath_entries();
+  _app_module_paths_start_index = checked_cast<jshort>(start_index);
   Handle system_class_loader (current, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
   process_module_table(current, met);
@@ -207,7 +217,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     if (dir_tail == nullptr) {
       dir_len = 0;
     } else {
-      dir_len = dir_tail - dir_name + 1;
+      dir_len = pointer_delta_as_int(dir_tail, dir_name) + 1;
     }
 
     // Split the cp_attr by spaces, and add each file
@@ -248,7 +258,7 @@ void ClassLoaderExt::setup_search_paths(JavaThread* current) {
 }
 
 void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* result, bool redefined) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   // We need to remember where the class comes from during dumping.
   oop loader = result->class_loader();

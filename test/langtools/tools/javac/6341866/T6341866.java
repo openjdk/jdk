@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class T6341866 {
     enum ImplicitType {
         NONE(null),                     // don't use implicit compilation
         OPT_UNSET(null),                // implicit compilation, but no -implicit option
-        OPT_NONE("-implicit:none"),     // implicit compilation wiith -implicit:none
-        OPT_CLASS("-implicit:class");   // implicit compilation wiith -implicit:class
+        OPT_NONE("-implicit:none"),     // implicit compilation with -implicit:none
+        OPT_CLASS("-implicit:class");   // implicit compilation with -implicit:class
 
         ImplicitType(String opt) {
             this.opt = opt;
@@ -67,7 +67,6 @@ public class T6341866 {
 
     enum AnnoType {
         NONE,           // no annotation processing
-        SERVICE,        // implicit annotation processing, via ServiceLoader
         SPECIFY         // explicit annotation processing
     };
 
@@ -99,14 +98,14 @@ public class T6341866 {
         processorServices.delete();
 
         List<String> opts = new ArrayList<String>();
-        opts.addAll(Arrays.asList("-d", ".", "-sourcepath", testSrc, "-classpath", testClasses, "-Xlint:-options"));
+        opts.addAll(Arrays.asList("-d", ".",
+                                  "-sourcepath", testSrc,
+                                  "-classpath", testClasses,
+                                  "-proc:full"));
         if (implicitType.opt != null)
             opts.add(implicitType.opt);
 
         switch (annoType) {
-        case SERVICE:
-            createProcessorServices(Anno.class.getName());
-            break;
         case SPECIFY:
             opts.addAll(Arrays.asList("-processor", Anno.class.getName()));
             break;
@@ -145,9 +144,6 @@ public class T6341866 {
             String expectKey = null;
             if (implicitType == ImplicitType.OPT_UNSET) {
                 switch (annoType) {
-                case SERVICE:
-                    expectKey = "compiler.warn.proc.use.proc.or.implicit";
-                    break;
                 case SPECIFY:
                     expectKey = "compiler.warn.proc.use.implicit";
                     break;

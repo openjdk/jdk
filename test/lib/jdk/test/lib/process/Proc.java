@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package jdk.test.lib.process;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -118,7 +120,11 @@ public class Proc {
     private boolean inheritIO = false;
     private boolean noDump = false;
 
-    private List<String> cp;        // user-provided classpath
+    private boolean addcp;          // user-provided classpath is appended
+    private List<String> cp;        // user-provided classpaths
+
+    private boolean compile;        // compile the program as well
+
     private String clazz;           // Class to launch
     private String debug;           // debug flag, controller will show data
                                     // transfer between procs. If debug is set,
@@ -195,14 +201,19 @@ public class Proc {
         }
         return this;
     }
-    // Sets classpath. If not called, Proc will choose a classpath. If called
-    // with no arg, no classpath will be used. Can be called multiple times.
+    // Sets classpath. Can be called multiple times.
     public Proc cp(String... s) {
         if (cp == null) {
             cp = new ArrayList<>();
         }
         cp.addAll(Arrays.asList(s));
         return this;
+    }
+    // Adds classpath to defaults. Can be called multiple times.
+    // Once called, addcp is always true.
+    public Proc addcp(String... s) {
+        addcp = true;
+        return cp(s);
     }
     // Adds a permission to policy. Can be called multiple times.
     // All perm() calls after a series of grant() calls are grouped into
@@ -259,6 +270,34 @@ public class Proc {
         grant.append(v).append(", ");
         return this;
     }
+    // Compile as well
+    public Proc compile() {
+        compile = true;
+        return this;
+    }
+
+    // get full classpath.
+    // 1. Default classpath used if neither cp() or addcp() is called
+    // 2. User provided classpath (can be empty) used if only cp() is called
+    // 3. User provided classpath + default classpath used, otherwise
+    String fullcp() {
+        if (cp == null) {
+            return System.getProperty("test.class.path") + File.pathSeparator +
+                    System.getProperty("test.src.path");
+        } else {
+            var newcp = new ArrayList<>(cp);
+            if (addcp) {
+                newcp.add(System.getProperty("test.class.path"));
+                newcp.add(System.getProperty("test.src.path"));
+            }
+            if (!newcp.isEmpty()) {
+                return newcp.stream().collect(Collectors.joining(File.pathSeparator));
+            } else {
+                return null;
+            }
+        }
+    }
+
     // Starts the proc
     public Proc start() throws IOException {
         List<String> cmd = new ArrayList<>();
@@ -282,17 +321,25 @@ public class Proc {
             }
         }
 
+        var lcp = fullcp();
+        if (lcp != null) {
+            cmd.add("-cp");
+            cmd.add(lcp);
+        }
+
+        if (compile) {
+            boolean comp = CompilerUtils.compile(
+                    Path.of(System.getProperty("test.src"), clazz + ".java"),
+                    Path.of(System.getProperty("test.classes")),
+                    cmd.subList(1, cmd.size()).toArray(new String[0]));
+                        // subList(1): all options added without launcher name
+            if (!comp) {
+                throw new RuntimeException("Compilation error");
+            }
+        }
+
         Collections.addAll(cmd, splitProperty("test.vm.opts"));
         Collections.addAll(cmd, splitProperty("test.java.opts"));
-
-        if (cp == null) {
-            cmd.add("-cp");
-            cmd.add(System.getProperty("test.class.path") + File.pathSeparator +
-                    System.getProperty("test.src.path"));
-        } else if (!cp.isEmpty()) {
-            cmd.add("-cp");
-            cmd.add(cp.stream().collect(Collectors.joining(File.pathSeparator)));
-        }
 
         if (!secprop.isEmpty()) {
             Path p = Path.of(getId("security"));

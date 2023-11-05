@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHODDATA_HPP
 
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
@@ -114,7 +115,7 @@ public:
   };
 
   // Tag values
-  enum {
+  enum : u1 {
     no_tag,
     bit_data_tag,
     counter_data_tag,
@@ -204,7 +205,7 @@ public:
   }
 
   void set_flag_at(u1 flag_number) {
-    _header._struct._flags |= (0x1 << flag_number);
+    _header._struct._flags |= (u1)(0x1 << flag_number);
   }
   bool flag_at(u1 flag_number) const {
     return (_header._struct._flags & (0x1 << flag_number)) != 0;
@@ -233,7 +234,7 @@ public:
     return temp._header._struct._flags;
   }
   // Return a value which, when or-ed as a word into _header, sets the flag.
-  static u8 flag_mask_to_header_mask(uint byte_constant) {
+  static u8 flag_mask_to_header_mask(u1 byte_constant) {
     DataLayout temp; temp.set_header(0);
     temp._header._struct._flags = byte_constant;
     return temp._header._bits;
@@ -344,10 +345,10 @@ protected:
     return cast_to_oop(intptr_at(index));
   }
 
-  void set_flag_at(int flag_number) {
+  void set_flag_at(u1 flag_number) {
     data()->set_flag_at(flag_number);
   }
-  bool flag_at(int flag_number) const {
+  bool flag_at(u1 flag_number) const {
     return data()->flag_at(flag_number);
   }
 
@@ -355,7 +356,7 @@ protected:
   static ByteSize cell_offset(int index) {
     return DataLayout::cell_offset(index);
   }
-  static int flag_number_to_constant(int flag_number) {
+  static u1 flag_number_to_constant(u1 flag_number) {
     return DataLayout::flag_number_to_constant(flag_number);
   }
 
@@ -487,7 +488,7 @@ class BitData : public ProfileData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
-  enum {
+  enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
       null_seen_flag              = DataLayout::first_flag + 0
@@ -525,7 +526,7 @@ public:
 #endif
 
   // Code generation support
-  static int null_seen_byte_constant() {
+  static u1 null_seen_byte_constant() {
     return flag_number_to_constant(null_seen_flag);
   }
 
@@ -1080,29 +1081,18 @@ public:
 // ReceiverTypeData
 //
 // A ReceiverTypeData is used to access profiling information about a
-// dynamic type check.  It consists of a counter which counts the total times
-// that the check is reached, and a series of (Klass*, count) pairs
-// which are used to store a type profile for the receiver of the check.
+// dynamic type check.  It consists of a series of (Klass*, count)
+// pairs which are used to store a type profile for the receiver of
+// the check, the associated count is incremented every time the type
+// is seen. A per ReceiverTypeData counter is incremented on type
+// overflow (when there's no more room for a not yet profiled Klass*).
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
   enum {
-#if INCLUDE_JVMCI
-    // Description of the different counters
-    // ReceiverTypeData for instanceof/checkcast/aastore:
-    //   count is decremented for failed type checks
-    //   JVMCI only: nonprofiled_count is incremented on type overflow
-    // VirtualCallData for invokevirtual/invokeinterface:
-    //   count is incremented on type overflow
-    //   JVMCI only: nonprofiled_count is incremented on method overflow
-
-    // JVMCI is interested in knowing the percentage of type checks involving a type not explicitly in the profile
-    nonprofiled_count_off_set = counter_cell_count,
-    receiver0_offset,
-#else
     receiver0_offset = counter_cell_count,
-#endif
     count0_offset,
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
   };
@@ -1117,7 +1107,7 @@ public:
   virtual bool is_ReceiverTypeData() const { return true; }
 
   static int static_cell_count() {
-    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count JVMCI_ONLY(+ 1);
+    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
   }
 
   virtual int cell_count() const {
@@ -1126,7 +1116,7 @@ public:
 
   // Direct accessors
   static uint row_limit() {
-    return TypeProfileWidth;
+    return (uint) TypeProfileWidth;
   }
   static int receiver_cell_index(uint row) {
     return receiver0_offset + row * receiver_type_row_cell_count;
@@ -1179,13 +1169,6 @@ public:
     set_count(0);
     set_receiver(row, nullptr);
     set_receiver_count(row, 0);
-#if INCLUDE_JVMCI
-    if (!this->is_VirtualCallData()) {
-      // if this is a ReceiverTypeData for JVMCI, the nonprofiled_count
-      // must also be reset (see "Description of the different counters" above)
-      set_nonprofiled_count(0);
-    }
-#endif
   }
 
   // Code generation support
@@ -1195,17 +1178,6 @@ public:
   static ByteSize receiver_count_offset(uint row) {
     return cell_offset(receiver_count_cell_index(row));
   }
-#if INCLUDE_JVMCI
-  static ByteSize nonprofiled_receiver_count_offset() {
-    return cell_offset(nonprofiled_count_off_set);
-  }
-  uint nonprofiled_count() const {
-    return uint_at(nonprofiled_count_off_set);
-  }
-  void set_nonprofiled_count(uint count) {
-    set_uint_at(nonprofiled_count_off_set, count);
-  }
-#endif // INCLUDE_JVMCI
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
   }
@@ -1430,7 +1402,7 @@ public:
   }
 
   static uint row_limit() {
-    return BciProfileWidth;
+    return (uint) BciProfileWidth;
   }
   static int bci_cell_index(uint row) {
     return bci0_offset + row * ret_row_cell_count;
@@ -2010,7 +1982,7 @@ public:
       assert((uint)reason < ARRAY_SIZE(_trap_hist._array), "oob");
       uint cnt1 = 1 + _trap_hist._array[reason];
       if ((cnt1 & _trap_hist_mask) != 0) {  // if no counter overflow...
-        _trap_hist._array[reason] = cnt1;
+        _trap_hist._array[reason] = (u1)cnt1;
         return cnt1;
       } else {
         return _trap_hist_mask + (++_nof_overflow_traps);
@@ -2253,8 +2225,8 @@ public:
     Atomic::store(&_rtm_state, (int)rstate);
   }
 
-  static int rtm_state_offset_in_bytes() {
-    return offset_of(MethodData, _rtm_state);
+  static ByteSize rtm_state_offset() {
+    return byte_offset_of(MethodData, _rtm_state);
   }
 #endif
 
@@ -2262,9 +2234,9 @@ public:
   bool would_profile() const                  { return _would_profile != no_profile; }
 
   int num_loops() const                       { return _num_loops;  }
-  void set_num_loops(int n)                   { _num_loops = n;     }
+  void set_num_loops(short n)                 { _num_loops = n;     }
   int num_blocks() const                      { return _num_blocks; }
-  void set_num_blocks(int n)                  { _num_blocks = n;    }
+  void set_num_blocks(short n)                { _num_blocks = n;    }
 
   bool is_mature() const;  // consult mileage and ProfileMaturityPercentage
   static int mileage_of(Method* m);
@@ -2326,7 +2298,7 @@ public:
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {
-    return dp - ((address)_data);
+    return (int)(dp - ((address)_data));
   }
 
   // bci to di/dp conversion.
@@ -2366,7 +2338,7 @@ public:
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
                                                               parameters_size_in_bytes()); }
-  int extra_data_size() const          { return (address)extra_data_limit() - (address)extra_data_base(); }
+  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.

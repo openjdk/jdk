@@ -1,6 +1,4 @@
 T8295447.java:33:29: compiler.err.deconstruction.pattern.only.records: T8295447.Foo
 T8295447.java:37:29: compiler.err.deconstruction.pattern.only.records: T8295447.Foo
 T8295447.java:44:44: compiler.err.deconstruction.pattern.only.records: java.awt.Point
-- compiler.note.preview.filename: T8295447.java, DEFAULT
-- compiler.note.preview.recompile
 3 errors

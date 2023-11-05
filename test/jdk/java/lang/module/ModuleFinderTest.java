@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 
 /**
  * @test
- * @modules java.base/jdk.internal.module
- * @build ModuleFinderTest
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.module
+ * @library /test/lib
+ * @build ModuleFinderTest jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleFinderTest
  * @summary Basic tests for java.lang.module.ModuleFinder
  */
@@ -45,7 +49,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 
-import jdk.internal.module.ModuleInfoWriter;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 /*
  * @test
  * @bug 8278623
- * @enablePreview
  * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc

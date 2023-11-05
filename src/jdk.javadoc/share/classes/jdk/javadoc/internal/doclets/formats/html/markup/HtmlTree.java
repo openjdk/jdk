@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -1073,7 +1073,7 @@ public class HtmlTree extends Content {
             out.write(key.toString());
             if (!value.isEmpty()) {
                 out.write("=\"");
-                out.write(value);
+                out.write(value.replace("\"", "&quot;"));
                 out.write("\"");
             }
         }

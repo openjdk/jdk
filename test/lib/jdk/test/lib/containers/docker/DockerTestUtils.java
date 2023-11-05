@@ -26,6 +26,7 @@ package jdk.test.lib.containers.docker;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +36,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -163,7 +165,7 @@ public class DockerTestUtils {
         Path jdkSrcDir = Paths.get(JDK_UNDER_TEST);
         Path jdkDstDir = buildDir.resolve("jdk");
         Files.createDirectories(jdkDstDir);
-        Files.walkFileTree(jdkSrcDir, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
+        Files.walkFileTree(jdkSrcDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
 
         buildImage(imageName, buildDir);
     }
@@ -199,9 +201,7 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static List<String> buildJavaCommand(DockerRunOptions opts) throws Exception {
-        List<String> cmd = new ArrayList<>();
-
-        cmd.add(Container.ENGINE_COMMAND);
+        List<String> cmd = buildContainerCommand();
         cmd.add("run");
         if (opts.tty)
             cmd.add("--tty=true");
@@ -221,6 +221,12 @@ public class DockerTestUtils {
         cmd.add(opts.classToRun);
         cmd.addAll(opts.classParams);
 
+        return cmd;
+    }
+
+    public static List<String> buildContainerCommand() {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(Container.ENGINE_COMMAND);
         return cmd;
     }
 

@@ -1949,7 +1949,7 @@ public class List extends Component implements ItemSelectable, Accessible {
             /**
              * Resizes this object so that it has width and height.
              *
-             * @param d - The dimension specifying the new size of the object.
+             * @param d The dimension specifying the new size of the object.
              * @see #getSize
              */
             public void setSize(Dimension d) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,9 +201,12 @@ public class OffScreenImageSource implements ImageProducer {
                 }
             }
         } catch (NullPointerException e) {
-            e.printStackTrace();
+            // If theConsumer is null and we throw a NPE when interacting with it:
+            // That's OK. That is an expected use case that can happen when an
+            // ImageConsumer detaches itself from this ImageProducer mid-production.
 
             if (theConsumer != null) {
+                e.printStackTrace();
                 theConsumer.imageComplete(ImageConsumer.IMAGEERROR);
             }
         }

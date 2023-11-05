@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ static inline int m68k_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int m68k_add_and_fetch(int add_value, volatile int *ptr) {
+static inline int m68k_add_then_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until success.
 
@@ -136,7 +136,7 @@ static inline int arm_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int arm_add_and_fetch(int add_value, volatile int *ptr) {
+static inline int arm_add_then_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until a __kernel_cmpxchg succeeds.
 
@@ -163,26 +163,26 @@ static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
 #ifdef ARM
-  return add_using_helper<int>(arm_add_and_fetch, dest, add_value);
+  return add_using_helper<int>(arm_add_then_fetch, dest, add_value);
 #else
 #ifdef M68K
-  return add_using_helper<int>(m68k_add_and_fetch, dest, add_value);
+  return add_using_helper<int>(m68k_add_then_fetch, dest, add_value);
 #else
   D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
   FULL_MEM_BARRIER;
@@ -193,8 +193,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 

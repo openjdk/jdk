@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,33 +28,38 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
+import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
+import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.MemorySegment.Scope;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -73,6 +78,28 @@ public final class SharedUtils {
     private static final MethodHandle MH_ALLOC_BUFFER;
     private static final MethodHandle MH_BUFFER_COPY;
     private static final MethodHandle MH_REACHABILITY_FENCE;
+    public static final MethodHandle MH_CHECK_SYMBOL;
+    private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
+
+    public static final AddressLayout C_POINTER = ADDRESS
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
+
+    public static final Arena DUMMY_ARENA = new Arena() {
+        @Override
+        public Scope scope() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() {
+            // do nothing
+        }
+    };
 
     static {
         try {
@@ -83,6 +110,10 @@ public final class SharedUtils {
                     methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class));
             MH_REACHABILITY_FENCE = lookup.findStatic(Reference.class, "reachabilityFence",
                     methodType(void.class, Object.class));
+            MH_CHECK_SYMBOL = lookup.findStatic(SharedUtils.class, "checkSymbol",
+                    methodType(void.class, MemorySegment.class));
+            MH_CHECK_CAPTURE_SEGMENT = lookup.findStatic(SharedUtils.class, "checkCaptureSegment",
+                    methodType(MemorySegment.class, MemorySegment.class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
@@ -95,6 +126,10 @@ public final class SharedUtils {
 
     public static long alignUp(long addr, long alignment) {
         return ((addr - 1) | (alignment - 1)) + 1;
+    }
+
+    public static long remainsToAlignment(long addr, long alignment) {
+        return alignUp(addr, alignment) - addr;
     }
 
     /**
@@ -135,7 +170,7 @@ public final class SharedUtils {
      * @param target the target handle to adapt
      * @return the adapted handle
      */
-    public static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn) {
+    private static MethodHandle adaptUpcallForIMR(MethodHandle target, boolean dropReturn) {
         if (target.type().returnType() != MemorySegment.class)
             throw new IllegalArgumentException("Must return MemorySegment for IMR");
 
@@ -144,7 +179,7 @@ public final class SharedUtils {
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
-            // adjust return type so it matches the inferred type of the effective
+            // adjust return type so that it matches the inferred type of the effective
             // function descriptor
             target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
@@ -152,30 +187,55 @@ public final class SharedUtils {
         return target;
     }
 
+    public static UpcallStubFactory arrangeUpcallHelper(MethodType targetType, boolean isInMemoryReturn, boolean dropReturn,
+                                                        ABIDescriptor abi, CallingSequence callingSequence) {
+        if (isInMemoryReturn) {
+            // simulate the adaptation to get the type
+            MethodHandle fakeTarget = MethodHandles.empty(targetType);
+            targetType = adaptUpcallForIMR(fakeTarget, dropReturn).type();
+        }
+
+        UpcallStubFactory factory = UpcallLinker.makeFactory(targetType, abi, callingSequence);
+
+        if (isInMemoryReturn) {
+            final UpcallStubFactory finalFactory = factory;
+            factory = (target, scope) -> {
+                target = adaptUpcallForIMR(target, dropReturn);
+                return finalFactory.makeStub(target, scope);
+            };
+        }
+
+        return factory;
+    }
+
     private static MemorySegment bufferCopy(MemorySegment dest, MemorySegment buffer) {
         return dest.copyFrom(buffer);
     }
 
     public static Class<?> primitiveCarrierForSize(long size, boolean useFloat) {
+        return primitiveLayoutForSize(size, useFloat).carrier();
+    }
+
+    public static ValueLayout primitiveLayoutForSize(long size, boolean useFloat) {
         if (useFloat) {
             if (size == 4) {
-                return float.class;
+                return JAVA_FLOAT;
             } else if (size == 8) {
-                return double.class;
+                return JAVA_DOUBLE;
             }
         } else {
             if (size == 1) {
-                return byte.class;
+                return JAVA_BYTE;
             } else if (size == 2) {
-                return short.class;
+                return JAVA_SHORT;
             } else if (size <= 4) {
-                return int.class;
+                return JAVA_INT;
             } else if (size <= 8) {
-                return long.class;
+                return JAVA_LONG;
             }
         }
 
-        throw new IllegalArgumentException("No type for size: " + size + " isFloat=" + useFloat);
+        throw new IllegalArgumentException("No layout for size: " + size + " isFloat=" + useFloat);
     }
 
     public static Linker getSystemLinker() {
@@ -184,26 +244,15 @@ public final class SharedUtils {
             case SYS_V -> SysVx64Linker.getInstance();
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
+            case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
+            case AIX_PPC_64 -> AixPPC64Linker.getInstance();
+            case LINUX_PPC_64 -> LinuxPPC64Linker.getInstance();
+            case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
+            case LINUX_S390 -> LinuxS390Linker.getInstance();
+            case FALLBACK -> FallbackLinker.getInstance();
+            case UNSUPPORTED -> throw new UnsupportedOperationException("Platform does not support native linker");
         };
-    }
-
-    public static String toJavaStringInternal(MemorySegment segment, long start) {
-        int len = strlen(segment, start);
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private static int strlen(MemorySegment segment, long start) {
-        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
-        for (int offset = 0; offset >= 0; offset++) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw new IllegalArgumentException("String too large");
     }
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
@@ -236,7 +285,7 @@ public final class SharedUtils {
     }
 
 
-    static MethodHandle swapArguments(MethodHandle mh, int firstArg, int secondArg) {
+    public static MethodHandle swapArguments(MethodHandle mh, int firstArg, int secondArg) {
         MethodType mtype = mh.type();
         int[] perms = new int[mtype.parameterCount()];
         MethodType swappedType = MethodType.methodType(mtype.returnType());
@@ -254,10 +303,14 @@ public final class SharedUtils {
         return MH_REACHABILITY_FENCE.asType(MethodType.methodType(void.class, type));
     }
 
-    static void handleUncaughtException(Throwable t) {
+    public static void handleUncaughtException(Throwable t) {
         if (t != null) {
-            t.printStackTrace();
-            JLA.exit(1);
+            try {
+                t.printStackTrace();
+                System.err.println("Unrecoverable uncaught exception encountered. The VM will now exit");
+            } finally {
+                JLA.exit(1);
+            }
         }
     }
 
@@ -283,41 +336,28 @@ public final class SharedUtils {
         return handle;
     }
 
+    public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, LinkerOptions options) {
+        if (options.hasCapturedCallState()) {
+            // (<target address>, SegmentAllocator, <capture segment>, ...) -> ...
+            handle = MethodHandles.filterArguments(handle, 2, MH_CHECK_CAPTURE_SEGMENT);
+        }
+        return handle;
+    }
+
+    @ForceInline
+    public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
+        Objects.requireNonNull(captureSegment);
+        if (captureSegment.equals(MemorySegment.NULL)) {
+            throw new IllegalArgumentException("Capture segment is NULL: " + captureSegment);
+        }
+        return captureSegment.asSlice(0, CapturableState.LAYOUT);
+    }
+
     @ForceInline
     public static void checkSymbol(MemorySegment symbol) {
         Objects.requireNonNull(symbol);
         if (symbol.equals(MemorySegment.NULL))
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
-    }
-
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        return switch (CABI.current()) {
-            case WIN_64 -> Windowsx64Linker.newVaList(actions, scope);
-            case SYS_V -> SysVx64Linker.newVaList(actions, scope);
-            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaList(actions, scope);
-            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaList(actions, scope);
-            case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaList(actions, scope);
-        };
-    }
-
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return switch (CABI.current()) {
-            case WIN_64 -> Windowsx64Linker.newVaListOfAddress(address, scope);
-            case SYS_V -> SysVx64Linker.newVaListOfAddress(address, scope);
-            case LINUX_AARCH_64 -> LinuxAArch64Linker.newVaListOfAddress(address, scope);
-            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.newVaListOfAddress(address, scope);
-            case LINUX_RISCV_64 -> LinuxRISCV64Linker.newVaListOfAddress(address, scope);
-        };
-    }
-
-    public static VaList emptyVaList() {
-        return switch (CABI.current()) {
-            case WIN_64 -> Windowsx64Linker.emptyVaList();
-            case SYS_V -> SysVx64Linker.emptyVaList();
-            case LINUX_AARCH_64 -> LinuxAArch64Linker.emptyVaList();
-            case MAC_OS_AARCH_64 -> MacOsAArch64Linker.emptyVaList();
-            case LINUX_RISCV_64 -> LinuxRISCV64Linker.emptyVaList();
-        };
     }
 
     static void checkType(Class<?> actualType, Class<?> expectedType) {
@@ -327,75 +367,57 @@ public final class SharedUtils {
         }
     }
 
-    public static NoSuchElementException newVaListNSEE(MemoryLayout layout) {
-        return new NoSuchElementException("No such element: " + layout);
+    public static boolean isPowerOfTwo(int width) {
+        return Integer.bitCount(width) == 1;
     }
 
-    public static final class SimpleVaArg {
-        public final MemoryLayout layout;
-        public final Object value;
-
-        public SimpleVaArg(MemoryLayout layout, Object value) {
-            this.layout = layout;
-            this.value = value;
-        }
-
-        public VarHandle varHandle() {
-            return layout.varHandle();
-        }
+    static long pickChunkOffset(long chunkOffset, long byteWidth, int chunkWidth) {
+        return ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN
+                ? byteWidth - chunkWidth - chunkOffset
+                : chunkOffset;
     }
 
-    public static final class EmptyVaList implements VaList {
+    public static Arena newBoundedArena(long size) {
+        return new Arena() {
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
 
-        private final MemorySegment address;
+            @Override
+            public Scope scope() {
+                return arena.scope();
+            }
 
-        public EmptyVaList(MemorySegment address) {
-            this.address = address;
-        }
+            @Override
+            public void close() {
+                arena.close();
+            }
 
-        private static UnsupportedOperationException uoe() {
-            return new UnsupportedOperationException("Empty VaList");
-        }
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return slicingAllocator.allocate(byteSize, byteAlignment);
+            }
+        };
+    }
 
-        @Override
-        public int nextVarg(ValueLayout.OfInt layout) {
-            throw uoe();
-        }
+    public static Arena newEmptyArena() {
+        return new Arena() {
+            final Arena arena = Arena.ofConfined();
 
-        @Override
-        public long nextVarg(ValueLayout.OfLong layout) {
-            throw uoe();
-        }
+            @Override
+            public Scope scope() {
+                return arena.scope();
+            }
 
-        @Override
-        public double nextVarg(ValueLayout.OfDouble layout) {
-            throw uoe();
-        }
+            @Override
+            public void close() {
+                arena.close();
+            }
 
-        @Override
-        public MemorySegment nextVarg(ValueLayout.OfAddress layout) {
-            throw uoe();
-        }
-
-        @Override
-        public MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator) {
-            throw uoe();
-        }
-
-        @Override
-        public void skip(MemoryLayout... layouts) {
-            throw uoe();
-        }
-
-        @Override
-        public VaList copy() {
-            return this;
-        }
-
-        @Override
-        public MemorySegment segment() {
-            return address;
-        }
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
@@ -422,47 +444,78 @@ public final class SharedUtils {
         }
     }
 
-    static void write(MemorySegment ptr, Class<?> type, Object o) {
+    static void write(MemorySegment ptr, long offset, Class<?> type, Object o) {
         if (type == long.class) {
-            ptr.set(JAVA_LONG_UNALIGNED, 0, (long) o);
+            ptr.set(JAVA_LONG_UNALIGNED, offset, (long) o);
         } else if (type == int.class) {
-            ptr.set(JAVA_INT_UNALIGNED, 0, (int) o);
+            ptr.set(JAVA_INT_UNALIGNED, offset, (int) o);
         } else if (type == short.class) {
-            ptr.set(JAVA_SHORT_UNALIGNED, 0, (short) o);
+            ptr.set(JAVA_SHORT_UNALIGNED, offset, (short) o);
         } else if (type == char.class) {
-            ptr.set(JAVA_CHAR_UNALIGNED, 0, (char) o);
+            ptr.set(JAVA_CHAR_UNALIGNED, offset, (char) o);
         } else if (type == byte.class) {
-            ptr.set(JAVA_BYTE, 0, (byte) o);
+            ptr.set(JAVA_BYTE, offset, (byte) o);
         } else if (type == float.class) {
-            ptr.set(JAVA_FLOAT_UNALIGNED, 0, (float) o);
+            ptr.set(JAVA_FLOAT_UNALIGNED, offset, (float) o);
         } else if (type == double.class) {
-            ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
+            ptr.set(JAVA_DOUBLE_UNALIGNED, offset, (double) o);
         } else if (type == boolean.class) {
-            ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
+            ptr.set(JAVA_BOOLEAN, offset, (boolean) o);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
     }
 
-    static Object read(MemorySegment ptr, Class<?> type) {
+    static Object read(MemorySegment ptr, long offset, Class<?> type) {
         if (type == long.class) {
-            return ptr.get(JAVA_LONG_UNALIGNED, 0);
+            return ptr.get(JAVA_LONG_UNALIGNED, offset);
         } else if (type == int.class) {
-            return ptr.get(JAVA_INT_UNALIGNED, 0);
+            return ptr.get(JAVA_INT_UNALIGNED, offset);
         } else if (type == short.class) {
-            return ptr.get(JAVA_SHORT_UNALIGNED, 0);
+            return ptr.get(JAVA_SHORT_UNALIGNED, offset);
         } else if (type == char.class) {
-            return ptr.get(JAVA_CHAR_UNALIGNED, 0);
+            return ptr.get(JAVA_CHAR_UNALIGNED, offset);
         } else if (type == byte.class) {
-            return ptr.get(JAVA_BYTE, 0);
+            return ptr.get(JAVA_BYTE, offset);
         } else if (type == float.class) {
-            return ptr.get(JAVA_FLOAT_UNALIGNED, 0);
+            return ptr.get(JAVA_FLOAT_UNALIGNED, offset);
         } else if (type == double.class) {
-            return ptr.get(JAVA_DOUBLE_UNALIGNED, 0);
+            return ptr.get(JAVA_DOUBLE_UNALIGNED, offset);
         } else if (type == boolean.class) {
-            return ptr.get(JAVA_BOOLEAN, 0);
+            return ptr.get(JAVA_BOOLEAN, offset);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
+    }
+
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+        return Map.ofEntries(
+                // specified canonical layouts
+                Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("short", ValueLayout.JAVA_SHORT),
+                Map.entry("int", ValueLayout.JAVA_INT),
+                Map.entry("float", ValueLayout.JAVA_FLOAT),
+                Map.entry("long", longLayout),
+                Map.entry("long long", ValueLayout.JAVA_LONG),
+                Map.entry("double", ValueLayout.JAVA_DOUBLE),
+                Map.entry("void*", ValueLayout.ADDRESS),
+                Map.entry("size_t", sizetLayout),
+                Map.entry("wchar_t", wchartLayout),
+                // unspecified size-dependent layouts
+                Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+                Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+                Map.entry("int32_t", ValueLayout.JAVA_INT),
+                Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                // unspecified JNI layouts
+                Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("jchar", ValueLayout.JAVA_CHAR),
+                Map.entry("jbyte", ValueLayout.JAVA_BYTE),
+                Map.entry("jshort", ValueLayout.JAVA_SHORT),
+                Map.entry("jint", ValueLayout.JAVA_INT),
+                Map.entry("jlong", ValueLayout.JAVA_LONG),
+                Map.entry("jfloat", ValueLayout.JAVA_FLOAT),
+                Map.entry("jdouble", ValueLayout.JAVA_DOUBLE)
+        );
     }
 }

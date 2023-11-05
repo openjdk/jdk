@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
 
-class BlockOffsetSharedArray;
+class SerialBlockOffsetSharedArray;
 class CardTableRS;
-class CompactibleSpace;
+class ContiguousSpace;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card
@@ -50,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  BlockOffsetSharedArray* _bts;
+  SerialBlockOffsetSharedArray* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
@@ -85,8 +85,6 @@ class TenuredGeneration: public Generation {
  public:
   virtual void compute_new_size();
 
-  virtual void invalidate_remembered_set();
-
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
   // Grow generation to reserved size.
@@ -103,7 +101,7 @@ class TenuredGeneration: public Generation {
 
   bool is_in(const void* p) const;
 
-  CompactibleSpace* first_compaction_space() const;
+  ContiguousSpace* first_compaction_space() const;
 
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
@@ -134,8 +132,6 @@ class TenuredGeneration: public Generation {
   void save_marks();
 
   bool no_allocs_since_save_marks();
-
-  inline size_t block_size(const HeapWord* addr) const;
 
   inline bool block_is_obj(const HeapWord* addr) const;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,10 @@ public final class Security {
      * Adds a new provider, at a specified position. The position is
      * the preference order in which providers are searched for
      * requested algorithms.  The position is 1-based, that is,
-     * 1 is most preferred, followed by 2, and so on.
+     * 1 is most preferred, followed by 2, and so on.  If the position
+     * is less than 1 or greater than n, where n is the number of installed
+     * providers, the provider (if not already installed) is inserted at
+     * the end of the list, or at the n + 1 position.
      *
      * <p>If the given provider is installed at the requested position,
      * the provider that used to be at that position, and all providers
@@ -702,14 +705,15 @@ public final class Security {
      *
      * @param key the key of the property being retrieved.
      *
-     * @return the value of the security property corresponding to key.
+     * @return the value of the security property, or {@code null} if there
+     *          is no property with that key.
      *
      * @throws  SecurityException
      *          if a security manager exists and its {@link
      *          java.lang.SecurityManager#checkPermission} method
      *          denies
      *          access to retrieve the specified security property value
-     * @throws  NullPointerException is key is {@code null}
+     * @throws  NullPointerException if key is {@code null}
      *
      * @see #setProperty
      * @see java.security.SecurityPermission

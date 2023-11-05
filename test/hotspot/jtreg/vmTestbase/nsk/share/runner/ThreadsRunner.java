@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,16 +86,7 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
         }
 
         private Thread unstartedVirtualThread(Runnable task) {
-            try {
-                Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-                Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-                java.lang.reflect.Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-                return (Thread) unstarted.invoke(builder, task);
-            } catch (RuntimeException | Error e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            return Thread.ofVirtual().unstarted(task);
         }
 
     }

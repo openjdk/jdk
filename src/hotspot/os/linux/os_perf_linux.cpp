@@ -232,7 +232,7 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
  */
 static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const char* fmt, va_list args) {
   FILE*f;
-  int n;
+  ssize_t n;
   char buf[2048];
 
   if ((f = os::fopen(procfile, "r")) == nullptr) {
@@ -382,12 +382,12 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
   } else if (tdiff < (udiff + kdiff)) {
     tdiff = udiff + kdiff;
   }
-  *pkernelLoad = (kdiff / (double)tdiff);
+  *pkernelLoad = ((double)kdiff / (double)tdiff);
   // BUG9044876, normalize return values to sane values
   *pkernelLoad = MAX2<double>(*pkernelLoad, 0.0);
   *pkernelLoad = MIN2<double>(*pkernelLoad, 1.0);
 
-  user_load = (udiff / (double)tdiff);
+  user_load = ((double)udiff / (double)tdiff);
   user_load = MAX2<double>(user_load, 0.0);
   user_load = MIN2<double>(user_load, 1.0);
 
@@ -473,7 +473,7 @@ static int perf_context_switch_rate(double* rate) {
     if (d == 0) {
       *rate = lastRate;
     } else if (get_noof_context_switches(&sw) == 0) {
-      *rate      = ( (double)(sw - lastSwitches) / d ) * 1000;
+      *rate      = ( (double)(sw - lastSwitches) / (double)d ) * 1000;
       lastRate     = *rate;
       lastSwitches = sw;
       if (bootTime != 0) {

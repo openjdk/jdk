@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     // The counter
     private static final long MAX_UINT32 = 0x00000000FFFFFFFFL;
     private long finalCounterValue;
+    private long initCounterValue;
     private long counter;
 
     // The base state is created at initialization time as a 16-int array
@@ -336,7 +337,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 }
                 ChaCha20ParameterSpec chaParams = (ChaCha20ParameterSpec)params;
                 newNonce = chaParams.getNonce();
-                counter = ((long)chaParams.getCounter()) & 0x00000000FFFFFFFFL;
+                initCounterValue = ((long)chaParams.getCounter()) &
+                        0x00000000FFFFFFFFL;
+                counter = initCounterValue;
                 break;
             case MODE_AEAD:
                 if (!(params instanceof IvParameterSpec)) {
@@ -545,9 +548,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
 
         // Make sure that the provided key and nonce are unique before
-        // assigning them to the object.
+        // assigning them to the object.  Key and nonce uniqueness
+        // protection is for encryption operations only.
         byte[] newKeyBytes = getEncodedKey(key);
-        checkKeyAndNonce(newKeyBytes, newNonce);
+        if (opmode == Cipher.ENCRYPT_MODE) {
+            checkKeyAndNonce(newKeyBytes, newNonce);
+        }
         if (this.keyBytes != null) {
             Arrays.fill(this.keyBytes, (byte)0);
         }
@@ -704,9 +710,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (ShortBufferException | KeyException exc) {
             throw new RuntimeException(exc);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return output;
     }
@@ -742,9 +747,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (KeyException ke) {
             throw new RuntimeException(ke);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return bytesUpdated;
     }
@@ -1171,6 +1175,23 @@ abstract class ChaCha20Cipher extends CipherSpi {
     }
 
     /**
+     * reset the Cipher's state to the values it had after
+     * the initial init() call.
+     *
+     * Note: The cipher's internal "initialized" field is set differently
+     * for ENCRYPT_MODE and DECRYPT_MODE in order to allow DECRYPT_MODE
+     * ciphers to reuse the key/nonce/counter values.  This kind of reuse
+     * is disallowed in ENCRYPT_MODE.
+     */
+    private void resetStartState() {
+        keyStrLimit = 0;
+        keyStrOffset = 0;
+        counter = initCounterValue;
+        aadDone = false;
+        initialized = (direction == Cipher.DECRYPT_MODE);
+    }
+
+    /**
      * Interface for the underlying processing engines for ChaCha20
      */
     interface ChaChaEngine {
@@ -1275,7 +1296,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private EngineAEADEnc() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
+            initCounterValue = 1;
+            counter = initCounterValue;
         }
 
         @Override
@@ -1347,7 +1369,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private EngineAEADDec() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
+            initCounterValue = 1;
+            counter = initCounterValue;
             cipherBuf = new ByteArrayOutputStream(CIPHERBUF_BASE);
             tag = new byte[TAG_LENGTH];
         }

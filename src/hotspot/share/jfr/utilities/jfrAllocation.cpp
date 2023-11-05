@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/vm_version.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -77,7 +77,7 @@ static void hook_memory_deallocation(size_t dealloc_size) {
 #endif // ASSERT
 
 static void hook_memory_allocation(const char* allocation, size_t alloc_size) {
-  if (NULL == allocation) {
+  if (nullptr == allocation) {
     if (!JfrRecorder::is_created()) {
       log_warning(jfr, system)("Memory allocation failed for size [" SIZE_FORMAT "] bytes", alloc_size);
       return;

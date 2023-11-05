@@ -22,55 +22,40 @@
  */
 
 import java.io.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
+import java.lang.reflect.AccessFlag;
+import jdk.internal.classfile.Classfile;
 
 /* Create an invalid classfile with version 51.0 and a static method in an interface.*/
 @SupportedAnnotationTypes("*")
 public class CreateBadClassFile extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (++round == 1) {
-            ConstantPool cp = new ConstantPool(new CPInfo[] {
-                new CONSTANT_Utf8_info(""),                     //0
-                new CONSTANT_Utf8_info("Test"),                 //1
-                new CONSTANT_Class_info(null, 1),               //2
-                new CONSTANT_Utf8_info("java/lang/Object"),     //3
-                new CONSTANT_Class_info(null, 3),               //4
-                new CONSTANT_Utf8_info("test"),                 //5
-                new CONSTANT_Utf8_info("()V"),                  //6
+            byte[] bytes = Classfile.of().build(ClassDesc.of("Test"), classBuilder -> {
+                classBuilder.withVersion(51, 0);
+                classBuilder.withFlags(AccessFlag.ABSTRACT,
+                            AccessFlag.INTERFACE,
+                            AccessFlag.PUBLIC);
+                classBuilder.withSuperclass(ConstantDescs.CD_Object);
+                classBuilder.withMethod("test", ConstantDescs.MTD_void,
+                        Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, methodBuilder -> {
+                            methodBuilder.withCode(xb -> {
+                                xb.return_();
+                            });
+                });
             });
-            ClassFile cf = new ClassFile(0xCAFEBABE,
-                          0,
-                          51,
-                          cp,
-                          new AccessFlags(AccessFlags.ACC_ABSTRACT |
-                                          AccessFlags.ACC_INTERFACE |
-                                          AccessFlags.ACC_PUBLIC),
-                          2,
-                          4,
-                          new int[0],
-                          new Field[0],
-                          new Method[] {
-                              //creating static method in 51.0 classfile:
-                              new Method(new AccessFlags(AccessFlags.ACC_PUBLIC |
-                                                         AccessFlags.ACC_STATIC),
-                                         5,
-                                         new Descriptor(6),
-                                         new Attributes(cp, new Attribute[0]))
-                          },
-                          new Attributes(cp, new Attribute[0]));
             try {
                 JavaFileObject clazz = processingEnv.getFiler().createClassFile("Test");
                 try (OutputStream out = clazz.openOutputStream()) {
-                    new ClassWriter().write(cf, out);
+                    out.write(bytes);
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();

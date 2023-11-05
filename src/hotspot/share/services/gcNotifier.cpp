@@ -122,7 +122,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
     if (u.max_size() == 0 && u.used() > 0) {
       // If max size == 0, this pool is a survivor space.
       // Set max size = -1 since the pools will be swapped after GC.
-      MemoryUsage usage(u.init_size(), u.used(), u.committed(), (size_t)-1);
+      MemoryUsage usage(u.init_size(), u.used(), u.committed(), MemoryUsage::undefined_size());
       after_usage = MemoryService::create_MemoryUsage_obj(usage, CHECK_NH);
     } else {
         after_usage = MemoryService::create_MemoryUsage_obj(u, CHECK_NH);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -114,6 +114,9 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
+static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_size_per_arg = 16;
+
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
@@ -124,7 +127,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
+  int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
+  CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
 
   Register shuffle_reg = x9;
   JavaCallingConvention out_conv;
@@ -214,6 +218,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ on_entry");
   __ la(c_rarg0, Address(sp, frame_data_offset));
+  __ movptr(c_rarg1, (intptr_t) receiver);
   __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry));
   __ mv(xthread, x10);
   __ reinit_heapbase();
@@ -251,9 +256,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ movptr(shuffle_reg, (intptr_t) receiver);
-  __ resolve_jobject(shuffle_reg, t0, t1);
-  __ mv(j_rarg0, shuffle_reg);
+  __ get_vm_result(j_rarg0, xthread);
   __ block_comment("} receiver ");
 
   __ mov_metadata(xmethod, entry);
@@ -322,17 +325,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // Native caller has no idea how to handle exceptions,
-  // so we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(x10); // return a exception oop in a0
-  __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
   __ flush();
 
 #ifndef PRODUCT
@@ -343,10 +335,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const char* name = "upcall_stub";
 #endif // PRODUCT
 
+  buffer.log_section_sizes(name);
+
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
 #ifndef PRODUCT

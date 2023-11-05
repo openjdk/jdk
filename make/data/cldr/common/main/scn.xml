@@ -1,0 +1,728 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="scn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="am" draft="unconfirmed">amàricu</language>
+			<language type="ar" draft="unconfirmed">àrabbu</language>
+			<language type="ast" draft="unconfirmed">asturianu</language>
+			<language type="bg" draft="unconfirmed">bùrgaru</language>
+			<language type="br" draft="unconfirmed">brètuni</language>
+			<language type="ca" draft="unconfirmed">catalanu</language>
+			<language type="ckb" draft="unconfirmed">curdu cintrali</language>
+			<language type="co" draft="unconfirmed">corsu</language>
+			<language type="cs" draft="unconfirmed">cecu</language>
+			<language type="cy" draft="unconfirmed">gallisi</language>
+			<language type="da" draft="unconfirmed">danisi</language>
+			<language type="de" draft="unconfirmed">tidiscu</language>
+			<language type="de_AT" draft="unconfirmed">tidiscu austrìacu</language>
+			<language type="de_CH" draft="unconfirmed">tidiscu autu sbìzziru</language>
+			<language type="el" draft="unconfirmed">grecu</language>
+			<language type="en" draft="unconfirmed">ngrisi</language>
+			<language type="en_AU" draft="unconfirmed">ngrisi australianu</language>
+			<language type="en_CA" draft="unconfirmed">ngrisi canadisi</language>
+			<language type="en_GB" draft="unconfirmed">ngridi britànnicu</language>
+			<language type="en_US" draft="unconfirmed">ngrisi miricanu</language>
+			<language type="eo" draft="unconfirmed">spirantu</language>
+			<language type="es" draft="unconfirmed">spagnolu</language>
+			<language type="es_419" draft="unconfirmed">spagnolu dâ mèrica latina</language>
+			<language type="es_ES" draft="unconfirmed">spagnolu eurupeu</language>
+			<language type="es_MX" draft="unconfirmed">spagnolu missicanu</language>
+			<language type="et" draft="unconfirmed">èstuni</language>
+			<language type="eu" draft="unconfirmed">bascu</language>
+			<language type="fil" draft="unconfirmed">filippinu</language>
+			<language type="fr" draft="unconfirmed">francisi</language>
+			<language type="fr_CA" draft="unconfirmed">francisi canadisi</language>
+			<language type="fr_CH" draft="unconfirmed">francisi sbìzziru</language>
+			<language type="fur" draft="unconfirmed">friulanu</language>
+			<language type="fy" draft="unconfirmed">frìsuni uccidintali</language>
+			<language type="ga" draft="unconfirmed">irlannisi</language>
+			<language type="gl" draft="unconfirmed">galizzianu</language>
+			<language type="gsw" draft="unconfirmed">tidiscu sbìzziru</language>
+			<language type="he" draft="unconfirmed">ebbràicu</language>
+			<language type="hr" draft="unconfirmed">cruatu</language>
+			<language type="hu" draft="unconfirmed">unghirisi</language>
+			<language type="hy" draft="unconfirmed">armenu</language>
+			<language type="ia" draft="unconfirmed">ntirlingua</language>
+			<language type="it" draft="unconfirmed">talianu</language>
+			<language type="ja" draft="unconfirmed">giappunisi</language>
+			<language type="ko" draft="unconfirmed">curianu</language>
+			<language type="ku" draft="unconfirmed">curdu</language>
+			<language type="la" draft="unconfirmed">latinu</language>
+			<language type="lt" draft="unconfirmed">lituanu</language>
+			<language type="lv" draft="unconfirmed">lèttuni</language>
+			<language type="mk" draft="unconfirmed">macèduni</language>
+			<language type="mn" draft="unconfirmed">mòngulu</language>
+			<language type="mt" draft="unconfirmed">martisi</language>
+			<language type="mul" draft="unconfirmed">assai lingui</language>
+			<language type="nb" draft="unconfirmed">nurviggisi Bokmål</language>
+			<language type="nl" draft="unconfirmed">ulannisi</language>
+			<language type="nn" draft="unconfirmed">nurviggisi Nynorsk</language>
+			<language type="pl" draft="unconfirmed">pulaccu</language>
+			<language type="prg" draft="unconfirmed">prussianu</language>
+			<language type="pt" draft="unconfirmed">purtughisi</language>
+			<language type="pt_BR" draft="unconfirmed">purtughisi brasilianu</language>
+			<language type="pt_PT" draft="unconfirmed">purtughisi eurupeu</language>
+			<language type="ro" draft="unconfirmed">rumenu</language>
+			<language type="ro_MD" draft="unconfirmed">murdavu</language>
+			<language type="ru" draft="unconfirmed">russu</language>
+			<language type="sa" draft="unconfirmed">sànscritu</language>
+			<language type="scn" draft="contributed">sicilianu</language>
+			<language type="sk" draft="unconfirmed">sluvaccu</language>
+			<language type="sl" draft="unconfirmed">sluvenu</language>
+			<language type="so" draft="unconfirmed">sòmalu</language>
+			<language type="sq" draft="unconfirmed">arbanisi</language>
+			<language type="sr" draft="unconfirmed">serbu</language>
+			<language type="sv" draft="unconfirmed">svidisi</language>
+			<language type="sw" draft="unconfirmed">swahili</language>
+			<language type="tr" draft="unconfirmed">turcu</language>
+			<language type="und" draft="unconfirmed">lingua scanusciuta</language>
+			<language type="ur" draft="unconfirmed">urdu</language>
+			<language type="uz" draft="unconfirmed">uzbeku</language>
+			<language type="vo" draft="unconfirmed">volapük</language>
+			<language type="yue" draft="unconfirmed">cantunisi</language>
+			<language type="zh" draft="unconfirmed">cinisi</language>
+			<language type="zh_Hant" draft="unconfirmed">cinisi tradizziunali</language>
+			<language type="zu" draft="unconfirmed">zulu</language>
+			<language type="zxx" draft="unconfirmed">nuḍḍu cuntinutu linguìsticu</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">àrabbu</script>
+			<script type="Aran" draft="unconfirmed">nastaliq</script>
+			<script type="Brai" draft="unconfirmed">braille</script>
+			<script type="Cyrl" draft="unconfirmed">cirìllicu</script>
+			<script type="Grek" draft="unconfirmed">grecu</script>
+			<script type="Hebr" draft="unconfirmed">ebbràicu</script>
+			<script type="Hira" draft="unconfirmed">hiragana</script>
+			<script type="Jpan" draft="unconfirmed">giappunisi</script>
+			<script type="Kana" draft="unconfirmed">katakana</script>
+			<script type="Kore" draft="unconfirmed">curianu</script>
+			<script type="Latn" draft="unconfirmed">latinu</script>
+			<script type="Zmth" draft="unconfirmed">nutazziuni matimàtica</script>
+			<script type="Zsye" draft="unconfirmed">emoji</script>
+			<script type="Zsym" draft="unconfirmed">sìmmuli</script>
+			<script type="Zxxx" draft="unconfirmed">nun scrittu</script>
+			<script type="Zyyy" draft="unconfirmed">cumuni</script>
+			<script type="Zzzz" draft="unconfirmed">scrittura scanusciuta</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">Munnu</territory>
+			<territory type="002" draft="unconfirmed">Àfrica</territory>
+			<territory type="009" draft="unconfirmed">Uciania</territory>
+			<territory type="011" draft="unconfirmed">Àfrica uccidintali</territory>
+			<territory type="013" draft="unconfirmed">Mèrica cintrali</territory>
+			<territory type="014" draft="unconfirmed">Àfrica urintali</territory>
+			<territory type="017" draft="unconfirmed">Àfrica di menzu</territory>
+			<territory type="019" draft="unconfirmed">Mèrichi</territory>
+			<territory type="030" draft="unconfirmed">Asia urintali</territory>
+			<territory type="142" draft="unconfirmed">Asia</territory>
+			<territory type="143" draft="unconfirmed">Asia cintrali</territory>
+			<territory type="145" draft="unconfirmed">Asia uccidintali</territory>
+			<territory type="150" draft="unconfirmed">Europa</territory>
+			<territory type="151" draft="unconfirmed">Europa urintali</territory>
+			<territory type="155" draft="unconfirmed">Europa uccidintali</territory>
+			<territory type="419" draft="unconfirmed">Mèrica latina</territory>
+			<territory type="AG" draft="unconfirmed">Antigua e Barbuda</territory>
+			<territory type="AI" draft="unconfirmed">Anguilla</territory>
+			<territory type="AL" draft="unconfirmed">Arbanìa</territory>
+			<territory type="AQ" draft="unconfirmed">Antàrtidi</territory>
+			<territory type="AR" draft="unconfirmed">Argintina</territory>
+			<territory type="AT" draft="unconfirmed">Austria</territory>
+			<territory type="AU" draft="unconfirmed">Australia</territory>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="BB" draft="unconfirmed">Barbados</territory>
+			<territory type="BE" draft="unconfirmed">Bergiu</territory>
+			<territory type="BF" draft="unconfirmed">Burkina Faso</territory>
+			<territory type="BG" draft="unconfirmed">Burgarìa</territory>
+			<territory type="BJ" draft="unconfirmed">Benin</territory>
+			<territory type="BO" draft="unconfirmed">Bulivia</territory>
+			<territory type="BR" draft="unconfirmed">Brasili</territory>
+			<territory type="BS" draft="unconfirmed">Bahamas</territory>
+			<territory type="BZ" draft="unconfirmed">Belize</territory>
+			<territory type="CH" draft="unconfirmed">Sbìzzira</territory>
+			<territory type="CL" draft="unconfirmed">Cili</territory>
+			<territory type="CN" draft="unconfirmed">Cina</territory>
+			<territory type="CO" draft="unconfirmed">Culommia</territory>
+			<territory type="CU" draft="unconfirmed">Cubba</territory>
+			<territory type="CV" draft="unconfirmed">Capu Virdi</territory>
+			<territory type="CZ" draft="unconfirmed">Cechia</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Ripùbblica Ceca</territory>
+			<territory type="DE" draft="unconfirmed">Girmania</territory>
+			<territory type="DK" draft="unconfirmed">Danimarca</territory>
+			<territory type="DO" draft="unconfirmed">Ripùbblica Duminicana</territory>
+			<territory type="EC" draft="unconfirmed">Ècuador</territory>
+			<territory type="EE" draft="unconfirmed">Estonia</territory>
+			<territory type="EG" draft="unconfirmed">Egittu</territory>
+			<territory type="EH" draft="unconfirmed">Sahara uccidintali</territory>
+			<territory type="ES" draft="unconfirmed">Spagna</territory>
+			<territory type="EU" draft="unconfirmed">Uniuni Eurupea</territory>
+			<territory type="EZ" draft="unconfirmed">Zuna Euru</territory>
+			<territory type="FR" draft="unconfirmed">Francia</territory>
+			<territory type="GB" draft="unconfirmed">Regnu Unitu</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">RU</territory>
+			<territory type="GF" draft="unconfirmed">Guiana Francisi</territory>
+			<territory type="GH" draft="unconfirmed">Ghana</territory>
+			<territory type="GR" draft="unconfirmed">Grecia</territory>
+			<territory type="GY" draft="unconfirmed">Guiana</territory>
+			<territory type="HN" draft="unconfirmed">Honduras</territory>
+			<territory type="HR" draft="unconfirmed">Cruazzia</territory>
+			<territory type="HT" draft="unconfirmed">Haiti</territory>
+			<territory type="HU" draft="unconfirmed">Ungarìa</territory>
+			<territory type="IC" draft="unconfirmed">Ìsuli Canari</territory>
+			<territory type="IE" draft="unconfirmed">Irlanna</territory>
+			<territory type="IN" draft="unconfirmed">Ìnnia</territory>
+			<territory type="IS" draft="unconfirmed">Islanna</territory>
+			<territory type="IT" draft="unconfirmed">Italia</territory>
+			<territory type="JM" draft="unconfirmed">Giamàica</territory>
+			<territory type="JO" draft="unconfirmed">Giurdania</territory>
+			<territory type="JP" draft="unconfirmed">Giappuni</territory>
+			<territory type="KH" draft="unconfirmed">Camboggia</territory>
+			<territory type="KW" draft="unconfirmed">Kuwait</territory>
+			<territory type="LB" draft="unconfirmed">Lìbbanu</territory>
+			<territory type="LI" draft="unconfirmed">Liechtenstein</territory>
+			<territory type="LR" draft="unconfirmed">Libberia</territory>
+			<territory type="LT" draft="unconfirmed">Lituania</territory>
+			<territory type="LU" draft="unconfirmed">Lussimmurgu</territory>
+			<territory type="LV" draft="unconfirmed">Littonia</territory>
+			<territory type="LY" draft="unconfirmed">Libbia</territory>
+			<territory type="MA" draft="unconfirmed">Maroccu</territory>
+			<territory type="MC" draft="unconfirmed">Mònacu</territory>
+			<territory type="MD" draft="unconfirmed">Murdova</territory>
+			<territory type="ML" draft="unconfirmed">Mali</territory>
+			<territory type="MR" draft="unconfirmed">Mauritania</territory>
+			<territory type="MT" draft="unconfirmed">Marta</territory>
+			<territory type="MV" draft="unconfirmed">Mardivi</territory>
+			<territory type="MX" draft="unconfirmed">Mèssicu</territory>
+			<territory type="NE" draft="unconfirmed">Niger</territory>
+			<territory type="NG" draft="unconfirmed">Niggeria</territory>
+			<territory type="NI" draft="unconfirmed">Nicaragua</territory>
+			<territory type="NL" draft="unconfirmed">Paisi Vasci</territory>
+			<territory type="NO" draft="unconfirmed">Nurveggia</territory>
+			<territory type="PA" draft="unconfirmed">Pànama</territory>
+			<territory type="PE" draft="unconfirmed">Pirù</territory>
+			<territory type="PL" draft="unconfirmed">Pulonia</territory>
+			<territory type="PT" draft="unconfirmed">Purtugallu</territory>
+			<territory type="PY" draft="unconfirmed">Paraguay</territory>
+			<territory type="RO" draft="unconfirmed">Rumanìa</territory>
+			<territory type="RS" draft="unconfirmed">Serbia</territory>
+			<territory type="RU" draft="unconfirmed">Russia</territory>
+			<territory type="SE" draft="unconfirmed">Sbezzia</territory>
+			<territory type="SI" draft="unconfirmed">Sluvenia</territory>
+			<territory type="SK" draft="unconfirmed">Sluvacchia</territory>
+			<territory type="SM" draft="unconfirmed">San Marinu</territory>
+			<territory type="SN" draft="unconfirmed">Sènigal</territory>
+			<territory type="SV" draft="unconfirmed">El Salvador</territory>
+			<territory type="TG" draft="unconfirmed">Togu</territory>
+			<territory type="TN" draft="unconfirmed">Tunisìa</territory>
+			<territory type="TR" draft="unconfirmed">Turchìa</territory>
+			<territory type="UN" draft="unconfirmed">Nazziuna Uniti</territory>
+			<territory type="US" draft="unconfirmed">Stati Uniti</territory>
+			<territory type="US" alt="short" draft="unconfirmed">SUM</territory>
+			<territory type="UY" draft="unconfirmed">Uruguay</territory>
+			<territory type="VA" draft="unconfirmed">Città dû Vaticanu</territory>
+			<territory type="XA" draft="unconfirmed">Accenti fausi</territory>
+			<territory type="XB" draft="unconfirmed">Bidirizziunali fausu</territory>
+			<territory type="XK" draft="unconfirmed">Kossovo</territory>
+			<territory type="ZZ" draft="unconfirmed">Riggiuni scanusciuta</territory>
+		</territories>
+		<keys>
+			<key type="calendar" draft="unconfirmed">Calannariu</key>
+			<key type="ms" draft="unconfirmed">Sistema di misura</key>
+			<key type="numbers" draft="unconfirmed">Nùmmari</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">Calannariu buddista</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">Calannariu cinisi</type>
+			<type key="calendar" type="gregorian" draft="unconfirmed">Calannariu grigurianu</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">Calannariu ebbràicu</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">Calannariu ISO-8601</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">Calannariu giappunisi</type>
+			<type key="ms" type="metric" draft="unconfirmed">Sistema mètricu</type>
+			<type key="ms" type="uksystem" draft="unconfirmed">Sistema mpiriali</type>
+			<type key="ms" type="ussystem" draft="unconfirmed">Sistema miricanu</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a à â b c d ḍ e è ê f g h i í î j l m n o ò ô p q r s t u ú û v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ç đ é ë ə ḥ ì k š ù w x y]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J L M N O P Q R S T U V Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">jin</month>
+							<month type="2" draft="unconfirmed">fri</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">apr</month>
+							<month type="5" draft="unconfirmed">maj</month>
+							<month type="6" draft="unconfirmed">giu</month>
+							<month type="7" draft="unconfirmed">gnt</month>
+							<month type="8" draft="unconfirmed">agu</month>
+							<month type="9" draft="unconfirmed">sit</month>
+							<month type="10" draft="unconfirmed">utt</month>
+							<month type="11" draft="unconfirmed">nuv</month>
+							<month type="12" draft="unconfirmed">dic</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">G</month>
+							<month type="7" draft="unconfirmed">G</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">U</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">jinnaru</month>
+							<month type="2" draft="unconfirmed">frivaru</month>
+							<month type="3" draft="unconfirmed">marzu</month>
+							<month type="4" draft="unconfirmed">aprili</month>
+							<month type="5" draft="unconfirmed">maju</month>
+							<month type="6" draft="unconfirmed">giugnu</month>
+							<month type="7" draft="unconfirmed">giugnettu</month>
+							<month type="8" draft="unconfirmed">agustu</month>
+							<month type="9" draft="unconfirmed">sittèmmiru</month>
+							<month type="10" draft="unconfirmed">uttòviru</month>
+							<month type="11" draft="unconfirmed">nuvèmmiru</month>
+							<month type="12" draft="unconfirmed">dicèmmiru</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">jin</month>
+							<month type="2" draft="unconfirmed">fri</month>
+							<month type="3" draft="unconfirmed">mar</month>
+							<month type="4" draft="unconfirmed">apr</month>
+							<month type="5" draft="unconfirmed">maj</month>
+							<month type="6" draft="unconfirmed">giu</month>
+							<month type="7" draft="unconfirmed">gnt</month>
+							<month type="8" draft="unconfirmed">agu</month>
+							<month type="9" draft="unconfirmed">sit</month>
+							<month type="10" draft="unconfirmed">utt</month>
+							<month type="11" draft="unconfirmed">nuv</month>
+							<month type="12" draft="unconfirmed">dic</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">G</month>
+							<month type="7" draft="unconfirmed">G</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">U</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">jinnaru</month>
+							<month type="2" draft="unconfirmed">frivaru</month>
+							<month type="3" draft="unconfirmed">marzu</month>
+							<month type="4" draft="unconfirmed">aprili</month>
+							<month type="5" draft="unconfirmed">maju</month>
+							<month type="6" draft="unconfirmed">giugnu</month>
+							<month type="7" draft="unconfirmed">giugnettu</month>
+							<month type="8" draft="unconfirmed">agustu</month>
+							<month type="9" draft="unconfirmed">sittèmmiru</month>
+							<month type="10" draft="unconfirmed">uttòviru</month>
+							<month type="11" draft="unconfirmed">nuvèmmiru</month>
+							<month type="12" draft="unconfirmed">dicèmmiru</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">dumìnica</day>
+							<day type="mon" draft="unconfirmed">lunnidìa</day>
+							<day type="tue" draft="unconfirmed">martidìa</day>
+							<day type="wed" draft="unconfirmed">mercuridìa</day>
+							<day type="thu" draft="unconfirmed">jovidìa</day>
+							<day type="fri" draft="unconfirmed">vennidìa</day>
+							<day type="sat" draft="unconfirmed">sàbbatu</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">annu</displayName>
+				<relative type="-1" draft="unconfirmed">l’annu passatu</relative>
+				<relative type="0" draft="unconfirmed">st’annu</relative>
+				<relative type="1" draft="unconfirmed">l’annu vinturu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">nna n’annu</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">nna {0} anni</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">n’annu nnarrè</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">{0} anni nnarrè</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">a.</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">a.</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">misi</displayName>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">m.</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">m.</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">simana</displayName>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">smn.</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">smn.</displayName>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">simana dû misi</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">smn. dû m.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">smn. dû m.</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">jornu</displayName>
+				<relative type="-1" draft="unconfirmed">ajeri</relative>
+				<relative type="0" draft="unconfirmed">stjornu</relative>
+				<relative type="1" draft="unconfirmed">dumani</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">j.</displayName>
+				<relative type="-1" draft="unconfirmed">ajeri</relative>
+				<relative type="0" draft="unconfirmed">oji</relative>
+				<relative type="1" draft="unconfirmed">dumani</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">j.</displayName>
+				<relative type="-1" draft="unconfirmed">ajeri</relative>
+				<relative type="0" draft="unconfirmed">oji</relative>
+				<relative type="1" draft="unconfirmed">dumani</relative>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">jornu di l’annu</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">j. di l’a.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">j. di l’a.</displayName>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">jornu dâ simana</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">j. dâ smn.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">j. dâ smn.</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">ura</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">u.</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">u.</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">minutu</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">min.</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">min.</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">sicunnu</displayName>
+				<relative type="0" draft="unconfirmed">ora</relative>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">sic.</displayName>
+				<relative type="0" draft="unconfirmed">ora</relative>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">sic.</displayName>
+				<relative type="0" draft="unconfirmed">ora</relative>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">fusu urariu</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">fusu</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName draft="unconfirmed">fusu</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<symbols numberSystem="adlm">
+			<decimal draft="unconfirmed">,</decimal>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">se:s</yesstr>
+		</messages>
+	</posix>
+</ldml>

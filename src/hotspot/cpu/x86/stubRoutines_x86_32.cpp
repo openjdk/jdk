@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = NULL;
-address StubRoutines::x86::_method_entry_barrier = NULL;
+address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = nullptr;
+address StubRoutines::x86::_method_entry_barrier = nullptr;
 
-address StubRoutines::x86::_d2i_wrapper = NULL;
-address StubRoutines::x86::_d2l_wrapper = NULL;
+address StubRoutines::x86::_d2i_wrapper = nullptr;
+address StubRoutines::x86::_d2l_wrapper = nullptr;
 
 jint StubRoutines::x86::_fpu_cntrl_wrd_std   = 0;
 jint StubRoutines::x86::_fpu_cntrl_wrd_24    = 0;

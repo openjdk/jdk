@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,12 @@ void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) 
 #ifdef _WIN64
   if (captured_state_mask & GET_LAST_ERROR) {
     *value_ptr = GetLastError();
-    value_ptr++;
   }
+  value_ptr++;
   if (captured_state_mask & WSA_GET_LAST_ERROR) {
     *value_ptr = WSAGetLastError();
-    value_ptr++;
   }
+  value_ptr++;
 #endif
   if (captured_state_mask & ERRNO) {
     *value_ptr = errno;

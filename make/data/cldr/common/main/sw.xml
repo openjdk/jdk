@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -134,6 +134,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_CA">Kiingereza (Canada)</language>
 			<language type="en_GB">Kiingereza (Uingereza)</language>
 			<language type="en_GB" alt="short">Kiingereza (UK)</language>
+			<language type="en_US" alt="short">Kiingereza (US)</language>
 			<language type="eo">Kiesperanto</language>
 			<language type="es">Kihispania</language>
 			<language type="es_419">Kihispania (Amerika ya Latini)</language>
@@ -870,6 +871,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Zimbabwe</territory>
 			<territory type="ZZ">Eneo lisilojulikana</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Uingereza</subdivision>
+			<subdivision type="gbsct">Uskoti</subdivision>
+			<subdivision type="gbwls">Welisi</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">Kalenda</key>
 			<key type="cf">Mpangilio wa Sarafu</key>
@@ -1894,6 +1900,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-short">
 				<displayName>mwaka</displayName>
+				<relative type="-1">mwaka uliopita</relative>
+				<relative type="0">mwaka huu</relative>
+				<relative type="1">mwaka ujao</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya mwaka {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya miaka {0}</relativeTimePattern>
@@ -1905,6 +1914,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-narrow">
 				<displayName>mwaka</displayName>
+				<relative type="-1">mwaka uliopita</relative>
+				<relative type="0">mwaka huu</relative>
+				<relative type="1">mwaka ujao</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya mwaka {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya miaka {0}</relativeTimePattern>
@@ -1966,6 +1978,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-short">
 				<displayName>mwezi</displayName>
+				<relative type="-1">mwezi uliopita</relative>
+				<relative type="0">mwezi huu</relative>
+				<relative type="1">mwezi ujao</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya mwezi {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya miezi {0}</relativeTimePattern>
@@ -1977,6 +1992,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-narrow">
 				<displayName>mwezi</displayName>
+				<relative type="-1">mwezi uliopita</relative>
+				<relative type="0">mwezi huu</relative>
+				<relative type="1">mwezi ujao</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya mwezi {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya miezi {0}</relativeTimePattern>
@@ -2003,6 +2021,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-short">
 				<displayName>wiki</displayName>
+				<relative type="-1">wiki iliyopita</relative>
+				<relative type="0">wiki hii</relative>
+				<relative type="1">wiki ijayo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya wiki {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya wiki {0}</relativeTimePattern>
@@ -2015,6 +2036,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-narrow">
 				<displayName>wiki</displayName>
+				<relative type="-1">wiki iliyopita</relative>
+				<relative type="0">wiki hii</relative>
+				<relative type="1">wiki ijayo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">baada ya wiki {0}</relativeTimePattern>
 					<relativeTimePattern count="other">baada ya wiki {0}</relativeTimePattern>
@@ -3301,6 +3325,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Ciudad Juarez</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Mazatlan</exemplarCity>
@@ -6061,6 +6088,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">{0} mchemraba</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0} mchemraba</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>mvuto wa graviti</displayName>
 				<unitPattern count="one">mvuto wa graviti {0}</unitPattern>
@@ -7099,6 +7129,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>mvuto wa graviti</displayName>
 				<unitPattern count="one">G {0}</unitPattern>
@@ -7226,6 +7264,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>permyriadi</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>moli</displayName>
@@ -7502,10 +7542,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">ppi {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
 				<unitPattern count="one">dpcm {0}</unitPattern>
 				<unitPattern count="other">dpcm {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
 				<unitPattern count="one">dpi {0}</unitPattern>
 				<unitPattern count="other">dpi {0}</unitPattern>
 			</unit>
@@ -8120,49 +8162,118 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>mvuto wa graviti</displayName>
 				<unitPattern count="one">G {0}</unitPattern>
 				<unitPattern count="other">G {0}</unitPattern>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>mita kwa kila sekunde mraba</displayName>
+				<unitPattern count="one">m {0}/s²</unitPattern>
+				<unitPattern count="other">m {0}/s²</unitPattern>
+			</unit>
 			<unit type="angle-revolution">
+				<displayName>mzunguko</displayName>
 				<unitPattern count="one">raundi {0}</unitPattern>
 				<unitPattern count="other">raundi {0}</unitPattern>
 			</unit>
+			<unit type="angle-radian">
+				<displayName>radiani</displayName>
+				<unitPattern count="one">radiani {0}</unitPattern>
+				<unitPattern count="other">radiani {0}</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>digrii</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>dakika</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>sekunde</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>kilomita za mraba</displayName>
 				<unitPattern count="one">km² {0}</unitPattern>
 				<unitPattern count="other">km² {0}</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>hekta</displayName>
 				<unitPattern count="one">ha {0}</unitPattern>
 				<unitPattern count="other">ha {0}</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>mita za mraba</displayName>
 				<unitPattern count="one">m² {0}</unitPattern>
 				<unitPattern count="other">m² {0}</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>sentimita za mraba</displayName>
+				<unitPattern count="one">cm² {0}</unitPattern>
+				<unitPattern count="other">cm² {0}</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>maili za mraba</displayName>
 				<unitPattern count="one">mi² {0}</unitPattern>
 				<unitPattern count="other">mi² {0}</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ekari</displayName>
 				<unitPattern count="one">Ekari {0}</unitPattern>
 				<unitPattern count="other">Ekari {0}</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>yadi za mraba</displayName>
+				<unitPattern count="one">yd² {0}</unitPattern>
+				<unitPattern count="other">yd² {0}</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>futi za mraba</displayName>
 				<unitPattern count="one">ft² {0}</unitPattern>
 				<unitPattern count="other">ft² {0}</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>inchi za mraba</displayName>
+				<unitPattern count="one">in² {0}</unitPattern>
+				<unitPattern count="other">in² {0}</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>dunamu</displayName>
+				<unitPattern count="one">dunamu {0}</unitPattern>
+				<unitPattern count="other">dunamu {0}</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>karati</displayName>
+				<unitPattern count="one">karati {0}</unitPattern>
+				<unitPattern count="other">karati {0}</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/L</displayName>
@@ -8171,14 +8282,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-item">
 				<displayName>kipengee</displayName>
+				<unitPattern count="one">kipengee {0}</unitPattern>
+				<unitPattern count="other">vipengee {0}</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
+				<unitPattern count="one">ppm {0}</unitPattern>
+				<unitPattern count="other">ppm {0}</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>asilimia</displayName>
 				<unitPattern count="one">asilimia {0}</unitPattern>
 				<unitPattern count="other">asilimia {0}</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>kwa elfu</displayName>
+				<unitPattern count="one">{0} kwa elfu</unitPattern>
+				<unitPattern count="other">{0} kwa elfu</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>permyriadi</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>moli</displayName>
+				<unitPattern count="one">moli {0}</unitPattern>
+				<unitPattern count="other">moli {0}</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>lita kwa kila kilomita</displayName>
+				<unitPattern count="one">lita {0} kwa kilomita</unitPattern>
+				<unitPattern count="other">lita {0} kwa kilomita</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>lita kwa kilomita 100</displayName>
@@ -8187,11 +8322,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
+				<unitPattern count="one">mpg {0}</unitPattern>
+				<unitPattern count="other">mpg {0}</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="one">mpg Imp. {0}</unitPattern>
+				<unitPattern count="other">mpg Imp. {0}</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>petabaiti</displayName>
+				<unitPattern count="one">PB {0}</unitPattern>
+				<unitPattern count="other">PB {0}</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>terabaiti</displayName>
+				<unitPattern count="one">terabaiti {0}</unitPattern>
+				<unitPattern count="other">terabaiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>terabiti</displayName>
+				<unitPattern count="one">terabiti {0}</unitPattern>
+				<unitPattern count="other">terabiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="one">GB {0}</unitPattern>
+				<unitPattern count="other">GB {0}</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>gigabiti</displayName>
+				<unitPattern count="one">gigabiti {0}</unitPattern>
+				<unitPattern count="other">gigabiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="one">MB {0}</unitPattern>
+				<unitPattern count="other">MB {0}</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="one">megabiti {0}</unitPattern>
+				<unitPattern count="other">megabiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kilobaiti</displayName>
+				<unitPattern count="one">kilobaiti {0}</unitPattern>
+				<unitPattern count="other">kilobaiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kilobiti</displayName>
+				<unitPattern count="one">kilobiti {0}</unitPattern>
+				<unitPattern count="other">kilobiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>baiti</displayName>
+				<unitPattern count="one">baiti {0}</unitPattern>
+				<unitPattern count="other">baiti {0}</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>biti</displayName>
+				<unitPattern count="one">biti {0}</unitPattern>
+				<unitPattern count="other">biti {0}</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>karne</displayName>
+				<unitPattern count="one">karne {0}</unitPattern>
+				<unitPattern count="other">karne {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>miongo</displayName>
+				<unitPattern count="one">mwongo {0}</unitPattern>
+				<unitPattern count="other">miongo {0}</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>mwaka</displayName>
 				<unitPattern count="one">mwaka {0}</unitPattern>
 				<unitPattern count="other">miaka {0}</unitPattern>
+				<perUnitPattern>{0} kwa mwaka</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>robo</displayName>
@@ -8203,26 +8411,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mwezi</displayName>
 				<unitPattern count="one">mwezi {0}</unitPattern>
 				<unitPattern count="other">miezi {0}</unitPattern>
+				<perUnitPattern>{0} kwa mwezi</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>wiki</displayName>
 				<unitPattern count="one">wiki {0}</unitPattern>
 				<unitPattern count="other">wiki {0}</unitPattern>
+				<perUnitPattern>{0} kwa wiki</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>siku</displayName>
 				<unitPattern count="one">siku {0}</unitPattern>
 				<unitPattern count="other">siku {0}</unitPattern>
+				<perUnitPattern>{0} kwa siku</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>saa</displayName>
 				<unitPattern count="one">saa {0}</unitPattern>
 				<unitPattern count="other">saa {0}</unitPattern>
+				<perUnitPattern>{0} kwa saa</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>dakika</displayName>
 				<unitPattern count="one">dak {0}</unitPattern>
 				<unitPattern count="other">dak {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila dakika</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sekunde</displayName>
@@ -8235,93 +8448,382 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ms {0}</unitPattern>
 				<unitPattern count="other">ms {0}</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>mikrosekunde</displayName>
+				<unitPattern count="one">mikrosekunde {0}</unitPattern>
+				<unitPattern count="other">mikrosekunde {0}</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nanosekunde</displayName>
+				<unitPattern count="one">nanosekunde {0}</unitPattern>
+				<unitPattern count="other">nanosekunde {0}</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>ampea</displayName>
+				<unitPattern count="one">ampea {0}</unitPattern>
+				<unitPattern count="other">ampea {0}</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>miliampea</displayName>
+				<unitPattern count="one">mA {0}</unitPattern>
+				<unitPattern count="other">mA {0}</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ohm</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
 			<unit type="electric-volt">
 				<displayName>volti</displayName>
+				<unitPattern count="one">volti {0}</unitPattern>
+				<unitPattern count="other">volti {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kilokalori</displayName>
+				<unitPattern count="one">kilokalori {0}</unitPattern>
+				<unitPattern count="other">kilokalori {0}</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>kalori</displayName>
+				<unitPattern count="one">kalori {0}</unitPattern>
+				<unitPattern count="other">kalori {0}</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>kalori</displayName>
+				<unitPattern count="one">kalori {0}</unitPattern>
+				<unitPattern count="other">kalori {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kilojuli</displayName>
+				<unitPattern count="one">kilojuli {0}</unitPattern>
+				<unitPattern count="other">kilojuli {0}</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>jouli</displayName>
+				<unitPattern count="one">jouli {0}</unitPattern>
+				<unitPattern count="other">jouli {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kilowati kwa saa</displayName>
+				<unitPattern count="one">kWh {0}</unitPattern>
+				<unitPattern count="other">kWh {0}</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>elektrovolti</displayName>
+				<unitPattern count="one">eV {0}</unitPattern>
+				<unitPattern count="other">eV {0}</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">Btu {0}</unitPattern>
+				<unitPattern count="other">Btu {0}</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>kipimo cha gesi, Marekani</displayName>
+				<unitPattern count="one">kipimo {0} cha gesi, US</unitPattern>
+				<unitPattern count="other">vipimo {0} vya gesi, US</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>paunikani</displayName>
+				<unitPattern count="one">lbf {0}</unitPattern>
+				<unitPattern count="other">lbf {0}</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>N</displayName>
+				<unitPattern count="one">N {0}</unitPattern>
+				<unitPattern count="other">N {0}</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/km 100</displayName>
 				<unitPattern count="one">kWh {0} kwa km 100</unitPattern>
 				<unitPattern count="other">kWh {0} kwa km 100</unitPattern>
 			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>gigahezi</displayName>
+				<unitPattern count="one">gigahezi {0}</unitPattern>
+				<unitPattern count="other">gigahezi {0}</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>megahezi</displayName>
+				<unitPattern count="one">megahezi {0}</unitPattern>
+				<unitPattern count="other">megahezi {0}</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kilohezi</displayName>
+				<unitPattern count="one">kilohezi {0}</unitPattern>
+				<unitPattern count="other">kilohezi {0}</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>hezi</displayName>
+				<unitPattern count="one">hezi {0}</unitPattern>
+				<unitPattern count="other">hezi {0}</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">em {0}</unitPattern>
+				<unitPattern count="other">em {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pikseli</displayName>
+				<unitPattern count="one">px {0}</unitPattern>
+				<unitPattern count="other">px {0}</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="one">MP {0}</unitPattern>
+				<unitPattern count="other">MP {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">ppcm {0}</unitPattern>
+				<unitPattern count="other">ppcm {0}</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">ppi {0}</unitPattern>
+				<unitPattern count="other">ppi {0}</unitPattern>
+			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
+				<unitPattern count="one">dpcm {0}</unitPattern>
+				<unitPattern count="other">dpcm {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
+				<unitPattern count="one">dpi {0}</unitPattern>
+				<unitPattern count="other">dpi {0}</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>kitone</displayName>
+				<unitPattern count="one">kitone {0}</unitPattern>
+				<unitPattern count="other">vitone {0}</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">R⊕ {0}</unitPattern>
+				<unitPattern count="other">R⊕ {0}</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">km {0}</unitPattern>
 				<unitPattern count="other">km {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila kilomita</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>mita</displayName>
 				<unitPattern count="one">mita {0}</unitPattern>
 				<unitPattern count="other">mita {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila mita</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>desimita</displayName>
+				<unitPattern count="one">desimita {0}</unitPattern>
+				<unitPattern count="other">desimita {0}</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>sentimita</displayName>
 				<unitPattern count="one">cm {0}</unitPattern>
 				<unitPattern count="other">cm {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila sentimita</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milimita</displayName>
 				<unitPattern count="one">mm {0}</unitPattern>
 				<unitPattern count="other">mm {0}</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>mikromita</displayName>
+				<unitPattern count="one">mikromita {0}</unitPattern>
+				<unitPattern count="other">mikromita {0}</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nanomita</displayName>
+				<unitPattern count="one">nanomita {0}</unitPattern>
+				<unitPattern count="other">nanomita {0}</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName>pikomita</displayName>
 				<unitPattern count="one">pm {0}</unitPattern>
 				<unitPattern count="other">pm {0}</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>maili</displayName>
 				<unitPattern count="one">maili {0}</unitPattern>
 				<unitPattern count="other">maili {0}</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>yadi</displayName>
 				<unitPattern count="one">yadi {0}</unitPattern>
 				<unitPattern count="other">yadi {0}</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>futi</displayName>
 				<unitPattern count="one">futi {0}</unitPattern>
 				<unitPattern count="other">futi {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila futi</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>inchi</displayName>
 				<unitPattern count="one">inchi {0}</unitPattern>
 				<unitPattern count="other">inchi {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila inchi</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>kila sekunde</displayName>
+				<unitPattern count="one">pc {0}</unitPattern>
+				<unitPattern count="other">pc {0}</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName>miaka ya mwanga</displayName>
 				<unitPattern count="one">ly {0}</unitPattern>
 				<unitPattern count="other">ly {0}</unitPattern>
 			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>vipimo vya astronomia</displayName>
+				<unitPattern count="one">au {0}</unitPattern>
+				<unitPattern count="other">au {0}</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>furlong</displayName>
+				<unitPattern count="one">fur {0}</unitPattern>
+				<unitPattern count="other">fur {0}</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fathom</displayName>
+				<unitPattern count="one">fth {0}</unitPattern>
+				<unitPattern count="other">fth {0}</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>maili za kibaharia</displayName>
+				<unitPattern count="one">maili {0} ya kibaharia</unitPattern>
+				<unitPattern count="other">maili {0} za kibaharia</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="one">smi {0}</unitPattern>
+				<unitPattern count="other">smi {0}</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pointi</displayName>
+				<unitPattern count="one">pointi {0}</unitPattern>
+				<unitPattern count="other">pointi {0}</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
+				<unitPattern count="one">R☉ {0}</unitPattern>
+				<unitPattern count="other">R☉ {0}</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lux</displayName>
+				<unitPattern count="one">lx {0}</unitPattern>
+				<unitPattern count="other">lx {0}</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="one">cd {0}</unitPattern>
+				<unitPattern count="other">cd {0}</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="one">lm {0}</unitPattern>
+				<unitPattern count="other">lm {0}</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
+				<unitPattern count="one">L☉ {0}</unitPattern>
+				<unitPattern count="other">L☉ {0}</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>tani mita</displayName>
+				<unitPattern count="one">tani mita {0}</unitPattern>
+				<unitPattern count="other">tani mita {0}</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kilogramu</displayName>
 				<unitPattern count="one">kg {0}</unitPattern>
 				<unitPattern count="other">kg {0}</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>gramu</displayName>
 				<unitPattern count="one">gramu {0}</unitPattern>
 				<unitPattern count="other">gramu {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila gramu</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>miligramu</displayName>
+				<unitPattern count="one">mg {0}</unitPattern>
+				<unitPattern count="other">mg {0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>mikrogramu</displayName>
+				<unitPattern count="one">mikrogramu {0}</unitPattern>
+				<unitPattern count="other">mikrogramu {0}</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>tani fupi</displayName>
+				<unitPattern count="one">tani fupi {0}</unitPattern>
+				<unitPattern count="other">tani fupi {0}</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>mawe</displayName>
+				<unitPattern count="one">st {0}</unitPattern>
+				<unitPattern count="other">st {0}</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName>ratili</displayName>
 				<unitPattern count="one">Ratili {0}</unitPattern>
 				<unitPattern count="other">Ratili {0}</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>aunsi</displayName>
 				<unitPattern count="one">Aunsi {0}</unitPattern>
 				<unitPattern count="other">Aunsi {0}</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>tola aunsi</displayName>
+				<unitPattern count="one">tola aunsi {0}</unitPattern>
+				<unitPattern count="other">tola aunsi {0}</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>karati</displayName>
+				<unitPattern count="one">karati {0}</unitPattern>
+				<unitPattern count="other">karati {0}</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>daltoni</displayName>
+				<unitPattern count="one">Da {0}</unitPattern>
+				<unitPattern count="other">Da {0}</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>uzito wa dunia</displayName>
+				<unitPattern count="one">M⊕ {0}</unitPattern>
+				<unitPattern count="other">M⊕ {0}</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>uzito wa jua</displayName>
+				<unitPattern count="one">M☉ {0}</unitPattern>
+				<unitPattern count="other">M☉ {0}</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>nafaka</displayName>
+				<unitPattern count="one">nafaka {0}</unitPattern>
+				<unitPattern count="other">nafaka {0}</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>gigawati</displayName>
+				<unitPattern count="one">gigawati {0}</unitPattern>
+				<unitPattern count="other">gigawati {0}</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>megawati</displayName>
+				<unitPattern count="one">megawati {0}</unitPattern>
+				<unitPattern count="other">megawati {0}</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kilowati</displayName>
 				<unitPattern count="one">kW {0}</unitPattern>
 				<unitPattern count="other">kW {0}</unitPattern>
 			</unit>
@@ -8330,21 +8832,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">Wati {0}</unitPattern>
 				<unitPattern count="other">Wati {0}</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>miliwati</displayName>
+				<unitPattern count="one">miliwati {0}</unitPattern>
+				<unitPattern count="other">miliwati {0}</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>kipimo cha hospawa</displayName>
 				<unitPattern count="one">hp {0}</unitPattern>
 				<unitPattern count="other">hp {0}</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>milimita za zebaki</displayName>
+				<unitPattern count="one">mmHg {0}</unitPattern>
+				<unitPattern count="other">mmHg {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>pauni kwa kila inchi mraba</displayName>
+				<unitPattern count="one">psi {0}</unitPattern>
+				<unitPattern count="other">psi {0}</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName>inchi za zebaki</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>bari</displayName>
+				<unitPattern count="one">bari {0}</unitPattern>
+				<unitPattern count="other">bari {0}</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName>kipimo cha milibari</displayName>
 				<unitPattern count="one">mbar {0}</unitPattern>
 				<unitPattern count="other">mbar {0}</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">atm {0}</unitPattern>
+				<unitPattern count="other">atm {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">Pa {0}</unitPattern>
+				<unitPattern count="other">Pa {0}</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>hektopaskali</displayName>
 				<unitPattern count="one">hPa {0}</unitPattern>
 				<unitPattern count="other">hPa {0}</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one">kPa {0}</unitPattern>
+				<unitPattern count="other">kPa {0}</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">MPa {0}</unitPattern>
+				<unitPattern count="other">MPa {0}</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilomita kwa saa</displayName>
@@ -8352,12 +8898,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">km {0}/saa</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName>mita kwa kila sekunde</displayName>
 				<unitPattern count="one">m {0}/s</unitPattern>
 				<unitPattern count="other">m {0}/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName>maili kwa kila saa</displayName>
 				<unitPattern count="one">mi {0}/saa</unitPattern>
 				<unitPattern count="other">mi {0}/saa</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>noti</displayName>
+				<unitPattern count="one">noti {0}</unitPattern>
+				<unitPattern count="other">noti {0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -8365,21 +8923,199 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>nyuzi za farenheiti</displayName>
 				<unitPattern count="one">{0}°F</unitPattern>
 				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="one">{0} K</unitPattern>
+				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="one">lbf⋅ft {0}</unitPattern>
+				<unitPattern count="other">lbf⋅ft {0}</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">N⋅m {0}</unitPattern>
+				<unitPattern count="other">N⋅m {0}</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>kilomita za ujazo</displayName>
 				<unitPattern count="one">km³ {0}</unitPattern>
 				<unitPattern count="other">km³ {0}</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>mita za ujazo</displayName>
+				<unitPattern count="one">m³ {0}</unitPattern>
+				<unitPattern count="other">mita {0} za ujazo</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>sentimita za ujazo</displayName>
+				<unitPattern count="one">cm³ {0}</unitPattern>
+				<unitPattern count="other">cm³ {0}</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>maili za ujazo</displayName>
 				<unitPattern count="one">mi³ {0}</unitPattern>
 				<unitPattern count="other">mi³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yadi za ujazo</displayName>
+				<unitPattern count="one">yd³ {0}</unitPattern>
+				<unitPattern count="other">yd³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>futi za ujazo</displayName>
+				<unitPattern count="one">ft³ {0}</unitPattern>
+				<unitPattern count="other">ft³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>inchi za ujazo</displayName>
+				<unitPattern count="one">in³ {0}</unitPattern>
+				<unitPattern count="other">in³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>megalita</displayName>
+				<unitPattern count="one">megalita {0}</unitPattern>
+				<unitPattern count="other">megalita {0}</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hektolita</displayName>
+				<unitPattern count="one">hektolita {0}</unitPattern>
+				<unitPattern count="other">hektolita {0}</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>lita</displayName>
 				<unitPattern count="one">lita {0}</unitPattern>
 				<unitPattern count="other">lita {0}</unitPattern>
+				<perUnitPattern>{0} kwa kila lita</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>desilita</displayName>
+				<unitPattern count="one">desilita {0}</unitPattern>
+				<unitPattern count="other">desilita {0}</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>sentilita</displayName>
+				<unitPattern count="one">sentilita {0}</unitPattern>
+				<unitPattern count="other">sentilita {0}</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mililita</displayName>
+				<unitPattern count="one">mililita {0}</unitPattern>
+				<unitPattern count="other">mililita {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>painti za mizani</displayName>
+				<unitPattern count="one">mpt {0}</unitPattern>
+				<unitPattern count="other">mpt {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>vikombe vya mizani</displayName>
+				<unitPattern count="one">mc {0}</unitPattern>
+				<unitPattern count="other">vikombe {0} vya mizani</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ekari futi</displayName>
+				<unitPattern count="one">ekari futi {0}</unitPattern>
+				<unitPattern count="other">ekari futi {0}</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>busheli</displayName>
+				<unitPattern count="one">bu {0}</unitPattern>
+				<unitPattern count="other">bu {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>galoni</displayName>
+				<unitPattern count="one">galoni {0}</unitPattern>
+				<unitPattern count="other">galoni {0}</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">gal Imp. {0}</unitPattern>
+				<unitPattern count="other">gal Imp. {0}</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>kwati</displayName>
+				<unitPattern count="one">kwati {0}</unitPattern>
+				<unitPattern count="other">kwati {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>painti</displayName>
+				<unitPattern count="one">painti {0}</unitPattern>
+				<unitPattern count="other">painti {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>vikombe</displayName>
+				<unitPattern count="one">kikombe {0}</unitPattern>
+				<unitPattern count="other">vikombe {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>aunsi za ujazo</displayName>
+				<unitPattern count="one">fl oz {0}</unitPattern>
+				<unitPattern count="other">fl oz {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="one">fl oz Imp. {0}</unitPattern>
+				<unitPattern count="other">fl oz Imp. {0}</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>vijiko vikubwa</displayName>
+				<unitPattern count="one">tbsp {0}</unitPattern>
+				<unitPattern count="other">tbsp {0}</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>vijiko vidogo</displayName>
+				<unitPattern count="one">tsp {0}</unitPattern>
+				<unitPattern count="other">tsp {0}</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>pipa</displayName>
+				<unitPattern count="one">pipa {0}</unitPattern>
+				<unitPattern count="other">mapipa {0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">dstspn {0}</unitPattern>
+				<unitPattern count="other">dstspn {0}</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="one">dstspn Imp {0}</unitPattern>
+				<unitPattern count="other">dstspn Imp {0}</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>tone</displayName>
+				<unitPattern count="one">tone {0}</unitPattern>
+				<unitPattern count="other">matone {0}</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ujazo wa dramu</displayName>
+				<unitPattern count="one">ujazo wa dramu {0}</unitPattern>
+				<unitPattern count="other">ujazo wa dramu {0}</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>toti</displayName>
+				<unitPattern count="one">toti {0}</unitPattern>
+				<unitPattern count="other">toti {0}</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>mfinyo kwa vidole</displayName>
+				<unitPattern count="one">mfinyo {0} kwa vidole</unitPattern>
+				<unitPattern count="other">mifinyo {0} kwa vidole</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="one">qt Imp. {0}</unitPattern>
+				<unitPattern count="other">qt Imp. {0}</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>mwelekeo</displayName>
@@ -8415,6 +9151,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<listPattern type="or-narrow">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, au {1}</listPatternPart>
 			<listPatternPart type="2">{0} au {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
@@ -8424,6 +9161,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} au {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} na {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
@@ -8632,13 +9372,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und sw</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8646,11 +9386,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8665,10 +9408,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal} {surname-initial}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8680,31 +9423,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
-		</personName>
-		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8722,7 +9462,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8751,27 +9491,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Hassan</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">Maria</nameField>
 			<nameField type="surname">Hasani</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">Ali</nameField>
 			<nameField type="given2">Juma</nameField>
 			<nameField type="surname">Hamisi</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Prof. Dk.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">Bw.</nameField>
+			<nameField type="given">Adam Juma</nameField>
+			<nameField type="given-informal">Bita</nameField>
+			<nameField type="given2">Agape Shukurani</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Masalu</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">Jr</nameField>
+			<nameField type="credentials">MB</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Kevin</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">John</nameField>
+			<nameField type="surname">Mkwawa</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Zamara</nameField>
+			<nameField type="given2">Imani</nameField>
+			<nameField type="surname">Bukenya</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Prof. Dk.</nameField>
 			<nameField type="given">Salima</nameField>
-			<nameField type="given-informal">Neema</nameField>
+			<nameField type="given-informal">Sarah</nameField>
 			<nameField type="given2">Farida</nameField>
 			<nameField type="surname-prefix">mwana</nameField>
 			<nameField type="surname-core">Hamisi</nameField>
 			<nameField type="surname2">Musa</nameField>
-			<nameField type="suffix">M.D. Ph.D.</nameField>
+			<nameField type="generation">Jr</nameField>
+			<nameField type="credentials">M.D. Ph.D.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -30,6 +30,8 @@
 
 #ifdef CHECK_UNHANDLED_OOPS
 
+CheckOopFunctionPointer check_oop_function = nullptr;
+
 void oop::register_oop() {
   assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
   if (!Universe::is_fully_initialized()) return;

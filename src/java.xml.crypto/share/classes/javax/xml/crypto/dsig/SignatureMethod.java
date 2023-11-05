@@ -34,7 +34,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * A representation of the XML <code>SignatureMethod</code> element
- * as defined in the <a href="http://www.w3.org/TR/xmldsig-core/">
+ * as defined in the <a href="https://www.w3.org/TR/xmldsig-core/">
  * W3C Recommendation for XML-Signature Syntax and Processing</a>.
  * The XML Schema Definition is defined as:
  * <pre>
@@ -52,6 +52,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * A <code>SignatureMethod</code> instance may be created by invoking the
  * {@link XMLSignatureFactory#newSignatureMethod newSignatureMethod} method
  * of the {@link XMLSignatureFactory} class.
+ * <p>
+ * The signature method algorithm URIs defined in this class are specified
+ * in the <a href="https://www.w3.org/TR/xmldsig-core/">
+ * W3C Recommendation for XML-Signature Syntax and Processing</a>
+ * and <a href="https://www.rfc-editor.org/info/rfc9231">
+ * RFC 9231: Additional XML Security Uniform Resource Identifiers (URIs)</a>
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group
@@ -59,8 +65,6 @@ import java.security.spec.AlgorithmParameterSpec;
  * @see XMLSignatureFactory#newSignatureMethod(String, SignatureMethodParameterSpec)
  */
 public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
-
-    // All methods can be found in RFC 6931.
 
     /**
      * The <a href="http://www.w3.org/2000/09/xmldsig#dsa-sha1">DSA-SHA1</a>
@@ -254,6 +258,22 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      * @since 17
      */
     String RSA_PSS = "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519">
+     * ED25519</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED25519 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
+
+    /**
+     * The <a href="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448">
+     * ED448</a> signature method algorithm URI.
+     *
+     * @since 21
+     */
+    String ED448 = "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
 
     /**
      * Returns the algorithm-specific input parameters of this

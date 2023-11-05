@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1641,7 +1641,7 @@ public class HTMLDocument extends DefaultStyledDocument {
             // e.getElement(index - 1) should represent the newline.
             index--;
             if (endE.getParentElement() != e) {
-                // The hiearchies don't match, we'll have to manually
+                // The hierarchies don't match, we'll have to manually
                 // recreate the leaf at e.getElement(index - 1)
                 replace(dde, e, index, ++count, start, end, true, true);
             }

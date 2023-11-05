@@ -61,12 +61,13 @@ public interface History extends Iterable<History.Entry>
     void append(Path file, boolean incremental) throws IOException;
 
     /**
-     * Read history from the file. If incremental only the events that are not contained within the internal list are added.
+     * Read history from the file. If checkDuplicates is <code>true</code> only the events that
+     * are not contained within the internal list are added.
      * @param  file        History file
-     * @param  incremental If true incremental read operation is performed.
+     * @param  checkDuplicates If <code>true</code>, duplicate history entries will be discarded
      * @throws IOException if a problem occurs
      */
-    void read(Path file, boolean incremental) throws IOException;
+    void read(Path file, boolean checkDuplicates) throws IOException;
 
     /**
      * Purge history.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class TestGetCategory {
         List<String> noCategory = EventType.getEventType(NoCategory.class).getCategoryNames();
         System.out.println("noCategory=" + noCategory);
         Asserts.assertEquals(noCategory.size(), 1, "Wrong default category");
-        Asserts.assertEquals(noCategory.get(0), "Uncategorized", "Wrong default category");
+        Asserts.assertEquals(noCategory.getFirst(), "Uncategorized", "Wrong default category");
 
         List<String>  withCategory = EventType.getEventType(WithCategory.class).getCategoryNames();
         Asserts.assertEquals(withCategory.size(), 4, "Wrong category");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,26 +43,22 @@ import java.util.*;
  * which loop, hitting a bkpt in each iteration.
  *
  */
-class SimulResumerTarg extends Thread {
+class SimulResumerTarg implements Runnable {
     static boolean one = false;
     static String name1 = "Thread 1";
     static String name2 = "Thread 2";
     static int count = 10000;
     public static void main(String[] args) {
         System.out.println("Howdy!");
-        SimulResumerTarg t1 = new SimulResumerTarg(name1);
-        SimulResumerTarg t2 = new SimulResumerTarg(name2);
+        Thread t1 = DebuggeeWrapper.newThread(new SimulResumerTarg(), name1);
+        Thread t2 = DebuggeeWrapper.newThread(new SimulResumerTarg(), name2);
 
         t1.start();
         t2.start();
     }
 
-    public SimulResumerTarg(String name) {
-        super(name);
-    }
-
     public void run() {
-        if (getName().equals(name1)) {
+        if (Thread.currentThread().getName().equals(name1)) {
             run1();
         } else {
             run2();

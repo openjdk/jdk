@@ -44,7 +44,7 @@ public class SerializableProxy implements Serializable {
         /**
          * Returns a deserialized object.
          *
-         * @returns the deserialized object
+         * @return the deserialized object
          */
         public SerializableProxy readResolve() {
             return new SerializableProxy(x, y);

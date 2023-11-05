@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ TEST_VM(ObjectMonitor, sanity) {
         << sizeof (PaddedEnd<ObjectMonitor>)
         << "; cache_line_size = " << cache_line_size;
 
-   EXPECT_GE((size_t) ObjectMonitor::owner_offset_in_bytes(), cache_line_size)
+   EXPECT_GE((size_t) in_bytes(ObjectMonitor::owner_offset()), cache_line_size)
         << "the _header and _owner fields are closer "
         << "than a cache line which permits false sharing.";
   }

@@ -95,13 +95,9 @@ public class NonBlocking {
 
         @Override
         public int read(long timeout, boolean isPeek) throws IOException {
-            boolean isInfinite = (timeout <= 0L);
-            while (!bytes.hasRemaining() && (isInfinite || timeout > 0L)) {
-                long start = 0;
-                if (!isInfinite) {
-                    start = System.currentTimeMillis();
-                }
-                int c = reader.read(timeout);
+            Timeout t = new Timeout(timeout);
+            while (!bytes.hasRemaining() && !t.elapsed()) {
+                int c = reader.read(t.timeout());
                 if (c == EOF) {
                     return EOF;
                 }
@@ -116,9 +112,6 @@ public class NonBlocking {
                     bytes.clear();
                     encoder.encode(chars, bytes, false);
                     bytes.flip();
-                }
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
                 }
             }
             if (bytes.hasRemaining()) {
@@ -151,21 +144,17 @@ public class NonBlocking {
         public NonBlockingInputStreamReader(NonBlockingInputStream input, CharsetDecoder decoder) {
             this.input = input;
             this.decoder = decoder;
-            this.bytes = ByteBuffer.allocate(4);
-            this.chars = CharBuffer.allocate(2);
+            this.bytes = ByteBuffer.allocate(2048);
+            this.chars = CharBuffer.allocate(1024);
             this.bytes.limit(0);
             this.chars.limit(0);
         }
 
         @Override
         protected int read(long timeout, boolean isPeek) throws IOException {
-            boolean isInfinite = (timeout <= 0L);
-            while (!chars.hasRemaining() && (isInfinite || timeout > 0L)) {
-                long start = 0;
-                if (!isInfinite) {
-                    start = System.currentTimeMillis();
-                }
-                int b = input.read(timeout);
+            Timeout t = new Timeout(timeout);
+            while (!chars.hasRemaining() && !t.elapsed()) {
+                int b = input.read(t.timeout());
                 if (b == EOF) {
                     return EOF;
                 }
@@ -181,10 +170,6 @@ public class NonBlocking {
                     decoder.decode(bytes, chars, false);
                     chars.flip();
                 }
-
-                if (!isInfinite) {
-                    timeout -= System.currentTimeMillis() - start;
-                }
             }
             if (chars.hasRemaining()) {
                 if (isPeek) {
@@ -198,46 +183,37 @@ public class NonBlocking {
         }
 
         @Override
-        public int readBuffered(char[] b) throws IOException {
+        public int readBuffered(char[] b, int off, int len, long timeout) throws IOException {
             if (b == null) {
                 throw new NullPointerException();
-            } else if (b.length == 0) {
+            } else if (off < 0 || len < 0 || off + len < b.length) {
+                throw new IllegalArgumentException();
+            } else if (len == 0) {
                 return 0;
+            } else if (chars.hasRemaining()) {
+                int r = Math.min(len, chars.remaining());
+                chars.get(b, off, r);
+                return r;
             } else {
-                if (chars.hasRemaining()) {
-                    int r = Math.min(b.length, chars.remaining());
-                    chars.get(b);
-                    return r;
-                } else {
-                    byte[] buf = new byte[b.length];
-                    int l = input.readBuffered(buf);
-                    if (l < 0) {
-                        return l;
-                    } else {
-                        ByteBuffer currentBytes;
-                        if (bytes.hasRemaining()) {
-                            int transfer = bytes.remaining();
-                            byte[] newBuf = new byte[l + transfer];
-                            bytes.get(newBuf, 0, transfer);
-                            System.arraycopy(buf, 0, newBuf, transfer, l);
-                            currentBytes = ByteBuffer.wrap(newBuf);
-                            bytes.position(0);
-                            bytes.limit(0);
-                        } else {
-                            currentBytes = ByteBuffer.wrap(buf, 0, l);
-                        }
-                        CharBuffer chars = CharBuffer.wrap(b);
-                        decoder.decode(currentBytes, chars, false);
-                        chars.flip();
-                        if (currentBytes.hasRemaining()) {
-                            int pos = bytes.position();
-                            bytes.limit(bytes.limit() + currentBytes.remaining());
-                            bytes.put(currentBytes);
-                            bytes.position(pos);
-                        }
-                        return chars.remaining();
+                Timeout t = new Timeout(timeout);
+                while (!chars.hasRemaining() && !t.elapsed()) {
+                    if (!bytes.hasRemaining()) {
+                        bytes.position(0);
+                        bytes.limit(0);
                     }
+                    int nb = input.readBuffered(bytes.array(), bytes.limit(),
+                                            bytes.capacity() - bytes.limit(), t.timeout());
+                    if (nb < 0) {
+                        return nb;
+                    }
+                    bytes.limit(bytes.limit() + nb);
+                    chars.clear();
+                    decoder.decode(bytes, chars, false);
+                    chars.flip();
                 }
+                int nb = Math.min(len, chars.remaining());
+                chars.get(b, off, nb);
+                return nb;
             }
         }
 

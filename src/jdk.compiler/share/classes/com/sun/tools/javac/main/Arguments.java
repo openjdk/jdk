@@ -114,6 +114,7 @@ public class Arguments {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Arguments(Context context) {
         context.put(argsKey, this);
         options = Options.instance(context);
@@ -457,7 +458,7 @@ public class Arguments {
 
             if (!emptyAllowed) {
                 if (!errors) {
-                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
+                    if (JavaCompiler.explicitAnnotationProcessingRequested(options, fileManager)) {
                         reportDiag(Errors.NoSourceFilesClasses);
                     } else {
                         reportDiag(Errors.NoSourceFiles);

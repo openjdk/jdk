@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,9 @@
  * classes so that any developer can extend them to provide additional features
  * while maintaining the core required standard functionality and compatibility. It
  * is anticipated that many vendors and developers will extend the standard feature
- * set to their their particular needs. The website for JDBC Technology will
+ * set to their particular needs. The website for JDBC Technology will
  * provider a portal where implementations can be listed, similar to the way it
  * provides a site for JDBC drivers.
+ * @since 1.5
  */
  package com.sun.rowset;

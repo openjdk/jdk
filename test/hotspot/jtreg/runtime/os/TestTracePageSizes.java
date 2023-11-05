@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
- * @requires vm.gc != "Z"
+ * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseTransparentHugePages TestTracePageSizes
@@ -258,7 +258,7 @@ public class TestTracePageSizes {
         parseSmaps();
 
         // Setup patters for the JVM page size logging.
-        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).*page_size=([^ ]+).*";
+        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).* page_size=(\\d+[BKMG]).*";
         Pattern traceLinePattern = Pattern.compile(traceLinePatternString);
 
         // The test needs to be run with page size logging printed to ps-$pid.log.

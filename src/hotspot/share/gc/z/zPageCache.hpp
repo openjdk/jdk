@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/z/zList.hpp"
 #include "gc/z/zPage.hpp"
+#include "gc/z/zPageType.hpp"
 #include "gc/z/zValue.hpp"
 
 class ZPageCacheFlushClosure;
@@ -53,15 +54,13 @@ private:
 public:
   ZPageCache();
 
-  ZPage* alloc_page(uint8_t type, size_t size);
+  ZPage* alloc_page(ZPageType type, size_t size);
   void free_page(ZPage* page);
 
   void flush_for_allocation(size_t requested, ZList<ZPage>* to);
   size_t flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64_t* timeout);
 
   void set_last_commit();
-
-  void pages_do(ZPageClosure* cl) const;
 };
 
 #endif // SHARE_GC_Z_ZPAGECACHE_HPP

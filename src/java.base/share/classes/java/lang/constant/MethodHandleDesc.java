@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import static java.lang.constant.DirectMethodHandleDesc.Kind.CONSTRUCTOR;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@link MethodHandle} constant.
  *
+ * @sealedGraph
  * @since 12
  */
 public sealed interface MethodHandleDesc
@@ -203,6 +204,9 @@ public sealed interface MethodHandleDesc
      * @return a {@linkplain MethodHandleDesc} describing the method handle type
      */
     MethodTypeDesc invocationType();
+
+    @Override
+    MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compares the specified object with this descriptor for equality.  Returns

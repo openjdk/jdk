@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -823,9 +823,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1003,6 +1009,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">nov</month>
 							<month type="12">dec</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">J</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">januaro</month>
 							<month type="2">februaro</month>
@@ -1074,6 +1094,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">ve</day>
 							<day type="sat">sa</day>
 						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">D</day>
+							<day type="mon" draft="unconfirmed">L</day>
+							<day type="tue" draft="unconfirmed">M</day>
+							<day type="wed" draft="unconfirmed">M</day>
+							<day type="thu" draft="unconfirmed">Ĵ</day>
+							<day type="fri" draft="unconfirmed">V</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">di</day>
+							<day type="mon" draft="unconfirmed">lu</day>
+							<day type="tue" draft="unconfirmed">ma</day>
+							<day type="wed" draft="unconfirmed">me</day>
+							<day type="thu" draft="unconfirmed">ĵa</day>
+							<day type="fri" draft="unconfirmed">ve</day>
+							<day type="sat" draft="unconfirmed">sa</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">dimanĉo</day>
 							<day type="mon">lundo</day>
@@ -1085,6 +1123,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">di</day>
+							<day type="mon" draft="unconfirmed">lu</day>
+							<day type="tue" draft="unconfirmed">ma</day>
+							<day type="wed" draft="unconfirmed">me</day>
+							<day type="thu" draft="unconfirmed">ĵa</day>
+							<day type="fri" draft="unconfirmed">ve</day>
+							<day type="sat" draft="unconfirmed">sa</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">D</day>
 							<day type="mon" draft="unconfirmed">L</day>
@@ -1093,6 +1140,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">Ĵ</day>
 							<day type="fri" draft="unconfirmed">V</day>
 							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">di</day>
+							<day type="mon" draft="unconfirmed">lu</day>
+							<day type="tue" draft="unconfirmed">ma</day>
+							<day type="wed" draft="unconfirmed">me</day>
+							<day type="thu" draft="unconfirmed">ĵa</day>
+							<day type="fri" draft="unconfirmed">ve</day>
+							<day type="sat" draft="unconfirmed">sa</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">dimanĉo</day>
@@ -1112,6 +1168,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="unconfirmed">2. jk.</quarter>
 							<quarter type="3" draft="unconfirmed">3. jk.</quarter>
 							<quarter type="4" draft="unconfirmed">4. jk.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">1-a jarkvarono</quarter>
@@ -1157,9 +1219,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">atm</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">ptm</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">atm</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">ptm</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1176,6 +1246,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">aK</era>
+						<era type="0" alt="variant">aK</era>
 						<era type="1">pK</era>
 						<era type="1" alt="variant" draft="unconfirmed">KE</era>
 					</eraNarrow>
@@ -1253,9 +1324,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1427,6 +1504,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="unconfirmed">erao</displayName>
 			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">erao</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">erao</displayName>
+			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">jaro</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta jaro</relative>
@@ -1441,7 +1524,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jaroj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">jaro</displayName>
+				<relative type="-1" draft="unconfirmed">pasinta jaro</relative>
+				<relative type="0" draft="unconfirmed">nuna jaro</relative>
+				<relative type="1" draft="unconfirmed">venonta jaro</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} jaro</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} jaroj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} jaro</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jaroj</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="year-narrow">
+				<displayName draft="unconfirmed">jaro</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta j.</relative>
 				<relative type="0" draft="unconfirmed">nuna j.</relative>
 				<relative type="1" draft="unconfirmed">venonta j.</relative>
@@ -1459,6 +1557,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">pasinta jarkvarono</relative>
 				<relative type="0" draft="unconfirmed">nuna jarkvarono</relative>
 				<relative type="1" draft="unconfirmed">venonta jarkvarono</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} jarkvarono</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} jarkvaronoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} jarkvarono</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} jarkvaronoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">jarkvarono</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">post {0} jarkvarono</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">post {0} jarkvaronoj</relativeTimePattern>
@@ -1508,6 +1617,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
+				<displayName draft="unconfirmed">mon.</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta mon.</relative>
 				<relative type="0" draft="unconfirmed">nuna mon.</relative>
 				<relative type="1" draft="unconfirmed">venonta mon.</relative>
@@ -1551,6 +1661,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod draft="unconfirmed">la semajno de {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
+				<displayName draft="unconfirmed">sem.</displayName>
 				<relative type="-1" draft="unconfirmed">pasinta sem.</relative>
 				<relative type="0" draft="unconfirmed">nuna sem.</relative>
 				<relative type="1" draft="unconfirmed">venonta sem.</relative>
@@ -1570,7 +1681,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekOfMonth-short">
 				<displayName draft="unconfirmed">sem. de mon.</displayName>
 			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">sem. de mon.</displayName>
+			</field>
 			<field type="day">
+				<displayName draft="unconfirmed">tago</displayName>
+				<relative type="-1" draft="unconfirmed">hieraŭ</relative>
+				<relative type="0" draft="unconfirmed">hodiaŭ</relative>
+				<relative type="1" draft="unconfirmed">morgaŭ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} tago</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} tagoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} tago</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} tagoj</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
 				<displayName draft="unconfirmed">tago</displayName>
 				<relative type="-1" draft="unconfirmed">hieraŭ</relative>
 				<relative type="0" draft="unconfirmed">hodiaŭ</relative>
@@ -1586,6 +1714,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">t.</displayName>
+				<relative type="-1" draft="unconfirmed">hieraŭ</relative>
+				<relative type="0" draft="unconfirmed">hodiaŭ</relative>
+				<relative type="1" draft="unconfirmed">morgaŭ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="unconfirmed">post {0} t.</relativeTimePattern>
 					<relativeTimePattern count="other" draft="unconfirmed">post {0} t.</relativeTimePattern>
@@ -1596,6 +1727,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
+				<displayName draft="unconfirmed">tago de jaro</displayName>
+			</field>
+			<field type="dayOfYear-short">
 				<displayName draft="unconfirmed">tago de jaro</displayName>
 			</field>
 			<field type="dayOfYear-narrow">
@@ -1614,6 +1748,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">semajntago de monato</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">st. de monato</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
 				<displayName draft="unconfirmed">st. de monato</displayName>
 			</field>
 			<field type="sun">
@@ -1910,6 +2047,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} horoj</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">horo</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="unconfirmed">post {0} horo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">post {0} horoj</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="unconfirmed">antaŭ {0} horo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="unconfirmed">antaŭ {0} horoj</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="hour-narrow">
 				<displayName draft="unconfirmed">h</displayName>
 				<relativeTime type="future">
@@ -1990,6 +2138,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName draft="unconfirmed">horzono</displayName>
+			</field>
+			<field type="zone-short">
 				<displayName draft="unconfirmed">horzono</displayName>
 			</field>
 			<field type="zone-narrow">

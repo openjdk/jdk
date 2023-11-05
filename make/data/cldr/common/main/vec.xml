@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="vec"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab">abcazo</language>
+			<language type="ace">achineze</language>
+			<language type="ada">adangme</language>
+			<language type="ady">adiga</language>
+			<language type="af">afregan</language>
+			<language type="agq">aghem</language>
+			<language type="ain">ainu</language>
+			<language type="ak">akan</language>
+			<language type="ale">aleutian</language>
+			<language type="am">amàrego</language>
+			<language type="an">aragoneze</language>
+			<language type="anp">angika</language>
+			<language type="ar">àrabo</language>
+			<language type="ar_001">àrabo moderno</language>
+			<language type="arp">arapaho</language>
+			<language type="sq">albaneze</language>
+			<language type="vec" draft="contributed">Veneto</language>
+		</languages>
+		<codePatterns>
+			<codePattern type="language">Lengua: {0}</codePattern>
+			<codePattern type="script">Scritura: {0}</codePattern>
+			<codePattern type="territory">Rejon: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="contributed">[a à b c d e é è f g h i ì j l m n o ó ò p r s t u ù v x z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ª á ć ç ḑ ʣ ǵ í k ł º q ş ţ ʦ ú w y {z\u0327}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ ‒ – — ― ⁓ , ; \: ! ? . … · ' ‘ ’ &quot; “ ” « » ( ) \[ \] \{ \} 〈 〉 @ * / \\ \&amp; # + = ⁄]</exemplarCharacters>
+	</characters>
+</ldml>

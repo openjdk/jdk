@@ -294,6 +294,11 @@
           "How many back-to-back Degenerated GCs should happen before "     \
           "going to a Full GC.")                                            \
                                                                             \
+  product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
+          "After this number of consecutive Full GCs fail to make "         \
+          "progress, Shenandoah will raise out of memory errors. Note "     \
+          "that progress is determined by ShenandoahCriticalFreeThreshold") \
+                                                                            \
   product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
           "Should internally-caused GC requests invoke concurrent cycles, " \
           "should they do the stop-the-world (Degenerated / Full GC)? "     \
@@ -334,7 +339,7 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
+  product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
@@ -351,9 +356,6 @@
                                                                             \
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
-                                                                            \
-  product(bool, ShenandoahNMethodBarrier, true, DIAGNOSTIC,                 \
-          "Turn on/off NMethod entry barriers in Shenandoah")               \
                                                                             \
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \

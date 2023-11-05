@@ -138,7 +138,7 @@ class arrayOopDesc : public oopDesc {
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
   static int32_t max_array_length(BasicType type) {
-    assert(type >= 0 && type < T_CONFLICT, "wrong type");
+    assert(type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
     const size_t max_element_words_per_size_t =

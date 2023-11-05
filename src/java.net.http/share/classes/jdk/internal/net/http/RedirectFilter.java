@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,14 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
+import java.util.concurrent.locks.ReentrantLock;
+
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 
 class RedirectFilter implements HeaderFilter {
 
+    private final ReentrantLock stateLock = new ReentrantLock();
     HttpRequestImpl request;
     HttpClientImpl client;
     HttpClient.Redirect policy;
@@ -58,19 +61,29 @@ class RedirectFilter implements HeaderFilter {
     public RedirectFilter() {}
 
     @Override
-    public synchronized void request(HttpRequestImpl r, MultiExchange<?> e) throws IOException {
-        this.request = r;
-        this.client = e.client();
-        this.policy = client.followRedirects();
+    public void request(HttpRequestImpl r, MultiExchange<?> e) throws IOException {
+        stateLock.lock();
+        try {
+            this.request = r;
+            this.client = e.client();
+            this.policy = client.followRedirects();
 
-        this.method = r.method();
-        this.uri = r.uri();
-        this.exchange = e;
+            this.method = r.method();
+            this.uri = r.uri();
+            this.exchange = e;
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     @Override
-    public synchronized HttpRequestImpl response(Response r) throws IOException {
-        return handleResponse(r);
+    public HttpRequestImpl response(Response r) throws IOException {
+        stateLock.lock();
+        try {
+            return handleResponse(r);
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     private static String redirectedMethod(int statusCode, String orig) {

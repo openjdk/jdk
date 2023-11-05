@@ -42,7 +42,6 @@
         <property name="nbjdk.java" value="${nbjdk.home}/bin/java${.exe}"/>
         <property name="nbjdk.javadoc" value="${nbjdk.home}/bin/javadoc${.exe}"/>
         <property name="nbjdk.appletviewer" value="${nbjdk.home}/bin/appletviewer${.exe}"/>
-        <property name="nbjdk.bootclasspath" value="${nbjdk.home}/jre/lib/rt.jar"/>
     </target>
 
     <target name="-jdk-presetdef-basic" depends="-jdk-preinit" unless="nbjdk.presetdef.basic.done">

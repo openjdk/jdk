@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order /* order */) const;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order /* order */) const;
 
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return fetch_and_add(dest, add_value, order) + add_value;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return fetch_then_add(dest, add_value, order) + add_value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::fetch_and_add(D volatile* dest, I add_value,
-                                               atomic_memory_order /* order */) const {
+inline D Atomic::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
+                                                atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
   D old_value;
@@ -96,8 +96,8 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
 #ifdef AMD64
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::fetch_and_add(D volatile* dest, I add_value,
-                                               atomic_memory_order /* order */) const {
+inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
+                                                atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
   D old_value;
@@ -152,6 +152,14 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
   STATIC_ASSERT(8 == sizeof(T));
   return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
 }
+
+// No direct support for 8-byte xchg; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+
+// No direct support for 8-byte add; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
 
 template<>
 template<typename T>

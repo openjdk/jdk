@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=platform_thread
  * @bug 8287847
  * @summary Test suspending a platform thread after it has terminated.
- * @enablePreview
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile SuspendAfterDeath.java
  * @run main/othervm SuspendAfterDeath
@@ -35,7 +34,6 @@
  * @test id=virtual_thread
  * @bug 8287847
  * @summary Test suspending a virtual thread after it has terminated.
- * @enablePreview
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile SuspendAfterDeath.java
  * @run main/othervm SuspendAfterDeath Virtual

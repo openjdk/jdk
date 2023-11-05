@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,16 @@ public class GSSNameElement implements GSSNameSpi {
                         supportedNTs = stub.inquireNamesForMech();
                     } catch (GSSException ge2) {
                         // Should never happen
-                        SunNativeProvider.debug("Name type list unavailable: " +
-                            ge2.getMajorString());
+                        if (SunNativeProvider.DEBUG) {
+                            SunNativeProvider.debug("Name type list unavailable: " +
+                                    ge2.getMajorString());
+                        }
                     }
                 } else {
-                    SunNativeProvider.debug("Name type list unavailable: " +
-                        ge.getMajorString());
+                    if (SunNativeProvider.DEBUG) {
+                        SunNativeProvider.debug("Name type list unavailable: " +
+                                ge.getMajorString());
+                    }
                 }
             }
             if (supportedNTs != null) {
@@ -86,8 +90,10 @@ public class GSSNameElement implements GSSNameSpi {
                     if (supportedNTs[i].equals(nameType)) return nameType;
                 }
                 // Special handling the specified name type
-                SunNativeProvider.debug("Override " + nameType +
-                    " with mechanism default(null)");
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("Override " + nameType +
+                            " with mechanism default(null)");
+                }
                 return null; // Use mechanism specific default
             }
         }
@@ -185,8 +191,10 @@ public class GSSNameElement implements GSSNameSpi {
             }
         }
 
-        SunNativeProvider.debug("Imported " + printableName + " w/ type " +
-                                printableType);
+        if (SunNativeProvider.DEBUG) {
+            SunNativeProvider.debug("Imported " + printableName + " w/ type " +
+                    printableType);
+        }
     }
 
     private void setPrintables() throws GSSException {
@@ -211,7 +219,9 @@ public class GSSNameElement implements GSSNameSpi {
         mName = stub.canonicalizeName(pName);
         Object[] printables2 = stub.displayName(mName);
         stub.releaseName(mName);
-        SunNativeProvider.debug("Got kerberized name: " + printables2[0]);
+        if (SunNativeProvider.DEBUG) {
+            SunNativeProvider.debug("Got kerberized name: " + printables2[0]);
+        }
         return (String) printables2[0];
     }
 

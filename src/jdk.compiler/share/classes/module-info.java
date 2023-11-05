@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
  * <tr><th scope="row">{@code requires-transitive-automatic} <td>automatic modules in {@code requires transitive}
  * <tr><th scope="row">{@code serial}               <td>{@link java.base/java.io.Serializable Serializable} classes
@@ -184,6 +185,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
+ * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
  *                                                      (that is, try-with-resources)
  * <tr><th scope="row">{@code unchecked}            <td>unchecked operations
@@ -216,6 +218,7 @@ import javax.tools.StandardLocation;
  */
 module jdk.compiler {
     requires transitive java.compiler;
+    requires jdk.internal.opt;
     requires jdk.zipfs;
 
     exports com.sun.source.doctree;

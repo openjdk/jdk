@@ -623,14 +623,14 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
     } else {
       // Go into the VM to fetch the implementor.
       VM_ENTRY_MARK;
-      MutexLocker ml(Compile_lock);
-      Klass* k = get_instanceKlass()->implementor();
-      if (k != nullptr) {
-        if (k == get_instanceKlass()) {
+      InstanceKlass* ik = get_instanceKlass();
+      Klass* implk = ik->implementor();
+      if (implk != nullptr) {
+        if (implk == ik) {
           // More than one implementors. Use 'this' in this case.
           impl = this;
         } else {
-          impl = CURRENT_THREAD_ENV->get_instance_klass(k);
+          impl = CURRENT_THREAD_ENV->get_instance_klass(implk);
         }
       }
     }
@@ -731,7 +731,7 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
 }
 
 GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() const{
-  if (_transitive_interfaces == NULL) {
+  if (_transitive_interfaces == nullptr) {
     const_cast<ciInstanceKlass*>(this)->compute_transitive_interfaces();
   }
   return _transitive_interfaces;
@@ -745,7 +745,7 @@ void ciInstanceKlass::compute_transitive_interfaces() {
           Arena* arena = CURRENT_ENV->arena();
           int transitive_interfaces_len = orig_length + (is_interface() ? 1 : 0);
           GrowableArray<ciInstanceKlass*>* transitive_interfaces = new(arena)GrowableArray<ciInstanceKlass*>(arena, transitive_interfaces_len,
-                                                                                                             0, NULL);
+                                                                                                             0, nullptr);
           for (int i = 0; i < orig_length; i++) {
             transitive_interfaces->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
           }

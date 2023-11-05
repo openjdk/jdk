@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -521,9 +521,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -885,9 +891,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} - {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} - {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -944,6 +956,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>jamono</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>jamono</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>jamono</displayName>
 			</field>
 			<field type="year">
@@ -1110,6 +1128,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>fan</displayName>
+				<relative type="-1">démb</relative>
+				<relative type="0">tay</relative>
+				<relative type="1">suba</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">fileek {0} fan</relativeTimePattern>
 				</relativeTime>
@@ -1119,6 +1140,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>fan</displayName>
+				<relative type="-1">démb</relative>
+				<relative type="0">tay</relative>
+				<relative type="1">suba</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">fileek {0} fan</relativeTimePattern>
 				</relativeTime>
@@ -1136,6 +1160,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>bisu at</displayName>
 			</field>
 			<field type="weekday">
+				<displayName>bisu ayu-bis</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>bisu ayu-bis</displayName>
+			</field>
+			<field type="weekday-narrow">
 				<displayName>bisu ayu-bis</displayName>
 			</field>
 			<field type="weekdayOfMonth">
@@ -1378,7 +1408,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} gà. ci ginaaw</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayperiod-short">
+				<displayName>Sub/Ngo</displayName>
+			</field>
 			<field type="dayperiod">
+				<displayName>Sub/Ngo</displayName>
+			</field>
+			<field type="dayperiod-narrow">
 				<displayName>Sub/Ngo</displayName>
 			</field>
 			<field type="hour">

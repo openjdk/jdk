@@ -47,13 +47,8 @@
 // Forward decls.
 class Space;
 class ContiguousSpace;
-#if INCLUDE_SERIALGC
-class BlockOffsetArray;
-class BlockOffsetArrayContigSpace;
-class BlockOffsetTable;
-#endif
 class Generation;
-class CompactibleSpace;
+class ContiguousSpace;
 class CardTableRS;
 class DirtyCardToOopClosure;
 class FilteringClosure;
@@ -86,13 +81,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void set_bottom(HeapWord* value) { _bottom = value; }
   virtual void set_end(HeapWord* value)    { _end = value; }
 
-  virtual HeapWord* saved_mark_word() const  { return _saved_mark_word; }
+  HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
   // Returns true if this object has been allocated since a
   // generation's "save_marks" call.
-  virtual bool obj_allocated_since_save_marks(const oop obj) const {
+  bool obj_allocated_since_save_marks(const oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
   }
 
@@ -111,17 +106,6 @@ class Space: public CHeapObj<mtGC> {
   MemRegion used_region_at_save_marks() const {
     return MemRegion(bottom(), saved_mark_word());
   }
-
-  // Initialization.
-  // "initialize" should be called once on a space, before it is used for
-  // any purpose.  The "mr" arguments gives the bounds of the space, and
-  // the "clear_space" argument should be true unless the memory in "mr" is
-  // known to be zeroed.
-  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
-
-  // The "clear" method must be called on a region that may have
-  // had allocation performed in it, but is now to be considered empty.
-  virtual void clear(bool mangle_space);
 
   // For detecting GC bugs.  Should only be called at GC boundaries, since
   // some unused space may be used as scratch space during GC's.
@@ -163,11 +147,6 @@ class Space: public CHeapObj<mtGC> {
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
 
-  // Iterate over all the ref-containing fields of all objects in the
-  // space, calling "cl.do_oop" on each.  Fields in objects allocated by
-  // applications of the closure are not included in the iteration.
-  virtual void oop_iterate(OopIterateClosure* cl);
-
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
@@ -183,7 +162,7 @@ class Space: public CHeapObj<mtGC> {
   // structure supporting these calls, possibly speeding up future calls.
   // The default implementation, however, is simply to call the const
   // version.
-  virtual HeapWord* block_start(const void* p);
+  HeapWord* block_start(const void* p);
 
   // Requires "addr" to be the start of a chunk, and returns its size.
   // "addr + size" is required to be the start of a new chunk, or the end
@@ -196,7 +175,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object and the object is alive.
-  virtual bool obj_is_alive(const HeapWord* addr) const;
+  bool obj_is_alive(const HeapWord* addr) const;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
@@ -211,78 +190,13 @@ class Space: public CHeapObj<mtGC> {
   virtual void adjust_pointers() = 0;
 #endif
 
-  virtual void print() const;
+  void print() const;
   virtual void print_on(outputStream* st) const;
-  virtual void print_short() const;
-  virtual void print_short_on(outputStream* st) const;
-
-
-  // IF "this" is a ContiguousSpace, return it, else return null.
-  virtual ContiguousSpace* toContiguousSpace() {
-    return nullptr;
-  }
+  void print_short() const;
+  void print_short_on(outputStream* st) const;
 
   // Debugging
   virtual void verify() const = 0;
-};
-
-// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
-// sub-classes). It knows how to filter out objects that are outside of the
-// _boundary.
-// (Note that because of the imprecise nature of the write barrier, this may
-// iterate over oops beyond the region.)
-//
-// Assumptions:
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class DirtyCardToOopClosure: public MemRegionClosure {
-protected:
-  OopIterateClosure* _cl;
-  Space* _sp;
-  HeapWord* _min_done;          // Need a downwards traversal to compensate
-                                // imprecise write barrier; this is the
-                                // lowest location already done (or,
-                                // alternatively, the lowest address that
-                                // shouldn't be done again.  null means infinity.)
-  NOT_PRODUCT(HeapWord* _last_bottom;)
-
-  // Get the actual top of the area on which the closure will
-  // operate, given where the top is assumed to be (the end of the
-  // memory region passed to do_MemRegion) and where the object
-  // at the top is assumed to start. For example, an object may
-  // start at the top but actually extend past the assumed top,
-  // in which case the top becomes the end of the object.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-  // Walk the given memory region, from bottom to top, applying
-  // the given oop closure to (possibly) all objects found. The
-  // given oop closure may or may not be the same as the oop
-  // closure with which this closure was created, as it may
-  // be a filtering closure which makes use of the _boundary.
-  // We offer two signatures, so the FilteringClosure static type is
-  // apparent.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               OopIterateClosure* cl);
-public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
-    _cl(cl), _sp(sp), _min_done(nullptr) {
-    NOT_PRODUCT(_last_bottom = nullptr);
-  }
-
-  void do_MemRegion(MemRegion mr) override;
 };
 
 // A structure to represent a point at which objects are being copied
@@ -290,34 +204,60 @@ public:
 class CompactPoint : public StackObj {
 public:
   Generation* gen;
-  CompactibleSpace* space;
+  ContiguousSpace* space;
 
   CompactPoint(Generation* g = nullptr) :
     gen(g), space(nullptr) {}
 };
 
-// A space that supports compaction operations.  This is usually, but not
-// necessarily, a space that is normally contiguous.  But, for example, a
-// free-list-based space whose normal collection is a mark-sweep without
-// compaction could still support compaction in full GC's.
-class CompactibleSpace: public Space {
+class GenSpaceMangler;
+
+// A space in which the free area is contiguous.  It therefore supports
+// faster allocation, and compaction.
+class ContiguousSpace: public Space {
   friend class VMStructs;
+
 private:
   HeapWord* _compaction_top;
-  CompactibleSpace* _next_compaction_space;
+  ContiguousSpace* _next_compaction_space;
 
-  template <class SpaceType>
-  static inline void verify_up_to_first_dead(SpaceType* space) NOT_DEBUG_RETURN;
+  static inline void verify_up_to_first_dead(ContiguousSpace* space) NOT_DEBUG_RETURN;
 
-  template <class SpaceType>
-  static inline void clear_empty_region(SpaceType* space);
+  static inline void clear_empty_region(ContiguousSpace* space);
 
-public:
-  CompactibleSpace() :
-   _compaction_top(nullptr), _next_compaction_space(nullptr) {}
+ protected:
+  HeapWord* _top;
+  // A helper for mangling the unused area of the space in debug builds.
+  GenSpaceMangler* _mangler;
 
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
-  void clear(bool mangle_space) override;
+  // Used during compaction.
+  HeapWord* _first_dead;
+  HeapWord* _end_of_live;
+
+  // This the function to invoke when an allocation of an object covering
+  // "start" to "end" occurs to update other internal data structures.
+  virtual void update_for_block(HeapWord* start, HeapWord* the_end) { }
+
+  GenSpaceMangler* mangler() { return _mangler; }
+
+  // Allocation helpers (return null if full).
+  inline HeapWord* allocate_impl(size_t word_size);
+  inline HeapWord* par_allocate_impl(size_t word_size);
+
+ public:
+  ContiguousSpace();
+  ~ContiguousSpace();
+
+  // Initialization.
+  // "initialize" should be called once on a space, before it is used for
+  // any purpose.  The "mr" arguments gives the bounds of the space, and
+  // the "clear_space" argument should be true unless the memory in "mr" is
+  // known to be zeroed.
+  void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+
+  // The "clear" method must be called on a region that may have
+  // had allocation performed in it, but is now to be considered empty.
+  virtual void clear(bool mangle_space);
 
   // Used temporarily during a compaction phase to hold the value
   // top should have when compaction is complete.
@@ -329,19 +269,15 @@ public:
     _compaction_top = value;
   }
 
-  // Perform operations on the space needed after a compaction
-  // has been performed.
-  virtual void reset_after_compaction() = 0;
-
   // Returns the next space (in the current generation) to be compacted in
   // the global compaction order.  Also is used to select the next
   // space into which to compact.
 
-  virtual CompactibleSpace* next_compaction_space() const {
+  virtual ContiguousSpace* next_compaction_space() const {
     return _next_compaction_space;
   }
 
-  void set_next_compaction_space(CompactibleSpace* csp) {
+  void set_next_compaction_space(ContiguousSpace* csp) {
     _next_compaction_space = csp;
   }
 
@@ -356,7 +292,7 @@ public:
   // "cp->compaction_space" up-to-date.  Offset tables may be updated in
   // this phase as if the final copy had occurred; if so, "cp->threshold"
   // indicates when the next such action should be taken.
-  virtual void prepare_for_compaction(CompactPoint* cp) = 0;
+  void prepare_for_compaction(CompactPoint* cp);
   // MarkSweep support phase3
   void adjust_pointers() override;
   // MarkSweep support phase4
@@ -367,11 +303,6 @@ public:
   // live part of a compacted space ("deadwood" support.)
   virtual size_t allowed_dead_ratio() const { return 0; };
 
-  // Some contiguous spaces may maintain some data structures that should
-  // be updated whenever an allocation crosses a boundary.  This function
-  // initializes these data structures for further updates.
-  virtual void initialize_threshold() { }
-
   // "q" is an object of the given "size" that should be forwarded;
   // "cp" names the generation ("gen") and containing "this" (which must
   // also equal "cp->space").  "compact_top" is where in "this" the
@@ -381,44 +312,10 @@ public:
   // be one, since compaction must succeed -- we go to the first space of
   // the previous generation if necessary, updating "cp"), reset compact_top
   // and then forward.  In either case, returns the new value of "compact_top".
-  // Invokes the "alloc_block" function of the then-current compaction
+  // Invokes the "update_for_block" function of the then-current compaction
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-protected:
-  // Used during compaction.
-  HeapWord* _first_dead;
-  HeapWord* _end_of_live;
-
-  // This the function to invoke when an allocation of an object covering
-  // "start" to "end" occurs to update other internal data structures.
-  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
-};
-
-class GenSpaceMangler;
-
-// A space in which the free area is contiguous.  It therefore supports
-// faster allocation, and compaction.
-class ContiguousSpace: public CompactibleSpace {
-  friend class VMStructs;
-
- protected:
-  HeapWord* _top;
-  // A helper for mangling the unused area of the space in debug builds.
-  GenSpaceMangler* _mangler;
-
-  GenSpaceMangler* mangler() { return _mangler; }
-
-  // Allocation helpers (return null if full).
-  inline HeapWord* allocate_impl(size_t word_size);
-  inline HeapWord* par_allocate_impl(size_t word_size);
-
- public:
-  ContiguousSpace();
-  ~ContiguousSpace();
-
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
-  void clear(bool mangle_space) override;
 
   // Accessors
   HeapWord* top() const            { return _top;    }
@@ -463,11 +360,10 @@ class ContiguousSpace: public CompactibleSpace {
   HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void oop_iterate(OopIterateClosure* cl) override;
   void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support
-  void reset_after_compaction() override {
+  void reset_after_compaction() {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
   }
@@ -497,17 +393,7 @@ class ContiguousSpace: public CompactibleSpace {
   HeapWord** top_addr() { return &_top; }
   HeapWord** end_addr() { return &_end; }
 
-#if INCLUDE_SERIALGC
-  // Overrides for more efficient compaction support.
-  void prepare_for_compaction(CompactPoint* cp) override;
-#endif
-
   void print_on(outputStream* st) const override;
-
-  // Checked dynamic downcasts.
-  ContiguousSpace* toContiguousSpace() override {
-    return this;
-  }
 
   // Debugging
   void verify() const override;
@@ -516,36 +402,28 @@ class ContiguousSpace: public CompactibleSpace {
 #if INCLUDE_SERIALGC
 
 // Class TenuredSpace is used by TenuredGeneration; it supports an efficient
-// "block_start" operation via a BlockOffsetArray (whose BlockOffsetSharedArray
-// may be shared with other spaces.)
+// "block_start" operation via a SerialBlockOffsetTable.
 
 class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
-  BlockOffsetArrayContigSpace _offsets;
-  Mutex _par_alloc_lock;
+  SerialBlockOffsetTable _offsets;
 
   // Mark sweep support
   size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+  TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
                MemRegion mr);
 
-  void set_bottom(HeapWord* value) override;
-  void set_end(HeapWord* value) override;
-
-  void clear(bool mangle_space) override;
-
-  inline HeapWord* block_start_const(const void* p) const override;
+  HeapWord* block_start_const(const void* addr) const override;
 
   // Add offset table update.
   inline HeapWord* allocate(size_t word_size) override;
   inline HeapWord* par_allocate(size_t word_size) override;
 
   // MarkSweep support phase3
-  void initialize_threshold() override;
-  void alloc_block(HeapWord* start, HeapWord* end) override;
+  void update_for_block(HeapWord* start, HeapWord* end) override;
 
   void print_on(outputStream* st) const override;
 

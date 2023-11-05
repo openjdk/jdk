@@ -1281,7 +1281,7 @@ public class BasicScrollBarUI
                 return;
 
             if (!scrollbar.hasFocus() && scrollbar.isRequestFocusEnabled()) {
-                scrollbar.requestFocus();
+                scrollbar.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
 
             useCachedValue = true;
@@ -1558,7 +1558,7 @@ public class BasicScrollBarUI
 
             handledEvent = true;
             if (!scrollbar.hasFocus() && scrollbar.isRequestFocusEnabled()) {
-                scrollbar.requestFocus();
+                scrollbar.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
 

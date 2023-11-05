@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -306,6 +306,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="narrow">
 			<unit type="duration-hour">
 				<displayName draft="contributed">hora</displayName>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>voltios</displayName>
+			</unit>
+			<unit type="power-watt">
+				<displayName>vatios</displayName>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>acre pie</displayName>
 			</unit>
 		</unitLength>
 	</units>

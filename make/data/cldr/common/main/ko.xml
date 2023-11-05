@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1048,7 +1048,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TM">투르크메니스탄</territory>
 			<territory type="TN">튀니지</territory>
 			<territory type="TO">통가</territory>
-			<territory type="TR">터키</territory>
+			<territory type="TR">튀르키예</territory>
 			<territory type="TT">트리니다드 토바고</territory>
 			<territory type="TV">투발루</territory>
 			<territory type="TW">대만</territory>
@@ -1080,6 +1080,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">짐바브웨</territory>
 			<territory type="ZZ">알려지지 않은 지역</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">잉글랜드</subdivision>
+			<subdivision type="gbsct">스코틀랜드</subdivision>
+			<subdivision type="gbwls">웨일즈</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="contributed">전통 독일어 표기법</variant>
 			<variant type="1994" draft="provisional">표준 레지아어 표기법</variant>
@@ -1468,6 +1473,196 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 								<cyclicName type="10" draft="contributed">유</cyclicName>
 								<cyclicName type="11" draft="contributed">술</cyclicName>
 								<cyclicName type="12" draft="contributed">해</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+					<cyclicNameSet type="days">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1" draft="contributed">갑자</cyclicName>
+								<cyclicName type="2" draft="contributed">을축</cyclicName>
+								<cyclicName type="3" draft="contributed">병인</cyclicName>
+								<cyclicName type="4" draft="contributed">정묘</cyclicName>
+								<cyclicName type="5" draft="contributed">무진</cyclicName>
+								<cyclicName type="6" draft="contributed">기사</cyclicName>
+								<cyclicName type="7" draft="contributed">경오</cyclicName>
+								<cyclicName type="8" draft="contributed">신미</cyclicName>
+								<cyclicName type="9" draft="contributed">임신</cyclicName>
+								<cyclicName type="10" draft="contributed">계유</cyclicName>
+								<cyclicName type="11" draft="contributed">갑술</cyclicName>
+								<cyclicName type="12" draft="contributed">을해</cyclicName>
+								<cyclicName type="13" draft="contributed">병자</cyclicName>
+								<cyclicName type="14" draft="contributed">정축</cyclicName>
+								<cyclicName type="15" draft="contributed">무인</cyclicName>
+								<cyclicName type="16" draft="contributed">기묘</cyclicName>
+								<cyclicName type="17" draft="contributed">경진</cyclicName>
+								<cyclicName type="18" draft="contributed">신사</cyclicName>
+								<cyclicName type="19" draft="contributed">임오</cyclicName>
+								<cyclicName type="20" draft="contributed">계미</cyclicName>
+								<cyclicName type="21" draft="contributed">갑신</cyclicName>
+								<cyclicName type="22" draft="contributed">을유</cyclicName>
+								<cyclicName type="23" draft="contributed">병술</cyclicName>
+								<cyclicName type="24" draft="contributed">정해</cyclicName>
+								<cyclicName type="25" draft="contributed">무자</cyclicName>
+								<cyclicName type="26" draft="contributed">기축</cyclicName>
+								<cyclicName type="27" draft="contributed">경인</cyclicName>
+								<cyclicName type="28" draft="contributed">신묘</cyclicName>
+								<cyclicName type="29" draft="contributed">임진</cyclicName>
+								<cyclicName type="30" draft="contributed">계사</cyclicName>
+								<cyclicName type="31" draft="contributed">갑오</cyclicName>
+								<cyclicName type="32" draft="contributed">을미</cyclicName>
+								<cyclicName type="33" draft="contributed">병신</cyclicName>
+								<cyclicName type="34" draft="contributed">정유</cyclicName>
+								<cyclicName type="35" draft="contributed">무술</cyclicName>
+								<cyclicName type="36" draft="contributed">기해</cyclicName>
+								<cyclicName type="37" draft="contributed">경자</cyclicName>
+								<cyclicName type="38" draft="contributed">신축</cyclicName>
+								<cyclicName type="39" draft="contributed">임인</cyclicName>
+								<cyclicName type="40" draft="contributed">계묘</cyclicName>
+								<cyclicName type="41" draft="contributed">갑진</cyclicName>
+								<cyclicName type="42" draft="contributed">을사</cyclicName>
+								<cyclicName type="43" draft="contributed">병오</cyclicName>
+								<cyclicName type="44" draft="contributed">정미</cyclicName>
+								<cyclicName type="45" draft="contributed">무신</cyclicName>
+								<cyclicName type="46" draft="contributed">기유</cyclicName>
+								<cyclicName type="47" draft="contributed">경술</cyclicName>
+								<cyclicName type="48" draft="contributed">신해</cyclicName>
+								<cyclicName type="49" draft="contributed">임자</cyclicName>
+								<cyclicName type="50" draft="contributed">계축</cyclicName>
+								<cyclicName type="51" draft="contributed">갑인</cyclicName>
+								<cyclicName type="52" draft="contributed">을묘</cyclicName>
+								<cyclicName type="53" draft="contributed">병진</cyclicName>
+								<cyclicName type="54" draft="contributed">정사</cyclicName>
+								<cyclicName type="55" draft="contributed">무오</cyclicName>
+								<cyclicName type="56" draft="contributed">기미</cyclicName>
+								<cyclicName type="57" draft="contributed">경신</cyclicName>
+								<cyclicName type="58" draft="contributed">신유</cyclicName>
+								<cyclicName type="59" draft="contributed">임술</cyclicName>
+								<cyclicName type="60" draft="contributed">계해</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="narrow">
+								<cyclicName type="1" draft="contributed">갑자</cyclicName>
+								<cyclicName type="2" draft="contributed">을축</cyclicName>
+								<cyclicName type="3" draft="contributed">병인</cyclicName>
+								<cyclicName type="4" draft="contributed">정묘</cyclicName>
+								<cyclicName type="5" draft="contributed">무진</cyclicName>
+								<cyclicName type="6" draft="contributed">기사</cyclicName>
+								<cyclicName type="7" draft="contributed">경오</cyclicName>
+								<cyclicName type="8" draft="contributed">신미</cyclicName>
+								<cyclicName type="9" draft="contributed">임신</cyclicName>
+								<cyclicName type="10" draft="contributed">계유</cyclicName>
+								<cyclicName type="11" draft="contributed">갑술</cyclicName>
+								<cyclicName type="12" draft="contributed">을해</cyclicName>
+								<cyclicName type="13" draft="contributed">병자</cyclicName>
+								<cyclicName type="14" draft="contributed">정축</cyclicName>
+								<cyclicName type="15" draft="contributed">무인</cyclicName>
+								<cyclicName type="16" draft="contributed">기묘</cyclicName>
+								<cyclicName type="17" draft="contributed">경진</cyclicName>
+								<cyclicName type="18" draft="contributed">신사</cyclicName>
+								<cyclicName type="19" draft="contributed">임오</cyclicName>
+								<cyclicName type="20" draft="contributed">계미</cyclicName>
+								<cyclicName type="21" draft="contributed">갑신</cyclicName>
+								<cyclicName type="22" draft="contributed">을유</cyclicName>
+								<cyclicName type="23" draft="contributed">병술</cyclicName>
+								<cyclicName type="24" draft="contributed">정해</cyclicName>
+								<cyclicName type="25" draft="contributed">무자</cyclicName>
+								<cyclicName type="26" draft="contributed">기축</cyclicName>
+								<cyclicName type="27" draft="contributed">경인</cyclicName>
+								<cyclicName type="28" draft="contributed">신묘</cyclicName>
+								<cyclicName type="29" draft="contributed">임진</cyclicName>
+								<cyclicName type="30" draft="contributed">계사</cyclicName>
+								<cyclicName type="31" draft="contributed">갑오</cyclicName>
+								<cyclicName type="32" draft="contributed">을미</cyclicName>
+								<cyclicName type="33" draft="contributed">병신</cyclicName>
+								<cyclicName type="34" draft="contributed">정유</cyclicName>
+								<cyclicName type="35" draft="contributed">무술</cyclicName>
+								<cyclicName type="36" draft="contributed">기해</cyclicName>
+								<cyclicName type="37" draft="contributed">경자</cyclicName>
+								<cyclicName type="38" draft="contributed">신축</cyclicName>
+								<cyclicName type="39" draft="contributed">임인</cyclicName>
+								<cyclicName type="40" draft="contributed">계묘</cyclicName>
+								<cyclicName type="41" draft="contributed">갑진</cyclicName>
+								<cyclicName type="42" draft="contributed">을사</cyclicName>
+								<cyclicName type="43" draft="contributed">병오</cyclicName>
+								<cyclicName type="44" draft="contributed">정미</cyclicName>
+								<cyclicName type="45" draft="contributed">무신</cyclicName>
+								<cyclicName type="46" draft="contributed">기유</cyclicName>
+								<cyclicName type="47" draft="contributed">경술</cyclicName>
+								<cyclicName type="48" draft="contributed">신해</cyclicName>
+								<cyclicName type="49" draft="contributed">임자</cyclicName>
+								<cyclicName type="50" draft="contributed">계축</cyclicName>
+								<cyclicName type="51" draft="contributed">갑인</cyclicName>
+								<cyclicName type="52" draft="contributed">을묘</cyclicName>
+								<cyclicName type="53" draft="contributed">병진</cyclicName>
+								<cyclicName type="54" draft="contributed">정사</cyclicName>
+								<cyclicName type="55" draft="contributed">무오</cyclicName>
+								<cyclicName type="56" draft="contributed">기미</cyclicName>
+								<cyclicName type="57" draft="contributed">경신</cyclicName>
+								<cyclicName type="58" draft="contributed">신유</cyclicName>
+								<cyclicName type="59" draft="contributed">임술</cyclicName>
+								<cyclicName type="60" draft="contributed">계해</cyclicName>
+							</cyclicNameWidth>
+							<cyclicNameWidth type="wide">
+								<cyclicName type="1" draft="contributed">갑자</cyclicName>
+								<cyclicName type="2" draft="contributed">을축</cyclicName>
+								<cyclicName type="3" draft="contributed">병인</cyclicName>
+								<cyclicName type="4" draft="contributed">정묘</cyclicName>
+								<cyclicName type="5" draft="contributed">무진</cyclicName>
+								<cyclicName type="6" draft="contributed">기사</cyclicName>
+								<cyclicName type="7" draft="contributed">경오</cyclicName>
+								<cyclicName type="8" draft="contributed">신미</cyclicName>
+								<cyclicName type="9" draft="contributed">임신</cyclicName>
+								<cyclicName type="10" draft="contributed">계유</cyclicName>
+								<cyclicName type="11" draft="contributed">갑술</cyclicName>
+								<cyclicName type="12" draft="contributed">을해</cyclicName>
+								<cyclicName type="13" draft="contributed">병자</cyclicName>
+								<cyclicName type="14" draft="contributed">정축</cyclicName>
+								<cyclicName type="15" draft="contributed">무인</cyclicName>
+								<cyclicName type="16" draft="contributed">기묘</cyclicName>
+								<cyclicName type="17" draft="contributed">경진</cyclicName>
+								<cyclicName type="18" draft="contributed">신사</cyclicName>
+								<cyclicName type="19" draft="contributed">임오</cyclicName>
+								<cyclicName type="20" draft="contributed">계미</cyclicName>
+								<cyclicName type="21" draft="contributed">갑신</cyclicName>
+								<cyclicName type="22" draft="contributed">을유</cyclicName>
+								<cyclicName type="23" draft="contributed">병술</cyclicName>
+								<cyclicName type="24" draft="contributed">정해</cyclicName>
+								<cyclicName type="25" draft="contributed">무자</cyclicName>
+								<cyclicName type="26" draft="contributed">기축</cyclicName>
+								<cyclicName type="27" draft="contributed">경인</cyclicName>
+								<cyclicName type="28" draft="contributed">신묘</cyclicName>
+								<cyclicName type="29" draft="contributed">임진</cyclicName>
+								<cyclicName type="30" draft="contributed">계사</cyclicName>
+								<cyclicName type="31" draft="contributed">갑오</cyclicName>
+								<cyclicName type="32" draft="contributed">을미</cyclicName>
+								<cyclicName type="33" draft="contributed">병신</cyclicName>
+								<cyclicName type="34" draft="contributed">정유</cyclicName>
+								<cyclicName type="35" draft="contributed">무술</cyclicName>
+								<cyclicName type="36" draft="contributed">기해</cyclicName>
+								<cyclicName type="37" draft="contributed">경자</cyclicName>
+								<cyclicName type="38" draft="contributed">신축</cyclicName>
+								<cyclicName type="39" draft="contributed">임인</cyclicName>
+								<cyclicName type="40" draft="contributed">계묘</cyclicName>
+								<cyclicName type="41" draft="contributed">갑진</cyclicName>
+								<cyclicName type="42" draft="contributed">을사</cyclicName>
+								<cyclicName type="43" draft="contributed">병오</cyclicName>
+								<cyclicName type="44" draft="contributed">정미</cyclicName>
+								<cyclicName type="45" draft="contributed">무신</cyclicName>
+								<cyclicName type="46" draft="contributed">기유</cyclicName>
+								<cyclicName type="47" draft="contributed">경술</cyclicName>
+								<cyclicName type="48" draft="contributed">신해</cyclicName>
+								<cyclicName type="49" draft="contributed">임자</cyclicName>
+								<cyclicName type="50" draft="contributed">계축</cyclicName>
+								<cyclicName type="51" draft="contributed">갑인</cyclicName>
+								<cyclicName type="52" draft="contributed">을묘</cyclicName>
+								<cyclicName type="53" draft="contributed">병진</cyclicName>
+								<cyclicName type="54" draft="contributed">정사</cyclicName>
+								<cyclicName type="55" draft="contributed">무오</cyclicName>
+								<cyclicName type="56" draft="contributed">기미</cyclicName>
+								<cyclicName type="57" draft="contributed">경신</cyclicName>
+								<cyclicName type="58" draft="contributed">신유</cyclicName>
+								<cyclicName type="59" draft="contributed">임술</cyclicName>
+								<cyclicName type="60" draft="contributed">계해</cyclicName>
 							</cyclicNameWidth>
 						</cyclicNameContext>
 					</cyclicNameSet>
@@ -2135,9 +2330,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2145,9 +2346,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2712,9 +2919,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2722,9 +2935,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3079,6 +3298,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</calendar>
 			<calendar type="japanese">
 				<eras>
+					<eraNames>
+						<era type="232" draft="contributed">메이지</era>
+						<era type="233" draft="contributed">다이쇼</era>
+						<era type="234" draft="contributed">쇼와</era>
+						<era type="235" draft="contributed">헤이세이</era>
+						<era type="236" draft="contributed">레이와</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">다이카 (645 ~ 650)</era>
 						<era type="1">하쿠치 (650 ~ 671)</era>
@@ -3451,6 +3677,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-short">
 				<displayName>년</displayName>
+				<relative type="-1">작년</relative>
+				<relative type="0">올해</relative>
+				<relative type="1">내년</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}년 후</relativeTimePattern>
 				</relativeTime>
@@ -3460,6 +3689,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="year-narrow">
 				<displayName>년</displayName>
+				<relative type="-1">작년</relative>
+				<relative type="0">올해</relative>
+				<relative type="1">내년</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}년 후</relativeTimePattern>
 				</relativeTime>
@@ -3481,6 +3713,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-short">
 				<displayName>분기</displayName>
+				<relative type="-1" draft="contributed">지난 분기</relative>
+				<relative type="0" draft="contributed">이번 분기</relative>
+				<relative type="1" draft="contributed">다음 분기</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}분기 후</relativeTimePattern>
 				</relativeTime>
@@ -3490,6 +3725,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>분기</displayName>
+				<relative type="-1" draft="contributed">지난 분기</relative>
+				<relative type="0" draft="contributed">이번 분기</relative>
+				<relative type="1" draft="contributed">다음 분기</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}분기 후</relativeTimePattern>
 				</relativeTime>
@@ -3511,6 +3749,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-short">
 				<displayName>월</displayName>
+				<relative type="-1">지난달</relative>
+				<relative type="0">이번 달</relative>
+				<relative type="1">다음 달</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}개월 후</relativeTimePattern>
 				</relativeTime>
@@ -3520,6 +3761,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-narrow">
 				<displayName>월</displayName>
+				<relative type="-1">지난달</relative>
+				<relative type="0">이번 달</relative>
+				<relative type="1">다음 달</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}개월 후</relativeTimePattern>
 				</relativeTime>
@@ -3542,6 +3786,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-short">
 				<displayName>주</displayName>
+				<relative type="-1">지난주</relative>
+				<relative type="0">이번 주</relative>
+				<relative type="1">다음 주</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}주 후</relativeTimePattern>
 				</relativeTime>
@@ -3552,6 +3799,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="week-narrow">
 				<displayName>주</displayName>
+				<relative type="-1">지난주</relative>
+				<relative type="0">이번 주</relative>
+				<relative type="1">다음 주</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}주 후</relativeTimePattern>
 				</relativeTime>
@@ -3585,6 +3835,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-short">
 				<displayName>일</displayName>
+				<relative type="-2" draft="contributed">그저께</relative>
+				<relative type="-1">어제</relative>
+				<relative type="0">오늘</relative>
+				<relative type="1">내일</relative>
+				<relative type="2" draft="contributed">모레</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}일 후</relativeTimePattern>
 				</relativeTime>
@@ -3594,6 +3849,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-narrow">
 				<displayName>일</displayName>
+				<relative type="-2" draft="contributed">그저께</relative>
+				<relative type="-1">어제</relative>
+				<relative type="0">오늘</relative>
+				<relative type="1">내일</relative>
+				<relative type="2" draft="contributed">모레</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}일 후</relativeTimePattern>
 				</relativeTime>
@@ -3936,6 +4196,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-short">
 				<displayName>초</displayName>
+				<relative type="0" draft="contributed">지금</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}초 후</relativeTimePattern>
 				</relativeTime>
@@ -3945,6 +4206,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="second-narrow">
 				<displayName>초</displayName>
+				<relative type="0" draft="contributed">지금</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}초 후</relativeTimePattern>
 				</relativeTime>
@@ -4763,6 +5025,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>에르모시요</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>시우다드후아레스</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>마사틀란</exemplarCity>
@@ -7766,6 +8031,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1>세제곱{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">세제곱{0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>중력가속도</displayName>
 				<unitPattern count="other">{0} 중력가속도</unitPattern>
@@ -7867,6 +8135,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>‰</displayName>
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
 			<unit type="concentr-mole">
 				<displayName>몰</displayName>
 				<unitPattern count="other">{0}몰</unitPattern>
@@ -7934,6 +8206,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-century">
 				<displayName>세기</displayName>
 				<unitPattern count="other">{0}세기</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="other">{0}dec</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>년</displayName>
@@ -8068,24 +8344,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}헤르츠</unitPattern>
 			</unit>
 			<unit type="graphics-em">
+				<displayName>em</displayName>
 				<unitPattern count="other">{0}em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
+				<displayName>px</displayName>
 				<unitPattern count="other">{0}px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
 				<unitPattern count="other">{0}MP</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
 				<unitPattern count="other">{0}ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0}dpcm</unitPattern>
+			</unit>
 			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
 				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>px</displayName>
 				<unitPattern count="other">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
@@ -8358,6 +8645,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}켈빈</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
 				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
@@ -8851,6 +9139,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>px</displayName>
 				<unitPattern count="other">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
@@ -9267,8 +9556,103 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-force</displayName>
@@ -9278,32 +9662,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>rev</displayName>
+				<unitPattern count="other">{0}rev</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>rad</displayName>
+				<unitPattern count="other">{0}rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>°</displayName>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>′</displayName>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>″</displayName>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>km²</displayName>
 				<unitPattern count="other">{0}km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>ha</displayName>
 				<unitPattern count="other">{0}ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>m²</displayName>
 				<unitPattern count="other">{0}m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+				<unitPattern count="other">{0}cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>mi²</displayName>
 				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>ac</displayName>
 				<unitPattern count="other">{0}ac</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="other">{0}yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
 				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>in²</displayName>
+				<unitPattern count="other">{0}in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>두남</displayName>
+				<unitPattern count="other">{0}두남</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>kt</displayName>
+				<unitPattern count="other">{0}kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0}mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="other">{0}mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>항목</displayName>
+				<unitPattern count="other">{0}개 항목</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -9317,13 +9755,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>‰</displayName>
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="other">{0}mol</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>L/km</displayName>
+				<unitPattern count="other">{0}L/km</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>mpg</displayName>
+				<unitPattern count="other">{0}mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="other">{0}mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="other">{0}PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="other">{0}TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="other">{0}Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="other">{0}GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="other">{0}Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="other">{0}MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="other">{0}Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0}kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="other">{0}kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>byte</displayName>
+				<unitPattern count="other">{0}byte</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>bit</displayName>
+				<unitPattern count="other">{0}bit</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>C</displayName>
 				<unitPattern count="other">{0}C</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>dec</displayName>
+				<unitPattern count="other">{0}dec</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>년</displayName>
@@ -9377,8 +9883,121 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ns</displayName>
 				<unitPattern count="other">{0}ns</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName>amp</displayName>
+				<unitPattern count="other">{0}A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="other">{0}mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ohm</displayName>
+				<unitPattern count="other">{0}Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>V</displayName>
+				<unitPattern count="other">{0}V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="other">{0}kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="other">{0}cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="other">{0}Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>kJ</displayName>
+				<unitPattern count="other">{0}kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>줄</displayName>
+				<unitPattern count="other">{0}줄</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="other">{0}kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="other">{0}eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>Btu</displayName>
+				<unitPattern count="other">{0}Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>미국 섬</displayName>
+				<unitPattern count="other">{0}섬</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="other">{0}lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="other">{0}N</unitPattern>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100km</displayName>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="other">{0}GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="other">{0}MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="other">{0}kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="other">{0}Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0}em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="other">{0}px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="other">{0}MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0}ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0}ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0}dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="other">{0}dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>px</displayName>
+				<unitPattern count="other">{0}dot</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -9465,6 +10084,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pt</displayName>
 				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="other">{0}R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lx</displayName>
+				<unitPattern count="other">{0}lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="other">{0}cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="other">{0}lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="other">{0}L☉</unitPattern>
+			</unit>
 			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0}t</unitPattern>
@@ -9513,13 +10152,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CD</displayName>
 				<unitPattern count="other">{0}CD</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="other">{0}Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="other">{0}M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="other">{0}M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>grain</displayName>
+				<unitPattern count="other">{0}grain</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="other">{0}GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="other">{0}MW</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
 				<unitPattern count="other">{0}kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>w</displayName>
 				<unitPattern count="other">{0}W</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="other">{0}mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>hp</displayName>
 				<unitPattern count="other">{0}HP</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
@@ -9532,14 +10202,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>inHg</displayName>
+				<unitPattern count="other">{0}inHg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="other">{0}bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
 				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="other">{0}atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="other">{0}Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
 				<unitPattern count="other">{0}hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="other">{0}kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="other">{0}MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
@@ -9573,19 +10264,154 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>K</displayName>
 				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="other">{0}lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="other">{0}N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>km³</displayName>
 				<unitPattern count="other">{0}km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="other">{0}m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>cm³</displayName>
+				<unitPattern count="other">{0}cm³</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>mi³</displayName>
 				<unitPattern count="other">{0}mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>yd³</displayName>
+				<unitPattern count="other">{0}yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ft³</displayName>
+				<unitPattern count="other">{0}ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>in³</displayName>
+				<unitPattern count="other">{0}in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="other">{0}ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="other">{0}hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ℓ</displayName>
 				<unitPattern count="other">{0}ℓ</unitPattern>
+				<perUnitPattern>{0}/L</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dL</displayName>
+				<unitPattern count="other">{0}dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cL</displayName>
+				<unitPattern count="other">{0}cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mL</displayName>
+				<unitPattern count="other">{0}mL</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="other">{0}mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="other">{0}mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ac ft</displayName>
+				<unitPattern count="other">{0}ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="other">{0}bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="other">{0}gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="other">{0}gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qt</displayName>
+				<unitPattern count="other">{0}qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>컵</displayName>
+				<unitPattern count="other">{0}컵</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="other">{0}fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="other">{0}tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="other">{0}tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="other">{0}dstspn</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>drop</displayName>
+				<unitPattern count="other">{0}drop</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>dram fluid</displayName>
+				<unitPattern count="other">{0}dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>jigger</displayName>
+				<unitPattern count="other">{0}jigger</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pinch</displayName>
+				<unitPattern count="other">{0}pinch</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="other">{0}qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>쪽</displayName>
@@ -9617,6 +10443,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} 또는 {1}</listPatternPart>
 			<listPatternPart type="2">{0} 또는 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} 또는 {1}</listPatternPart>
+			<listPatternPart type="2">{0} 또는 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} 또는 {1}</listPatternPart>
+			<listPatternPart type="2">{0} 또는 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} 및 {1}</listPatternPart>
+			<listPatternPart type="2">{0} 및 {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -9823,13 +10667,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="surnameFirst">hu ja ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9841,13 +10685,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {surname} {suffix}</namePattern>
+			<namePattern>{given} {surname} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9865,7 +10709,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9877,13 +10721,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}{given} {given2} {suffix}</namePattern>
+			<namePattern>{surname}{given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9895,13 +10739,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}{given} {suffix}</namePattern>
+			<namePattern>{surname}{given} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9919,7 +10763,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {suffix}</namePattern>
+			<namePattern>{surname} {title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -9948,26 +10792,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">유미</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">유미</nameField>
 			<nameField type="surname">강</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">존</nameField>
-			<nameField type="given2">해미쉬</nameField>
-			<nameField type="surname">왓슨</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">소현</nameField>
+			<nameField type="given2">∅∅∅</nameField>
+			<nameField type="surname">박</nameField>
 		</sampleName>
-		<sampleName item="full">
+		<sampleName item="nativeFull">
+			<nameField type="title">씨</nameField>
+			<nameField type="given">민규</nameField>
+			<nameField type="given-informal">민규</nameField>
+			<nameField type="given2">헨리</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">김</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">신밧드</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">케테</nameField>
+			<nameField type="surname">뮐러</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">제질리아</nameField>
+			<nameField type="given2">해미쉬</nameField>
+			<nameField type="surname">슈퇴버</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">교수</nameField>
 			<nameField type="given">에이다 코넬리아</nameField>
 			<nameField type="given-informal">닐</nameField>
-			<nameField type="given2">에바 소피아</nameField>
+			<nameField type="given2">세사르 마르틴</nameField>
 			<nameField type="surname-prefix">폰</nameField>
 			<nameField type="surname-core">볼프</nameField>
 			<nameField type="surname2">베커 슈미트</nameField>
-			<nameField type="suffix">님</nameField>
+			<nameField type="generation">주니어</nameField>
+			<nameField type="credentials">박사</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

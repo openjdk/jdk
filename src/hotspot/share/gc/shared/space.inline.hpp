@@ -27,8 +27,8 @@
 
 #include "gc/shared/space.hpp"
 
+#include "gc/serial/generation.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -47,43 +47,26 @@ inline HeapWord* Space::block_start(const void* p) {
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != nullptr) {
-    _offsets.alloc_block(res, size);
+    _offsets.update_for_block(res, res + size);
   }
   return res;
 }
 
-// Because of the requirement of keeping "_offsets" up to date with the
-// allocations, we sequentialize these with a lock.  Therefore, best if
-// this is used for larger LAB allocations only.
 inline HeapWord* TenuredSpace::par_allocate(size_t size) {
-  MutexLocker x(&_par_alloc_lock);
-  // This ought to be just "allocate", because of the lock above, but that
-  // ContiguousSpace::allocate asserts that either the allocating thread
-  // holds the heap lock or it is the VM thread and we're at a safepoint.
-  // The best I (dld) could figure was to put a field in ContiguousSpace
-  // meaning "locking at safepoint taken care of", and set/reset that
-  // here.  But this will do for now, especially in light of the comment
-  // above.  Perhaps in the future some lock-free manner of keeping the
-  // coordination.
   HeapWord* res = ContiguousSpace::par_allocate(size);
   if (res != nullptr) {
-    _offsets.alloc_block(res, size);
+    _offsets.update_for_block(res, res + size);
   }
   return res;
-}
-
-inline HeapWord*
-TenuredSpace::block_start_const(const void* p) const {
-  return _offsets.block_start(p);
 }
 
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
   bool _active;
-  CompactibleSpace* _space;
+  ContiguousSpace* _space;
 
 public:
-  DeadSpacer(CompactibleSpace* space) : _allowed_deadspace_words(0), _space(space) {
+  DeadSpacer(ContiguousSpace* space) : _allowed_deadspace_words(0), _space(space) {
     size_t ratio = _space->allowed_dead_ratio();
     _active = ratio > 0;
 
@@ -101,7 +84,6 @@ public:
       }
     }
   }
-
 
   bool insert_deadspace(HeapWord* dead_start, HeapWord* dead_end) {
     if (!_active) {
@@ -125,12 +107,10 @@ public:
       return false;
     }
   }
-
 };
 
 #ifdef ASSERT
-template <class SpaceType>
-inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
+inline void ContiguousSpace::verify_up_to_first_dead(ContiguousSpace* space) {
   HeapWord* cur_obj = space->bottom();
 
   if (cur_obj < space->_end_of_live && space->_first_dead > cur_obj && !cast_to_oop(cur_obj)->is_gc_marked()) {
@@ -149,8 +129,7 @@ inline void CompactibleSpace::verify_up_to_first_dead(SpaceType* space) {
 }
 #endif
 
-template <class SpaceType>
-inline void CompactibleSpace::clear_empty_region(SpaceType* space) {
+inline void ContiguousSpace::clear_empty_region(ContiguousSpace* space) {
   // Let's remember if we were empty before we did the compaction.
   bool was_empty = space->used_region().is_empty();
   // Reset space after compaction is complete

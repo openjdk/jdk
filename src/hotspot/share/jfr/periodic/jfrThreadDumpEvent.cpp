@@ -57,7 +57,6 @@ static bool execute_dcmd(bufferedStream& st, const char* const cmd) {
 
 // caller needs ResourceMark
 const char* JfrDcmdEvent::thread_dump() {
-  assert(EventThreadDump::is_enabled(), "invariant");
   bufferedStream st;
   execute_dcmd(st, "Thread.print");
   return st.as_string();

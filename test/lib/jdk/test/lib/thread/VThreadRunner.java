@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class VThreadRunner {
     private VThreadRunner() { }
-
-    /**
-     * Characteristic value signifying that the thread cannot set values for its
-     * copy of thread-locals.
-     */
-    public static final int NO_THREAD_LOCALS = 1 << 1;
 
     /**
      * Characteristic value signifying that initial values for inheritable
@@ -85,8 +79,6 @@ public class VThreadRunner {
         Thread.Builder builder = Thread.ofVirtual();
         if (name != null)
             builder.name(name);
-        if ((characteristics & NO_THREAD_LOCALS) != 0)
-            builder.allowSetThreadLocals(false);
         if ((characteristics & NO_INHERIT_THREAD_LOCALS) != 0)
             builder.inheritInheritableThreadLocals(false);
         Thread thread = builder.start(target);

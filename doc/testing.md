@@ -135,12 +135,21 @@ the first N tiers they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
-- `tier1`: This is the lowest test tier. Multiple developers run these tests
-  every day. Because of the widespread use, the tests in `tier1` are
-  carefully selected and optimized to run fast, and to run in the most stable
-  manner. The test failures in `tier1` are usually followed up on quickly,
-  either with fixes, or adding relevant tests to problem list. GitHub Actions
-  workflows, if enabled, run `tier1` tests.
+- `tier1`: This is the most fundamental test tier.
+  Roughly speaking, a failure of a test in this tier has the potential
+  to indicate a problem that would affect many Java programs. Tests in
+  `tier1` include tests of HotSpot, core APIs in the `java.base`
+  module, and the `javac` compiler. Multiple developers run these
+  tests every day. Because of the widespread use, the tests in `tier1`
+  are carefully selected and optimized to run fast, and to run in the
+  most stable manner. As a guideline, nearly all individual tests in
+  `tier1` are expected to run to completion in ten seconds or less
+  when run on common configurations used for development. Long-running
+  tests, even of core functionality, should occur in higher tiers or
+  be covered in other kinds of testing. The test failures in `tier1`
+  are usually followed up on quickly, either with fixes, or adding
+  relevant tests to problem list. GitHub Actions workflows, if
+  enabled, run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other
   things, tests that either run for too long to be at `tier1`, or may require
@@ -378,6 +387,15 @@ Defaults to 4.
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
+#### JTREG_TEST_THREAD_FACTORY
+
+Sets the `-testThreadFactory` for JTReg. It should be the fully qualified classname
+of a class which implements `java.util.concurrent.ThreadFactory`.
+One such implementation class, named Virtual, is currently part of the JDK build
+in the `test/jtreg_test_thread_factory/` directory. This class gets compiled during
+the test image build. The implementation of the Virtual class creates a new virtual
+thread for executing each test class.
+
 #### TEST_MODE
 
 The test mode (`agentvm` or `othervm`).
@@ -606,12 +624,14 @@ test/jdk/sun/security/pkcs11/README.
 
 ### Client UI Tests
 
+#### System key shortcuts
+
 Some Client UI tests use key sequences which may be reserved by the operating
 system. Usually that causes the test failure. So it is highly recommended to
 disable system key shortcuts prior testing. The steps to access and disable
 system key shortcuts for various platforms are provided below.
 
-#### MacOS
+##### macOS
 
 Choose Apple menu; System Preferences, click Keyboard, then click Shortcuts;
 select or deselect desired shortcut.
@@ -624,12 +644,12 @@ test correctly the default global key shortcut should be disabled using the
 steps described above, and then deselect "Turn keyboard access on or off"
 option which is responsible for `CTRL + F1` combination.
 
-#### Linux
+##### Linux
 
 Open the Activities overview and start typing Settings; Choose Settings, click
 Devices, then click Keyboard; set or override desired shortcut.
 
-#### Windows
+##### Windows
 
 Type `gpedit` in the Search and then click Edit group policy; navigate to User
 Configuration -> Administrative Templates -> Windows Components -> File
@@ -637,6 +657,33 @@ Explorer; in the right-side pane look for "Turn off Windows key hotkeys" and
 double click on it; enable or disable hotkeys.
 
 Note: restart is required to make the settings take effect.
+
+#### Robot API
+
+Most automated Client UI tests use `Robot` API to control the UI. Usually,
+the default operating system settings need to be adjusted for Robot
+to work correctly. The detailed steps how to access and update these settings
+for different platforms are provided below.
+
+##### macOS
+
+`Robot` is not permitted to control your Mac by default since
+macOS 10.15. To allow it, choose Apple menu -> System Settings, click
+Privacy & Security; then click Accessibility and ensure the following apps are
+allowed to control your computer: *Java* and *Terminal*. If the tests are run
+from an IDE, the IDE should be granted this permission too.
+
+##### Windows
+
+On Windows if Cygwin terminal is used to run the tests, there is a delay in
+focus transfer. Usually it causes automated UI test failure. To disable the
+delay, type `regedit` in the Search and then select Registry Editor; navigate
+to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure
+the `ForegroundLockTimeout` value is set to 0.
+
+Additional information about Client UI tests configuration for various operating
+systems can be obtained at [Automated client GUI testing system set up
+requirements](https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
 ## Editing this document
 

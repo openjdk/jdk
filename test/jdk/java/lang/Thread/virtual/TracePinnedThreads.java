@@ -26,7 +26,6 @@
  * @bug 8284161 8289284
  * @summary Basic test of debugging option to trace pinned threads
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
  * @run junit/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
@@ -84,7 +83,7 @@ class TracePinnedThreads {
     }
 
     /**
-     * Runs a task in a virutal thread, returning a String with any output printed
+     * Run a task in a virtual thread, returning a String with any output printed
      * to standard output.
      */
     private static String run(Runnable task) throws Exception {

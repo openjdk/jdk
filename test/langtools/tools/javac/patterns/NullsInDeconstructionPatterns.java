@@ -1,7 +1,6 @@
 /*
  * @test /nodynamiccopyright/
  * @summary Testing record patterns against the null constant (14.30.2 Pattern Matching)
- * @enablePreview
  */
 
 public class NullsInDeconstructionPatterns {

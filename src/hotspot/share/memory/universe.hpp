@@ -43,6 +43,7 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
 class ReservedHeapSpace;
+class SerializeClosure;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -67,9 +68,7 @@ class LatestMethodCache : public CHeapObj<mtClass> {
 
   // CDS support.  Replace the klass in this with the archive version
   // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_klass);
-  }
+  void serialize(SerializeClosure* f);
   void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
@@ -111,6 +110,7 @@ class Universe: AllStatic {
 
   // preallocated error objects (no backtrace)
   static OopHandle    _out_of_memory_errors;
+  static OopHandle    _class_init_stack_overflow_error;
 
   // preallocated cause message for delayed StackOverflowError
   static OopHandle    _delayed_stack_overflow_error_message;
@@ -208,6 +208,7 @@ class Universe: AllStatic {
 
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
+  static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
   static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
@@ -312,6 +313,11 @@ class Universe: AllStatic {
   // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
   static oop out_of_memory_error_retry();
   static oop delayed_stack_overflow_error_message();
+
+  // Saved StackOverflowError and OutOfMemoryError for use when
+  // class initialization can't create ExceptionInInitializerError.
+  static oop class_init_stack_overflow_error();
+  static oop class_init_out_of_memory_error();
 
   // If it's a certain type of OOME object
   static bool is_out_of_memory_error_metaspace(oop ex_obj);

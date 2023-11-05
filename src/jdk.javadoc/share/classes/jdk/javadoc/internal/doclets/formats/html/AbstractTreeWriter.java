@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree.Hierarchy;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -123,7 +122,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                                         TypeElement typeElement,
                                         Content content)
     {
-        SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.generalPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
         if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;

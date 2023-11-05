@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 public class ClassHierarchyTest {
 
     // $> jcmd DcmdTestClass VM.class_hierarchy  DcmdTestClass | grep DcmdTestClass\$\$Lambda
-    // |--DcmdTestClass$$Lambda$1/4081552/0xa529fbb0
+    // |--DcmdTestClass$$Lambda/4081552/0xa529fbb0
 
     // > VM.class_hierarchy DcmdBaseClass
     // java.lang.Object/null

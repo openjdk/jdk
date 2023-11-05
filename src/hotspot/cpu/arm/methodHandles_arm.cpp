@@ -218,7 +218,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   if (VerifyMethodHandles) {
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ ldrh(rdi_temp, Address(rbx_method, Method::intrinsic_id_offset_in_bytes()));
+    __ ldrh(rdi_temp, Address(rbx_method, Method::intrinsic_id_offset()));
     __ sub_slow(rdi_temp, rdi_temp, (int) iid);
     __ cbz(rdi_temp, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
@@ -331,7 +331,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg, temp3);
       } else {
         // load receiver klass itself
-        __ load_klass_check_null(temp1_recv_klass, receiver_reg, temp3);
+        __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,10 @@
 
 class HeapRegion;
 class G1CollectionSet;
+class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
+class G1CollectionCandidateRegionList;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -101,7 +103,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _rs_length;
+  size_t _card_rs_length;
 
   size_t _pending_cards_at_gc_start;
 
@@ -130,8 +132,8 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_rs_length(size_t rs_length) {
-    _rs_length = rs_length;
+  void record_card_rs_length(size_t card_rs_length) {
+    _card_rs_length = card_rs_length;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
@@ -140,12 +142,15 @@ private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
-  double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
+  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
 
   // Copy time for a region is copying live data.
-  double predict_region_copy_time_ms(HeapRegion* hr) const;
-  // Merge-scan time for a region is handling remembered sets of that region (as a single unit).
+  double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
+  // Merge-scan time for a region is handling card-based remembered sets of that region
+  // (as a single unit).
   double predict_region_merge_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
+  // Code root scan time prediction for the given region.
+  double predict_region_code_root_scan_time(HeapRegion* hr, bool for_young_only_phase) const;
   // Non-copy time for a region is handling remembered sets and other time.
   double predict_region_non_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
 
@@ -154,7 +159,7 @@ public:
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
-  // bytes_to_copy is non-nullptr.
+  // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
   // Total time for a region is handling remembered sets (as a single unit), copying its live data
   // and other time.
@@ -181,6 +186,7 @@ public:
 
 private:
   G1CollectionSet* _collection_set;
+  G1CollectionSetCandidates* candidates() const;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -204,18 +210,17 @@ private:
   double _mark_cleanup_start_sec;
 
   // Updates the internal young gen maximum and target and desired lengths.
-  // If no parameters are passed, predict pending cards and the RS length using
-  // the prediction model.
+  // If no parameters are passed, predict pending cards, card set remset length and
+  // code root remset length using the prediction model.
   void update_young_length_bounds();
-  void update_young_length_bounds(size_t pending_cards, size_t rs_length);
+  void update_young_length_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // Calculate and return the minimum desired eden length based on the MMU target.
   uint calculate_desired_eden_length_by_mmu() const;
 
   // Calculate the desired eden length meeting the pause time goal.
-  // The parameters are: rs_length represents the prediction of how large the
-  // young RSet lengths will be, min_eden_length and max_eden_length are the bounds
-  // (inclusive) within eden can grow.
+  // Min_eden_length and max_eden_length are the bounds
+  // (inclusive) within which eden can grow.
   uint calculate_desired_eden_length_by_pause(double base_time_ms,
                                               uint min_eden_length,
                                               uint max_eden_length) const;
@@ -235,7 +240,7 @@ private:
 
   // Calculate desired young length based on current situation without taking actually
   // available free regions into account.
-  uint calculate_young_desired_length(size_t pending_cards, size_t rs_length) const;
+  uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
   // The GCLocker might cause us to need more regions than the target. Calculate
@@ -244,33 +249,24 @@ private:
 
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
-
-  // Check whether a given young length (young_length) fits into the
-  // given target pause time and whether the prediction for the amount
-  // of objects to be copied for the given length will fit into the
-  // given free space (expressed by base_free_regions).  It is used by
-  // calculate_young_list_target_length().
-  bool predict_will_fit(uint young_length, double base_time_ms,
-                        uint base_free_regions, double target_pause_time_ms) const;
+  double predict_retained_regions_evac_time() const;
 
 public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
+  // The minimum number of retained regions we will add to the CSet during a young GC.
+  uint min_retained_old_cset_length() const;
   // Calculate the minimum number of old regions we'll add to the CSet
-  // during a mixed GC.
-  uint calc_min_old_cset_length(G1CollectionSetCandidates* candidates) const;
+  // during a single mixed GC given the initial number of regions selected during
+  // marking.
+  uint calc_min_old_cset_length(uint num_candidate_regions) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
   uint calc_max_old_cset_length() const;
 
-  // Returns the given amount of reclaimable bytes (that represents
-  // the amount of reclaimable space still to be collected) as a
-  // percentage of the current heap capacity.
-  double reclaimable_bytes_percent(size_t reclaimable_bytes) const;
-
 private:
-  void clear_collection_set_candidates();
+  void abandon_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
   // Manage time-to-mixed tracking.
@@ -299,7 +295,7 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length(size_t rs_length);
+  void revise_young_list_target_length(size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
@@ -312,7 +308,7 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
-  bool concurrent_operation_is_full_mark(const char* msg = NULL);
+  bool concurrent_operation_is_full_mark(const char* msg = nullptr);
 
   bool about_to_start_mixed_phase() const;
 
@@ -335,24 +331,29 @@ public:
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
-  bool next_gc_should_be_mixed(const char* no_candidates_str) const;
+  bool next_gc_should_be_mixed() const;
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
-  // Calculate and return the number of initial and optional old gen regions from
-  // the given collection set candidates and the remaining time.
-  void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                            double time_remaining_ms,
-                                            uint& num_initial_regions,
-                                            uint& num_optional_regions);
+  // Calculate and fill in the initial and optional old gen candidate regions from
+  // the given candidate list and the remaining time.
+  // Returns the remaining time.
+  double select_candidates_from_marking(G1CollectionCandidateList* marking_list,
+                                        double time_remaining_ms,
+                                        G1CollectionCandidateRegionList* initial_old_regions,
+                                        G1CollectionCandidateRegionList* optional_old_regions);
+
+  void select_candidates_from_retained(G1CollectionCandidateList* retained_list,
+                                       double time_remaining_ms,
+                                       G1CollectionCandidateRegionList* initial_old_regions,
+                                       G1CollectionCandidateRegionList* optional_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
   // of actually selected regions in num_optional_regions.
-  void calculate_optional_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                                 uint const max_optional_regions,
+  void calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_old_regions,
                                                  double time_remaining_ms,
-                                                 uint& num_optional_regions);
+                                                 G1CollectionCandidateRegionList* selected);
 
 private:
 
@@ -402,6 +403,11 @@ public:
   void record_concurrent_refinement_stats(size_t pending_cards,
                                           size_t thread_buffer_cards);
 
+  bool should_retain_evac_failed_region(HeapRegion* r) const {
+    return should_retain_evac_failed_region(r->hrm_index());
+  }
+  bool should_retain_evac_failed_region(uint index) const;
+
 private:
   //
   // Survivor regions policy.
@@ -421,12 +427,15 @@ private:
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,
   // the rest is used to add old regions to the normal CSet.
-  double optional_prediction_fraction() { return 0.2; }
+  double optional_prediction_fraction() const { return 0.2; }
 
 public:
   // Fraction used when evacuating the optional regions. This fraction of the
   // remaining time is used to choose what regions to include in the evacuation.
-  double optional_evacuation_fraction() { return 0.75; }
+  double optional_evacuation_fraction() const { return 0.75; }
+
+  // Returns the total time that to at most reserve for handling retained regions.
+  double max_time_for_retaining() const { return max_pause_time_ms() * optional_prediction_fraction(); }
 
   uint tenuring_threshold() const { return _tenuring_threshold; }
 

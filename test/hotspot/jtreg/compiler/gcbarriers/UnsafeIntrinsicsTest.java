@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,64 @@
  */
 
 /*
- * @test id=Z
+ * @test id=ZSinglegenDebug
  * @key randomness
  * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.Z
+ * @requires vm.gc.ZSinglegen & vm.debug
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+ZVerifyViews -XX:ZCollectionInterval=1
+ *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
+ */
+
+/*
+ * @test id=ZSinglegen
+ * @key randomness
+ * @bug 8059022 8271855
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
+ * @requires vm.gc.ZSinglegen & !vm.debug
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:ZCollectionInterval=1
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
+ */
+
+/*
+ * @test id=ZGenerationalDebug
+ * @key randomness
+ * @bug 8059022 8271855
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
+ * @requires vm.gc.ZGenerational & vm.debug
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
+ *                   -XX:-CreateCoredumpOnCrash
+ *                   -XX:CompileCommand=dontinline,*::mergeImpl*
+ *                   compiler.gcbarriers.UnsafeIntrinsicsTest
+ */
+
+/*
+ * @test id=ZGenerational
+ * @key randomness
+ * @bug 8059022 8271855
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
+ * @requires vm.gc.ZGenerational & !vm.debug
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:ZCollectionInterval=1
  *                   -XX:-CreateCoredumpOnCrash
  *                   -XX:CompileCommand=dontinline,*::mergeImpl*
  *                   compiler.gcbarriers.UnsafeIntrinsicsTest
@@ -289,7 +337,7 @@ class Runner implements Runnable {
     private Node mergeImplLoad(Node startNode, Node expectedNext, Node head) {
         // Atomic load version
         Node temp = (Node) UNSAFE.getReference(startNode, offset);
-        UNSAFE.storeFence(); // Make all new Node fields visible to concurrent readers.
+        UNSAFE.storeFence(); // We need the contents of the published node to be released
         startNode.setNext(head);
         return temp;
     }

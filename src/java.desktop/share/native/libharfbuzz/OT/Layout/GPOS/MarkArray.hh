@@ -28,7 +28,7 @@ struct MarkArray : Array16Of<MarkRecord>        /* Array of MarkRecords--in Cove
 
     const Anchor& mark_anchor = this + record.markAnchor;
     bool found;
-    const Anchor& glyph_anchor = anchors.get_anchor (glyph_index, mark_class, class_count, &found);
+    const Anchor& glyph_anchor = anchors.get_anchor (c, glyph_index, mark_class, class_count, &found);
     /* If this subtable doesn't have an anchor for this base and this class,
      * return false such that the subsequent subtables have a chance at it. */
     if (unlikely (!found)) return_trace (false);
@@ -39,12 +39,26 @@ struct MarkArray : Array16Of<MarkRecord>        /* Array of MarkRecords--in Cove
     mark_anchor.get_anchor (c, buffer->cur().codepoint, &mark_x, &mark_y);
     glyph_anchor.get_anchor (c, buffer->info[glyph_pos].codepoint, &base_x, &base_y);
 
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+                          "attaching mark glyph at %u to glyph at %u",
+                          c->buffer->idx, glyph_pos);
+    }
+
     hb_glyph_position_t &o = buffer->cur_pos();
     o.x_offset = roundf (base_x - mark_x);
     o.y_offset = roundf (base_y - mark_y);
     o.attach_type() = ATTACH_TYPE_MARK;
     o.attach_chain() = (int) glyph_pos - (int) buffer->idx;
     buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT;
+
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+                          "attached mark glyph at %u to glyph at %u",
+                          c->buffer->idx, glyph_pos);
+    }
 
     buffer->idx++;
     return_trace (true);
@@ -68,10 +82,10 @@ struct MarkArray : Array16Of<MarkRecord>        /* Array of MarkRecords--in Cove
     | hb_map (hb_second)
     ;
 
+    bool ret = false;
     unsigned new_length = 0;
     for (const auto& mark_record : mark_iter) {
-      if (unlikely (!mark_record.subset (c, this, klass_mapping)))
-        return_trace (false);
+      ret |= mark_record.subset (c, this, klass_mapping);
       new_length++;
     }
 
@@ -79,14 +93,15 @@ struct MarkArray : Array16Of<MarkRecord>        /* Array of MarkRecords--in Cove
                                                 HB_SERIALIZE_ERROR_ARRAY_OVERFLOW)))
       return_trace (false);
 
-    return_trace (true);
+    return_trace (ret);
   }
 };
 
-static void Markclass_closure_and_remap_indexes (const Coverage  &mark_coverage,
-                                                 const MarkArray &mark_array,
-                                                 const hb_set_t  &glyphset,
-                                                 hb_map_t*        klass_mapping /* INOUT */)
+HB_INTERNAL inline
+void Markclass_closure_and_remap_indexes (const Coverage  &mark_coverage,
+                                          const MarkArray &mark_array,
+                                          const hb_set_t  &glyphset,
+                                          hb_map_t*        klass_mapping /* INOUT */)
 {
   hb_set_t orig_classes;
 

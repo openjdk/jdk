@@ -1,18 +1,18 @@
 <!--
-Copyright © 1991-2022 Unicode, Inc.
+Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "42" >
+<!ATTLIST version cldrVersion CDATA #FIXED "43" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "15.0.0" >
@@ -216,7 +216,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT calendarData ( calendar* ) >
 
-<!ELEMENT calendar ( calendarSystem?, eras? ) >
+<!ELEMENT calendar ( calendarSystem?, inheritEras?, eras? ) >
 <!ATTLIST calendar type NMTOKEN #REQUIRED >
     <!--@MATCH:bcp47/ca-->
 <!ATTLIST calendar territories NMTOKENS #IMPLIED >
@@ -237,6 +237,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST calendarSystem references CDATA #IMPLIED >
     <!--@METADATA-->
 
+<!ELEMENT inheritEras EMPTY >
+<!ATTLIST inheritEras calendar NMTOKEN #REQUIRED >
+    <!--@MATCH:bcp47/ca-->
+    <!--@VALUE-->
+
 <!ELEMENT eras ( era* ) >
 <!ATTLIST eras references CDATA #IMPLIED >
     <!--@METADATA-->
@@ -249,6 +254,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@VALUE-->
 <!ATTLIST era end CDATA #IMPLIED >
     <!--@MATCH:time/yyyy-MM-dd-->
+    <!--@VALUE-->
+<!ATTLIST era code NMTOKEN #IMPLIED >
+    <!--@MATCH:regex/[a-z0-9]{3,8}(\-[a-z0-9]{3,8})*-->
+    <!--@VALUE-->
+<!ATTLIST era aliases NMTOKENS #IMPLIED >
+    <!--@MATCH:set/regex/[a-z0-9]{2,8}(\-[a-z0-9]{3,8})*-->
     <!--@VALUE-->
 <!ATTLIST era named (true | false) #IMPLIED >
     <!--@VALUE-->
@@ -439,7 +450,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@DEPRECATED-->
 <!ATTLIST unitPreferences draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
-    <!--@DEPRECATED-->
 
 <!ELEMENT unitPreference ( #PCDATA ) >
     <!--@ORDERED-->
@@ -900,6 +910,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!-- # Parent locales -->
 
 <!ELEMENT parentLocales ( parentLocale* ) >
+<!ATTLIST parentLocales component NMTOKEN #IMPLIED >
+    <!--@MATCH:literal/segmentations, collations-->
 
 <!ELEMENT parentLocale EMPTY >
 <!ATTLIST parentLocale parent NMTOKEN #REQUIRED >
@@ -923,6 +935,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST likelySubtag to NMTOKEN #REQUIRED >
     <!--@MATCH:validity/locale-->
     <!--@VALUE-->
+<!ATTLIST likelySubtag origin NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/sil1, wikidata, special-->
+    <!--@METADATA-->
 
 <!ELEMENT metazoneInfo ( timezone* ) >
 

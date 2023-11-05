@@ -276,9 +276,7 @@ public:
     return p;
   }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
-  // - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments().
-  // - Other subclasses of DCmd have zero arguments by default. You can change this
-  //   by defining your own version of MyDCmd::num_arguments().
+  // All subclasses should override this to report the actual number of arguments.
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }
@@ -310,6 +308,11 @@ public:
   // main method to invoke the framework
   static void parse_and_execute(DCmdSource source, outputStream* out, const char* cmdline,
                                 char delim, TRAPS);
+
+  // Convenience method to register Dcmds, without a need to change
+  // management.cpp every time.
+  static void register_dcmds();
+
 };
 
 class DCmdWithParser : public DCmd {
@@ -434,13 +437,14 @@ public:
   }
 
 private:
+#ifdef ASSERT
   template <typename T, ENABLE_IF(!std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     return T::num_arguments();
   }
 
   template <typename T, ENABLE_IF(std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     ResourceMark rm;
     DCmdClass* dcmd = new DCmdClass(nullptr, false);
     if (dcmd != nullptr) {
@@ -450,19 +454,20 @@ private:
       return 0;
     }
   }
-};
+#endif
 
-// This class provides a convenient way to register Dcmds, without a need to change
-// management.cpp every time. Body of these two methods resides in
-// diagnosticCommand.cpp
+  template <typename T, ENABLE_IF(std::is_convertible<T, DCmd>::value)>
+  static int get_num_arguments() {
+    int n_args = T::num_arguments();
+#ifdef ASSERT
+    int n_parsed_args = get_parsed_num_arguments<T>();
+    assert(n_args == n_parsed_args,
+           "static argument count %d does not match parsed argument count %d",
+           n_args, n_parsed_args);
+#endif
+    return n_args;
+  }
 
-class DCmdRegistrant : public AllStatic {
-
-private:
-    static void register_dcmds();
-    static void register_dcmds_ext();
-
-    friend class Management;
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP

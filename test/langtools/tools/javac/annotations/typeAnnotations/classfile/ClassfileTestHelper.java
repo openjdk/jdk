@@ -21,12 +21,12 @@
  * questions.
  */
 
-import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import java.util.ArrayList;
 
 public class ClassfileTestHelper {
@@ -59,158 +59,119 @@ public class ClassfileTestHelper {
         return new File(path.substring(0, path.length() - 5) + ".class");
     }
 
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
+    ClassModel getClassFile(String name) throws IOException {
         URL url = getClass().getResource(name);
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
+        assert url != null;
+        try (InputStream in = url.openStream()) {
+            return Classfile.of().parse(in.readAllBytes());
         }
     }
 
-    ClassFile getClassFile(URL url) throws IOException, ConstantPoolException {
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
+    ClassModel getClassFile(URL url) throws IOException {
+        try (InputStream in = url.openStream()) {
+            return Classfile.of().parse(in.readAllBytes());
         }
     }
 
     /************ Helper annotations counting methods ******************/
-    void test(ClassFile cf) {
-        test("CLASS",cf, null, null, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test("CLASS",cf, null, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
-        //RuntimeAnnotations since one annotation can result in two attributes.
-        test("CLASS",cf, null, null, Attribute.RuntimeVisibleAnnotations, true);
-        test("CLASS",cf, null, null, Attribute.RuntimeInvisibleAnnotations, false);
+    void test(ClassModel cm) {
+        test(cm, false); //For ClassModel, not look for annotations in code attr
+    }
+    // default to not looking in code attribute
+    void test(FieldModel fm) {
+        test(fm, false);
     }
 
-    void test(ClassFile cf, Field f, Boolean local) {
-        if (!local) {
-            test("FIELD",cf, f, null, Attribute.RuntimeVisibleTypeAnnotations, true);
-            test("FIELD",cf, f, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
-            test("FIELD",cf, f, null, Attribute.RuntimeVisibleAnnotations, true);
-            test("FIELD",cf, f, null, Attribute.RuntimeInvisibleAnnotations, false);
-        } else {
-            test("CODE",cf, f, null, Attribute.RuntimeVisibleTypeAnnotations, true);
-            test("CODE",cf, f, null, Attribute.RuntimeInvisibleTypeAnnotations, false);
-            test("CODE",cf, f, null, Attribute.RuntimeVisibleAnnotations, true);
-            test("CODE",cf, f, null, Attribute.RuntimeInvisibleAnnotations, false);
-        }
-    }
-
-    void test(ClassFile cf, Field f) {
-        test(cf, f, false);
+    void test(MethodModel mm ) {
+        test(mm, false);
     }
 
     // 'local' determines whether to look for annotations in code attribute or not.
-    void test(ClassFile cf, Method m, Boolean local) {
-        if (!local) {
-            test("METHOD",cf, null, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-            test("METHOD",cf, null, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-            test("METHOD",cf, null, m, Attribute.RuntimeVisibleAnnotations, true);
-            test("METHOD",cf, null, m, Attribute.RuntimeInvisibleAnnotations, false);
-        } else  {
-            test("MCODE",cf, null, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-            test("MCODE",cf, null, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-            test("MCODE",cf, null, m, Attribute.RuntimeVisibleAnnotations, true);
-            test("MCODE",cf, null, m, Attribute.RuntimeInvisibleAnnotations, false);
-        }
+    void test(AttributedElement m, Boolean local) {
+        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, local);
+        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, local);
+        test(m, Attributes.RUNTIME_VISIBLE_ANNOTATIONS, local);
+        test(m, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS, local);
     }
 
-    // default to not looking in code attribute
-    void test(ClassFile cf, Method m ) {
-        test(cf, m, false);
-    }
-
-    // Test the result of Attributes.getIndex according to expectations
+    // Test the result of MethodModel.findAttribute according to expectations
     // encoded in the class/field/method name; increment annotations counts.
-    void test(String ttype, ClassFile cf, Field f, Method m, String annName, boolean visible) {
-        String testtype = ttype;
-        String name = null;
-        int index = -1;
-        Attribute attr = null;
-        Code_attribute cAttr = null;
-        boolean isTAattr = annName.contains("TypeAnnotations");
-        try {
-            switch(testtype) {
-                case "FIELD":
-                    name = f.getName(cf.constant_pool);
-                    index = f.attributes.getIndex(cf.constant_pool, annName);
-                    if(index!= -1)
-                        attr = f.attributes.get(index);
-                    break;
-                case "CODE":
-                    name = f.getName(cf.constant_pool);
-                    //fetch index of and code attribute and annotations from code attribute.
-                    index = cf.attributes.getIndex(cf.constant_pool, Attribute.Code);
-                    if(index!= -1) {
-                        attr = cf.attributes.get(index);
-                        assert attr instanceof Code_attribute;
-                        cAttr = (Code_attribute)attr;
-                        index = cAttr.attributes.getIndex(cf.constant_pool, annName);
-                        if(index!= -1)
-                            attr = cAttr.attributes.get(index);
-                    }
-                    break;
-                case "METHOD":
-                    name = m.getName(cf.constant_pool);
-                    index = m.attributes.getIndex(cf.constant_pool, annName);
-                    if(index!= -1)
-                        attr = m.attributes.get(index);
-                    break;
-                case "MCODE":
-                    name = m.getName(cf.constant_pool);
-                    //fetch index of and code attribute and annotations from code attribute.
-                    index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-                    if(index!= -1) {
-                        attr = m.attributes.get(index);
-                        assert attr instanceof Code_attribute;
-                        cAttr = (Code_attribute)attr;
-                        index = cAttr.attributes.getIndex(cf.constant_pool, annName);
-                        if(index!= -1)
-                            attr = cAttr.attributes.get(index);
-                    }
-                    break;
-                default:
-                    name = cf.getName();
-                    index = cf.attributes.getIndex(cf.constant_pool, annName);
-                    if(index!= -1) attr = cf.attributes.get(index);
+    <T extends Attribute<T>>void test(AttributedElement m, AttributeMapper<T> annName, Boolean local) {
+        String name;
+        Attribute<T> attr;
+        boolean isTAattr = annName.name().contains("Type");
+        switch(m) {
+            case FieldModel fm -> {
+                name = fm.fieldName().stringValue();
+                attr = extractAnnotation(m, annName, local);
             }
-        } catch(ConstantPoolException cpe) { cpe.printStackTrace(); }
-
-        if (index != -1) {
-            if(isTAattr) { //count RuntimeTypeAnnotations
-                RuntimeTypeAnnotations_attribute tAttr =
-                        (RuntimeTypeAnnotations_attribute)attr;
-                println(testtype + ": " + name + ", " + annName + ": " +
-                        tAttr.annotations.length );
-                if (tAttr.annotations.length > 0) {
-                    for (int i = 0; i < tAttr.annotations.length; i++) {
-                        println("  types:" + tAttr.annotations[i].position.type);
-                    }
-                } else {
-                    println("");
-                }
-                allt += tAttr.annotations.length;
-                if (visible)
-                    tvisibles += tAttr.annotations.length;
-                else
-                    tinvisibles += tAttr.annotations.length;
-            } else {
-                RuntimeAnnotations_attribute tAttr =
-                        (RuntimeAnnotations_attribute)attr;
-                println(testtype + ": " + name + ", " + annName + ": " +
-                        tAttr.annotations.length );
-                all += tAttr.annotations.length;
-                if (visible)
-                    visibles += tAttr.annotations.length;
-                else
-                    invisibles += tAttr.annotations.length;
+            case MethodModel mm -> {
+                name = mm.methodName().stringValue();
+                attr = extractAnnotation(m, annName, local);
+            }
+            default -> {
+                ClassModel cm = (ClassModel) m;
+                name = cm.thisClass().asInternalName();
+                attr = extractAnnotation(cm, annName, local);
             }
         }
+
+        if (attr != null) {
+            if(isTAattr) { //count RuntimeTypeAnnotations
+//                List <TypeAnnotation> tAnnots = new ArrayList<TypeAnnotation>();
+                switch (attr) {
+                    case RuntimeVisibleTypeAnnotationsAttribute vtAttr -> {
+                        List <TypeAnnotation> tAnnots = vtAttr.annotations();
+                        tvisibles += tAnnots.size();
+                        allt += tAnnots.size();
+                    }
+                    case RuntimeInvisibleTypeAnnotationsAttribute invtAttr -> {
+                        System.err.println(invtAttr.annotations());
+                        List <TypeAnnotation> tAnnots = invtAttr.annotations();
+                        tinvisibles += tAnnots.size();
+                        allt += tAnnots.size();
+                    }
+                    default -> throw new AssertionError();
+                }
+                // This snippet is simply for printlin. which are duplicated in two cases. Therefore, I want to drop it.
+//                if (!tAnnots.isEmpty()) {
+////                    for (TypeAnnotation tAnnot : tAnnots)
+////                        println("  types:" + tAnnot.targetInfo().targetType());
+////                    println("Local: " + local + ", " + name + ", " + annName + ": " + tAnnots.size());
+//                    allt += tAnnots.size();
+//                }
+            } else {
+                List <Annotation> annots;
+                switch (attr) {
+                    case RuntimeVisibleAnnotationsAttribute tAttr -> {
+                        annots = tAttr.annotations();
+                        visibles += annots.size();
+                    }
+                    case RuntimeInvisibleAnnotationsAttribute tAttr -> {
+                        annots = tAttr.annotations();
+                        invisibles += annots.size();
+                    }
+                    default -> throw new AssertionError();
+                }
+                if (!annots.isEmpty()) {
+                    println("Local: " + local + ", " + name + ", " + annName + ": " + annots.size());
+                    all += annots.size();
+                }
+            }
+        }
+    }
+    <T extends Attribute<T>> Attribute<T> extractAnnotation(AttributedElement m, AttributeMapper<T> annName, Boolean local) {
+        CodeAttribute cAttr;
+        Attribute<T> attr = null;
+        if (local) {
+            cAttr = m.findAttribute(Attributes.CODE).orElse(null);
+            if (cAttr != null) {
+                attr = cAttr.findAttribute(annName).orElse(null);
+            }
+        } else {
+            attr = m.findAttribute(annName).orElse(null);
+        }
+        return attr;
     }
 
     void countAnnotations() {

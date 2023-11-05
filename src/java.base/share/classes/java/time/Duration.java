@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,23 +486,26 @@ public final class Duration
      * @throws ArithmeticException if the calculation exceeds the capacity of {@code Duration}
      */
     public static Duration between(Temporal startInclusive, Temporal endExclusive) {
-        try {
+        long secs = startInclusive.until(endExclusive, SECONDS);
+        if (secs == 0) {
+            // We don't know which Temporal is earlier, so the adjustment below would not work.
+            // But we do know that there's no danger of until(NANOS) overflowing in that case.
             return ofNanos(startInclusive.until(endExclusive, NANOS));
-        } catch (DateTimeException | ArithmeticException ex) {
-            long secs = startInclusive.until(endExclusive, SECONDS);
-            long nanos;
-            try {
-                nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
-                if (secs > 0 && nanos < 0) {
-                    secs++;
-                } else if (secs < 0 && nanos > 0) {
-                    secs--;
-                }
-            } catch (DateTimeException ex2) {
-                nanos = 0;
-            }
-            return ofSeconds(secs, nanos);
         }
+        long nanos;
+        try {
+            nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
+        } catch (DateTimeException ex2) {
+            nanos = 0;
+        }
+        if (nanos < 0 && secs > 0) {
+            // ofSeconds will subtract one even though until(SECONDS) already gave the correct
+            // number of seconds. So compensate. Similarly for the secs < 0 case below.
+            secs++;
+        } else if (nanos > 0 && secs < 0) {
+            secs--;
+        }
+        return ofSeconds(secs, nanos);
     }
 
     //-----------------------------------------------------------------------
@@ -526,7 +529,6 @@ public final class Duration
      * @param nanos  the nanoseconds within the second, from 0 to 999,999,999
      */
     private Duration(long seconds, int nanos) {
-        super();
         this.seconds = seconds;
         this.nanos = nanos;
     }
@@ -1420,7 +1422,8 @@ public final class Duration
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherDuration the other duration to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this duration is less than {@code otherDuration},
+     *          zero if they are equal, greater than zero if this duration is greater than {@code otherDuration}
      */
     @Override
     public int compareTo(Duration otherDuration) {

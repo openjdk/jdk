@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
@@ -73,7 +73,7 @@ size_t GCArguments::compute_heap_alignment() {
   // byte entry and the os page size is 4096, the maximum heap size should
   // be 512*4096 = 2MB aligned.
 
-  size_t alignment = CardTableRS::ct_max_alignment_constraint();
+  size_t alignment = CardTable::ct_max_alignment_constraint();
 
   if (UseLargePages) {
       // In presence of large pages we have to make sure that our

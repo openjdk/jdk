@@ -136,7 +136,11 @@ sys_thread_2(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
 
 static void JNICALL
 sys_thread_3(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
-    while (1) {
+    /* The volatile variable in the loop body is necessary
+     * to avoid the compiler optimization to elide the loop. */
+    volatile int i = 1;
+    while (i) {
+      i += 2;
     }
 }
 

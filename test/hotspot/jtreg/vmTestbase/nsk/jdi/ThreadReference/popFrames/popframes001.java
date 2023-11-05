@@ -93,8 +93,6 @@ import java.io.*;
 
 public class popframes001 extends JDIBase {
 
-    static boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
-
     public static void main (String argv[]) {
 
         int result = run(argv, System.out);
@@ -220,10 +218,6 @@ public class popframes001 extends JDIBase {
 
         try {
             testRun();
-
-            if (vthreadMode) {
-                return 0; // just exit. we already got the expected OpaqueFrameException
-            }
 
             log2("waiting for VMDeathEvent");
             getEventSet();
@@ -356,24 +350,10 @@ public class popframes001 extends JDIBase {
             log2("......thread2Ref.popFrames(stackFrame);");
             try {
                 thread2Ref.popFrames(stackFrame);
-                if (vthreadMode) {
-                    log3("ERROR: Expected OpaqueFrameException");
-                    testExitCode = FAILED;
-                }
-            } catch ( Exception e ) {
-                if (vthreadMode && (e instanceof OpaqueFrameException)) {
-                    // pass. resume thread and exit
-                    log2("......got expected OpaqueFrameException");
-                    log2("......thread2Ref.resume();");
-                    thread2Ref.resume();
-                    breakpointForCommunication();
-                    vm.resume();
-                    break;
-                } else {
-                    log3("ERROR: " + e.getClass().getSimpleName());
-                    testExitCode = FAILED;
-                    throw e;
-                }
+            } catch ( IncompatibleThreadStateException e ) {
+                log3("ERROR: IncompatibleThreadStateException");
+                testExitCode = FAILED;
+                break;
             }
 
             log2("......thread2Ref.resume();");

@@ -38,7 +38,7 @@ enum CompilerType : u1 {
 };
 
 extern const char* compilertype2name_tab[compiler_number_of_types];     // Map CompilerType to its name
-inline const char* compilertype2name(CompilerType t) { return (uint)t < compiler_number_of_types ? compilertype2name_tab[t] : nullptr; }
+inline const char* compilertype2name(CompilerType t) { return (uint)t < compiler_number_of_types ? compilertype2name_tab[t] : "invalid"; }
 
 // Handy constants for deciding which compiler mode to use.
 enum MethodCompilation {

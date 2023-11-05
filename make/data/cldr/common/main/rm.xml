@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1265,7 +1265,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMMEd">
-							<greatestDifference id="d" draft="contributed">E, d. – E, d MMMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d. – E, d MMMM</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E, d MMMM – E, d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
@@ -1309,7 +1309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">d MMMM y – d MMMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMMEd">
-							<greatestDifference id="d" draft="contributed">E, d. – E, d MMMM y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d. – E, d MMMM y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E, d MMMM – E, d MMMM y G</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E, d MMMM y – E, d MMMM y G</greatestDifference>
 						</intervalFormatItem>
@@ -1762,7 +1762,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M">d MMMM – d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMMEd">
-							<greatestDifference id="d">E, d. – E, d MMMM</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d MMMM</greatestDifference>
 							<greatestDifference id="M">E, d MMMM – E, d MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
@@ -1806,7 +1806,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">d MMMM y – d MMMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMMEd">
-							<greatestDifference id="d">E, d. – E, d MMMM y</greatestDifference>
+							<greatestDifference id="d">E, d. – E, d MMMM y</greatestDifference>
 							<greatestDifference id="M">E, d MMMM – E, d MMMM y</greatestDifference>
 							<greatestDifference id="y">E, d MMMM y – E, d MMMM y</greatestDifference>
 						</intervalFormatItem>
@@ -1824,6 +1824,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">quest onn</relative>
 				<relative type="1">l’onn proxim</relative>
 			</field>
+			<field type="year-short">
+				<displayName>onn</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>onn</displayName>
+			</field>
 			<field type="quarter">
 				<displayName>quartal</displayName>
 			</field>
@@ -1836,8 +1842,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="month">
 				<displayName draft="contributed">mais</displayName>
 			</field>
+			<field type="month-short">
+				<displayName>mais</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName>mais</displayName>
+			</field>
 			<field type="week">
 				<displayName draft="contributed">emna</displayName>
+			</field>
+			<field type="week-short">
+				<displayName>emna</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>emna</displayName>
 			</field>
 			<field type="day">
 				<displayName>di</displayName>
@@ -1849,9 +1867,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>di</displayName>
+				<relative type="-1">ier</relative>
+				<relative type="0">oz</relative>
+				<relative type="1">damaun</relative>
 			</field>
 			<field type="day-narrow">
 				<displayName>d</displayName>
+				<relative type="-1">ier</relative>
+				<relative type="0">oz</relative>
+				<relative type="1">damaun</relative>
 			</field>
 			<field type="weekday">
 				<displayName>di da l’emna</displayName>
@@ -1866,6 +1890,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>mesadad dal di</displayName>
 			</field>
 			<field type="hour">
+				<displayName>ura</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>ura</displayName>
+			</field>
+			<field type="hour-narrow">
 				<displayName>ura</displayName>
 			</field>
 			<field type="minute">
@@ -2702,6 +2732,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>rubel bieloruss</displayName>
 				<displayName count="one">rubel bieloruss</displayName>
 				<displayName count="other">rubels bieloruss</displayName>
+				<symbol alt="narrow" draft="contributed">BYN</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>rubel bieloruss (2000–2016)</displayName>
@@ -3938,6 +3969,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} per {1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="digital-petabyte">
 				<displayName>petabytes</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
@@ -4247,6 +4281,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="duration-year">
 				<displayName>onn</displayName>
 				<unitPattern count="one">{0} onns</unitPattern>
@@ -4351,6 +4391,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<coordinateUnit>
 				<displayName>direcziun</displayName>
 				<coordinateUnitPattern type="east">{0}O</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}V</coordinateUnitPattern>
 			</coordinateUnit>
@@ -4377,18 +4418,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} u {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} u {1}</listPatternPart>
 			<listPatternPart type="2">{0} u {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} u {1}</listPatternPart>
 			<listPatternPart type="2">{0} u {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} e {1}</listPatternPart>
+			<listPatternPart type="2">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} e {1}</listPatternPart>
+			<listPatternPart type="2">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} e {1}</listPatternPart>
+			<listPatternPart type="2">{0} e {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} e {1}</listPatternPart>
+			<listPatternPart type="2">{0} e {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

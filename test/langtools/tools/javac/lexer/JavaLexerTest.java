@@ -102,7 +102,8 @@ public class JavaLexerTest {
             new TestTuple(EOF,           "\\u", ""),
 
             new TestTuple(ERROR,         "\'\'"),
-            new TestTuple(ERROR,         "\'\\q\'", "\'\\"),
+            new TestTuple(ERROR,         "\'\\q\'", "\'\\q\'"),
+            new TestTuple(ERROR,         "\'\\{1+2}\'", "\'\\{1+2}\'"),
     };
 
     static class TestTuple {

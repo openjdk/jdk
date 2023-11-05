@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -354,7 +354,7 @@ inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorat
                                             Register tmp1, Register tmp2, Register tmp3,
                                             MacroAssembler::PreservationLevel preservation_level) {
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
-                         ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
+                         ON_UNKNOWN_OOP_REF | IS_DEST_UNINITIALIZED)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bool as_raw = (decorators & AS_RAW) != 0;
   decorators = AccessInternal::decorator_fixup(decorators, type);
@@ -419,7 +419,7 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 }
 
 inline Register MacroAssembler::encode_heap_oop(Register d, Register src) {
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     if (VM_Version::has_isel()) {
       cmpdi(CCR0, src, 0);
       Register co = encode_heap_oop_not_null(d, src);
@@ -451,7 +451,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
     sldi(d, current, CompressedOops::shift());
     current = d;
   }
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     add_const_optimized(d, current, CompressedOops::base(), R0);
     current = d;
   }
@@ -461,7 +461,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
 inline void MacroAssembler::decode_heap_oop(Register d) {
   Label isNull;
   bool use_isel = false;
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     cmpwi(CCR0, d, 0);
     if (VM_Version::has_isel()) {
       use_isel = true;

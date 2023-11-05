@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ package java.nio.file.attribute;
  * legacy "DOS" attributes.
  *
  * <p> <b>Usage Example:</b>
- * <pre>
- *    Path file = ...
- *    DosFileAttributes attrs = Files.readAttributes(file, DosFileAttributes.class);
- * </pre>
+ * {@snippet lang=java :
+ *     Path file = ...
+ *     DosFileAttributes attrs = Files.readAttributes(file, DosFileAttributes.class);
+ * }
  *
  * @since 1.7
  */

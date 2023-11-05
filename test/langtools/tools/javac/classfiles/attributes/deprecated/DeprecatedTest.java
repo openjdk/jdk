@@ -30,19 +30,19 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main DeprecatedTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Deprecated_attribute;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.InnerClasses_attribute;
-import com.sun.tools.classfile.InnerClasses_attribute.Info;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -244,9 +244,8 @@ public class DeprecatedTest extends TestResult {
                     ? "deprecated"
                     : "notDeprecated";
             echo("Testing outer class : " + outerClassName);
-            ClassFile cf = readClassFile(classes.get(outerClassName));
-            Deprecated_attribute attr = (Deprecated_attribute)
-                    cf.getAttribute(Attribute.Deprecated);
+            ClassModel cf = readClassFile(classes.get(outerClassName));
+            DeprecatedAttribute attr = cf.findAttribute(Attributes.DEPRECATED).orElse(null);
             testAttribute(outerClassName, attr, cf);
             testInnerClasses(cf, classes);
             testMethods(cf);
@@ -256,18 +255,17 @@ public class DeprecatedTest extends TestResult {
         }
     }
 
-    private void testInnerClasses(ClassFile cf, Map<String, ? extends JavaFileObject> classes)
-            throws ConstantPoolException, IOException {
-        InnerClasses_attribute innerAttr = (InnerClasses_attribute)
-                cf.getAttribute(Attribute.InnerClasses);
-        for (Info innerClass : innerAttr.classes) {
-            String innerClassName = cf.constant_pool.
-                    getClassInfo(innerClass.inner_class_info_index).getName();
+    private void testInnerClasses(ClassModel cf, Map<String, ? extends JavaFileObject> classes)
+            throws IOException {
+        InnerClassesAttribute innerAttr = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        assert innerAttr != null;
+        for (InnerClassInfo innerClass : innerAttr.classes()) {
+            String innerClassName = innerClass.innerClass().name().stringValue();
             echo("Testing inner class : " + innerClassName);
-            ClassFile innerCf = readClassFile(classes.get(innerClassName));
-            Deprecated_attribute attr = (Deprecated_attribute)
-                    innerCf.getAttribute(Attribute.Deprecated);
-            String innerClassSimpleName = innerClass.getInnerName(cf.constant_pool);
+            ClassModel innerCf = readClassFile(classes.get(innerClassName));
+            DeprecatedAttribute attr = innerCf.findAttribute(Attributes.DEPRECATED).orElse(null);
+            assert innerClass.innerName().isPresent();
+            String innerClassSimpleName = innerClass.innerName().get().stringValue();
             testAttribute(innerClassSimpleName, attr, innerCf);
             if (innerClassName.contains("Local")) {
                 testMethods(innerCf);
@@ -276,29 +274,25 @@ public class DeprecatedTest extends TestResult {
         }
     }
 
-    private void testMethods(ClassFile cf)
-            throws ConstantPoolException {
-        for (Method m : cf.methods) {
-            String methodName = cf.constant_pool.getUTF8Value(m.name_index);
+    private void testMethods(ClassModel cf) {
+        for (MethodModel m : cf.methods()) {
+            String methodName = m.methodName().stringValue();
             echo("Testing method : " + methodName);
-            Deprecated_attribute attr = (Deprecated_attribute)
-                    m.attributes.get(Attribute.Deprecated);
+            DeprecatedAttribute attr = m.findAttribute(Attributes.DEPRECATED).orElse(null);
             testAttribute(methodName, attr, cf);
         }
     }
 
-    private void testFields(ClassFile cf) throws ConstantPoolException {
-        for (Field f : cf.fields) {
-            String fieldName = cf.constant_pool.getUTF8Value(f.name_index);
+    private void testFields(ClassModel cm) {
+        for (FieldModel f : cm.fields()) {
+            String fieldName = f.fieldName().stringValue();
             echo("Testing field : " + fieldName);
-            Deprecated_attribute attr = (Deprecated_attribute)
-                    f.attributes.get(Attribute.Deprecated);
-            testAttribute(fieldName, attr, cf);
+            DeprecatedAttribute attr = f.findAttribute(Attributes.DEPRECATED).orElse(null);
+            testAttribute(fieldName, attr, cm);
         }
     }
 
-    private void testAttribute(String name, Deprecated_attribute attr, ClassFile cf)
-            throws ConstantPoolException {
+    private void testAttribute(String name, DeprecatedAttribute attr, ClassModel cf) {
         if (name.contains("deprecated")) {
             testDeprecatedAttribute(name, attr, cf);
         } else {
@@ -306,13 +300,11 @@ public class DeprecatedTest extends TestResult {
         }
     }
 
-    private void testDeprecatedAttribute(String name, Deprecated_attribute attr, ClassFile cf)
-            throws ConstantPoolException {
+    private void testDeprecatedAttribute(String name, DeprecatedAttribute attr, ClassModel cm) {
         if (checkNotNull(attr, name + " must have deprecated attribute")) {
-            checkEquals(0, attr.attribute_length,
+            checkEquals(0, ((BoundAttribute<?>)attr).payloadLen(),
                     "attribute_length should equal to 0");
-            checkEquals("Deprecated",
-                    cf.constant_pool.getUTF8Value(attr.attribute_name_index),
+            checkEquals("Deprecated", attr.attributeName(),
                     name + " attribute_name_index");
         }
     }

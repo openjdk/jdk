@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,10 +101,10 @@ class LambdaFormEditor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof TransformKey) {
-                return equals((TransformKey) obj);
+            if (obj instanceof TransformKey key) {
+                return equals(key);
             }
-            return obj instanceof Transform && equals((Transform)obj);
+            return obj instanceof Transform transform && equals(transform);
         }
 
         private boolean equals(TransformKey that) {
@@ -354,10 +354,10 @@ class LambdaFormEditor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof TransformKey) {
-                return equals((TransformKey) obj);
+            if (obj instanceof TransformKey key) {
+                return equals(key);
             }
-            return obj instanceof Transform && equals((Transform)obj);
+            return obj instanceof Transform transform && equals(transform);
         }
 
         private boolean equals(TransformKey that) {

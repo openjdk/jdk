@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,6 @@ public final class TaskHelper {
         private final List<Plugin> plugins;
         private String lastSorter;
         private boolean listPlugins;
-        private Path existingImage;
 
         // plugin to args maps. Each plugin may be used more than once in command line.
         // Each such occurrence results in a Map of arguments. So, there could be multiple
@@ -259,13 +258,6 @@ public final class TaskHelper {
                     throw newBadArgs("err.no.such.plugin", arg);
                 },
                 false, "--disable-plugin"));
-            mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
-                Path path = Paths.get(arg);
-                if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.image.must.exist", path);
-                }
-                existingImage = path.toAbsolutePath();
-            }, true, "--post-process-path"));
             mainOptions.add(new PluginOption(true,
                     (task, opt, arg) -> {
                         lastSorter = arg;
@@ -417,8 +409,9 @@ public final class TaskHelper {
             return null;
         }
 
-        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers
-                    ) throws IOException, BadArgs {
+        private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                      Platform targetPlatform)
+                throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
                     throw new IllegalArgumentException(PluginsResourceBundle.
@@ -465,7 +458,7 @@ public final class TaskHelper {
             // recreate or postprocessing don't require an output directory.
             ImageBuilder builder = null;
             if (output != null) {
-                builder = new DefaultImageBuilder(output, launchers);
+                builder = new DefaultImageBuilder(output, launchers, targetPlatform);
             }
 
             return new Jlink.PluginsConfiguration(pluginsList,
@@ -716,13 +709,10 @@ public final class TaskHelper {
                 + bundleHelper.getMessage(key, args));
     }
 
-    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers)
+    public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
+                                                 Platform targetPlatform)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, launchers);
-    }
-
-    public Path getExistingImage() {
-        return pluginOptions.existingImage;
+        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform);
     }
 
     public void showVersion(boolean full) {

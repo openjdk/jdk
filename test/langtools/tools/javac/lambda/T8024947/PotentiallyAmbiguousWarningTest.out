@@ -1,9 +1,12 @@
-PotentiallyAmbiguousWarningTest.java:15:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.I1, foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.I1
-PotentiallyAmbiguousWarningTest.java:21:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.C1, foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.C1
+PotentiallyAmbiguousWarningTest.java:16:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.I1, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.I1
+PotentiallyAmbiguousWarningTest.java:22:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.C1, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.C1
 PotentiallyAmbiguousWarningTest.java:31:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.J1, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.I2
 PotentiallyAmbiguousWarningTest.java:48:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.D1, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.C2
 PotentiallyAmbiguousWarningTest.java:54:21: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.C3, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.C3
-PotentiallyAmbiguousWarningTest.java:71:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.J2, foo(T), PotentiallyAmbiguousWarningTest.I5
+PotentiallyAmbiguousWarningTest.java:71:14: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.J2, foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.I5
+PotentiallyAmbiguousWarningTest.java:85:5: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.I7, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.I6
+PotentiallyAmbiguousWarningTest.java:97:5: compiler.warn.potentially.ambiguous.overload: foo(java.util.function.IntConsumer), PotentiallyAmbiguousWarningTest.I10, foo(java.util.function.Consumer<java.lang.Integer>), PotentiallyAmbiguousWarningTest.I10
+PotentiallyAmbiguousWarningTest.java:102:9: compiler.warn.potentially.ambiguous.overload: andThen(java.util.function.IntConsumer), java.util.function.IntConsumer, andThen(java.util.function.Consumer<? super java.lang.Integer>), java.util.function.Consumer
 - compiler.err.warnings.and.werror
 1 error
-6 warnings
+9 warnings

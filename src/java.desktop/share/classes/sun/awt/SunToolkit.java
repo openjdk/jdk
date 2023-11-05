@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,9 @@ public abstract class SunToolkit extends Toolkit
      *     }
      */
 
-    private static final ReentrantLock AWT_LOCK = new ReentrantLock();
+    @SuppressWarnings("removal")
+    private static final ReentrantLock AWT_LOCK = new ReentrantLock(
+            AccessController.doPrivileged(new GetBooleanAction("awt.lock.fair")));
     private static final Condition AWT_LOCK_COND = AWT_LOCK.newCondition();
 
     public static final void awtLock() {
@@ -549,7 +551,7 @@ public abstract class SunToolkit extends Toolkit
      * Execute a chunk of code on the Java event handler thread. The
      * method takes into account provided AppContext and sets
      * {@code SunToolkit.getDefaultToolkit()} as a target of the
-     * event. See 6451487 for detailes.
+     * event. See 6451487 for details.
      * Does not wait for the execution to occur before returning to
      * the caller.
      */
@@ -1881,6 +1883,20 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
+    /**
+     * Checks if the system is running Linux with the Wayland server.
+     *
+     * @return true if running on Wayland, false otherwise
+     */
+    public boolean isRunningOnWayland() {
+        return false;
+    }
+
+    public void dismissPopupOnFocusLostIfNeeded(Window invoker) {}
+
+    public void dismissPopupOnFocusLostIfNeededCleanUp(Window invoker) {}
+
+
     private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
 
     public synchronized void setWindowDeactivationTime(Window w, long time) {
@@ -1914,7 +1930,7 @@ public abstract class SunToolkit extends Toolkit
     public void updateScreenMenuBarUI() {
     }
 
-    // Cosntant alpha
+    // Constant alpha
     public boolean isWindowOpacitySupported() {
         return false;
     }

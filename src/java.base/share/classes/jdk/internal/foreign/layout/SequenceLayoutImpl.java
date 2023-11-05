@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
 import java.util.Objects;
@@ -36,11 +38,11 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     private final MemoryLayout elementLayout;
 
     private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.bitAlignment(), Optional.empty());
+        this(elemCount, elementLayout, elementLayout.byteAlignment(), Optional.empty());
     }
 
-    private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long bitAlignment, Optional<String> name) {
-        super(Math.multiplyExact(elemCount, elementLayout.bitSize()), bitAlignment, name);
+    private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long byteAlignment, Optional<String> name) {
+        super(Math.multiplyExact(elemCount, elementLayout.byteSize()), byteAlignment, name);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
     }
@@ -68,8 +70,8 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
     public SequenceLayout withElementCount(long elementCount) {
-        MemoryLayoutUtil.checkSize(elementCount, true);
-        return new SequenceLayoutImpl(elementCount, elementLayout, bitAlignment(), name());
+        return Utils.wrapOverflow(() ->
+                new SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name()));
     }
 
     /**
@@ -177,21 +179,18 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
 
     @Override
     public String toString() {
+        boolean max = (Long.MAX_VALUE / elementLayout.byteSize()) == elemCount;
         return decorateLayoutString(String.format("[%s:%s]",
-                elemCount, elementLayout));
+                max ? "*" : elemCount, elementLayout));
     }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        return other instanceof SequenceLayoutImpl otherSeq &&
-                elemCount == otherSeq.elemCount &&
-                elementLayout.equals(otherSeq.elementLayout);
+        return this == other ||
+                other instanceof SequenceLayoutImpl otherSeq &&
+                        super.equals(other) &&
+                        elemCount == otherSeq.elemCount &&
+                        elementLayout.equals(otherSeq.elementLayout);
     }
 
     @Override
@@ -200,13 +199,21 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     }
 
     @Override
-    SequenceLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new SequenceLayoutImpl(elementCount(), elementLayout, bitAlignment, name);
+    SequenceLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new SequenceLayoutImpl(elementCount(), elementLayout, byteAlignment, name);
+    }
+
+    @Override
+    public SequenceLayoutImpl withByteAlignment(long byteAlignment) {
+        if (byteAlignment < elementLayout.byteAlignment()) {
+            throw new IllegalArgumentException("Invalid alignment constraint");
+        }
+        return super.withByteAlignment(byteAlignment);
     }
 
     @Override
     public boolean hasNaturalAlignment() {
-        return bitAlignment() == elementLayout.bitAlignment();
+        return byteAlignment() == elementLayout.byteAlignment();
     }
 
     public static SequenceLayout of(long elementCount, MemoryLayout elementLayout) {

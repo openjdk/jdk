@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -624,6 +624,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">чӳк</month>
 							<month type="12">раш.</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">К</month>
+							<month type="2">Н</month>
+							<month type="3">П</month>
+							<month type="4">А</month>
+							<month type="5">Ҫ</month>
+							<month type="6">Ҫ</month>
+							<month type="7">У</month>
+							<month type="8">Ҫ</month>
+							<month type="9">А</month>
+							<month type="10">Ю</month>
+							<month type="11">Ч</month>
+							<month type="12">Р</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">кӑрлач</month>
 							<month type="2">нарӑс</month>
@@ -640,6 +654,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">кӑр.</month>
+							<month type="2">нар.</month>
+							<month type="3">пуш</month>
+							<month type="4">ака</month>
+							<month type="5">ҫу</month>
+							<month type="6">ҫӗр.</month>
+							<month type="7">утӑ</month>
+							<month type="8">ҫур.</month>
+							<month type="9">авӑн</month>
+							<month type="10">юпа</month>
+							<month type="11">чӳк</month>
+							<month type="12">раш.</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">К</month>
 							<month type="2">Н</month>
@@ -653,6 +681,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">Ю</month>
 							<month type="11">Ч</month>
 							<month type="12">Р</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">кӑрлач</month>
+							<month type="2">нарӑс</month>
+							<month type="3">пуш</month>
+							<month type="4">ака</month>
+							<month type="5">ҫу</month>
+							<month type="6">ҫӗртме</month>
+							<month type="7">утӑ</month>
+							<month type="8">ҫурла</month>
+							<month type="9">авӑн</month>
+							<month type="10">юпа</month>
+							<month type="11">чӳк</month>
+							<month type="12">раштав</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -723,6 +765,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">эр.</day>
 							<day type="sat">шӑм.</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">вырсарникун</day>
+							<day type="mon">тунтикун</day>
+							<day type="tue">ытларикун</day>
+							<day type="wed">юнкун</day>
+							<day type="thu">кӗҫнерникун</day>
+							<day type="fri">эрнекун</day>
+							<day type="sat">шӑматкун</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -732,6 +783,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">2-мӗш кв.</quarter>
 							<quarter type="3">3-мӗш кв.</quarter>
 							<quarter type="4">4-мӗш кв.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1-мӗш квартал</quarter>
@@ -755,6 +812,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Христос ҫуралнӑ кунччен</era>
@@ -816,9 +899,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -980,6 +1069,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>ҫ.</displayName>
+				<relative type="-1">пӗлтӗр</relative>
+				<relative type="0">кӑҫал</relative>
+				<relative type="1">ҫитес ҫ.</relative>
 			</field>
 			<field type="quarter">
 				<displayName>квартал</displayName>
@@ -1004,6 +1096,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>уй.</displayName>
+				<relative type="-1">иртнӗ уй.</relative>
+				<relative type="0">ку уй.</relative>
+				<relative type="1">ҫитес уй.</relative>
 			</field>
 			<field type="week">
 				<displayName>эрне</displayName>
@@ -1017,12 +1112,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">иртнӗ эр.</relative>
 				<relative type="0">ҫак эр.</relative>
 				<relative type="1">ҫитес эр.</relative>
+				<relativePeriod>эрнере {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>эр.</displayName>
 				<relative type="-1">иртнӗ эр.</relative>
 				<relative type="0">ҫак эр.</relative>
 				<relative type="1">ҫитес эр.</relative>
+				<relativePeriod>эрнере {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>кун</displayName>
@@ -3287,6 +3384,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
@@ -3933,6 +4034,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<coordinateUnit>
 				<displayName>енӗ</displayName>
 				<coordinateUnitPattern type="east">{0} хӗвелтухӑҫ тӑрӑхӗ</coordinateUnitPattern>
@@ -3951,6 +4058,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<coordinateUnit>
 				<displayName>енӗ</displayName>
 				<coordinateUnitPattern type="east">{0} х. т.</coordinateUnitPattern>
@@ -3970,16 +4083,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} е {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} е {1}</listPatternPart>
 			<listPatternPart type="2">{0} е {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} е {1}</listPatternPart>
 			<listPatternPart type="2">{0} е {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} тата {1}</listPatternPart>
+			<listPatternPart type="2">{0} тата {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0} {1}</listPatternPart>

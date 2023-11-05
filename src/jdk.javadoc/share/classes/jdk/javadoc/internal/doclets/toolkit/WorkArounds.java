@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -56,11 +55,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -130,136 +126,6 @@ public class WorkArounds {
     // TODO: implement in either jx.l.m API (preferred) or DocletEnvironment.
     FileObject getJavaFileObject(PackageElement packageElement) {
         return ((PackageSymbol)packageElement).sourcefile;
-    }
-
-    // TODO: needs to ported to jx.l.m.
-    public TypeElement searchClass(TypeElement klass, String className) {
-        TypeElement te;
-
-        // search by qualified name in current module first
-        ModuleElement me = utils.containingModule(klass);
-        if (me != null) {
-            te = elementUtils.getTypeElement(me, className);
-            if (te != null) {
-                return te;
-            }
-        }
-
-        // search inner classes
-        for (TypeElement ite : utils.getClasses(klass)) {
-            TypeElement innerClass = searchClass(ite, className);
-            if (innerClass != null) {
-                return innerClass;
-            }
-        }
-
-        // check in this package
-        te = utils.findClassInPackageElement(utils.containingPackage(klass), className);
-        if (te != null) {
-            return te;
-        }
-
-        ClassSymbol tsym = (ClassSymbol)klass;
-        // make sure that this symbol has been completed
-        // TODO: do we need this anymore ?
-        if (tsym.completer != null) {
-            tsym.complete();
-        }
-
-        // search imports
-        if (tsym.sourcefile != null) {
-
-            //### This information is available only for source classes.
-            Env<AttrContext> compenv = toolEnv.getEnv(tsym);
-            if (compenv == null) {
-                return null;
-            }
-            Names names = tsym.name.table.names;
-            Scope s = compenv.toplevel.namedImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-
-            s = compenv.toplevel.starImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-        }
-
-        // finally, search by qualified name in all modules
-        return elementUtils.getTypeElement(className);
-    }
-
-    // TODO:  need to re-implement this using j.l.m. correctly!, this has
-    //        implications on testInterface, the note here is that javac's supertype
-    //        does the right thing returning Parameters in scope.
-    /*
-     * Returns the closest superclass (not the superinterface) that contains
-     * a method that is both:
-     *
-     *   - overridden by the specified method, and
-     *   - is not itself a *simple* override
-     *
-     * If no such class can be found, returns null.
-     *
-     * If the specified method belongs to an interface, the only considered
-     * superclass is java.lang.Object no matter how many other interfaces
-     * that interface extends.
-     */
-    public DeclaredType overriddenType(ExecutableElement method) {
-        if (utils.isStatic(method)) {
-            return null;
-        }
-        MethodSymbol sym = (MethodSymbol) method;
-        ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (Type t = javacTypes.supertype(origin.type);
-             t.hasTag(TypeTag.CLASS);
-             t = javacTypes.supertype(t)) {
-            ClassSymbol c = (ClassSymbol) t.tsym;
-            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
-                if (sym.overrides(sym2, origin, javacTypes, true)) {
-                    // Ignore those methods that may be a simple override
-                    // and allow the real API method to be found.
-                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
-                        continue;
-                    }
-                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
-                    return (Type.ClassType) t;
-                }
-            }
-        }
-        return null;
-    }
-
-    // TODO: the method jx.l.m.Elements::overrides does not check
-    // the return type, see JDK-8174840 until that is resolved,
-    // use a  copy of the same method, with a return type check.
-
-    // Note: the rider.overrides call in this method *must* be consistent
-    // with the call in overrideType(....), the method above.
-    public boolean overrides(ExecutableElement e1, ExecutableElement e2, TypeElement cls) {
-        MethodSymbol rider = (MethodSymbol)e1;
-        MethodSymbol ridee = (MethodSymbol)e2;
-        ClassSymbol origin = (ClassSymbol)cls;
-
-        return rider.name == ridee.name &&
-
-               // not reflexive as per JLS
-               rider != ridee &&
-
-               // we don't care if ridee is static, though that wouldn't
-               // compile
-               !rider.isStatic() &&
-
-               // Symbol.overrides assumes the following
-               ridee.isMemberOf(origin, javacTypes) &&
-
-               // check access, signatures and check return types
-               rider.overrides(ridee, origin, javacTypes, true);
     }
 
     // TODO: jx.l.m ?
@@ -348,8 +214,8 @@ public class WorkArounds {
         NewSerializedForm(Utils utils, Elements elements, TypeElement te) {
             this.utils = utils;
             this.elements = elements;
-            methods = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
-            fields = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+            methods = new TreeSet<>(utils.comparators.generalPurposeComparator());
+            fields = new TreeSet<>(utils.comparators.generalPurposeComparator());
             if (utils.isExternalizable(te)) {
                 /* look up required public accessible methods,
                  *   writeExternal and readExternal.
@@ -499,6 +365,11 @@ public class WorkArounds {
             }
             return findMethod(encl, methodName, paramTypes);
         }
+    }
+
+    public boolean isRestrictedAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return sym.kind == MTH && (sym.flags() & Flags.RESTRICTED) != 0;
     }
 
     public boolean isPreviewAPI(Element el) {

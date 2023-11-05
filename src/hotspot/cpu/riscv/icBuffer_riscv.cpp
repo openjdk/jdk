@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -43,7 +43,7 @@ int InlineCacheBuffer::ic_stub_code_size() {
 #define __ masm->
 
 void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {
-  assert_cond(code_begin != NULL && entry_point != NULL);
+  assert_cond(code_begin != nullptr && entry_point != nullptr);
   ResourceMark rm;
   CodeBuffer      code(code_begin, ic_stub_code_size());
   MacroAssembler* masm            = new MacroAssembler(&code);

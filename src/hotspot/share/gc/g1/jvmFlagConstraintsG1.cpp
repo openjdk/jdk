@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
+#include "gc/shared/ptrQueue.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -90,13 +91,13 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1NewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value > G1MaxNewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1NewSizePercent (" UINTX_FORMAT ") must be "
-                        "less than or equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1NewSizePercent (%u) must be "
+                        "less than or equal to G1MaxNewSizePercent (%u)\n",
                         value, G1MaxNewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -104,13 +105,13 @@ JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value < G1NewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1MaxNewSizePercent (" UINTX_FORMAT ") must be "
-                        "greater than or equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1MaxNewSizePercent (%u) must be "
+                        "greater than or equal to G1NewSizePercent (%u)\n",
                         value, G1NewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -179,4 +180,33 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 
 size_t MaxSizeForHeapAlignmentG1() {
   return HeapRegionBounds::max_size();
+}
+
+static JVMFlag::Error buffer_size_constraint_helper(JVMFlagsEnum flagid,
+                                                    size_t value,
+                                                    bool verbose) {
+  if (UseG1GC) {
+    const size_t min_size = 1;
+    const size_t max_size = BufferNode::max_size();
+    JVMFlag* flag = JVMFlag::flag_from_enum(flagid);
+    if ((value < min_size) || (value > max_size)) {
+      JVMFlag::printError(verbose,
+                          "%s (%zu) must be in range [%zu, %zu]\n",
+                          flag->name(), value, min_size, max_size);
+      return JVMFlag::OUT_OF_BOUNDS;
+    }
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error G1SATBBufferSizeConstraintFunc(size_t value, bool verbose) {
+  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1SATBBufferSize),
+                                       value,
+                                       verbose);
+}
+
+JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
+  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1UpdateBufferSize),
+                                       value,
+                                       verbose);
 }

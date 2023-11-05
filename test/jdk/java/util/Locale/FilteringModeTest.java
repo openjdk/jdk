@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,67 +25,61 @@
  * @test
  * @bug 8210443
  * @summary Check values() and valueOf(String name) of Locale.FilteringMode.
- * @run main FilteringModeTest
+ * @run junit FilteringModeTest
  */
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale.FilteringMode;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FilteringModeTest {
-    private static boolean err = false;
-    private static List<String> modeNames = List.of("AUTOSELECT_FILTERING",
-                                                    "EXTENDED_FILTERING",
-                                                    "IGNORE_EXTENDED_RANGES",
-                                                    "MAP_EXTENDED_RANGES",
-                                                    "REJECT_EXTENDED_RANGES");
 
-    public static void main(String[] args) throws Exception {
-        testValues();
-        testValueOf();
+    private static final List<String> expectedModeNames = List.of(
+            "AUTOSELECT_FILTERING",
+            "EXTENDED_FILTERING",
+            "IGNORE_EXTENDED_RANGES",
+            "MAP_EXTENDED_RANGES",
+            "REJECT_EXTENDED_RANGES"
+    );
 
-        if (err) {
-            throw new RuntimeException("Failed.");
-        }
+    // Ensure valueOf() exceptions are thrown
+    @Test
+    public void valueOfExceptionsTest() {
+        assertThrows(IllegalArgumentException.class,
+                () -> FilteringMode.valueOf("").name());
+        assertThrows(NullPointerException.class,
+                () -> FilteringMode.valueOf(null).name());
     }
 
-    private static void testValueOf() {
-        try {
-            FilteringMode.valueOf("").name();
-            err = true;
-            System.err.println("IAE should be thrown for valueOf(\"\").");
-        } catch (IllegalArgumentException ex) {
-        }
-
-        try {
-            FilteringMode.valueOf(null).name();
-            err = true;
-            System.err.println("NPE should be thrown for valueOf(null).");
-        } catch (NullPointerException ex) {
-        }
-
-        modeNames.forEach((expectedName) -> {
-            String name = FilteringMode.valueOf(expectedName).name();
-            if (!expectedName.equals(name)) {
-                err = true;
-                System.err.println("FilteringMode.valueOf(" + expectedName
-                        + ") returned unexpected value. Expected: "
-                        + expectedName + ", got: " + name);
-            }
-        });
+    // Ensure valueOf() returns expected results
+    @ParameterizedTest
+    @MethodSource("modes")
+    public void valueOfTest(String expectedName) {
+        String name = FilteringMode.valueOf(expectedName).name();
+        assertEquals(expectedName, name);
     }
 
-    private static void testValues() {
+    private static Stream<String> modes() {
+        return expectedModeNames.stream();
+    }
+
+    // Ensure values() returns expected results
+    @Test
+    public void valuesTest() {
         FilteringMode[] modeArray = FilteringMode.values();
-        List<String> modeNames2 = Arrays.stream(modeArray)
+        List<String> actualNames = Arrays.stream(modeArray)
                 .map(mode -> mode.name())
                 .collect(Collectors.toList());
-
-        if (!modeNames.equals(modeNames2)) {
-            err = true;
-            System.err.println("FilteringMode.values() returned unexpected value. Expected:"
-                    + modeNames + " Got:" + modeNames2);
-        }
+        assertEquals(expectedModeNames, actualNames);
     }
 }

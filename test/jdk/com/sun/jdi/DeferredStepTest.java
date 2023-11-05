@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,17 @@ class DeferredStepTestTarg {
 
         jj1 obj1 = new jj1();
         jj2 obj2 = new jj2();
-        new Thread(obj1, "jj1").start();
-        new Thread(obj2, "jj2").start();
+        Thread thread1 = DebuggeeWrapper.newThread(obj1, "jj1");
+        Thread thread2 = DebuggeeWrapper.newThread(obj2, "jj2");
+        thread1.start();
+        thread2.start();
+        // Threads might be deamon threads, so wait here for them to complete.
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
     }
 }
 

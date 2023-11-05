@@ -22,17 +22,21 @@
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 /*
  * @test NewArray
  * @bug 6843077
  * @summary Test type annotations on local array are in method's code attribute.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  */
 
 public class NewArray {
-
     public static void main(String[] args) throws Exception {
         new NewArray().run();
     }
@@ -41,51 +45,48 @@ public class NewArray {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassFile cf = ClassFile.read(classFile);
-        for (Method m: cf.methods) {
-            test(cf, m);
+        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
-
         countAnnotations();
-
         if (errors > 0)
             throw new Exception(errors + " errors found");
         System.out.println("PASSED");
     }
 
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+    void test(MethodModel mm) {
+        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
     }
 
     // test the result of Attributes.getIndex according to expectations
     // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        Attribute attr = null;
-        Code_attribute cAttr = null;
-        RuntimeTypeAnnotations_attribute tAttr = null;
+    <T extends Attribute<T>> void test(MethodModel mm, AttributeMapper<T> attr_name) {
+        Attribute<T> attr_instance;
+        CodeAttribute cAttr;
 
-        int index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-        if(index!= -1) {
-            attr = m.attributes.get(index);
-            assert attr instanceof Code_attribute;
-            cAttr = (Code_attribute)attr;
-            index = cAttr.attributes.getIndex(cf.constant_pool, name);
-            if(index!= -1) {
-                attr = cAttr.attributes.get(index);
-                assert attr instanceof RuntimeTypeAnnotations_attribute;
-                tAttr = (RuntimeTypeAnnotations_attribute)attr;
-                all += tAttr.annotations.length;
-                if (visible)
-                    visibles += tAttr.annotations.length;
-                else
-                    invisibles += tAttr.annotations.length;
-               }
+        cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+        if (cAttr != null) {
+            attr_instance = cAttr.findAttribute(attr_name).orElse(null);
+            if (attr_instance != null) {
+                switch (attr_instance) {
+                    case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                        all += tAttr.annotations().size();
+                        visibles += tAttr.annotations().size();
+                    }
+                    case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                        all += tAttr.annotations().size();
+                        invisibles += tAttr.annotations().size();
+                    }
+                    default -> throw new AssertionError();
+                }
+            }
         }
     }
 
     File writeTestFile() throws IOException {
-      File f = new File("Test.java");
+        File f = new File("Test.java");
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)));
         out.println("import java.lang.annotation.*;");
         out.println("import java.util.*;");
@@ -133,7 +134,6 @@ public class NewArray {
         }
 
     }
-
     int errors;
     int all;
     int visibles;

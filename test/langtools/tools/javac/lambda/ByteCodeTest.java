@@ -26,22 +26,25 @@
  * @bug     8011738
  * @author  sogoel
  * @summary Code translation test for Lambda expressions, method references
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main ByteCodeTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.ConstantPool.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
+import jdk.internal.classfile.constantpool.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,13 +76,14 @@ public class ByteCodeTest {
     }
 
     private static boolean verifyClassFileAttributes(File classFile, TestCases tc) {
-        ClassFile c = null;
+        ClassModel c = null;
         try {
-            c = ClassFile.read(classFile);
-        } catch (IOException | ConstantPoolException e) {
+            c = Classfile.of().parse(classFile.toPath());
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        ConstantPoolVisitor cpv = new ConstantPoolVisitor(c, c.constant_pool.size());
+        assert c != null;
+        ConstantPoolVisitor cpv = new ConstantPoolVisitor(c, c.constantPool().size());
         Map<Integer, String> hm = cpv.getBSMMap();
 
         List<String> expectedValList = tc.getExpectedArgValues();
@@ -378,20 +382,20 @@ public class ByteCodeTest {
         }
     }
 
-    static class ConstantPoolVisitor implements ConstantPool.Visitor<String, Integer> {
+    static class ConstantPoolVisitor {
         final List<String> slist;
-        final ClassFile cf;
+        final ClassModel cf;
         final ConstantPool cfpool;
         final Map<Integer, String> bsmMap;
 
 
-        public ConstantPoolVisitor(ClassFile cf, int size) {
+        public ConstantPoolVisitor(ClassModel cf, int size) {
             slist = new ArrayList<>(size);
             for (int i = 0 ; i < size; i++) {
                 slist.add(null);
             }
             this.cf = cf;
-            this.cfpool = cf.constant_pool;
+            this.cfpool = cf.constantPool();
             bsmMap = readBSM();
         }
 
@@ -399,39 +403,57 @@ public class ByteCodeTest {
             return Collections.unmodifiableMap(bsmMap);
         }
 
-        public String visit(CPInfo c, int index) {
-            return c.accept(this, index);
+        public String visit(PoolEntry c, int index) {
+            return switch (c) {
+                case ClassEntry entry -> visitClass(entry, index);
+                case DoubleEntry entry -> visitDouble(entry, index);
+                case FieldRefEntry entry -> visitFieldref(entry, index);
+                case FloatEntry entry -> visitFloat(entry, index);
+                case IntegerEntry entry -> visitInteger(entry, index);
+                case InterfaceMethodRefEntry entry -> visitInterfaceMethodref(entry, index);
+                case InvokeDynamicEntry entry -> visitInvokeDynamic(entry, index);
+                case ConstantDynamicEntry entry -> visitDynamicConstant(entry, index);
+                case LongEntry entry -> visitLong(entry, index);
+                case NameAndTypeEntry entry -> visitNameAndType(entry, index);
+                case MethodRefEntry entry -> visitMethodref(entry, index);
+                case MethodHandleEntry entry -> visitMethodHandle(entry, index);
+                case MethodTypeEntry entry -> visitMethodType(entry, index);
+                case ModuleEntry entry -> visitModule(entry, index);
+                case PackageEntry entry -> visitPackage(entry, index);
+                case StringEntry entry -> visitString(entry, index);
+                case Utf8Entry entry -> visitUtf8(entry, index);
+                default -> throw new AssertionError();
+            };
         }
 
         private Map<Integer, String> readBSM() {
-            BootstrapMethods_attribute bsmAttr =
-                    (BootstrapMethods_attribute) cf.getAttribute(Attribute.BootstrapMethods);
+            BootstrapMethodsAttribute bsmAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElse(null);
             if (bsmAttr != null) {
                 Map<Integer, String> out =
-                        new HashMap<>(bsmAttr.bootstrap_method_specifiers.length);
-                for (BootstrapMethods_attribute.BootstrapMethodSpecifier bsms :
-                        bsmAttr.bootstrap_method_specifiers) {
-                    int index = bsms.bootstrap_method_ref;
+                        new HashMap<>(bsmAttr.bootstrapMethodsSize());
+                for (BootstrapMethodEntry bsms : bsmAttr.bootstrapMethods()) {
+                    int index = bsms.bootstrapMethod().index();
                     try {
                         String value = slist.get(index);
                         if (value == null) {
-                            value = visit(cfpool.get(index), index);
+                            value = visit(cfpool.entryByIndex(index), index);
                             debugln("[SG]: index " + index);
                             debugln("[SG]: value " + value);
                             slist.set(index, value);
                             out.put(index, value);
                         }
-                        for (int idx : bsms.bootstrap_arguments) {
+                        for (LoadableConstantEntry ce : bsms.arguments()) {
+                            int idx = ce.index();
                             value = slist.get(idx);
                             if (value == null) {
-                                value = visit(cfpool.get(idx), idx);
+                                value = visit(cfpool.entryByIndex(idx), idx);
                                 debugln("[SG]: idx " + idx);
                                 debugln("[SG]: value " + value);
                                 slist.set(idx, value);
                                 out.put(idx, value);
                             }
                         }
-                    } catch (InvalidIndex ex) {
+                    } catch (ConstantPoolException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -440,13 +462,12 @@ public class ByteCodeTest {
             return new HashMap<>(0);
         }
 
-        @Override
-        public String visitClass(CONSTANT_Class_info c, Integer p) {
+        public String visitClass(ClassEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    value = visit(cfpool.entryByIndex(c.name().index()), c.index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -455,26 +476,24 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitDouble(CONSTANT_Double_info c, Integer p) {
+        public String visitDouble(DoubleEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
-                value = Double.toString(c.value);
+                value = Double.toString(c.doubleValue());
                 slist.set(p, value);
             }
             return value;
         }
 
-        @Override
-        public String visitFieldref(CONSTANT_Fieldref_info c, Integer p) {
+        public String visitFieldref(FieldRefEntry c, Integer p) {
 
         String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.class_index), c.class_index);
-                    value = value.concat(" " + visit(cfpool.get(c.name_and_type_index),
-                                         c.name_and_type_index));
+                    value = visit(cfpool.entryByIndex(c.owner().index()), c.owner().index());
+                    value = value.concat(" " + visit(cfpool.entryByIndex(c.nameAndType().index()),
+                                         c.nameAndType().index()));
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -483,39 +502,36 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitFloat(CONSTANT_Float_info c, Integer p) {
+        public String visitFloat(FloatEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
-                value = Float.toString(c.value);
+                value = Float.toString(c.floatValue());
                 slist.set(p, value);
             }
             return value;
         }
 
-        @Override
-        public String visitInteger(CONSTANT_Integer_info cnstnt, Integer p) {
+        public String visitInteger(IntegerEntry cnstnt, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
-                value = Integer.toString(cnstnt.value);
+                value = Integer.toString(cnstnt.intValue());
                 slist.set(p, value);
             }
             return value;
         }
 
-        @Override
-        public String visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info c,
+        public String visitInterfaceMethodref(InterfaceMethodRefEntry c,
                                               Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.class_index), c.class_index);
+                    value = visit(cfpool.entryByIndex(c.owner().index()), c.owner().index());
                     value = value.concat(" " +
-                                         visit(cfpool.get(c.name_and_type_index),
-                                         c.name_and_type_index));
+                                         visit(cfpool.entryByIndex(c.nameAndType().index()),
+                                         c.nameAndType().index()));
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -524,14 +540,13 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitInvokeDynamic(CONSTANT_InvokeDynamic_info c, Integer p) {
+        public String visitInvokeDynamic(InvokeDynamicEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = bsmMap.get(c.bootstrap_method_attr_index) + " "
-                            + visit(cfpool.get(c.name_and_type_index), c.name_and_type_index);
+                    value = bsmMap.get(c.bootstrap().bsmIndex()) + " "
+                            + visit(cfpool.entryByIndex(c.nameAndType().index()), c.nameAndType().index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -540,14 +555,13 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitDynamicConstant(CONSTANT_Dynamic_info c, Integer p) {
+        public String visitDynamicConstant(ConstantDynamicEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = bsmMap.get(c.bootstrap_method_attr_index) + " "
-                            + visit(cfpool.get(c.name_and_type_index), c.name_and_type_index);
+                    value = bsmMap.get(c.bootstrap().bsmIndex()) + " "
+                            + visit(cfpool.entryByIndex(c.nameAndType().index()), c.nameAndType().index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -556,44 +570,24 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitLong(CONSTANT_Long_info c, Integer p) {
+        public String visitLong(LongEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
-                value = Long.toString(c.value);
+                value = Long.toString(c.longValue());
                 slist.set(p, value);
             }
             return value;
         }
 
-        @Override
-        public String visitNameAndType(CONSTANT_NameAndType_info c, Integer p) {
+        public String visitNameAndType(NameAndTypeEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    value = visit(cfpool.entryByIndex(c.name().index()), c.name().index());
                     value = value.concat(" " +
-                            visit(cfpool.get(c.type_index), c.type_index));
-                    slist.set(p, value);
-                } catch (InvalidIndex ex) {
-                    ex.printStackTrace();
-                }
-            }
-            return value;
-        }
-
-        @Override
-        public String visitMethodref(CONSTANT_Methodref_info c, Integer p) {
-
-            String value = slist.get(p);
-            if (value == null) {
-                try {
-                    value = visit(cfpool.get(c.class_index), c.class_index);
-                    value = value.concat(" " +
-                                         visit(cfpool.get(c.name_and_type_index),
-                                         c.name_and_type_index));
+                            visit(cfpool.entryByIndex(c.type().index()), c.type().index()));
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -602,15 +596,31 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitMethodHandle(CONSTANT_MethodHandle_info c, Integer p) {
+        public String visitMethodref(MethodRefEntry c, Integer p) {
+
+            String value = slist.get(p);
+            if (value == null) {
+                try {
+                    value = visit(cfpool.entryByIndex(c.owner().index()), c.owner().index());
+                    value = value.concat(" " +
+                                         visit(cfpool.entryByIndex(c.nameAndType().index()),
+                                         c.nameAndType().index()));
+                    slist.set(p, value);
+                } catch (ConstantPoolException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return value;
+        }
+
+        public String visitMethodHandle(MethodHandleEntry c, Integer p) {
 
         String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = c.reference_kind.name();
+                    value = MethodHandleInfo.referenceKindToString(c.kind());
                     value = value.concat(" "
-                            + visit(cfpool.get(c.reference_index), c.reference_index));
+                            + visit(cfpool.entryByIndex(c.reference().index()), c.reference().index()));
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -619,13 +629,12 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitMethodType(CONSTANT_MethodType_info c, Integer p) {
+        public String visitMethodType(MethodTypeEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.descriptor_index), c.descriptor_index);
+                    value = visit(cfpool.entryByIndex(c.descriptor().index()), c.descriptor().index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -634,13 +643,12 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitModule(CONSTANT_Module_info c, Integer p) {
+        public String visitModule(ModuleEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    value = visit(cfpool.entryByIndex(c.name().index()), c.name().index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -649,13 +657,12 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitPackage(CONSTANT_Package_info c, Integer p) {
+        public String visitPackage(PackageEntry c, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
                 try {
-                    value = visit(cfpool.get(c.name_index), c.name_index);
+                    value = visit(cfpool.entryByIndex(c.name().index()), c.name().index());
                     slist.set(p, value);
                 } catch (ConstantPoolException ex) {
                     ex.printStackTrace();
@@ -664,13 +671,12 @@ public class ByteCodeTest {
             return value;
         }
 
-        @Override
-        public String visitString(CONSTANT_String_info c, Integer p) {
+        public String visitString(StringEntry c, Integer p) {
 
             try {
                 String value = slist.get(p);
                 if (value == null) {
-                    value = c.getString();
+                    value = c.stringValue();
                     slist.set(p, value);
                 }
                 return value;
@@ -679,12 +685,11 @@ public class ByteCodeTest {
             }
         }
 
-        @Override
-        public String  visitUtf8(CONSTANT_Utf8_info cnstnt, Integer p) {
+        public String  visitUtf8(Utf8Entry cnstnt, Integer p) {
 
             String value = slist.get(p);
             if (value == null) {
-                value = cnstnt.value;
+                value = cnstnt.stringValue();
                 slist.set(p, value);
             }
             return value;

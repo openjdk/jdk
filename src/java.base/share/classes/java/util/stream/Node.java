@@ -314,6 +314,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for int elements
      */
+    @SuppressWarnings("overloads")
     interface OfInt extends OfPrimitive<Integer, IntConsumer, int[], Spliterator.OfInt, OfInt> {
 
         /**
@@ -391,6 +392,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for long elements
      */
+    @SuppressWarnings("overloads")
     interface OfLong extends OfPrimitive<Long, LongConsumer, long[], Spliterator.OfLong, OfLong> {
 
         /**
@@ -468,6 +470,7 @@ interface Node<T> {
     /**
      * Specialized {@code Node} for double elements
      */
+    @SuppressWarnings("overloads")
     interface OfDouble extends OfPrimitive<Double, DoubleConsumer, double[], Spliterator.OfDouble, OfDouble> {
 
         /**

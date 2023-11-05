@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  */
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,7 +61,14 @@ public class TestExtraTime {
 
         TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
 
-        for (byte[] extra : new byte[][] { null, new byte[] {1, 2, 3}}) {
+        // A structurally valid extra data example
+        byte[] sampleExtra = new byte[Short.BYTES*3];
+        ByteBuffer.wrap(sampleExtra).order(ByteOrder.LITTLE_ENDIAN)
+                .putShort((short) 123)         // ID:   123
+                .putShort((short) Short.BYTES) // Size: 2
+                .putShort((short) 42);         // Data: Two bytes
+
+        for (byte[] extra : new byte[][] { null, sampleExtra}) {
 
             // ms-dos 1980 epoch problem
             test0(FileTime.from(10, TimeUnit.MILLISECONDS), null, null, null, extra);

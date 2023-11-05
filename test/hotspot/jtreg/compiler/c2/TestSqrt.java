@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,8 +31,8 @@ package compiler.c2;
  * @requires vm.debug
  *
  * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler/c2/TestSqrt
- *                   -XX:CompileOnly=java/lang/Math
+ *                   -XX:CompileOnly=compiler.c2.TestSqrt::*
+ *                   -XX:CompileOnly=java.lang.Math::*
  *                   compiler.c2.TestSqrt
  */
 public class TestSqrt {
@@ -51,4 +52,3 @@ public class TestSqrt {
         }
     }
 }
-

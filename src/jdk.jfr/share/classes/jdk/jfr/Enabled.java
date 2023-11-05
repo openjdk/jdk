@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,19 @@ import java.lang.annotation.Target;
 /**
  * Event annotation, determines if an event should be enabled by default.
  * <p>
- * If an event doesn't have the annotation, then by default the event is enabled.
+ * If an event doesn't have the annotation, then by default the event is
+ * enabled.
+ * <p>
+ * The following example shows how the {@code Enabled} annotation can be used to
+ * create a disabled event. A disabled event will at most have the overhead of
+ * an allocation, or none if the runtime JIT compiler is able to eliminate it.
+ *
+ * {@snippet class = "Snippets" region = "EnabledOverview"}
+ *
+ * The event can be enabled programmatically, or on command line when needed,
+ * for example:
+ *
+ * {@snippet class = "Snippets" region = "EnabledOverviewCommandLine"}
  *
  * @since 9
  */
