@@ -1,0 +1,4 @@
+EmptyReturnTest.java:15: warning: no description for @return
+     * @return
+       ^
+1 warning

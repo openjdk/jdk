@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="sv"/>
+		<territory type="FI"/>
+	</identity>
+	<localeDisplayNames>
+		<scripts>
+			<script type="Arab" alt="variant" draft="contributed">persisk-arabiska</script>
+		</scripts>
+		<keys>
+			<key type="timezone" draft="contributed">tidszon</key>
+		</keys>
+		<types>
+			<type key="collation" type="big5han" draft="unconfirmed">kinesiska i big5-sorteringsordning</type>
+			<type key="collation" type="gb2312han" draft="unconfirmed">kinesiska i gb2312-sorteringsordning</type>
+			<type key="collation" type="pinyin" draft="unconfirmed">kinesiska i pinyin-sorteringsordning</type>
+			<type key="collation" type="stroke" draft="unconfirmed">kinesiska i strecksorteringsordning</type>
+		</types>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="contributed">Q1</quarter>
+							<quarter type="2" draft="contributed">Q2</quarter>
+							<quarter type="3" draft="contributed">Q3</quarter>
+							<quarter type="4" draft="contributed">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="contributed">Q1</quarter>
+							<quarter type="2" draft="contributed">Q2</quarter>
+							<quarter type="3" draft="contributed">Q3</quarter>
+							<quarter type="4" draft="contributed">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Bhm">h.mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E h.mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH.mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
+						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH.mm.ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH.mm v</dateFormatItem>
+						<dateFormatItem id="Md">d.M</dateFormatItem>
+						<dateFormatItem id="MEd">E d.M</dateFormatItem>
+						<dateFormatItem id="MMd">d.M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd.MM</dateFormatItem>
+						<dateFormatItem id="ms">mm.ss</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<timeSeparator draft="contributed">.</timeSeparator>
+			<timeSeparator alt="variant">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator>.</timeSeparator>
+			<timeSeparator alt="variant">:</timeSeparator>
+		</symbols>
+	</numbers>
+	<units>
+		<unitLength type="narrow">
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one" draft="contributed">{0} km/h</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} km/h</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>

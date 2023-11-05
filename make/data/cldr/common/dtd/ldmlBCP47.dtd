@@ -1,0 +1,82 @@
+<!--
+Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+
+<!ELEMENT ldmlBCP47 ( version, generation?, cldrVersion?, keyword*, attribute* ) >
+
+<!ELEMENT version EMPTY >
+    <!--@METADATA-->
+<!ATTLIST version number CDATA #REQUIRED >
+    <!--@MATCH:regex/\$Revision.*\$-->
+    <!--@METADATA-->
+<!ATTLIST version cldrVersion CDATA #FIXED "43" >
+    <!--@MATCH:version-->
+    <!--@VALUE-->
+
+<!ELEMENT generation EMPTY >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST generation date CDATA #REQUIRED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT cldrVersion EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST cldrVersion version CDATA #REQUIRED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT keyword ( key* ) >
+
+<!ELEMENT key ( type* ) >
+<!ATTLIST key extension NMTOKEN #IMPLIED >
+    <!--@MATCH:any-->
+<!ATTLIST key name NMTOKEN #REQUIRED >
+    <!--@MATCH:regex/[a-z0-9]{2}-->
+<!ATTLIST key description CDATA #IMPLIED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
+<!ATTLIST key deprecated (true | false) "false" >
+    <!--@VALUE-->
+<!ATTLIST key preferred NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST key alias NMTOKEN #IMPLIED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
+<!ATTLIST key valueType (single | multiple | incremental | any) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST key since CDATA #IMPLIED >
+    <!--@MATCH:version-->
+    <!--@METADATA-->
+
+<!ELEMENT type EMPTY >
+<!ATTLIST type name NMTOKEN #REQUIRED >
+    <!--@MATCH:any-->
+<!ATTLIST type description CDATA #REQUIRED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
+<!ATTLIST type deprecated (true | false) "false" >
+    <!--@VALUE-->
+<!ATTLIST type preferred NMTOKEN #IMPLIED >
+    <!--@MATCH:bcp47/anyvalue-->
+    <!--@VALUE-->
+<!ATTLIST type alias CDATA #IMPLIED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
+<!ATTLIST type since CDATA #IMPLIED >
+    <!--@MATCH:version-->
+    <!--@METADATA-->
+
+<!ELEMENT attribute EMPTY >
+<!ATTLIST attribute name NMTOKEN #REQUIRED >
+<!ATTLIST attribute description CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST attribute deprecated (true | false) "false" >
+    <!--@VALUE-->
+<!ATTLIST attribute preferred NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attribute since CDATA #IMPLIED >
+    <!--@METADATA-->

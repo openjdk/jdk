@@ -1,0 +1,66 @@
+<html>
+<head>
+<title>
+Using HotSpot Serviceability Agent (SA)
+</title>
+</head>
+<body>
+<h1>Using HotSpot Serviceability Agent (SA)</h1>
+
+<h3>HSDB GUI</h3>
+<p>
+The top-level GUI program using the HotSpot Serviceability Agent APIs is
+called <b>HSDB</b>, the "HotSpot Debugger". To run it, type "jhsdb hsdb".
+More info on HSDB GUI are in <a href="hsdb.html">hsdb.html</a>. Also
+see the "jhsdb" man page.
+</p>
+
+<h3>SA Modes</h3>
+<p>
+There are three modes for the SA debugger:
+<ul>
+<li>attaching to a local process
+<li>opening a core file
+<li>attaching to a remote "debug server"
+</ul>
+<p>
+The remote case requires running the debug server on the remote machine. This
+is done by running "jhsdb debugd", and also adding arguments specifying the core
+file or process to debug. Once this is done you can connect remotely
+to the debug server by running various other "jhsdb" subcommands, and specifying
+which debug server to connect to. See the "jhsdb" man page for details.
+</p>
+
+<h3>Command line HSDB</h3>
+<p>
+There is also a command line HSDB variant. It is launched using "jhsdb clhsdb".
+More details on the command line interface can be found in the "jhsdb" man page and also in:<ul>
+<li><a href="clhsdb.html">clhsdb.html</a>
+</ul>
+</p>
+
+<h3>Compilation Replay</h3>
+<p>
+When a java process crashes in a compiled method, usually a core file is saved.
+The compiler replay function can reproduce the compiling process in the core.
+See <a href="cireplay.html">cireplay.html</a>
+
+<h3>Debugging transported core dumps</h3>
+<p>
+When a core dump is moved from the machine where it was produced to a
+different machine, it may not always be possible for SA to debug it.
+More info on debugging on transported core dumps is in
+<a href="transported_core.html">transported_core.html</a>.
+</p>
+
+<h3>SA Bugs</h3>
+<p>
+Not all of the possible states of target VMs have been tested (or
+are supportable) with SA. For example, the SA will probably not work at all
+if it freezes the target VM during certain phases of GC. When filing bugs,
+a pointer to a core file (see gcore(1)) which the SA can not handle well
+is best.
+</p>
+
+</body>
+</html>

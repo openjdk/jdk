@@ -1,0 +1,6 @@
+SerialMethodArity.java:18:18: compiler.warn.serial.method.parameter.type: writeObject, java.io.ObjectOutputStream, SerialMethodMods.CustomObjectOutputStream
+SerialMethodArity.java:23:18: compiler.warn.serial.method.one.arg: readObject, 2
+SerialMethodArity.java:29:39: compiler.warn.serial.method.no.args: readObjectNoData
+SerialMethodArity.java:32:36: compiler.warn.serial.method.no.args: writeReplace
+SerialMethodArity.java:37:38: compiler.warn.serial.method.no.args: readResolve
+5 warnings

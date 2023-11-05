@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This is a wrapper for the config.guess from autoconf. The latter does not
+# properly detect 64 bit systems on all platforms. Instead of patching the
+# autoconf system (which might easily get lost in a future update), we wrap it
+# and fix the broken property, if needed.
+
+DIR=`dirname $0`
+OUT=`. $DIR/autoconf-config.guess 2> /dev/null`
+
+# Handle some cases that autoconf-config.guess is not capable of
+if [ "x$OUT" = x ]; then
+  if [ `uname -s` = Linux ]; then
+    # Test and fix little endian MIPS.
+    if [ `uname -m` = mipsel ]; then
+      OUT=mipsel-unknown-linux-gnu
+    fi
+  # Test and fix cygwin machine arch .x86_64
+  elif [[ `uname -s` = CYGWIN* ]]; then
+    if [ `uname -m` = ".x86_64" ]; then
+      OUT=x86_64-unknown-cygwin
+    fi
+  fi
+
+  if [ "x$OUT" = x ]; then
+    # Run autoconf-config.guess again to get the error message.
+    . $DIR/autoconf-config.guess > /dev/null
+  else
+    printf "guessed by custom config.guess... " >&2
+  fi
+fi
+
+# Test and fix cygwin on x86_64
+echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null
+if test $? != 0; then
+  echo $OUT | grep 86-pc-mingw > /dev/null 2> /dev/null
+fi
+if test $? = 0; then
+  case `echo $PROCESSOR_IDENTIFIER | cut -f1 -d' '` in
+    intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)
+      REAL_CPU=x86_64
+      OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
+      ;;
+  esac
+fi
+
+# Test and fix wsl
+echo $OUT | grep '\(unknown\|pc\)-linux-gnu' > /dev/null 2> /dev/null
+if test $? = 0; then
+  uname -r | grep -i microsoft > /dev/null 2> /dev/null
+  if test $? = 0; then
+    OUT=`echo $OUT | sed -e 's/\(unknown\|pc\)-linux-gnu/pc-wsl/'`
+  fi
+fi
+
+# Test and fix architecture string on AIX
+# On AIX 'config.guess' returns 'powerpc' as architecture but 'powerpc' is
+# implicitly handled as 32-bit architecture in 'platform.m4' so we check
+# for the kernel mode rewrite it to 'powerpc64' if we'Re running in 64-bit mode.
+# The check could also be done with `/usr/sbin/prtconf | grep "Kernel Type" | grep "64-bit"`
+echo $OUT | grep powerpc-ibm-aix > /dev/null 2> /dev/null
+if test $? = 0; then
+  if [ -x /bin/getconf ] ; then
+    KERNEL_BITMODE=`getconf KERNEL_BITMODE`
+    if  [ "$KERNEL_BITMODE" = "32" ]; then
+      KERNEL_BITMODE=""
+    fi
+  fi
+  OUT=powerpc$KERNEL_BITMODE`echo $OUT | sed -e 's/[^-]*//'`
+fi
+
+# Test and fix cpu on Macosx when C preprocessor is not on the path
+echo $OUT | grep i386-apple-darwin > /dev/null 2> /dev/null
+if test $? = 0; then
+  REAL_CPU=`uname -m`
+  OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
+fi
+
+echo $OUT

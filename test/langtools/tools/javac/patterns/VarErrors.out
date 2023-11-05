@@ -1,0 +1,4 @@
+VarErrors.java:9:27: compiler.err.restricted.type.not.allowed.here: var
+VarErrors.java:13:18: compiler.err.restricted.type.not.allowed.here: var
+VarErrors.java:18:18: compiler.err.restricted.type.not.allowed.here: var
+3 errors

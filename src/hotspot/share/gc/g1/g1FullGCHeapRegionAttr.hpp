@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_GC_G1_G1FULLGCHEAPREGIONATTR_HPP
+#define SHARE_GC_G1_G1FULLGCHEAPREGIONATTR_HPP
+
+#include "gc/g1/g1BiasedArray.hpp"
+
+// This table is used to store attribute values of all HeapRegions that need
+// fast access during the full collection. In particular some parts of the
+// region type information is encoded in these per-region bytes. Value encoding
+// has been specifically chosen to make required accesses fast. In particular,
+// the table specifies whether a Full GC cycle should be compacting or skip
+// compacting a region.
+// Reasons for not compacting a region:
+// (1) the HeapRegion itself can not be moved during this phase of the full gc
+//     (e.g. Humongous regions).
+// (2) the occupancy of the region is too high to be considered eligible for compaction.
+class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
+  static const uint8_t Compacting = 0;       // Region will be compacted.
+  static const uint8_t SkipCompacting = 1;   // Region should not be compacted, but otherwise handled as usual.
+  static const uint8_t Free = 2;             // Region is free.
+
+  static const uint8_t Invalid = 255;
+
+  bool is_free(HeapWord* obj) const {
+    return get_by_address(obj) == Free;
+  }
+
+protected:
+  uint8_t default_value() const { return Invalid; }
+
+public:
+  void set_invalid(uint idx) { set_by_index(idx, Invalid); }
+
+  void set_compacting(uint idx) { set_by_index(idx, Compacting); }
+  void set_skip_compacting(uint idx) { set_by_index(idx, SkipCompacting); }
+  void set_free(uint idx) { set_by_index(idx, Free); }
+
+  bool is_compacting(HeapWord* obj) const {
+    assert(!is_free(obj), "Should not have objects in free regions.");
+    return get_by_address(obj) == Compacting;
+  }
+
+  bool is_compacting(uint idx) const {
+    return get_by_index(idx) == Compacting;
+  }
+
+  bool is_skip_compacting(uint idx) const {
+    return get_by_index(idx) == SkipCompacting;
+  }
+
+  bool is_free(uint idx) const {
+    return get_by_index(idx) == Free;
+  }
+
+  void verify_is_compacting(uint idx) { assert(get_by_index(idx) == Compacting, "invariant"); }
+
+  void verify_is_skip_compacting(uint idx) { assert(get_by_index(idx) == SkipCompacting, "invariant"); }
+
+  void verify_is_invalid(uint idx) { assert(get_by_index(idx) == Invalid, "invariant"); }
+};
+
+#endif // SHARE_GC_G1_G1FULLGCHEAPREGIONATTR_HPP

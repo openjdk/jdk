@@ -1,0 +1,57 @@
+#
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+FONTCONFIG_DATA_DIR := $(MODULE_SRC)/$(OPENJDK_TARGET_OS)/data/fontconfig
+FONTCONFIG_SRC_FILE := $(FONTCONFIG_DATA_DIR)/fontconfig.properties
+
+FONTCONFIG_DEST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
+FONTCONFIG_OUT_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.properties.src
+FONTCONFIG_OUT_BIN_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.bfc
+
+ifneq ($(findstring $(LOG_LEVEL), debug trace), )
+  FONTCONFIG_VERBOSE_FLAG := -verbose
+endif
+
+# Not all OSes have a fontconfig file
+ifneq ($(wildcard $(FONTCONFIG_SRC_FILE)), )
+
+  # Copy properties file as-is
+  $(FONTCONFIG_OUT_FILE): $(FONTCONFIG_SRC_FILE)
+	$(call LogInfo, Copying fontconfig.properties)
+	$(call install-file)
+
+  TARGETS += $(FONTCONFIG_OUT_FILE)
+
+  # Generate binary representation
+  $(FONTCONFIG_OUT_BIN_FILE): $(FONTCONFIG_SRC_FILE) $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Compiling fontconfig.properties to binary)
+	$(call MakeTargetDir)
+	$(RM) $@
+	$(TOOL_COMPILEFONTCONFIG) $(FONTCONFIG_VERBOSE_FLAG) $< $@
+	$(CHMOD) 444 $@
+
+  TARGETS += $(FONTCONFIG_OUT_BIN_FILE)
+
+endif

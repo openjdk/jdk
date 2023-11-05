@@ -1,0 +1,5 @@
+RecordSerial.java:17:46: compiler.warn.ineffectual.serial.field.record
+RecordSerial.java:20:18: compiler.warn.ineffectual.serial.method.record: writeObject
+RecordSerial.java:30:18: compiler.warn.ineffectual.serial.method.record: readObject
+RecordSerial.java:36:18: compiler.warn.ineffectual.serial.method.record: readObjectNoData
+4 warnings

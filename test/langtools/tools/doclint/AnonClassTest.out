@@ -1,0 +1,10 @@
+AnonClassTest.java:18: warning: no comment
+        int field;
+            ^
+AnonClassTest.java:21: warning: no comment
+        void m() { }
+             ^
+AnonClassTest.java:30: warning: no comment
+    E2 { },
+    ^
+3 warnings

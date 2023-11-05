@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.test.lib.hprof;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
+import jdk.test.lib.Asserts;
+import jdk.test.lib.hprof.model.Snapshot;
+import jdk.test.lib.hprof.parser.Reader;
+
+/**
+ * Helper class to parse a java heap dump file.
+ */
+public class HprofParser {
+
+    public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            System.out.println("No arguments supplied");
+        }
+        File dump = new File(args[0]);
+        if (!dump.exists() || !dump.isFile()) {
+            throw new RuntimeException("The dump file does not exist or not a file");
+        }
+        parse(dump);
+    }
+
+    /**
+     * @see #parse(File, boolean, boolean, boolean, boolean)
+     */
+    public static File parseAndVerify(File dump) throws Exception {
+        return parse(dump, false, true, true, true);
+    }
+
+    /**
+     * @see #parse(File, boolean, boolean, boolean, boolean)
+     */
+    public static File parse(File dump) throws Exception {
+        return parse(dump, false, true, true, false);
+    }
+
+    /**
+     * @see #parse(File, boolean, boolean, boolean, boolean)
+     */
+    public static File parseWithDebugInfo(File dump) throws Exception {
+        return parse(dump, true, true, true, false);
+    }
+
+    /**
+     * Parse a java heap dump file
+     *
+     * @param dump Heap dump file to parse
+     * @param debug Turn on/off debug file parsing
+     * @param callStack Turn on/off tracking of object allocation call stack
+     * @param calculateRefs Turn on/off tracking object allocation call stack
+     * @param verifyParse Verify output of parse process and fail if error occurred
+     * @throws Exception
+     * @return File containing output from the parser
+     */
+    public static File parse(File dump, boolean debug, boolean callStack,
+                             boolean calculateRefs, boolean verifyParse) throws Exception {
+        File out = new File("hprof." + System.currentTimeMillis() + ".out");
+        if (out.exists()) {
+            out.delete();
+        }
+
+        PrintStream psSystemOut = System.out;
+        try (PrintStream psHprof = new PrintStream(new BufferedOutputStream(new FileOutputStream(out.getAbsolutePath())))) {
+            System.setOut(psHprof);
+
+            int debugLevel = debug ? 2 : 0;
+            try (Snapshot snapshot = Reader.readFile(dump.getAbsolutePath(), callStack, debugLevel)) {
+                System.out.println("Snapshot read, resolving...");
+                snapshot.resolve(calculateRefs);
+                System.out.println("Snapshot resolved.");
+            }
+        } finally {
+            System.setOut(psSystemOut);
+        }
+        if (verifyParse) {
+            verifyParse(out);
+        }
+        return out;
+    }
+
+    private static void verifyParse(File out) throws IOException {
+        Asserts.assertTrue(out != null && out.exists() && out.isFile(), "Could not find hprof parser output file");
+        List<String> lines = Files.readAllLines(out.toPath());
+        Asserts.assertTrue(lines.size() > 0, "hprof parser output file is empty");
+        for (String line : lines) {
+            Asserts.assertFalse(line.matches(".*WARNING(?!.*Failed to resolve object.*constantPoolOop.*).*"));
+        }
+    }
+}

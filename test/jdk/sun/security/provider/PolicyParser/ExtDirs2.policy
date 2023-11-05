@@ -1,0 +1,4 @@
+grant codebase "file:${test.classes}/*" {
+    permission java.util.PropertyPermission "user.name", "read";
+    permission java.util.PropertyPermission "user.home", "read";
+};

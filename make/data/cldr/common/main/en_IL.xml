@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="en"/>
+		<territory type="IL"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
+						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
+						<dateFormatItem id="H">H</dateFormatItem>
+						<dateFormatItem id="Hm">H:mm</dateFormatItem>
+						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>H:mm:ss zzzz</pattern>
+							<datetimeSkeleton>Hmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>H:mm:ss z</pattern>
+							<datetimeSkeleton>Hmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>H:mm:ss</pattern>
+							<datetimeSkeleton>Hmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>H:mm</pattern>
+							<datetimeSkeleton>Hmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
+						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
+						<dateFormatItem id="H">H</dateFormatItem>
+						<dateFormatItem id="Hm">H:mm</dateFormatItem>
+						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>

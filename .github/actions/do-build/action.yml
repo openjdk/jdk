@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Do build'
+description: 'Build the JDK using make'
+inputs:
+  make-target:
+    description: 'Make target(s)'
+    required: true
+  platform:
+    description: 'Platform name'
+    required: true
+  debug-suffix:
+    description: 'File name suffix denoting debug level, possibly empty'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: 'Build'
+      id: build
+      run: >
+        make LOG=info ${{ inputs.make-target }}
+        || bash ./.github/scripts/gen-build-failure-report.sh "$GITHUB_STEP_SUMMARY"
+      shell: bash
+
+    - name: 'Check for failure'
+      id: check
+      run: |
+        # Check for failure marker file
+        build_dir="$(ls -d build/*)"
+        if [[ -e $build_dir/build-failure ]]; then
+          # Collect relevant log files
+          mkdir failure-logs
+          cp \
+              $build_dir/spec.gmk \
+              $build_dir/build.log \
+              $build_dir/configure.log \
+              $build_dir/make-support/failure-summary.log \
+              $build_dir/make-support/failure-logs/* \
+              failure-logs/ 2> /dev/null || true
+          echo 'failure=true' >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: 'Upload build logs'
+      uses: actions/upload-artifact@v3
+      with:
+        name: failure-logs-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        path: failure-logs
+      if: steps.check.outputs.failure == 'true'
+
+      # This is the best way I found to abort the job with an error message
+    - name: 'Notify about build failures'
+      uses: actions/github-script@v6
+      with:
+        script: core.setFailed('Build failed. See summary for details.')
+      if: steps.check.outputs.failure == 'true'

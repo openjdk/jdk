@@ -1,0 +1,1815 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="sr"/>
+		<script type="Latn"/>
+		<territory type="BA"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="be">bjeloruski</language>
+			<language type="bm">bamanankan</language>
+			<language type="bn">bangla</language>
+			<language type="crl">sjeveroistočni kri</language>
+			<language type="de">njemački</language>
+			<language type="de_CH">švajcarski visoki njemački</language>
+			<language type="frr">sjevernofrizijski</language>
+			<language type="gsw">njemački (Švajcarska)</language>
+			<language type="ht">haićanski kreolski</language>
+			<language type="lrc">sjeverni luri</language>
+			<language type="nd">sjeverni ndebele</language>
+			<language type="nds">niskonjemački</language>
+			<language type="nso">sjeverni soto</language>
+			<language type="ojb">sjeverozapadni odžibva</language>
+			<language type="se">sjeverni sami</language>
+			<language type="ttm">sjeverni tučon</language>
+		</languages>
+		<territories>
+			<territory type="001">svijet</territory>
+			<territory type="003">Sjevernoamerički kontinent</territory>
+			<territory type="015">Sjeverna Afrika</territory>
+			<territory type="019">Sjeverna i Južna Amerika</territory>
+			<territory type="021">Sjeverna Amerika</territory>
+			<territory type="154">Sjeverna Evropa</territory>
+			<territory type="AC">ostrvo Asension</territory>
+			<territory type="AX">Olandska ostrva</territory>
+			<territory type="BL">Sen Bartelemi</territory>
+			<territory type="BN">Bruneji</territory>
+			<territory type="BV">ostrvo Buve</territory>
+			<territory type="BY">Bjelorusija</territory>
+			<territory type="CC">Kokosova (Kiling) ostrva</territory>
+			<territory type="CP">ostrvo Kliperton</territory>
+			<territory type="CZ">Češka Republika</territory>
+			<territory type="DE">Njemačka</territory>
+			<territory type="FK">Foklandska ostrva</territory>
+			<territory type="FK" alt="variant">Folklandska (Malvinska) ostrva</territory>
+			<territory type="FO">Farska ostrva</territory>
+			<territory type="GS">Južna Džordžija i Južna Sendvička ostrva</territory>
+			<territory type="GU">Gvam</territory>
+			<territory type="GW">Gvineja Bisao</territory>
+			<territory type="HK">Hongkong (SAO Kine)</territory>
+			<territory type="HM">ostrvo Herd i ostrva Makdonald</territory>
+			<territory type="KM">Komori</territory>
+			<territory type="KP">Sjeverna Koreja</territory>
+			<territory type="MK">Sjeverna Makedonija</territory>
+			<territory type="MM">Mjanmar (Burma)</territory>
+			<territory type="MP">Sjeverna Marijanska ostrva</territory>
+			<territory type="NF">ostrvo Norfok</territory>
+			<territory type="NU">Nijue</territory>
+			<territory type="PS">palestinske teritorije</territory>
+			<territory type="RE">Reunion</territory>
+			<territory type="TF">Francuske južne teritorije</territory>
+			<territory type="UM">Spoljna ostrva SAD</territory>
+			<territory type="VC">Sveti Vinsent i Grenadini</territory>
+			<territory type="VG">Britanska Djevičanska ostrva</territory>
+			<territory type="VI">Američka Djevičanska ostrva</territory>
+		</territories>
+		<keys>
+			<key type="collation">redoslijed sortiranja</key>
+			<key type="ms">sistem mjernih jedinica</key>
+		</keys>
+		<types>
+			<type key="collation" type="compat">prethodni redoslijed sortiranja, zbog kompatibilnosti</type>
+			<type key="collation" type="dictionary">redoslijed sortiranja u rječniku</type>
+			<type key="collation" type="ducet">podrazumijevani Unicode redoslijed sortiranja</type>
+			<type key="collation" type="phonetic">fonetski redoslijed sortiranja</type>
+			<type key="collation" type="reformed">reformisani redoslijed sortiranja</type>
+			<type key="collation" type="search">pretraga opšte namjene</type>
+			<type key="collation" type="standard">standardni redoslijed sortiranja</type>
+			<type key="collation" type="unihan">redoslijed sortiranja radikalnih poteza</type>
+			<type key="numbers" type="mymr">mjanmarske cifre</type>
+		</types>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ned</day>
+							<day type="mon">pon</day>
+							<day type="tue">uto</day>
+							<day type="wed">sri</day>
+							<day type="thu">čet</day>
+							<day type="fri">pet</day>
+							<day type="sat">sub</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">nedjelja</day>
+							<day type="mon">ponedjeljak</day>
+							<day type="tue">utorak</day>
+							<day type="wed">srijeda</day>
+							<day type="thu">četvrtak</day>
+							<day type="fri">petak</day>
+							<day type="sat">subota</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">ned</day>
+							<day type="mon">pon</day>
+							<day type="tue">uto</day>
+							<day type="wed">sri</day>
+							<day type="thu">čet</day>
+							<day type="fri">pet</day>
+							<day type="sat">sub</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">nedjelja</day>
+							<day type="mon">ponedjeljak</day>
+							<day type="tue">utorak</day>
+							<day type="wed">srijeda</day>
+							<day type="thu">četvrtak</day>
+							<day type="fri">petak</day>
+							<day type="sat">subota</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">prije podne</dayPeriod>
+							<dayPeriod type="pm">po podne</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">ponoć</dayPeriod>
+							<dayPeriod type="noon">podne</dayPeriod>
+							<dayPeriod type="morning1">ujutro</dayPeriod>
+							<dayPeriod type="afternoon1">po podne</dayPeriod>
+							<dayPeriod type="evening1">uveče</dayPeriod>
+							<dayPeriod type="night1">noću</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">prije podne</dayPeriod>
+							<dayPeriod type="pm">po podne</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">prije podne</dayPeriod>
+							<dayPeriod type="pm">po podne</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">prije podne</dayPeriod>
+							<dayPeriod type="pm">po podne</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">prije nove ere</era>
+						<era type="1" alt="variant">nove ere</era>
+					</eraNames>
+				</eras>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">prošle godine</relative>
+				<relative type="0">ove godine</relative>
+				<relative type="1">sljedeće godine</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} godine</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} godine</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} godina</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relative type="-1">prošle god.</relative>
+				<relative type="0">ove god.</relative>
+				<relative type="1">sljedeće god.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} god.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} god.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} god.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1">prošle g.</relative>
+				<relative type="0">ove g.</relative>
+				<relative type="1">sljedeće g.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} g.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} g.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} g.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<relative type="-1">prošlog kvartala</relative>
+				<relative type="0">ovog kvartala</relative>
+				<relative type="1">sljedećeg kvartala</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} kvartala</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} kvartala</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} kvartala</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} kv.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} kv.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} kv.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} kv.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} kv.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} kv.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName>mjesec</displayName>
+				<relative type="-1">prošlog mjeseca</relative>
+				<relative type="0">ovog mjeseca</relative>
+				<relative type="1">sljedećeg mjeseca</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} mjesec</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} mjeseca</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} mjeseci</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} mjeseca</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} mjeseca</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} mjeseci</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>mjes.</displayName>
+				<relative type="-1">prošlog mjes.</relative>
+				<relative type="0">ovog mjes.</relative>
+				<relative type="1">sljedećeg mjes.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} mjes.</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} mjes.</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} mjes.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} mjes.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} mjes.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} mjes.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>mjes.</displayName>
+				<relative type="-1">prošlog mjes.</relative>
+				<relative type="0">ovog mjes.</relative>
+				<relative type="1">sljedećeg m.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} m.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} m.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} m.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName>sedmica</displayName>
+				<relative type="-1">prošle sedmice</relative>
+				<relative type="0">ove sedmice</relative>
+				<relative type="1">sljedeće sedmice</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sedmicu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} sedmice</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sedmica</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sedmice</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sedmice</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sedmica</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>sedmica koja počinje {0}.</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>sedm.</displayName>
+				<relative type="-1">prošle sedm.</relative>
+				<relative type="0">ove sedm.</relative>
+				<relative type="1">sljedeće sedm.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sedm.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sedm.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sedm.</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>sedmica koja počinje {0}.</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>sedm.</displayName>
+				<relative type="-1">prošle s.</relative>
+				<relative type="0">ove s.</relative>
+				<relative type="1">sljedeće s.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} s.</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} s.</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} s.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} s.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} s.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} s.</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>sedmica koja počinje {0}.</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>sedmica u mjesecu</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>sedm. u mjes.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>sedm. u mjes.</displayName>
+			</field>
+			<field type="day">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} dana</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} dana</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} dana</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} d.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} d.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} d.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} d.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} d.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} d.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekday">
+				<displayName>dan u sedmici</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>dan u sedm.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>dan u sedm.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>dan u mjesecu</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>dan u mjesecu</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>dan u mjesecu</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">prošle nedjelje</relative>
+				<relative type="0">u nedjelju</relative>
+				<relative type="1">sljedeće nedjelje</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedjelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">pr. ned.</relative>
+				<relative type="0">u ned</relative>
+				<relative type="1">slj. ned.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedjelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">pr. ned.</relative>
+				<relative type="0">u ned</relative>
+				<relative type="1">slj. ned.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedjelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} nedjelje</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} nedjelja</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">prošlog ponedjeljka</relative>
+				<relative type="0">u ponedjeljak</relative>
+				<relative type="1">sljedećeg ponedjeljka</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedjeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">prošlog pon</relative>
+				<relative type="0">u pon</relative>
+				<relative type="1">sljedećeg pon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedjeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">prošlog pon</relative>
+				<relative type="0">u pon</relative>
+				<relative type="1">sljedećeg pon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedjeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} ponedjeljka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} ponedjeljaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">prošlog utorka</relative>
+				<relative type="0">u utorak</relative>
+				<relative type="1">sljedećeg utorka</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} utoraka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">prošlog uto</relative>
+				<relative type="0">u uto</relative>
+				<relative type="1">sljedećeg uto</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} utoraka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">prošlog uto</relative>
+				<relative type="0">u uto</relative>
+				<relative type="1">sljedećeg uto</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} utoraka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">prošle srijede</relative>
+				<relative type="0">u srijedu</relative>
+				<relative type="1">sljedeće srijede</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} srijedu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} srijeda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} srijeda</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">prošle sri</relative>
+				<relative type="0">u sri</relative>
+				<relative type="1">sljedeće sri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} srijedu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} srijeda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} srijeda</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">prošle sri</relative>
+				<relative type="0">u sri</relative>
+				<relative type="1">sljedeće sri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} srijedu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} srijeda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} srijede</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} srijeda</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">prošlog četvrtka</relative>
+				<relative type="0">u četvrtak</relative>
+				<relative type="1">sljedećeg četvrtka</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">prošlog čet</relative>
+				<relative type="0">u čet</relative>
+				<relative type="1">sljedećeg čet</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">prošlog čet</relative>
+				<relative type="0">u čet</relative>
+				<relative type="1">sljedećeg čet</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">prošlog petka</relative>
+				<relative type="0">u petak</relative>
+				<relative type="1">sljedećeg petka</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} petaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">prošlog pet</relative>
+				<relative type="0">u pet</relative>
+				<relative type="1">sljedećeg pet</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} petaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">prošlog pet</relative>
+				<relative type="0">u pet</relative>
+				<relative type="1">sljedećeg pet</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} petaka</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">prošle subote</relative>
+				<relative type="0">u subotu</relative>
+				<relative type="1">sljedeće subote</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} subota</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">prošle sub</relative>
+				<relative type="0">u sub</relative>
+				<relative type="1">sljedeće sub</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} subota</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">prošle sub</relative>
+				<relative type="0">u sub</relative>
+				<relative type="1">sljedeće sub</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} subota</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>prije podne/po podne</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>prije podne/po podne</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>prije podne/po podne</displayName>
+			</field>
+			<field type="hour">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sata</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sata</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sati</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} č.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} č.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} č.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} č.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} č.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} č.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} minuta</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} minuta</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} minuta</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} min.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} min.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} min.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} min.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} min.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sekunde</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sekunde</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sekundi</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} sek.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} sek.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} sek.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prije {0} s.</relativeTimePattern>
+					<relativeTimePattern count="few">prije {0} s.</relativeTimePattern>
+					<relativeTimePattern count="other">prije {0} s.</relativeTimePattern>
+				</relativeTime>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat type="daylight">{0}, ljetnje vrijeme</regionFormat>
+			<regionFormat type="standard">{0}, standardno vrijeme</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Koordinisano univerzalno vrijeme</standard>
+				</long>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Dimon d’Irvil</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Makvori</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>Sen Bartelemi</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>Svift Karent</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>Redžajna</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>Rezolut</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>Sent Džons</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Britanija, ljetnje vrijeme</daylight>
+				</long>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>Itokortormit</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>Port-o-Prens</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Irska, standardno vrijeme</daylight>
+				</long>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>Nijue</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Portoriko</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>Longjir</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Port ov Spejn</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Bjula, Sjeverna Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>Novi Salem, Sjeverna Dakota</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Centar, Sjeverna Dakota</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>Vinsens, Indijana</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>Indijanapolis</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>Luivil</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>Vivi, Indijana</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>Sent Tomas</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Avganistan vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Centralno-afričko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Istočno-afričko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Južno-afričko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Zapadno-afričko vrijeme</generic>
+					<standard>Zapadno-afričko standardno vrijeme</standard>
+					<daylight>Zapadno-afričko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Aljaska</generic>
+					<standard>Aljaska, standardno vrijeme</standard>
+					<daylight>Aljaska, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Amazon vrijeme</generic>
+					<standard>Amazon, standardno vrijeme</standard>
+					<daylight>Amazon, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>Sjevernoameričko centralno vrijeme</generic>
+					<standard>Sjevernoameričko centralno standardno vrijeme</standard>
+					<daylight>Sjevernoameričko centralno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>Sjevernoameričko istočno vrijeme</generic>
+					<standard>Sjevernoameričko istočno standardno vrijeme</standard>
+					<daylight>Sjevernoameričko istočno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>Sjevernoameričko planinsko vrijeme</generic>
+					<standard>Sjevernoameričko planinsko standardno vrijeme</standard>
+					<daylight>Sjevernoameričko planinsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>Sjevernoameričko pacifičko vrijeme</generic>
+					<standard>Sjevernoameričko pacifičko standardno vrijeme</standard>
+					<daylight>Sjevernoameričko pacifičko letnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Apija vrijeme</generic>
+					<standard>Apija, standardno vrijeme</standard>
+					<daylight>Apija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Arabijsko vrijeme</generic>
+					<standard>Arabijsko standardno vrijeme</standard>
+					<daylight>Arabijsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Argentina vrijeme</generic>
+					<standard>Argentina, standardno vrijeme</standard>
+					<daylight>Argentina, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Zapadna Argentina vrijeme</generic>
+					<standard>Zapadna Argentina, standardno vrijeme</standard>
+					<daylight>Zapadna Argentina, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Jermenija vrijeme</generic>
+					<standard>Jermenija, standardno vrijeme</standard>
+					<daylight>Jermenija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>Atlantsko vrijeme</generic>
+					<standard>Atlantsko standardno vrijeme</standard>
+					<daylight>Atlantsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Australijsko centralno vrijeme</generic>
+					<standard>Australijsko centralno standardno vrijeme</standard>
+					<daylight>Australijsko centralno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Australijsko centralno zapadno vrijeme</generic>
+					<standard>Australijsko centralno zapadno standardno vrijeme</standard>
+					<daylight>Australijsko centralno zapadno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Australijsko istočno vrijeme</generic>
+					<standard>Australijsko istočno standardno vrijeme</standard>
+					<daylight>Australijsko istočno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Australijsko zapadno vrijeme</generic>
+					<standard>Australijsko zapadno standardno vrijeme</standard>
+					<daylight>Australijsko zapadno ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Azerbejdžan vrijeme</generic>
+					<standard>Azerbejdžan, standardno vrijeme</standard>
+					<daylight>Azerbejdžan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Azori vrijeme</generic>
+					<standard>Azori, standardno vrijeme</standard>
+					<daylight>Azori, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Bangladeš vrijeme</generic>
+					<standard>Bangladeš, standardno vrijeme</standard>
+					<daylight>Bangladeš, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Butan vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Bolivija vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Brazilija vrijeme</generic>
+					<standard>Brazilija, standardno vrijeme</standard>
+					<daylight>Brazilija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Brunej Darusalum vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Zelenortska Ostrva vrijeme</generic>
+					<standard>Zelenortska Ostrva, standardno vrijeme</standard>
+					<daylight>Zelenortska Ostrva, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Čamoro vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Čatam vrijeme</generic>
+					<standard>Čatam, standardno vrijeme</standard>
+					<daylight>Čatam, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Čile vrijeme</generic>
+					<standard>Čile, standardno vrijeme</standard>
+					<daylight>Čile, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Kina vrijeme</generic>
+					<standard>Kinesko standardno vrijeme</standard>
+					<daylight>Kina, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Čojbalsan vrijeme</generic>
+					<standard>Čojbalsan, standardno vrijeme</standard>
+					<daylight>Čojbalsan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Božićno ostrvo vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Kokosova (Kiling) ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Kolumbija vrijeme</generic>
+					<standard>Kolumbija, standardno vrijeme</standard>
+					<daylight>Kolumbija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Kukova Ostrva vrijeme</generic>
+					<standard>Kukova Ostrva, standardno vrijeme</standard>
+					<daylight>Kukova Ostrva, poluljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Kuba</generic>
+					<standard>Kuba, standardno vrijeme</standard>
+					<daylight>Kuba, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Dejvis vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Dimon d’Irvil vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Istočni Timor vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Uskršnja ostrva vrijeme</generic>
+					<standard>Uskršnja ostrva, standardno vrijeme</standard>
+					<daylight>Uskršnja ostrva, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Ekvador vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>Srednjoevropsko vrijeme</generic>
+					<standard>Srednjoevropsko standardno vrijeme</standard>
+					<daylight>Srednjoevropsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>Istočnoevropsko vrijeme</generic>
+					<standard>Istočnoevropsko standardno vrijeme</standard>
+					<daylight>Istočnoevropsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>Zapadnoevropsko vrijeme</generic>
+					<standard>Zapadnoevropsko standardno vrijeme</standard>
+					<daylight>Zapadnoevropsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Folklandska Ostrva vrijeme</generic>
+					<standard>Folklandska Ostrva, standardno vrijeme</standard>
+					<daylight>Folklandska Ostrva, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Fidži vrijeme</generic>
+					<standard>Fidži, standardno vrijeme</standard>
+					<daylight>Fidži, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Francuska Gvajana vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Francusko južno i antarktičko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Galapagos vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Gambije vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Gruzija vrijeme</generic>
+					<standard>Gruzija, standardno vrijeme</standard>
+					<daylight>Gruzija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Gilbertova ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>Srednje vrijeme po Griniču</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Istočni Grenland</generic>
+					<standard>Istočni Grenland, standardno vrijeme</standard>
+					<daylight>Istočni Grenland, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Zapadni Grenland</generic>
+					<standard>Zapadni Grenland, standardno vrijeme</standard>
+					<daylight>Zapadni Grenland, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Zalivsko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Gvajana vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Havajsko-aleutsko vrijeme</generic>
+					<standard>Havajsko-aleutsko standardno vrijeme</standard>
+					<daylight>Havajsko-aleutsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Hong Kong vrijeme</generic>
+					<standard>Hong Kong, standardno vrijeme</standard>
+					<daylight>Hong Kong, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Hovd vrijeme</generic>
+					<standard>Hovd, standardno vrijeme</standard>
+					<daylight>Hovd, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Indijsko standardno vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Indijsko okeansko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Indokina vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Centralno-indonezijsko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Istočno-indonezijsko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Zapadno-indonezijsko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Iran vrijeme</generic>
+					<standard>Iran, standardno vrijeme</standard>
+					<daylight>Iran, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Irkuck vrijeme</generic>
+					<standard>Irkuck, standardno vrijeme</standard>
+					<daylight>Irkuck, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Izraelsko vrijeme</generic>
+					<standard>Izraelsko standardno vrijeme</standard>
+					<daylight>Izraelsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Japansko vrijeme</generic>
+					<standard>Japansko standardno vrijeme</standard>
+					<daylight>Japansko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Istočno-kazahstansko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Zapadno-kazahstansko vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Korejsko vrijeme</generic>
+					<standard>Korejsko standardno vrijeme</standard>
+					<daylight>Korejsko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Košre vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Krasnojarsk vrijeme</generic>
+					<standard>Krasnojarsk, standardno vrijeme</standard>
+					<daylight>Krasnojarsk, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Kirgistan vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Linijska ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Lord Hov vrijeme</generic>
+					<standard>Lord Hov, standardno vrijeme</standard>
+					<daylight>Lord Hov, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>ostrvo Makvori vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Magadan vrijeme</generic>
+					<standard>Magadan, standardno vrijeme</standard>
+					<daylight>Magadan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malezija vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Maldivi vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Markiz vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Maršalska Ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Mauricijus vrijeme</generic>
+					<standard>Mauricijus, standardno vrijeme</standard>
+					<daylight>Mauricijus, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Moson vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Sjeverozapadni Meksiko</generic>
+					<standard>Sjeverozapadni Meksiko, standardno vrijeme</standard>
+					<daylight>Sjeverozapadni Meksiko, letnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Meksički Pacifik</generic>
+					<standard>Meksički Pacifik, standardno vrijeme</standard>
+					<daylight>Meksički Pacifik, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Ulan Bator vrijeme</generic>
+					<standard>Ulan Bator, standardno vrijeme</standard>
+					<daylight>Ulan Bator, ljetnje vrijeeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Moskva vrijeme</generic>
+					<standard>Moskva, standardno vrijeme</standard>
+					<daylight>Moskva, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Mjanmar vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Nauru vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Nepal vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Nova Kaledonija vrijeme</generic>
+					<standard>Nova Kaledonija, standardno vrijeme</standard>
+					<daylight>Nova Kaledonija, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Novi Zeland vrijeme</generic>
+					<standard>Novi Zeland, standardno vrijeme</standard>
+					<daylight>Novi Zeland, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Njufaundlend</generic>
+					<standard>Njufaundlend, standardno vrijeme</standard>
+					<daylight>Njufaundlend, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Nijue vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>ostrvo Norfolk vrijeme</generic>
+					<standard>ostrvo Norfolk, standardno vrijeme</standard>
+					<daylight>ostrvo Norfolk, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Fernando de Noronja vrijeme</generic>
+					<standard>Fernando de Noronja, standardno vrijeme</standard>
+					<daylight>Fernando de Noronja, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Novosibirsk vrijeme</generic>
+					<standard>Novosibirsk, standardno vrijeme</standard>
+					<daylight>Novosibirsk, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Omsk vrijeme</generic>
+					<standard>Omsk, standardno vrijeme</standard>
+					<daylight>Omsk, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Pakistan vrijeme</generic>
+					<standard>Pakistan, standardno vrijeme</standard>
+					<daylight>Pakistan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Palau vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Papua Nova Gvineja vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Paragvaj vrijeme</generic>
+					<standard>Paragvaj, standardno vrijeme</standard>
+					<daylight>Paragvaj, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Peru vrijeme</generic>
+					<standard>Peru, standardno vrijeme</standard>
+					<daylight>Peru, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Filipini vrijeme</generic>
+					<standard>Filipini, standardno vrijeme</standard>
+					<daylight>Filipini, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Feniks ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Sen Pjer i Mikelon</generic>
+					<standard>Sen Pjer i Mikelon, standardno vrijeme</standard>
+					<daylight>Sen Pjer i Mikelon, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Pitkern vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponpej vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pjongjanško vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Reunion vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Rotera vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Sahalin vrijeme</generic>
+					<standard>Sahalin, standardno vrijeme</standard>
+					<daylight>Sahalin, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Samoa vrijeme</generic>
+					<standard>Samoa, standardno vrijeme</standard>
+					<daylight>Samoa, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Sejšeli vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Singapur, standardno vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Solomonska Ostrva vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Južna Džordžija vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Surinam vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Šova vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Tahiti vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Tajpej vrijeme</generic>
+					<standard>Tajpej, standardno vrijeme</standard>
+					<daylight>Tajpej, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Tadžikistan vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Tokelau vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Tonga vrijeme</generic>
+					<standard>Tonga, standardno vrijeme</standard>
+					<daylight>Tonga, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Čuk vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Turkmenistan vrijeme</generic>
+					<standard>Turkmenistan, standardno vrijeme</standard>
+					<daylight>Turkmenistan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Tuvalu vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Urugvaj vrijeme</generic>
+					<standard>Urugvaj, standardno vrijeme</standard>
+					<daylight>Urugvaj, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Uzbekistan vrijeme</generic>
+					<standard>Uzbekistan, standardno vrijeme</standard>
+					<daylight>Uzbekistan, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Vanuatu vrijeme</generic>
+					<standard>Vanuatu, standardno vrijeme</standard>
+					<daylight>Vanuatu, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Venecuela vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Vladivostok vrijeme</generic>
+					<standard>Vladivostok, standardno vrijeme</standard>
+					<daylight>Vladivostok, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Volgograd vrijeme</generic>
+					<standard>Volgograd, standardno vrijeme</standard>
+					<daylight>Volgograd, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Vostok vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>ostrvo Vejk vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>ostrva Valis i Futuna vrijeme</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Jakutsk vrijeme</generic>
+					<standard>Jakutsk, standardno vrijeme</standard>
+					<daylight>Jakutsk, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Jekaterinburg vrijeme</generic>
+					<standard>Jekaterinburg, standardno vrijeme</standard>
+					<daylight>Jekaterinburg, ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="BAM">
+				<displayName>Bosanskohercegovačka konvertibilna marka</displayName>
+				<displayName count="one">bosanskohercegovačka konvertibilna marka</displayName>
+				<displayName count="few">bosanskohercegovačke konvertibilne marke</displayName>
+				<displayName count="other">bosanskohercegovačkih konvertibilnih maraka</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Bjeloruska rublja</displayName>
+				<displayName count="one">bjeloruska rublja</displayName>
+				<displayName count="few">bjeloruske rublje</displayName>
+				<displayName count="other">bjeloruskih rublji</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Sjevernokorejski von</displayName>
+				<displayName count="one">sjevernokorejski von</displayName>
+				<displayName count="few">sjevernokorejska vona</displayName>
+				<displayName count="other">sjevernokorejskih vona</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Nikaragvanska zlatna kordoba</displayName>
+				<displayName count="one">nikaragvanska zlatna kordoba</displayName>
+				<displayName count="few">nikaragvanske zlatne kordobe</displayName>
+				<displayName count="other">nikaragvanskih zlatnih kordoba</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>jobi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<unit type="duration-century">
+				<displayName>vijekovi</displayName>
+				<unitPattern count="one">{0} vijek</unitPattern>
+				<unitPattern count="few">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="accusative">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="genitive">{0} vijeka</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} vijeka</unitPattern>
+				<unitPattern count="other">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="accusative">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vijekova</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} vijekova</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>mjeseci</displayName>
+				<unitPattern count="one">{0} mjesec</unitPattern>
+				<unitPattern count="few">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="accusative">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mjeseca</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} mjeseca</unitPattern>
+				<unitPattern count="other">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mjeseci</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mjeseci</unitPattern>
+				<perUnitPattern>{0} mjesečno</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>nedjelje</displayName>
+				<unitPattern count="one">{0} nedjelja</unitPattern>
+				<unitPattern count="few">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="accusative">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nedjelje</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} nedjelje</unitPattern>
+				<unitPattern count="other">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nedjelja</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nedjelja</unitPattern>
+				<perUnitPattern>{0} nedjeljno</perUnitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>svjetlosne godine</displayName>
+				<unitPattern count="one">{0} svjetlosna godina</unitPattern>
+				<unitPattern count="few">{0} svjetlosne godine</unitPattern>
+				<unitPattern count="other">{0} svjetlosnih godina</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grana</unitPattern>
+				<unitPattern count="other">{0} granova</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-month">
+				<displayName>mjeseci</displayName>
+				<unitPattern count="one">{0} mjes.</unitPattern>
+				<unitPattern count="few">{0} mjes.</unitPattern>
+				<unitPattern count="other">{0} mjes.</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>svjetlosne god.</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grana</unitPattern>
+				<unitPattern count="other">{0} granova</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="few">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="length-light-year">
+				<displayName>svjetlosne god.</displayName>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>gran</displayName>
+				<unitPattern count="one">{0} gran</unitPattern>
+				<unitPattern count="few">{0} grana</unitPattern>
+				<unitPattern count="other">{0} granova</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="one">{0}bbl</unitPattern>
+				<unitPattern count="few">{0} bbl</unitPattern>
+				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>d. kaš.</displayName>
+				<unitPattern count="one">{0} d. kaš.</unitPattern>
+				<unitPattern count="few">{0} d. kaš.</unitPattern>
+				<unitPattern count="other">{0} d. kaš.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>i. d. k.</displayName>
+				<unitPattern count="one">{0} i. d. k.</unitPattern>
+				<unitPattern count="few">{0} i. d. k.</unitPattern>
+				<unitPattern count="other">{0} i. d. k.</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<characterLabels>
+		<characterLabel type="body">tijelo</characterLabel>
+		<characterLabel type="bullets_stars">Znakovi za nabrajanje/zvjezdice</characterLabel>
+		<characterLabel type="downwards_arrows">Strelice nadolje</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Strelice nadolje i nagore</characterLabel>
+		<characterLabel type="leftwards_arrows">Strelice nalijevo</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Strelice nalijevo i nadesno</characterLabel>
+		<characterLabel type="place">mjesto</characterLabel>
+		<characterLabel type="travel_places">Putovanja i mjesta</characterLabel>
+		<characterLabel type="weather">vrijeme</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="slnt" subtype="-12">nagnut ulijevo</styleName>
+		<styleName type="wght" subtype="200">ekstrasvijetao</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultrasvijetao</styleName>
+		<styleName type="wght" subtype="300">svijetao</styleName>
+		<styleName type="wght" subtype="350">polusvijetao</styleName>
+	</typographicNames>
+</ldml>

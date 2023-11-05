@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#############################################################################
+#
+# List of quarantined tests for testing in Xcomp mode.
+#
+#############################################################################
+
+vmTestbase/nsk/jvmti/AttachOnDemand/attach020/TestDescription.java 8287324 generic-all
+vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
+vmTestbase/nsk/jvmti/SetFieldModificationWatch/setfmodw001/TestDescription.java 8205957 linux-x64,windows-x64
+vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
+
+vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64
+
+serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8303168 linux-all
+
+serviceability/sa/ClhsdbInspect.java 8283578 windows-x64
+
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 windows-x64
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 8308367 windows-x64
+vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 windows-x64
+
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
+
+gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
+compiler/interpreter/TestVerifyStackAfterDeopt.java 8316392 macosx-aarch64
+
+gc/cslocker/TestCSLocker.java 8310480 linux-x64
