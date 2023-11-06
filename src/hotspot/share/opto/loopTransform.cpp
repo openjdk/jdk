@@ -2387,7 +2387,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 #endif
 
-  C->print_method(PHASE_AFTER_LOOP_UNROLLING, 4, loop_head);
+  C->print_method(PHASE_AFTER_LOOP_UNROLLING, 4, clone_head);
 }
 
 //------------------------------do_maximally_unroll----------------------------
@@ -2869,8 +2869,6 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
-  C->print_method(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, cl);
-
   // protect against stride not being a constant
   if (!cl->stride_is_con()) {
     return;
@@ -3018,6 +3016,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       // monotonically increases by stride_con, a constant.  Both (or either)
       // stride_con and scale_con can be negative which will flip about the
       // sense of the test.
+
+      C->print_method(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, iff);
 
       // Perform the limit computations in jlong to avoid overflow
       jlong lscale_con = scale_con;
