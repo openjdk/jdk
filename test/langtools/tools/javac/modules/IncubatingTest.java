@@ -239,11 +239,11 @@ public class IncubatingTest extends ModuleTestBase {
             throw new AssertionError("Unexpected output: " + log);
         }
 
-        //test disable lint preview
+        //test disable lint incubating
         new JavacTask(tb)
                 .options("--module-path", classes.toString(),
                          "-XDrawDiagnostics",
-                         "-Xlint:-preview",
+                         "-Xlint:-incubating",
                          "-Werror")
                 .outdir(testModuleClasses)
                 .files(findJavaFiles(testModuleSrc))

@@ -1354,7 +1354,7 @@ public class Modules extends JCTree.Visitor {
                 .forEach(result::add);
         }
 
-        if (lint.isEnabled(LintCategory.PREVIEW)) {
+        if (lint.isEnabled(LintCategory.INCUBATING)) {
             String incubatingModules = filterAlreadyWarnedIncubatorModules(result.stream()
                     .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
                     .map(msym -> msym.name.toString()))

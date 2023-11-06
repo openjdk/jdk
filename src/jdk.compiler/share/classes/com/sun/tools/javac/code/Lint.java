@@ -130,6 +130,7 @@ public class Lint
                 values.add(LintCategory.PREVIEW);
             }
             values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides
@@ -214,6 +215,11 @@ public class Lint
          * Warn about finally clauses that do not terminate normally.
          */
         FINALLY("finally"),
+
+        /**
+         * Warn about use of incubating modules.
+         */
+        INCUBATING("incubating"),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -333,7 +339,7 @@ public class Lint
         VARARGS("varargs"),
 
         /**
-         * Warn about use of preview features and incubating modules.
+         * Warn about use of preview features.
          */
         PREVIEW("preview"),
 
