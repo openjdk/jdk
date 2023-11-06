@@ -32,7 +32,7 @@ import java.lang.management.ThreadMXBean;
 /*
  * @test
  * @bug 8318757
- * @summary Test concurrent monitor deflation by MonitorDeflationThread and VMThread
+ * @summary Test concurrent monitor deflation by MonitorDeflationThread and thread dumping
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedAsyncDeflationInterval=2000 -XX:LockingMode=0 ConcurrentDeflation
  */
