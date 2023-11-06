@@ -819,11 +819,11 @@ about the problem.</p>
 <p>Some command line examples:</p>
 <ul>
 <li><p>Create a 32-bit build for Windows with FreeType2 in
-<code>C:\freetype-i586</code>:
-<code>bash configure --with-freetype=/cygdrive/c/freetype-i586 --with-target-bits=32</code></p></li>
+<code>C:\freetype-i586</code>:</p>
+<pre><code>bash configure --with-freetype=/cygdrive/c/freetype-i586 --with-target-bits=32</code></pre></li>
 <li><p>Create a debug build with the <code>server</code> JVM and DTrace
-enabled:
-<code>bash configure --enable-debug --with-jvm-variants=server --enable-dtrace</code></p></li>
+enabled:</p>
+<pre><code>bash configure --enable-debug --with-jvm-variants=server --enable-dtrace</code></pre></li>
 </ul>
 <h3 id="common-configure-arguments">Common Configure Arguments</h3>
 <p>Here follows some of the most common and important
@@ -1331,14 +1331,12 @@ Package Search</a> and search for the <code>libasound2</code> and
 <code>libasound2-dev</code> packages for your <em>target</em> system.
 Download them to /tmp.</p></li>
 <li><p>Install the libraries into the cross-compilation toolchain. For
-instance:</p></li>
-</ul>
+instance:</p>
 <pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
 dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
-dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre>
-<ul>
-<li>If alsa is not properly detected by <code>configure</code>, you can
-point it out by <code>--with-alsa</code>.</li>
+dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
+<li><p>If alsa is not properly detected by <code>configure</code>, you
+can point it out by <code>--with-alsa</code>.</p></li>
 </ul>
 <h4 id="x11-1">X11</h4>
 <p>You will need X11 libraries suitable for your <em>target</em> system.
@@ -1372,21 +1370,18 @@ Package Search</a>, search for the following packages for your
 </ul></li>
 <li><p>Install the libraries into the cross-compilation toolchain. For
 instance:</p>
-<pre><code>    cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
-    mkdir X11R6
-    cd X11R6
-    for deb in /tmp/target-x11/*.deb ; do dpkg-deb -x $deb . ; done
-    mv usr/* .
-    cd lib
-    cp arm-linux-gnueabihf/* .
-    ```
-
-You can ignore the following messages. These libraries are not needed to
-successfully complete a full JDK build.</code></pre>
-<p>cp: cannot stat
-<code>arm-linux-gnueabihf/libICE.so': No such file or directory cp: cannot stat</code>arm-linux-gnueabihf/libSM.so':
-No such file or directory cp: cannot stat
-`arm-linux-gnueabihf/libXt.so': No such file or directory ```</p></li>
+<pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
+mkdir X11R6
+cd X11R6
+for deb in /tmp/target-x11/*.deb ; do dpkg-deb -x $deb . ; done
+mv usr/* .
+cd lib
+cp arm-linux-gnueabihf/* .</code></pre>
+<p>You can ignore the following messages. These libraries are not needed
+to successfully complete a full JDK build.</p>
+<pre><code>cp: cannot stat `arm-linux-gnueabihf/libICE.so&#39;: No such file or directory
+cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
+cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
 <li><p>If the X11 libraries are not properly detected by
 <code>configure</code>, you can point them out by
 <code>--with-x</code>.</p></li>
@@ -1404,17 +1399,41 @@ native compilation speed.</p>
 <p>For example, cross-compiling to AArch64 from x86_64 could be done
 like this:</p>
 <ul>
-<li><p>Install cross-compiler on the <em>build</em> system:
-<code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></p></li>
+<li><p>Install cross-compiler on the <em>build</em> system:</p>
+<pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre></li>
 <li><p>Create chroot on the <em>build</em> system, configuring it for
-<em>target</em> system:
-<code>sudo debootstrap \       --arch=arm64 \       --verbose \       --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \       --resolve-deps \       buster \       ~/sysroot-arm64 \       http://httpredir.debian.org/debian/     # If the target architecture is `riscv64`,     # the path should be `debian-ports` instead of `debian`.</code></p></li>
+<em>target</em> system:</p>
+<pre><code>sudo debootstrap \
+  --arch=arm64 \
+  --verbose \
+  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+  --resolve-deps \
+  buster \
+  ~/sysroot-arm64 \
+  http://httpredir.debian.org/debian/
+# If the target architecture is `riscv64`,
+# the path should be `debian-ports` instead of `debian`.</code></pre></li>
+<li><p>To create a Ubuntu-based chroot:</p>
+<pre><code>sudo debootstrap \
+  --arch=arm64 \
+  --verbose \
+  --components=main,universe \
+  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+  --resolve-deps \
+  jammy \
+  ~/sysroot-arm64 \
+  http://ports.ubuntu.com/ubuntu-ports/
+# symlinks is in the universe repository</code></pre></li>
 <li><p>Make sure the symlinks inside the newly created chroot point to
-proper locations:
-<code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></p></li>
+proper locations:</p>
+<pre><code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></pre></li>
 <li><p>Configure and build with newly created chroot as
-sysroot/toolchain-path:
-<code>sh ./configure \       --openjdk-target=aarch64-linux-gnu \       --with-sysroot=~/sysroot-arm64     make images     ls build/linux-aarch64-server-release/</code></p></li>
+sysroot/toolchain-path:</p>
+<pre><code>sh ./configure \
+  --openjdk-target=aarch64-linux-gnu \
+  --with-sysroot=~/sysroot-arm64
+make images
+ls build/linux-aarch64-server-release/</code></pre></li>
 </ul>
 <p>The build does not create new files in that chroot, so it can be
 reused for multiple builds without additional cleanup.</p>
@@ -1566,12 +1585,27 @@ libraries</a> required by OpenJDK complicate the building process. The
 placeholder <code>&lt;toolchain-installed-path&gt;</code> shown below is
 the path where you want to install the toolchain.</p>
 <ul>
-<li><p>Install the RISC-V GNU compiler toolchain:
-<code>git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain     cd riscv-gnu-toolchain     ./configure --prefix=&lt;toolchain-installed-path&gt;     make linux     export PATH=&lt;toolchain-installed-path&gt;/bin:$PATH</code></p></li>
-<li><p>Cross-compile all the required libraries:
-<code># An example for libffi     git clone https://github.com/libffi/libffi     cd libffi     ./configure --host=riscv64-unknown-linux-gnu --prefix=&lt;toolchain-installed-path&gt;/sysroot/usr     make     make install</code></p></li>
-<li><p>Configure and build OpenJDK:
-<code>bash configure \       --with-boot-jdk=$BOOT_JDK \       --openjdk-target=riscv64-linux-gnu \       --with-sysroot=&lt;toolchain-installed-path&gt;/sysroot \       --with-toolchain-path=&lt;toolchain-installed-path&gt;/bin \       --with-extra-path=&lt;toolchain-installed-path&gt;/bin     make images</code></p></li>
+<li><p>Install the RISC-V GNU compiler toolchain:</p>
+<pre><code>git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
+cd riscv-gnu-toolchain
+./configure --prefix=&lt;toolchain-installed-path&gt;
+make linux
+export PATH=&lt;toolchain-installed-path&gt;/bin:$PATH</code></pre></li>
+<li><p>Cross-compile all the required libraries:</p>
+<pre><code># An example for libffi
+git clone https://github.com/libffi/libffi
+cd libffi
+./configure --host=riscv64-unknown-linux-gnu --prefix=&lt;toolchain-installed-path&gt;/sysroot/usr
+make
+make install</code></pre></li>
+<li><p>Configure and build OpenJDK:</p>
+<pre><code>bash configure \
+  --with-boot-jdk=$BOOT_JDK \
+  --openjdk-target=riscv64-linux-gnu \
+  --with-sysroot=&lt;toolchain-installed-path&gt;/sysroot \
+  --with-toolchain-path=&lt;toolchain-installed-path&gt;/bin \
+  --with-extra-path=&lt;toolchain-installed-path&gt;/bin
+make images</code></pre></li>
 </ul>
 <h3 id="building-for-musl">Building for musl</h3>
 <p>Just like it's possible to cross-compile for a different CPU, it's

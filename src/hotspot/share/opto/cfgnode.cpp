@@ -1883,6 +1883,17 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   return phi;
 }
 
+// Returns the BasicType of a given convert node and a type, with special handling to ensure that conversions to
+// and from half float will return the SHORT basic type, as that wouldn't be returned typically from TypeInt.
+static BasicType get_convert_type(Node* convert, const Type* type) {
+  int convert_op = convert->Opcode();
+  if (type->isa_int() && (convert_op == Op_ConvHF2F || convert_op == Op_ConvF2HF)) {
+    return T_SHORT;
+  }
+
+  return type->basic_type();
+}
+
 //=============================================================================
 //------------------------------simple_data_loop_check-------------------------
 //  Try to determining if the phi node in a simple safe/unsafe data loop.
@@ -2556,6 +2567,41 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 #endif
+
+  // Try to convert a Phi with two duplicated convert nodes into a phi of the pre-conversion type and the convert node
+  // proceeding the phi, to de-duplicate the convert node and compact the IR.
+  if (can_reshape && progress == nullptr) {
+    ConvertNode* convert = in(1)->isa_Convert();
+    if (convert != nullptr) {
+      int conv_op = convert->Opcode();
+      bool ok = true;
+
+      // Check the rest of the inputs
+      for (uint i = 2; i < req(); i++) {
+        // Make sure that all inputs are of the same type of convert node
+        if (in(i)->Opcode() != conv_op) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) {
+        // Find the local bottom type to set as the type of the phi
+        const Type* source_type = Type::get_const_basic_type(convert->in_type()->basic_type());
+        const Type* dest_type = convert->bottom_type();
+
+        PhiNode* newphi = new PhiNode(in(0), source_type, nullptr);
+        // Set inputs to the new phi be the inputs of the convert
+        for (uint i = 1; i < req(); i++) {
+          newphi->init_req(i, in(i)->in(1));
+        }
+
+        phase->is_IterGVN()->register_new_node_with_optimizer(newphi, this);
+
+        return ConvertNode::create_convert(get_convert_type(convert, source_type), get_convert_type(convert, dest_type), newphi);
+      }
+    }
+  }
 
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
   if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->isa_oopptr()) {

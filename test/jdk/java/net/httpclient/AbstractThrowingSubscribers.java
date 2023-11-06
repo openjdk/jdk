@@ -474,6 +474,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
             if (response != null) {
                 finisher.finish(where, response, thrower);
             }
+            var tracker = TRACKER.getTracker(client);
             if (!sameClient) {
                 // Wait for the client to be garbage collected.
                 // we use the ReferenceTracker API rather than HttpClient::close here,
@@ -482,7 +483,6 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                 // By using the ReferenceTracker, we will get some diagnosis about what
                 // is keeping the client alive if it doesn't get GC'ed within the
                 // expected time frame.
-                var tracker = TRACKER.getTracker(client);
                 client = null;
                 System.gc();
                 System.out.println(now() + "waiting for client to shutdown: " + tracker.getName());
@@ -491,6 +491,14 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                 if (error != null) throw error;
                 System.out.println(now() + "client shutdown normally: " + tracker.getName());
                 System.err.println(now() + "client shutdown normally: " + tracker.getName());
+            } else {
+                System.out.println(now() + "waiting for operation to finish: " + tracker.getName());
+                System.err.println(now() + "waiting for operation to finish: " + tracker.getName());
+                var error = TRACKER.checkFinished(tracker, 10000);
+                if (error != null) throw error;
+                System.out.println(now() + "operation finished normally: " + tracker.getName());
+                System.err.println(now() + "operation finished normally: " + tracker.getName());
+
             }
         }
     }
@@ -800,7 +808,7 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(5000);
         try {
             httpTestServer.stop();
             httpsTestServer.stop();

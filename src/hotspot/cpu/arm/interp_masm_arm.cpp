@@ -37,6 +37,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -310,6 +311,36 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
 
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  assert_different_registers(cache, index);
+
+  get_index_at_bcp(index, bcp_offset, cache /*as tmp*/, sizeof(u2));
+
+  // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+  // sizeof(ResolvedFieldEntry) is 16 on Arm, so using shift
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    // load constant pool cache pointer
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+    // Get address of field entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
+
+    add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+    add(cache, cache, AsmOperand(index, lsl, log2i_exact(sizeof(ResolvedFieldEntry))));
+  }
+  else {
+    mov(cache, sizeof(ResolvedFieldEntry));
+    mul(index, index, cache);
+    // load constant pool cache pointer
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+
+    // Get address of field entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::field_entries_offset())));
+    add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+    add(cache, cache, index);
+  }
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is
