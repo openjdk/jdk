@@ -581,7 +581,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      * @throws IllegalArgumentException if this segment is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
-     *         in the provided layout.
+     *         in the provided layout
      */
     Stream<MemorySegment> elements(MemoryLayout elementLayout);
 
@@ -895,7 +895,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code src.isAccessibleBy(T) == false}
      * @throws UnsupportedOperationException if this segment is
      *         {@linkplain #isReadOnly() read-only}
-     * @return this segment.
+     * @return this segment
      */
     MemorySegment copyFrom(MemorySegment src);
 
@@ -951,7 +951,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code isAccessibleBy(T) == false}
      * @throws UnsupportedOperationException if this segment is not a mapped memory
-     *         segment, e.g. if {@code isMapped() == false}.
+     *         segment, e.g. if {@code isMapped() == false}
      */
     boolean isLoaded();
 
@@ -1119,7 +1119,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                     the layout is different from the
      *                     {@linkplain ByteOrder#nativeOrder native order}, a byte swap
      *                     operation will be performed on each array element.
-     * @return a new int array whose contents are copied from this memory segment.
+     * @return a new int array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1144,7 +1144,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalStateException if this segment's contents cannot be copied into a
      *         {@code float[]} instance, e.g. because {@code byteSize() % 4 != 0}, or
-     *         {@code byteSize() / 4 > Integer.MAX_VALUE}.
+     *         {@code byteSize() / 4 > Integer.MAX_VALUE}
      */
     float[] toArray(ValueLayout.OfFloat elementLayout);
 
@@ -1177,10 +1177,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalStateException if this segment's contents cannot be copied into a
      *         {@code double[]} instance, e.g. because {@code byteSize() % 8 != 0}, or
-     *         {@code byteSize() / 8 > Integer.MAX_VALUE}.
+     *         {@code byteSize() / 8 > Integer.MAX_VALUE}
      */
     double[] toArray(ValueLayout.OfDouble elementLayout);
 
@@ -1199,7 +1199,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         address up to (but not including) the first {@code '\0'} terminator
      *         character (assuming one is found)
      * @throws IllegalArgumentException if the size of the string is greater than the
-     *         largest string supported by the platform.
+     *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + 1)}, where
      *         {@code B} is the size, in bytes, of the string encoded using UTF-8 charset
@@ -1267,7 +1267,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      */
     void setString(long offset, String str);
 
@@ -1575,9 +1575,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               access operation will occur
      * @return a byte value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1613,9 +1613,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               access operation will occur
      * @return a boolean value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1651,9 +1651,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               access operation will occur
      * @return a char value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1689,9 +1689,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               access operation will occur
      * @return a short value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1727,9 +1727,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               access operation will occur
      * @return an int value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1929,7 +1929,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
-     * @return a byte value read from this segment.
+     * @return a byte value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2321,17 +2321,17 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the address value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout.
-     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}.
-     * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows.
-     * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}.
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
-     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment.
+     * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
+     * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
+     * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment
      */
     void setAtIndex(AddressLayout layout, long index, MemorySegment value);
 

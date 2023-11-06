@@ -107,7 +107,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * @return a sequence layout where element layouts in the
      *         {@linkplain #flatten() flattened projection} of this sequence layout
      *         (see {@link #flatten()}) are re-arranged into one or more nested
-     *         sequence layouts.
+     *         sequence layouts
      * @throws IllegalArgumentException if two or more element counts are set to {@code -1},
      *         or if one or more element count is {@code <= 0} (but other than {@code -1}) or,
      *         if, after any required inference, multiplying the element counts does not

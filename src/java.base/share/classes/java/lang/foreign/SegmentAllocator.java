@@ -179,7 +179,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a new memory segment initialized with the provided char value.}
+     * {@return a new memory segment initialized with the provided char value}
      * <p>
      * The size of the allocated memory segment is the
      * {@linkplain MemoryLayout#byteSize() size} of the given layout.
@@ -383,7 +383,7 @@ public interface SegmentAllocator {
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() != sourceElementLayout.byteSize()}
      * @throws IllegalArgumentException if the source segment/offset
      *         are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
-     *         in the source element layout.
+     *         in the source element layout
      * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
      * @throws IllegalArgumentException if {@code sourceElementLayout.byteAlignment() > sourceElementLayout.byteSize()}
      * @throws IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated

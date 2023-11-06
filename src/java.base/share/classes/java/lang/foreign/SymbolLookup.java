@@ -142,7 +142,7 @@ public interface SymbolLookup {
      *
      * @param name the symbol name
      * @return a zero-length memory segment whose address indicates the address of
-     *         the symbol, if found.
+     *         the symbol, if found
      */
     Optional<MemorySegment> find(String name);
 

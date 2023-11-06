@@ -67,7 +67,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * @param addedLayouts the argument layouts to append
      * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is
      *         a padding layout
-     * @return a new function descriptor, with the provided additional argument layouts.
+     * @return a new function descriptor, with the provided additional argument layouts
      */
     FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts);
 
@@ -77,7 +77,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      *
      * @param index the index at which to insert the arguments
      * @param addedLayouts the argument layouts to insert at given index
-     * @return a new function descriptor, with the provided additional argument layouts.
+     * @return a new function descriptor, with the provided additional argument layouts
      * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts}
      *         is a padding layout
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}

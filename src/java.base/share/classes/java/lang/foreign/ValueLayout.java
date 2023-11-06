@@ -99,7 +99,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
     /**
      * {@return a var handle which can be used to access values described by this value
-     *          layout, in a given memory segment.}
+     *          layout, in a given memory segment}
      * <p>
      * The returned var handle's {@linkplain VarHandle#varType() var type} is the
      * {@linkplain ValueLayout#carrier() carrier type} of this value layout, and the
