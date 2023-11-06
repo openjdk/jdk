@@ -493,7 +493,7 @@ protected:
   ~AnyObj();
 #endif // ASSERT
 
-  public:
+ public:
   // CHeap allocations
   void* operator new(size_t size, MEMFLAGS flags) throw();
   void* operator new [](size_t size, MEMFLAGS flags) throw() = delete;
