@@ -670,7 +670,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @CallerSensitive
     @Restricted
-    MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup);
+    MemorySegment reinterpret(long newSize,
+                              Arena arena,
+                              Consumer<MemorySegment> cleanup);
 
     /**
      * {@return {@code true}, if this segment is read-only}
@@ -1296,7 +1298,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     @ForceInline
     static void copy(MemorySegment srcSegment, long srcOffset,
-                     MemorySegment dstSegment, long dstOffset, long bytes) {
+                     MemorySegment dstSegment, long dstOffset,
+                     long bytes) {
         copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
     }
 
@@ -2077,9 +2080,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstIndex} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
-    static void copy(
-            MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
-            Object dstArray, int dstIndex, int elementCount) {
+    static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
+                     Object dstArray, int dstIndex,
+                     int elementCount) {
         Objects.requireNonNull(srcSegment);
         Objects.requireNonNull(dstArray);
         Objects.requireNonNull(srcLayout);
@@ -2117,9 +2120,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code dstOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
-    static void copy(
-            Object srcArray, int srcIndex,
-            MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset, int elementCount) {
+    static void copy(Object srcArray, int srcIndex,
+                     MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset,
+                     int elementCount) {
         Objects.requireNonNull(srcArray);
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstLayout);
