@@ -224,14 +224,22 @@ public final class SignaturesImpl {
         }
     }
 
-    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, Optional<RefTypeSig> boundType) implements Signature.TypeArg {
+    public static enum UnboundedTypeArgImpl implements TypeArg.Unbounded {
+        INSTANCE;
 
+        @Override
+        public String signatureString() {
+            return "*";
+        }
+    }
+
+    public static record TypeArgImpl(WildcardIndicator wildcardIndicator, RefTypeSig boundType) implements Signature.TypeArg.Bounded {
+        @Override
         public String signatureString() {
             return switch (wildcardIndicator) {
-                case DEFAULT -> boundType.get().signatureString();
-                case EXTENDS -> "+" + boundType.get().signatureString();
-                case SUPER -> "-" + boundType.get().signatureString();
-                case UNBOUNDED -> "*";
+                case DEFAULT -> boundType.signatureString();
+                case EXTENDS -> "+" + boundType.signatureString();
+                case SUPER -> "-" + boundType.signatureString();
             };
         }
     }

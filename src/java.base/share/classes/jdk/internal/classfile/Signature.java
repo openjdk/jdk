@@ -168,74 +168,81 @@ public sealed interface Signature {
     /**
      * Models the type argument.
      */
-    public sealed interface TypeArg
-            permits SignaturesImpl.TypeArgImpl {
+    public sealed interface TypeArg {
+
+        /** {@return the raw signature string} */
+        String signatureString();
 
         /**
-         * Indicator for whether a wildcard has default bound, no bound,
-         * an upper bound, or a lower bound
+         * Models an unbounded type argument {@code *}.
          */
-        public enum WildcardIndicator {
-
-            /**
-             * default bound wildcard (empty)
-             */
-            DEFAULT,
-
-            /**
-             * unbounded indicator {@code *}
-             */
-            UNBOUNDED,
-
-            /**
-             * upper-bounded indicator {@code +}
-             */
-            EXTENDS,
-
-            /**
-             * lower-bounded indicator {@code -}
-             */
-            SUPER;
+        public sealed interface Unbounded extends TypeArg permits SignaturesImpl.UnboundedTypeArgImpl {
         }
 
-        /** {@return the wildcard indicator} */
-        WildcardIndicator wildcardIndicator();
+        /**
+         * Models a type argument with an explicit bound type.
+         */
+        public sealed interface Bounded extends TypeArg permits SignaturesImpl.TypeArgImpl {
+            /**
+             * Models a type argument's wildcard indicator.
+             */
+            public enum WildcardIndicator {
 
-        /** {@return the signature of the type bound, if any} */
-        Optional<RefTypeSig> boundType();
+                /**
+                 * no wildcard (empty), an exact type
+                 */
+                DEFAULT,
+
+                /**
+                 * upper-bounded indicator {@code +}
+                 */
+                EXTENDS,
+
+                /**
+                 * lower-bounded indicator {@code -}
+                 */
+                SUPER;
+            }
+
+            /** {@return the kind of wildcard} */
+            WildcardIndicator wildcardIndicator();
+
+            /** {@return the signature of the type bound} */
+            RefTypeSig boundType();
+        }
 
         /**
          * {@return a bounded type arg}
          * @param boundType the bound
          */
-        public static TypeArg of(RefTypeSig boundType) {
+        public static TypeArg.Bounded of(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.DEFAULT, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.DEFAULT, boundType);
         }
 
         /**
          * {@return an unbounded type arg}
          */
-        public static TypeArg unbounded() {
-            return of(WildcardIndicator.UNBOUNDED, Optional.empty());
+        public static TypeArg.Unbounded unbounded() {
+            return SignaturesImpl.UnboundedTypeArgImpl.INSTANCE;
         }
 
         /**
          * {@return an upper-bounded type arg}
          * @param boundType the upper bound
          */
-        public static TypeArg extendsOf(RefTypeSig boundType) {
+        public static TypeArg.Bounded extendsOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.EXTENDS, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.EXTENDS, boundType);
         }
 
         /**
          * {@return a lower-bounded type arg}
          * @param boundType the lower bound
          */
-        public static TypeArg superOf(RefTypeSig boundType) {
+        public static TypeArg.Bounded superOf(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return of(WildcardIndicator.SUPER, Optional.of(boundType));
+            return bounded(Bounded.WildcardIndicator.SUPER, boundType);
         }
 
         /**
@@ -243,7 +250,7 @@ public sealed interface Signature {
          * @param wildcard the wild card
          * @param boundType optional bound type
          */
-        public static TypeArg of(WildcardIndicator wildcard, Optional<RefTypeSig> boundType) {
+        public static TypeArg.Bounded bounded(Bounded.WildcardIndicator wildcard, RefTypeSig boundType) {
             return new SignaturesImpl.TypeArgImpl(wildcard, boundType);
         }
     }
