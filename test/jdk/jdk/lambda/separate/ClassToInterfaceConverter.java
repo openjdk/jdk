@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,64 @@
 
 package separate;
 
-import java.io.*;
-import java.util.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.instruction.InvokeInstruction;
+import static jdk.internal.classfile.Opcode.*;
 
 public class ClassToInterfaceConverter implements ClassFilePreprocessor {
 
-    private String whichClass;
+    private final String whichClass;
 
     public ClassToInterfaceConverter(String className) {
         this.whichClass = className;
     }
 
-    private boolean utf8Matches(ClassFile.CpEntry entry, String v) {
-        if (!(entry instanceof ClassFile.CpUtf8)) {
-            return false;
-        }
-        ClassFile.CpUtf8 utf8 = (ClassFile.CpUtf8)entry;
-        if (v.length() != utf8.bytes.length) {
-            return false;
-        }
-        for (int i = 0; i < v.length(); ++i) {
-            if (v.charAt(i) != utf8.bytes[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void convertToInterface(ClassFile cf) {
-        cf.access_flags = 0x0601; // ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC
-        ArrayList<ClassFile.Method> new_methods = new ArrayList<>();
-        // Find <init> method and delete it
-        for (int i = 0; i < cf.methods.size(); ++i) {
-            ClassFile.Method method = cf.methods.get(i);
-            ClassFile.CpEntry name = cf.constant_pool.get(method.name_index);
-            if (!utf8Matches(name, "<init>")) {
-                new_methods.add(method);
-            }
-        }
-        cf.methods = new_methods;
-        //  Convert method tag. Find Methodref, which is not "<init>" and only invoked by other methods
-        //  in the interface, convert it to InterfaceMethodref
-        ArrayList<ClassFile.CpEntry> cpool = new ArrayList<>();
-        for (int i = 0; i < cf.constant_pool.size(); i++) {
-            ClassFile.CpEntry ce = cf.constant_pool.get(i);
-            if (ce instanceof ClassFile.CpMethodRef) {
-                ClassFile.CpMethodRef me = (ClassFile.CpMethodRef)ce;
-                ClassFile.CpNameAndType nameType = (ClassFile.CpNameAndType)cf.constant_pool.get(me.name_and_type_index);
-                ClassFile.CpEntry name = cf.constant_pool.get(nameType.name_index);
-                if (!utf8Matches(name, "<init>") && cf.this_class == me.class_index) {
-                    ClassFile.CpInterfaceMethodRef newEntry = new ClassFile.CpInterfaceMethodRef();
-                    newEntry.class_index = me.class_index;
-                    newEntry.name_and_type_index = me.name_and_type_index;
-                    ce = newEntry;
-                }
-            }
-            cpool.add(ce);
-        }
-        cf.constant_pool = cpool;
+    private byte[] convertToInterface(ClassModel classModel) {
+        return Classfile.of().build(classModel.thisClass().asSymbol(),
+                classBuilder ->  {
+                    for (ClassElement ce : classModel) {
+                        if (ce instanceof AccessFlags accessFlags) {
+                            classBuilder.withFlags(0x0601); // ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC);
+                        } else if (ce instanceof MethodModel mm) {
+                            // Find <init> method and delete it
+                            if (mm.methodName().stringValue().equals("<init>")) {
+                                continue;
+                            }
+                            //  Convert method tag. Find Methodref, which is not "<init>" and only invoked
+                            //  by other methods in the interface, convert it to InterfaceMethodref and
+                            //  if opcode is invokevirtual, convert it to invokeinterface
+                            classBuilder.withMethod(mm.methodName().stringValue(),
+                                    mm.methodTypeSymbol(),
+                                    mm.flags().flagsMask(),
+                                    methodBuilder -> {
+                                        for (MethodElement me : mm) {
+                                            if (me instanceof CodeModel xm) {
+                                                methodBuilder.withCode(codeBuilder -> {
+                                                    for (CodeElement e : xm) {
+                                                        if (e instanceof InvokeInstruction i && i.owner() == classModel.thisClass()) {
+                                                            Opcode opcode = i.opcode() == INVOKEVIRTUAL ? INVOKEINTERFACE : i.opcode();
+                                                            codeBuilder.invokeInstruction(opcode, i.owner().asSymbol(),
+                                                                    i.name().stringValue(), i.typeSymbol(), true);
+                                                        } else {
+                                                            codeBuilder.with(e);
+                                                        }
+                                                    }});
+                                            } else {
+                                                methodBuilder.with(me);
+                                            }
+                                        }
+                                    });
+                        } else {
+                            classBuilder.with(ce);
+                        }
+                    }
+                });
     }
 
     public byte[] preprocess(String classname, byte[] bytes) {
-        ClassFile cf = new ClassFile(bytes);
-
-        ClassFile.CpEntry entry = cf.constant_pool.get(cf.this_class);
-        ClassFile.CpEntry name = cf.constant_pool.get(
-            ((ClassFile.CpClass)entry).name_index);
-        if (utf8Matches(name, whichClass)) {
-            convertToInterface(cf);
-            return cf.toByteArray();
+        ClassModel classModel = Classfile.of().parse(bytes);
+        if (classModel.thisClass().asInternalName().equals(whichClass)) {
+            return convertToInterface(classModel);
         } else {
             return bytes; // unmodified
         }
