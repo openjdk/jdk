@@ -3898,6 +3898,7 @@ void PhaseIdealLoop::build_and_optimize() {
   NOT_PRODUCT( C->verify_graph_edges(); )
   worklist.push(C->top());
   build_loop_late( visited, worklist, nstack );
+  if (C->failing()) { return; }
 
   if (_verify_only) {
     C->restore_major_progress(old_progress);
@@ -5218,6 +5219,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
       } else {
         // All of n's children have been processed, complete post-processing.
         build_loop_late_post(n);
+        if (C->failing()) { return; }
         if (nstack.is_empty()) {
           // Finished all nodes on stack.
           // Process next node on the worklist.
@@ -5363,13 +5365,15 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   Node *legal = LCA;            // Walk 'legal' up the IDOM chain
   Node *least = legal;          // Best legal position so far
   while( early != legal ) {     // While not at earliest legal
-#ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
+#ifdef ASSERT
       // Bad graph. Print idom path and fail.
       dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
-    }
 #endif
+      C->record_method_not_compilable("Bad graph detected in build_loop_late");
+      return;
+    }
     // Find least loop nesting depth
     legal = idom(legal);        // Bump up the IDOM tree
     // Check for lower nesting depth
