@@ -154,10 +154,15 @@ public class SwitchBootstrapsTest {
             EnumDesc.of(eDesc, "A"),
             EnumDesc.of(eDesc, "B"),
             EnumDesc.of(eDesc, "C"),
+            "a",
+            String.class
         };
         testType(E.A, 0, 0, typeParams);
         testType(E.B, 0, 1, typeParams);
         testType(E.C, 0, 2, typeParams);
+        testType("a", 0, 3, typeParams);
+        testType("x", 0, 4, typeParams);
+        testType('a', 0, 5, typeParams);
         testEnum(E.class, E.A, 0, 0, "A", "B", "C");
         testEnum(E.class, E.B, 0, 1, "A", "B", "C");
         testEnum(E.class, E.C, 0, 2, "A", "B", "C");

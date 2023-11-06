@@ -42,10 +42,11 @@ public class SwitchEnumConstants {
         doRun(this::enumSwitch);
     }
 
-    void doRun(ToIntFunction<E> c) throws Exception {
+    void doRun(ToIntFunction<Object> c) throws Exception {
         assertEquals(0, c.applyAsInt(E.A));
         assertEquals(1, c.applyAsInt(E.B));
         assertEquals(2, c.applyAsInt(E.C));
+        assertEquals(3, c.applyAsInt(""));
     }
 
     int typeSwitch(Object o) {
@@ -53,11 +54,15 @@ public class SwitchEnumConstants {
             case E.A -> 0;
             case E.B -> 1;
             case E.C -> 2;
+            case String s -> 3;
             default -> throw new IllegalStateException();
         };
     }
 
-    int enumSwitch(E e) {
+    int enumSwitch(Object o) {
+        if (!(o instanceof E e)) {
+            return 3;
+        }
         return switch (e) {
             case A -> 0;
             case B -> 1;
