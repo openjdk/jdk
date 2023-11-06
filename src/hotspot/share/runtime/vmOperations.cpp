@@ -395,7 +395,8 @@ void VM_ThreadDump::doit() {
     // The limit has been arbitrarily chosen to be were the iteration started
     // to take more then a few milliseconds.
     size_t monitors_count = ObjectSynchronizer::in_use_list_count();
-    if (monitors_count > 100000) {
+    const int DeflateRequestLimit = 100000;
+    if (monitors_count > DeflateRequestLimit) {
       ObjectSynchronizer::request_deflate_idle_monitors();
     }
   }
