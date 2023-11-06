@@ -87,25 +87,6 @@ bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
 
-#if INCLUDE_SERIALGC
-void TenuredSpace::clear(bool mangle_space) {
-  ContiguousSpace::clear(mangle_space);
-  _offsets.initialize_threshold();
-}
-
-void TenuredSpace::set_bottom(HeapWord* new_bottom) {
-  Space::set_bottom(new_bottom);
-  _offsets.set_bottom(new_bottom);
-}
-
-void TenuredSpace::set_end(HeapWord* new_end) {
-  // Space should not advertise an increase in size
-  // until after the underlying offset table has been enlarged.
-  _offsets.resize(pointer_delta(new_end, bottom()));
-  Space::set_end(new_end);
-}
-#endif // INCLUDE_SERIALGC
-
 #ifndef PRODUCT
 
 void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
@@ -152,7 +133,6 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
     }
     compact_top = cp->space->bottom();
     cp->space->set_compaction_top(compact_top);
-    cp->space->initialize_threshold();
     compaction_max_size = pointer_delta(cp->space->end(), compact_top);
   }
 
@@ -172,7 +152,7 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
   // We need to update the offset table so that the beginnings of objects can be
   // found during scavenge.  Note that we are updating the offset table based on
   // where the object will be once the compaction phase finishes.
-  cp->space->alloc_block(compact_top - size, compact_top);
+  cp->space->update_for_block(compact_top - size, compact_top);
   return compact_top;
 }
 
@@ -190,7 +170,6 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
     assert(cp->gen != nullptr, "need a generation");
     assert(cp->gen->first_compaction_space() == this, "just checking");
     cp->space = cp->gen->first_compaction_space();
-    cp->space->initialize_threshold();
     cp->space->set_compaction_top(cp->space->bottom());
   }
 
@@ -384,9 +363,8 @@ void ContiguousSpace::print_on(outputStream* st) const {
 #if INCLUDE_SERIALGC
 void TenuredSpace::print_on(outputStream* st) const {
   print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", "
-                PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+              p2i(bottom()), p2i(top()), p2i(end()));
 }
 #endif
 
@@ -510,20 +488,30 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 }
 
 #if INCLUDE_SERIALGC
-void TenuredSpace::initialize_threshold() {
-  _offsets.initialize_threshold();
+void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
+  _offsets.update_for_block(start, end);
 }
 
-void TenuredSpace::alloc_block(HeapWord* start, HeapWord* end) {
-  _offsets.alloc_block(start, end);
+HeapWord* TenuredSpace::block_start_const(const void* addr) const {
+  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
-TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::safepoint, "TenuredSpaceParAlloc_lock", true)
+  _offsets(sharedOffsetArray)
 {
-  _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
 
@@ -535,10 +523,6 @@ void TenuredSpace::verify() const {
   HeapWord* prev_p = nullptr;
   int objs = 0;
   int blocks = 0;
-
-  if (VerifyObjectStartArray) {
-    _offsets.verify();
-  }
 
   while (p < top()) {
     size_t size = cast_to_oop(p)->size();

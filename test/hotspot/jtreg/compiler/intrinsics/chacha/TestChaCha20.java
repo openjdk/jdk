@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class TestChaCha20 {
             for (String className : classNames) {
                 // Start a new job
                 {
-                    ProcessBuilder pb = ProcessTools.createTestJvm(
+                    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                             mix(c, "-Xmx256m", className));
                     Process p = pb.start();
                     OutputAnalyzer oa = new OutputAnalyzer(p);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.net;
 
+import sun.net.util.IPAddressUtil;
+
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -32,13 +34,14 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.Enumeration;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class represents an Internet Protocol version 6 (IPv6) address.
  * Defined by <a href="http://www.ietf.org/rfc/rfc2373.txt">
  * <i>RFC&nbsp;2373: IP Version 6 Addressing Architecture</i></a>.
  *
- * <h2> <a id="format">Textual representation of IP addresses</a> </h2>
+ * <h2> <a id="format">Textual representation of IPv6 addresses</a> </h2>
  *
  * Textual representation of IPv6 address used as input to methods
  * takes one of the following forms:
@@ -116,7 +119,7 @@ import java.util.Arrays;
  * form because it is unambiguous when used in combination with other
  * textual data.
  *
- * <h3> Special IPv6 address </h3>
+ * <h3><a id="special-ipv6-address">Special IPv6 address</a></h3>
  *
  * <blockquote>
  * <dl>
@@ -139,7 +142,8 @@ import java.util.Arrays;
  *
  * <p>The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic
- * addressing architecture is described in [draft-ietf-ipngwg-scoping-arch-04.txt].
+ * addressing architecture is described in <a href="https://www.rfc-editor.org/info/rfc4007">
+ * <i>RFC&nbsp;4007: IPv6 Scoped Address Architecture</i></a>.
  *
  * <p> Because link-local and site-local addresses are non-global, it is possible
  * that different hosts may have the same destination address and may be
@@ -170,8 +174,24 @@ import java.util.Arrays;
  * Inet6Address instances returned from the NetworkInterface class. This can be
  * used to find out the current scope ids configured on the system.
  *
+ * <h3><a id="input">Textual representation of IPv6 addresses as method inputs</a></h3>
+ *
+ * <p> Methods of {@code InetAddress} and {@code Inet6Address} that accept a
+ * textual representation of an IPv6 address allow for that representation
+ * to be enclosed in square brackets. For example,
+ * {@snippet :
+ *  // The full IPv6 form
+ *  InetAddress.getByName("1080:0:0:0:8:800:200C:417A");   // ==> /1080:0:0:0:8:800:200c:417a
+ *  InetAddress.getByName("[1080:0:0:0:8:800:200C:417A]"); // ==> /1080:0:0:0:8:800:200c:417a
+ *
+ *  // IPv6 scoped address with scope-id as string
+ *  Inet6Address.ofLiteral("fe80::1%en0");   // ==> /fe80:0:0:0:0:0:0:1%en0
+ *  Inet6Address.ofLiteral("[fe80::1%en0]"); // ==> /fe80:0:0:0:0:0:0:1%en0
+ * }
  * @spec https://www.rfc-editor.org/info/rfc2373
  *      RFC 2373: IP Version 6 Addressing Architecture
+ * @spec https://www.rfc-editor.org/info/rfc4007
+ *      RFC 4007: IPv6 Scoped Address Architecture
  * @since 1.4
  */
 
@@ -475,6 +495,128 @@ class Inet6Address extends InetAddress {
             }
         }
         throw new UnknownHostException("addr is of illegal length");
+    }
+
+    /**
+     * Creates an {@code InetAddress} based on the provided {@linkplain
+     * Inet6Address##format textual representation} of an IPv6 address.
+     * <p> If the provided address literal cannot represent {@linkplain Inet6Address##format
+     * a valid IPv6 address} an {@code IllegalArgumentException} is thrown.
+     * An {@code IllegalArgumentException} is also thrown if an IPv6 scoped address literal
+     * contains a scope-id that doesn't map to any network interface on the system, or
+     * if a scope-id is present in an IPv4-mapped IPv6 address literal.
+     * <p> This method doesn't block, i.e. no reverse lookup is performed.
+     * <p> Note that IPv6 address literal forms are also supported when enclosed in
+     * square brackets.
+     * Note also that if the supplied literal represents an {@linkplain
+     * Inet6Address##special-ipv6-address IPv4-mapped IPv6 address} an
+     * instance of {@code Inet4Address} is returned.
+     *
+     * @param ipv6AddressLiteral the textual representation of an IPv6 address.
+     * @return an {@link InetAddress} object with no hostname set, and constructed
+     *         from the provided IPv6 address literal.
+     * @throws IllegalArgumentException if the {@code ipv6AddressLiteral} cannot be
+     *         parsed as an IPv6 address literal.
+     * @throws NullPointerException if the {@code ipv6AddressLiteral} is {@code null}.
+     */
+    public static InetAddress ofLiteral(String ipv6AddressLiteral) {
+        Objects.requireNonNull(ipv6AddressLiteral);
+        try {
+            InetAddress parsedAddress = parseAddressString(ipv6AddressLiteral, true);
+            if (parsedAddress != null) {
+                return parsedAddress;
+            }
+        } catch (UnknownHostException uhe) {
+            // Error constructing Inet6Address from address literal containing
+            // a network interface name
+        }
+        throw IPAddressUtil.invalidIpAddressLiteral(ipv6AddressLiteral);
+    }
+
+    /**
+     * Method tries to parse supplied IP address literal as IPv6, IPv4-compatible IPv6 or
+     * IPv4-mapped IPv6 address.
+     * If address part of the literal string doesn't contain address in valid IPv6 form
+     * - {@code null} is returned.
+     * {@code UnknownHostException} is thrown if {@link InetAddress} cannot be constructed
+     * from parsed string due to:
+     * - incorrect zone-id specified in IPv6-scoped address literal that references
+     * non-existing interface name.
+     * - unexpected zone-id in IPv4-mapped address literal.
+     *
+     * @param addressLiteral literal IP address
+     * @param removeSqBrackets if {@code true} remove outer square brackets
+     * @return {@link Inet6Address} or {@link Inet4Address} object constructed from
+     * literal IP address string.
+     * @throws UnknownHostException if literal IP address string cannot be parsed
+     * as IPv6, IPv4-mapped IPv6 or IPv4-compatible IPv6 address literals.
+     */
+    static InetAddress parseAddressString(String addressLiteral, boolean removeSqBrackets)
+            throws UnknownHostException {
+        // Remove trailing and leading square brackets if requested
+        if (removeSqBrackets && addressLiteral.charAt(0) == '[' &&
+                addressLiteral.length() > 2 &&
+                addressLiteral.charAt(addressLiteral.length() - 1) == ']') {
+            addressLiteral = addressLiteral.substring(1, addressLiteral.length() - 1);
+        }
+        int pos, numericZone = -1;
+        String ifname = null;
+        if ((pos = addressLiteral.indexOf('%')) != -1) {
+            numericZone = checkNumericZone(addressLiteral);
+            if (numericZone == -1) {
+                /* remainder of string must be an ifname */
+                ifname = addressLiteral.substring(pos + 1);
+            }
+        }
+        byte[] addrBytes = IPAddressUtil.textToNumericFormatV6(addressLiteral);
+        if (addrBytes == null) {
+            return null;
+        }
+        // IPv4-mapped IPv6 address
+        if (addrBytes.length == Inet4Address.INADDRSZ) {
+            if (numericZone != -1 || ifname != null) {
+                // IPv4-mapped address must not contain zone-id
+                throw new UnknownHostException(addressLiteral + ": invalid IPv4-mapped address");
+            }
+            return new Inet4Address(null, addrBytes);
+        }
+        if (ifname != null) {
+            return new Inet6Address(null, addrBytes, ifname);
+        } else {
+            return new Inet6Address(null, addrBytes, numericZone);
+        }
+    }
+
+    /**
+     * Check if the literal address string has %nn appended
+     * returns -1 if not, or the numeric value otherwise.
+     * <p>
+     * %nn may also be a string that represents the displayName of
+     * a currently available NetworkInterface.
+     */
+    private static int checkNumericZone(String s) {
+        int percent = s.indexOf('%');
+        int slen = s.length();
+        int digit, zone = 0;
+        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
+        if (percent == -1) {
+            return -1;
+        }
+        for (int i = percent + 1; i < slen; i++) {
+            char c = s.charAt(i);
+            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
+                return -1;
+            }
+            if (zone > multmax) {
+                return -1;
+            }
+            zone = (zone * 10) + digit;
+            if (zone < 0) {
+                return -1;
+            }
+
+        }
+        return zone;
     }
 
     private void initstr(String hostName, byte[] addr, String ifname)

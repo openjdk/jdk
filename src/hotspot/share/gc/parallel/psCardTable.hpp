@@ -63,13 +63,6 @@ class PSCardTable: public CardTable {
                      HeapWord* const start,
                      HeapWord* const end);
 
-  void verify_all_young_refs_precise_helper(MemRegion mr);
-
-  enum ExtendedCardValue {
-    youngergen_card   = CT_MR_BS_last_reserved + 1,
-    verify_card       = CT_MR_BS_last_reserved + 5
-  };
-
   void scan_obj_with_limit(PSPromotionManager* pm,
                            oop obj,
                            HeapWord* start,
@@ -78,9 +71,6 @@ class PSCardTable: public CardTable {
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap),
                                       _preprocessing_active_workers(0) {}
-
-  static CardValue youngergen_card_val() { return youngergen_card; }
-  static CardValue verify_card_val()     { return verify_card; }
 
   // Scavenge support
   void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
@@ -93,34 +83,18 @@ class PSCardTable: public CardTable {
                                   uint n_stripes);
 
   bool addr_is_marked_imprecise(void *addr);
-  bool addr_is_marked_precise(void *addr);
-
-  void set_card_newgen(void* addr)   { CardValue* p = byte_for(addr); *p = verify_card; }
-
-  // Testers for entries
-  static bool card_is_dirty(int value)      { return value == dirty_card; }
-  static bool card_is_newgen(int value)     { return value == youngergen_card; }
-  static bool card_is_clean(int value)      { return value == clean_card; }
-  static bool card_is_verify(int value)     { return value == verify_card; }
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
-    *byte = youngergen_card;
+    *byte = dirty_card_val();
   }
 
   // ReduceInitialCardMarks support
   bool is_in_young(const void* p) const override;
 
-#ifdef ASSERT
-  bool is_valid_card_address(CardValue* addr) {
-    return (addr >= _byte_map) && (addr < _byte_map + _byte_map_size);
-  }
-#endif // ASSERT
-
   // Verification
   void verify_all_young_refs_imprecise();
-  void verify_all_young_refs_precise();
 };
 
 #endif // SHARE_GC_PARALLEL_PSCARDTABLE_HPP
