@@ -49,24 +49,24 @@
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
   flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
-  flags(BEFORE_UNROLL_LOOP,             "Before loop unrolling") \
-  flags(UNROLL_LOOP,                    "After loop unrolling") \
+  flags(BEFORE_LOOP_UNROLLING,          "Before loop unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After loop unrolling") \
   flags(BEFORE_SPLIT_IF,                "Before split if") \
-  flags(SPLIT_IF,                       "After split if") \
+  flags(AFTER_SPLIT_IF,                 "After split if") \
   flags(BEFORE_LOOP_PREDICATION,        "Before loop predication") \
-  flags(LOOP_PREDICATION,               "After loop predication") \
+  flags(AFTER_LOOP_PREDICATION,         "After loop predication") \
   flags(BEFORE_PARTIAL_PEEL,            "Before partial peeling") \
-  flags(PARTIAL_PEEL,                   "After partial peeling") \
+  flags(AFTER_PARTIAL_PEEL,             "After partial peeling") \
   flags(BEFORE_LOOP_PEEL,               "Before loop peeling") \
-  flags(LOOP_PEEL,                      "After loop peeling") \
+  flags(AFTER_LOOP_PEEL,                "After loop peeling") \
   flags(BEFORE_LOOP_UNSWITCH,           "Before loop unswitching") \
-  flags(LOOP_UNSWITCH,                  "After loop unswitching") \
+  flags(AFTER_LOOP_UNSWITCH,            "After loop unswitching") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before range check elimination") \
-  flags(RANGE_CHECK_ELIMINATION,        "After range check elimination") \
+  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After range check elimination") \
   flags(BEFORE_PRE_POST_LOOPS,          "Before pre/post loops") \
-  flags(PRE_POST_LOOPS,                 "After pre/post loops") \
+  flags(AFTER_PRE_POST_LOOPS,           "After pre/post loops") \
   flags(BEFORE_SUPERWORD,               "Before superword")\
-  flags(SUPERWORD,                      "After superword")\
+  flags(AFTER_SUPERWORD,                "After superword")\
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \

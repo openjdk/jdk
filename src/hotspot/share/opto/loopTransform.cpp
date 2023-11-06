@@ -704,7 +704,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 #endif
   LoopNode* head = loop->_head->as_Loop();
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_LOOP_PEEL, 4, head);)
+  C->print_method(PHASE_BEFORE_LOOP_PEEL, 4, head);
 
   bool counted_loop = head->is_CountedLoop();
   if (counted_loop) {
@@ -799,7 +799,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   loop->record_for_igvn();
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_LOOP_PEEL, 4, head);)
+  C->print_method(PHASE_AFTER_LOOP_PEEL, 4, head);
 }
 
 //------------------------------policy_maximally_unroll------------------------
@@ -1634,7 +1634,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopEndNode *main_end = main_head->loopexit();
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_PRE_POST_LOOPS, 4, main_head);)
+  C->print_method(PHASE_BEFORE_PRE_POST_LOOPS, 4, main_head);
 
   Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
@@ -1833,7 +1833,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_PRE_POST_LOOPS, 4, main_head);)
+  C->print_method(PHASE_AFTER_PRE_POST_LOOPS, 4, main_head);
 }
 
 //------------------------------insert_vector_post_loop------------------------
@@ -2137,7 +2137,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_UNROLL_LOOP, 4, loop_head);)
+  C->print_method(PHASE_BEFORE_LOOP_UNROLLING, 4, loop_head);
 
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
@@ -2387,7 +2387,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 #endif
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_UNROLL_LOOP, 4, loop_head);)
+  C->print_method(PHASE_AFTER_LOOP_UNROLLING, 4, loop_head);
 }
 
 //------------------------------do_maximally_unroll----------------------------
@@ -2869,7 +2869,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, cl);)
+  C->print_method(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, cl);
 
   // protect against stride not being a constant
   if (!cl->stride_is_con()) {
@@ -3168,7 +3168,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
 
-  NOT_PRODUCT(C->print_method_iter(PHASE_RANGE_CHECK_ELIMINATION, 4, cl);)
+  C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
 
   return;
 }

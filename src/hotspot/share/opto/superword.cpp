@@ -158,7 +158,7 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     cl->set_pre_loop_end(pre_end);
   }
 
-  NOT_PRODUCT(_phase->C->print_method_iter(PHASE_BEFORE_SUPERWORD, 4, cl);)
+  _phase->C->print_method(PHASE_BEFORE_SUPERWORD, 4, cl);
 
   init(); // initialize data structures
 
@@ -168,7 +168,7 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     success = SLP_extract();
   }
 
-  NOT_PRODUCT(_phase->C->print_method_iter(PHASE_SUPERWORD, 4, cl);)
+  _phase->C->print_method(PHASE_AFTER_SUPERWORD, 4, cl);
 
   return success;
 }
