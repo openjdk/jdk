@@ -559,6 +559,54 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
 
 #endif
 
+struct Elt {
+  static int copy_calls;
+  const char* str; int x;
+
+  Elt(const Elt& e)
+    : str(e.str), x(e.x) {
+    copy_calls++;
+  }
+  Elt(Elt&&) = default;
+  Elt& operator=(const Elt&) = default;
+  Elt& operator=(Elt&&) = default;
+  Elt() {
+  }
+  Elt(const char* str, int x)
+    : str(str),
+      x(x) {
+  }
+};
+int Elt::copy_calls = 0;
+
+TEST_VM_F(GrowableArrayTest, AtPutGrowOnlyCopiesLastElement) {
+  Elt::copy_calls = 0;
+  GrowableArray<Elt> arr;
+  arr.at_put_grow(16, Elt{"final_elt", 16}, "earlier_elt", 1);
+  for (int i = 0; i < 16; i++) {
+    ASSERT_STREQ(arr.at(i).str, "earlier_elt");
+    ASSERT_EQ(arr.at(i).x, 1);
+  }
+  ASSERT_STREQ(arr.at(16).str, "final_elt");
+  ASSERT_EQ(arr.at(16).x, 16);
+  // Last element is copied
+  ASSERT_EQ(Elt::copy_calls, 1);
+}
+
+TEST_VM_F(GrowableArrayTest, ShouldBeAbleToGrowByCopying) {
+  Elt::copy_calls = 0;
+  GrowableArray<Elt> arr{0};
+  arr.at_put_grow(16, Elt{"final_elt", 16}, Elt{"",0});
+  ASSERT_GE(Elt::copy_calls, 16);
+}
+
+TEST_VM_F(GrowableArrayTest, CanGrowWithoutCopying) {
+  Elt::copy_calls = 0;
+  GrowableArray<Elt> arr{0};
+  arr.at_grow(15, "hello", 5);
+  ASSERT_EQ(Elt::copy_calls, 0);
+}
+
 TEST(GrowableArrayCHeap, sanity) {
   // Stack/CHeap
   {
@@ -601,43 +649,3 @@ TEST(GrowableArrayCHeap, sanity) {
     delete a;
   }
 }
-
-struct Elt {
-  static int copy_calls;
-  const char* str; int x;
-
-  Elt(const Elt& e)
-    : str(e.str), x(e.x) {
-    copy_calls++;
-  }
-  Elt(Elt&&) = default;
-  Elt& operator=(const Elt&) = default;
-  Elt& operator=(Elt&&) = default;
-  Elt() {
-  }
-  Elt(const char* str, int x)
-    : str(str),
-      x(x) {
-  }
-};
-int Elt::copy_calls = 0;
-
-TEST(GrowableArrayCHeap, ShouldBeAbleToGrowWithoutCopying) {
-  Elt::copy_calls = 0;
-  GrowableArrayCHeap<Elt, mtTest> arr;
-  arr.at_put_grow(16, Elt{"final_elt", 16}, "earlier_elt", 1);
-  for (int i = 0; i < 16; i++) {
-    ASSERT_STREQ(arr.at(i).str, "earlier_elt");
-    ASSERT_EQ(arr.at(i).x, 1);
-  }
-  ASSERT_STREQ(arr.at(16).str, "final_elt");
-  ASSERT_EQ(arr.at(16).x, 16);
-  ASSERT_EQ(Elt::copy_calls, 0);
-}
-TEST(GrowableArrayCHeap, ShouldBeAbleToGrowByCopying) {
-  Elt::copy_calls = 0;
-  GrowableArrayCHeap<Elt, mtTest> arr{0};
-  arr.at_put_grow(16, Elt{"final_elt", 16}, Elt{"",0});
-  ASSERT_GE(Elt::copy_calls, 16);
-}
-
