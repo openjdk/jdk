@@ -25,6 +25,8 @@
 
 package sun.util.locale.provider;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /*
@@ -49,8 +51,12 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     protected Set<String> createLanguageTagSet(String category) {
         return switch (category) {
-            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData"
-                    -> super.createLanguageTagSet(category);
+            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData" -> {
+                // ensure to include en-US
+                var s = new HashSet<>(super.createLanguageTagSet(category));
+                s.add("en-US");
+                yield Collections.unmodifiableSet(s);
+            }
             case "FormatData" -> Set.of("ja", "und");
             default -> Set.of("und");
         };
