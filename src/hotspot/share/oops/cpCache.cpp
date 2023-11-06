@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -704,7 +705,7 @@ void ConstantPoolCache::save_for_archive(TRAPS) {
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
   // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
   // still pointing to the array allocated inside save_for_archive().
@@ -738,7 +739,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_reference_map(nullptr);
 #if INCLUDE_CDS
   if (_initial_entries != nullptr) {
-    Arguments::assert_is_dumping_archive();
+    assert(CDSConfig::is_dumping_archive(), "sanity");
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
     if (_resolved_indy_entries) {
       MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);

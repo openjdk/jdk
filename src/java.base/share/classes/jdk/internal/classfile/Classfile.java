@@ -241,17 +241,22 @@ public sealed interface Classfile
     }
 
     /**
-     * Option describing whether to process or discard unrecognized attributes.
-     * Default is {@code PASS_UNKNOWN_ATTRIBUTES} to process unrecognized
-     * attributes, and deliver as instances of {@link UnknownAttribute}.
+     * Option describing whether to process or discard unrecognized or problematic
+     * original attributes when a class, record component, field, method or code is
+     * transformed in its exploded form.
+     * Default is {@code PASS_ALL_ATTRIBUTES} to process all original attributes.
+     * @see AttributeMapper.AttributeStability
      */
-    enum UnknownAttributesOption implements Option {
+    enum AttributesProcessingOption implements Option {
 
-        /** Process unknown attributes */
-        PASS_UNKNOWN_ATTRIBUTES,
+        /** Process all original attributes during transformation */
+        PASS_ALL_ATTRIBUTES,
 
-        /** Drop unknown attributes */
-        DROP_UNKNOWN_ATTRIBUTES
+        /** Drop unknown attributes during transformation */
+        DROP_UNKNOWN_ATTRIBUTES,
+
+        /** Drop unknown and unstable original attributes during transformation */
+        DROP_UNSTABLE_ATRIBUTES;
     }
 
     /**

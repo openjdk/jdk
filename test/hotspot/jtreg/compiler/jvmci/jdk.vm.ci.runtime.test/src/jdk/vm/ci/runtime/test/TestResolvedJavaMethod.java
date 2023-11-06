@@ -35,6 +35,10 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm
@@ -50,6 +54,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.DataInputStream;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -61,18 +66,35 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.attribute.CodeAttribute;
+
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -82,6 +104,7 @@ import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotati
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation2;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation3;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -565,6 +588,152 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         // Ensure NumbersDE is initialized after Annotation2 is requested
         Assert.assertNotNull(m.getAnnotationData(a2));
         Assert.assertTrue(numbersDEType.isInitialized());
+    }
+
+    private static ClassModel readClassfile(Class<?> c) throws Exception {
+        String name = c.getName();
+        final int lastDot = name.lastIndexOf('.');
+        if (lastDot != -1) {
+            name = name.substring(lastDot + 1);
+        }
+        URI uri = c.getResource(name + ".class").toURI();
+        if (uri.getScheme().equals("jar")) {
+            final String[] parts = uri.toString().split("!");
+            if (parts.length == 2) {
+                try (FileSystem fs = FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>())) {
+                    return Classfile.of().parse(fs.getPath(parts[1]));
+                }
+            }
+        }
+        return Classfile.of().parse(Paths.get(uri));
+    }
+
+    public static void methodWithManyArgs(
+        Object   o0, int   i1, int  i2,  int   i3, int   i4, int   i5, int   i6, int  i7,
+           int   i8, int   i9, int  i10, int  i11, int  i12, int  i13, int  i14, int  i15,
+           int  i16, int  i17, int  i18, int  i19, int  i20, int  i21, int  i22, int  i23,
+           int  i24, int  i25, int  i26, int  i27, int  i28, int  i29, int  i30, int  i31,
+           int  i32, int  i33, int  i34, int  i35, int  i36, int  i37, int  i38, int  i39,
+           int  i40, int  i41, int  i42, int  i43, int  i44, int  i45, int  i46, int  i47,
+           int  i48, int  i49, int  i50, int  i51, int  i52, int  i53, int  i54, int  i55,
+           int  i56, int  i57, int  i58, int  i59, int  i60, int  i61, int  i62, int  i63,
+        Object  o64, int  i65, int  i66, int  i67, int  i68, int  i69, int  i70, int  i71,
+           int  i72, int  i73, int  i74, int  i75, int  i76, int  i77, int  i78, int  i79,
+           int  i80, int  i81, int  i82, int  i83, int  i84, int  i85, int  i86, int  i87,
+           int  i88, int  i89, int  i90, int  i91, int  i92, int  i93, int  i94, int  i95,
+           int  i96, int  i97, int  i98, int  i99, int i100, int i101, int i102, int i103,
+           int i104, int i105, int i106, int i107, int i108, int i109, int i110, int i111,
+           int i112, int i113, int i114, int i115, int i116, int i117, int i118, int i119,
+           int i120, int i121, int i122, int i123, int i124, int i125, int i126, int i127,
+        Object o128)
+    {
+        o0.hashCode();
+        o64.hashCode();
+        if (o128 != null) {
+            Object t1 = "tmp val";
+            t1.hashCode();
+        } else {
+            int t1 = 42 + i1;
+            String.valueOf(t1);
+        }
+        o128.hashCode();
+    }
+
+    private static Map<String, ResolvedJavaMethod> buildMethodMap(ResolvedJavaType type) {
+        Map<String, ResolvedJavaMethod> methodMap = new HashMap<>();
+        for (ResolvedJavaMethod m : type.getDeclaredMethods()) {
+            if (m.hasBytecodes()) {
+                String key = m.getName() + ":" + m.getSignature().toMethodDescriptor();
+                methodMap.put(key, m);
+            }
+        }
+        for (ResolvedJavaMethod m : type.getDeclaredConstructors()) {
+            if (m.hasBytecodes()) {
+                String key = "<init>:" + m.getSignature().toMethodDescriptor();
+                methodMap.put(key, m);
+            }
+        }
+        ResolvedJavaMethod clinit = type.getClassInitializer();
+        if (clinit != null) {
+            String key = "<clinit>:()V";
+            methodMap.put(key, clinit);
+        }
+        return methodMap;
+    }
+
+    @Test
+    public void getOopMapAtTest() throws Exception {
+        Collection<Class<?>> allClasses = new ArrayList<>(classes);
+
+        // Add this class so that methodWithManyArgs is processed
+        allClasses.add(getClass());
+
+        boolean[] processedMethodWithManyArgs = {false};
+
+        for (Class<?> c : allClasses) {
+            if (c.isArray() || c.isPrimitive() || c.isHidden()) {
+                continue;
+            }
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Map<String, ResolvedJavaMethod> methodMap = buildMethodMap(type);
+            ClassModel cf = readClassfile(c);
+            for (MethodModel cm : cf.methods()) {
+                cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
+                    String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
+                    HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) Objects.requireNonNull(methodMap.get(key));
+                    boolean isMethodWithManyArgs = c == getClass() && m.getName().equals("methodWithManyArgs");
+                    if (isMethodWithManyArgs) {
+                        processedMethodWithManyArgs[0] = true;
+                    }
+                    int maxSlots = m.getMaxLocals() + m.getMaxStackSize();
+
+                    int bci = 0;
+                    Map<String, int[]> expectOopMaps = !isMethodWithManyArgs ? null : Map.of(
+                        "{0, 64, 128}",      new int[] {0},
+                        "{0, 64, 128, 130}", new int[] {0},
+                        "{0, 64, 128, 129}", new int[] {0});
+                    for (CodeElement i : codeAttr.elementList()) {
+                        if (i instanceof Instruction ins) {
+                            BitSet oopMap = m.getOopMapAt(bci);
+                            if (isMethodWithManyArgs) {
+                                System.out.printf("methodWithManyArgs@%d [%d]: %s%n", bci, maxSlots, oopMap);
+                                System.out.printf("methodWithManyArgs@%d [%d]: %s%n", bci, maxSlots, ins);
+
+                                // Assumes stability of javac output
+                                String where = "methodWithManyArgs@" + bci;
+                                String oopMapString = String.valueOf(oopMap);
+                                int[] count = expectOopMaps.get(oopMapString);
+                                if (count == null) {
+                                    throw new AssertionError(where + ": unexpected oop map: " + oopMapString);
+                                }
+                                count[0]++;
+                            }
+
+                            // Requesting an oop map at an invalid BCI must throw an exception
+                            if (ins.sizeInBytes() > 1) {
+                                try {
+                                    oopMap = m.getOopMapAt(bci + 1);
+                                    throw new AssertionError("expected exception for illegal bci %d in %s: %s".formatted(bci + 1, m.format("%H.%n(%p)"), oopMap));
+                                } catch(IllegalArgumentException e) {
+                                    // expected
+                                }
+                            }
+                            bci += ins.sizeInBytes();
+                        }
+                    }
+                    if (isMethodWithManyArgs) {
+                        for (var e : expectOopMaps.entrySet()) {
+                            if (e.getValue()[0] == 0) {
+                                throw new AssertionError(m.format("%H.%n(%p)") + "did not find expected oop map: " + e.getKey());
+                            }
+                            System.out.printf("methodWithManyArgs: %s = %d%n", e.getKey(), e.getValue()[0]);
+                        }
+                    }
+                });
+            }
+        }
+
+        Assert.assertTrue(processedMethodWithManyArgs[0]);
     }
 
     private Method findTestMethod(Method apiMethod) {

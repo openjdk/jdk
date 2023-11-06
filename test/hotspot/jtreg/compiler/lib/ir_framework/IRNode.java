@@ -432,9 +432,19 @@ public class IRNode {
         beforeMatchingNameRegex(CMP_UL3, "CmpUL3");
     }
 
+    public static final String CMP_P = PREFIX + "CMP_P" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_P, "CmpP");
+    }
+
     public static final String COMPRESS_BITS = PREFIX + "COMPRESS_BITS" + POSTFIX;
     static {
         beforeMatchingNameRegex(COMPRESS_BITS, "CompressBits");
+    }
+
+    public static final String CONV = PREFIX + "CONV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV, "Conv");
     }
 
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
@@ -622,6 +632,16 @@ public class IRNode {
     public static final String LOAD_KLASS = PREFIX + "LOAD_KLASS" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_KLASS, "LoadKlass");
+    }
+
+    public static final String LOAD_NKLASS = PREFIX + "LOAD_NKLASS" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_NKLASS, "LoadNKlass");
+    }
+
+    public static final String LOAD_KLASS_OR_NKLASS = PREFIX + "LOAD_KLASS_OR_NKLASS" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_KLASS_OR_NKLASS, "LoadN?Klass");
     }
 
     public static final String LOAD_L = PREFIX + "LOAD_L" + POSTFIX;
@@ -1062,6 +1082,11 @@ public class IRNode {
     static {
         String regex = START + "OuterStripMinedLoop\\b" + MID + END;
         fromAfterCountedLoops(OUTER_STRIP_MINED_LOOP, regex);
+    }
+
+    public static final String PARTIAL_SUBTYPE_CHECK = PREFIX + "PARTIAL_SUBTYPE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(PARTIAL_SUBTYPE_CHECK, "PartialSubtypeCheck");
     }
 
     public static final String PHI = PREFIX + "PHI" + POSTFIX;
@@ -2133,6 +2158,16 @@ public class IRNode {
     public static final String X86_LOCK_XADDL = PREFIX + "X86_LOCK_XADDL" + POSTFIX;
     static {
         machOnlyNameRegex(X86_LOCK_XADDL, "xaddL");
+    }
+
+    public static final String X86_TESTI_REG = PREFIX + "X86_TESTI_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_TESTI_REG, "testI_reg");
+    }
+
+    public static final String X86_TESTL_REG = PREFIX + "X86_TESTL_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
     }
 
     /*

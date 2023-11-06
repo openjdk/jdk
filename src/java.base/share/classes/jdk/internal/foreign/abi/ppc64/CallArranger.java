@@ -35,7 +35,9 @@ import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.ppc64.ABIv2CallArranger;
+import jdk.internal.foreign.abi.ppc64.aix.AixCallArranger;
+import jdk.internal.foreign.abi.ppc64.linux.ABIv1CallArranger;
+import jdk.internal.foreign.abi.ppc64.linux.ABIv2CallArranger;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
@@ -62,7 +64,8 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
  * public constants CallArranger.ABIv1/2.
  */
 public abstract class CallArranger {
-    final boolean useABIv2 = (this instanceof ABIv2CallArranger);
+    final boolean useABIv2 = useABIv2();
+    final boolean isAIX = isAIX();
 
     private static final int STACK_SLOT_SIZE = 8;
     private static final int MAX_COPY_SIZE = 8;
@@ -90,7 +93,15 @@ public abstract class CallArranger {
 
     protected CallArranger() {}
 
+    public static final CallArranger ABIv1 = new ABIv1CallArranger();
     public static final CallArranger ABIv2 = new ABIv2CallArranger();
+    public static final CallArranger AIX = new AixCallArranger();
+
+    /**
+     * Select ABI version
+     */
+    protected abstract boolean useABIv2();
+    protected abstract boolean isAIX();
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
@@ -201,7 +212,7 @@ public abstract class CallArranger {
             // offset for the next argument which will really use the stack.
             // The reserved space for the Parameter Save Area is determined by the DowncallStubGenerator.
             VMStorage stack;
-            if (!useABIv2 && is32Bit) {
+            if (!useABIv2 && !isAIX && is32Bit) {
                 stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.
                 stack = stackAlloc(4, 4);
             } else {
@@ -214,11 +225,23 @@ public abstract class CallArranger {
             return reg;
         }
 
+        /* The struct is split into 8-byte chunks, and those chunks are passed in registers or on the stack.
+           ABIv1 requires shifting if the struct occupies more than one 8-byte chunk and the last one is not full.
+           Here's an example for passing an 11 byte struct with ABIv1:
+        offset         : 0 .... 32 ..... 64 ..... 96 .... 128
+        values         : xxxxxxxx|yyyyyyyy|zzzzzz??|????????   (can't touch bits 96..128)
+        Load into int  :                  V        +--------+
+                                          |                 |
+                                          +--------+        |
+                                                   V        V
+        In register    :                   ????????|??zzzzzz   (LSBs are zz...z)
+        Shift left     :                   zzzzzz00|00000000   (LSBs are 00...0)
+        Write long     :                  V                 V
+        Result         : xxxxxxxx|yyyyyyyy|zzzzzz00|00000000
+        */
+
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
-            // TODO: Big Endian can't pass partially used slots correctly in some cases with:
-            // !useABIv2 && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
-
             // Allocate enough gp slots (regs and stack) such that the struct fits in them.
             int numChunks = (int) Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
             VMStorage[] result = new VMStorage[numChunks];
@@ -326,22 +349,33 @@ public abstract class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2, isAIX);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
                     assert carrier == MemorySegment.class;
                     VMStorage[] regs = storageCalculator.structAlloc(layout);
+                    final boolean isLargeABIv1Struct = !useABIv2 &&
+                        (isAIX || layout.byteSize() > MAX_COPY_SIZE);
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
                         final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                        int shiftAmount = 0;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
+                        } else if (isLargeABIv1Struct) {
+                            // Last slot requires shift.
+                            shiftAmount = MAX_COPY_SIZE - (int) size;
                         }
-                        bindings.bufferLoad(offset, type, (int) size)
-                                .vmStore(storage, type);
+                        bindings.bufferLoad(offset, type, (int) size);
+                        if (shiftAmount != 0) {
+                            bindings.shiftLeft(shiftAmount, type)
+                                    .vmStore(storage, long.class);
+                        } else {
+                            bindings.vmStore(storage, type);
+                        }
                         offset += size;
                     }
                 }
@@ -403,21 +437,33 @@ public abstract class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2, isAIX);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     VMStorage[] regs = storageCalculator.structAlloc(layout);
+                    final boolean isLargeABIv1Struct = !useABIv2 &&
+                        (isAIX || layout.byteSize() > MAX_COPY_SIZE);
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
                         final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                        int shiftAmount = 0;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
-                        bindings.dup()
-                                .vmLoad(storage, type)
-                                .bufferStore(offset, type, (int) size);
+                        if (isLargeABIv1Struct && offset + size >= layout.byteSize()) {
+                            // Last slot requires shift.
+                            shiftAmount = MAX_COPY_SIZE - (int) size;
+                        }
+                        bindings.dup();
+                        if (shiftAmount != 0) {
+                            bindings.vmLoad(storage, long.class)
+                                    .shiftRight(shiftAmount, type);
+                        } else {
+                            bindings.vmLoad(storage, type);
+                        }
+                        bindings.bufferStore(offset, type, (int) size);
                         offset += size;
                     }
                 }

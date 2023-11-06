@@ -206,7 +206,7 @@ public class BasicTableUI extends TableUI
                 boolean inSelection) {
             super(name);
 
-            // Actions spcifying true for "inSelection" are
+            // Actions specifying true for "inSelection" are
             // fairly sensitive to bad parameter values. They require
             // that one of dx and dy be 0 and the other be -1 or 1.
             // Bogus parameter values could cause an infinite loop.
@@ -526,7 +526,7 @@ public class BasicTableUI extends TableUI
                 // for the focus regardless of who owns the focus at the
                 // time the call to requestFocus() is made. The optimisation
                 // to ignore the call to requestFocus() when the component
-                // already has focus may ligitimately be made as the
+                // already has focus may legitimately be made as the
                 // request focus event is dequeued, not before.
 
                 // boolean wasEditingWithFocus = table.isEditing() &&

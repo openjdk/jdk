@@ -76,8 +76,8 @@ TOOL_GENERATECACERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_class
     -Dkeystore.pkcs12.macAlgorithm=NONE \
     build.tools.generatecacerts.GenerateCacerts
 
-TOOL_GENERATEEMOJIDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.generateemojidata.GenerateEmojiData
+TOOL_GENERATEEXTRAPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.generateextraproperties.GenerateExtraProperties
 
 TOOL_MAKEZIPREPRODUCIBLE = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.makezipreproducible.MakeZipReproducible

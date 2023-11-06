@@ -9280,6 +9280,17 @@ void MacroAssembler::evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    vpshufb(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    vpshufb(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src3), "missing");
 
@@ -9789,7 +9800,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with unspecified ZF.
 //
@@ -9797,7 +9808,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 // hdr: the (pre-loaded) header of the object, must be rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
@@ -9825,14 +9836,14 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with unspecified ZF.
 //
 // obj: the object to be unlocked
 // hdr: the (pre-loaded) header of the object, must be rax
 // tmp: a temporary register
-void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
 

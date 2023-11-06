@@ -4438,12 +4438,12 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
     CompilerEvent::InlineEvent::post(event, compilation()->env()->task()->compile_id(), method()->get_Method(), callee, success, msg, bci());
   }
 
-  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), inlining_result_of(success), msg);
 
   if (!compilation()->directive()->PrintInliningOption) {
     return;
   }
-  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), inlining_result_of(success), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }

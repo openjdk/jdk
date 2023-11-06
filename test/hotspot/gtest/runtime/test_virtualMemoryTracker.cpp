@@ -33,8 +33,8 @@
 #include "precompiled.hpp"
 
 #include "memory/virtualspace.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"

@@ -430,6 +430,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AbortVMOnSafepointTimeout, false, DIAGNOSTIC,               \
           "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
+  product(uint64_t, AbortVMOnSafepointTimeoutDelay, 0, DIAGNOSTIC,          \
+          "Delay in milliseconds for option AbortVMOnSafepointTimeout")     \
+          range(0, max_jlong)                                               \
+                                                                            \
   product(bool, AbortVMOnVMOperationTimeout, false, DIAGNOSTIC,             \
           "Abort upon failure to complete VM operation promptly")           \
                                                                             \
@@ -1055,13 +1059,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  develop(bool, UseHeavyMonitors, false,                                    \
-          "(Deprecated) Use heavyweight instead of lightweight Java "       \
-          "monitors")                                                       \
-                                                                            \
   develop(bool, VerifyHeavyMonitors, false,                                 \
           "Checks that no stack locking happens when using "                \
-          "+UseHeavyMonitors")                                              \
+          "-XX:LockingMode=0 (LM_MONITOR)")                                 \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
@@ -1888,10 +1888,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(size_t, ArrayAllocatorMallocLimit, SIZE_MAX, EXPERIMENTAL,        \
-          "Allocation less than this value will be allocated "              \
-          "using malloc. Larger allocations will use mmap.")                \
-                                                                            \
   product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
           "Accesses to all variables should always be atomic")              \
                                                                             \
@@ -1982,11 +1978,11 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LEGACY,                                      \
+  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
+          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \

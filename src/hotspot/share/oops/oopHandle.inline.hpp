@@ -52,6 +52,7 @@ inline void OopHandle::release(OopStorage* storage) {
     // Clear the OopHandle first
     NativeAccess<>::oop_store(_obj, nullptr);
     storage->release(_obj);
+    _obj = nullptr;
   }
 }
 

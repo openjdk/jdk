@@ -28,6 +28,7 @@
  * @bug 8191101
  * @summary Show Registers on assert/guarantee
  * @library /test/lib
+ * @requires vm.flagless
  * @requires (vm.debug == true) & (os.family == "linux")
  * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
@@ -54,7 +55,7 @@ public class ShowRegistersOnAssertTest {
     {
         System.out.println("Testing " + (do_assert ? "assert" : "guarantee") +
                            " with " + (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert") + "...");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions", "-Xmx100M", "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=" + (do_assert ? "1" : "2"),
             (show_registers_on_assert ? "-XX:+ShowRegistersOnAssert" : "-XX:-ShowRegistersOnAssert"),

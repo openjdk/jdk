@@ -138,9 +138,9 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 
 class JfrVframeStream : public vframeStreamCommon {
  private:
+  bool _vthread;
   const ContinuationEntry* _cont_entry;
   bool _async_mode;
-  bool _vthread;
   bool step_to_sender();
   void next_frame();
  public:
@@ -165,8 +165,9 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
                                  walk_continuation(jt))),
-    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
-    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
+    _vthread(JfrThreadLocal::is_vthread(jt)),
+    _cont_entry(_vthread ? jt->last_continuation() : nullptr),
+    _async_mode(async_mode) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);
   _frame = fr;
@@ -233,6 +234,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   Thread* current_thread = Thread::current();
+  assert(current_thread->is_JfrSampler_thread(), "invariant");
   assert(jt != current_thread, "invariant");
   // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
@@ -285,6 +287,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   assert(jt != nullptr, "invariant");
   assert(jt == Thread::current(), "invariant");
+  assert(jt->thread_state() != _thread_in_native, "invariant");
   assert(!_lineno, "invariant");
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.

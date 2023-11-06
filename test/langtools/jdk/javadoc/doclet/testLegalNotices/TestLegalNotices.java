@@ -112,6 +112,18 @@ public class TestLegalNotices extends JavadocTester {
         if (foundFiles.equals(expectFiles)) {
             passed("Found all expected files");
         }
+
+        // See JDK-8306980
+        for (Path p : foundFiles) {
+            // Somewhat unusually, the dominant test is that the string "Please see..."
+            // does _not_ appear in the generated legal-notice files.
+            // The string is used by jlink when creating the legal files for a module
+            // on platforms that do not support symbolic links.
+            // The test verifies that javadoc is not using any such files.
+            checkOutput("legal/" + p, false,
+                    "Please see");
+        }
+
     }
 
     Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {

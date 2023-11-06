@@ -857,6 +857,49 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::array_partition_Type() {
+  // create input type (domain)
+  int num_args = 7;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;  // array
+  fields[argp++] = TypeInt::INT;      // element type
+  fields[argp++] = TypeInt::INT;      // low
+  fields[argp++] = TypeInt::INT;      // end
+  fields[argp++] = TypePtr::NOTNULL;  // pivot_indices (int array)
+  fields[argp++] = TypeInt::INT;      // indexPivot1
+  fields[argp++] = TypeInt::INT;      // indexPivot2
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc* OptoRuntime::array_sort_Type() {
+  // create input type (domain)
+  int num_args      = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // array
+  fields[argp++] = TypeInt::INT;    // element type
+  fields[argp++] = TypeInt::INT;    // fromIndex
+  fields[argp++] = TypeInt::INT;    // toIndex
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // for aescrypt encrypt/decrypt operations, just three pointers returning void (length is constant)
 const TypeFunc* OptoRuntime::aescrypt_block_Type() {
   // create input type (domain)
@@ -1563,10 +1606,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
-  // This needs authenticating, but to do that here requires the fp of the previous frame.
-  // A better way of doing it would be authenticate in the caller by adding a
-  // AuthPAuthNode and using it in GraphKit::gen_stub. For now, just strip it.
-  AARCH64_PORT_ONLY(ret_pc = pauth_strip_pointer(ret_pc));
+  AARCH64_PORT_ONLY(ret_pc = pauth_strip_verifiable(ret_pc));
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows

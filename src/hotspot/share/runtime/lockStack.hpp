@@ -30,11 +30,13 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
-class Thread;
+class JavaThread;
 class OopClosure;
+class outputStream;
 
 class LockStack {
   friend class VMStructs;
+  JVMCI_ONLY(friend class JVMCIVMStructs;)
 private:
   static const int CAPACITY = 8;
 
@@ -91,6 +93,8 @@ public:
   // GC support
   inline void oops_do(OopClosure* cl);
 
+  // Printing
+  void print_on(outputStream* st);
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

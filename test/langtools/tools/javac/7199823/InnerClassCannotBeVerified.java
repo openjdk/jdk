@@ -25,7 +25,12 @@
  * @test
  * @bug 7199823
  * @summary javac generates inner class that can't be verified
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main InnerClassCannotBeVerified
  */
 
@@ -37,8 +42,7 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler;
 import com.sun.source.util.JavacTask;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.*;
 import java.io.File;
 import java.io.IOException;
 
@@ -85,17 +89,17 @@ public class InnerClassCannotBeVerified {
         }
     }
 
-    private void check(CompilationKind ck) throws IOException, ConstantPoolException {
+    private void check(CompilationKind ck) throws IOException {
         try {
             File file = new File("Test$1.class");
-            ClassFile classFile = ClassFile.read(file);
+            ClassModel classFile = Classfile.of().parse(file.toPath());
             if (ck == CompilationKind.POST_NESTMATES) {
                 throw new AssertionError("Unexpected constructor tag class!");
             }
             boolean inheritsFromObject =
-                    classFile.getSuperclassName().equals("java/lang/Object");
-            boolean implementsNoInterface = classFile.interfaces.length == 0;
-            boolean noMethods = classFile.methods.length == 0;
+                    classFile.superclass().orElseThrow().asInternalName().equals("java/lang/Object");
+            boolean implementsNoInterface = classFile.interfaces().size() == 0;
+            boolean noMethods = classFile.methods().size() == 0;
             if (!(inheritsFromObject &&
                     implementsNoInterface &&
                     noMethods)) {

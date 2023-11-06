@@ -27,9 +27,11 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/classListWriter.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/classListParser.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -43,9 +45,10 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -62,6 +65,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -76,14 +80,13 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 
 ReservedSpace MetaspaceShared::_symbol_rs;
@@ -385,6 +388,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
+  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
@@ -477,6 +481,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
+  // Write module name into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -640,7 +646,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 }
 
 void MetaspaceShared::prepare_for_dumping() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   Arguments::check_unsupported_dumping_properties();
 
   ClassLoader::initialize_shared_path(JavaThread::current());
@@ -663,18 +669,11 @@ void MetaspaceShared::preload_and_dump() {
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
-
-#if INCLUDE_CDS_JAVA_HEAP
-  // Restore the java loaders that were cleared at dump time
-  if (use_full_module_graph()) {
-    HeapShared::restore_loader_data();
-  }
-#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
 void MetaspaceShared::adjust_heap_sizes_for_dumping() {
-  if (!DumpSharedSpaces || UseCompressedOops) {
+  if (!CDSConfig::is_dumping_heap() || UseCompressedOops) {
     return;
   }
   // CDS heap dumping requires all string oops to have an offset
@@ -768,8 +767,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     log_info(cds)("Reading extra data: done.");
   }
 
-  HeapShared::init_for_dumping(CHECK);
-
   // Rewrite and link classes
   log_info(cds)("Rewriting and linking classes ...");
 
@@ -781,10 +778,17 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  StringTable::allocate_shared_strings_array(CHECK);
-  ArchiveHeapWriter::init();
-  if (use_full_module_graph()) {
-    HeapShared::reset_archived_object_states(CHECK);
+  if (CDSConfig::is_dumping_heap()) {
+    StringTable::allocate_shared_strings_array(CHECK);
+    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+      log_info(cds)("archivedBootLayer not available, disabling full module graph");
+      disable_full_module_graph();
+    }
+    HeapShared::init_for_dumping(CHECK);
+    ArchiveHeapWriter::init();
+    if (use_full_module_graph()) {
+      HeapShared::reset_archived_object_states(CHECK);
+    }
   }
 #endif
 
@@ -796,7 +800,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
@@ -1166,8 +1170,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_or_load_heap_region();
         }
 #endif // _LP64
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);

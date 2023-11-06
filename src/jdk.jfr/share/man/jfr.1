@@ -221,7 +221,7 @@ Use \f[V]jfr --help view\f[R] to see a list of available views.
 <\f[I]file\f[R]>
 Location of the recording file (.jfr)
 .PP
-The parameter can be an event type name.
+The <\f[I]view\f[R]> parameter can be an event type name.
 Use the \f[V]jfr view types <file>\f[R] to see a list.
 To display all views, use \f[V]jfr view all-views <file>\f[R].
 To display all events, use \f[V]jfr view all-events <file>\f[R].
@@ -258,8 +258,9 @@ To see available options, use \f[V]jfr help configure\f[R]
 .TP
 \f[I]event-setting=value\f[R]
 The event setting value to modify.
-Use the form: <\f[I]event-name>#=<value\f[R]> To add a new event
-setting, prefix the event name with \[aq]+\[aq].
+Use the form:
+<\f[I]event-name\f[R]>#<\f[I]setting-name\f[R]>=<\f[I]value\f[R]> To add
+a new event setting, prefix the event name with \[aq]+\[aq].
 .PP
 The whitespace delimiter can be omitted for timespan values, i.e.
 20ms.
@@ -316,7 +317,7 @@ The syntax is:
 [--exclude-events <\f[I]filter\f[R]>] [--include-categories
 <\f[I]filter\f[R]>] [--exclude-categories <\f[I]filter\f[R]>]
 [--include-threads <\f[I]filter\f[R]>] [--exclude-threads
-<\f[I]filter\f[R]>] <\f[I]input-file\f[R]> []
+<\f[I]filter\f[R]>] <\f[I]input-file\f[R]> [<\f[I]output-file\f[R]>]
 .TP
 \f[V]--include-events\f[R] <\f[I]filter\f[R]>
 Select events matching an event name.
@@ -335,8 +336,9 @@ Select events matching a thread name.
 .TP
 \f[V]--exclude-threads\f[R] <\f[I]filter\f[R]>
 Exclude events matching a thread name.
-.PP
-<\f[I]input-file\f[R]> :The input file to read events from.
+.TP
+<\f[I]input-file\f[R]>
+The input file to read events from.
 .TP
 <\f[I]output-file\f[R]>
 The output file to write filter events to.
@@ -346,7 +348,7 @@ input file, but with \[dq]-scrubbed\[dq] appended to the filename.
 The filter is a comma-separated list of names, simple and/or qualified,
 and/or quoted glob patterns.
 If multiple filters are used, they are applied in the specified order.
-.SS jfr \f[V]assemble\f[R] subcommand
+.SS \f[V]jfr assemble\f[R] subcommand
 .PP
 Use jfr \f[V]assemble\f[R] to assemble chunk files into a recording
 file.

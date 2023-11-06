@@ -199,6 +199,7 @@ private:
   static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
+  static InstanceKlass* retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) NOT_CDS_RETURN_(nullptr);
 
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 

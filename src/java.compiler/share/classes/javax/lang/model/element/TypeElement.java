@@ -255,6 +255,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the permitted classes of this class or interface
      * element in declaration order.
+     * Note that for an interface, permitted subclasses and
+     * subinterfaces can be returned.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -262,6 +264,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the permitted classes, or an empty list if there are none
      *
      * @since 17
+     * @jls 8.1.6 Permitted Direct Subclasses
+     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces
      */
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();

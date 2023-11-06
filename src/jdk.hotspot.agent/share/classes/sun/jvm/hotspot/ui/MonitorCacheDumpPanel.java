@@ -94,11 +94,6 @@ public class MonitorCacheDumpPanel extends JPanel {
 
   private void dumpOn(PrintStream tty) {
     Iterator i = ObjectSynchronizer.objectMonitorIterator();
-    if (i == null) {
-      tty.println("This version of HotSpot VM doesn't support monitor cache dump.");
-      tty.println("You need 1.4.0_04, 1.4.1_01 or later versions");
-      return;
-    }
     ObjectMonitor mon;
     while (i.hasNext()) {
       mon = (ObjectMonitor)i.next();

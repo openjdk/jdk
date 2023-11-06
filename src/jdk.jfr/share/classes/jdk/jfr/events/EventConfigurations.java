@@ -28,8 +28,6 @@ import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.event.EventConfiguration;
 
 public final class EventConfigurations {
-    public static final EventConfiguration SOCKET_READ = JVMSupport.getConfiguration(SocketReadEvent.class);
-    public static final EventConfiguration SOCKET_WRITE = JVMSupport.getConfiguration(SocketWriteEvent.class);
     public static final EventConfiguration FILE_READ = JVMSupport.getConfiguration(FileReadEvent.class);
     public static final EventConfiguration FILE_WRITE = JVMSupport.getConfiguration(FileWriteEvent.class);
     public static final EventConfiguration FILE_FORCE = JVMSupport.getConfiguration(FileForceEvent.class);

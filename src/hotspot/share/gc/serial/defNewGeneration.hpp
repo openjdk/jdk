@@ -26,10 +26,10 @@
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class InheritIOTest {
 
     @Test(dataProvider = "testCases")
     public void testInheritWithoutRedirect(List<String> arguments) throws Throwable {
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(arguments);
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(0);
         assertEquals(outputAnalyzer.getStdout(), EXPECTED_RESULT_STDOUT);

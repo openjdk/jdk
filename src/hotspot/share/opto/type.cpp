@@ -4750,7 +4750,7 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   jint hi = size->_hi;
   jint lo = size->_lo;
   jint min_lo = 0;
-  jint max_hi = max_array_length(elem()->basic_type());
+  jint max_hi = max_array_length(elem()->array_element_basic_type());
   //if (index_not_size)  --max_hi;     // type of a valid array index, FTR
   bool chg = false;
   if (lo < min_lo) {

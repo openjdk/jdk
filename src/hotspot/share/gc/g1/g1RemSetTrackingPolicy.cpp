@@ -142,7 +142,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                          [&] (HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
-                                           r->rem_set()->clear_locked(true /* only_cardset */);
+                                           r->rem_set()->clear(true /* only_cardset */);
                                          });
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
