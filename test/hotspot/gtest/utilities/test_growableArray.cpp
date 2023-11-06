@@ -580,6 +580,7 @@ struct Elt {
 int Elt::copy_calls = 0;
 
 TEST_VM_F(GrowableArrayTest, AtPutGrowOnlyCopiesLastElement) {
+  ResourceMark rm;
   Elt::copy_calls = 0;
   GrowableArray<Elt> arr;
   arr.at_put_grow(16, Elt{"final_elt", 16}, "earlier_elt", 1);
@@ -594,6 +595,7 @@ TEST_VM_F(GrowableArrayTest, AtPutGrowOnlyCopiesLastElement) {
 }
 
 TEST_VM_F(GrowableArrayTest, ShouldBeAbleToGrowByCopying) {
+  ResourceMark rm;
   Elt::copy_calls = 0;
   GrowableArray<Elt> arr{0};
   arr.at_put_grow(16, Elt{"final_elt", 16}, Elt{"",0});
@@ -601,6 +603,7 @@ TEST_VM_F(GrowableArrayTest, ShouldBeAbleToGrowByCopying) {
 }
 
 TEST_VM_F(GrowableArrayTest, CanGrowWithoutCopying) {
+  ResourceMark rm;
   Elt::copy_calls = 0;
   GrowableArray<Elt> arr{0};
   arr.at_grow(15, "hello", 5);
