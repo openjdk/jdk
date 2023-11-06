@@ -3963,8 +3963,7 @@ class StubGenerator: public StubCodeGenerator {
                                int k, int s, int t,
                                Register rtmp1) {
     // a += ac
-    __ mv(t1, t);
-    __ addw(a, a, t1);
+    __ addw(a, a, t, t1);
 
     // a += x;
     reg_cache.add_u32(a, k);
