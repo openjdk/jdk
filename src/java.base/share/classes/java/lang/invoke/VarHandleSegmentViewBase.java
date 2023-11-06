@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -84,7 +85,7 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
     }
 
     static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + address);
+        return new IllegalArgumentException("Misaligned access at address: " + Utils.toHexString(address));
     }
 
     static UnsupportedOperationException newUnsupportedAccessModeForAlignment(long alignment) {

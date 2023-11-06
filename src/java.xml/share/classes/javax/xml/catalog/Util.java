@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -266,5 +267,33 @@ class Util {
         } else if (f == Feature.FILES) {
             Util.validateUrisSyntax(value.split(";"));
         }
+    }
+
+    /**
+     * Returns the absolute form of the specified uri after resolving it against
+     * the base. Returns the uri as is if it's already absolute.
+     *
+     * @param base the base, that is the system id of the catalog within the
+     * Catalog implementation
+     * @param uri the specified uri
+     * @return the absolute form of the specified uri
+     */
+    @SuppressWarnings("deprecation")
+    static String getAbsoluteURI(String base, String uri) {
+        String temp = "";
+        try {
+            URL baseURL = new URL(base);
+            URI specURI = URI.create(uri);
+
+            if (specURI.isAbsolute()) {
+                temp = specURI.toURL().toString();
+            } else {
+                temp = (new URL(baseURL, uri)).toString();
+            }
+        } catch (MalformedURLException ex) {
+            // shouldn't happen since inputs are validated, report error in case
+            CatalogMessages.reportError(CatalogMessages.ERR_INVALID_CATALOG);
+        }
+        return temp;
     }
 }
