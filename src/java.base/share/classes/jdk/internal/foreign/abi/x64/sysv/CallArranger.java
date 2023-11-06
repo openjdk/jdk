@@ -76,7 +76,9 @@ public class CallArranger {
         new VMStorage[] { xmm0, xmm1 },
         2,
         new VMStorage[] { r10, r11 },
-        new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
+        new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+                          xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+                          xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },
         16,
         0, //no shadow space
         r10, r11 // scratch 1 & 2

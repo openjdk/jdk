@@ -73,8 +73,6 @@ compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x6
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
-compiler/sharedstubs/SharedTrampolineTest.java 8318455 generic-all
-
 compiler/codecache/CheckLargePages.java 8317831 linux-x64
 
 #############################################################################
