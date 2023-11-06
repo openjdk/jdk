@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -610,7 +611,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   InstanceKlass* loaded_class = nullptr;
   SymbolHandle superclassname; // Keep alive while loading in parallel thread.
 
-  assert(THREAD->can_call_java(),
+  guarantee(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
          name->as_C_string(),
          class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
@@ -1782,7 +1783,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
     bool result = LoaderConstraintTable::add_entry(constraint_name, klass1, loader_data1,
                                                    klass2, loader_data2);
 #if INCLUDE_CDS
-    if (Arguments::is_dumping_archive() && klass_being_linked != nullptr &&
+    if (CDSConfig::is_dumping_archive() && klass_being_linked != nullptr &&
         !klass_being_linked->is_shared()) {
          SystemDictionaryShared::record_linking_constraint(constraint_name,
                                      InstanceKlass::cast(klass_being_linked),
@@ -2055,7 +2056,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                      Klass* accessing_klass,
                                                      Handle* appendix_result,
                                                      TRAPS) {
-  assert(THREAD->can_call_java() ,"");
+  guarantee(THREAD->can_call_java(), "");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
 

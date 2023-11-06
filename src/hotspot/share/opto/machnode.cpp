@@ -183,6 +183,27 @@ bool MachNode::cmp( const Node &node ) const {
   return true;                  // match
 }
 
+void MachNode::fill_new_machnode(MachNode* node) const {
+  // New node must use same node index
+  node->set_idx(_idx);
+  // Copy machine-independent inputs
+  for (uint j = 0; j < req(); j++) {
+    node->add_req(in(j));
+  }
+  // Copy my operands, except for cisc position
+  int nopnds = num_opnds();
+  assert(node->num_opnds() == (uint)nopnds, "Must have same number of operands");
+  MachOper** to = node->_opnds;
+  for (int i = 0; i < nopnds; i++) {
+    if (i != cisc_operand()) {
+      to[i] = _opnds[i]->clone();
+    }
+  }
+  // Do not increment node index counter, since node reuses my index
+  Compile* C = Compile::current();
+  C->set_unique(C->unique() - 1);
+}
+
 // Return an equivalent instruction using memory for cisc_operand position
 MachNode *MachNode::cisc_version(int offset) {
   ShouldNotCallThis();

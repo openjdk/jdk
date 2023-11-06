@@ -1194,7 +1194,7 @@ public:
     if (!C->failing()) {
       // Cleanup any modified bits
       igvn.optimize();
-
+      if (C->failing()) { return; }
       v.log_loop_tree();
     }
   }

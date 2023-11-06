@@ -787,7 +787,8 @@ public final class ScopedValue<T> {
         // Bindings can be in one of four states:
         //
         // 1: class Thread: this is a new Thread instance, and no
-        // scoped values have ever been bound in this Thread.
+        // scoped values have ever been bound in this Thread, and neither
+        // have any scoped value bindings been inherited from a parent.
         // 2: EmptySnapshot.SINGLETON: This is effectively an empty binding.
         // 3: A Snapshot instance: this contains one or more scoped value
         // bindings.
@@ -798,18 +799,18 @@ public final class ScopedValue<T> {
         Object bindings = Thread.scopedValueBindings();
         if (bindings == NEW_THREAD_BINDINGS) {
             // This must be a new thread
-           return Snapshot.EMPTY_SNAPSHOT;
+            return Snapshot.EMPTY_SNAPSHOT;
         }
         if (bindings == null) {
             // Search the stack
             bindings = Thread.findScopedValueBindings();
-            if (bindings == null) {
-                // Nothing on the stack.
+            if (bindings == NEW_THREAD_BINDINGS || bindings == null) {
+                // We've walked the stack without finding anything.
                 bindings = Snapshot.EMPTY_SNAPSHOT;
             }
+            Thread.setScopedValueBindings(bindings);
         }
         assert (bindings != null);
-        Thread.setScopedValueBindings(bindings);
         return (Snapshot) bindings;
     }
 

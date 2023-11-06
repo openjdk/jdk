@@ -25,13 +25,14 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -44,7 +45,7 @@
 //
 CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(num_entries >= 0, "sanity");
   _num_buckets = calculate_num_buckets(num_entries);
   assert(_num_buckets > 0, "no buckets");

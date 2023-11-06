@@ -279,7 +279,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     }
 
     end++;
-  };
+  }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
 

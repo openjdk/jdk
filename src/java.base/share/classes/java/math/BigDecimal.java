@@ -279,7 +279,7 @@ import java.util.Objects;
  * operations indicated by {@linkplain RoundingMode rounding modes}
  * are a proper superset of the IEEE 754 rounding-direction
  * attributes.
-
+ *
  * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
  * decimal arithmetic if a {@code MathContext} corresponding to an
  * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
@@ -291,6 +291,27 @@ import java.util.Objects;
  * results. Operations that would generate a NaN or exact infinity,
  * such as dividing by zero, throw an {@code ArithmeticException} in
  * {@code BigDecimal} arithmetic.
+ *
+ * <h2><a id=algorithmicComplexity>Algorithmic Complexity</a></h2>
+ *
+ * Operations on {@code BigDecimal} values have a range of algorithmic
+ * complexities; in general, those complexities are a function of both
+ * the size of the unscaled value as well as the size of the
+ * scale. For example, an {@linkplain BigDecimal#multiply(BigDecimal)
+ * exact multiply} of two {@code BigDecimal} values is subject to the
+ * same {@linkplain BigInteger##algorithmicComplexity complexity
+ * constraints} as {@code BigInteger} multiply of the unscaled
+ * values. In contrast, a {@code BigDecimal} value with a compact
+ * representation like {@code new BigDecimal(1E-1000000000)} has a
+ * {@link toPlainString} result with over one billion characters.
+ *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be as large as in
+ * proportion to the running time of the algorithm.
+ *
+ * <p>Users of {@code BigDecimal} concerned with bounding the running
+ * time or space of operations can screen out {@code BigDecimal}
+ * values with unscaled values or scales above a chosen magnitude.
  *
  * @see     BigInteger
  * @see     MathContext

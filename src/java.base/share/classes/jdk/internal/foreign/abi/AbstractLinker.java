@@ -30,6 +30,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
@@ -54,6 +55,7 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.HashSet;
 import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -61,7 +63,7 @@ import java.util.Set;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
-                                                                      Windowsx64Linker,
+                                                                      Windowsx64Linker, AixPPC64Linker,
                                                                       LinuxPPC64Linker, LinuxPPC64leLinker,
                                                                       LinuxRISCV64Linker, LinuxS390Linker,
                                                                       FallbackLinker {
@@ -73,6 +75,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
+    private final Set<MemoryLayout> CANONICAL_LAYOUTS_CACHE = new HashSet<>(canonicalLayouts().values());
 
     @Override
     @CallerSensitive
@@ -89,7 +92,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return downcallHandle0(function, options);
     }
 
-    private final MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
+    private MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
@@ -177,6 +180,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    // some ABIs have special handling for struct members
+    protected void checkStructMember(MemoryLayout member, long offset) {
+        checkLayoutRecursive(member);
+    }
+
     private void checkLayoutRecursive(MemoryLayout layout) {
         if (layout instanceof ValueLayout vl) {
             checkSupported(vl);
@@ -188,7 +196,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 // check element offset before recursing so that an error points at the
                 // outermost layout first
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
-                checkLayoutRecursive(member);
+                checkStructMember(member, offset);
 
                 offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {
@@ -213,7 +221,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     // check for trailing padding
-    private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -223,7 +231,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+    private void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
@@ -232,17 +240,17 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private static void checkSupported(ValueLayout valueLayout) {
+    private void checkSupported(ValueLayout valueLayout) {
         valueLayout = valueLayout.withoutName();
         if (valueLayout instanceof AddressLayout addressLayout) {
             valueLayout = addressLayout.withoutTargetLayout();
         }
-        if (!SUPPORTED_LAYOUTS.contains(valueLayout.withoutName())) {
+        if (!CANONICAL_LAYOUTS_CACHE.contains(valueLayout.withoutName())) {
             throw new IllegalArgumentException("Unsupported layout: " + valueLayout);
         }
     }
 
-    private static void checkHasNaturalAlignment(MemoryLayout layout) {
+    private void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
             throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
         }
@@ -273,16 +281,4 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
-
-    private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
-            ValueLayout.JAVA_BOOLEAN,
-            ValueLayout.JAVA_BYTE,
-            ValueLayout.JAVA_CHAR,
-            ValueLayout.JAVA_SHORT,
-            ValueLayout.JAVA_INT,
-            ValueLayout.JAVA_FLOAT,
-            ValueLayout.JAVA_LONG,
-            ValueLayout.JAVA_DOUBLE,
-            ValueLayout.ADDRESS
-    );
 }

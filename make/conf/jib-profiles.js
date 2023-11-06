@@ -426,9 +426,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--with-jvm-variants=minimal,server", "--with-zlib=system"),
+            dependencies: ["devkit", "gtest", "libffi"],
+            configure_args: concat(common.configure_args_32bit, [
+                "--with-jvm-variants=minimal,server",
+                "--with-zlib=system",
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
+                "--enable-fallback-linker"
+            ])
         },
 
         "macosx-x64": {
@@ -436,7 +441,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.12.00",
+                "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.

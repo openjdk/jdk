@@ -191,9 +191,11 @@ public class ModuleWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content moduleContent = getContentHeader();
-
-        addModuleSignature(moduleContent);
-        buildModuleDescription(moduleContent);
+        moduleContent.add(new HtmlTree(TagName.HR));
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addModuleSignature(div);
+        buildModuleDescription(div);
+        moduleContent.add(div);
         buildSummary(moduleContent);
 
         addModuleContent(moduleContent);
@@ -882,7 +884,6 @@ public class ModuleWriter extends HtmlDocletWriter {
     }
 
     protected void addModuleSignature(Content moduleContent) {
-        moduleContent.add(new HtmlTree(TagName.HR));
         moduleContent.add(Signatures.getModuleSignature(mdle, this));
     }
 
@@ -921,5 +922,10 @@ public class ModuleWriter extends HtmlDocletWriter {
             }
             li.add(deprDiv);
         }
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 }

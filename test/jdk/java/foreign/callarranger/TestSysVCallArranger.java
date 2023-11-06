@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @compile platform/PlatformLayouts.java
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
