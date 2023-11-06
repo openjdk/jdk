@@ -507,7 +507,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * {@return a memory layout with the same characteristics as this layout, but with
      *          the given alignment constraint (in bytes)}
      *
-     * @param byteAlignment the layout alignment constraint, expressed in bytes.
+     * @param byteAlignment the layout alignment constraint, expressed in bytes
      * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two
      */
     MemoryLayout withByteAlignment(long byteAlignment);
@@ -845,8 +845,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     sealed interface PathElement permits LayoutPath.PathElementImpl {
 
         /**
-         * Returns a path element which selects a member layout with the given name in a
-         * group layout.
+         * {@return a path element which selects a member layout with the given name in a
+         *          group layout}
          *
          * @implSpec in case multiple group elements with a matching name exist, the path
          *           element returned by this method will select the first one; that is,
@@ -855,8 +855,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          *           preferable.
          *
          * @param name the name of the member layout to be selected
-         * @return a path element which selects the group member layout with the
-         *         given name
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
@@ -865,12 +863,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns a path element which selects a member layout with the given index in a
-         * group layout.
+         * {@return a path element which selects a member layout with the given index in a
+         *          group layout}
          *
          * @param index the index of the member layout element to be selected
-         * @return a path element which selects the group member layout with the
-         *         given index
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement groupElement(long index) {
@@ -882,12 +878,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns a path element which selects the element layout at the specified
-         * position in a sequence layout.
+         * {@return a path element which selects the element layout at the specified
+         *          index in a sequence layout}
          *
          * @param index the index of the sequence element to be selected
-         * @return a path element which selects the sequence element layout with the
-         *         given index
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement sequenceElement(long index) {
@@ -916,8 +910,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @param start the index of the first sequence element to be selected
          * @param step the step factor at which subsequence sequence elements are to be
          *             selected
-         * @return a path element which selects the sequence element layout with the
-         *         given index
+         * @return a path element which selects the sequence element layout in the
+         *         given range
          * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
@@ -932,14 +926,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns an <a href="MemoryLayout.html#open-path-elements">open path element</a>
-         * which selects an unspecified element layout in a sequence layout.
+         * {@return an <a href="MemoryLayout.html#open-path-elements">open path element</a>
+         * which selects an unspecified element layout in a sequence layout}
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
          * {@code I}. If {@code C} is the sequence element count, it follows that
          * {@code 0 <= I < C}.
-         *
-         * @return a path element which selects an unspecified sequence element layout
          */
         static PathElement sequenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
@@ -947,10 +939,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns a path element which dereferences an address layout as its
-         * {@linkplain AddressLayout#targetLayout() target layout} (where set).
-         *
-         * @return a path element which dereferences an address layout
+         * {@return a path element which dereferences an address layout as its
+         * {@linkplain AddressLayout#targetLayout() target layout} (where set)}
          */
         static PathElement dereferenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
@@ -1014,7 +1004,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elementCount the sequence element count
      * @param elementLayout the sequence element layout
-     * @return the new sequence layout with the given element layout and size.
+     * @return the new sequence layout with the given element layout and size
      * @throws IllegalArgumentException if {@code elementCount} is negative
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount}
      *         overflows
