@@ -158,8 +158,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     cl->set_pre_loop_end(pre_end);
   }
 
-  _phase->C->print_method(PHASE_BEFORE_SUPERWORD, 4, cl);
-
   init(); // initialize data structures
 
   bool success = true;
@@ -167,9 +165,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
   }
-
-  _phase->C->print_method(PHASE_AFTER_SUPERWORD, 4, cl);
-
   return success;
 }
 
@@ -2356,6 +2351,9 @@ void SuperWord::schedule() {
   }
   ResourceMark rm;
 
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  _phase->C->print_method(PHASE_BEFORE_SUPERWORD_SCHEDULE, 4, cl);
+
   // (1) Build the PacksetGraph.
   PacksetGraph graph(this);
   graph.build();
@@ -2493,6 +2491,7 @@ bool SuperWord::output() {
     lpt()->dump_head();
   }
 #endif
+  _phase->C->print_method(PHASE_BEFORE_SUPERWORD_OUTPUT, 4, cl);
 
   // Ensure main loop's initial value is properly aligned
   //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
@@ -2812,6 +2811,8 @@ bool SuperWord::output() {
       }
     }
   }
+
+  _phase->C->print_method(PHASE_AFTER_SUPERWORD_OUTPUT, 4, cl);
 
   return true;
 }

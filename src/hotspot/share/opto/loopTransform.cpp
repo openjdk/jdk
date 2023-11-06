@@ -3119,6 +3119,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           --imax;
         }
       }
+
+      C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
+
     } // End of is IF
   }
   if (loop_entry != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
@@ -3167,8 +3170,6 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The OpaqueNode is unshared by design
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
-
-  C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
 
   return;
 }
