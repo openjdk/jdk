@@ -45,7 +45,8 @@ import jdk.internal.foreign.FunctionDescriptorImpl;
  * @see MemoryLayout
  * @since 22
  */
-public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
+public sealed interface FunctionDescriptor
+        permits FunctionDescriptorImpl {
 
     /**
      * {@return the return layout (if any) of this function descriptor}

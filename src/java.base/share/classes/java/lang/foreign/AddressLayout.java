@@ -57,7 +57,8 @@ import java.util.Optional;
  * @see #ADDRESS_UNALIGNED
  * @since 22
  */
-public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.OfAddressImpl {
+public sealed interface AddressLayout extends ValueLayout
+        permits ValueLayouts.OfAddressImpl {
 
     /**
      * {@inheritDoc}

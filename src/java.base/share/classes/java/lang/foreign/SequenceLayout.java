@@ -51,7 +51,8 @@ import jdk.internal.foreign.layout.SequenceLayoutImpl;
  *
  * @since 22
  */
-public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayoutImpl {
+public sealed interface SequenceLayout extends MemoryLayout
+        permits SequenceLayoutImpl {
 
 
     /**

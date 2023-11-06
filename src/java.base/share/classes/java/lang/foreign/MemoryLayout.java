@@ -396,7 +396,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * @sealedGraph
  * @since 22
  */
-public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
+public sealed interface MemoryLayout
+        permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
      * {@return the layout size, in bytes}
@@ -715,7 +716,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @since 22
      */
-    sealed interface PathElement permits LayoutPath.PathElementImpl {
+    sealed interface PathElement
+            permits LayoutPath.PathElementImpl {
 
         /**
          * Returns a path element which selects a member layout with the given name in a group layout.

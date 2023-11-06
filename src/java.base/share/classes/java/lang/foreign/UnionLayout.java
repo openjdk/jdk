@@ -35,7 +35,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  *
  * @since 22
  */
-public sealed interface UnionLayout extends GroupLayout permits UnionLayoutImpl {
+public sealed interface UnionLayout extends GroupLayout
+        permits UnionLayoutImpl {
 
     /**
      * {@inheritDoc}

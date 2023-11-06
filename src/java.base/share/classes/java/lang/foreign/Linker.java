@@ -511,7 +511,8 @@ import java.util.stream.Stream;
  *
  * @since 22
  */
-public sealed interface Linker permits AbstractLinker {
+public sealed interface Linker
+        permits AbstractLinker {
 
     /**
      * {@return a linker for the ABI associated with the underlying native platform} The underlying native platform

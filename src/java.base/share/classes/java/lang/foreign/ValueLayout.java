@@ -50,9 +50,10 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * @sealedGraph
  * @since 22
  */
-public sealed interface ValueLayout extends MemoryLayout permits
-        ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar, ValueLayout.OfShort, ValueLayout.OfInt,
-        ValueLayout.OfFloat, ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
+public sealed interface ValueLayout extends MemoryLayout
+        permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
+        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
      * {@return the value's byte order}
@@ -118,7 +119,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_BOOLEAN
      * @since 22
      */
-        sealed interface OfBoolean extends ValueLayout permits ValueLayouts.OfBooleanImpl {
+        sealed interface OfBoolean extends ValueLayout
+            permits ValueLayouts.OfBooleanImpl {
 
         /**
          * {@inheritDoc}
@@ -153,7 +155,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_BYTE
      * @since 22
      */
-        sealed interface OfByte extends ValueLayout permits ValueLayouts.OfByteImpl {
+        sealed interface OfByte extends ValueLayout
+            permits ValueLayouts.OfByteImpl {
 
         /**
          * {@inheritDoc}
@@ -189,7 +192,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_CHAR_UNALIGNED
      * @since 22
      */
-        sealed interface OfChar extends ValueLayout permits ValueLayouts.OfCharImpl {
+        sealed interface OfChar extends ValueLayout
+            permits ValueLayouts.OfCharImpl {
 
         /**
          * {@inheritDoc}
@@ -225,7 +229,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_SHORT_UNALIGNED
      * @since 22
      */
-        sealed interface OfShort extends ValueLayout permits ValueLayouts.OfShortImpl {
+        sealed interface OfShort extends ValueLayout
+            permits ValueLayouts.OfShortImpl {
 
         /**
          * {@inheritDoc}
@@ -261,7 +266,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_INT_UNALIGNED
      * @since 22
      */
-        sealed interface OfInt extends ValueLayout permits ValueLayouts.OfIntImpl {
+        sealed interface OfInt extends ValueLayout
+            permits ValueLayouts.OfIntImpl {
 
         /**
          * {@inheritDoc}
@@ -297,7 +303,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_FLOAT_UNALIGNED
      * @since 22
      */
-        sealed interface OfFloat extends ValueLayout permits ValueLayouts.OfFloatImpl {
+        sealed interface OfFloat extends ValueLayout
+            permits ValueLayouts.OfFloatImpl {
 
         /**
          * {@inheritDoc}
@@ -332,7 +339,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_LONG_UNALIGNED
      * @since 22
      */
-        sealed interface OfLong extends ValueLayout permits ValueLayouts.OfLongImpl {
+        sealed interface OfLong extends ValueLayout
+            permits ValueLayouts.OfLongImpl {
 
         /**
          * {@inheritDoc}
@@ -368,7 +376,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @see #JAVA_DOUBLE_UNALIGNED
      * @since 22
      */
-        sealed interface OfDouble extends ValueLayout permits ValueLayouts.OfDoubleImpl {
+        sealed interface OfDouble extends ValueLayout
+            permits ValueLayouts.OfDoubleImpl {
 
         /**
          * {@inheritDoc}

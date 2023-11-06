@@ -39,7 +39,8 @@ import java.util.List;
  * @sealedGraph
  * @since 22
  */
-public sealed interface GroupLayout extends MemoryLayout permits StructLayout, UnionLayout {
+public sealed interface GroupLayout extends MemoryLayout
+        permits StructLayout, UnionLayout {
 
     /**
      * {@return the member layouts of this group layout}
