@@ -181,8 +181,8 @@ public interface SegmentAllocator {
     /**
      * {@return a new memory segment initialized with the provided char value.}
      * <p>
-     * The size of the allocated memory segment is the {
-     * @linkplain MemoryLayout#byteSize() size} of the given layout.
+     * The size of the allocated memory segment is the
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout.
      * The given value is written into the segment according to the byte order and
      * alignment constraint of the given layout.
      *

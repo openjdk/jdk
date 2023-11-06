@@ -805,7 +805,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * The resulting segment will be identical to this one, but attempts to overwrite the
      * contents of the returned segment will cause runtime exceptions.
      *
-     * @return a read-only view of this segment.
      * @see #isReadOnly()
      */
     MemorySegment asReadOnly();
@@ -813,8 +812,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * {@return {@code true} if this segment is a native segment}
      *
-     * A native segment is created e.g. using the {
-     * @link Arena#allocate(long, long)} (and related) factory, or by
+     * A native segment is created e.g. using the
+     * {@link Arena#allocate(long, long)} (and related) factory, or by
      * {@linkplain #ofBuffer(Buffer) wrapping} a
      * {@linkplain ByteBuffer#allocateDirect(int) direct buffer}.
      */
@@ -1627,6 +1626,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a boolean into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the boolean value to be written.
@@ -1664,6 +1664,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a char into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the char value to be written.
@@ -1701,6 +1702,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a short into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the short value to be written.
@@ -1738,6 +1740,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes an int into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the int value to be written.
@@ -1775,6 +1778,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a float into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the float value to be written.
@@ -1812,6 +1816,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a long into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the long value to be written.
@@ -1849,6 +1854,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a double into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the double value to be written.
@@ -1896,6 +1902,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes an address into this segment at the given offset, with the given layout.
      *
+     * @param layout the layout of the region of memory to be written.
      * @param offset offset in bytes (relative to this segment address) at which this
      *               access operation will occur.
      * @param value the byte value to be written.
@@ -1909,6 +1916,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
      * @throws UnsupportedOperationException if this segment is
      *         {@linkplain #isReadOnly() read-only}
+     * @throws UnsupportedOperationException if {@code value} is not a
+     *         {@linkplain #isNative() native} segment
      */
     void set(AddressLayout layout, long offset, MemorySegment value);
 
