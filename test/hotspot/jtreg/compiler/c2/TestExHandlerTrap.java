@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /*
- * @test
+ * @test id=default_config
  * @bug 8267532
  * @summary Test whether trap in place of pruned exception handler block works
  *
@@ -37,6 +37,36 @@ import java.util.ArrayList;
  *   -XX:CompileCommand=PrintCompilation,compiler.c2.TestExHandlerTrap::payload
  *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::payload
  *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::maybeThrow
+ *   compiler.c2.TestExHandlerTrap
+ */
+
+/*
+ * @test id=no_profiling
+ * @bug 8267532
+ * @summary basic smoke test for disabled ex. handler profiling
+ *
+ * @run main/othervm
+ *   -Xbatch
+ *   -Xlog:deoptimization=trace
+ *   -XX:CompileCommand=PrintCompilation,compiler.c2.TestExHandlerTrap::payload
+ *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::payload
+ *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::maybeThrow
+ *   -XX:-ProfileExceptionHandlers
+ *   compiler.c2.TestExHandlerTrap
+ */
+
+/*
+ * @test id=stress
+ * @bug 8267532
+ * @summary basic smoke test for stressing ex. handler pruning
+ *
+ * @run main/othervm
+ *   -Xbatch
+ *   -Xlog:deoptimization=trace
+ *   -XX:CompileCommand=PrintCompilation,compiler.c2.TestExHandlerTrap::payload
+ *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::payload
+ *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::maybeThrow
+ *   -XX:+StressPrunedExceptionHandlers
  *   compiler.c2.TestExHandlerTrap
  */
 
