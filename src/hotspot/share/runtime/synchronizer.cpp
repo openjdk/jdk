@@ -638,13 +638,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  if (LockingMode == LM_LIGHTWEIGHT && monitor->is_owner_anonymous()) {
-    // It must be owned by us. Pop lock object from lock stack.
-    LockStack& lock_stack = current->lock_stack();
-    oop popped = lock_stack.pop();
-    assert(popped == object, "must be owned by this thread");
-    monitor->set_owner_from_anonymous(current);
-  }
+  assert(!monitor->is_owner_anonymous(), "must not be");
   monitor->exit(current);
 }
 
