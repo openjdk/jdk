@@ -216,17 +216,18 @@ public final class SignaturesImpl {
             if (!typeArgs.isEmpty()) {
                 var sb = new StringBuilder();
                 sb.append('<');
-                for (var ta : typeArgs)
+                for (var ta : typeArgs) {
                     switch (ta) {
-                    case TypeArg.Bounded b -> {
-                        switch (b.wildcardIndicator()) {
-                            case SUPER -> sb.append('-');
-                            case EXTENDS -> sb.append('+');
+                        case TypeArg.Bounded b -> {
+                            switch (b.wildcardIndicator()) {
+                                case SUPER -> sb.append('-');
+                                case EXTENDS -> sb.append('+');
+                            }
+                            sb.append(b.boundType().signatureString());
                         }
-                        sb.append(b.boundType().signatureString());
+                        case TypeArg.Unbounded _ -> sb.append('*');
                     }
-                    case TypeArg.Unbounded _ -> sb.append('*');
-                    }
+                }
                 suffix = sb.append(">;").toString();
             }
             return prefix + className + suffix;
