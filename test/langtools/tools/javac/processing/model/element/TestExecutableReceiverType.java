@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8222369 8225488 8319196
+ * @bug 8222369 8225488
  * @summary Test behavior of ExecutableElement.getReceiverType
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestExecutableReceiverType
@@ -109,6 +109,9 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
     String type() default "";
 }
 
+@Target(ElementType.TYPE_USE)
+@interface TA {}
+
 /**
  * Class to host various methods, etc.
  */
@@ -119,17 +122,17 @@ class MethodHost {
     @ReceiverTypeKind(TypeKind.NONE)
     public static void foo() {return;}
 
-    @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost")
+    @ReceiverTypeKind(TypeKind.NONE)
     public void bar() {return;}
 
-    @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost")
-    public void quux(MethodHost this) {return;}
+    @ReceiverTypeKind(value = TypeKind.DECLARED, type = "@TA MethodHost")
+    public void quux(@TA MethodHost this) {return;}
 
     private class Nested {
-        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost")
-        public Nested(MethodHost MethodHost.this) {}
+        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "@TA MethodHost")
+        public Nested(@TA MethodHost MethodHost.this) {}
 
-        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost")
+        @ReceiverTypeKind(TypeKind.NONE)
         public Nested(int foo) {}
     }
 
@@ -140,10 +143,10 @@ class MethodHost {
 
     private static class Generic<X> {
       private class GenericNested<Y> {
-        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost.Generic<X>")
-        GenericNested(Generic<X> Generic.this) {}
+        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost.@TA Generic<X>")
+        GenericNested(@TA Generic<X> Generic.this) {}
 
-        @ReceiverTypeKind(value = TypeKind.DECLARED, type = "MethodHost.Generic<X>")
+        @ReceiverTypeKind(TypeKind.NONE)
         GenericNested(int x) {}
       }
     }

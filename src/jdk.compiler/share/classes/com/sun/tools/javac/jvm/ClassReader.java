@@ -2333,8 +2333,11 @@ public class ClassReader {
             }
             mt.thrown = thrown.toList();
             mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
-            if (mt.recvtype != null) {
-                mt.recvtype = addTypeAnnotations(mt.recvtype, TargetType.METHOD_RECEIVER);
+
+            Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
+            Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
+            if (annotated != recvtype) {
+                mt.recvtype = annotated;
             }
             return null;
         }
@@ -2640,7 +2643,6 @@ public class ClassReader {
         }
         validateMethodType(name, m.type);
         setParameters(m, type);
-        m.type.asMethodType().recvtype = m.implicitReceiverType();
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
             throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
