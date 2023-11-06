@@ -917,10 +917,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
-            labels: "test",
-            environment: {
-                "JT_JAVA": common.boot_jdk_home
-            }
+            labels: "test"
         }
     };
     profiles = concatObjects(profiles, testOnlyProfiles);
