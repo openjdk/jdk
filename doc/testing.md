@@ -135,12 +135,21 @@ the first N tiers they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
-- `tier1`: This is the lowest test tier. Multiple developers run these tests
-  every day. Because of the widespread use, the tests in `tier1` are
-  carefully selected and optimized to run fast, and to run in the most stable
-  manner. The test failures in `tier1` are usually followed up on quickly,
-  either with fixes, or adding relevant tests to problem list. GitHub Actions
-  workflows, if enabled, run `tier1` tests.
+- `tier1`: This is the most fundamental test tier.
+  Roughly speaking, a failure of a test in this tier has the potential
+  to indicate a problem that would affect many Java programs. Tests in
+  `tier1` include tests of HotSpot, core APIs in the `java.base`
+  module, and the `javac` compiler. Multiple developers run these
+  tests every day. Because of the widespread use, the tests in `tier1`
+  are carefully selected and optimized to run fast, and to run in the
+  most stable manner. As a guideline, nearly all individual tests in
+  `tier1` are expected to run to completion in ten seconds or less
+  when run on common configurations used for development. Long-running
+  tests, even of core functionality, should occur in higher tiers or
+  be covered in other kinds of testing. The test failures in `tier1`
+  are usually followed up on quickly, either with fixes, or adding
+  relevant tests to problem list. GitHub Actions workflows, if
+  enabled, run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other
   things, tests that either run for too long to be at `tier1`, or may require
