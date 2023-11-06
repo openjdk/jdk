@@ -224,8 +224,8 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
- * is supported by a native linker {@code NL} if:
+ * All native linker implementations support a well-defined subset of layouts. More formally,
+ * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
@@ -244,6 +244,22 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  *
+ * Linker implementations may optionally support additional layouts, such as <em>packed</em> struct layouts.
+ * A packed struct is a struct in which there is at least one member layout {@code L} that has an alignment
+ * constraint less strict than its natural alignment. This allows avoiding padding between member layouts,
+ * as well as avoiding padding at the end of the struct layout. For example:
+ * {@snippet lang = java:
+ * // No padding between the 2 element layouts:
+ * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_INT,
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
+ *
+ * // No padding at the end of the struct:
+ * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
+ *         ValueLayout.JAVA_INT);
+ * }
+ * <p>
  * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
  * and are not sequence layouts.
  *
