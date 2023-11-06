@@ -36,6 +36,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.CLASS;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.COLON;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.ENUM;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.EOF;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.IDENTIFIER;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.INTERFACE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LPAREN;
@@ -182,11 +183,14 @@ class ReplParser extends JavacParser {
                 }
                 //fall-through
             default:
+                boolean nonSealed = token.kind == IDENTIFIER &&
+                                    isNonSealedIdentifier(token, 0);
                 JCModifiers mods = modifiersOpt(pmods);
                 if (token.kind == CLASS
                         || isRecordStart()
                         || token.kind == INTERFACE
-                        || token.kind == ENUM) {
+                        || token.kind == ENUM
+                        || nonSealed) {
                     return List.<JCTree>of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
                 } else {
                     int pos = token.pos;
