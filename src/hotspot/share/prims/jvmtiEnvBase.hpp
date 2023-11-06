@@ -491,8 +491,8 @@ class JvmtiHandshake : public Handshake {
 
  public:
   static void execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* tlh,
-                      JavaThread* target_jt, Handle target_h, bool no_vm_op = false);
-  static void execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target, bool no_vm_op = false);
+                      JavaThread* target_jt, Handle target_h);
+  static void execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target);
 };
 
 class SetForceEarlyReturn : public JvmtiHandshakeClosure {

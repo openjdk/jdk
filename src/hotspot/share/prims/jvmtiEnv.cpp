@@ -1884,7 +1884,7 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
 
   SetFramePopClosure op(this, state, depth);
   MutexLocker mu(current, JvmtiThreadState_lock);
-  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle, true /* no_vm_op */);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end NotifyFramePop */
 
