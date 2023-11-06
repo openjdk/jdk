@@ -1130,8 +1130,7 @@ public:
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
-  // reaching a boundary node, defined by is_boundary. Does NOT guarantee that
-  // we visit boundary nodes only once.
+  // reaching a boundary node, defined by is_boundary.
   // Note: the function definition appears after the complete type definition
   // of Unique_Node_List.
   template <typename Callback, typename Check>
@@ -1734,16 +1733,24 @@ public:
 template <typename Callback, typename Check>
 void Node::visit_uses(Callback callback, Check is_boundary) {
   ResourceMark rm;
-  Unique_Node_List internals;
-  internals.push(this); // start traversal
-  for (uint j = 0; j < internals.size(); ++j) {
-    Node* internal = internals.at(j); // for every internal
-    for (DUIterator_Fast kmax, k = internal->fast_outs(kmax); k < kmax; k++) {
-      Node* internal_use = internal->fast_out(k);
-      if (is_boundary(internal_use)) {
-        callback(internal_use);
-      } else {
-        internals.push(internal_use); // continue traversal
+  // Unique_Node_List guarantees no duplicates in the worklist. Note that we
+  // never pop anything from the worklist, since that could result in applying
+  // the callback for a use more than once (if it is at some point readded to
+  // the worklist).
+  Unique_Node_List worklist;
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    worklist.push(fast_out(k));
+  }
+  for (uint j = 0; j < worklist.size(); ++j) {
+    Node* use = worklist.at(j);
+    if (is_boundary(use)) {
+      // Apply callback on boundary nodes
+      callback(use);
+    }
+    else {
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        worklist.push(use->fast_out(k));
       }
     }
   }
