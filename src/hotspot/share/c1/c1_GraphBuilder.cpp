@@ -178,7 +178,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
     block = new BlockBegin(cur_bci);
     block->init_stores_to_locals(method()->max_locals());
     _bci2block->at_put(cur_bci, block);
-    _bci2block_successors.at_put_grow(cur_bci, BlockList(), BlockList());
+    _bci2block_successors.at_put_grow(cur_bci, BlockList());
     _blocks.append(block);
 
     assert(predecessor == nullptr || predecessor->bci() < cur_bci, "targets for backward branches must already exist");
