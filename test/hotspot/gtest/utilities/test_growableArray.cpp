@@ -610,6 +610,19 @@ TEST_VM_F(GrowableArrayTest, CanGrowWithoutCopying) {
   ASSERT_EQ(Elt::copy_calls, 0);
 }
 
+TEST_VM_F(GrowableArrayTest, CanGrowUsingACapturingLambda) {
+  ResourceMark rm;
+  GrowableArray<int> arr{0};
+  int i = 0;
+  arr.at_grow_with(15, [&](int* ptr) {
+    ::new (ptr) int(i);
+    i++;
+  });
+  for (int j = 0; j < i; j++) {
+    ASSERT_EQ(j, arr.at(j));
+  }
+}
+
 TEST(GrowableArrayCHeap, sanity) {
   // Stack/CHeap
   {
