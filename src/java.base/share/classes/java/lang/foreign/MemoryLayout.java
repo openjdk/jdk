@@ -446,7 +446,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * alignment constraint (in bytes)}
      *
      * @param byteAlignment the layout alignment constraint, expressed in bytes.
-     * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two.
+     * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two
      */
     MemoryLayout withByteAlignment(long byteAlignment);
 
@@ -471,9 +471,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>
      */
     long byteOffset(PathElement... elements);
 
@@ -507,8 +507,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle that computes the offset, in bytes, of the layout selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>
      */
     MethodHandle byteOffsetHandle(PathElement... elements);
 
@@ -599,8 +599,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses a memory segment at the offset selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}
      */
     VarHandle varHandle(PathElement... elements);
 
@@ -642,8 +642,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses adjacent elements in a memory segment at offsets selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}
      */
     VarHandle arrayElementVarHandle(PathElement... elements);
 
@@ -681,8 +681,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle which is used to slice a memory segment at the offset selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>
      */
     MethodHandle sliceHandle(PathElement... elements);
 
@@ -691,10 +691,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return the layout selected by the layout path in {@code elements}.
-     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select one or more
-     * sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
+     *         sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)})
      */
     MemoryLayout select(PathElement... elements);
 
@@ -738,7 +738,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          *
          * @param index the index of the member layout element to be selected.
          * @return a path element which selects the group member layout with the given index.
-         * @throws IllegalArgumentException if {@code index < 0}.
+         * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement groupElement(long index) {
             if (index < 0) {
@@ -753,7 +753,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          *
          * @param index the index of the sequence element to be selected.
          * @return a path element which selects the sequence element layout with the given index.
-         * @throws IllegalArgumentException if {@code index < 0}.
+         * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement sequenceElement(long index) {
             if (index < 0) {
@@ -778,7 +778,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @param start the index of the first sequence element to be selected.
          * @param step the step factor at which subsequence sequence elements are to be selected.
          * @return a path element which selects the sequence element layout with the given index.
-         * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}.
+         * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
             if (start < 0) {
@@ -856,7 +856,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param byteSize the padding size (expressed in bytes).
      * @return the new selector layout.
-     * @throws IllegalArgumentException if {@code byteSize <= 0}.
+     * @throws IllegalArgumentException if {@code byteSize <= 0}
      */
     static PaddingLayout paddingLayout(long byteSize) {
         return PaddingLayoutImpl.of(MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
@@ -868,9 +868,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @param elementCount the sequence element count.
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
-     * @throws IllegalArgumentException if {@code elementCount} is negative.
-     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows.
-     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementCount} is negative
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         MemoryLayoutUtil.requireNonNegative(elementCount);
@@ -885,10 +885,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements The member layouts of the struct layout.
      * @return a struct layout with the given member layouts.
-     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes} of the member layouts
-     * overflows.
-     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset (relative to the start
-     * of the struct layout) which is not compatible with its alignment constraint.
+     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes} of the member
+     *         layouts overflows
+     * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset
+     *         (relative to the start of the struct layout) which is not compatible with its alignment constraint
      *
      * @apiNote This factory does not automatically align element layouts, by inserting additional {@linkplain PaddingLayout
      * padding layout} elements. As such, the following struct layout creation will fail with an exception:
