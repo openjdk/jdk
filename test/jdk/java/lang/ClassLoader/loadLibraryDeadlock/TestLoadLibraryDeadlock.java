@@ -169,15 +169,20 @@ public class TestLoadLibraryDeadlock {
                 "Unable to load native library.");
 
         Asserts.assertTrue(
-                countLines(outputAnalyzer, "Class1 loaded from " + bJar) > 0,
-                "Unable to load b.jar.");
+                countLines(outputAnalyzer, "Class1 loaded from " + toLocationString(bJar)) > 0,
+                "Unable to load " + toLocationString(bJar));
 
         Asserts.assertTrue(
-                countLines(outputAnalyzer, "Class2 loaded from " + cJar) > 0,
-                "Unable to load signed c.jar.");
+                countLines(outputAnalyzer, "Class2 loaded from " + toLocationString(cJar)) > 0,
+                "Unable to load signed " + toLocationString(cJar));
 
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Signed jar loaded from native library.") > 0,
                 "Unable to load signed jar from native library.");
+    }
+
+    private static String toLocationString(Path path) {
+        // same format as returned by LoadLibraryDeadlock::getLocation
+        return path.toUri().getPath();
     }
 }

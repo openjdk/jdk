@@ -313,8 +313,8 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *
      * @throws IllegalStateException if the arena has already been closed
      * @throws IllegalStateException if a segment associated with this arena is being
-     *         accessed concurrently, e.g. by a {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...)
-     *         downcall method handle}
+     *         accessed concurrently, e.g. by a
+     *         {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}
      * @throws WrongThreadException if this arena is confined, and this method is called
      *         from a thread other than the arena's owner thread
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly

@@ -175,68 +175,68 @@
                         Register tmp1, Register tmp2,
                         int encForm);
 
- void clear_array_v(Register base, Register cnt);
+  void clear_array_v(Register base, Register cnt);
 
- void byte_array_inflate_v(Register src, Register dst,
-                           Register len, Register tmp);
+  void byte_array_inflate_v(Register src, Register dst,
+                            Register len, Register tmp);
 
- void char_array_compress_v(Register src, Register dst,
+  void char_array_compress_v(Register src, Register dst,
                             Register len, Register result,
                             Register tmp);
 
- void encode_iso_array_v(Register src, Register dst,
-                         Register len, Register result,
-                         Register tmp, bool ascii);
+  void encode_iso_array_v(Register src, Register dst,
+                          Register len, Register result,
+                          Register tmp, bool ascii);
 
- void count_positives_v(Register ary, Register len,
+  void count_positives_v(Register ary, Register len,
                         Register result, Register tmp);
 
- void string_indexof_char_v(Register str1, Register cnt1,
+  void string_indexof_char_v(Register str1, Register cnt1,
                             Register ch, Register result,
                             Register tmp1, Register tmp2,
                             bool isL);
 
- void minmax_fp_v(VectorRegister dst,
+  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
                   BasicType bt, bool is_min, int vector_length);
 
- void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                         VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                         BasicType bt, bool is_min, int vector_length);
+  void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
+                          VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
+                          BasicType bt, bool is_min, int vector_length);
 
- void reduce_minmax_fp_v(FloatRegister dst,
-                         FloatRegister src1, VectorRegister src2,
-                         VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length,
-                         VectorMask vm = Assembler::unmasked);
+  void reduce_minmax_fp_v(FloatRegister dst,
+                          FloatRegister src1, VectorRegister src2,
+                          VectorRegister tmp1, VectorRegister tmp2,
+                          bool is_double, bool is_min, int vector_length,
+                          VectorMask vm = Assembler::unmasked);
 
- void reduce_integral_v(Register dst, Register src1,
+  void reduce_integral_v(Register dst, Register src1,
                         VectorRegister src2, VectorRegister tmp,
                         int opc, BasicType bt, int vector_length,
                         VectorMask vm = Assembler::unmasked);
 
- void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
+  void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
- void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                         BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
+  void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                          BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
- void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
-                   BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
+  void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                    BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
- // In Matcher::scalable_predicate_reg_slots,
- // we assume each predicate register is one-eighth of the size of
- // scalable vector register, one mask bit per vector byte.
- void spill_vmask(VectorRegister v, int offset){
-   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-   add(t0, sp, offset);
-   vse8_v(v, t0);
- }
+  // In Matcher::scalable_predicate_reg_slots,
+  // we assume each predicate register is one-eighth of the size of
+  // scalable vector register, one mask bit per vector byte.
+  void spill_vmask(VectorRegister v, int offset){
+    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+    add(t0, sp, offset);
+    vse8_v(v, t0);
+  }
 
- void unspill_vmask(VectorRegister v, int offset){
-   vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-   add(t0, sp, offset);
-   vle8_v(v, t0);
- }
+  void unspill_vmask(VectorRegister v, int offset){
+    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+    add(t0, sp, offset);
+    vle8_v(v, t0);
+  }
 
   void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");

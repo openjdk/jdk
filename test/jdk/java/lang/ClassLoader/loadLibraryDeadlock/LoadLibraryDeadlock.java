@@ -33,6 +33,7 @@
  * triggered from JNI.
  */
 import java.lang.*;
+import java.net.URISyntaxException;
 
 public class LoadLibraryDeadlock {
 
@@ -78,6 +79,11 @@ public class LoadLibraryDeadlock {
     private static String getLocation(Class<?> c) {
         var pd = c.getProtectionDomain();
         var cs = pd != null ? pd.getCodeSource() : null;
-        return cs != null ? cs.getLocation().getPath() : null;
+        try {
+            // same format as returned by TestLoadLibraryDeadlock::getLocation
+            return cs != null ? cs.getLocation().toURI().getPath() : null;
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }
