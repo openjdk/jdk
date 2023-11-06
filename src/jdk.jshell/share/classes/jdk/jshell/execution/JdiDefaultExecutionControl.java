@@ -33,7 +33,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +47,11 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
+import java.io.PrintStream;
 import java.util.Optional;
 import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
+import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.remoteInputOutput;
@@ -94,8 +95,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
      * @return the channel
      * @throws IOException if there are errors in set-up
      */
-    static ExecutionControl create(ExecutionEnv env, String remoteAgent,
-            boolean isLaunch, String host, int timeout) throws IOException {
+    static ExecutionControl create(ExecutionEnv env, Map<String, String> parameters, String remoteAgent, int timeout, JdiStarter starter) throws IOException {
         try (final ServerSocket listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
@@ -107,13 +107,37 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
                                   //disable System.console():
                                   List.of("-Djdk.console=" + consoleModule).stream())
                           .toList();
+            ExecutionEnv augmentedEnv = new ExecutionEnv() {
+                @Override
+                public InputStream userIn() {
+                    return env.userIn();
+                }
+
+                @Override
+                public PrintStream userOut() {
+                    return env.userOut();
+                }
+
+                @Override
+                public PrintStream userErr() {
+                    return env.userErr();
+                }
+
+                @Override
+                public List<String> extraRemoteVMOptions() {
+                    return augmentedremoteVMOptions;
+                }
+
+                @Override
+                public void closeDown() {
+                    env.closeDown();
+                }
+            };
 
             // Set-up the JDI connection
-            JdiInitiator jdii = new JdiInitiator(port,
-                    augmentedremoteVMOptions, remoteAgent, isLaunch, host,
-                    timeout, Collections.emptyMap());
-            VirtualMachine vm = jdii.vm();
-            Process process = jdii.process();
+            TargetDescription target = starter.start(augmentedEnv, parameters, port);
+            VirtualMachine vm = target.vm();
+            Process process = target.process();
 
             List<Consumer<String>> deathListeners = new ArrayList<>();
             Util.detectJdiExitEvent(vm, s -> {
@@ -294,4 +318,11 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
         // Reserved for future logging
     }
 
+    /**
+     *
+     */
+    public interface JdiStarter {
+        public TargetDescription start(ExecutionEnv env, Map<String, String> parameters, int port);
+        public record TargetDescription(VirtualMachine vm, Process process) {}
+    }
 }
