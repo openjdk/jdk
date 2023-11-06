@@ -34,7 +34,7 @@ public final class ThrowableTracer {
 
     private static final AtomicLong numThrowables = new AtomicLong();
 
-    public static void enable() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    public static void enable() throws NoSuchFieldException, IllegalAccessException {
         Field field = Throwable.class.getDeclaredField("tracing");
         field.setAccessible(true);
         field.setBoolean(null, true);
