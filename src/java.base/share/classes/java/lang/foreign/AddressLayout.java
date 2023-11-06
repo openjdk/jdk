@@ -35,16 +35,16 @@ import java.nio.ByteOrder;
 import java.util.Optional;
 
 /**
- * A value layout used to model the address of some region of memory.  The carrier
- * associated with an address layout is {@code MemorySegment.class}.  The size and
+ * A value layout used to model the address of some region of memory. The carrier
+ * associated with an address layout is {@code MemorySegment.class}. The size and
  * alignment of an address layout are platform-dependent (e.g. on a 64-bit platform,
  * the size and alignment of an address layout are set to 8 bytes).
  * <p>
  * An address layout may optionally feature a {@linkplain #targetLayout() target layout}.
  * An address layout with target layout {@code T} can be used to model the address of a
- * region of memory whose layout is {@code T}.  For instance, an address layout with
+ * region of memory whose layout is {@code T}. For instance, an address layout with
  * target layout {@link ValueLayout#JAVA_INT} can be used to model the address of a
- * region of memory that is 4 bytes long.  Specifying a target layout can be useful in
+ * region of memory that is 4 bytes long. Specifying a target layout can be useful in
  * the following situations:
  * <ul>
  *     <li>When accessing a memory segment that has been obtained by reading an address from
@@ -92,12 +92,12 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * order as this address layout, but associated with the specified target layout.
      * The returned address layout allows raw addresses to be accessed as
      * {@linkplain MemorySegment memory segments} whose size is set to the size of the
-     * specified layout.  Moreover, if the accessed raw address is not compatible with
+     * specified layout. Moreover, if the accessed raw address is not compatible with
      * the alignment constraint in the provided layout, {@linkplain IllegalArgumentException}
      * will be thrown.
      * @apiNote
      * This method can also be used to create an address layout which, when used, creates
-     * native memory segments with maximal size (e.g. {@linkplain Long#MAX_VALUE}).  This
+     * native memory segments with maximal size (e.g. {@linkplain Long#MAX_VALUE}). This
      * can be done by using a target sequence layout with unspecified size, as follows:
      * {@snippet lang = java:
      * AddressLayout addressLayout   = ...

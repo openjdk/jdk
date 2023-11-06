@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * A compound layout that is an aggregation of multiple, heterogeneous
- * <em>member layouts</em>.  There are two ways in which member layouts can be combined:
+ * <em>member layouts</em>. There are two ways in which member layouts can be combined:
  * if member layouts are laid out one after the other, the resulting group layout is a
  * {@linkplain StructLayout struct layout}; conversely, if all member layouts are laid
  * out at the same starting offset, the resulting group layout is a

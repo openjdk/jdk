@@ -34,7 +34,7 @@ import java.util.List;
 import jdk.internal.foreign.FunctionDescriptorImpl;
 
 /**
- * A function descriptor models the signature of a foreign function.  A function
+ * A function descriptor models the signature of a foreign function. A function
  * descriptor is made up of zero or more argument layouts, and zero or one return layout.
  * A function descriptor is used to create
  * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles} and
@@ -109,7 +109,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * </ul>
      *
      * @apiNote A function descriptor cannot, by construction, contain any padding
-     *          layouts.  As such, it is not necessary to specify how padding layout
+     *          layouts. As such, it is not necessary to specify how padding layout
      *          should be mapped to carrier types.
      *
      * @return the method type consisting of the carrier types of the layouts in this
@@ -135,7 +135,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
 
     /**
      * Creates a function descriptor with the given argument layouts and no return
-     * layout.  This is useful to model functions that return no values.
+     * layout. This is useful to model functions that return no values.
      *
      * @param argLayouts the argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts}

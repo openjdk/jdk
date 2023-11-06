@@ -47,21 +47,21 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * which are used to represent values of given size and kind and
  * {@linkplain PaddingLayout padding layouts} which are used, as the name suggests, to
  * represent a portion of a memory segment whose contents should be ignored, and which
- * are primarily present for alignment reasons.  Some common value layout constants, such
+ * are primarily present for alignment reasons. Some common value layout constants, such
  * as {@link ValueLayout#JAVA_INT} and {@link ValueLayout#JAVA_FLOAT_UNALIGNED} are
- * defined in the {@link ValueLayout} class.  A special kind of value layout, namely an
+ * defined in the {@link ValueLayout} class. A special kind of value layout, namely an
  * {@linkplain AddressLayout address layout}, is used to model values that denote the
  * address of a region of memory.
  * <p>
  * More complex layouts can be derived from simpler ones: a
  * {@linkplain SequenceLayout sequence layout} denotes a homogeneous repetition of zero
  * or more occurrences of an element layout; a {@linkplain GroupLayout group layout}
- * denotes a heterogeneous aggregation of zero or more member layouts.  Group layouts
+ * denotes a heterogeneous aggregation of zero or more member layouts. Group layouts
  * come in two flavors: {@linkplain StructLayout struct layouts}, where member layouts
  * are laid out one after the other, and {@linkplain UnionLayout union layouts} where
  * member layouts are laid out at the same starting offset.
  * <p>
- * Layouts can be optionally associated with a <em>name</em>.  A layout name can be
+ * Layouts can be optionally associated with a <em>name</em>. A layout name can be
  * referred to when constructing <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
  * <p>
  * Consider the following struct declaration in C:
@@ -90,9 +90,9 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * All layouts have a <em>size</em> (expressed in bytes), which is defined as follows:
  * <ul>
  *     <li>The size of a value layout is determined by the {@linkplain ValueLayout#carrier()}
- *     associated with the value layout.  That is, the constant {@link ValueLayout#JAVA_INT}
+ *     associated with the value layout. That is, the constant {@link ValueLayout#JAVA_INT}
  *     has carrier {@code int}, and size of 4 bytes;</li>
- *     <li>The size of an address layout is platform-dependent.  That is, the constant
+ *     <li>The size of an address layout is platform-dependent. That is, the constant
  *     {@link ValueLayout#ADDRESS} has size of 8 bytes on a 64-bit platform;</li>
  *     <li>The size of a padding layout is always provided explicitly, on
  *     {@linkplain MemoryLayout#paddingLayout(long) construction};</li>
@@ -126,7 +126,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <h2 id="layout-paths">Layout paths</h2>
  *
  * A <em>layout path</em> is used to unambiguously select a layout that is nested in some
- * other layout.  Layout paths are typically expressed as a sequence of one or more
+ * other layout. Layout paths are typically expressed as a sequence of one or more
  * {@linkplain PathElement path elements}. (A more formal definition of layout paths is
  * provided <a href="#well-formedness">below</a>).
  * <p>
@@ -156,9 +156,9 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <h3 id="open-path-elements">Open path elements</h3>
  *
  * Some layout path elements, said <em>open path elements</em>, can select multiple
- * layouts at once.  For instance, the open path elements
+ * layouts at once. For instance, the open path elements
  * {@link PathElement#sequenceElement()}, {@link PathElement#sequenceElement(long, long)}
- * select an unspecified element in a sequence layout.  A var handle derived from a
+ * select an unspecified element in a sequence layout. A var handle derived from a
  * layout path containing one or more open path element features additional coordinates
  * of type {@code long}, which can be used by clients to <em>bind</em> the open elements
  * in the path:
@@ -175,9 +175,9 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  *
  * <p>
  * Open path elements also affects the creation of
- * {@linkplain #byteOffsetHandle(PathElement...) offset-computing method handles}.  Each
+ * {@linkplain #byteOffsetHandle(PathElement...) offset-computing method handles}. Each
  * open path element becomes an additional {@code long} parameter in the obtained method
- * handle.  This parameter can be used to specify the index of the sequence element whose
+ * handle. This parameter can be used to specify the index of the sequence element whose
  * offset is to be computed:
  *
  * {@snippet lang=java :
@@ -190,7 +190,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <h3 id="deref-path-elements">Dereference path elements</h3>
  *
  * A special kind of path element, called <em>dereference path element</em>, allows var
- * handles obtained from memory layouts to follow pointers.  Consider the following layout:
+ * handles obtained from memory layouts to follow pointers. Consider the following layout:
  *
  * {@snippet lang=java :
  * StructLayout RECTANGLE = MemoryLayout.structLayout(
@@ -205,10 +205,10 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * );
  * }
  *
- * This layout is a struct layout which describe a rectangle.  It contains a single field,
+ * This layout is a struct layout which describe a rectangle. It contains a single field,
  * namely {@code points}, an address layout whose
  * {@linkplain AddressLayout#targetLayout() target layout} is a sequence layout of four
- * struct layouts.  Each struct layout describes a two-dimensional point, and is defined
+ * struct layouts. Each struct layout describes a two-dimensional point, and is defined
  * as a pair or {@link ValueLayout#JAVA_INT} coordinates, with names {@code x} and
  * {@code y}, respectively.
  * <p>
@@ -233,21 +233,21 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <h3 id="well-formedness">Layout path well-formedness</h3>
  *
  * A layout path is applied to a layout {@code C_0}, also called the
- * <em>initial layout</em>.  Each path element in a layout path can be thought of as a
+ * <em>initial layout</em>. Each path element in a layout path can be thought of as a
  * function which updates the current layout {@code C_i-1} to some other layout
- * {@code C_i}.  That is, for each path element {@code E1, E2, ... En}, in a layout path
+ * {@code C_i}. That is, for each path element {@code E1, E2, ... En}, in a layout path
  * {@code P}, we compute {@code C_i = f_i(C_i-1)}, where {@code f_i} is the selection
  * function associated with the path element under consideration, denoted as {@code E_i}.
  * The final layout {@code C_i} is also called the <em>selected layout</em>.
  * <p>
  * A layout path {@code P} is considered well-formed for an initial layout {@code C_0}
  * if all its path elements {@code E1, E2, ... En} are well-formed for their
- * corresponding input layouts {@code C_0, C_1, ... C_n-1}.  A path element {@code E} is
+ * corresponding input layouts {@code C_0, C_1, ... C_n-1}. A path element {@code E} is
  * considered well-formed for a layout {@code L} if any of the following is true:
  * <ul>
  * <li>{@code L} is a sequence layout and {@code E} is a sequence path element
  * (one of {@link PathElement#sequenceElement(long)}, {@link PathElement#sequenceElement(long, long)}
- * or {@link PathElement#sequenceElement()}).  Moreover, if {@code E} contains one or
+ * or {@link PathElement#sequenceElement()}). Moreover, if {@code E} contains one or
  * more sequence indices, such indices have to be compatible with the sequence layout's
  * element count;</li>
  * <li>{@code L} is a group layout and {@code E} is a group path element (one of
@@ -272,12 +272,12 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <li>An access size {@code S}, derived from {@code L.byteSize()}</li>
  * </ul>
  * Depending on the above characteristics, the returned var handle might feature certain
- * <i>access mode restrictions</i>.  We say that a var handle is <em>aligned</em> if its
+ * <i>access mode restrictions</i>. We say that a var handle is <em>aligned</em> if its
  * alignment constraint {@code A} is compatible with the access size {@code S}, that is
- * if {@code A >= S}.  An aligned var handle is guaranteed to support the following
+ * if {@code A >= S}. An aligned var handle is guaranteed to support the following
  * access modes:
  * <ul>
- * <li>read write access modes for all {@code T}.  On 32-bit platforms, access modes
+ * <li>read write access modes for all {@code T}. On 32-bit platforms, access modes
  *     {@code get} and {@code set} for {@code long}, {@code double} and {@code MemorySegment}
  *     are supported but might lead to word tearing, as described in Section {@jls 17.7}.
  *     of <cite>The Java Language Specification</cite>.
@@ -298,8 +298,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * and {@link MemorySegment#address()}, respectively).
  * <p>
  * Alternatively, a var handle is <em>unaligned</em> if its alignment constraint {@code A}
- * is incompatible with the access size {@code S}, that is, if {@code A < S}.  An
- * unaligned var handle only supports the {@code get} and {@code set} access modes.  All
+ * is incompatible with the access size {@code S}, that is, if {@code A < S}. An
+ * unaligned var handle only supports the {@code get} and {@code set} access modes. All
  * other access modes will result in {@link UnsupportedOperationException} being thrown.
  * Moreover, while supported, access modes {@code get} and {@code set} might lead to
  * word tearing.
@@ -307,8 +307,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * <h2 id="variable-length">Working with variable-length arrays</h2>
  *
  * We have seen how sequence layouts are used to describe the contents of an array whose
- * size is known <em>statically</em>.  There are cases, however, where the array size is
- * only known <em>dynamically</em>.  We call such arrays <em>variable-length arrays</em>.
+ * size is known <em>statically</em>. There are cases, however, where the array size is
+ * only known <em>dynamically</em>. We call such arrays <em>variable-length arrays</em>.
  * There are two common kinds of variable-length arrays:
  * <ul>
  *     <li>a <em>toplevel</em> variable-length array whose size depends on the value of
@@ -332,7 +332,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * }
  *
  * In the above code, a point is modelled as two coordinates ({@code x} and {@code y}
- * respectively).  Now consider the following snippet of C code:
+ * respectively). Now consider the following snippet of C code:
  *
  * {@snippet lang=c :
  * int size = ...
@@ -342,8 +342,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * }
  * }
  *
- * Here, we allocate an array of point ({@code points}).  Crucially, the size of the array
- * is dynamically bound to the value of the {@code size} variable.  Inside the loop, the
+ * Here, we allocate an array of point ({@code points}). Crucially, the size of the array
+ * is dynamically bound to the value of the {@code size} variable. Inside the loop, the
  * {@code x} coordinate of all the points in the array is accessed.
  * <p>
  * To model this code in Java, let's start by defining a layout for the {@code Point}
@@ -358,8 +358,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  *
  * Since we know we need to create and access an array of points, it would be tempting to
  * create a sequence layout modelling the variable-length array, and then derive the
- * necessary access var handles from the sequence layout.  But this approach is
- * problematic, as the size of the variable-length array is not known.  Instead, a
+ * necessary access var handles from the sequence layout. But this approach is
+ * problematic, as the size of the variable-length array is not known. Instead, a
  * var handle that provides structured access to the elements of a variable-length array
  * can be obtained directly from the layout describing the array elements
  * (e.g. the point layout), as demonstrated below:
@@ -376,16 +376,16 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  *
  * Here, the coordinate {@code x} of subsequent point in the array is accessed using the
  * {@code POINT_ARR_X} var handle, which is obtained using the
- * {@link #arrayElementVarHandle(PathElement...)} method.  This var handle features two
+ * {@link #arrayElementVarHandle(PathElement...)} method. This var handle features two
  * {@code long} coordinates: the first is a base offset (set to {@code 0L}), while the
  * second is a logical index that can be used to stride over all the elements of the
  * point array.
  * <p>
  * The base offset coordinate allows clients to express complex access operations, by
  * injecting additional offset computation into the var handle (we will see an example
- * of that below).  In cases where the base offset is constant (as in the previous
+ * of that below). In cases where the base offset is constant (as in the previous
  * example) clients can, if desired, drop the base offset parameter and make the access
- * expression simpler.  This is achieved using the
+ * expression simpler. This is achieved using the
  * {@link java.lang.invoke.MethodHandles#insertCoordinates(VarHandle, int, Object...)}
  * var handle adapter.
  *
@@ -401,8 +401,8 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * }
  *
  * In the above code, a polygon is modelled as a size (the number of edges in the polygon)
- * and an array of points (one for each vertex in the polygon).  The number of vertices
- * depends on the number of edges in the polygon.  As such, the size of the
+ * and an array of points (one for each vertex in the polygon). The number of vertices
+ * depends on the number of edges in the polygon. As such, the size of the
  * {@code points} array is left <em>unspecified</em> in the C declaration, using a
  * <em>Flexible Array Member</em> (a feature standardized in C99).
  * <p>
@@ -420,7 +420,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * long POINTS_OFFSET = POLYGON.byteOffset(PathElement.groupElement("points"));
  * }
  *
- * The {@code POLYGON} layout contains a sequence layout of size <em>zero</em>.  The
+ * The {@code POLYGON} layout contains a sequence layout of size <em>zero</em>. The
  * element layout of the sequence layout is the {@code POINT} layout, shown previously.
  * The polygon layout is used to obtain a var handle that provides access to the polygon
  * size, as well as an offset ({@code POINTS_OFFSET}) to the start of the variable-length
@@ -438,7 +438,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * Here, we first obtain the polygon size, using the {@code POLYGON_SIZE} var handle.
  * Then, in a loop, we read the {@code x} coordinates of all the points in the polygon.
  * This is done by providing a custom offset (namely, {@code POINTS_OFFSET}) to the
- * offset coordinate of the {@code POINT_ARR_X} var handle.  As before, the loop
+ * offset coordinate of the {@code POINT_ARR_X} var handle. As before, the loop
  * induction variable {@code i} is passed as the index of the {@code POINT_ARR_X}
  * var handle, to stride over all the elements of the variable-length array.
  *
@@ -486,7 +486,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <p>
      * Layout alignment defines a power of two {@code A} which is the byte-wise alignment
      * of the layout, where {@code A} is the number of bytes that must be aligned for any
-     * pointer that correctly points to this layout.  Thus:
+     * pointer that correctly points to this layout. Thus:
      *
      * <ul>
      * <li>{@code A=1} means unaligned (in the usual sense), which is common in packets.</li>
@@ -554,7 +554,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li>it has one leading {@code long} parameter representing the base offset;</li>
      *     <li>it has as zero or more trailing parameters of type {@code long}, one for
      *     each <a href=#open-path-elements>open path element</a> in the provided layout
-     *     path.  The order of these parameters corresponds to the order in which the
+     *     path. The order of these parameters corresponds to the order in which the
      *     open path elements occur in the provided layout path.
      * </ul>
      * <p>
@@ -600,7 +600,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     denoted as {@code B};</li>
      *     <li>it has zero or more trailing access coordinates of type {@code long},
      *     one for each <a href=#open-path-elements>open path element</a> in the provided
-     *     layout path, denoted as {@code I1, I2, ... In}, respectively.  The order of
+     *     layout path, denoted as {@code I1, I2, ... In}, respectively. The order of
      *     these access coordinates corresponds to the order in which the open path
      *     elements occur in the provided layout path.
      * </ul>
@@ -618,12 +618,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li>The physical address of the accessed memory segment must be
      *     <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
      *     {@linkplain #byteAlignment() alignment constraint} of the root layout
-     *     (this layout), or an {@link IllegalArgumentException} is thrown.  Note
+     *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected value layout.</li>
      *     <li>The offset of the access operation (computed as above) must fall inside
      *     the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown.  This is the case when
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
      *     {@code O + A <= S}, where {@code O} is the accessed offset (computed as above),
      *     {@code A} is the size of the selected layout and {@code S} is the size of the
      *     accessed memory segment.</li>
@@ -637,9 +637,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <p>
      * If the selected layout is an {@linkplain AddressLayout address layout}, calling
      * {@link VarHandle#get(Object...)} on the returned var handle will return a new
-     * memory segment.  The segment is associated with the global scope.  Moreover, the
+     * memory segment. The segment is associated with the global scope. Moreover, the
      * size of the segment depends on whether the address layout has a
-     * {@linkplain AddressLayout#targetLayout() target layout}.  More specifically:
+     * {@linkplain AddressLayout#targetLayout() target layout}. More specifically:
      * <ul>
      *     <li>If the address layout has a target layout {@code T}, then the size of the
      *     returned segment is {@code T.byteSize()};</li>
@@ -655,7 +655,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * element in position {@code k} (where {@code k <= m}) then two layout paths
      * {@code P} and {@code P'} are derived, where P contains all the path elements from
      * 0 to {@code k - 1} and {@code P'} contains all the path elements from {@code k + 1}
-     * to {@code m} (if any).  Then, the returned var handle is computed as follows:
+     * to {@code m} (if any). Then, the returned var handle is computed as follows:
      *
      * {@snippet lang = "java":
      * VarHandle baseHandle = this.varHandle(P);
@@ -737,7 +737,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * As the leading index coordinate {@code I0} is not bound by any sequence layout, it
      * can assume <em>any</em> non-negative value - provided that the resulting offset
      * computation does not overflow, or that the computed offset does not fall outside
-     * the spatial bound of the accessed memory segment.  As such, the var handles
+     * the spatial bound of the accessed memory segment. As such, the var handles
      * returned from this method can be especially useful when accessing
      * <a href="#variable-length">variable-length arrays</a>.
      *
@@ -765,7 +765,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li>a following {@code long} parameter, corresponding to the base offset</li>
      *     <li>it has as zero or more trailing parameters of type {@code long}, one for
      *     each <a href=#open-path-elements>open path element</a> in the provided
-     *     layout path.  The order of these parameters corresponds to the order in which
+     *     layout path. The order of these parameters corresponds to the order in which
      *     the open path elements occur in the provided layout path.
      * </ul>
      * <p>
@@ -779,12 +779,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li>The physical address of the accessed memory segment must be
      *     <a href="MemorySegment.html#segment-alignment">aligned</a> according to the
      *     {@linkplain #byteAlignment() alignment constraint} of the root layout
-     *     (this layout), or an {@link IllegalArgumentException} is thrown.  Note
+     *     (this layout), or an {@link IllegalArgumentException} is thrown. Note
      *     that the alignment constraint of the root layout can be more strict
      *     (but not less) than the alignment constraint of the selected layout.</li>
      *     <li>The start offset of the slicing operation (computed as above) must fall
      *     fall inside the spatial bounds of the accessed memory segment, or an
-     *     {@link IndexOutOfBoundsException} is thrown.  This is the case when
+     *     {@link IndexOutOfBoundsException} is thrown. This is the case when
      *     {@code O + A <= S}, where {@code O} is the start offset of the slicing
      *     operation (computed as above), {@code A} is the size of the selected layout
      *     and {@code S} is the size of the accessed memory segment.</li>
@@ -851,7 +851,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * @implSpec in case multiple group elements with a matching name exist, the path
          *           element returned by this method will select the first one; that is,
          *           the group element with the lowest offset from current path is
-         *           selected.  In such cases, using {@link #groupElement(long)} might be
+         *           selected. In such cases, using {@link #groupElement(long)} might be
          *           preferable.
          *
          * @param name the name of the member layout to be selected.
@@ -901,11 +901,11 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         /**
          * Returns an <a href="MemoryLayout.html#open-path-elements">open path element</a>
          * which selects the element layout in a <em>range</em> of positions in a sequence
-         * layout.  The range is expressed as a pair of starting index (inclusive)
+         * layout. The range is expressed as a pair of starting index (inclusive)
          * {@code S} and step factor (which can also be negative) {@code F}.
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
-         * {@code I}.  If {@code C} is the
+         * {@code I}. If {@code C} is the
          * sequence element count, it follows that {@code 0 <= I < B}, where {@code B}
          * is computed as follows:
          * <ul>
@@ -936,7 +936,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * which selects an unspecified element layout in a sequence layout.
          * <p>
          * The exact sequence element selected by this layout is expressed as an index
-         * {@code I}.  If {@code C} is the sequence element count, it follows that
+         * {@code I}. If {@code C} is the sequence element count, it follows that
          * {@code 0 <= I < C}.
          *
          * @return a path element which selects an unspecified sequence element layout.
@@ -961,13 +961,13 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     /**
      * Compares the specified object with this layout for equality. Returns {@code true}
      * if and only if the specified object is also a layout, and it is equal to this
-     * layout.  Two layouts are considered equal if they are of the same kind, have the
+     * layout. Two layouts are considered equal if they are of the same kind, have the
      * same size, name and alignment constraint. Furthermore, depending on the
      * layout kind, additional conditions must be satisfied:
      * <ul>
      *     <li>two value layouts are considered equal if they have the same
      *     {@linkplain ValueLayout#order() order}, and
-     *     {@linkplain ValueLayout#carrier() carrier}.  Additionally, two address
+     *     {@linkplain ValueLayout#carrier() carrier}. Additionally, two address
      *     layouts are considered equal if they also have the same
      *     {@linkplain AddressLayout#targetLayout() target layout};</li>
      *     <li>two sequence layouts are considered equal if they have the same element
@@ -996,7 +996,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * Creates a padding layout with the given byte size. The alignment constraint of the
-     * returned layout is 1.  As such, regardless of its size, in the absence of an
+     * returned layout is 1. As such, regardless of its size, in the absence of an
      * {@linkplain #withByteAlignment(long) explicit} alignment constraint, a padding
      * layout does not affect the natural alignment of the group or sequence layout it is
      * nested into.
@@ -1040,7 +1040,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *         compatible with its alignment constraint
      *
      * @apiNote This factory does not automatically align element layouts, by inserting
-     *          additional {@linkplain PaddingLayout padding layout} elements.  As such,
+     *          additional {@linkplain PaddingLayout padding layout} elements. As such,
      *          the following struct layout creation will fail with an exception:
      *
      * {@snippet lang = java:

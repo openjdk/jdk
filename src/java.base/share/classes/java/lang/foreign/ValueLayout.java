@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
 import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
- * A layout that models values of basic data types.  Examples of values modelled by a
+ * A layout that models values of basic data types. Examples of values modelled by a
  * value layout are <em>integral</em> values (either signed or unsigned),
  * <em>floating-point</em> values and <em>address</em> values.
  * <p>

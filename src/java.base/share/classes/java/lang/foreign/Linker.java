@@ -44,15 +44,15 @@ import java.util.stream.Stream;
  * A linker provides access to foreign functions from Java code, and access to Java code
  * from foreign functions.
  * <p>
- * Foreign functions typically reside in libraries that can be loaded on-demand.  Each
- * library conforms to a specific ABI (Application Binary Interface).  An ABI is a set of
+ * Foreign functions typically reside in libraries that can be loaded on-demand. Each
+ * library conforms to a specific ABI (Application Binary Interface). An ABI is a set of
  * calling conventions and data types associated with the compiler, OS, and processor
- * where the library was built.  For example, a C compiler on Linux/x64 usually builds
+ * where the library was built. For example, a C compiler on Linux/x64 usually builds
  * libraries that conform to the SystemV ABI.
  * <p>
  * A linker has detailed knowledge of the calling conventions and data types used by a
- * specific ABI.  For any library which conforms to that ABI, the linker can mediate
- * between Java code running in the JVM and foreign functions in the library.  In
+ * specific ABI. For any library which conforms to that ABI, the linker can mediate
+ * between Java code running in the JVM and foreign functions in the library. In
  * particular:
  * <ul>
  * <li>A linker allows Java code to link against foreign functions, via
@@ -62,22 +62,22 @@ import java.util.stream.Stream;
  * of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stubs}.</li>
  * </ul>
  * A linker provides a way to look up the <em>canonical layouts</em> associated with the
- * data types used by the ABI.  For example, a linker implementing the C ABI might choose
- * to provide a canonical layout for the C {@code size_t} type.  On 64-bit platforms,
- * this canonical layout might be equal to {@link ValueLayout#JAVA_LONG}.  The canonical
+ * data types used by the ABI. For example, a linker implementing the C ABI might choose
+ * to provide a canonical layout for the C {@code size_t} type. On 64-bit platforms,
+ * this canonical layout might be equal to {@link ValueLayout#JAVA_LONG}. The canonical
  * layouts supported by a linker are exposed via the {@link #canonicalLayouts()} method,
  * which returns a map from type names to canonical layouts.
  * <p>
  * In addition, a linker provides a way to look up foreign functions in libraries that
- * conform to the ABI.  Each linker chooses a set of libraries that are commonly used on
- * the OS and processor combination associated with the ABI.  For example, a linker for
- * Linux/x64 might choose two libraries: {@code libc} and {@code libm}.  The functions in
+ * conform to the ABI. Each linker chooses a set of libraries that are commonly used on
+ * the OS and processor combination associated with the ABI. For example, a linker for
+ * Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in
  * these libraries are exposed via a {@linkplain #defaultLookup() symbol lookup}.
  *
  * <h2 id="native-linker">Calling native functions</h2>
  *
  * The {@linkplain #nativeLinker() native linker} can be used to link against functions
- * defined in C libraries (native functions).  Suppose we wish to downcall from Java to
+ * defined in C libraries (native functions). Suppose we wish to downcall from Java to
  * the {@code strlen} function defined in the standard C library:
  * {@snippet lang = c:
  * size_t strlen(const char *s);
@@ -96,10 +96,10 @@ import java.util.stream.Stream;
  * Note how the native linker also provides access, via its {@linkplain #defaultLookup() default lookup},
  * to the native functions defined by the C libraries loaded with the Java runtime.
  * Above, the default lookup is used to search the address of the {@code strlen} native
- * function.  That address is then passed, along with a <em>platform-dependent description</em>
+ * function. That address is then passed, along with a <em>platform-dependent description</em>
  * of the signature of the function expressed as a {@link FunctionDescriptor} (more on
  * that below) to the native linker's {@link #downcallHandle(MemorySegment, FunctionDescriptor, Option...)}
- * method.  The obtained downcall method handle is then invoked as follows:
+ * method. The obtained downcall method handle is then invoked as follows:
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
@@ -110,28 +110,28 @@ import java.util.stream.Stream;
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
  *
  * When interacting with the native linker, clients must provide a platform-dependent
- * description of the signature of the C function they wish to link against.  This
+ * description of the signature of the C function they wish to link against. This
  * description, a {@link FunctionDescriptor function descriptor}, defines the layouts
  * associated with the parameter types and return type (if any) of the C function.
  * <p>
  * Scalar C types such as {@code bool}, {@code int} are modelled as
- * {@linkplain ValueLayout value layouts} of a suitable carrier.  The
+ * {@linkplain ValueLayout value layouts} of a suitable carrier. The
  * {@linkplain #canonicalLayouts() mapping} between a scalar type and its corresponding
  * canonical layout is dependent on the ABI implemented by the native linker (see below).
  * <p>
- * Composite types are modelled as {@linkplain GroupLayout group layouts}.  More
+ * Composite types are modelled as {@linkplain GroupLayout group layouts}. More
  * specifically, a C {@code struct} type maps to a {@linkplain StructLayout struct layout},
- * whereas a C {@code union} type maps to a {@link UnionLayout union layout}.  When
+ * whereas a C {@code union} type maps to a {@link UnionLayout union layout}. When
  * defining a struct or union layout, clients must pay attention to the size and
- * alignment constraint of the corresponding composite type definition in C.  For
+ * alignment constraint of the corresponding composite type definition in C. For
  * instance, padding between two struct fields must be modelled explicitly, by adding
  * an adequately sized {@linkplain PaddingLayout padding layout} member to the resulting
  * struct layout.
  * <p>
  * Finally, pointer types such as {@code int**} and {@code int(*)(size_t*, size_t*)} are
- * modelled as {@linkplain AddressLayout address layouts}.  When the spatial bounds of
+ * modelled as {@linkplain AddressLayout address layouts}. When the spatial bounds of
  * the pointer type are known statically, the address layout can be associated with a
- * {@linkplain AddressLayout#targetLayout() target layout}.  For instance, a pointer that
+ * {@linkplain AddressLayout#targetLayout() target layout}. For instance, a pointer that
  * is known to point to a C {@code int[2]} array can be modelled as an address layout
  * whose target layout is a sequence layout whose element count is 2, and whose element
  * type is {@link ValueLayout#JAVA_INT}.
@@ -152,7 +152,7 @@ import java.util.stream.Stream;
  *     <li>{@code void*}</li>
  * </ul>
  * As noted above, the specific canonical layout associated with each type can vary,
- * depending on the data model supported by a given ABI.  For instance, the C type
+ * depending on the data model supported by a given ABI. For instance, the C type
  * {@code long} maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64,
  * but maps to the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
  * Similarly, the C type {@code size_t} maps to the layout constant
@@ -160,8 +160,8 @@ import java.util.stream.Stream;
  * {@link ValueLayout#JAVA_INT} on 32-bit platforms.
  * <p>
  * A native linker typically does not provide canonical layouts for C's unsigned integral
- * types.  Instead, they are modelled using the canonical layouts associated with their
- * corresponding signed integral types.  For instance, the C type {@code unsigned long}
+ * types. Instead, they are modelled using the canonical layouts associated with their
+ * corresponding signed integral types. For instance, the C type {@code unsigned long}
  * maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to
  * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
  * <p>
@@ -242,7 +242,7 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations operate on a subset of memory layouts.  More formally,
+ * All native linker implementations operate on a subset of memory layouts. More formally,
  * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
@@ -283,7 +283,7 @@ import java.util.stream.Stream;
  *
  * The {@code qsort} function can be used to sort the contents of an array, using a
  * custom comparator function which is passed as a function pointer
- * (the {@code compar} parameter).  To be able to call the {@code qsort} function from
+ * (the {@code compar} parameter). To be able to call the {@code qsort} function from
  * Java, we must first create a downcall method handle for it, as follows:
  *
  * {@snippet lang = java:
@@ -299,8 +299,8 @@ import java.util.stream.Stream;
  * pointer) and the last parameter (the function pointer).
  * <p>
  * To invoke the {@code qsort} downcall handle obtained above, we need a function pointer
- * to be passed as the last parameter.  That is, we need to create a function pointer out
- * of an existing method handle.  First, let's write a Java method that can compare two
+ * to be passed as the last parameter. That is, we need to create a function pointer out
+ * of an existing method handle. First, let's write a Java method that can compare two
  * int elements passed as pointers (i.e. as {@linkplain MemorySegment memory segments}):
  *
  * {@snippet lang = java:
@@ -322,14 +322,14 @@ import java.util.stream.Stream;
  *                                                      comparDesc.toMethodType());
  * }
  *
- * First, we create a function descriptor for the function pointer type.  Since we know
+ * First, we create a function descriptor for the function pointer type. Since we know
  * that the parameters passed to the comparator method will be pointers to elements of a
  * C {@code int[]} array, we can specify {@link ValueLayout#JAVA_INT} as the target
- * layout for the address layouts of both parameters.  This will allow the comparator
- * method to access the contents of the array elements to be compared.  We then
+ * layout for the address layouts of both parameters. This will allow the comparator
+ * method to access the contents of the array elements to be compared. We then
  * {@linkplain FunctionDescriptor#toMethodType() turn} that function descriptor into a
  * suitable {@linkplain java.lang.invoke.MethodType method type} which we then use to
- * look up the comparator method handle.  We can now create an upcall stub which points
+ * look up the comparator method handle. We can now create an upcall stub which points
  * to that method, and pass it, as a function pointer, to the {@code qsort} downcall
  * handle, as follows:
  *
@@ -344,15 +344,15 @@ import java.util.stream.Stream;
  *
  * This code creates an off-heap array, copies the contents of a Java array into it, and
  * then passes the array to the {@code qsort} method handle along with the comparator
- * function we obtained from the native linker.  After the invocation, the contents
+ * function we obtained from the native linker. After the invocation, the contents
  * of the off-heap array will be sorted according to our comparator function, written in
- * Java.  We then extract a new Java array from the segment, which contains the sorted
+ * Java. We then extract a new Java array from the segment, which contains the sorted
  * elements.
  *
  * <h3 id="by-ref">Functions returning pointers</h3>
  *
  * When interacting with native functions, it is common for those functions to allocate
- * a region of memory and return a pointer to that region.  Let's consider the following
+ * a region of memory and return a pointer to that region. Let's consider the following
  * function from the C standard library:
  *
  * {@snippet lang = c:
@@ -368,7 +368,7 @@ import java.util.stream.Stream;
  * }
  *
  * The {@code free} function takes a pointer to a region of memory and deallocates that
- * region.  In this section we will show how to interact with these native functions,
+ * region. In this section we will show how to interact with these native functions,
  * with the aim of providing a <em>safe</em> allocation API (the approach outlined below
  * can of course be generalized to allocation functions other than {@code malloc} and
  * {@code free}).
@@ -392,19 +392,19 @@ import java.util.stream.Stream;
  *
  * When a native function returning a pointer (such as {@code malloc}) is invoked using
  * a downcall method handle, the Java runtime has no insight into the size or the
- * lifetime of the returned pointer.  Consider the following code:
+ * lifetime of the returned pointer. Consider the following code:
  *
  * {@snippet lang = java:
  * MemorySegment segment = (MemorySegment)malloc.invokeExact(100);
  * }
  *
  * The size of the segment returned by the {@code malloc} downcall method handle is
- * <a href="MemorySegment.html#wrapping-addresses">zero</a>.  Moreover, the scope of the
- * returned segment is the global scope.  To provide safe access to the segment, we must,
- * unsafely, resize the segment to the desired size (100, in this case).  It might also
+ * <a href="MemorySegment.html#wrapping-addresses">zero</a>. Moreover, the scope of the
+ * returned segment is the global scope. To provide safe access to the segment, we must,
+ * unsafely, resize the segment to the desired size (100, in this case). It might also
  * be desirable to attach the segment to some existing {@linkplain Arena arena}, so that
  * the lifetime of the region of memory backing the segment can be managed automatically,
- * as for any other native segment created directly from Java code.  Both of these
+ * as for any other native segment created directly from Java code. Both of these
  * operations are accomplished using the restricted method
  * {@link MemorySegment#reinterpret(long, Arena, Consumer)}, as follows:
  *
@@ -422,11 +422,11 @@ import java.util.stream.Stream;
  * }
  *
  * The {@code allocateMemory} method defined above accepts two parameters: a size and an
- * arena.  The method calls the {@code malloc} downcall method handle, and unsafely
+ * arena. The method calls the {@code malloc} downcall method handle, and unsafely
  * reinterprets the returned segment, by giving it a new size (the size passed to the
  * {@code allocateMemory} method) and a new scope (the scope of the provided arena).
  * The method also specifies a <em>cleanup action</em> to be executed when the provided
- * arena is closed.  Unsurprisingly, the cleanup action passes the segment to the
+ * arena is closed. Unsurprisingly, the cleanup action passes the segment to the
  * {@code free} downcall method handle, to deallocate the underlying region of memory.
  * We can use the {@code allocateMemory} method as follows:
  *
@@ -437,7 +437,7 @@ import java.util.stream.Stream;
  * }
  *
  * Note how the segment obtained from {@code allocateMemory} acts as any other segment
- * managed by the confined arena.  More specifically, the obtained segment has the
+ * managed by the confined arena. More specifically, the obtained segment has the
  * desired size, can only be accessed by a single thread (the thread which created the
  * confined arena), and its lifetime is tied to the surrounding <em>try-with-resources</em>
  * block.
@@ -445,15 +445,15 @@ import java.util.stream.Stream;
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
  * Variadic functions are C functions which can accept a variable number and type of
- * arguments.  They are declared with a trailing ellipsis ({@code ...}) at the end of the
- * formal parameter list, such as: {@code void foo(int x, ...);}.  The arguments passed
- * in place of the ellipsis are called <em>variadic arguments</em>.  Variadic functions
+ * arguments. They are declared with a trailing ellipsis ({@code ...}) at the end of the
+ * formal parameter list, such as: {@code void foo(int x, ...);}. The arguments passed
+ * in place of the ellipsis are called <em>variadic arguments</em>. Variadic functions
  * are, essentially, templates that can be <em>specialized</em> into multiple
  * non-variadic functions by replacing the {@code ...} with a list of
  * <em>variadic parameters</em> of a fixed number and type.
  * <p>
  * It should be noted that values passed as variadic arguments undergo default argument
- * promotion in C.  For instance, the following argument promotions are applied:
+ * promotion in C. For instance, the following argument promotions are applied:
  * <ul>
  * <li>{@code _Bool} -> {@code unsigned int}</li>
  * <li>{@code [signed] char} -> {@code [signed] int}</li>
@@ -461,28 +461,28 @@ import java.util.stream.Stream;
  * <li>{@code float} -> {@code double}</li>
  * </ul>
  * whereby the signed-ness of the source type corresponds to the signed-ness of the
- * promoted type.  The complete process of default argument promotion is described in the
- * C specification.  In effect these promotions place limits on the types that can be
+ * promoted type. The complete process of default argument promotion is described in the
+ * C specification. In effect these promotions place limits on the types that can be
  * used to replace the {@code ...}, as the variadic parameters of the specialized form of
  * a variadic function will always have a promoted type.
  * <p>
  * The native linker only supports linking the specialized form of a variadic function.
  * A variadic function in its specialized form can be linked using a function descriptor
- * describing the specialized form.  Additionally, the {@link Linker.Option#firstVariadicArg(int)}
+ * describing the specialized form. Additionally, the {@link Linker.Option#firstVariadicArg(int)}
  * linker option must be provided to indicate the first variadic parameter in the
- * parameter list.  The corresponding argument layout (if any), and all following
+ * parameter list. The corresponding argument layout (if any), and all following
  * argument layouts in the specialized function descriptor, are called
  * <em>variadic argument layouts</em>.
  * <p>
- * The native linker does not automatically perform default argument promotions.  However,
+ * The native linker does not automatically perform default argument promotions. However,
  * since passing an argument of a non-promoted type as a variadic argument is not
  * supported in C, the native linker will reject an attempt to link a specialized
  * function descriptor with any variadic argument value layouts corresponding to a
- * non-promoted C type.  Since the size of the C {@code int} type is platform-specific,
- * exactly which layouts will be rejected is platform-specific as well.  As an example:
+ * non-promoted C type. Since the size of the C {@code int} type is platform-specific,
+ * exactly which layouts will be rejected is platform-specific as well. As an example:
  * on Linux/x64 the layouts corresponding to the C types {@code _Bool},
  * {@code (unsigned) char}, {@code (unsigned) short}, and {@code float} (among others),
- * will be rejected by the linker.  The {@link #canonicalLayouts()} method can be used to
+ * will be rejected by the linker. The {@link #canonicalLayouts()} method can be used to
  * find which layout corresponds to a particular C type.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the
@@ -493,7 +493,7 @@ import java.util.stream.Stream;
  * }
  *
  * This function takes a format string, and a number of additional arguments (the number
- * of such arguments is dictated by the format string).  Consider the following
+ * of such arguments is dictated by the format string). Consider the following
  * variadic call:
  *
  * {@snippet lang = c:
@@ -502,12 +502,12 @@ import java.util.stream.Stream;
  *
  * To perform an equivalent call using a downcall method handle we must create a function
  * descriptor which describes the specialized signature of the C function we want to
- * call.  This descriptor must include an additional layout for each variadic argument we
- * intend to provide.  In this case, the specialized signature of the C function is
+ * call. This descriptor must include an additional layout for each variadic argument we
+ * intend to provide. In this case, the specialized signature of the C function is
  * {@code (char*, int, int, int)} as the format string accepts three integer parameters.
  * We then need to use a {@linkplain Linker.Option#firstVariadicArg(int) linker option}
  * to specify the position of the first variadic layout in the provided function
- * descriptor (starting from 0).  In this case, since the first parameter is the format
+ * descriptor (starting from 0). In this case, since the first parameter is the format
  * string (a non-variadic argument), the first variadic index needs to be set to 1, as
  * follows:
  *
@@ -531,10 +531,10 @@ import java.util.stream.Stream;
  *
  * <h2 id="safety">Safety considerations</h2>
  *
- * Creating a downcall method handle is intrinsically unsafe.  A symbol in a foreign
+ * Creating a downcall method handle is intrinsically unsafe. A symbol in a foreign
  * library does not, in general, contain enough signature information (e.g. arity and
- * types of foreign function parameters).  As a consequence, the linker runtime cannot
- * validate linkage requests.  When a client interacts with a downcall method handle
+ * types of foreign function parameters). As a consequence, the linker runtime cannot
+ * validate linkage requests. When a client interacts with a downcall method handle
  * obtained through an invalid linkage request (e.g. by specifying a function descriptor
  * featuring too many argument layouts), the result of such interaction is unspecified
  * and can lead to JVM crashes.
@@ -542,10 +542,10 @@ import java.util.stream.Stream;
  * When an upcall stub is passed to a foreign function, a JVM crash might occur, if the
  * foreign code casts the function pointer associated with the upcall stub to a type that
  * is incompatible with the type of the upcall stub, and then attempts to invoke the
- * function through the resulting function pointer.  Moreover, if the method handle
+ * function through the resulting function pointer. Moreover, if the method handle
  * associated with an upcall stub returns a {@linkplain MemorySegment memory segment},
  * clients must ensure that this address cannot become invalid after the upcall
- * completes.  This can lead to unspecified behavior, and even JVM crashes, since an
+ * completes. This can lead to unspecified behavior, and even JVM crashes, since an
  * upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
@@ -568,7 +568,7 @@ public sealed interface Linker permits AbstractLinker {
      *           layouts for <a href="#describing-c-sigs">basic C types</a>.
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup}
      *           associated with the returned linker are the native libraries loaded in
-     *           the process where the Java runtime is currently executing.  For example,
+     *           the process where the Java runtime is currently executing. For example,
      *           on Linux, these libraries typically include {@code libc}, {@code libm}
      *           and {@code libdl}.
      */
@@ -614,7 +614,7 @@ public sealed interface Linker permits AbstractLinker {
      * returned method handle is {@linkplain FunctionDescriptor#toMethodType() derived}
      * from the argument and return layouts in the function descriptor, but features an
      * additional leading parameter of type {@link MemorySegment}, from which the address
-     * of the target foreign function is derived.  Moreover, if the function descriptor's
+     * of the target foreign function is derived. Moreover, if the function descriptor's
      * return layout is a group layout, the resulting downcall method handle accepts an
      * additional leading parameter of type {@link SegmentAllocator}, which is used by
      * the linker runtime to allocate the memory region associated with the struct
@@ -638,20 +638,20 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * Moreover, if the provided function descriptor's return layout is an
      * {@linkplain AddressLayout address layout}, invoking the returned method handle
-     * will return a native segment associated with the global scope.  Under normal
-     * conditions, the size of the returned segment is {@code 0}.  However, if the
+     * will return a native segment associated with the global scope. Under normal
+     * conditions, the size of the returned segment is {@code 0}. However, if the
      * function descriptor's return layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size
      * of the returned segment is set to {@code T.byteSize()}.
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the
      * {@link MemorySegment} representing the target address of the foreign function is
-     * the {@link MemorySegment#NULL} address.  If an argument is a {@link MemorySegment},
+     * the {@link MemorySegment#NULL} address. If an argument is a {@link MemorySegment},
      * whose corresponding layout is a {@linkplain GroupLayout group layout}, the linker
-     * might attempt to access the contents of the segment.  As such, one of the
+     * might attempt to access the contents of the segment. As such, one of the
      * exceptions specified by the {@link MemorySegment#get(ValueLayout.OfByte, long)} or
      * the {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)}
-     * methods may be thrown.  The returned method handle will additionally throw
+     * methods may be thrown. The returned method handle will additionally throw
      * {@link NullPointerException} if any argument passed to it is {@code null}.
      *
      * @param function the function descriptor of the target foreign function.
@@ -670,27 +670,27 @@ public sealed interface Linker permits AbstractLinker {
 
     /**
      * Creates an upcall stub which can be passed to other foreign functions as a
-     * function pointer, associated with the given arena.  Calling such a function
+     * function pointer, associated with the given arena. Calling such a function
      * pointer from foreign code will result in the execution of the provided method
      * handle.
      * <p>
      * The returned memory segment's address points to the newly allocated upcall stub,
-     * and is associated with the provided arena.  As such, the lifetime of the returned
-     * upcall stub segment is controlled by the provided arena.  For instance, if the
+     * and is associated with the provided arena. As such, the lifetime of the returned
+     * upcall stub segment is controlled by the provided arena. For instance, if the
      * provided arena is a confined arena, the returned upcall stub segment will be
      * deallocated when the provided confined arena is {@linkplain Arena#close() closed}.
      * <p>
      * An upcall stub argument whose corresponding layout is an
      * {@linkplain AddressLayout address layout} is a native segment associated with the
-     * global scope.  Under normal conditions, the size of this segment argument is
-     * {@code 0}.  However, if the address layout has a
+     * global scope. Under normal conditions, the size of this segment argument is
+     * {@code 0}. However, if the address layout has a
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size
      * of the segment argument is set to {@code T.byteSize()}.
      * <p>
      * The target method handle should not throw any exceptions. If the target method
-     * handle does throw an exception, the JVM will terminate abruptly.  To avoid this,
+     * handle does throw an exception, the JVM will terminate abruptly. To avoid this,
      * clients should wrap the code in the target method handle in a try/catch block to
-     * catch any unexpected exceptions.  This can be done using the
+     * catch any unexpected exceptions. This can be done using the
      * {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
      * method handle combinator, and handle exceptions as desired in the corresponding
      * catch block.
@@ -722,11 +722,11 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * Each {@link Linker} is responsible for choosing libraries that are widely
      * recognized as useful on the OS and processor combination supported by the
-     * {@link Linker}.  Accordingly, the precise set of symbols exposed by the symbol
+     * {@link Linker}. Accordingly, the precise set of symbols exposed by the symbol
      * lookup is unspecified; it varies from one {@link Linker} to another.
      *
      * @implNote It is strongly recommended that the result of {@link #defaultLookup}
-     *           exposes a set of symbols that is stable over time.  Clients of
+     *           exposes a set of symbols that is stable over time. Clients of
      *           {@link #defaultLookup()} are likely to fail if a symbol that was
      *           previously exposed by the symbol lookup is no longer exposed.
      *           <p>If an implementer provides {@link Linker} implementations for
@@ -745,12 +745,12 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * Each {@link Linker} is responsible for choosing the data types that are widely
      * recognized as useful on the OS and processor combination supported by the
-     * {@link Linker}.  Accordingly, the precise set of data type names and canonical
+     * {@link Linker}. Accordingly, the precise set of data type names and canonical
      * layouts exposed by the linker is unspecified; it varies from one {@link Linker} to
      * another.
      *
      * @implNote It is strongly recommended that the result of {@link #canonicalLayouts()}
-     *           exposes a set of symbols that is stable over time.  Clients of
+     *           exposes a set of symbols that is stable over time. Clients of
      *           {@link #canonicalLayouts()} are likely to fail if a data type that was
      *           previously exposed by the linker is no longer exposed, or if its
      *           canonical layout is updated.
@@ -776,7 +776,7 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * The {@code index} value must conform to {@code 0 <= index <= N}, where
          * {@code N} is the number of argument layouts of the function descriptor used in
-         * conjunction with this linker option.  When the {@code index} is:
+         * conjunction with this linker option. When the {@code index} is:
          * <ul>
          * <li>{@code 0}, all arguments passed to the function are passed as variadic
          *     arguments</li>
@@ -809,14 +809,14 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * Execution state is captured by a downcall method handle on invocation, by
          * writing it to a native segment provided by the user to the downcall method
-         * handle.  For this purpose, a downcall method handle linked with this option
+         * handle. For this purpose, a downcall method handle linked with this option
          * will feature an additional {@link MemorySegment} parameter directly following
-         * the target address, and optional {@link SegmentAllocator} parameters.  This
+         * the target address, and optional {@link SegmentAllocator} parameters. This
          * parameter, the <em>capture state segment</em>, represents the native segment
          * into which the captured state is written.
          * <p>
          * The capture state segment must have size and alignment compatible with the
-         * layout returned by {@linkplain #captureStateLayout}.  This layout is a struct
+         * layout returned by {@linkplain #captureStateLayout}. This layout is a struct
          * layout which has a named field for each captured value.
          * <p>
          * Captured state can be retrieved from the capture state segment by constructing

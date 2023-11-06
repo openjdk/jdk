@@ -28,7 +28,7 @@ package java.lang.foreign;
 import jdk.internal.foreign.layout.PaddingLayoutImpl;
 
 /**
- * A padding layout.  A padding layout specifies the size of extra space which is
+ * A padding layout. A padding layout specifies the size of extra space which is
  * typically not accessed by applications, and is typically used for aligning member
  * layouts around word boundaries.
  *

@@ -38,7 +38,7 @@ import jdk.internal.vm.annotation.ForceInline;
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}.
  * Clients implementing this interface must implement the {@link #allocate(long, long)}
- * method.  A segment allocator defines several methods which can be useful to create
+ * method. A segment allocator defines several methods which can be useful to create
  * segments from several kinds of Java values such as primitives and arrays.
  * <p>
  * {@code SegmentAllocator} is a {@linkplain FunctionalInterface functional interface}.
@@ -60,16 +60,16 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Passing a segment allocator to an API can be especially useful in circumstances where
  * a client wants to communicate <em>where</em> the results of a certain operation
- * (performed by the API) should be stored, as a memory segment.  For instance,
+ * (performed by the API) should be stored, as a memory segment. For instance,
  * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles}
  * can accept an additional {@link SegmentAllocator} parameter if the underlying
- * foreign function is known to return a struct by-value.  Effectively, the allocator
+ * foreign function is known to return a struct by-value. Effectively, the allocator
  * parameter tells the linker where to store the return value of the foreign function.
  *
  * @apiNote Unless otherwise specified, the {@link #allocate(long, long)} method is
- *          not thread-safe.  Furthermore, memory segments allocated by a segment
+ *          not thread-safe. Furthermore, memory segments allocated by a segment
  *          allocator can be associated with different lifetimes, and can even be backed
- *          by overlapping regions of memory.  For these reasons, clients should
+ *          by overlapping regions of memory. For these reasons, clients should
  *          generally only interact with a segment allocator they own.
  * <p>
  * Clients should consider using an {@linkplain Arena arena} instead, which, provides
@@ -104,12 +104,12 @@ public interface SegmentAllocator {
      * and storing the result into a memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement byte array.  The
+     * sequences with this charset's default replacement byte array. The
      * {@link java.nio.charset.CharsetEncoder} class should be used when more
      * control over the encoding process is required.
      * <p>
      * If the given string contains any {@code '\0'} characters, they will be
-     * copied as well.  This means that, depending on the method used to read
+     * copied as well. This means that, depending on the method used to read
      * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
      *
@@ -126,7 +126,7 @@ public interface SegmentAllocator {
      *     <li>{@code B} is the size, in bytes, of the string encoded using the
      *         provided charset (e.g. {@code str.getBytes(charset).length});</li>
      *     <li>{@code N} is the size (in bytes) of the terminator char according to the
-     *         provided charset.  For instance, this is 1 for {@link StandardCharsets#US_ASCII}
+     *         provided charset. For instance, this is 1 for {@link StandardCharsets#US_ASCII}
      *         and 2 for {@link StandardCharsets#UTF_16}.</li>
      * </ul>
      */
@@ -157,7 +157,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided byte value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -207,7 +207,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided short value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -232,7 +232,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided int value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -257,7 +257,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided float value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -282,7 +282,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided long value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -307,7 +307,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the provided double value}
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -336,7 +336,7 @@ public interface SegmentAllocator {
      * (see {@link ValueLayout#ADDRESS}).
      * <p>
      * The size of the allocated memory segment is the
-     * {@linkplain MemoryLayout#byteSize() size} of the given layout.  The given value is
+     * {@linkplain MemoryLayout#byteSize() size} of the given layout. The given value is
      * written into the segment according to the byte order and alignment constraint of
      * the given layout.
      *
@@ -364,7 +364,7 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the contents of the provided segment}
      * <p>
      * The size of the allocated memory segment is the
-     * {@code elementLayout.byteSize() * elementCount}.  The contents of the
+     * {@code elementLayout.byteSize() * elementCount}. The contents of the
      * source segment is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -409,7 +409,7 @@ public interface SegmentAllocator {
      *          byte array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of the
+     * {@code elementLayout.byteSize() * elements.length}. The contents of the
      * source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -436,7 +436,7 @@ public interface SegmentAllocator {
      *          short array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of the
+     * {@code elementLayout.byteSize() * elements.length}. The contents of the
      * source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -463,7 +463,7 @@ public interface SegmentAllocator {
      *          char array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of the
+     * {@code elementLayout.byteSize() * elements.length}. The contents of the
      * source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -490,7 +490,7 @@ public interface SegmentAllocator {
      *          int array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of the
+     * {@code elementLayout.byteSize() * elements.length}. The contents of the
      * source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -517,7 +517,7 @@ public interface SegmentAllocator {
      *          float array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of
+     * {@code elementLayout.byteSize() * elements.length}. The contents of
      * the source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -544,7 +544,7 @@ public interface SegmentAllocator {
      *          long array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of
+     * {@code elementLayout.byteSize() * elements.length}. The contents of
      * the source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -571,7 +571,7 @@ public interface SegmentAllocator {
      *          double array}
      * <p>
      * The size of the allocated memory segment is
-     * {@code elementLayout.byteSize() * elements.length}.  The contents of
+     * {@code elementLayout.byteSize() * elements.length}. The contents of
      * the source array is copied into the result segment element by element, according
      * to the byte order and alignment constraint of the given element layout.
      *
@@ -655,7 +655,7 @@ public interface SegmentAllocator {
 
     /**
      * Returns a segment allocator which responds to allocation requests by returning
-     * consecutive slices obtained from the provided segment.  Each new allocation
+     * consecutive slices obtained from the provided segment. Each new allocation
      * request will return a new slice starting at the current offset (modulo additional
      * padding to satisfy alignment constraint), with given size.
      * <p>
@@ -674,7 +674,7 @@ public interface SegmentAllocator {
 
     /**
      * Returns a segment allocator which responds to allocation requests by recycling a
-     * single segment.  Each new allocation request will return a new slice starting at
+     * single segment. Each new allocation request will return a new slice starting at
      * the segment offset {@code 0}, hence the name <em>prefix allocator</em>.
      * <p>
      * Equivalent to (but likely more efficient than) the following code:

@@ -29,10 +29,10 @@ import jdk.internal.foreign.layout.SequenceLayoutImpl;
 
 /**
  * A compound layout that denotes a homogeneous repetition of a given
- * <em>element layout</em>.  The repetition count is said to be the sequence layout's
- * <em>element count</em>.  A sequence layout can be thought of as a struct layout where
+ * <em>element layout</em>. The repetition count is said to be the sequence layout's
+ * <em>element count</em>. A sequence layout can be thought of as a struct layout where
  * the sequence layout's element layout is repeated a number of times that is equal to
- * the sequence layout's element count.  In other words this layout:
+ * the sequence layout's element count. In other words this layout:
  *
  * {@snippet lang=java :
  * MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN));
@@ -78,10 +78,10 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
 
     /**
      * Rearranges the elements in this sequence layout into a multi-dimensional sequence
-     * layout.  The resulting layout is a sequence layout where element layouts in the
+     * layout. The resulting layout is a sequence layout where element layouts in the
      * {@linkplain #flatten() flattened projection} of this sequence layout are
      * rearranged into one or more nested sequence layouts according to the provided
-     * element counts.  This transformation preserves the layout size;
+     * element counts. This transformation preserves the layout size;
      * that is, multiplying the provided element counts must yield the same element count
      * as the flattened projection of this sequence layout.
      * <p>
@@ -117,7 +117,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
     SequenceLayout reshape(long... elementCounts);
 
     /**
-     * Returns a flattened sequence layout.  The element layout of the returned
+     * Returns a flattened sequence layout. The element layout of the returned
      * sequence layout is the first non-sequence layout found by inspecting
      * (recursively, if needed) the element layout of this sequence layout:
      * {@snippet lang=java :
@@ -131,7 +131,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * <p>
      * This transformation preserves the layout size; nested sequence layout in this
      * sequence layout will be dropped and their element counts will be incorporated
-     * into that of the returned sequence layout.  For instance, given a
+     * into that of the returned sequence layout. For instance, given a
      * sequence layout of the kind:
      * {@snippet lang=java :
      * var seq = MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT));

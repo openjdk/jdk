@@ -51,7 +51,7 @@ import java.util.function.BiFunction;
  * and returns the address of the symbol in that library.
  * <p>
  * The address of a symbol is modelled as a zero-length
- * {@linkplain MemorySegment memory segment}.  The segment can be used in different ways:
+ * {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
  * <ul>
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which
  *         can then be used to call the foreign function at the segment's address.</li>
@@ -69,8 +69,8 @@ import java.util.function.BiFunction;
  *
  * The factory methods {@link #libraryLookup(String, Arena)} and
  * {@link #libraryLookup(Path, Arena)} create a symbol lookup for a library known to
- * the operating system.  The library is specified by either its name or a path.
- * The library is loaded if not already loaded.  The symbol lookup, which is known as a
+ * the operating system. The library is specified by either its name or a path.
+ * The library is loaded if not already loaded. The symbol lookup, which is known as a
  * <em>library lookup</em>, and its lifetime is controlled by an {@linkplain Arena arena}.
  * For instance, if the provided arena is a confined arena, the library associated with
  * the symbol lookup is unloaded when the confined arena is {@linkplain Arena#close() closed}:
@@ -85,7 +85,7 @@ import java.util.function.BiFunction;
  * <p>
  * If a library was previously loaded through JNI, i.e., by {@link System#load(String)}
  * or {@link System#loadLibrary(String)}, then the library was also associated with
- * a particular class loader.  The factory method {@link #loaderLookup()} creates
+ * a particular class loader. The factory method {@link #loaderLookup()} creates
  * a symbol lookup for all the libraries associated with the caller's class loader:
  *
  * {@snippet lang=java :
@@ -96,7 +96,7 @@ import java.util.function.BiFunction;
  * }
  *
  * This symbol lookup, which is known as a <em>loader lookup</em>, is dynamic with
- * respect to the libraries associated with the class loader.  If other libraries are
+ * respect to the libraries associated with the class loader. If other libraries are
  * subsequently loaded through JNI and associated with the class loader, then the loader
  * lookup will expose their symbols automatically.
  * <p>
@@ -121,9 +121,9 @@ import java.util.function.BiFunction;
  *
  * <p>
  * Finally, each {@link Linker} provides a symbol lookup for libraries that are commonly
- * used on the OS and processor combination supported by that {@link Linker}.  This
+ * used on the OS and processor combination supported by that {@link Linker}. This
  * symbol lookup, which is known as a <em>default lookup</em>, helps clients to quickly
- * find addresses of well-known symbols.  For example, a {@link Linker} for Linux/x64
+ * find addresses of well-known symbols. For example, a {@link Linker} for Linux/x64
  * might choose to expose symbols in {@code libc} through the default lookup:
  *
  * {@snippet lang = java:
@@ -159,7 +159,7 @@ public interface SymbolLookup {
      *         .or(SymbolLookup.loaderLookup());
      *}
      * The above code creates a symbol lookup that first searches for symbols in
-     * the "foo" library.  If no symbol is found in "foo" then "bar" is searched.
+     * the "foo" library. If no symbol is found in "foo" then "bar" is searched.
      * Finally, if a symbol is not found in neither "foo" nor "bar", the
      * {@linkplain SymbolLookup#loaderLookup() loader lookup} is used.
      *
@@ -180,15 +180,15 @@ public interface SymbolLookup {
      * {@link System#loadLibrary(String)} from code in a class defined by {@code CL}.
      * If that code makes further invocations of {@link System#load(String)} or
      * {@link System#loadLibrary(String)} then more libraries are loaded and associated
-     * with {@code CL}.  The symbol lookup returned by this method is always current: it
+     * with {@code CL}. The symbol lookup returned by this method is always current: it
      * reflects all the libraries associated with the relevant class loader, even if they
      * were loaded after this method returned.
      * <p>
      * Libraries associated with a class loader are unloaded when the class loader becomes
-     * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.  The
+     * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>. The
      * symbol lookup returned by this method is associated with an automatic
      * {@linkplain MemorySegment.Scope scope} which keeps the caller's class loader
-     * reachable.  Therefore, libraries associated with the caller's class loader are
+     * reachable. Therefore, libraries associated with the caller's class loader are
      * kept loaded (and their symbols available) as long as a loader lookup for that
      * class loader, or any of the segments obtained by it, is reachable.
      * <p>
@@ -231,14 +231,14 @@ public interface SymbolLookup {
 
     /**
      * Loads a library with the given name (if not already loaded) and creates a symbol
-     * lookup for symbols in that library.  The lifetime of the returned library lookup
-     * is controlled by the provided arena.  For instance, if the provided arena is a
+     * lookup for symbols in that library. The lifetime of the returned library lookup
+     * is controlled by the provided arena. For instance, if the provided arena is a
      * confined arena, the library associated with the returned lookup will be unloaded
      * when the provided confined arena is {@linkplain Arena#close() closed}.
      *
-     * @implNote The process of resolving a library name is OS-specific.  For instance,
+     * @implNote The process of resolving a library name is OS-specific. For instance,
      *           in a POSIX-compliant OS, the library name is resolved according to the
-     *           specification of the {@code dlopen} function for that OS.  In Windows,
+     *           specification of the {@code dlopen} function for that OS. In Windows,
      *           the library name is resolved according to the specification of the
      *           {@code LoadLibrary} function.
      *
@@ -265,8 +265,8 @@ public interface SymbolLookup {
 
     /**
      * Loads a library from the given path (if not already loaded) and creates a symbol
-     * lookup for symbols in that library.  The lifetime of the returned library lookup
-     * is controlled by the provided arena.  For instance, if the provided arena is a
+     * lookup for symbols in that library. The lifetime of the returned library lookup
+     * is controlled by the provided arena. For instance, if the provided arena is a
      * confined arena, the library associated with the returned lookup will be unloaded
      * when the provided confined arena is {@linkplain Arena#close() closed}.
      *
