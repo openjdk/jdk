@@ -350,42 +350,38 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   using Word = uintptr_t;
 
   auto is_word_aligned = [] (const void* const p) {
-      return (((uintptr_t)p) % sizeof(Word)) == 0;
+      return is_aligned(p, sizeof(Word));
   };
 
   static_assert(clean_card_val() == (CardValue)-1, "inv");
   constexpr Word clean_word = (Word)-1;
 
-  CardValue* i = start_card;
+  CardValue* i_card = start_card;
 
-  while (!is_word_aligned(i)) {
-    if (i >= end_card) {
+  while (!is_word_aligned(i_card)) {
+    if (i_card >= end_card) {
       return end_card;
     }
-    if (is_dirty(i)) {
-      return i;
+    if (is_dirty(i_card)) {
+      return i_card;
     }
-    ++i;
+    ++i_card;
   }
 
   // Word comparison
-  while (i + sizeof(Word) <= end_card) {
-    Word* i_word = reinterpret_cast<Word*>(i);
+  while (i_card + sizeof(Word) <= end_card) {
+    Word* i_word = reinterpret_cast<Word*>(i_card);
     if (*i_word != clean_word) {
-      // Found sth in this word
-      for (size_t j = 0; j < sizeof(Word); ++j) {
-        if (is_dirty(i + j)) {
-          return i + j;
-        }
-      }
+      // Found sth in this word; fall back to byte-comparison
+      break;
     }
-    i += sizeof(Word);
+    i_card += sizeof(Word);
   }
 
-  // Byte-by-byte comparison for remaining bytes
-  for (/* empty */; i < end_card; ++i) {
-    if (is_dirty(i)) {
-      return i;
+  // Byte comparison
+  for (/* empty */; i_card < end_card; ++i_card) {
+    if (is_dirty(i_card)) {
+      return i_card;
     }
   }
 
