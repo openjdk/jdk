@@ -1068,8 +1068,8 @@ public abstract class FileChannel
      *          If {@code arena.isAlive() == false}.
      *
      * @throws  WrongThreadException
-     *          If {@code arena} is a confined scoped arena, and this method is called from a
-     *          thread {@code T}, other than the scoped arena's owner thread.
+     *          If {@code arena} is a confined scoped arena, and this method is called
+     *          from a thread {@code T}, other than the scoped arena's owner thread.
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
