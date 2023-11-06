@@ -152,7 +152,7 @@ static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
 }
 
-static bool is_cloop_condition(Node* bol) {
+static bool is_cloop_condition(BoolNode* bol) {
   for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
     Node* out = bol->fast_out(i);
     if (out->is_CountedLoopEnd()) {

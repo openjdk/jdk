@@ -36,7 +36,7 @@ package compiler.c2;
  * @test
  * @bug 8316719
  * @summary Loop increment should not be transformed into unsigned comparison
- *
+ * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-UseLoopPredicate
  *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
  *                   compiler.c2.MinValueStrideCountedLoop
