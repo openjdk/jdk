@@ -138,8 +138,6 @@ public final class JDKEvents {
                 targetClasses[i] = clazz;
                 list.add(clazz);
             }
-            list.add(java.lang.Throwable.class);
-            list.add(java.lang.Error.class);
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Retransformed JDK classes");
             JVM.retransformClasses(list.toArray(new Class<?>[list.size()]));
         } catch (IllegalStateException ise) {
