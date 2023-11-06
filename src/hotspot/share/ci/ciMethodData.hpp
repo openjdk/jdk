@@ -522,7 +522,7 @@ public:
   bool is_valid(DataLayout* current)    { return current != nullptr; }
 
   // pointers to sections in _data
-  // NOTE: these may be called before ciMethodData::load_data (is that a bug?).
+  // NOTE: these may be called before ciMethodData::load_data
   //       this works out since everything is initialized to 0 (i.e. there will appear to be no data)
   DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
   DataLayout* extra_data_limit() const { return data_layout_at(data_size() + extra_data_size()); }
