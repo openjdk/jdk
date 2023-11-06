@@ -53,8 +53,10 @@
   flags(AFTER_LOOP_UNROLLING,           "After loop unrolling") \
   flags(BEFORE_SPLIT_IF,                "Before split if") \
   flags(AFTER_SPLIT_IF,                 "After split if") \
-  flags(BEFORE_LOOP_PREDICATION,        "Before loop predication") \
-  flags(AFTER_LOOP_PREDICATION,         "After loop predication") \
+  flags(BEFORE_LOOP_PREDICATION_IC,     "Before loop predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After loop predication IC") \
+  flags(BEFORE_LOOP_PREDICATION_RC,     "Before loop predication RC") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After loop predication RC") \
   flags(BEFORE_PARTIAL_PEELING,         "Before partial peeling") \
   flags(AFTER_PARTIAL_PEELING,          "After partial peeling") \
   flags(BEFORE_LOOP_PEELING,            "Before loop peeling") \
