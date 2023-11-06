@@ -21,6 +21,7 @@
  * questions.
  */
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -81,12 +82,26 @@ public class GatherersTest {
 
         // We're already covering less-than-one scenarios above
         if (streamSize > 0) {
-            //Test greating a window of the same size as the stream
+            //Test creating a window of the same size as the stream
+            {
                 final var result = config.stream()
-                                         .gather(Gatherers.windowFixed(streamSize))
-                                         .toList();
+                        .gather(Gatherers.windowFixed(streamSize))
+                        .toList();
                 assertEquals(1, result.size());
                 assertEquals(result.get(0), config.list());
+            }
+
+            //Test nulls as elements
+            {
+                assertEquals(
+                      config.stream()
+                            .map(n -> Arrays.asList(null, null))
+                            .toList(),
+                      config.stream()
+                            .flatMap(n -> Stream.of(null, null))
+                            .gather(Gatherers.windowFixed(2))
+                            .toList());
+            }
         }
 
 
@@ -95,18 +110,18 @@ public class GatherersTest {
             final var expectLastWindowSize = streamSize % windowSize == 0 ? windowSize : streamSize % windowSize;
             final var expectedSize = (streamSize / windowSize) + ((streamSize % windowSize == 0) ? 0 : 1);
 
-            int expectedElement = 0;
-            int currentWindow = 0;
+            final var expected = config.stream().toList().iterator();
 
             final var result = config.stream()
                                      .gather(Gatherers.windowFixed(windowSize))
                                      .toList();
 
+            int currentWindow = 0;
             for (var window : result) {
                 ++currentWindow;
                 assertEquals(currentWindow < expectedSize ? windowSize : expectLastWindowSize, window.size());
                 for (var element : window)
-                    assertEquals(++expectedElement, element.intValue());
+                    assertEquals(expected.next(), element);
             }
 
             assertEquals(expectedSize, currentWindow);
@@ -130,6 +145,18 @@ public class GatherersTest {
                                          .toList();
                 assertEquals(1, result.size());
                 assertEquals(config.list(), result.get(0));
+            }
+
+            //Test nulls as elements
+            {
+                assertEquals(
+                        List.of(
+                                Arrays.asList(null, null),
+                                Arrays.asList(null, null)
+                        ),
+                        Stream.of(null, null, null)
+                            .gather(Gatherers.windowSliding(2))
+                            .toList());
             }
         }
 

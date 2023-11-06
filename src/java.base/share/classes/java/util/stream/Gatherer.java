@@ -115,7 +115,7 @@ import java.util.function.Supplier;
  * Gatherer<Integer, ?, String> incrementThenToString = plusOne.andThen(intToString);
  * }</pre>
  *
- * AS an example, in order to create a gatherer to implement a sequential
+ * As an example, in order to create a gatherer to implement a sequential
  * Prefix Scan as a Gatherer, it could be done the following way:
  *
  * <pre>{@code

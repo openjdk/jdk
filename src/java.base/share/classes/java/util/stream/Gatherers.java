@@ -24,11 +24,11 @@
  */
 package java.util.stream;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
@@ -37,7 +37,6 @@ import java.util.concurrent.Semaphore;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Gatherer.Integrator;
@@ -340,29 +339,54 @@ public final class Gatherers {
      */
     public static <TR> Gatherer<TR, ?, List<TR>> windowFixed(int windowSize) {
         if (windowSize < 1)
-            throw new IllegalArgumentException("'groupSize' must be greater than zero");
+            throw new IllegalArgumentException("'windowSize' must be greater than zero");
 
-        return Gatherer.ofSequential(
+        class FixedWindow {
+            Object[] window;
+            int at;
+
+            FixedWindow() {
+                at = 0;
+                window = new Object[windowSize];
+            }
+
+            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
+                window[at++] = element;
+                if (at < windowSize) {
+                    return true;
+                } else {
+                    final var oldWindow = window;
+                    window = new Object[windowSize];
+                    at = 0;
+                    return downstream.push(
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(oldWindow)
+                    );
+                }
+            }
+
+            void finish(Downstream<? super List<TR>> downstream) {
+                if(at > 0 && !downstream.isRejecting()) {
+                    var lastWindow = new Object[at];
+                    System.arraycopy(window, 0, lastWindow, 0, at);
+                    window = null;
+                    at = 0;
+                    downstream.push(
+                            SharedSecrets.getJavaUtilCollectionAccess()
+                                    .listFromTrustedArrayNullsAllowed(lastWindow)
+                    );
+                }
+            }
+        }
+        return Gatherer.<TR, FixedWindow, List<TR>>ofSequential(
                 // Initializer
-                () -> new ArrayList<>(windowSize),
+                FixedWindow::new,
 
                 // Integrator
-                Integrator.<ArrayList<TR>,TR,List<TR>>ofGreedy((window, e, downstream) -> {
-                    window.add(e);
-                    if (window.size() < windowSize) {
-                        return true;
-                    } else {
-                        var full = List.copyOf(window);
-                        window.clear();
-                        return downstream.push(full);
-                    }
-                }),
+                Integrator.<FixedWindow, TR, List<TR>>ofGreedy(FixedWindow::integrate),
 
                 // Finisher
-                (window, downstream) -> {
-                    if(!downstream.isRejecting() && !window.isEmpty())
-                        downstream.push(List.copyOf(window));
-                }
+                FixedWindow::finish
         );
     }
 
@@ -388,34 +412,59 @@ public final class Gatherers {
      */
     public static <TR> Gatherer<TR, ?, List<TR>> windowSliding(int windowSize) {
         if (windowSize < 1)
-            throw new IllegalArgumentException("'groupSize' must be greater than zero");
+            throw new IllegalArgumentException("'windowSize' must be greater than zero");
 
-        @SuppressWarnings("serial")
-        class SlidingWindow extends ArrayDeque<TR> {
-            boolean firstWindow = true;
+        class SlidingWindow {
+            Object[] window;
+            int at;
+            boolean firstWindow;
+
+            SlidingWindow() {
+                firstWindow = true;
+                at = 0;
+                window = new Object[windowSize];
+            }
+
+            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
+                window[at++] = element;
+                if (at < windowSize) {
+                    return true;
+                } else {
+                    final var oldWindow = window;
+                    final var newWindow = new Object[windowSize];
+                    System.arraycopy(oldWindow,1, newWindow, 0, windowSize - 1);
+                    window = newWindow;
+                    at -= 1;
+                    firstWindow = false;
+                    return downstream.push(
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(oldWindow)
+                    );
+                }
+            }
+
+            void finish(Downstream<? super List<TR>> downstream) {
+                if(firstWindow && at > 0 && !downstream.isRejecting()) {
+                    var lastWindow = new Object[at];
+                    System.arraycopy(window, 0, lastWindow, 0, at);
+                    window = null;
+                    at = 0;
+                    downstream.push(
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(lastWindow)
+                    );
+                }
+            }
         }
-        return Gatherer.ofSequential(
+        return Gatherer.<TR, SlidingWindow, List<TR>>ofSequential(
                 // Initializer
                 SlidingWindow::new,
 
                 // Integrator
-                Integrator.ofGreedy((window, e, downstream) -> {
-                    window.addLast(e);
-                    if (window.size() < windowSize) {
-                        return true;
-                    } else {
-                        var full = List.copyOf(window);
-                        window.removeFirst();
-                        window.firstWindow = false;
-                        return downstream.push(full);
-                    }
-                }),
+                Integrator.<SlidingWindow, TR, List<TR>>ofGreedy(SlidingWindow::integrate),
 
                 // Finisher
-                (window, downstream) -> {
-                    if(window.firstWindow && !downstream.isRejecting() && !window.isEmpty())
-                        downstream.push(List.copyOf(window));
-                }
+                SlidingWindow::finish
         );
     }
 

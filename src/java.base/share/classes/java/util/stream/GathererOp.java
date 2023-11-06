@@ -569,11 +569,9 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                  */
                 if (greedy && task.getPendingCount() > 0) {
                     // Upstream elements are buffered
-                    var builder = Nodes.<T>builder(
-                                                rightSplit.getExactSizeIfKnown(),
-                                                Nodes.castingArray());
-                    rightSplit.forEachRemaining(builder); // Run the upstream
-                    task.spliterator = builder.build().spliterator();
+                    NodeBuilder<T> nb = new NodeBuilder<>();
+                    rightSplit.forEachRemaining(nb); // Run the upstream
+                    task.spliterator = nb.build().spliterator();
                 }
                 task.tryComplete();
             }
