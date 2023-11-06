@@ -170,9 +170,6 @@ public sealed interface Signature {
      */
     public sealed interface TypeArg {
 
-        /** {@return the raw signature string} */
-        String signatureString();
-
         /**
          * Models an unbounded type argument {@code *}.
          */

@@ -217,7 +217,16 @@ public final class SignaturesImpl {
                 var sb = new StringBuilder();
                 sb.append('<');
                 for (var ta : typeArgs)
-                    sb.append(((TypeArgImpl)ta).signatureString());
+                    switch (ta) {
+                    case TypeArg.Bounded b -> {
+                        switch (b.wildcardIndicator()) {
+                            case SUPER -> sb.append('-');
+                            case EXTENDS -> sb.append('+');
+                        }
+                        sb.append(b.boundType().signatureString());
+                    }
+                    case TypeArg.Unbounded _ -> sb.append('*');
+                    }
                 suffix = sb.append(">;").toString();
             }
             return prefix + className + suffix;
@@ -226,22 +235,9 @@ public final class SignaturesImpl {
 
     public static enum UnboundedTypeArgImpl implements TypeArg.Unbounded {
         INSTANCE;
-
-        @Override
-        public String signatureString() {
-            return "*";
-        }
     }
 
     public static record TypeArgImpl(WildcardIndicator wildcardIndicator, RefTypeSig boundType) implements Signature.TypeArg.Bounded {
-        @Override
-        public String signatureString() {
-            return switch (wildcardIndicator) {
-                case DEFAULT -> boundType.signatureString();
-                case EXTENDS -> "+" + boundType.signatureString();
-                case SUPER -> "-" + boundType.signatureString();
-            };
-        }
     }
 
     public static record TypeParamImpl(String identifier, Optional<RefTypeSig> classBound, List<RefTypeSig> interfaceBounds)
