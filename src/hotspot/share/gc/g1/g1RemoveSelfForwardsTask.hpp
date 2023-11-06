@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILURE_HPP
-#define SHARE_GC_G1_G1EVACFAILURE_HPP
+#ifndef SHARE_GC_G1_G1REMOVESELFFORWARDSTASK_HPP
+#define SHARE_GC_G1_G1REMOVESELFFORWARDSTASK_HPP
 
 #include "gc/shared/workerThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -58,4 +58,4 @@ public:
   void work(uint worker_id);
 };
 
-#endif // SHARE_GC_G1_G1EVACFAILURE_HPP
+#endif // SHARE_GC_G1_G1REMOVESELFFORWARDSTASK_HPP
