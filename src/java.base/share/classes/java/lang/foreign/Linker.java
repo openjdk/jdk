@@ -587,10 +587,10 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @param address  the native memory segment whose
      *                 {@linkplain MemorySegment#address() base address} is the address
-     *                 of the target foreign function.
-     * @param function the function descriptor of the target foreign function.
-     * @param options  the linker options associated with this linkage request.
-     * @return a downcall method handle.
+     *                 of the target foreign function
+     * @param function the function descriptor of the target foreign function
+     * @param options  the linker options associated with this linkage request
+     * @return a downcall method handle
      * @throws IllegalArgumentException if the provided function descriptor is not
      *         supported by this linker
      * @throws IllegalArgumentException if {@code !address.isNative()}, or if
@@ -654,9 +654,9 @@ public sealed interface Linker permits AbstractLinker {
      * methods may be thrown. The returned method handle will additionally throw
      * {@link NullPointerException} if any argument passed to it is {@code null}.
      *
-     * @param function the function descriptor of the target foreign function.
-     * @param options  the linker options associated with this linkage request.
-     * @return a downcall method handle.
+     * @param function the function descriptor of the target foreign function
+     * @param options  the linker options associated with this linkage request
+     * @return a downcall method handle
      * @throws IllegalArgumentException if the provided function descriptor is not
      *         supported by this linker
      * @throws IllegalArgumentException if an invalid combination of linker options
@@ -695,11 +695,11 @@ public sealed interface Linker permits AbstractLinker {
      * method handle combinator, and handle exceptions as desired in the corresponding
      * catch block.
      *
-     * @param target the target method handle.
-     * @param function the upcall stub function descriptor.
-     * @param arena the arena associated with the returned upcall stub segment.
-     * @param options  the linker options associated with this linkage request.
-     * @return a zero-length segment whose address is the address of the upcall stub.
+     * @param target the target method handle
+     * @param function the upcall stub function descriptor
+     * @param arena the arena associated with the returned upcall stub segment
+     * @param options  the linker options associated with this linkage request
+     * @return a zero-length segment whose address is the address of the upcall stub
      * @throws IllegalArgumentException if the provided function descriptor is not
      *         supported by this linker
      * @throws IllegalArgumentException if the type of {@code target} is incompatible
@@ -735,7 +735,7 @@ public sealed interface Linker permits AbstractLinker {
      *           as possible, a consistent set of symbols across all the OS and processor
      *           combinations.
      *
-     * @return a symbol lookup for symbols in a set of commonly used libraries.
+     * @return a symbol lookup for symbols in a set of commonly used libraries
      */
     SymbolLookup defaultLookup();
 
@@ -795,7 +795,7 @@ public sealed interface Linker permits AbstractLinker {
          *           available.
          *
          * @param index the index of the first variadic argument layout in the function
-         *             descriptor associated with a downcall linkage request.
+         *             descriptor associated with a downcall linkage request
          */
         static Option firstVariadicArg(int index) {
             return new LinkerOptions.FirstVariadicArg(index);
@@ -840,7 +840,7 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * This linker option can not be combined with {@link #critical}.
          *
-         * @param capturedState the names of the values to save.
+         * @param capturedState the names of the values to save
          * @throws IllegalArgumentException if at least one of the provided
          *         {@code capturedState} names is unsupported on the current platform
          * @see #captureStateLayout()

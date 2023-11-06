@@ -219,18 +219,17 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
      *
-     * @return a new arena that is managed, automatically, by the garbage collector.
+     * @return a new arena that is managed, automatically, by the garbage collector
      */
     static Arena ofAuto() {
         return MemorySessionImpl.createImplicit(CleanerFactory.cleaner()).asArena();
     }
 
     /**
-     * Obtains the global arena. Segments allocated with the global arena can be
-     * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
-     * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
-     *
-     * @return the global arena.
+     * {@return the global arena} Segments allocated with the global arena can be
+     *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
+     *          Calling {@link #close()} on the returned arena will result in
+     *          an {@link UnsupportedOperationException}.
      */
     static Arena global() {
         class Holder {
@@ -275,10 +274,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * }
      *
      * @param byteSize the size (in bytes) of the off-heap region of memory backing
-     *                 the native memory segment.
+     *                 the native memory segment
      * @param byteAlignment the alignment constraint (in bytes) of the off-heap region
-     *                      of memory backing the native memory segment.
-     * @return a new native memory segment.
+     *                      of memory backing the native memory segment
+     * @return a new native memory segment
      * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0},
      *         or if {@code byteAlignment} is not a power of 2
      * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}

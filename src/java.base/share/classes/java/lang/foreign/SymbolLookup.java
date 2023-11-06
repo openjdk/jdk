@@ -139,7 +139,8 @@ public interface SymbolLookup {
 
     /**
      * Returns the address of the symbol with the given name.
-     * @param name the symbol name.
+     *
+     * @param name the symbol name
      * @return a zero-length memory segment whose address indicates the address of
      *         the symbol, if found.
      */
@@ -164,7 +165,7 @@ public interface SymbolLookup {
      * {@linkplain SymbolLookup#loaderLookup() loader lookup} is used.
      *
      * @param other the symbol lookup that should be used to look for symbols not found
-     *              in this lookup.
+     *              in this lookup
      */
     default SymbolLookup or(SymbolLookup other) {
         Objects.requireNonNull(other);
@@ -198,7 +199,7 @@ public interface SymbolLookup {
      * {@linkplain ClassLoader#getSystemClassLoader system class loader}.
      *
      * @return a symbol lookup for symbols in the libraries associated with
-     *         the caller's class loader.
+     *         the caller's class loader
      * @see System#load(String)
      * @see System#loadLibrary(String)
      */
@@ -242,10 +243,10 @@ public interface SymbolLookup {
      *           the library name is resolved according to the specification of the
      *           {@code LoadLibrary} function.
      *
-     * @param name the name of the library in which symbols should be looked up.
-     * @param arena the arena associated with symbols obtained from the returned lookup.
+     * @param name the name of the library in which symbols should be looked up
+     * @param arena the arena associated with symbols obtained from the returned lookup
      * @return a new symbol lookup suitable to find symbols in a library with the
-     *         given name.
+     *         given name
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
@@ -273,10 +274,11 @@ public interface SymbolLookup {
      * @implNote On Linux, the functionalities provided by this factory method and the
      *           returned symbol lookup are implemented using the {@code dlopen},
      *           {@code dlsym} and {@code dlclose} functions.
-     * @param path the path of the library in which symbols should be looked up.
-     * @param arena the arena associated with symbols obtained from the returned lookup.
+     *
+     * @param path the path of the library in which symbols should be looked up
+     * @param arena the arena associated with symbols obtained from the returned lookup
      * @return a new symbol lookup suitable to find symbols in a library with the given
-     *         path.
+     *         path
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread

@@ -68,7 +68,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
     /**
      * {@return a value layout with the same characteristics as this layout, but with the given byte order}
      *
-     * @param order the desired byte order.
+     * @param order the desired byte order
      */
     ValueLayout withOrder(ByteOrder order);
 

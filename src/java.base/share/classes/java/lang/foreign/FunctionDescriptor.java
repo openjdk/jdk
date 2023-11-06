@@ -37,7 +37,8 @@ import jdk.internal.foreign.FunctionDescriptorImpl;
  * A function descriptor models the signature of a foreign function. A function
  * descriptor is made up of zero or more argument layouts, and zero or one return layout.
  * A function descriptor is used to create
- * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles} and
+ * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles}
+ * and
  * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Linker.Option...) upcall stubs}.
  *
  * @implSpec
@@ -63,7 +64,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Returns a function descriptor with the given argument layouts appended to the
      * argument layouts of this function descriptor.
      *
-     * @param addedLayouts the argument layouts to append.
+     * @param addedLayouts the argument layouts to append
      * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is
      *         a padding layout
      * @return a new function descriptor, with the provided additional argument layouts.
@@ -75,7 +76,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * given index, into the argument layout array of this function descriptor.
      *
      * @param index the index at which to insert the arguments
-     * @param addedLayouts the argument layouts to insert at given index.
+     * @param addedLayouts the argument layouts to insert at given index
      * @return a new function descriptor, with the provided additional argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts}
      *         is a padding layout
@@ -85,9 +86,9 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
 
     /**
      * Returns a function descriptor with the provided return layout.
-     * @param newReturn the new return layout.
+     * @param newReturn the new return layout
      * @throws IllegalArgumentException if {@code newReturn} is a padding layout
-     * @return a new function descriptor, with the provided return layout.
+     * @return a new function descriptor, with the provided return layout
      */
     FunctionDescriptor changeReturnLayout(MemoryLayout newReturn);
 
@@ -113,19 +114,19 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      *          should be mapped to carrier types.
      *
      * @return the method type consisting of the carrier types of the layouts in this
-     *         function descriptor.
+     *         function descriptor
      */
     MethodType toMethodType();
 
     /**
      * Creates a function descriptor with the given return and argument layouts.
      *
-     * @param resLayout the return layout.
-     * @param argLayouts the argument layouts.
+     * @param resLayout the return layout
+     * @param argLayouts the argument layouts
      * @throws IllegalArgumentException if {@code resLayout} is a padding layout
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts}
      *         is a padding layout
-     * @return a new function descriptor with the provided return and argument layouts.
+     * @return a new function descriptor with the provided return and argument layouts
      */
     static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
         Objects.requireNonNull(resLayout);
@@ -137,10 +138,10 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Creates a function descriptor with the given argument layouts and no return
      * layout. This is useful to model functions that return no values.
      *
-     * @param argLayouts the argument layouts.
+     * @param argLayouts the argument layouts
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts}
      *         is a padding layout
-     * @return a new function descriptor with the provided argument layouts.
+     * @return a new function descriptor with the provided argument layouts
      */
     static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
         // Null checks are implicit in List.of(argLayouts)

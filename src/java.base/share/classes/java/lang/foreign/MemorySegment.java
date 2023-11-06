@@ -534,7 +534,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain #isNative() native} segment, or if this segment is
      * {@linkplain #isReadOnly() read-only}.
      *
-     * @return the Java object associated with this memory segment, if any.
+     * @return the Java object associated with this memory segment, if any
      */
     Optional<Object> heapBase();
 
@@ -555,7 +555,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain #asSlice(long, long) slices}, which can then be processed in parallel
      * by multiple threads.
      *
-     * @param elementLayout the layout to be used for splitting.
+     * @param elementLayout the layout to be used for splitting
      * @return the element spliterator for this segment
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}
@@ -574,8 +574,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * StreamSupport.stream(segment.spliterator(elementLayout), false);
      * }
      *
-     * @param elementLayout the layout to be used for splitting.
-     * @return a sequential {@code Stream} over disjoint slices in this segment.
+     * @param elementLayout the layout to be used for splitting
+     * @return a sequential {@code Stream} over disjoint slices in this segment
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
@@ -592,7 +592,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * {@return {@code true} if this segment can be accessed from the provided thread}
-     * @param thread the thread to be tested.
+     * @param thread the thread to be tested
      */
     boolean isAccessibleBy(Thread thread);
 
@@ -614,9 +614,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see #asSlice(long, long, long)
      *
      * @param offset The new segment base offset (relative to the address of this segment),
-     *               specified in bytes.
-     * @param newSize The new segment size, specified in bytes.
-     * @return a slice of this memory segment.
+     *               specified in bytes
+     * @param newSize The new segment size, specified in bytes
+     * @return a slice of this memory segment
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()},
      *         {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      */
@@ -628,10 +628,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment plus the given offset; its size is specified by the given argument.
      *
      * @param offset The new segment base offset (relative to the address of this segment),
-     *               specified in bytes.
-     * @param newSize The new segment size, specified in bytes.
-     * @param byteAlignment The alignment constraint (in bytes) of the returned slice.
-     * @return a slice of this memory segment.
+     *               specified in bytes
+     * @param newSize The new segment size, specified in bytes
+     * @param byteAlignment The alignment constraint (in bytes) of the returned slice
+     * @return a slice of this memory segment
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()},
      *         {@code newSize < 0}, or {@code newSize > byteSize() - offset}
      * @throws IllegalArgumentException if this segment cannot be accessed at {@code offset} under
@@ -654,13 +654,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see #asSlice(long, long, long)
      *
      * @param offset The new segment base offset (relative to the address of this segment),
-     *               specified in bytes.
-     * @param layout The layout of the segment slice.
+     *               specified in bytes
+     * @param layout The layout of the segment slice
      * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()},
      *         or {@code layout.byteSize() > byteSize() - offset}
      * @throws IllegalArgumentException if this segment cannot be accessed at {@code offset}
      *         under the alignment constraint specified by {@code layout}
-     * @return a slice of this memory segment.
+     * @return a slice of this memory segment
      */
     MemorySegment asSlice(long offset, MemoryLayout layout);
 
@@ -677,8 +677,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @see #asSlice(long, long)
      *
      * @param offset The new segment base offset (relative to the address of this segment),
-     *               specified in bytes.
-     * @return a slice of this memory segment.
+     *               specified in bytes
+     * @return a slice of this memory segment
      * @throws IndexOutOfBoundsException if {@code offset < 0}, or {@code offset > byteSize()}
      */
     MemorySegment asSlice(long offset);
@@ -687,9 +687,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Returns a new memory segment that has the same address and scope as this segment,
      * but with the provided size.
      *
-     * @param newSize the size of the returned segment.
+     * @param newSize the size of the returned segment
      * @return a new memory segment that has the same address and scope as
-     *         this segment, but the new provided size.
+     *         this segment, but the new provided size
      * @throws IllegalArgumentException if {@code newSize < 0}
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
@@ -731,10 +731,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
-     * @param arena the arena to be associated with the returned segment.
+     * @param arena the arena to be associated with the returned segment
      * @param cleanup the cleanup action that should be executed when the provided arena
-     *                is closed (can be {@code null}).
-     * @return a new memory segment with unbounded size.
+     *                is closed (can be {@code null})
+     * @return a new memory segment with unbounded size
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
@@ -776,12 +776,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
-     * @param newSize the size of the returned segment.
-     * @param arena the arena to be associated with the returned segment.
+     * @param newSize the size of the returned segment
+     * @param arena the arena to be associated with the returned segment
      * @param cleanup the cleanup action that should be executed when the provided arena
-     *                is closed (can be {@code null}).
+     *                is closed (can be {@code null})
      * @return a new segment that has the same address as this segment, but with new size
-     *         and its scope set to that of the provided arena.
+     *         and its scope set to that of the provided arena
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException if {@code newSize < 0}
@@ -840,8 +840,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment; in this case, or when no overlap occurs, an empty {@code Optional} is
      * returned.
      *
-     * @param other the segment to test for an overlap with this segment.
-     * @return a slice of this segment (where overlapping occurs).
+     * @param other the segment to test for an overlap with this segment
+     * @return a slice of this segment (where overlapping occurs)
      */
     Optional<MemorySegment> asOverlappingSlice(MemorySegment other);
 
@@ -862,8 +862,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * This method can be useful to initialize or reset the contents of a memory segment.
      *
-     * @param value the value to write into this segment.
-     * @return this memory segment.
+     * @param value the value to write into this segment
+     * @return this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -883,7 +883,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * MemorySegment.copy(src, 0, this, 0, src.byteSize());
      * }
-     * @param src the source segment.
+     * @param src the source segment
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -914,9 +914,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * valid for the larger segment. Otherwise, there is no mismatch and {@code
      * -1} is returned.
      *
-     * @param other the segment to be tested for a mismatch with this segment.
+     * @param other the segment to be tested for a mismatch with this segment
      * @return the relative offset, in bytes, of the first mismatch between this
-     * and the given other segment, otherwise -1 if no mismatch.
+     * and the given other segment, otherwise -1 if no mismatch
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1051,7 +1051,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
      * {@link ByteBuffer#order(java.nio.ByteOrder)}.
      *
-     * @return a {@link ByteBuffer} view of this memory segment.
+     * @return a {@link ByteBuffer} view of this memory segment
      * @throws UnsupportedOperationException if this segment cannot be mapped onto a
      *         {@link ByteBuffer} instance, e.g. if it is a heap segment backed by an
      *         array other than {@code byte[]}), or if its size is greater than
@@ -1065,8 +1065,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                      the layout is different from the
      *                      {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                      operation will be performed on each array element.
-     * @return a new byte array whose contents are copied from this memory segment.
+     *                      operation will be performed on each array element
+     * @return a new byte array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1082,8 +1082,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                      the layout is different from the
      *                      {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                      operation will be performed on each array element.
-     * @return a new short array whose contents are copied from this memory segment.
+     *                      operation will be performed on each array element
+     * @return a new short array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1100,8 +1100,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                      the layout is different from the
      *                      {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                      operation will be performed on each array element.
-     * @return a new char array whose contents are copied from this memory segment.
+     *                      operation will be performed on each array element
+     * @return a new char array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1136,8 +1136,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                      the layout is different from the
      *                      {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                      operation will be performed on each array element.
-     * @return a new float array whose contents are copied from this memory segment.
+     *                      operation will be performed on each array element
+     * @return a new float array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1154,8 +1154,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                     the layout is different from the
      *                     {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                     operation will be performed on each array element.
-     * @return a new long array whose contents are copied from this memory segment.
+     *                     operation will be performed on each array element
+     * @return a new long array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1172,8 +1172,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param elementLayout the source element layout. If the byte order associated with
      *                      the layout is different from the
      *                      {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                      operation will be performed on each array element.
-     * @return a new double array whose contents are copied from this memory segment.
+     *                      operation will be performed on each array element
+     * @return a new double array whose contents are copied from this memory segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1194,10 +1194,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *}
      *
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
+     *               access operation will occur
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to (but not including) the first {@code '\0'} terminator
-     *         character (assuming one is found).
+     *         character (assuming one is found)
      * @throws IllegalArgumentException if the size of the string is greater than the
      *         largest string supported by the platform.
      * @throws IndexOutOfBoundsException if {@code offset < 0}
@@ -1221,12 +1221,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * over the decoding process is required.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
-     *                access operation will occur.
+     *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
-     *                string bytes.
+     *                string bytes
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to (but not including) the first {@code '\0'} terminator
-     *         character (assuming one is found).
+     *         character (assuming one is found)
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
@@ -1257,9 +1257,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * setString(offset, str, StandardCharsets.UTF_8);
      *}
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur. The final address of this write
-     *               operation can be expressed as {@code address() + offset}.
-     * @param str the Java string to be written into this segment.
+     *               access operation will occur, the final address of this write
+     *               operation can be expressed as {@code address() + offset}
+     * @param str the Java string to be written into this segment
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + 1)}, where
      *         {@code B} is the size, in bytes, of the string encoded using UTF-8 charset
@@ -1286,10 +1286,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * will appear truncated when read again.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
-     *                access operation will occur. The final address of this write
-     *                operation can be expressed as {@code address() + offset}.
-     * @param str     the Java string to be written into this segment.
-     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes.
+     *                access operation will occur, the final address of this write
+     *                operation can be expressed as {@code address() + offset}
+     * @param str     the Java string to be written into this segment
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
      *         <ul>
@@ -1326,8 +1326,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * not be deallocated as long as the returned segment (or any of its slices) are kept
      * reachable.
      *
-     * @param buffer the buffer instance to be turned into a new memory segment.
-     * @return a memory segment, derived from the given buffer instance.
+     * @param buffer the buffer instance to be turned into a new memory segment
+     * @return a memory segment, derived from the given buffer instance
      * @throws IllegalArgumentException if the provided {@code buffer} is a heap buffer
      *         but is not backed by an array; For example, buffers directly or indirectly
      *         obtained via ({@link CharBuffer#wrap(CharSequence)} or
@@ -1343,8 +1343,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param byteArray the primitive array backing the heap memory segment.
-     * @return a heap memory segment backed by a byte array.
+     * @param byteArray the primitive array backing the heap memory segment
+     * @return a heap memory segment backed by a byte array
      */
     static MemorySegment ofArray(byte[] byteArray) {
         return SegmentFactories.fromArray(byteArray);
@@ -1356,8 +1356,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param charArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by a char array.
+     * @param charArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by a char array
      */
     static MemorySegment ofArray(char[] charArray) {
         return SegmentFactories.fromArray(charArray);
@@ -1369,8 +1369,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param shortArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by a short array.
+     * @param shortArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by a short array
      */
     static MemorySegment ofArray(short[] shortArray) {
         return SegmentFactories.fromArray(shortArray);
@@ -1382,8 +1382,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param intArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by an int array.
+     * @param intArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by an int array
      */
     static MemorySegment ofArray(int[] intArray) {
         return SegmentFactories.fromArray(intArray);
@@ -1395,8 +1395,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param floatArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by a float array.
+     * @param floatArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by a float array
      */
     static MemorySegment ofArray(float[] floatArray) {
         return SegmentFactories.fromArray(floatArray);
@@ -1408,8 +1408,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param longArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by a long array.
+     * @param longArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by a long array
      */
     static MemorySegment ofArray(long[] longArray) {
         return SegmentFactories.fromArray(longArray);
@@ -1421,8 +1421,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the given array reachable. The returned segment is always accessible, from any
      * thread. Its {@link #address()} is set to zero.
      *
-     * @param doubleArray the primitive array backing the heap segment.
-     * @return a heap memory segment backed by a double array.
+     * @param doubleArray the primitive array backing the heap segment
+     * @return a heap memory segment backed by a double array
      */
     static MemorySegment ofArray(double[] doubleArray) {
         return SegmentFactories.fromArray(doubleArray);
@@ -1445,8 +1445,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * highest-order ("leftmost") 32 bits of the {@link MemorySegment#address() address}
      * of the returned memory segment are set to zero.
      *
-     * @param address the address of the returned native segment.
-     * @return a zero-length native segment with the given address.
+     * @param address the address of the returned native segment
+     * @return a zero-length native segment with the given address
      */
     static MemorySegment ofAddress(long address) {
         return SegmentFactories.makeNativeSegmentUnchecked(address, 0);
@@ -1475,11 +1475,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
      * }
-     * @param srcSegment the source segment.
-     * @param srcOffset the starting offset, in bytes, of the source segment.
-     * @param dstSegment the destination segment.
-     * @param dstOffset the starting offset, in bytes, of the destination segment.
-     * @param bytes the number of bytes to be copied.
+     * @param srcSegment the source segment
+     * @param srcOffset the starting offset, in bytes, of the source segment
+     * @param dstSegment the destination segment
+     * @param dstOffset the starting offset, in bytes, of the destination segment
+     * @param bytes the number of bytes to be copied
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         {@code srcSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1528,13 +1528,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * regions of the same backing storage using different addresses. For example,
      * this may occur if the same file is {@linkplain FileChannel#map mapped} to two
      * segments.
-     * @param srcSegment the source segment.
-     * @param srcElementLayout the element layout associated with the source segment.
-     * @param srcOffset the starting offset, in bytes, of the source segment.
-     * @param dstSegment the destination segment.
-     * @param dstElementLayout the element layout associated with the destination segment.
-     * @param dstOffset the starting offset, in bytes, of the destination segment.
-     * @param elementCount the number of elements to be copied.
+     * @param srcSegment the source segment
+     * @param srcElementLayout the element layout associated with the source segment
+     * @param srcOffset the starting offset, in bytes, of the source segment
+     * @param dstSegment the destination segment
+     * @param dstElementLayout the element layout associated with the destination segment
+     * @param dstOffset the starting offset, in bytes, of the destination segment
+     * @param elementCount the number of elements to be copied
      * @throws IllegalArgumentException if the element layouts have different sizes, if
      *         the source (resp. destination) segment/offset are
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the
@@ -1570,10 +1570,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a byte from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a byte value read from this segment.
+     *               access operation will occur
+     * @return a byte value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1588,9 +1588,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a byte into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
+     *               access operation will occur
      * @param value the byte value to be written.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1608,10 +1608,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a boolean from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a boolean value read from this segment.
+     *               access operation will occur
+     * @return a boolean value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1626,10 +1626,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a boolean into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the boolean value to be written.
+     *               access operation will occur
+     * @param value the boolean value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1646,10 +1646,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a char from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a char value read from this segment.
+     *               access operation will occur
+     * @return a char value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1664,10 +1664,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a char into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the char value to be written.
+     *               access operation will occur
+     * @param value the char value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1684,10 +1684,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a short from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a short value read from this segment.
+     *               access operation will occur
+     * @return a short value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1702,10 +1702,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a short into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the short value to be written.
+     *               access operation will occur
+     * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1722,10 +1722,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads an int from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return an int value read from this segment.
+     *               access operation will occur
+     * @return an int value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1740,10 +1740,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes an int into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the int value to be written.
+     *               access operation will occur
+     * @param value the int value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1760,14 +1760,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a float from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a float value read from this segment.
+     *               access operation will occur
+     * @return a float value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1778,10 +1778,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a float into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the float value to be written.
+     *               access operation will occur
+     * @param value the float value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1798,14 +1798,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a long from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a long value read from this segment.
+     *               access operation will occur
+     * @return a long value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1816,10 +1816,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a long into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the long value to be written.
+     *               access operation will occur
+     * @param value the long value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1836,14 +1836,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Reads a double from this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a double value read from this segment.
+     *               access operation will occur
+     * @return a double value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}.
+     *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}.
+     *         such that {@code isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if the access operation is
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the provided layout
@@ -1854,10 +1854,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a double into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the double value to be written.
+     *               access operation will occur
+     * @param value the double value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1879,10 +1879,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size
      * of the returned segment is set to {@code T.byteSize()}.
      *
-     * @param layout the layout of the region of memory to be read.
+     * @param layout the layout of the region of memory to be read
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @return a native segment wrapping an address read from this segment.
+     *               access operation will occur
+     * @return a native segment wrapping an address read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1902,10 +1902,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes an address into this segment at the given offset, with the given layout.
      *
-     * @param layout the layout of the region of memory to be written.
+     * @param layout the layout of the region of memory to be written
      * @param offset offset in bytes (relative to this segment address) at which this
-     *               access operation will occur.
-     * @param value the byte value to be written.
+     *               access operation will occur
+     * @param value the byte value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1925,10 +1925,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a byte from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
+     *              expressed as {@code (index * layout.byteSize())}
      * @return a byte value read from this segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1947,11 +1947,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a boolean from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *             segment address) at which the access operation will occur can be
-     *             expressed as {@code (index * layout.byteSize())}.
-     * @return a boolean value read from this segment.
+     *             expressed as {@code (index * layout.byteSize())}
+     * @return a boolean value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1969,11 +1969,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a char from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}.
-     * @return a char value read from this segment.
+     * @return a char value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1991,11 +1991,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a char into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the char value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the char value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2014,11 +2014,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a short from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @return a short value read from this segment.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return a short value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2035,11 +2035,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Writes a byte into this segment at the given index, scaled by the given layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the short value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2058,11 +2058,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a boolean into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the short value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2081,11 +2081,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a short into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the short value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2105,10 +2105,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @return an int value read from this segment.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return an int value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2126,11 +2126,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes an int into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation
-     *              will occur can be expressed as {@code (index * layout.byteSize())}.
-     * @param value the int value to be written.
+     *              will occur can be expressed as {@code (index * layout.byteSize())}
+     * @param value the int value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2149,11 +2149,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a float from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @return a float value read from this segment.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return a float value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2171,11 +2171,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a float into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the float value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the float value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2194,11 +2194,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a long from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @return a long value read from this segment.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return a long value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2216,11 +2216,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a long into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the long value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the long value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2239,11 +2239,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads a double from this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @return a double value read from this segment.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return a double value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2261,11 +2261,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a double into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the double value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the double value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2288,10 +2288,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size
      * of the returned segment is set to {@code T.byteSize()}.
      *
-     * @param layout the layout of the region of memory to be read.
-     * @param index a logical index. The offset in bytes (relative to this segment address) at which the access operation
-     *              will occur can be expressed as {@code (index * layout.byteSize())}.
-     * @return a native segment wrapping an address read from this segment.
+     * @param layout the layout of the region of memory to be read
+     * @param index a logical index, the offset in bytes (relative to this
+     *              segment address) at which the access operation will occur can be
+     *              expressed as {@code (index * layout.byteSize())}
+     * @return a native segment wrapping an address read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2314,11 +2315,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes an address into this segment at the given index, scaled by the given
      * layout size.
      *
-     * @param layout the layout of the region of memory to be written.
-     * @param index a logical index. The offset in bytes (relative to this
+     * @param layout the layout of the region of memory to be written
+     * @param index a logical index, the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}.
-     * @param value the address value to be written.
+     *              expressed as {@code (index * layout.byteSize())}
+     * @param value the address value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2358,8 +2359,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          two segments. As such, it is suitable to check whether two segments have
      *          the same address.
      *
-     * @param that the object to be compared for equality with this memory segment.
-     * @return {@code true} if the specified object is equal to this memory segment.
+     * @param that the object to be compared for equality with this memory segment
+     * @return {@code true} if the specified object is equal to this memory segment
      * @see #mismatch(MemorySegment)
      */
     @Override
@@ -2383,15 +2384,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@code byte[]}, {@code char[]}, {@code short[]},
      * {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
      *
-     * @param srcSegment the source segment.
+     * @param srcSegment the source segment
      * @param srcLayout the source element layout. If the byte order associated with the
      *                 layout is different from the
      *                 {@linkplain ByteOrder#nativeOrder native order}, a byte swap
-     *                  operation will be performed on each array element.
-     * @param srcOffset the starting offset, in bytes, of the source segment.
-     * @param dstArray the destination array.
-     * @param dstIndex the starting index of the destination array.
-     * @param elementCount the number of array elements to be copied.
+     *                  operation will be performed on each array element
+     * @param srcOffset the starting offset, in bytes, of the source segment
+     * @param dstArray the destination array
+     * @param dstIndex the starting index of the destination array
+     * @param elementCount the number of array elements to be copied
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         {@code srcSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2433,15 +2434,15 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@code byte[]}, {@code char[]}, {@code short[]},
      * {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
      *
-     * @param srcArray the source array.
-     * @param srcIndex the starting index of the source array.
-     * @param dstSegment the destination segment.
+     * @param srcArray the source array
+     * @param srcIndex the starting index of the source array
+     * @param dstSegment the destination segment
      * @param dstLayout the destination element layout. If the byte order associated
      *                  with the layout is different from the
      *                  {@linkplain ByteOrder#nativeOrder native order}, a byte swap
      *                  operation will be performed on each array element.
-     * @param dstOffset the starting offset, in bytes, of the destination segment.
-     * @param elementCount the number of array elements to be copied.
+     * @param dstOffset the starting offset, in bytes, of the destination segment
+     * @param elementCount the number of array elements to be copied
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         {@code dstSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2490,16 +2491,16 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param srcSegment the source segment.
      * @param srcFromOffset the offset (inclusive) of the first byte in the
-     *                      source segment to be tested.
+     *                      source segment to be tested
      * @param srcToOffset the offset (exclusive) of the last byte in the
-     *                    source segment to be tested.
-     * @param dstSegment the destination segment.
+     *                    source segment to be tested
+     * @param dstSegment the destination segment
      * @param dstFromOffset the offset (inclusive) of the first byte in the
-     *                      destination segment to be tested.
+     *                      destination segment to be tested
      * @param dstToOffset the offset (exclusive) of the last byte in the
-     *                    destination segment to be tested.
+     *                    destination segment to be tested
      * @return the relative offset, in bytes, of the first mismatch between the
-     *         source and destination segments, otherwise -1 if no mismatch.
+     *         source and destination segments, otherwise -1 if no mismatch
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         {@code srcSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -2583,7 +2584,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
          * the same lifetime as that modelled by this scope}. In that case, it is always
          * the case that {@code this.isAlive() == ((Scope)that).isAlive()}.
          *
-         * @param that the object to be tested.
+         * @param that the object to be tested
          */
         @Override
         boolean equals(Object that);
@@ -2594,7 +2595,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
          * @implSpec Implementations of this method obey the general contract of
          * {@link Object#hashCode}.
          *
-         * @return the hash code of this scope object.
+         * @return the hash code of this scope object
          * @see #equals(Object)
          */
         @Override

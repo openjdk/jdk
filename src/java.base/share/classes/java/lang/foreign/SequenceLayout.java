@@ -69,7 +69,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
     /**
      * {@return a sequence layout with the same characteristics of this layout, but with
      *          the given element count}
-     * @param elementCount the new element count.
+     * @param elementCount the new element count
      * @throws IllegalArgumentException if {@code elementCount} is negative
      * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount}
      *         overflows
@@ -77,7 +77,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
     SequenceLayout withElementCount(long elementCount);
 
     /**
-     * Rearranges the elements in this sequence layout into a multi-dimensional sequence
+     * Rearranges the elements in this sequence layout into a multidimensional sequence
      * layout. The resulting layout is a sequence layout where element layouts in the
      * {@linkplain #flatten() flattened projection} of this sequence layout are
      * rearranged into one or more nested sequence layouts according to the provided
@@ -103,7 +103,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * var reshapeSeqImplicit1 = seq.reshape(-1, 6);
      * var reshapeSeqImplicit2 = seq.reshape(2, -1);
      * }
-     * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
+     * @param elementCounts an array of element counts, of which at most one can be {@code -1}
      * @return a sequence layout where element layouts in the
      *         {@linkplain #flatten() flattened projection} of this sequence layout
      *         (see {@link #flatten()}) are re-arranged into one or more nested
@@ -142,7 +142,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * }
      * @return a sequence layout with the same size as this layout
      *         (but, possibly, with different element count), whose
-     *         element layout is not a sequence layout.
+     *         element layout is not a sequence layout
      */
     SequenceLayout flatten();
 

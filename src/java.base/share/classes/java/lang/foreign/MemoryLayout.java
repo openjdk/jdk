@@ -466,7 +466,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * {@return a memory layout with the same characteristics as this layout, but with
      *          the given name}
      *
-     * @param name the layout name.
+     * @param name the layout name
      * @see MemoryLayout#name()
      */
     MemoryLayout withName(String name);
@@ -532,9 +532,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Computes the offset, in bytes, of the layout selected by the given layout path,
      * where the initial layout in the path is this layout.
      *
-     * @param elements the layout path elements.
+     * @param elements the layout path elements
      * @return The offset, in bytes, of the layout selected by the layout path in
-     *         {@code elements}.
+     *         {@code elements}
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout path contains one or more
@@ -576,9 +576,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
      *          some indices can be specified when invoking the method handle.
      *
-     * @param elements the layout path elements.
+     * @param elements the layout path elements
      * @return a method handle that computes the offset, in bytes, of the layout selected
-     *         by the given layout path.
+     *         by the given layout path
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout path contains one or more
@@ -687,9 +687,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <a href="#access-mode-restrictions"><em>access mode restrictions</em></a>, which
      * are common to all var handles derived from memory layouts.
      *
-     * @param elements the layout path elements.
+     * @param elements the layout path elements
      * @return a var handle that accesses a memory segment at the offset selected by the
-     *         given layout path.
+     *         given layout path
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout selected by the provided path is not a
@@ -741,9 +741,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * returned from this method can be especially useful when accessing
      * <a href="#variable-length">variable-length arrays</a>.
      *
-     * @param elements the layout path elements.
+     * @param elements the layout path elements
      * @return a var handle that accesses adjacent elements in a memory segment at
-     *         offsets selected by the given layout path.
+     *         offsets selected by the given layout path
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout selected by the provided path is
@@ -794,9 +794,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *          similarly to {@link MemorySegment#asSlice(long, long)}, but more flexibly,
      *          as some indices can be specified when invoking the method handle.
      *
-     * @param elements the layout path elements.
+     * @param elements the layout path elements
      * @return a method handle which is used to slice a memory segment at the offset
-     *         selected by the given layout path.
+     *         selected by the given layout path
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout path contains one or more
@@ -808,8 +808,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Returns the layout selected from the provided path, where the initial layout in
      * the path is this layout.
      *
-     * @param elements the layout path elements.
-     * @return the layout selected by the layout path in {@code elements}.
+     * @param elements the layout path elements
+     * @return the layout selected by the layout path in {@code elements}
      * @throws IllegalArgumentException if the layout path is not
      *         <a href="#well-formedness">well-formed</a> for this layout
      * @throws IllegalArgumentException if the layout path contains one or more
@@ -854,9 +854,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          *           selected. In such cases, using {@link #groupElement(long)} might be
          *           preferable.
          *
-         * @param name the name of the member layout to be selected.
+         * @param name the name of the member layout to be selected
          * @return a path element which selects the group member layout with the
-         *         given name.
+         *         given name
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
@@ -868,9 +868,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * Returns a path element which selects a member layout with the given index in a
          * group layout.
          *
-         * @param index the index of the member layout element to be selected.
+         * @param index the index of the member layout element to be selected
          * @return a path element which selects the group member layout with the
-         *         given index.
+         *         given index
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement groupElement(long index) {
@@ -885,9 +885,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * Returns a path element which selects the element layout at the specified
          * position in a sequence layout.
          *
-         * @param index the index of the sequence element to be selected.
+         * @param index the index of the sequence element to be selected
          * @return a path element which selects the sequence element layout with the
-         *         given index.
+         *         given index
          * @throws IllegalArgumentException if {@code index < 0}
          */
         static PathElement sequenceElement(long index) {
@@ -913,11 +913,11 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
          * </ul>
          *
-         * @param start the index of the first sequence element to be selected.
+         * @param start the index of the first sequence element to be selected
          * @param step the step factor at which subsequence sequence elements are to be
-         *             selected.
+         *             selected
          * @return a path element which selects the sequence element layout with the
-         *         given index.
+         *         given index
          * @throws IllegalArgumentException if {@code start < 0}, or {@code step == 0}
          */
         static PathElement sequenceElement(long start, long step) {
@@ -939,7 +939,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * {@code I}. If {@code C} is the sequence element count, it follows that
          * {@code 0 <= I < C}.
          *
-         * @return a path element which selects an unspecified sequence element layout.
+         * @return a path element which selects an unspecified sequence element layout
          */
         static PathElement sequenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.SEQUENCE_ELEMENT,
@@ -950,7 +950,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
          * Returns a path element which dereferences an address layout as its
          * {@linkplain AddressLayout#targetLayout() target layout} (where set).
          *
-         * @return a path element which dereferences an address layout.
+         * @return a path element which dereferences an address layout
          */
         static PathElement dereferenceElement() {
             return new LayoutPath.PathElementImpl(PathKind.DEREF_ELEMENT,
@@ -978,8 +978,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     (see {@link GroupLayout#memberLayouts()}) are also equal.</li>
      * </ul>
      *
-     * @param other the object to be compared for equality with this layout.
-     * @return {@code true} if the specified object is equal to this layout.
+     * @param other the object to be compared for equality with this layout
+     * @return {@code true} if the specified object is equal to this layout
      */
     boolean equals(Object other);
 
@@ -1001,8 +1001,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * layout does not affect the natural alignment of the group or sequence layout it is
      * nested into.
      *
-     * @param byteSize the padding size (expressed in bytes).
-     * @return the new selector layout.
+     * @param byteSize the padding size (expressed in bytes)
+     * @return the new selector layout
      * @throws IllegalArgumentException if {@code byteSize <= 0}
      */
     static PaddingLayout paddingLayout(long byteSize) {
@@ -1012,8 +1012,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     /**
      * Creates a sequence layout with the given element layout and element count.
      *
-     * @param elementCount the sequence element count.
-     * @param elementLayout the sequence element layout.
+     * @param elementCount the sequence element count
+     * @param elementLayout the sequence element layout
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount} is negative
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount}
@@ -1031,8 +1031,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     /**
      * Creates a struct layout with the given member layouts.
      *
-     * @param elements The member layouts of the struct layout.
-     * @return a struct layout with the given member layouts.
+     * @param elements The member layouts of the struct layout
+     * @return a struct layout with the given member layouts
      * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes}
      *         of the member layouts overflows
      * @throws IllegalArgumentException if a member layout in {@code elements} occurs at
@@ -1072,8 +1072,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     /**
      * Creates a union layout with the given member layouts.
      *
-     * @param elements The member layouts of the union layout.
-     * @return a union layout with the given member layouts.
+     * @param elements The member layouts of the union layout
+     * @return a union layout with the given member layouts
      */
     static UnionLayout unionLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
