@@ -134,10 +134,10 @@ int main(int argc, char *argv[]) {
     ChildStuff c;
     int t;
     struct stat buf;
-    /* argv[0] contains the fd number to read all the child info */
+    /* argv[1] contains the fd number to read all the child info */
     int r, fdin, fdout;
 
-    r = sscanf (argv[argc-1], "%d:%d", &fdin, &fdout);
+    r = sscanf (argv[1], "%d:%d", &fdin, &fdout);
     if (r == 2 && fcntl(fdin, F_GETFD) != -1) {
         fstat(fdin, &buf);
         if (!S_ISFIFO(buf.st_mode))

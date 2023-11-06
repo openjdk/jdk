@@ -491,16 +491,20 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     jboolean isCopy;
     int i, offset, rval, bufsize, magic;
     char *buf, buf1[16];
-    char *hlpargs[2];
+    char *hlpargs[3];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
     snprintf(buf1, sizeof(buf1), "%d:%d", c->childenv[0], c->fail[1]);
-    /* put the fd string as argument to the helper cmd */
-    hlpargs[0] = buf1;
-    hlpargs[1] = 0;
+    /* NULL-terminated argv array.
+     * argv[0] contains path to jspawnhelper, to follow conventions.
+     * argv[1] contains the fd string as argument to jspawnhelper
+     */
+    hlpargs[0] = (char*)helperpath;
+    hlpargs[1] = buf1;
+    hlpargs[2] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
