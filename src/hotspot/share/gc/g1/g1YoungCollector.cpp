@@ -427,7 +427,7 @@ public:
     _g1h(g1h),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
-    _humongous_candidates(0)  { }
+    _humongous_candidates(0) { }
 
   void work(uint worker_id) {
     G1PrepareRegionsClosure cl(_g1h, this);

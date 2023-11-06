@@ -462,7 +462,7 @@ void G1FullCollector::phase2d_prepare_humongous_compaction() {
       region_index += num_regions; // Advance over all humongous regions.
       continue;
     } else if (is_compaction_target(region_index)) {
-      assert(!hr->has_pinned_objects(), "pinned objects should not be compaction targets");
+      assert(!hr->has_pinned_objects(), "pinned regions should not be compaction targets");
       // Add the region to the humongous compaction point.
       humongous_cp->add(hr);
     }
