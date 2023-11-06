@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 9999999
- * @summary XXX
+ * @bug 8318913
+ * @summary Verify correct module versions are recorded when --release is used.
  * @library /tools/lib
- * @modules 
+ * @modules
  *          java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
