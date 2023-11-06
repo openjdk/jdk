@@ -116,8 +116,9 @@ AWT_ASSERT_APPKIT_THREAD;
 
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
+    BOOL overrideDelegate = (int)(getenv("AWT_OVERRIDE_DELEGATE") != NULL);
     if (NSApp != nil) {
-        if ([NSApp isMemberOfClass:[NSApplication class]]) shouldInstall = YES;
+        if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
         if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
     }
     checked = YES;
@@ -510,8 +511,10 @@ AWT_ASSERT_APPKIT_THREAD;
     [dockImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
     [dockImageView setImage:image];
 
-    [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
-    [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    if ([ApplicationDelegate sharedDelegate] != nil) {
+        [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
+        [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    }
 
     // add it to the NSDockTile
     [dockTile setContentView: dockImageView];
@@ -524,14 +527,15 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-    if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
-        [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
-        [delegate.fProgressIndicator setHidden:NO];
-    } else {
-        [delegate.fProgressIndicator setHidden:YES];
+    if ([ApplicationDelegate sharedDelegate] != nil) {
+        if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
+            [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
+            [delegate.fProgressIndicator setHidden:NO];
+        } else {
+            [delegate.fProgressIndicator setHidden:YES];
+        }
+        [[NSApp dockTile] display];
     }
-
-    [[NSApp dockTile] display];
 }
 
 // Obtains the image of the Dock icon, either manually set, a drawn copy, or the default NSApplicationIcon

@@ -121,10 +121,6 @@
     } copy]];
 }
 
-- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
-    return YES;
-}
-
 - (void)application:(NSApplication *)theApplication openFiles:(NSArray *)fileNames
 {
     [self.queue addObject:[^(){
@@ -202,6 +198,12 @@
     [self.queue addObject:[^(){
         [[self.realDelegate class] _appDidUnhide];
     } copy]];
+}
+
+
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
+{
+    return YES;
 }
 
 - (void)processQueuedEventsWithTargetDelegate:(id <NSApplicationDelegate>)delegate
