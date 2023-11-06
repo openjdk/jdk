@@ -4489,37 +4489,17 @@ public final class Formatter implements Closeable, Flushable {
                     break;
                 }
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
-                    // ISO_STANDARD_DATE does not need to deal with Locale
+                    char sep = '-';
                     int year = t.get(ChronoField.YEAR);
-                    int month = t.get(ChronoField.MONTH_OF_YEAR);
-                    int dayOfMonth = t.get(ChronoField.DAY_OF_MONTH);
-
                     if (year < 0) {
                         sb.append('-');
                         year = -year;
                     } else if (year > 9999) {
                         sb.append('+');
                     }
-                    if (year < 1000) {
-                        sb.append('0');
-                        if (year < 100) {
-                            sb.append('0');
-                            if (year < 10) {
-                                sb.append('0');
-                            }
-                        }
-                    }
-                    sb.append(year)
-                      .append('-');
-                    if (month < 10) {
-                        sb.append('0');
-                    }
-                    sb.append(month)
-                      .append('-');
-                    if (dayOfMonth < 10) {
-                        sb.append('0');
-                    }
-                    sb.append(dayOfMonth);
+                    sb.append(localizedMagnitude(fmt, null, year, Flags.ZERO_PAD, 4, l)).append(sep);
+                    print(fmt, sb, t, DateTime.MONTH, l).append(sep);
+                    print(fmt, sb, t, DateTime.DAY_OF_MONTH_0, l);
                     break;
                 }
                 default:
