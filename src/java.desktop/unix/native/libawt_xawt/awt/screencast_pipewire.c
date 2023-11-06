@@ -175,49 +175,6 @@ static gboolean initScreencast(const gchar *token,
     return TRUE;
 }
 
-static inline void convertRGBxToBGRx(int* in) {
-    char* o = (char*) in;
-    char tmp = o[0];
-    o[0] = o[2];
-    o[2] = tmp;
-}
-
-static gchar * cropTo(
-        struct spa_data data,
-        struct spa_video_info_raw raw,
-        guint32 x,
-        guint32 y,
-        guint32 width,
-        guint32 height
-) {
-    int srcW = raw.size.width;
-    if (data.chunk->stride / 4 != srcW) {
-        fprintf(stderr, "%s:%i Unexpected stride / 4: %i srcW: %i\n",
-                __func__, __LINE__, data.chunk->stride / 4, srcW);
-    }
-
-    int* d = data.data;
-
-    int *outData = calloc(width * height, sizeof(int));
-    if (!outData) {
-        ERR("failed to allocate memory\n");
-        return NULL;
-    }
-
-    gboolean needConversion = raw.format != SPA_VIDEO_FORMAT_BGRx;
-    for (guint32 j = y; j < y + height; ++j) {
-        for (guint32 i = x; i < x + width; ++i) {
-            int color = *(d + (j * srcW) + i);
-            if (needConversion) {
-                convertRGBxToBGRx(&color);
-            }
-            *(outData + ((j - y) * width) + (i - x)) = color;
-        }
-    }
-
-    return (gchar*) outData;
-}
-
 static void onStreamParamChanged(
         void *userdata,
         uint32_t id,
@@ -301,24 +258,81 @@ static void onStreamProcess(void *userdata) {
 
     struct spa_data spaData = spaBuffer->datas[0];
 
+    gint streamWidth = data->rawFormat.size.width;
+    gint streamHeight = data->rawFormat.size.height;
+
     DEBUG_SCREEN(screen);
     DEBUG_SCREEN_PREFIX(screen,
                         "got a frame of size %d offset %d stride %d "
-                        "flags %d FD %li captureDataReady %i\n",
+                        "flags %d FD %li captureDataReady %i of stream %dx%d\n",
                         spaBuffer->datas[0].chunk->size,
                         spaData.chunk->offset,
                         spaData.chunk->stride,
                         spaData.chunk->flags,
                         spaData.fd,
-                        screen->captureDataReady
+                        screen->captureDataReady,
+                        streamWidth,
+                        streamHeight
     );
 
-    data->screenProps->captureData = cropTo(
-            spaData,
-            data->rawFormat,
-            screen->captureArea.x, screen->captureArea.y,
-            screen->captureArea.width, screen->captureArea.height
-    );
+    GdkRectangle captureArea = screen->captureArea;
+    GdkRectangle screenBounds = screen->bounds;
+
+    GdkPixbuf *pixbuf = gtk->gdk_pixbuf_new_from_data(spaData.data,
+                                                      GDK_COLORSPACE_RGB,
+                                                      TRUE,
+                                                      8,
+                                                      streamWidth,
+                                                      streamHeight,
+                                                      spaData.chunk->stride,
+                                                      NULL,
+                                                      NULL);
+
+    if (screen->bounds.width != streamWidth
+        || screen->bounds.height != streamHeight) {
+
+        DEBUG_SCREEN_PREFIX(screen, "scaling stream data %dx%d -> %dx%d\n",
+                         streamWidth, streamHeight,
+                         screen->bounds.width, screen->bounds.height
+        );
+
+        GdkPixbuf *scaled = gtk->gdk_pixbuf_scale_simple(pixbuf,
+                                                         screen->bounds.width,
+                                                         screen->bounds.height,
+                                                         GDK_INTERP_BILINEAR);
+
+        gtk->g_object_unref(pixbuf);
+        pixbuf = scaled;
+    }
+
+    GdkPixbuf *cropped = NULL;
+    if (captureArea.width != screenBounds.width
+        || captureArea.height != screenBounds.height) {
+
+        cropped = gtk->gdk_pixbuf_new(GDK_COLORSPACE_RGB,
+                                      TRUE,
+                                      8,
+                                      captureArea.width,
+                                      captureArea.height);
+        if (cropped) {
+            gtk->gdk_pixbuf_copy_area(pixbuf,
+                                      captureArea.x,
+                                      captureArea.y,
+                                      captureArea.width,
+                                      captureArea.height,
+                                      cropped,
+                                      0, 0);
+        } else {
+            ERR("Cannot create a new pixbuf.\n");
+        }
+
+        gtk->g_object_unref(pixbuf);
+        pixbuf = NULL;
+
+        data->screenProps->captureDataPixbuf = cropped;
+    } else {
+        data->screenProps->captureDataPixbuf = pixbuf;
+    }
 
     screen->captureDataReady = TRUE;
 
@@ -366,11 +380,7 @@ static bool startStream(
             SPA_FORMAT_mediaSubtype,
             SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
             SPA_FORMAT_VIDEO_format,
-            SPA_POD_CHOICE_ENUM_Id(
-                    2,
-                    SPA_VIDEO_FORMAT_RGBx,
-                    SPA_VIDEO_FORMAT_BGRx
-            ),
+            SPA_POD_Id(SPA_VIDEO_FORMAT_BGRx),
             SPA_FORMAT_VIDEO_size,
             SPA_POD_CHOICE_RANGE_Rectangle(
                     &SPA_RECTANGLE(320, 240),
@@ -910,7 +920,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                                 "\t||\tx %5i y %5i w %5i h %5i %s\n"
                                 "\t||\tx %5i y %5i w %5i h %5i %s\n"
                                 "\t||\tx %5i y %5i w %5i h %5i %s\n\n",
-                                i, screenProps->captureData,
+                                i, screenProps->captureDataPixbuf,
                                 requestedArea.x, requestedArea.y,
                                 requestedArea.width, requestedArea.height,
                                 "requested area",
@@ -924,7 +934,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                                 "in-screen coords capture area"
             );
 
-            if (screenProps->captureData) {
+            if (screenProps->captureDataPixbuf) {
                 for (int y = 0; y < captureArea.height; y++) {
                     jsize preY = (requestedArea.y > screenProps->bounds.y)
                             ? 0
@@ -939,14 +949,18 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                     (*env)->SetIntArrayRegion(
                             env, pixelArray,
                             start, len,
-                            ((jint *) screenProps->captureData)
-                                + (captureArea.width * y)
+                            ((jint *) gtk->gdk_pixbuf_get_pixels(
+                                    screenProps->captureDataPixbuf
+                            ))
+                            + (captureArea.width * y)
                     );
                 }
             }
 
-            free(screenProps->captureData);
-            screenProps->captureData = NULL;
+            if (screenProps->captureDataPixbuf) {
+                gtk->g_object_unref(screenProps->captureDataPixbuf);
+                screenProps->captureDataPixbuf = NULL;
+            }
             screenProps->shouldCapture = FALSE;
 
             fp_pw_thread_loop_lock(pw.loop);

@@ -47,7 +47,6 @@
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
@@ -57,6 +56,8 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocSiteTable.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -89,9 +90,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
-#include "services/mallocSiteTable.hpp"
 #include "services/memoryService.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -111,6 +110,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialHeap.hpp"
+#endif // INCLUDE_SERIALGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
 #endif // INCLUDE_ZGC
@@ -119,9 +121,9 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 #ifdef LINUX
-#include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "osContainer_linux.hpp"
+#include "os_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -379,7 +381,7 @@ WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint 
   if (EnableJVMCI) {
     // Enter the JVMCI env that will be used by the CompileBroker.
     JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
-    return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
+    return jvmciEnv.init_error() == JNI_OK && jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
   }
 #endif
   return false;
@@ -422,8 +424,13 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
     return Universe::heap()->is_in(p);
   }
 #endif
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  return !gch->is_in_young(p);
+#if INCLUDE_SERIALGC
+  if (UseSerialGC) {
+    return !SerialHeap::heap()->is_in_young(p);
+  }
+#endif
+  ShouldNotReachHere();
+  return false;
 WB_END
 
 WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
@@ -721,7 +728,7 @@ WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTNewArena(JNIEnv* env, jobject o, jlong init_size))
-  Arena* arena =  new (mtTest) Arena(mtTest, size_t(init_size));
+  Arena* arena =  new (mtTest) Arena(mtTest, Arena::Tag::tag_other, size_t(init_size));
   return (jlong)arena;
 WB_END
 

@@ -1059,7 +1059,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R12_scratch2, _ijava_state_neg(monitors), R1_SP);
   __ std(R14_bcp, _ijava_state_neg(bcp), R1_SP);
   if (ProfileInterpreter) { __ std(R28_mdx, _ijava_state_neg(mdx), R1_SP); }
-  __ std(R15_esp, _ijava_state_neg(esp), R1_SP);
+  __ sub(R12_scratch2, R15_esp, R1_SP);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  __ std(R12_scratch2, _ijava_state_neg(esp), R1_SP);
   __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
 
   // Store sender's SP and this frame's top SP.

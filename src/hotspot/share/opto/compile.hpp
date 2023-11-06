@@ -184,12 +184,16 @@ class Options {
   const bool _do_reduce_allocation_merges;  // Do try to reduce allocation merges.
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
+  const bool _do_superword;          // Do SuperWord
   const bool _install_code;          // Install the code that was compiled
  public:
-  Options(bool subsume_loads, bool do_escape_analysis,
+  Options(bool subsume_loads,
+          bool do_escape_analysis,
           bool do_iterative_escape_analysis,
           bool do_reduce_allocation_merges,
-          bool eliminate_boxing, bool do_locks_coarsening,
+          bool eliminate_boxing,
+          bool do_locks_coarsening,
+          bool do_superword,
           bool install_code) :
           _subsume_loads(subsume_loads),
           _do_escape_analysis(do_escape_analysis),
@@ -197,6 +201,7 @@ class Options {
           _do_reduce_allocation_merges(do_reduce_allocation_merges),
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
+          _do_superword(do_superword),
           _install_code(install_code) {
   }
 
@@ -208,6 +213,7 @@ class Options {
        /* do_reduce_allocation_merges = */ false,
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
+       /* do_superword = */ true,
        /* install_code = */ true
     );
   }
@@ -460,6 +466,9 @@ private:
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
 
+  // "MemLimit" directive was specified and the memory limit was hit during compilation
+  bool                          _oom;
+
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
   // pieces in order.
@@ -502,6 +511,8 @@ private:
 
   void log_late_inline_failure(CallGenerator* cg, const char* msg);
   DEBUG_ONLY(bool _exception_backedge;)
+
+  void record_method_not_compilable_oom();
 
  public:
 
@@ -584,6 +595,7 @@ private:
   bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
+  bool              do_superword() const        { return _options._do_superword; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }
@@ -819,6 +831,10 @@ private:
     record_failure(reason);
   }
   bool check_node_count(uint margin, const char* reason) {
+    if (oom()) {
+      record_method_not_compilable_oom();
+      return true;
+    }
     if (live_nodes() + margin > max_node_limit()) {
       record_method_not_compilable(reason);
       return true;
@@ -826,6 +842,8 @@ private:
       return false;
     }
   }
+  bool oom() const { return _oom; }
+  void set_oom()   { _oom = true; }
 
   // Node management
   uint         unique() const              { return _unique; }

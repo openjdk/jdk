@@ -165,14 +165,19 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));       \
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
-  JavaThread* THREAD = thread;                                        \
+  JavaThread* THREAD = thread;                                    \
   debug_only(VMNativeEntryWrapper __vew;)
 
 // Native method block that transitions current thread to '_thread_in_vm'.
-#define C2V_BLOCK(result_type, name, signature)      \
-  JVMCI_VM_ENTRY_MARK;                               \
-  ResourceMark rm;                                   \
-  JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env);
+// Note: CompilerThreadCanCallJava must precede JVMCIENV_FROM_JNI so that
+// the translation of an uncaught exception in the JVMCIEnv does not make
+// a Java call when __is_hotspot == false.
+#define C2V_BLOCK(result_type, name, signature)            \
+  JVMCI_VM_ENTRY_MARK;                                     \
+  ResourceMark rm;                                         \
+  bool __is_hotspot = env == thread->jni_environment();    \
+  CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
+  JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
 static JavaThread* get_current_thread(bool allow_null=true) {
   Thread* thread = Thread::current_or_null_safe();
@@ -188,7 +193,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 #define C2V_VMENTRY(result_type, name, signature)        \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
   JavaThread* thread = get_current_thread();             \
-  if (thread == nullptr) {                                  \
+  if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
     return;                                              \
@@ -199,7 +204,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 #define C2V_VMENTRY_(result_type, name, signature, result) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
   JavaThread* thread = get_current_thread();             \
-  if (thread == nullptr) {                                  \
+  if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
     return result;                                       \
@@ -221,7 +226,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 #define JNI_THROW(caller, name, msg) do {                                         \
     jint __throw_res = env->ThrowNew(JNIJVMCI::name::clazz(), msg);               \
     if (__throw_res != JNI_OK) {                                                  \
-      tty->print_cr("Throwing " #name " in " caller " returned %d", __throw_res); \
+      JVMCI_event_1("Throwing " #name " in " caller " returned %d", __throw_res); \
     }                                                                             \
     return;                                                                       \
   } while (0);
@@ -229,7 +234,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 #define JNI_THROW_(caller, name, msg, result) do {                                \
     jint __throw_res = env->ThrowNew(JNIJVMCI::name::clazz(), msg);               \
     if (__throw_res != JNI_OK) {                                                  \
-      tty->print_cr("Throwing " #name " in " caller " returned %d", __throw_res); \
+      JVMCI_event_1("Throwing " #name " in " caller " returned %d", __throw_res); \
     }                                                                             \
     return result;                                                                \
   } while (0)
@@ -579,6 +584,7 @@ C2V_VMENTRY_0(jboolean, shouldInlineMethod,(JNIEnv* env, jobject, ARGUMENT_PAIR(
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGUMENT_PAIR(accessing_klass), jint accessing_klass_loader, jboolean resolve))
+  CompilerThreadCanCallJava canCallJava(thread, resolve); // Resolution requires Java calls
   JVMCIObject name = JVMCIENV->wrap(jname);
   const char* str = JVMCIENV->as_utf8_string(name);
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
@@ -592,7 +598,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   if (val != nullptr) {
     if (strstr(val, "<trace>") != nullptr) {
       tty->print_cr("CompilerToVM.lookupType: %s", str);
-    } else if (strstr(val, str) != nullptr) {
+    } else if (strstr(str, val) != nullptr) {
       THROW_MSG_0(vmSymbols::java_lang_Exception(),
                   err_msg("lookupTypeException: %s", str));
     }
@@ -938,6 +944,17 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
   fieldDescriptor fd;
   methodHandle mh(THREAD, UNPACK_PAIR(Method, method));
+
+  Bytecodes::Code bc = (Bytecodes::Code) (((int) opcode) & 0xFF);
+  int holder_index = cp->klass_ref_index_at(index, bc);
+  if (!cp->tag_at(holder_index).is_klass() && !THREAD->can_call_java()) {
+    // If the holder is not resolved in the constant pool and the current
+    // thread cannot call Java, return null. This avoids a Java call
+    // in LinkInfo to load the holder.
+    Symbol* klass_name = cp->klass_ref_at_noresolve(index, bc);
+    return nullptr;
+  }
+
   LinkInfo link_info(cp, index, mh, code, CHECK_NULL);
   LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
@@ -1282,6 +1299,18 @@ C2V_VMENTRY_0(jint, getLocalVariableTableLength, (JNIEnv* env, jobject, ARGUMENT
   return method->localvariable_table_length();
 C2V_END
 
+static MethodData* get_profiling_method_data(const methodHandle& method, TRAPS) {
+  MethodData* method_data = method->method_data();
+  if (method_data == nullptr) {
+    method->build_profiling_method_data(method, CHECK_NULL);
+    method_data = method->method_data();
+    if (method_data == nullptr) {
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "cannot allocate MethodData")
+    }
+  }
+  return method_data;
+}
+
 C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   MethodCounters* mcs = method->method_counters();
@@ -1297,9 +1326,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   MethodData* method_data = method->method_data();
   if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK);
-    method->set_method_data(method_data);
+    method_data = get_profiling_method_data(method, CHECK);
   } else {
     method_data->initialize();
   }
@@ -2426,6 +2453,16 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
   return type2aelembytes(type);
 C2V_END
 
+C2V_VMENTRY(void, clearOopHandle, (JNIEnv* env, jobject, jlong oop_handle))
+  if (oop_handle == 0L) {
+    JVMCI_THROW(NullPointerException);
+  }
+  // Assert before nulling out, for better debugging.
+  assert(JVMCIRuntime::is_oop_handle(oop_handle), "precondition");
+  oop* oop_ptr = (oop*) oop_handle;
+  NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
+C2V_END
+
 C2V_VMENTRY(void, releaseClearedOopHandles, (JNIEnv* env, jobject))
   JVMCIENV->runtime()->release_cleared_oop_handles();
 C2V_END
@@ -2706,6 +2743,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     return 0L;
   }
   PEER_JVMCIENV_FROM_THREAD(THREAD, !JVMCIENV->is_hotspot());
+  CompilerThreadCanCallJava canCallJava(thread, PEER_JVMCIENV->is_hotspot());
   PEER_JVMCIENV->check_init(JVMCI_CHECK_0);
 
   JVMCIEnv* thisEnv = JVMCIENV;
@@ -2759,11 +2797,11 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       } else {
         // Link the new HotSpotNmethod to the nmethod
         PEER_JVMCIENV->initialize_installed_code(result, nm, JVMCI_CHECK_0);
-        // Only HotSpotNmethod instances in the HotSpot heap are tracked directly by the runtime.
-        if (PEER_JVMCIENV->is_hotspot()) {
+        // Only non-default HotSpotNmethod instances in the HotSpot heap are tracked directly by the runtime.
+        if (!isDefault && PEER_JVMCIENV->is_hotspot()) {
           JVMCINMethodData* data = nm->jvmci_nmethod_data();
           if (data == nullptr) {
-            JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot set HotSpotNmethod mirror for default nmethod");
+            JVMCI_THROW_MSG_0(IllegalArgumentException, "Missing HotSpotNmethod data");
           }
           if (data->get_nmethod_mirror(nm, /* phantom_ref */ false) != nullptr) {
             JVMCI_THROW_MSG_0(IllegalArgumentException, "Cannot overwrite existing HotSpotNmethod mirror for nmethod");
@@ -2925,18 +2963,21 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedClassAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass),
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
+  CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = InstanceKlass::cast(UNPACK_PAIR(Klass, klass));
   return get_encoded_annotation_data(holder, holder->class_annotations(), true, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedExecutableAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
+  CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   return get_encoded_annotation_data(method->method_holder(), method->annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
 C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getEncodedFieldAnnotationData, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass), jint index,
                  jobject filter, jint filter_length, jlong filter_klass_pointers))
+  CompilerThreadCanCallJava canCallJava(thread, true); // Requires Java support
   InstanceKlass* holder = check_field(InstanceKlass::cast(UNPACK_PAIR(Klass, klass)), index, JVMCIENV);
   fieldDescriptor fd(holder, index);
   return get_encoded_annotation_data(holder, fd.annotations(), false, filter_length, filter_klass_pointers, THREAD, JVMCIENV);
@@ -2976,12 +3017,7 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
-  MethodData* method_data = method->method_data();
-  if (method_data == nullptr) {
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    method_data = MethodData::allocate(loader_data, method, CHECK_0);
-    method->set_method_data(method_data);
-  }
+  MethodData* method_data = get_profiling_method_data(method, CHECK_0);
   return (jlong) method_data->get_failed_speculations_address();
 C2V_END
 
@@ -2998,6 +3034,7 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
 C2V_END
 
 C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
+  CompilerThreadCanCallJava canCallJava(thread, true);
   JavaValue result(T_VOID);
   JavaCallArguments jargs(1);
   jargs.push_int(status);
@@ -3255,6 +3292,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
   {CC "arrayBaseOffset",                              CC "(C)I",                                                                            FN_PTR(arrayBaseOffset)},
   {CC "arrayIndexScale",                              CC "(C)I",                                                                            FN_PTR(arrayIndexScale)},
+  {CC "clearOopHandle",                               CC "(J)V",                                                                            FN_PTR(clearOopHandle)},
   {CC "releaseClearedOopHandles",                     CC "()V",                                                                             FN_PTR(releaseClearedOopHandles)},
   {CC "registerNativeMethods",                        CC "(" CLASS ")[J",                                                                   FN_PTR(registerNativeMethods)},
   {CC "isCurrentThreadAttached",                      CC "()Z",                                                                             FN_PTR(isCurrentThreadAttached)},

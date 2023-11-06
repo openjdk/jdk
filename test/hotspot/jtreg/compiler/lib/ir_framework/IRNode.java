@@ -442,6 +442,11 @@ public class IRNode {
         beforeMatchingNameRegex(COMPRESS_BITS, "CompressBits");
     }
 
+    public static final String CONV = PREFIX + "CONV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV, "Conv");
+    }
+
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_I2L, "ConvI2L");
