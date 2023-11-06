@@ -704,7 +704,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 #endif
   LoopNode* head = loop->_head->as_Loop();
 
-  C->print_method(PHASE_BEFORE_LOOP_PEEL, 4, head);
+  C->print_method(PHASE_BEFORE_LOOP_PEELING, 4, head);
 
   bool counted_loop = head->is_CountedLoop();
   if (counted_loop) {
@@ -799,7 +799,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   loop->record_for_igvn();
 
-  C->print_method(PHASE_AFTER_LOOP_PEEL, 4, head);
+  C->print_method(PHASE_AFTER_LOOP_PEELING, 4, head);
 }
 
 //------------------------------policy_maximally_unroll------------------------
@@ -1634,7 +1634,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopEndNode *main_end = main_head->loopexit();
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
-  C->print_method(PHASE_BEFORE_PRE_POST_LOOPS, 4, main_head);
+  C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
 
   Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
@@ -1833,7 +1833,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
 
-  C->print_method(PHASE_AFTER_PRE_POST_LOOPS, 4, main_head);
+  C->print_method(PHASE_AFTER_PRE_MAIN_POST, 4, main_head);
 }
 
 //------------------------------insert_vector_post_loop------------------------

@@ -55,16 +55,16 @@
   flags(AFTER_SPLIT_IF,                 "After split if") \
   flags(BEFORE_LOOP_PREDICATION,        "Before loop predication") \
   flags(AFTER_LOOP_PREDICATION,         "After loop predication") \
-  flags(BEFORE_PARTIAL_PEEL,            "Before partial peeling") \
-  flags(AFTER_PARTIAL_PEEL,             "After partial peeling") \
-  flags(BEFORE_LOOP_PEEL,               "Before loop peeling") \
-  flags(AFTER_LOOP_PEEL,                "After loop peeling") \
-  flags(BEFORE_LOOP_UNSWITCH,           "Before loop unswitching") \
-  flags(AFTER_LOOP_UNSWITCH,            "After loop unswitching") \
+  flags(BEFORE_PARTIAL_PEELING,         "Before partial peeling") \
+  flags(AFTER_PARTIAL_PEELING,          "After partial peeling") \
+  flags(BEFORE_LOOP_PEELING,            "Before loop peeling") \
+  flags(AFTER_LOOP_PEELING,             "After loop peeling") \
+  flags(BEFORE_LOOP_UNSWITCHING,        "Before loop unswitching") \
+  flags(AFTER_LOOP_UNSWITCHING,         "After loop unswitching") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before range check elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After range check elimination") \
-  flags(BEFORE_PRE_POST_LOOPS,          "Before pre/post loops") \
-  flags(AFTER_PRE_POST_LOOPS,           "After pre/post loops") \
+  flags(BEFORE_PRE_MAIN_POST,           "Before pre/main/post loops") \
+  flags(AFTER_PRE_MAIN_POST,            "After pre/main/post loops") \
   flags(BEFORE_SUPERWORD,               "Before superword")\
   flags(AFTER_SUPERWORD,                "After superword")\
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \

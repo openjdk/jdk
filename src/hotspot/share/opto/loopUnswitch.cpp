@@ -134,7 +134,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
   }
 #endif
 
-  C->print_method(PHASE_BEFORE_LOOP_UNSWITCH, 4, head);
+  C->print_method(PHASE_BEFORE_LOOP_UNSWITCHING, 4, head);
 
   // Need to revert back to normal loop
   if (head->is_CountedLoop() && !head->as_CountedLoop()->is_normal_loop()) {
@@ -202,7 +202,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
   }
 #endif
 
-  C->print_method(PHASE_AFTER_LOOP_UNSWITCH, 4, head);
+  C->print_method(PHASE_AFTER_LOOP_UNSWITCHING, 4, head);
 
   C->set_major_progress();
 }
