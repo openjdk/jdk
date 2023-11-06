@@ -374,7 +374,7 @@ bool ConnectionGraph::compute_escape() {
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
       Node* n = reducible_merges.at(i);
       if (!can_reduce_phi(n->as_Phi())) {
-        NOT_PRODUCT(TraceReduceAllocationMerges = true;)
+        TraceReduceAllocationMerges = true;
         n->dump(2);
         n->dump(-2);
         assert(can_reduce_phi(n->as_Phi()), "Sanity: previous reducible Phi is no longer reducible before SUT.");
@@ -544,7 +544,7 @@ void ConnectionGraph::reduce_phi_on_field_access(PhiNode* ophi, GrowableArray<No
 
 #ifdef ASSERT
   if (VerifyReduceAllocationMerges && !can_reduce_phi(ophi)) {
-    NOT_PRODUCT(TraceReduceAllocationMerges = true;)
+    TraceReduceAllocationMerges = true;
     ophi->dump(2);
     ophi->dump(-2);
     assert(can_reduce_phi(ophi), "Sanity: previous reducible Phi is no longer reducible inside reduce_phi_on_field_access.");
@@ -3637,7 +3637,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                                          GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
                                          GrowableArray<MergeMemNode*> &mergemem_worklist,
                                          Unique_Node_List &reducible_merges) {
-  Unique_Node_List reduced_merges;
+  DEBUG_ONLY(Unique_Node_List reduced_merges;)
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
@@ -3814,7 +3814,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (reducible_merges.member(n)) {
         // Split loads through phi
         reduce_phi_on_field_access(n->as_Phi(), alloc_worklist);
-        if (VerifyReduceAllocationMerges) reduced_merges.push(n);
+#ifdef ASSERT
+        if (VerifyReduceAllocationMerges) {
+          reduced_merges.push(n);
+        }
+#endif
         continue;
       }
       JavaObjectNode* jobj = unique_java_object(n);
