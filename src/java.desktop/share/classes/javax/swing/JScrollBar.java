@@ -754,6 +754,21 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
+     * Enables the component so that the knob position can be changed.
+     * When the disabled, the knob position cannot be changed.
+     *
+     * @param x a boolean value, where true enables the component and
+     *          false disables it
+     */
+    public void setEnabled(boolean x)  {
+        super.setEnabled(x);
+        Component[] children = getComponents();
+        for (Component child : children) {
+            child.setEnabled(x);
+        }
+    }
+
+    /**
      * See readObject() and writeObject() in JComponent for more
      * information about serialization in Swing.
      */
