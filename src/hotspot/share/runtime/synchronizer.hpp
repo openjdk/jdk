@@ -123,7 +123,7 @@ class ObjectSynchronizer : AllStatic {
   // JNI detach support
   static void release_monitors_owned_by_thread(JavaThread* current);
 
-  // Iterate owned ObjectMonitors where the owner `filter` returns true
+  // Iterate owned ObjectMonitors where the owner `filter` returns true.
   template <typename OwnerFilter>
   static void monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
@@ -131,7 +131,7 @@ class ObjectSynchronizer : AllStatic {
   // ObjectMonitors where owner is set to a stack lock address in thread.
   static void monitors_iterate(MonitorClosure* m, JavaThread* thread);
 
-  // Iterate owned ObjectMonitors
+  // Iterate owned ObjectMonitors.
   static void monitors_iterate(MonitorClosure* closure);
 
   // Initialize the gInflationLocks

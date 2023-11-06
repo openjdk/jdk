@@ -1060,6 +1060,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Visitors ...
 
+// Iterate owned ObjectMonitors where the owner `filter` returns true
 template <typename OwnerFilter>
 void ObjectSynchronizer::monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
   MonitorList::Iterator iter = _in_use_list.iterator();
@@ -1088,8 +1089,7 @@ void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* t
   return monitors_iterate_filtered(closure, thread_filter);
 }
 
-// Iterate ObjectMonitors; this does NOT include ObjectMonitors where owner
-// is set to a stack lock address in thread.
+// Iterate owned ObjectMonitors
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
   auto all_filter = [&](void* owner) { return true; };
   return monitors_iterate_filtered(closure, all_filter);
