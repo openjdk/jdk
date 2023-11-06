@@ -569,9 +569,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintNMTStatistics, false, DIAGNOSTIC,                      \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
-  product(bool, DoEcoreOpt, false, DIAGNOSTIC,                              \
-          "Perform Ecore Optimization")                                     \
-                                                                            \
   product(bool, LogCompilation, false, DIAGNOSTIC,                          \
           "Log compilation activity in detail to LogFile")                  \
                                                                             \
