@@ -30,6 +30,7 @@
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8276539   generic-all
 serviceability/sa/CDSJMapClstats.java                         8276539   generic-all
 serviceability/sa/ClhsdbJhisto.java                           8276539   generic-all
+serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java      8276539   generic-all
 
 serviceability/sa/ClhsdbFindPC.java#xcomp-core                8284045   generic-all
 serviceability/sa/TestJmapCore.java                           8268283,8270202   linux-aarch64,linux-x64,macosx-aarch64

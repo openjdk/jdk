@@ -98,7 +98,7 @@ void G1NUMA::initialize(bool use_numa) {
 
   // Create an array of active node ids.
   _node_ids = NEW_C_HEAP_ARRAY(uint, num_node_ids, mtGC);
-  _num_active_node_ids = checked_cast<uint>(os::numa_get_leaf_groups(reinterpret_cast<int*>(_node_ids), num_node_ids));
+  _num_active_node_ids = checked_cast<uint>(os::numa_get_leaf_groups(_node_ids, num_node_ids));
 
   uint max_node_id = 0;
   for (uint i = 0; i < _num_active_node_ids; i++) {

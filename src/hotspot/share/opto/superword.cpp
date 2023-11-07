@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
@@ -70,7 +71,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _race_possible(false),                                    // cases where SDMU is true
   _early_return(true),                                      // analysis evaluations routine
   _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
-  _do_reserve_copy(DoReserveCopyInSuperWord),
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
 {
@@ -85,7 +85,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 //------------------------------transform_loop---------------------------
 bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
-  assert(UseSuperWord, "should be");
+  assert(_phase->C->do_superword(), "SuperWord option should be enabled");
   // SuperWord only works with power of two vector sizes.
   int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
   if (vector_width < 2 || !is_power_of_2(vector_width)) {
@@ -2493,24 +2493,13 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   }
 }
 
-#ifndef PRODUCT
-void SuperWord::print_loop(bool whole) {
-  Node_Stack stack(_arena, _phase->C->unique() >> 2);
-  Node_List rpo_list;
-  VectorSet visited(_arena);
-  visited.set(lpt()->_head->_idx);
-  _phase->rpo(lpt()->_head, stack, visited, rpo_list);
-  _phase->dump(lpt(), rpo_list.size(), rpo_list );
-  if(whole) {
-    tty->print_cr("\n Whole loop tree");
-    _phase->dump();
-    tty->print_cr(" End of whole loop tree\n");
-  }
-}
-#endif
-
 //------------------------------output---------------------------
 // Convert packs into vector node operations
+// At this point, all correctness and profitability checks have passed.
+// We start the irreversible process of editing the C2 graph. Should
+// there be an unexpected situation (assert fails), then we can only
+// bail out of the compilation, as the graph has already been partially
+// modified. We bail out, and retry without SuperWord.
 bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
@@ -2538,17 +2527,6 @@ bool SuperWord::output() {
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
 
-  NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("VPointer::output: print loop before create_reserve_version_of_loop"); print_loop(true);})
-
-  CountedLoopReserveKit make_reversable(_phase, _lpt, do_reserve_copy());
-
-  NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("VPointer::output: print loop after create_reserve_version_of_loop"); print_loop(true);})
-
-  if (do_reserve_copy() && !make_reversable.has_reserved()) {
-    NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: loop was not reserved correctly, exiting SuperWord");})
-    return false;
-  }
-
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -2565,18 +2543,15 @@ bool SuperWord::output() {
       if (n->is_Load()) {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
-        VPointer p1(n->as_Mem(), phase(), lpt(), nullptr, false);
-        // Identify the memory dependency for the new loadVector node by
-        // walking up through memory chain.
-        // This is done to give flexibility to the new loadVector node so that
-        // it can move above independent storeVector nodes.
+        // Set the memory dependency of the LoadVector as early as possible.
+        // Walk up the memory chain, and ignore any StoreVector that provably
+        // does not have any memory dependency.
         while (mem->is_StoreVector()) {
-          VPointer p2(mem->as_Mem(), phase(), lpt(), nullptr, false);
-          int cmp = p1.cmp(p2);
-          if (VPointer::not_equal(cmp) || !VPointer::comparable(cmp)) {
-            mem = mem->in(MemNode::Memory);
+          VPointer p_store(mem->as_Mem(), phase(), lpt(), nullptr, false);
+          if (p_store.overlap_possible_with_any_in(p)) {
+            break;
           } else {
-            break; // dependent memory
+            mem = mem->in(MemNode::Memory);
           }
         }
         Node* adr = first->in(MemNode::Address);
@@ -2587,12 +2562,9 @@ bool SuperWord::output() {
         // Promote value to be stored to vector
         Node* val = vector_opd(p, MemNode::ValueIn);
         if (val == nullptr) {
-          if (do_reserve_copy()) {
-            NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: val should not be null, exiting SuperWord");})
-            assert(false, "input to vector store was not created");
-            return false; //and reverse to backup IG
-          }
-          ShouldNotReachHere();
+          assert(false, "input to vector store was not created");
+          C->record_failure(C2Compiler::retry_no_superword());
+          return false; // bailout
         }
 
         Node* ctl = n->in(MemNode::Control);
@@ -2729,22 +2701,16 @@ bool SuperWord::output() {
         } else {
           in1 = vector_opd(p, 1);
           if (in1 == nullptr) {
-            if (do_reserve_copy()) {
-              NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: in1 should not be null, exiting SuperWord");})
-              assert(false, "input in1 to vector operand was not created");
-              return false; //and reverse to backup IG
-            }
-            ShouldNotReachHere();
+            assert(false, "input in1 to vector operand was not created");
+            C->record_failure(C2Compiler::retry_no_superword());
+            return false; // bailout
           }
         }
         Node* in2 = vector_opd(p, 2);
         if (in2 == nullptr) {
-          if (do_reserve_copy()) {
-            NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: in2 should not be null, exiting SuperWord");})
-            assert(false, "input in2 to vector operand was not created");
-            return false; //and reverse to backup IG
-          }
-          ShouldNotReachHere();
+          assert(false, "input in2 to vector operand was not created");
+          C->record_failure(C2Compiler::retry_no_superword());
+          return false; // bailout
         }
         if (VectorNode::is_invariant_vector(in1) && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
           // Move invariant vector input into second position to avoid register spilling.
@@ -2813,21 +2779,15 @@ bool SuperWord::output() {
         vn = VectorNode::make(opc, in1, in2, in3, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
-        if (do_reserve_copy()) {
-          NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: Unhandled scalar opcode (%s), ShouldNotReachHere, exiting SuperWord", NodeClassNames[opc]);})
-          assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
-          return false; //and reverse to backup IG
-        }
-        ShouldNotReachHere();
+        assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
+        C->record_failure(C2Compiler::retry_no_superword());
+        return false; // bailout
       }
 
-      assert(vn != nullptr, "sanity");
       if (vn == nullptr) {
-        if (do_reserve_copy()){
-          NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("VPointer::output: got null node, cannot proceed, exiting SuperWord");})
-          return false; //and reverse to backup IG
-        }
-        ShouldNotReachHere();
+        assert(false, "got null node instead of vector node");
+        C->record_failure(C2Compiler::retry_no_superword());
+        return false; // bailout
       }
 
       _block.at_put(i, vn);
@@ -2874,11 +2834,6 @@ bool SuperWord::output() {
     }
   }
 
-  if (do_reserve_copy()) {
-    make_reversable.use_new();
-  }
-
-  NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
   return true;
 }
 
@@ -2909,9 +2864,8 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
   if (have_same_inputs) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
-      assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
-        NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("shift's count can't be vector");})
+        assert(false, "shift's count can't be vector");
         return nullptr;
       }
       return opd; // input is matching vector
@@ -2935,9 +2889,8 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
           _igvn.register_new_node_with_optimizer(cnt);
           _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
         }
-        assert(opd->bottom_type()->isa_int(), "int type only");
         if (!opd->bottom_type()->isa_int()) {
-          NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("Should be int type only");})
+          assert(false, "int type only");
           return nullptr;
         }
       }
@@ -2947,9 +2900,8 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
       return cnt;
     }
-    assert(!opd->is_StoreVector(), "such vector is not expected here");
     if (opd->is_StoreVector()) {
-      NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("StoreVector is not expected here");})
+      assert(false, "StoreVector is not expected here");
       return nullptr;
     }
     // Convert scalar input to vector with the same number of elements as
@@ -2986,19 +2938,17 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   for (uint i = 1; i < vlen; i++) {
     Node* pi = p->at(i);
     Node* in = pi->in(opd_idx);
-    assert(my_pack(in) == nullptr, "Should already have been unpacked");
     if (my_pack(in) != nullptr) {
-      NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("Should already have been unpacked");})
+      assert(false, "Should already have been unpacked");
       return nullptr;
     }
     assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
     pk->add_opd(in);
     if (VectorNode::is_muladds2i(pi)) {
       Node* in2 = pi->in(opd_idx + 2);
-      assert(my_pack(in2) == nullptr, "Should already have been unpacked");
       if (my_pack(in2) != nullptr) {
-        NOT_PRODUCT(if (is_trace_loop_reverse() || TraceLoopOpts) { tty->print_cr("Should already have been unpacked"); })
-          return nullptr;
+        assert(false, "Should already have been unpacked");
+        return nullptr;
       }
       assert(opd_bt == in2->bottom_type()->basic_type(), "all same type");
       pk->add_opd(in2);

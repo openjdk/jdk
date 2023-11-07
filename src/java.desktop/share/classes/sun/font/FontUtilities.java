@@ -230,7 +230,7 @@ public final class FontUtilities {
      * which would mean all ranges would need to be checked so be sure
      * CTL is not needed, the method returns as soon as it recognises
      * the code point is outside of a CTL ranges.
-     * NOTE: Since this method accepts an 'int' it is asssumed to properly
+     * NOTE: Since this method accepts an 'int' it is assumed to properly
      * represent a CHARACTER. ie it assumes the caller has already
      * converted surrogate pairs into supplementary characters, and so
      * can handle this case and doesn't need to be told such a case is

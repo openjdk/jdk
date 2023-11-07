@@ -46,127 +46,6 @@
 #include "gc/serial/defNewGeneration.hpp"
 #endif
 
-HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
-                                                HeapWord* top_obj) {
-  if (top_obj != nullptr && top_obj < (_sp->toContiguousSpace())->top()) {
-    if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-      // An arrayOop is starting on the dirty card - since we do exact
-      // store checks for objArrays we are done.
-    } else {
-      // Otherwise, it is possible that the object starting on the dirty
-      // card spans the entire card, and that the store happened on a
-      // later card.  Figure out where the object ends.
-      assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
-             "Block size and object size mismatch");
-      top = top_obj + cast_to_oop(top_obj)->size();
-    }
-  } else {
-    top = (_sp->toContiguousSpace())->top();
-  }
-  return top;
-}
-
-void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
-                                            HeapWord* bottom,
-                                            HeapWord* top) {
-  // Note that this assumption won't hold if we have a concurrent
-  // collector in this space, which may have freed up objects after
-  // they were dirtied and before the stop-the-world GC that is
-  // examining cards here.
-  assert(bottom < top, "ought to be at least one obj on a dirty card.");
-
-  walk_mem_region_with_cl(mr, bottom, top, _cl);
-}
-
-// We get called with "mr" representing the dirty region
-// that we want to process. Because of imprecise marking,
-// we may need to extend the incoming "mr" to the right,
-// and scan more. However, because we may already have
-// scanned some of that extended region, we may need to
-// trim its right-end back some so we do not scan what
-// we (or another worker thread) may already have scanned
-// or planning to scan.
-void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
-  HeapWord* bottom = mr.start();
-  HeapWord* last = mr.last();
-  HeapWord* top = mr.end();
-  HeapWord* bottom_obj;
-  HeapWord* top_obj;
-
-  assert(_last_bottom == nullptr || top <= _last_bottom,
-         "Not decreasing");
-  NOT_PRODUCT(_last_bottom = mr.start());
-
-  bottom_obj = _sp->block_start(bottom);
-  top_obj    = _sp->block_start(last);
-
-  assert(bottom_obj <= bottom, "just checking");
-  assert(top_obj    <= top,    "just checking");
-
-  // Given what we think is the top of the memory region and
-  // the start of the object at the top, get the actual
-  // value of the top.
-  top = get_actual_top(top, top_obj);
-
-  // If the previous call did some part of this region, don't redo.
-  if (_min_done != nullptr && _min_done < top) {
-    top = _min_done;
-  }
-
-  // Top may have been reset, and in fact may be below bottom,
-  // e.g. the dirty card region is entirely in a now free object
-  // -- something that could happen with a concurrent sweeper.
-  bottom = MIN2(bottom, top);
-  MemRegion extended_mr = MemRegion(bottom, top);
-  assert(bottom <= top &&
-         (_min_done == nullptr || top <= _min_done),
-         "overlap!");
-
-  // Walk the region if it is not empty; otherwise there is nothing to do.
-  if (!extended_mr.is_empty()) {
-    walk_mem_region(extended_mr, bottom_obj, top);
-  }
-
-  _min_done = bottom;
-}
-
-void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
-                                                    HeapWord* bottom,
-                                                    HeapWord* top,
-                                                    OopIterateClosure* cl) {
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);
-  if (bottom < top) {
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();
-    while (next_obj < top) {
-      /* Bottom lies entirely below top, so we can call the */
-      /* non-memRegion version of oop_iterate below. */
-      cast_to_oop(bottom)->oop_iterate(cl);
-      bottom = next_obj;
-      next_obj = bottom + cast_to_oop(bottom)->size();
-    }
-    /* Last object. */
-    cast_to_oop(bottom)->oop_iterate(cl, mr);
-  }
-}
-
-void Space::initialize(MemRegion mr,
-                       bool clear_space,
-                       bool mangle_space) {
-  HeapWord* bottom = mr.start();
-  HeapWord* end    = mr.end();
-  assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
-         "invalid space boundaries");
-  set_bottom(bottom);
-  set_end(end);
-  if (clear_space) clear(mangle_space);
-}
-
-void Space::clear(bool mangle_space) {
-  if (ZapUnusedHeapArea && mangle_space) {
-    mangle_unused_area();
-  }
-}
-
 ContiguousSpace::ContiguousSpace(): Space(),
   _compaction_top(nullptr),
   _next_compaction_space(nullptr),
@@ -182,40 +61,31 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
                                  bool mangle_space)
 {
-  Space::initialize(mr, clear_space, mangle_space);
-  set_compaction_top(bottom());
+  HeapWord* bottom = mr.start();
+  HeapWord* end    = mr.end();
+  assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
+         "invalid space boundaries");
+  set_bottom(bottom);
+  set_end(end);
+  if (clear_space) {
+    clear(mangle_space);
+  }
+  set_compaction_top(bottom);
   _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  Space::clear(mangle_space);
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
+  }
   _compaction_top = bottom();
 }
 
 bool ContiguousSpace::is_free_block(const HeapWord* p) const {
   return p >= _top;
 }
-
-#if INCLUDE_SERIALGC
-void TenuredSpace::clear(bool mangle_space) {
-  ContiguousSpace::clear(mangle_space);
-  _offsets.initialize_threshold();
-}
-
-void TenuredSpace::set_bottom(HeapWord* new_bottom) {
-  Space::set_bottom(new_bottom);
-  _offsets.set_bottom(new_bottom);
-}
-
-void TenuredSpace::set_end(HeapWord* new_end) {
-  // Space should not advertise an increase in size
-  // until after the underlying offset table has been enlarged.
-  _offsets.resize(pointer_delta(new_end, bottom()));
-  Space::set_end(new_end);
-}
-#endif // INCLUDE_SERIALGC
 
 #ifndef PRODUCT
 
@@ -263,7 +133,6 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
     }
     compact_top = cp->space->bottom();
     cp->space->set_compaction_top(compact_top);
-    cp->space->initialize_threshold();
     compaction_max_size = pointer_delta(cp->space->end(), compact_top);
   }
 
@@ -283,7 +152,7 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
   // We need to update the offset table so that the beginnings of objects can be
   // found during scavenge.  Note that we are updating the offset table based on
   // where the object will be once the compaction phase finishes.
-  cp->space->alloc_block(compact_top - size, compact_top);
+  cp->space->update_for_block(compact_top - size, compact_top);
   return compact_top;
 }
 
@@ -301,7 +170,6 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
     assert(cp->gen != nullptr, "need a generation");
     assert(cp->gen->first_compaction_space() == this, "just checking");
     cp->space = cp->gen->first_compaction_space();
-    cp->space->initialize_threshold();
     cp->space->set_compaction_top(cp->space->bottom());
   }
 
@@ -495,9 +363,8 @@ void ContiguousSpace::print_on(outputStream* st) const {
 #if INCLUDE_SERIALGC
 void TenuredSpace::print_on(outputStream* st) const {
   print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", "
-                PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+              p2i(bottom()), p2i(top()), p2i(end()));
 }
 #endif
 
@@ -621,20 +488,30 @@ HeapWord* ContiguousSpace::par_allocate(size_t size) {
 }
 
 #if INCLUDE_SERIALGC
-void TenuredSpace::initialize_threshold() {
-  _offsets.initialize_threshold();
+void TenuredSpace::update_for_block(HeapWord* start, HeapWord* end) {
+  _offsets.update_for_block(start, end);
 }
 
-void TenuredSpace::alloc_block(HeapWord* start, HeapWord* end) {
-  _offsets.alloc_block(start, end);
+HeapWord* TenuredSpace::block_start_const(const void* addr) const {
+  HeapWord* cur_block = _offsets.block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
-TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
                            MemRegion mr) :
-  _offsets(sharedOffsetArray, mr),
-  _par_alloc_lock(Mutex::safepoint, "TenuredSpaceParAlloc_lock", true)
+  _offsets(sharedOffsetArray)
 {
-  _offsets.set_contig_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
 
@@ -646,10 +523,6 @@ void TenuredSpace::verify() const {
   HeapWord* prev_p = nullptr;
   int objs = 0;
   int blocks = 0;
-
-  if (VerifyObjectStartArray) {
-    _offsets.verify();
-  }
 
   while (p < top()) {
     size_t size = cast_to_oop(p)->size();

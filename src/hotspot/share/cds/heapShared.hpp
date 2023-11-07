@@ -49,6 +49,9 @@ class ResourceBitMap;
 struct ArchivableStaticFieldInfo;
 class ArchiveHeapInfo;
 
+#define ARCHIVED_BOOT_LAYER_CLASS "jdk/internal/module/ArchivedBootLayer"
+#define ARCHIVED_BOOT_LAYER_FIELD "archivedBootLayer"
+
 // A dump time sub-graph info for Klass _k. It includes the entry points
 // (static fields in _k's mirror) of the archived sub-graphs reachable
 // from _k's mirror. It also contains a list of Klasses of the objects
@@ -160,6 +163,7 @@ public:
   // Scratch objects for archiving Klass::java_mirror()
   static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static bool is_archived_boot_layer_available(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
@@ -283,9 +287,6 @@ private:
   static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
   static MetaspaceObjToOopHandleTable* _scratch_references_table;
 
-  static ClassLoaderData* _saved_java_platform_loader_data;
-  static ClassLoaderData* _saved_java_system_loader_data;
-
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
     _seen_objects_table = new (mtClass)SeenObjectsTable();
@@ -401,7 +402,6 @@ private:
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void restore_loader_data() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);

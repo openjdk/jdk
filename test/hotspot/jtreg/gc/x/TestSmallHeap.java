@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestSmallHeap {
 
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
-            ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
+            ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
                                         "-XX:+UseZGC",
                                         "-XX:-ZGenerational",
                                         "-Xlog:gc,gc+init,gc+reloc,gc+heap",

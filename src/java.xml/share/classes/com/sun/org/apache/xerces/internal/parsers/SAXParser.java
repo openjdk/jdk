@@ -27,7 +27,9 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.Utils;
 import jdk.xml.internal.XMLSecurityManager;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 
@@ -39,7 +41,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @LastModified: July 2023
+ * @LastModified: Sep 2023
  */
 public class SAXParser
     extends AbstractSAXParser {
@@ -89,6 +91,7 @@ public class SAXParser
      */
     public SAXParser(XMLParserConfiguration config) {
         super(config);
+        initSecurityManager();
     } // <init>(XMLParserConfiguration)
 
     /**
@@ -125,6 +128,7 @@ public class SAXParser
             fConfiguration.setProperty(XMLGRAMMAR_POOL, grammarPool);
         }
 
+        initSecurityManager();
     } // <init>(SymbolTable,XMLGrammarPool)
 
     /**
@@ -152,16 +156,6 @@ public class SAXParser
             return;
         }
 
-        if (securityManager == null) {
-            securityManager = new XMLSecurityManager(true);
-            super.setProperty(Constants.SECURITY_MANAGER, securityManager);
-        }
-
-        if (securityPropertyManager == null) {
-            securityPropertyManager = new XMLSecurityPropertyManager();
-            super.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
-        }
-
         int index = securityPropertyManager.getIndex(name);
         if (index > -1) {
             /**
@@ -176,6 +170,27 @@ public class SAXParser
                 //fall back to the default configuration to handle the property
                 super.setProperty(name, value);
             }
+        }
+    }
+
+    /**
+     * Initiates the SecurityManager. This becomes necessary when the SAXParser
+     * is constructed directly by, for example, XMLReaderFactory rather than
+     * through SAXParserFactory.
+     */
+    private void initSecurityManager() {
+        try {
+            if (securityManager == null) {
+                securityManager = new XMLSecurityManager(true);
+                super.setProperty(Constants.SECURITY_MANAGER, securityManager);
+            }
+
+            if (securityPropertyManager == null) {
+                securityPropertyManager = new XMLSecurityPropertyManager();
+                super.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            }
+        } catch (SAXException e) {
+            Utils.dPrint(() -> e.getMessage());
         }
     }
 } // class SAXParser

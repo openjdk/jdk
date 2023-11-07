@@ -29,14 +29,12 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
-import java.nio.ByteOrder;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -59,6 +57,12 @@ import java.util.stream.Stream;
  * <li>A linker allows foreign functions to call Java method handles,
  * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stubs}.</li>
  * </ul>
+ * A linker provides a way to look up the <em>canonical layouts</em> associated with the data types used by the ABI.
+ * For example, a linker implementing the C ABI might choose to provide a canonical layout for the C {@code size_t}
+ * type. On 64-bit platforms, this canonical layout might be equal to {@link ValueLayout#JAVA_LONG}. The canonical
+ * layouts supported by a linker are exposed via the {@link #canonicalLayouts()} method, which returns a map from
+ * type names to canonical layouts.
+ * <p>
  * In addition, a linker provides a way to look up foreign functions in libraries that conform to the ABI. Each linker
  * chooses a set of libraries that are commonly used on the OS and processor combination associated with the ABI.
  * For example, a linker for Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in these
@@ -92,10 +96,10 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
- *     MemorySegment str = arena.allocateUtf8String("Hello");
+ *     MemorySegment str = arena.allocateFrom("Hello");
  *     long len = (long) strlen.invokeExact(str);  // 5
  * }
- * }
+ *}
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
  *
  * When interacting with the native linker, clients must provide a platform-dependent description of the signature
@@ -103,11 +107,8 @@ import java.util.stream.Stream;
  * defines the layouts associated with the parameter types and return type (if any) of the C function.
  * <p>
  * Scalar C types such as {@code bool}, {@code int} are modelled as {@linkplain ValueLayout value layouts}
- * of a suitable carrier. The mapping between a scalar type and its corresponding layout is dependent on the ABI
- * implemented by the native linker. For instance, the C type {@code long} maps to the layout constant
- * {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to the layout constant {@link ValueLayout#JAVA_INT} on
- * Windows/x64. Similarly, the C type {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG}
- * on 64-bit platforms, but maps to the layout constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
+ * of a suitable carrier. The {@linkplain #canonicalLayouts() mapping} between a scalar type and its corresponding
+ * canonical layout is dependent on the ABI implemented by the native linker (see below).
  * <p>
  * Composite types are modelled as {@linkplain GroupLayout group layouts}. More specifically, a C {@code struct} type
  * maps to a {@linkplain StructLayout struct layout}, whereas a C {@code union} type maps to a {@link UnionLayout union
@@ -122,7 +123,33 @@ import java.util.stream.Stream;
  * a pointer that is known to point to a C {@code int[2]} array can be modelled as an address layout whose
  * target layout is a sequence layout whose element count is 2, and whose element type is {@link ValueLayout#JAVA_INT}.
  * <p>
- * The following table shows some examples of how C types are modelled in Linux/x64:
+ * All native linker implementations are guaranteed to provide canonical layouts for the following set of types:
+ * <ul>
+ *     <li>{@code bool}</li>
+ *     <li>{@code char}</li>
+ *     <li>{@code short}</li>
+ *     <li>{@code int}</li>
+ *     <li>{@code long}</li>
+ *     <li>{@code long long}</li>
+ *     <li>{@code float}</li>
+ *     <li>{@code double}</li>
+ *     <li>{@code size_t}</li>
+ *     <li>{@code wchar_t}</li>
+ *     <li>{@code void*}</li>
+ * </ul>
+ * As noted above, the specific canonical layout associated with each type can vary, depending on the data model
+ * supported by a given ABI. For instance, the C type {@code long} maps to the layout constant {@link ValueLayout#JAVA_LONG}
+ * on Linux/x64, but maps to the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64. Similarly, the C type
+ * {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout
+ * constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
+ * <p>
+ * A native linker typically does not provide canonical layouts for C's unsigned integral types. Instead, they are
+ * modelled using the canonical layouts associated with their corresponding signed integral types. For instance,
+ * the C type {@code unsigned long} maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to
+ * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
+ * <p>
+ * The following table shows some examples of how C types are modelled in Linux/x64 according to the
+ * "System V Application Binary Interface" (all the examples provided here will assume these platform-dependent mappings):
  *
  * <blockquote><table class="plain">
  * <caption style="display:none">Mapping C types</caption>
@@ -137,19 +164,19 @@ import java.util.stream.Stream;
  * <tr><th scope="row" style="font-weight:normal">{@code bool}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_BOOLEAN}</td>
  *     <td style="text-align:center;">{@code boolean}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code char}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code char} <br> {@code unsigned char}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_BYTE}</td>
  *     <td style="text-align:center;">{@code byte}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code short}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code short} <br> {@code unsigned short}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_SHORT}</td>
  *     <td style="text-align:center;">{@code short}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code int}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code int} <br> {@code unsigned int}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_INT}</td>
  *     <td style="text-align:center;">{@code int}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code long} <br> {@code unsigned long}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
  *     <td style="text-align:center;">{@code long}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long long}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code long long} <br> {@code unsigned long long}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
  *     <td style="text-align:center;">{@code long}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code float}</th>
@@ -197,23 +224,10 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
- * is supported by a native linker {@code NL} if:
+ * All native linker implementations support a well-defined subset of layouts. More formally,
+ * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
- * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is {@linkplain MemoryLayout#equals(Object) equal}
- * to one of the following layout constants:
- * <ul>
- * <li>{@link ValueLayout#JAVA_BOOLEAN}</li>
- * <li>{@link ValueLayout#JAVA_BYTE}</li>
- * <li>{@link ValueLayout#JAVA_CHAR}</li>
- * <li>{@link ValueLayout#JAVA_SHORT}</li>
- * <li>{@link ValueLayout#JAVA_INT}</li>
- * <li>{@link ValueLayout#JAVA_LONG}</li>
- * <li>{@link ValueLayout#JAVA_FLOAT}</li>
- * <li>{@link ValueLayout#JAVA_DOUBLE}</li>
- * </ul></li>
- * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is
- * {@linkplain MemoryLayout#equals(Object) equal} to {@link ValueLayout#ADDRESS}</li>
+ * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
  * <li>the alignment constraint of {@code S} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
@@ -230,6 +244,22 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  *
+ * Linker implementations may optionally support additional layouts, such as <em>packed</em> struct layouts.
+ * A packed struct is a struct in which there is at least one member layout {@code L} that has an alignment
+ * constraint less strict than its natural alignment. This allows avoiding padding between member layouts,
+ * as well as avoiding padding at the end of the struct layout. For example:
+ * {@snippet lang = java:
+ * // No padding between the 2 element layouts:
+ * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_INT,
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
+ *
+ * // No padding at the end of the struct:
+ * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
+ *         ValueLayout.JAVA_INT);
+ * }
+ * <p>
  * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
  * and are not sequence layouts.
  *
@@ -293,7 +323,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
- *     MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+ *     MemorySegment array = arena.allocateFrom(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
  *     qsort.invokeExact(array, 10L, 4L, comparFunc);
  *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
@@ -351,7 +381,7 @@ import java.util.stream.Stream;
  *
  * The size of the segment returned by the {@code malloc} downcall method handle is
  * <a href="MemorySegment.html#wrapping-addresses">zero</a>. Moreover, the scope of the
- * returned segment is a fresh scope that is always alive. To provide safe access to the segment, we must,
+ * returned segment is the global scope. To provide safe access to the segment, we must,
  * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
  * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
  * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
@@ -390,15 +420,11 @@ import java.util.stream.Stream;
  *
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
- * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared:
- * <ol>
- * <li>With a trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}</li>
- * <li>With an empty formal parameter list, called a prototype-less function, such as: {@code void foo();}</li>
- * </ol>
- * The arguments passed in place of the ellipsis, or the arguments passed to a prototype-less function are called
- * <em>variadic arguments</em>. Variadic functions are, essentially, templates that can be <em>specialized</em> into multiple
- * non-variadic functions by replacing the {@code ...} or empty formal parameter list with a list of <em>variadic parameters</em>
- * of a fixed number and type.
+ * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared with a
+ * trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}
+ * The arguments passed in place of the ellipsis are called <em>variadic arguments</em>. Variadic functions are,
+ * essentially, templates that can be <em>specialized</em> into multiple non-variadic functions by replacing the
+ * {@code ...} with a list of <em>variadic parameters</em> of a fixed number and type.
  * <p>
  * It should be noted that values passed as variadic arguments undergo default argument promotion in C. For instance, the
  * following argument promotions are applied:
@@ -410,21 +436,22 @@ import java.util.stream.Stream;
  * </ul>
  * whereby the signed-ness of the source type corresponds to the signed-ness of the promoted type. The complete process
  * of default argument promotion is described in the C specification. In effect these promotions place limits on the
- * specialized form of a variadic function, as the variadic parameters of the specialized form will always have a promoted
- * type.
+ * types that can be used to replace the {@code ...}, as the variadic parameters of the specialized form of a variadic
+ * function will always have a promoted type.
  * <p>
  * The native linker only supports linking the specialized form of a variadic function. A variadic function in its specialized
  * form can be linked using a function descriptor describing the specialized form. Additionally, the
  * {@link Linker.Option#firstVariadicArg(int)} linker option must be provided to indicate the first variadic parameter in
  * the parameter list. The corresponding argument layout (if any), and all following argument layouts in the specialized
- * function descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
- * {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
+ * function descriptor, are called <em>variadic argument layouts</em>.
  * <p>
- * The native linker will reject an attempt to link a specialized function descriptor with any variadic argument layouts
- * corresponding to a C type that would be subject to default argument promotion (as described above). Exactly which layouts
- * will be rejected is platform specific, but as an example: on Linux/x64 the layouts {@link ValueLayout#JAVA_BOOLEAN},
- * {@link ValueLayout#JAVA_BYTE}, {@link ValueLayout#JAVA_CHAR}, {@link ValueLayout#JAVA_SHORT}, and
- * {@link ValueLayout#JAVA_FLOAT} will be rejected.
+ * The native linker does not automatically perform default argument promotions. However, since passing an argument of a
+ * non-promoted type as a variadic argument is not supported in C, the native linker will reject an attempt to link a
+ * specialized function descriptor with any variadic argument value layouts corresponding to a non-promoted C type.
+ * Since the size of the C {@code int} type is platform-specific, exactly which layouts will be rejected is
+ * platform-specific as well. As an example: on Linux/x64 the layouts corresponding to the C types {@code _Bool},
+ * {@code (unsigned) char}, {@code (unsigned) short}, and {@code float} (among others), will be rejected by the linker.
+ * The {@link #canonicalLayouts()} method can be used to find which layout corresponds to a particular C type.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
@@ -460,9 +487,9 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
- *     int res = (int)printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
+ *     int res = (int)printf.invokeExact(arena.allocateFrom("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
  * }
- * }
+ *}
  *
  * <h2 id="safety">Safety considerations</h2>
  *
@@ -482,9 +509,8 @@ import java.util.stream.Stream;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface Linker permits AbstractLinker {
 
     /**
@@ -492,11 +518,11 @@ public sealed interface Linker permits AbstractLinker {
      * is the combination of OS and processor where the Java runtime is currently executing.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
+     * @implSpec A native linker implementation is guaranteed to provide canonical layouts for
+     * <a href="#describing-c-sigs">basic C types</a>.
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
      * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
-     *
-     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      */
     static Linker nativeLinker() {
         return SharedUtils.getSystemLinker();
@@ -509,25 +535,21 @@ public sealed interface Linker permits AbstractLinker {
      * {@snippet lang=java :
      * linker.downcallHandle(function).bindTo(symbol);
      * }
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param address  the native memory segment whose {@linkplain MemorySegment#address() base address} is the
      *                 address of the target foreign function.
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      *
      * @see SymbolLookup
      */
     @CallerSensitive
+    @Restricted
     MethodHandle downcallHandle(MemorySegment address, FunctionDescriptor function, Option... options);
 
     /**
@@ -553,27 +575,28 @@ public sealed interface Linker permits AbstractLinker {
      * <p>
      * Moreover, if the provided function descriptor's return layout is an {@linkplain AddressLayout address layout},
      * invoking the returned method handle will return a native segment associated with
-     * a fresh scope that is always alive. Under normal conditions, the size of the returned segment is {@code 0}.
+     * the global scope. Under normal conditions, the size of the returned segment is {@code 0}.
      * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout() target layout}
      * {@code T}, then the size of the returned segment is set to {@code T.byteSize()}.
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
-     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
-     * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
+     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address. If an argument
+     * is a {@link MemorySegment}, whose corresponding layout is a {@linkplain GroupLayout group layout}, the linker
+     * might attempt to access the contents of the segment. As such, one of the exceptions specified by the
+     * {@link MemorySegment#get(ValueLayout.OfByte, long)} or the
+     * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown.
+     * The returned method handle will additionally throw {@link NullPointerException} if any argument
+     * passed to it is {@code null}.
      *
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
+    @Restricted
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -587,7 +610,7 @@ public sealed interface Linker permits AbstractLinker {
      * upcall stub segment will be deallocated when the provided confined arena is {@linkplain Arena#close() closed}.
      * <p>
      * An upcall stub argument whose corresponding layout is an {@linkplain AddressLayout address layout}
-     * is a native segment associated with a fresh scope that is always alive.
+     * is a native segment associated with the global scope.
      * Under normal conditions, the size of this segment argument is {@code 0}.
      * However, if the address layout has a {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the
      * segment argument is set to {@code T.byteSize()}.
@@ -597,27 +620,23 @@ public sealed interface Linker permits AbstractLinker {
      * try/catch block to catch any unexpected exceptions. This can be done using the
      * {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)} method handle combinator,
      * and handle exceptions as desired in the corresponding catch block.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
      * @param arena the arena associated with the returned upcall stub segment.
      * @param options  the linker options associated with this linkage request.
      * @return a zero-length segment whose address is the address of the upcall stub.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
      * @throws IllegalArgumentException if the type of {@code target} is incompatible with the
-     * type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}.
-     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception.
+     *         type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}
+     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
-     * thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *         thread {@code T}, other than the arena's owner thread
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
+    @Restricted
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**
@@ -636,10 +655,25 @@ public sealed interface Linker permits AbstractLinker {
     SymbolLookup defaultLookup();
 
     /**
-     * A linker option is used to provide additional parameters to a linkage request.
-     * @since 20
+     * {@return an unmodifiable mapping between the names of data types used by the ABI implemented by this linker and their
+     * <em>canonical layouts</em>}
+     * <p>
+     * Each {@link Linker} is responsible for choosing the data types that are widely recognized as useful on the OS
+     * and processor combination supported by the {@link Linker}. Accordingly, the precise set of data type names
+     * and canonical layouts exposed by the linker is unspecified; it varies from one {@link Linker} to another.
+     * @implNote It is strongly recommended that the result of {@link #canonicalLayouts()} exposes a set of symbols that is stable over time.
+     * Clients of {@link #canonicalLayouts()} are likely to fail if a data type that was previously exposed by the linker
+     * is no longer exposed, or if its canonical layout is updated.
+     * <p>If an implementer provides {@link Linker} implementations for multiple OS and processor combinations, then it is strongly
+     * recommended that the result of {@link #canonicalLayouts()} exposes, as much as possible, a consistent set of symbols
+     * across all the OS and processor combinations.
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    Map<String, MemoryLayout> canonicalLayouts();
+
+    /**
+     * A linker option is used to provide additional parameters to a linkage request.
+     * @since 22
+     */
     sealed interface Option
             permits LinkerOptions.LinkerOptionImpl {
 
@@ -703,10 +737,12 @@ public sealed interface Linker permits AbstractLinker {
          *     // use errno
          * }
          * }
+         * <p>
+         * This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
-         *                                  is unsupported on the current platform.
+         *         is unsupported on the current platform
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
@@ -746,19 +782,19 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return a linker option used to mark a foreign function as <em>trivial</em>}
+         * {@return a linker option used to mark a foreign function as <em>critical</em>}
          * <p>
-         * A trivial function is a function that has an extremely short running time
-         * in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).
+         * A critical function is a function that has an extremely short running time in all cases
+         * (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).
          * <p>
          * Using this linker option is a hint which some implementations may use to apply
-         * optimizations that are only valid for trivial functions.
+         * optimizations that are only valid for critical functions.
          * <p>
-         * Using this linker option when linking non trivial functions is likely to have adverse effects,
+         * Using this linker option when linking non-critical functions is likely to have adverse effects,
          * such as loss of performance, or JVM crashes.
          */
-        static Option isTrivial() {
-            return LinkerOptions.IsTrivial.INSTANCE;
+        static Option critical() {
+            return LinkerOptions.Critical.INSTANCE;
         }
     }
 }

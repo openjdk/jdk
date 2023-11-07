@@ -139,8 +139,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
-      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset], (address)saved_fp);
-
+      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset]);
     } else {
       // must be some sort of compiled/runtime frame
       // fp does not have to be safe (although it could be check for c1?)
@@ -158,7 +157,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_unextended_sp = sender_sp;
       // Note: frame::sender_sp_offset is only valid for compiled frame
       saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
-      sender_pc = pauth_strip_verifiable((address) *(sender_sp-1), (address)saved_fp);
+      // Note: PAC authentication may fail in case broken frame is passed in.
+      // Just strip it for now.
+      sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
     }
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
@@ -276,9 +277,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
-  address signing_sp = (((address*) sp())[-2]);
-  address signed_pc = pauth_sign_return_address(pc, (address)signing_sp);
-  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
+  address signed_pc = pauth_sign_return_address(pc);
+  address pc_old = pauth_strip_verifiable(*pc_addr);
 
   if (TracePcPatching) {
     tty->print("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
@@ -342,7 +342,7 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) at(interpreter_frame_monitor_block_top_offset);
+  BasicObjectLock* result = (BasicObjectLock*) at_relative(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
@@ -350,7 +350,10 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 }
 
 void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
-  *((BasicObjectLock**)addr_at(interpreter_frame_monitor_block_top_offset)) = value;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitor_block_top
+  ptr_at_put(interpreter_frame_monitor_block_top_offset, (intptr_t*)value - fp());
+  assert(at_absolute(interpreter_frame_monitor_block_top_offset) <= interpreter_frame_monitor_block_top_offset, "");
 }
 
 // Used by template based interpreter deoptimization
@@ -476,8 +479,9 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  // For ROP protection, Interpreter will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed(), (address)link());
+  // For ROP protection, Interpreter will have signed the sender_pc,
+  // but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed());
 
   if (Continuation::is_return_barrier_entry(sender_pc)) {
     if (map->walk_cont()) { // about to walk into an h-stack

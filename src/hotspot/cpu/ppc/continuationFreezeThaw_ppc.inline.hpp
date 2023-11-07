@@ -71,13 +71,6 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   // nothing to do
 }
 
-static inline void relativize_one(intptr_t* const vfp, intptr_t* const hfp, int offset) {
-  assert(*(hfp + offset) == *(vfp + offset), "");
-  intptr_t* addr = hfp + offset;
-  intptr_t value = *(intptr_t**)addr - vfp;
-  *addr = value;
-}
-
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   intptr_t* vfp = f.fp();
   intptr_t* hfp = hf.fp();
@@ -87,8 +80,12 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // frame, because we freeze the padding (see recurse_freeze_interpreted_frame)
   // in order to keep the same relativized locals pointer, we don't need to change it here.
 
-  relativize_one(vfp, hfp, ijava_idx(monitors));
-  relativize_one(vfp, hfp, ijava_idx(esp));
+  // Make sure that monitors is already relativized.
+  assert(hf.at_absolute(ijava_idx(monitors)) <= -(frame::ijava_state_size / wordSize), "");
+
+  // Make sure that esp is already relativized.
+  assert(hf.at_absolute(ijava_idx(esp)) <= hf.at_absolute(ijava_idx(monitors)), "");
+
   // top_frame_sp is already relativized
 
   // hfp == hf.sp() + (f.fp() - f.sp()) is not true on ppc because the stack frame has room for
@@ -534,16 +531,15 @@ inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& cal
   return nullptr;
 }
 
-static inline void derelativize_one(intptr_t* const fp, int offset) {
-  intptr_t* addr = fp + offset;
-  *addr = (intptr_t)(fp + *addr);
-}
-
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
   intptr_t* vfp = f.fp();
 
-  derelativize_one(vfp, ijava_idx(monitors));
-  derelativize_one(vfp, ijava_idx(esp));
+  // Make sure that monitors is still relativized.
+  assert(f.at_absolute(ijava_idx(monitors)) <= -(frame::ijava_state_size / wordSize), "");
+
+  // Make sure that esp is still relativized.
+  assert(f.at_absolute(ijava_idx(esp)) <= f.at_absolute(ijava_idx(monitors)), "");
+
   // Keep top_frame_sp relativized.
 }
 

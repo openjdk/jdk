@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class GetSystemPackage {
     private static void runSubProcess(String messageOnError, String ... args)
             throws Exception
     {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         int res = pb.directory(tmpFolder).inheritIO().start().waitFor();
         if (res != 0) {
             throw new RuntimeException(messageOnError);

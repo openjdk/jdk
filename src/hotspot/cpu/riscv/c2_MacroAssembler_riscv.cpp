@@ -63,7 +63,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(flag, oop);
     lwu(flag, Address(flag, Klass::access_flags_offset()));
-    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
+    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bnez(flag, cont, true /* is_far */);
   }
 
@@ -1571,7 +1571,7 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   is_double ? fclass_d(t1, src2)
             : fclass_s(t1, src2);
   orr(t0, t0, t1);
-  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  andi(t0, t0, fclass_mask::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
   beqz(t0, Compare);
   is_double ? fadd_d(dst, src1, src2)
             : fadd_s(dst, src1, src2);
@@ -1649,6 +1649,34 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   // If got conversion overflow return src
   bind(bad_val);
   fmv_d(dst, src);
+
+  bind(done);
+}
+
+// According to Java SE specification, for floating-point signum operations, if
+// on input we have NaN or +/-0.0 value we should return it,
+// otherwise return +/- 1.0 using sign of input.
+// one - gives us a floating-point 1.0 (got from matching rule)
+// bool is_double - specifies single or double precision operations will be used.
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
+  Register tmp1 = t0;
+
+  Label done;
+
+  is_double ? fclass_d(tmp1, src)
+            : fclass_s(tmp1, src);
+
+  is_double ? fmv_d(dst, src)
+            : fmv_s(dst, src);
+
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  andi(tmp1, tmp1, fclass_mask::zero | fclass_mask::nan);
+
+  bnez(tmp1, done);
+
+  // use floating-point 1.0 with a sign of input
+  is_double ? fsgnj_d(dst, one, src)
+            : fsgnj_s(dst, one, src);
 
   bind(done);
 }
@@ -2179,13 +2207,13 @@ void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, i
       }
     }
   } else if (src_bt == T_INT) {
-      // T_SHORT
-      vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
-      vncvt_x_x_w(dst, src);
-      if (dst_bt == T_BYTE) {
-        vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
-        vncvt_x_x_w(dst, dst);
-      }
+    // T_SHORT
+    vsetvli(t0, t0, Assembler::e16, Assembler::mf2);
+    vncvt_x_x_w(dst, src);
+    if (dst_bt == T_BYTE) {
+      vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
+      vncvt_x_x_w(dst, dst);
+    }
   } else if (src_bt == T_SHORT) {
     vsetvli(t0, t0, Assembler::e8, Assembler::mf2);
     vncvt_x_x_w(dst, src);
@@ -2201,8 +2229,6 @@ void C2_MacroAssembler::VFLOATCVT##_safe(VectorRegister dst, VectorRegister src)
 }
 
 VFCVT_SAFE(vfcvt_rtz_x_f_v);
-VFCVT_SAFE(vfwcvt_rtz_x_f_v);
-VFCVT_SAFE(vfncvt_rtz_x_f_w);
 
 #undef VFCVT_SAFE
 

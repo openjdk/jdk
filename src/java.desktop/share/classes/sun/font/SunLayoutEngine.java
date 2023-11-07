@@ -88,7 +88,7 @@ import java.util.WeakHashMap;
  * character.
  *
  * I'd expect that the majority of scripts use the default mapper for
- * a particular font.  Loading the hastable with 40 or so keys 30+ of
+ * a particular font.  Loading the hashtable with 40 or so keys 30+ of
  * which all map to the same object is unfortunate.  It might be worth
  * instead having a per-font list of 'scripts with non-default
  * engines', e.g. the factory has a hashtable mapping fonts to 'script

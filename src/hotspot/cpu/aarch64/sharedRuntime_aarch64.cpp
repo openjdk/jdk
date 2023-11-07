@@ -390,7 +390,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mov(c_rarg0, rmethod);
   __ mov(c_rarg1, lr);
-  __ authenticate_return_address(c_rarg1, rscratch1);
+  __ authenticate_return_address(c_rarg1);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)));
   __ blr(rscratch1);
 
@@ -1167,6 +1167,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
       continuation_enter_cleanup(masm);
 
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
+      __ authenticate_return_address(c_rarg1);
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
@@ -1759,6 +1760,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = r19;  // Will contain the oop
   const Register lock_reg = r13;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = r13;  // value of old header at unlock time
+  const Register lock_tmp = r14;  // Temporary used by lightweight_lock/unlock
   const Register tmp = lr;
 
   Label slow_path_lock;
@@ -1812,7 +1814,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ ldr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ lightweight_lock(obj_reg, swap_reg, tmp, rscratch1, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
@@ -1953,7 +1955,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ldr(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ tbnz(old_hdr, exact_log2(markWord::monitor_value), slow_path_unlock);
-      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, rscratch1, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
       __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     }
 
@@ -2332,7 +2334,7 @@ void SharedRuntime::generate_deopt_blob() {
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
   __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
-  __ protect_return_address(r3, rscratch1);
+  __ protect_return_address(r3);
   __ str(r3, Address(rfp, wordSize));
   __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
 
@@ -2438,9 +2440,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ ldrw(r2, Address(r5, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
-  __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
-  __ authenticate_return_address();
-  // LR should now be the return address to the caller (3)
+  __ ldp(rfp, zr, __ post(sp, 2 * wordSize));
 
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
@@ -2655,9 +2655,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
                       size_of_deoptimized_frame_offset()));
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
-  __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
-  __ authenticate_return_address();
-  // LR should now be the return address to the caller (3) frame
+  __ ldp(rfp, zr, __ post(sp, 2 * wordSize));
 
 #ifdef ASSERT
   // Compilers generate code that bang the stack by as much as the
@@ -2803,7 +2801,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     // it later to determine if someone changed the return address for
     // us!
     __ ldr(r20, Address(rthread, JavaThread::saved_exception_pc_offset()));
-    __ protect_return_address(r20, rscratch1);
+    __ protect_return_address(r20);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -2844,7 +2842,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);
     __ br(Assembler::NE, no_adjust);
-    __ authenticate_return_address(r20, rscratch1);
+    __ authenticate_return_address(r20);
 
 #ifdef ASSERT
     // Verify the correct encoding of the poll we're about to skip.
@@ -2859,7 +2857,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 #endif
     // Adjust return pc forward to step over the safepoint poll instruction
     __ add(r20, r20, NativeInstruction::instruction_size);
-    __ protect_return_address(r20, rscratch1);
+    __ protect_return_address(r20);
     __ str(r20, Address(rfp, wordSize));
   }
 

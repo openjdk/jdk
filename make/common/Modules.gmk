@@ -62,8 +62,8 @@ endif
 # Filter out jvmci specific modules if jvmci is disabled
 ifeq ($(INCLUDE_JVMCI), false)
   MODULES_FILTER += jdk.internal.vm.ci
-  MODULES_FILTER += jdk.internal.vm.compiler
-  MODULES_FILTER += jdk.internal.vm.compiler.management
+  MODULES_FILTER += jdk.graal.compiler
+  MODULES_FILTER += jdk.graal.compiler.management
 endif
 
 # jpackage is only on windows, macosx, and linux

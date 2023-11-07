@@ -23,9 +23,7 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestAddressDereference
  */
 
@@ -40,6 +38,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.testng.annotations.*;
 
@@ -184,18 +184,23 @@ public class TestAddressDereference extends UpcallTestHelper {
             this.layout = segment;
         }
 
+        private static final Pattern LAYOUT_PATTERN = Pattern.compile("^(?<align>\\d+%)?(?<char>[azcsifjdAZCSIFJD])\\d+$");
+
         static LayoutKind parse(String layoutString) {
-            return switch (layoutString.charAt(0)) {
-                case 'A','a' -> ADDRESS;
-                case 'z','Z' -> BOOL;
-                case 'c','C' -> CHAR;
-                case 's','S' -> SHORT;
-                case 'i','I' -> INT;
-                case 'f','F' -> FLOAT;
-                case 'j','J' -> LONG;
-                case 'd','D' -> DOUBLE;
-                default -> throw new AssertionError("Invalid layout string: " + layoutString);
-            };
+            Matcher matcher = LAYOUT_PATTERN.matcher(layoutString);
+            if (matcher.matches()) {
+                switch (matcher.group("char")) {
+                    case "A","a": return ADDRESS;
+                    case "z","Z": return BOOL;
+                    case "c","C": return CHAR;
+                    case "s","S": return SHORT;
+                    case "i","I": return INT;
+                    case "f","F": return FLOAT;
+                    case "j","J": return LONG;
+                    case "d","D": return DOUBLE;
+                };
+            }
+            throw new AssertionError("Invalid layout string: " + layoutString);
         }
     }
 }

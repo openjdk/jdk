@@ -116,28 +116,33 @@ public abstract sealed class MappedByteBuffer
     }
 
     UnmapperProxy unmapper() {
-        return fd != null ?
-                new UnmapperProxy() {
-                    @Override
-                    public long address() {
-                        return address;
-                    }
+        return fd == null
+                ? null
+                : new UnmapperProxy() {
 
-                    @Override
-                    public FileDescriptor fileDescriptor() {
-                        return fd;
-                    }
+            // Ensure safe publication as MappedByteBuffer.this.address is not final
+            private final long addr = address;
 
-                    @Override
-                    public boolean isSync() {
-                        return isSync;
-                    }
+            @Override
+            public long address() {
+                return addr;
+            }
 
-                    @Override
-                    public void unmap() {
-                        Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
-                    }
-                } : null;
+            @Override
+            public FileDescriptor fileDescriptor() {
+                return fd;
+            }
+
+            @Override
+            public boolean isSync() {
+                return isSync;
+            }
+
+            @Override
+            public void unmap() {
+                Unsafe.getUnsafe().invokeCleaner(MappedByteBuffer.this);
+            }
+        };
     }
 
     /**

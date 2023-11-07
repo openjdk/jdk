@@ -167,7 +167,7 @@ time of writing.
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
 | Linux             | Oracle Enterprise Linux 6.4 / 7.6  |
-| macOS             | Mac OS X 10.13 (High Sierra)       |
+| macOS             | macOS 13 (Ventura)                 |
 | Windows           | Windows Server 2012 R2             |
 
 The double version numbers for Linux are due to the hybrid model
@@ -270,8 +270,8 @@ difficult for a project such as the JDK to keep pace with a continuously updated
 machine running macOS. See the section on [Apple Xcode](#apple-xcode) on some
 strategies to deal with this.
 
-It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time
-of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).
+It is recommended that you use at least macOS 13 (Ventura) and Xcode
+14, but earlier versions may also work.
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -337,7 +337,7 @@ issues.
 | Operating system   | Toolchain version                          |
 | ------------------ | ------------------------------------------ |
 | Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
 | Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
@@ -626,11 +626,13 @@ automatically, it will exit and inform you about the problem.
 Some command line examples:
 
   * Create a 32-bit build for Windows with FreeType2 in `C:\freetype-i586`:
+
     ```
     bash configure --with-freetype=/cygdrive/c/freetype-i586 --with-target-bits=32
     ```
 
   * Create a debug build with the `server` JVM and DTrace enabled:
+
     ```
     bash configure --enable-debug --with-jvm-variants=server --enable-dtrace
     ```
@@ -1100,11 +1102,12 @@ Note that alsa is needed even if you only want to build a headless JDK.
     system. Download them to /tmp.
 
   * Install the libraries into the cross-compilation toolchain. For instance:
-```
-cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
-dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
-dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .
-```
+
+    ```
+    cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
+    dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
+    dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .
+    ```
 
   * If alsa is not properly detected by `configure`, you can point it out by
     `--with-alsa`.
@@ -1140,6 +1143,7 @@ Note that X11 is needed even if you only want to build a headless JDK.
       * libxext-dev
 
   * Install the libraries into the cross-compilation toolchain. For instance:
+
     ```
     cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
     mkdir X11R6
@@ -1173,11 +1177,13 @@ for foreign architectures with native compilation speed.
 For example, cross-compiling to AArch64 from x86_64 could be done like this:
 
   * Install cross-compiler on the *build* system:
+
     ```
     apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
     ```
 
   * Create chroot on the *build* system, configuring it for *target* system:
+
     ```
     sudo debootstrap \
       --arch=arm64 \
@@ -1191,12 +1197,29 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     # the path should be `debian-ports` instead of `debian`.
     ```
 
+  * To create a Ubuntu-based chroot:
+
+    ```
+    sudo debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --components=main,universe \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+      --resolve-deps \
+      jammy \
+      ~/sysroot-arm64 \
+      http://ports.ubuntu.com/ubuntu-ports/
+    # symlinks is in the universe repository
+    ```
+
   * Make sure the symlinks inside the newly created chroot point to proper locations:
+
     ```
     sudo chroot ~/sysroot-arm64 symlinks -cr .
     ```
 
   * Configure and build with newly created chroot as sysroot/toolchain-path:
+
     ```
     sh ./configure \
       --openjdk-target=aarch64-linux-gnu \
@@ -1255,6 +1278,7 @@ complicate the building process. The placeholder `<toolchain-installed-path>`
 shown below is the path where you want to install the toolchain.
 
   * Install the RISC-V GNU compiler toolchain:
+
     ```
     git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain
     cd riscv-gnu-toolchain
@@ -1264,6 +1288,7 @@ shown below is the path where you want to install the toolchain.
     ```
 
   * Cross-compile all the required libraries:
+
     ```
     # An example for libffi
     git clone https://github.com/libffi/libffi
@@ -1274,6 +1299,7 @@ shown below is the path where you want to install the toolchain.
     ```
 
   * Configure and build OpenJDK:
+
     ```
     bash configure \
       --with-boot-jdk=$BOOT_JDK \

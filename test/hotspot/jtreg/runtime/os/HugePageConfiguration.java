@@ -30,17 +30,46 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+// This class allows us to parse system hugepage config from
+// - a) the Operating System (the truth)
+// - b) the JVM log (-Xlog:pagesize)
+// This is used e.g. in TestHugePageDetection to determine if the JVM detects the correct settings from the OS.
 class HugePageConfiguration {
 
-    Set<Long> _staticHugePageSizes;
-    long _staticDefaultHugePageSize;
+    public static class StaticHugePageConfig implements Comparable<StaticHugePageConfig> {
+        public long pageSize = -1;
+        public long nr_hugepages = -1;
+        public long nr_overcommit_hugepages = -1;
 
-    enum THPMode {always, never, madvise, unknown}
+        @Override
+        public int hashCode() {
+            return Objects.hash(pageSize);
+        }
+
+        @Override
+        public String toString() {
+            return "StaticHugePageConfig{" +
+                    "pageSize=" + pageSize +
+                    ", nr_hugepages=" + nr_hugepages +
+                    ", nr_overcommit_hugepages=" + nr_overcommit_hugepages +
+                    '}';
+        }
+
+        @Override
+        public int compareTo(StaticHugePageConfig o) {
+            return (int) (pageSize - o.pageSize);
+        }
+    }
+
+    Set<StaticHugePageConfig> _staticHugePageConfigurations;
+    long _staticDefaultHugePageSize = -1;
+
+    enum THPMode {always, never, madvise}
     THPMode _thpMode;
     long _thpPageSize;
 
-    public Set<Long> getStaticHugePageSizes() {
-        return _staticHugePageSizes;
+    public Set<StaticHugePageConfig> getStaticHugePageConfigurations() {
+        return _staticHugePageConfigurations;
     }
 
     public long getStaticDefaultHugePageSize() {
@@ -55,8 +84,18 @@ class HugePageConfiguration {
         return _thpPageSize;
     }
 
-    public HugePageConfiguration(Set<Long> _staticHugePageSizes, long _staticDefaultHugePageSize, THPMode _thpMode, long _thpPageSize) {
-        this._staticHugePageSizes = _staticHugePageSizes;
+    // Returns true if the THP support is enabled
+    public boolean supportsTHP() {
+        return _thpMode == THPMode.always || _thpMode == THPMode.madvise;
+    }
+
+    // Returns true if static huge pages are supported (whether or not we have configured the pools)
+    public boolean supportsStaticHugePages() {
+        return _staticDefaultHugePageSize > 0 && _staticHugePageConfigurations.size() > 0;
+    }
+
+    public HugePageConfiguration(Set<StaticHugePageConfig> _staticHugePageConfigurations, long _staticDefaultHugePageSize, THPMode _thpMode, long _thpPageSize) {
+        this._staticHugePageConfigurations = _staticHugePageConfigurations;
         this._staticDefaultHugePageSize = _staticDefaultHugePageSize;
         this._thpMode = _thpMode;
         this._thpPageSize = _thpPageSize;
@@ -65,7 +104,7 @@ class HugePageConfiguration {
     @Override
     public String toString() {
         return "Configuration{" +
-                "_staticHugePageSizes=" + _staticHugePageSizes +
+                "_staticHugePageConfigurations=" + _staticHugePageConfigurations +
                 ", _staticDefaultHugePageSize=" + _staticDefaultHugePageSize +
                 ", _thpMode=" + _thpMode +
                 ", _thpPageSize=" + _thpPageSize +
@@ -77,12 +116,8 @@ class HugePageConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         HugePageConfiguration that = (HugePageConfiguration) o;
-        return _staticDefaultHugePageSize == that._staticDefaultHugePageSize && _thpPageSize == that._thpPageSize && Objects.equals(_staticHugePageSizes, that._staticHugePageSizes) && _thpMode == that._thpMode;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(_staticHugePageSizes, _staticDefaultHugePageSize, _thpMode, _thpPageSize);
+        return _staticDefaultHugePageSize == that._staticDefaultHugePageSize && _thpPageSize == that._thpPageSize &&
+                Objects.equals(_staticHugePageConfigurations, that._staticHugePageConfigurations) && _thpMode == that._thpMode;
     }
 
     private static long readDefaultHugePageSizeFromOS() {
@@ -102,25 +137,36 @@ class HugePageConfiguration {
         return 0;
     }
 
-    private static Set<Long> readSupportedHugePagesFromOS() {
-        TreeSet<Long> pagesizes = new TreeSet<>();
+    private static Set<StaticHugePageConfig> readSupportedHugePagesFromOS() throws IOException {
+        TreeSet<StaticHugePageConfig> hugePageConfigs = new TreeSet<>();
         Pattern pat = Pattern.compile("hugepages-(\\d+)kB");
         File[] subdirs = new File("/sys/kernel/mm/hugepages").listFiles();
         if (subdirs != null) {
-            for (File f : subdirs) {
-                String name = f.getName();
+            for (File subdir : subdirs) {
+                String name = subdir.getName();
                 Matcher mat = pat.matcher(name);
                 if (mat.matches()) {
-                    long pagesize = Long.parseLong(mat.group(1)) * 1024;
-                    pagesizes.add(pagesize);
+                    StaticHugePageConfig config = new StaticHugePageConfig();
+                    config.pageSize = Long.parseLong(mat.group(1)) * 1024;
+                    try (FileReader fr = new FileReader(subdir.getAbsolutePath() + "/nr_hugepages");
+                         BufferedReader reader = new BufferedReader(fr)) {
+                        String s = reader.readLine();
+                        config.nr_hugepages = Long.parseLong(s);
+                    }
+                    try (FileReader fr = new FileReader(subdir.getAbsolutePath() + "/nr_overcommit_hugepages");
+                         BufferedReader reader = new BufferedReader(fr)) {
+                        String s = reader.readLine();
+                        config.nr_overcommit_hugepages = Long.parseLong(s);
+                    }
+                    hugePageConfigs.add(config);
                 }
             }
         }
-        return pagesizes;
+        return hugePageConfigs;
     }
 
     private static THPMode readTHPModeFromOS() {
-        THPMode mode = THPMode.unknown;
+        THPMode mode = THPMode.never;
         String file = "/sys/kernel/mm/transparent_hugepage/enabled";
         try (FileReader fr = new FileReader(file);
              BufferedReader reader = new BufferedReader(fr)) {
@@ -136,7 +182,8 @@ class HugePageConfiguration {
             }
         } catch (IOException e) {
             System.out.println("Failed to read " + file);
-            mode = THPMode.unknown;
+            // Happens when the kernel is not built to support THPs.
+            mode = THPMode.never;
         }
         return mode;
     }
@@ -148,19 +195,19 @@ class HugePageConfiguration {
              BufferedReader reader = new BufferedReader(fr)) {
             String s = reader.readLine();
             pagesize = Long.parseLong(s);
-        } catch (IOException | NumberFormatException e) { /* ignored */ }
+        } catch (IOException | NumberFormatException e) { } // ignored
         return pagesize;
     }
 
     // Fill object with info read from proc file system
-    public static HugePageConfiguration readFromOS() {
+    public static HugePageConfiguration readFromOS() throws IOException {
         return new HugePageConfiguration(readSupportedHugePagesFromOS(),
                 readDefaultHugePageSizeFromOS(),
                 readTHPModeFromOS(),
                 readTHPPageSizeFromOS());
     }
 
-    private static long parseSIUnit(String num, String unit) {
+    public static long parseSIUnit(String num, String unit) {
         long n = Long.parseLong(num);
         return switch (unit) {
             case "K" -> n * 1024;
@@ -180,7 +227,7 @@ class HugePageConfiguration {
         // [0.001s][info][pagesize] Transparent hugepage (THP) support:
         // [0.001s][info][pagesize]   THP mode: madvise
         // [0.001s][info][pagesize]   THP pagesize: 2M
-        TreeSet<Long> hugepages = new TreeSet<>();
+        TreeSet<StaticHugePageConfig> staticHugePageConfigs = new TreeSet<>();
         long defaultHugepageSize = 0;
         THPMode thpMode = THPMode.never;
         long thpPageSize = 0;
@@ -192,7 +239,9 @@ class HugePageConfiguration {
         for (String s : lines) {
             Matcher mat = patternHugepageSize.matcher(s);
             if (mat.matches()) {
-                hugepages.add(parseSIUnit(mat.group(1), mat.group(2)));
+                StaticHugePageConfig config = new StaticHugePageConfig();
+                config.pageSize = parseSIUnit(mat.group(1), mat.group(2));
+                staticHugePageConfigs.add(config);
                 continue;
             }
             if (defaultHugepageSize == 0) {
@@ -215,7 +264,7 @@ class HugePageConfiguration {
             }
         }
 
-        return new HugePageConfiguration(hugepages, defaultHugepageSize, thpMode, thpPageSize);
+        return new HugePageConfiguration(staticHugePageConfigs, defaultHugepageSize, thpMode, thpPageSize);
     }
 
 }

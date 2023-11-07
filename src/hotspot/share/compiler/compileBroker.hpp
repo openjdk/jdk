@@ -252,6 +252,8 @@ class CompileBroker: AllStatic {
   static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
 #endif
 
+  static void free_buffer_blob_if_allocated(CompilerThread* thread);
+
   static void invoke_compiler_on_method(CompileTask* task);
   static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
                                    int compilable, const char* failure_reason);

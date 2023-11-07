@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.layout.SequenceLayoutImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A compound layout that denotes a homogeneous repetition of a given <em>element layout</em>.
@@ -50,9 +49,8 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec
  * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayoutImpl {
 
 
@@ -69,8 +67,8 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
     /**
      * {@return a sequence layout with the same characteristics of this layout, but with the given element count}
      * @param elementCount the new element count.
-     * @throws IllegalArgumentException if {@code elementCount} is negative.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows.
+     * @throws IllegalArgumentException if {@code elementCount} is negative
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows
      */
     SequenceLayout withElementCount(long elementCount);
 
@@ -103,9 +101,9 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * @return a sequence layout where element layouts in the {@linkplain #flatten() flattened projection} of this
      * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
      * @throws IllegalArgumentException if two or more element counts are set to {@code -1}, or if one
-     * or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,
-     * multiplying the element counts does not yield the same element count as the flattened projection of this
-     * sequence layout.
+     *         or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,
+     *         multiplying the element counts does not yield the same element count as the flattened projection of this
+     *         sequence layout
      */
     SequenceLayout reshape(long... elementCounts);
 
@@ -151,7 +149,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws IllegalArgumentException if {@code byteAlignment < elementLayout().byteAlignment()}.
+     * @throws IllegalArgumentException if {@code byteAlignment < elementLayout().byteAlignment()}
      */
     SequenceLayout withByteAlignment(long byteAlignment);
 }

@@ -71,7 +71,7 @@ register %{
 //
 // Linux ABI:   No register preserved across function calls
 //              XMM0-XMM7 might hold parameters
-// Windows ABI: XMM6-XMM31 preserved across function calls
+// Windows ABI: XMM6-XMM15 preserved across function calls
 //              XMM0-XMM3 might hold parameters
 
 reg_def XMM0 ( SOC, SOC, Op_RegF, 0, xmm0->as_VMReg());

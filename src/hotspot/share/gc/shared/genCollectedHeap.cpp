@@ -34,7 +34,6 @@
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
-#include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"

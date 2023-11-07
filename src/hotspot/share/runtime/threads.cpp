@@ -52,17 +52,18 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -83,8 +84,8 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
@@ -92,7 +93,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
-#include "services/memTracker.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
@@ -699,6 +699,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
     force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
+    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
+      // Force initialization of jarjvmci otherwise requests for blocking
+      // compilations will not actually block until jarjvmci is initialized.
+      force_JVMCI_initialization = true;
+    }
     if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
       // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
       // so compilation should be disabled. This prevents dumping or

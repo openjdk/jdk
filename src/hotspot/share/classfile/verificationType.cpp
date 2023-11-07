@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -32,7 +33,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 
 VerificationType VerificationType::from_tag(u1 tag) {
@@ -109,7 +109,7 @@ bool VerificationType::is_reference_assignable_from(
       return true;
     }
 
-    if (Arguments::is_dumping_archive()) {
+    if (CDSConfig::is_dumping_archive()) {
       if (SystemDictionaryShared::add_verification_constraint(klass,
               name(), from.name(), from_field_is_protected, from.is_array(),
               from.is_object())) {

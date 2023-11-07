@@ -308,8 +308,6 @@ class Method : public Metadata {
     return _method_data;
   }
 
-  void set_method_data(MethodData* data);
-
   MethodCounters* method_counters() const {
     return _method_counters;
   }
@@ -360,6 +358,10 @@ class Method : public Metadata {
 private:
   // Either called with CompiledMethod_lock held or from constructor.
   void clear_code();
+
+  void clear_method_data() {
+    _method_data = nullptr;
+  }
 
 public:
   static void set_code(const methodHandle& mh, CompiledMethod* code);

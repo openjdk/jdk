@@ -91,6 +91,7 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_age_single(outputStream *ast, int age);
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
+  static void print_aggregate_missing(outputStream* out, const char* heapName);
   static blobType get_cbType(CodeBlob* cb);
   static bool blob_access_is_safe(CodeBlob* this_blob);
   static bool nmethod_access_is_safe(nmethod* nm);

@@ -134,7 +134,6 @@ private:
 class ShenandoahRootProcessor : public StackObj {
 private:
   ShenandoahHeap* const               _heap;
-  const ShenandoahPhaseTimings::Phase _phase;
   const ShenandoahGCWorkerPhase       _worker_phase;
 public:
   ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase);

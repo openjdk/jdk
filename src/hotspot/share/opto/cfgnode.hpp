@@ -268,6 +268,8 @@ public:
 #else //ASSERT
   void verify_adr_type(bool recursive = false) const {}
 #endif //ASSERT
+
+  const TypeTuple* collect_types(PhaseGVN* phase) const;
 };
 
 //------------------------------GotoNode---------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ public class Driver8015436 {
     public static void main(String args[]) {
         OutputAnalyzer oa;
         try {
-            oa = ProcessTools.executeProcess(ProcessTools.createTestJvm(
+            oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
                     Test8015436.class.getName()));
         } catch (Exception ex) {
             throw new Error("TESTBUG: exception while running child process: " + ex, ex);

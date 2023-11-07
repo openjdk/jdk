@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
@@ -64,12 +63,6 @@ public class TestMemoryAccess {
     public void testArrayAccess(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(PathElement.sequenceElement()), checker);
-    }
-
-    @Test(dataProvider = "arrayElements")
-    public void testArrayAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
-        testArrayAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(), checker);
     }
 
     @Test(dataProvider = "arrayElements")
@@ -156,13 +149,6 @@ public class TestMemoryAccess {
                 MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
         testMatrixAccessInternal(viewFactory, seq, seq.varHandle(
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
-    }
-
-    @Test(dataProvider = "matrixElements")
-    public void testMatrixAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, MatrixChecker checker) {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
-                MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
-        testMatrixAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(10), checker);
     }
 
     @Test(dataProvider = "matrixElements")
@@ -267,38 +253,38 @@ public class TestMemoryAccess {
         void check(VarHandle handle, MemorySegment segment);
 
         Checker BYTE = (handle, segment) -> {
-            handle.set(segment, (byte)42);
-            assertEquals(42, (byte)handle.get(segment));
+            handle.set(segment, 0L, (byte)42);
+            assertEquals(42, (byte)handle.get(segment, 0L));
         };
 
         Checker SHORT = (handle, segment) -> {
-            handle.set(segment, (short)42);
-            assertEquals(42, (short)handle.get(segment));
+            handle.set(segment, 0L, (short)42);
+            assertEquals(42, (short)handle.get(segment, 0L));
         };
 
         Checker CHAR = (handle, segment) -> {
-            handle.set(segment, (char)42);
-            assertEquals(42, (char)handle.get(segment));
+            handle.set(segment, 0L, (char)42);
+            assertEquals(42, (char)handle.get(segment, 0L));
         };
 
         Checker INT = (handle, segment) -> {
-            handle.set(segment, 42);
-            assertEquals(42, (int)handle.get(segment));
+            handle.set(segment, 0L, 42);
+            assertEquals(42, (int)handle.get(segment, 0L));
         };
 
         Checker LONG = (handle, segment) -> {
-            handle.set(segment, (long)42);
-            assertEquals(42, (long)handle.get(segment));
+            handle.set(segment, 0L, (long)42);
+            assertEquals(42, (long)handle.get(segment, 0L));
         };
 
         Checker FLOAT = (handle, segment) -> {
-            handle.set(segment, (float)42);
-            assertEquals((float)42, (float)handle.get(segment));
+            handle.set(segment, 0L, (float)42);
+            assertEquals((float)42, (float)handle.get(segment, 0L));
         };
 
         Checker DOUBLE = (handle, segment) -> {
-            handle.set(segment, (double)42);
-            assertEquals((double)42, (double)handle.get(segment));
+            handle.set(segment, 0L, (double)42);
+            assertEquals((double)42, (double)handle.get(segment, 0L));
         };
     }
 
@@ -344,38 +330,38 @@ public class TestMemoryAccess {
         void check(VarHandle handle, MemorySegment segment, long index);
 
         ArrayChecker BYTE = (handle, segment, i) -> {
-            handle.set(segment, i, (byte)i);
-            assertEquals(i, (byte)handle.get(segment, i));
+            handle.set(segment, 0L, i, (byte)i);
+            assertEquals(i, (byte)handle.get(segment, 0L, i));
         };
 
         ArrayChecker SHORT = (handle, segment, i) -> {
-            handle.set(segment, i, (short)i);
-            assertEquals(i, (short)handle.get(segment, i));
+            handle.set(segment, 0L, i, (short)i);
+            assertEquals(i, (short)handle.get(segment, 0L, i));
         };
 
         ArrayChecker CHAR = (handle, segment, i) -> {
-            handle.set(segment, i, (char)i);
-            assertEquals(i, (char)handle.get(segment, i));
+            handle.set(segment, 0L, i, (char)i);
+            assertEquals(i, (char)handle.get(segment, 0L, i));
         };
 
         ArrayChecker INT = (handle, segment, i) -> {
-            handle.set(segment, i, (int)i);
-            assertEquals(i, (int)handle.get(segment, i));
+            handle.set(segment, 0L, i, (int)i);
+            assertEquals(i, (int)handle.get(segment, 0L, i));
         };
 
         ArrayChecker LONG = (handle, segment, i) -> {
-            handle.set(segment, i, (long)i);
-            assertEquals(i, (long)handle.get(segment, i));
+            handle.set(segment, 0L, i, (long)i);
+            assertEquals(i, (long)handle.get(segment, 0L, i));
         };
 
         ArrayChecker FLOAT = (handle, segment, i) -> {
-            handle.set(segment, i, (float)i);
-            assertEquals((float)i, (float)handle.get(segment, i));
+            handle.set(segment, 0L, i, (float)i);
+            assertEquals((float)i, (float)handle.get(segment, 0L, i));
         };
 
         ArrayChecker DOUBLE = (handle, segment, i) -> {
-            handle.set(segment, i, (double)i);
-            assertEquals((double)i, (double)handle.get(segment, i));
+            handle.set(segment, 0L, i, (double)i);
+            assertEquals((double)i, (double)handle.get(segment, 0L, i));
         };
     }
 
@@ -429,48 +415,48 @@ public class TestMemoryAccess {
         void check(VarHandle handle, MemorySegment segment, long row, long col);
 
         MatrixChecker BYTE = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (byte)(r + c));
-            assertEquals(r + c, (byte)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (byte)(r + c));
+            assertEquals(r + c, (byte)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker BOOLEAN = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (r + c) != 0);
-            assertEquals((r + c) != 0, (boolean)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (r + c) != 0);
+            assertEquals((r + c) != 0, (boolean)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker SHORT = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (short)(r + c));
-            assertEquals(r + c, (short)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (short)(r + c));
+            assertEquals(r + c, (short)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker CHAR = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (char)(r + c));
-            assertEquals(r + c, (char)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (char)(r + c));
+            assertEquals(r + c, (char)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker INT = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (int)(r + c));
-            assertEquals(r + c, (int)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (int)(r + c));
+            assertEquals(r + c, (int)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker LONG = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, r + c);
-            assertEquals(r + c, (long)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, r + c);
+            assertEquals(r + c, (long)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker ADDR = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, MemorySegment.ofAddress(r + c));
-            assertEquals(MemorySegment.ofAddress(r + c), (MemorySegment) handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, MemorySegment.ofAddress(r + c));
+            assertEquals(MemorySegment.ofAddress(r + c), (MemorySegment) handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker FLOAT = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (float)(r + c));
-            assertEquals((float)(r + c), (float)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (float)(r + c));
+            assertEquals((float)(r + c), (float)handle.get(segment, 0L, r, c));
         };
 
         MatrixChecker DOUBLE = (handle, segment, r, c) -> {
-            handle.set(segment, r, c, (double)(r + c));
-            assertEquals((double)(r + c), (double)handle.get(segment, r, c));
+            handle.set(segment, 0L, r, c, (double)(r + c));
+            assertEquals((double)(r + c), (double)handle.get(segment, 0L, r, c));
         };
     }
 }
