@@ -1297,7 +1297,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     @ForceInline
     static void copy(MemorySegment srcSegment, long srcOffset,
                      MemorySegment dstSegment, long dstOffset, long bytes) {
-        copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
+        copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset,
+                dstSegment, ValueLayout.JAVA_BYTE, dstOffset,
+                bytes);
     }
 
     /**
@@ -1354,7 +1356,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         Objects.requireNonNull(srcElementLayout);
         Objects.requireNonNull(dstSegment);
         Objects.requireNonNull(dstElementLayout);
-        AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset, dstSegment, dstElementLayout, dstOffset, elementCount);
+        AbstractMemorySegmentImpl.copy(srcSegment, srcElementLayout, srcOffset,
+                dstSegment, dstElementLayout, dstOffset,
+                elementCount);
     }
 
     /**
