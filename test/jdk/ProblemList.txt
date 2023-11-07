@@ -630,8 +630,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 # jdk_security
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
-
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
