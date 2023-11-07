@@ -100,16 +100,16 @@ struct MarkMarkPosFormat1_2
 
     /* now we search backwards for a suitable mark glyph until a non-mark glyph */
     hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
-    skippy_iter.reset (buffer->idx, 1);
+    skippy_iter.reset_fast (buffer->idx);
     skippy_iter.set_lookup_props (c->lookup_props & ~(uint32_t)LookupFlag::IgnoreFlags);
     unsigned unsafe_from;
-    if (!skippy_iter.prev (&unsafe_from))
+    if (unlikely (!skippy_iter.prev (&unsafe_from)))
     {
       buffer->unsafe_to_concat_from_outbuffer (unsafe_from, buffer->idx + 1);
       return_trace (false);
     }
 
-    if (!_hb_glyph_info_is_mark (&buffer->info[skippy_iter.idx]))
+    if (likely (!_hb_glyph_info_is_mark (&buffer->info[skippy_iter.idx])))
     {
       buffer->unsafe_to_concat_from_outbuffer (skippy_iter.idx, buffer->idx + 1);
       return_trace (false);
@@ -183,9 +183,10 @@ struct MarkMarkPosFormat1_2
     if (!out->mark1Coverage.serialize_serialize (c->serializer, new_coverage.iter ()))
       return_trace (false);
 
-    out->mark1Array.serialize_subset (c, mark1Array, this,
-                                      (this+mark1Coverage).iter (),
-                                      &klass_mapping);
+    if (unlikely (!out->mark1Array.serialize_subset (c, mark1Array, this,
+                                                     (this+mark1Coverage).iter (),
+                                                     &klass_mapping)))
+      return_trace (false);
 
     unsigned mark2count = (this+mark2Array).rows;
     auto mark2_iter =
@@ -214,9 +215,10 @@ struct MarkMarkPosFormat1_2
       ;
     }
 
-    out->mark2Array.serialize_subset (c, mark2Array, this, mark2_iter.len (), mark2_indexes.iter ());
+    return_trace (out->mark2Array.serialize_subset (c, mark2Array, this,
+                                                    mark2_iter.len (),
+                                                    mark2_indexes.iter ()));
 
-    return_trace (true);
   }
 };
 

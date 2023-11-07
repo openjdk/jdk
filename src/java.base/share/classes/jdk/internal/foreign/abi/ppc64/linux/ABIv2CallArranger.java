@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +23,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.foreign.abi.ppc64.linux;
 
-#include "java_awt_Rectangle.h"
+import jdk.internal.foreign.abi.ppc64.CallArranger;
 
-/************************************************************************
- * AwtRectangle native methods
+/**
+ * PPC64 CallArranger specialized for ABI v2.
  */
+public class ABIv2CallArranger extends CallArranger {
 
-extern "C" {
+    @Override
+    protected boolean useABIv2() {
+        return true;
+    }
 
-JNIEXPORT void JNICALL
-Java_java_awt_Rectangle_initIDs(JNIEnv *env, jclass cls) {
+    @Override
+    protected boolean isAIX() {
+        return false;
+    }
 }
-
-} /* extern "C" */
