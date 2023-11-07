@@ -31,7 +31,6 @@ import javax.sound.midi.*;
  *          is sent again with the next sysex message
  * @comment This test does not fail when the bug occurs. It requires manual
  *          monitoring of the output.
- * @requires os.family == "windows"
  */
 public class OutputBuffer {
     public static class RawMidiMessage extends MidiMessage {
