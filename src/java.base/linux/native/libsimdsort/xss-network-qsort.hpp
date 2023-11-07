@@ -2,7 +2,7 @@
 #define XSS_NETWORK_QSORT
 
 #include "xss-optimal-networks.hpp"
-#include "simd-common-qsort.h"
+#include "xss-common-qsort.h"
 
 template <typename vtype, int numVecs, typename reg_t = typename vtype::reg_t>
 X86_SIMD_SORT_FINLINE void bitonic_sort_n_vec(reg_t *regs)

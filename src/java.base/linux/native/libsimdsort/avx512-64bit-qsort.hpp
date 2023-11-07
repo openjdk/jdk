@@ -27,7 +27,7 @@
 #ifndef AVX512_QSORT_64BIT
 #define AVX512_QSORT_64BIT
 
-#include "simd-common-qsort.h"
+#include "xss-common-qsort.h"
 #include "avx512-64bit-common.h"
 
 #endif // AVX512_QSORT_64BIT

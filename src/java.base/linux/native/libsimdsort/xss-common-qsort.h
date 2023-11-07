@@ -26,8 +26,8 @@
 // This implementation is based on
 // x86-simd-sort(https://github.com/intel/x86-simd-sort)
 
-#ifndef SIMD_COMMON_QSORT
-#define SIMD_COMMON_QSORT
+#ifndef XSS_COMMON_QSORT
+#define XSS_COMMON_QSORT
 
 /*
  * Quicksort using AVX-512. The ideas and code are based on these two research
@@ -541,4 +541,4 @@ DEFINE_METHODS(avx512, zmm_vector<T>)
 
 
 
-#endif  // SIMD_COMMON_QSORT
+#endif  // XSS_COMMON_QSORT
