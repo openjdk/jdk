@@ -128,6 +128,13 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
   return xchg_using_helper<int32_t>(ARMAtomicFuncs::_xchg_func, dest, exchange_value);
 }
 
+// No direct support for 8-byte xchg; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+
+// No direct support for 8-byte add; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 

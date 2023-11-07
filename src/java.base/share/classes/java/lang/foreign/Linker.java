@@ -224,8 +224,8 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
- * is supported by a native linker {@code NL} if:
+ * All native linker implementations support a well-defined subset of layouts. More formally,
+ * a layout {@code L} is supported by a native linker {@code NL} if:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
@@ -244,6 +244,22 @@ import java.util.stream.Stream;
  * </li>
  * </ul>
  *
+ * Linker implementations may optionally support additional layouts, such as <em>packed</em> struct layouts.
+ * A packed struct is a struct in which there is at least one member layout {@code L} that has an alignment
+ * constraint less strict than its natural alignment. This allows avoiding padding between member layouts,
+ * as well as avoiding padding at the end of the struct layout. For example:
+ * {@snippet lang = java:
+ * // No padding between the 2 element layouts:
+ * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_INT,
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
+ *
+ * // No padding at the end of the struct:
+ * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
+ *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
+ *         ValueLayout.JAVA_INT);
+ * }
+ * <p>
  * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
  * and are not sequence layouts.
  *
@@ -525,10 +541,10 @@ public sealed interface Linker permits AbstractLinker {
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      *
      * @see SymbolLookup
      */
@@ -575,9 +591,9 @@ public sealed interface Linker permits AbstractLinker {
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if an invalid combination of linker options is given.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
+     * @throws IllegalArgumentException if an invalid combination of linker options is given
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
@@ -610,14 +626,14 @@ public sealed interface Linker permits AbstractLinker {
      * @param arena the arena associated with the returned upcall stub segment.
      * @param options  the linker options associated with this linkage request.
      * @return a zero-length segment whose address is the address of the upcall stub.
-     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
+     * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker
      * @throws IllegalArgumentException if the type of {@code target} is incompatible with the
-     * type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}.
-     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception.
+     *         type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}
+     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
-     * thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *         thread {@code T}, other than the arena's owner thread
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
@@ -726,7 +742,7 @@ public sealed interface Linker permits AbstractLinker {
          *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
-         *                                  is unsupported on the current platform.
+         *         is unsupported on the current platform
          * @see #captureStateLayout()
          */
         static Option captureCallState(String... capturedState) {
