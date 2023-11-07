@@ -372,8 +372,11 @@ public interface SegmentAllocator {
      * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
-    default MemorySegment allocateFrom(ValueLayout elementLayout, MemorySegment source,
-                                       ValueLayout sourceElementLayout, long sourceOffset, long elementCount) {
+    default MemorySegment allocateFrom(ValueLayout elementLayout,
+                                       MemorySegment source,
+                                       ValueLayout sourceElementLayout,
+                                       long sourceOffset,
+                                       long elementCount) {
         Objects.requireNonNull(source);
         Objects.requireNonNull(sourceElementLayout);
         Objects.requireNonNull(elementLayout);

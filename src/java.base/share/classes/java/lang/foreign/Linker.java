@@ -550,7 +550,9 @@ public sealed interface Linker permits AbstractLinker {
      */
     @CallerSensitive
     @Restricted
-    MethodHandle downcallHandle(MemorySegment address, FunctionDescriptor function, Option... options);
+    MethodHandle downcallHandle(MemorySegment address,
+                                FunctionDescriptor function,
+                                Option... options);
 
     /**
      * Creates a method handle that is used to call a foreign function with the given signature.
@@ -637,7 +639,10 @@ public sealed interface Linker permits AbstractLinker {
      */
     @CallerSensitive
     @Restricted
-    MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
+    MemorySegment upcallStub(MethodHandle target,
+                             FunctionDescriptor function,
+                             Arena arena,
+                             Linker.Option... options);
 
     /**
      * Returns a symbol lookup for symbols in a set of commonly used libraries.
