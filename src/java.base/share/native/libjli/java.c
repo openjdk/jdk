@@ -1616,8 +1616,9 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Loads a class and verifies that the main class is present and it is ok to
- * call it for more details refer to the java implementation.
+ * Calls LauncherHelper::checkAndLoadMain to verify that the main class
+ * is present, it is ok to load the main class and then load the main class.
+ * For more details refer to the java implementation.
  */
 static jclass
 LoadMainClass(JNIEnv *env, int mode, char *name)

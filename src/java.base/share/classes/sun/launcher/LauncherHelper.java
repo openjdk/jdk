@@ -895,7 +895,8 @@ public final class LauncherHelper {
     private static final int MAIN_NONSTATIC = 2;
 
     /*
-     * Return type so that launcher invokes the correct main
+     * Return whether the main method is non-static and/or has no arguments
+     * so that launcher invokes the method correctly.
      */
     public static int getMainType(Method mainMethod) {
         int mods = mainMethod.getModifiers();
