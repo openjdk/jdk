@@ -239,9 +239,14 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
     // When promotion-failure occurs during Young GC, eden/from space is not cleared,
     // so we can encounter objects with "forwarded" markword.
     // They are essentially dead, so skipping them
-    if (!obj->is_forwarded() || obj->forwardee() == obj) {
+    if (!obj->is_forwarded()) {
       cl->do_object(obj);
     }
+#ifdef ASSERT
+    else {
+      assert(obj->forwardee() != obj, "must not be self-forwarded");
+    }
+#endif
     p += cast_to_oop(p)->size();
   }
 }
