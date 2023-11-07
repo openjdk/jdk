@@ -70,7 +70,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Returns a function descriptor with the given argument layouts inserted at the given index, into the argument
      * layout array of this function descriptor.
      * @param index the index at which to insert the arguments
-     * @param addedLayouts the argument layouts to insert at given index.
+     * @param addedLayouts the argument layouts to insert at the given index.
      * @return a new function descriptor, with the provided additional argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout
      * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}
@@ -100,7 +100,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * </ul>
      *
      * @apiNote A function descriptor cannot, by construction, contain any padding layouts. As such, it is not
-     * necessary to specify how padding layout should be mapped to carrier types.
+     * necessary to specify how padding layouts should be mapped to carrier types.
      *
      * @return the method type consisting of the carrier types of the layouts in this function descriptor.
      */
@@ -121,7 +121,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     }
 
     /**
-     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful to model functions
+     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful for modeling functions
      * that return no values.
      * @param argLayouts the argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout
