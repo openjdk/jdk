@@ -318,7 +318,7 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj, Register rscratch)
   mov_literal32(dst, (int32_t)obj, metadata_Relocation::spec_for_immediate());
 }
 
-void MacroAssembler::mov_ptrslot(Register dst, intptr_t value) {
+void MacroAssembler::movptr_imm64(Register dst, intptr_t value) {
   movptr(dst, value);
 }
 
@@ -678,7 +678,7 @@ void MacroAssembler::mov_metadata(Address dst, Metadata* obj, Register rscratch)
   movq(dst, rscratch);
 }
 
-void MacroAssembler::mov_ptrslot(Register dst, intptr_t value) {
+void MacroAssembler::movptr_imm64(Register dst, intptr_t value) {
   // Should never be shortened. Need full 64-immediate.
   mov64(dst, value);
 }
@@ -1348,7 +1348,7 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  mov_ptrslot(rax, (intptr_t)Universe::non_oop_word());
+  movptr_imm64(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }
 
@@ -2573,7 +2573,7 @@ void MacroAssembler::movptr(Register dst, Address src) {
 void MacroAssembler::movptr(Register dst, intptr_t src) {
 #ifdef _LP64
   if (is_simm32(src)) {
-    movslq(dst, checked_cast<int32_t>(src));
+    movq(dst, checked_cast<int32_t>(src));
   } else {
     mov64(dst, src);
   }
