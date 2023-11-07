@@ -90,25 +90,37 @@ const type name = ((type)value)
 template <class RegImpl> class RegSetIterator;
 template <class RegImpl> class ReverseRegSetIterator;
 
+// #ifdef _LP64
+//   typedef uint64_t reg_bitset_t;
+// #else
+//   typedef uint32_t reg_bitset_t;
+// #endif
+
+typedef uint32_t reg_bitset_t;
+
+bool abstractRegSetContains(int reg, reg_bitset_t bitset);
+
 // A set of registers
 template <class RegImpl>
 class AbstractRegSet {
-  uint32_t _bitset;
+  static constexpr size_t _bitset_size = sizeof (reg_bitset_t) * CHAR_BIT;
 
-  AbstractRegSet(uint32_t bitset) : _bitset(bitset) { }
+  reg_bitset_t _bitset;
+
+  constexpr AbstractRegSet(reg_bitset_t bitset) : _bitset(bitset) { }
 
 public:
 
-  AbstractRegSet() : _bitset(0) { }
+  constexpr AbstractRegSet() : _bitset(0) { }
 
-  AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
+  constexpr AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
 
-  AbstractRegSet operator+(const AbstractRegSet aSet) const {
+  constexpr AbstractRegSet operator+(const AbstractRegSet aSet) const {
     AbstractRegSet result(_bitset | aSet._bitset);
     return result;
   }
 
-  AbstractRegSet operator-(const AbstractRegSet aSet) const {
+  constexpr AbstractRegSet operator-(const AbstractRegSet aSet) const {
     AbstractRegSet result(_bitset & ~aSet._bitset);
     return result;
   }
@@ -140,20 +152,29 @@ public:
   }
 
   static AbstractRegSet range(RegImpl start, RegImpl end) {
+
     int start_enc = start->encoding();
     int   end_enc = end->encoding();
     assert(start_enc <= end_enc, "must be");
-    uint32_t bits = ~0;
+    reg_bitset_t bits = ~(reg_bitset_t)0;
     bits <<= start_enc;
-    bits <<= 31 - end_enc;
-    bits >>= 31 - end_enc;
+    bits <<= _bitset_size - 1 - end_enc;
+    bits >>= _bitset_size - 1 - end_enc;
 
     return AbstractRegSet(bits);
   }
 
+  inline constexpr bool abstractRegSetContains(int reg, reg_bitset_t bitset) {
+    return (bitset >> reg) & 1;
+  }
+
+  constexpr bool contains(RegImpl reg) {
+    return abstractRegSetContains(reg->encoding(), _bitset);
+  }
+
   uint size() const { return population_count(_bitset); }
 
-  uint32_t bits() const { return _bitset; }
+  reg_bitset_t bits() const { return _bitset; }
 
 private:
 
@@ -245,17 +266,47 @@ inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
 
 // Debugging support
 
+// template<typename R, typename... Rx>
+// inline constexpr bool different_registers(R &dupe, R first_register, Rx... more_registers) {
+//   const R regs[] = { first_register, more_registers... };
+//   AbstractRegSet<R> allocated_regs;
+//   // Verify there are no equal entries.
+//   for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
+//     if (regs[i]->is_valid()) {
+//       if (allocated_regs.contains(regs[i])) {
+//         dupe = regs[i];
+//         return false;
+//       }
+//       allocated_regs += regs[i];
+//     }
+//   }
+//   return true;
+// }
+
+template<typename R, typename... Rx>
+inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register) {
+  return ! allocated_regs.contains(first_register);
+}
+
+template<typename R, typename... Rx>
+inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R first_register, Rx... more_registers) {
+  if (allocated_regs.contains(first_register))
+    return false;
+  return different_registers(allocated_regs + first_register, more_registers...);
+}
+
+template<typename R, typename... Rx>
+inline constexpr bool different_registers(R first_register, Rx... more_registers) {
+  AbstractRegSet<R> set;
+  return different_registers(set, first_register, more_registers...);
+}
+
 template<typename R, typename... Rx>
 inline void assert_different_registers(R first_register, Rx... more_registers) {
-#ifdef ASSERT
-  const R regs[] = { first_register, more_registers... };
-  // Verify there are no equal entries.
-  for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
-    for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-      assert(regs[i] != regs[j], "Multiple uses of register: %s", regs[i]->name());
-    }
-  }
-#endif
+  R dupe;
+  AbstractRegSet<R> set;
+  bool pass = different_registers(set, first_register, more_registers...);
+  guarantee(pass, "Multiple uses of registers: %s", dupe->name());
 }
 
 #endif // SHARE_ASM_REGISTER_HPP
