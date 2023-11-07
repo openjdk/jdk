@@ -49,11 +49,6 @@ public:
   void set_reschedule(bool reschedule) { _reschedule = reschedule; }
 };
 
-static void stop_service_thread(G1ServiceThread* thread) {
-  ThreadInVMfromNative tvn(JavaThread::current());
-  thread->stop();
-}
-
 // Test that a task that is added during runtime gets run.
 TEST_VM(G1ServiceThread, test_add) {
   // Create thread and let it start.
@@ -66,7 +61,7 @@ TEST_VM(G1ServiceThread, test_add) {
 
   // Give CheckTask time to run.
   os::naked_short_sleep(500);
-  stop_service_thread(st);
+  st->stop();
 
   ASSERT_GT(ct.execution_count(), 0);
 }
@@ -89,7 +84,7 @@ TEST_VM(G1ServiceThread, test_add_while_waiting) {
 
   // Give CheckTask time to run.
   os::naked_short_sleep(500);
-  stop_service_thread(st);
+  st->stop();
 
   ASSERT_GT(ct.execution_count(), 0);
 }
@@ -108,7 +103,7 @@ TEST_VM(G1ServiceThread, test_add_run_once) {
 
   // Give CheckTask time to run.
   os::naked_short_sleep(500);
-  stop_service_thread(st);
+  st->stop();
 
   // Should be exactly 1 since negative timeout should
   // prevent rescheduling.
