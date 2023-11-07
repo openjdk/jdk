@@ -62,8 +62,7 @@ public class InstructionHelper {
                             Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
                                     .withCode(codeBuilder -> {
                                         for (int i = 0; i < type.parameterCount(); i++) {
-                                            codeBuilder.loadInstruction(TypeKind.fromDescriptor(
-                                                    type.parameterType(i).descriptorString()), i);
+                                            codeBuilder.loadInstruction(TypeKind.from(type.parameterType(i)), i);
                                         }
                                         codeBuilder.invokedynamic(DynamicCallSiteDesc.of(
                                                 MethodHandleDesc.ofMethod(
@@ -75,8 +74,7 @@ public class InstructionHelper {
                                                 name,
                                                 MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
                                                 boostrapArgs));
-                                        codeBuilder.returnInstruction(TypeKind.fromDescriptor(
-                                                type.returnType().descriptorString()));
+                                        codeBuilder.returnInstruction(TypeKind.from(type.returnType()));
                                     }));
         });
         Class<?> gc = l.defineClass(byteArray);
@@ -100,7 +98,7 @@ public class InstructionHelper {
     }
 
     public static MethodHandle ldcDynamicConstant(MethodHandles.Lookup l, String name, String type, String bsmClass,
-                                                   String bsmMethodName, String bsmType, ConstantDesc... bootstrapArgs)
+                                                  String bsmMethodName, String bsmType, ConstantDesc... bootstrapArgs)
             throws IllegalAccessException, NoSuchMethodException {
         String methodType = "()" + type;
         ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
