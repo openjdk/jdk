@@ -246,7 +246,7 @@ import java.util.stream.Stream;
  *
  * Linker implementations may optionally support additional layouts, such as <em>packed</em> struct layouts.
  * A packed struct is a struct in which there is at least one member layout {@code L} that has an alignment
- * constraint less strict than its natural alignment. This allows for avoiding padding between member layouts,
+ * constraint less strict than its natural alignment. This allows to avoid padding between member layouts,
  * as well as avoiding padding at the end of the struct layout. For example:
  * {@snippet lang = java:
  * // No padding between the 2 element layouts:
@@ -343,7 +343,7 @@ import java.util.stream.Stream;
  * void *malloc(size_t size);
  * }
  *
- * The {@code malloc} function allocates a region of memory of a given size,
+ * The {@code malloc} function allocates a region of memory with the given size,
  * and returns a pointer to that region of memory, which is later deallocated using another function from
  * the C standard library:
  *

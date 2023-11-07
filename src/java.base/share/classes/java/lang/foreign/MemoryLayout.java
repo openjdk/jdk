@@ -185,7 +185,7 @@ import jdk.internal.foreign.layout.UnionLayoutImpl;
  * );
  * }
  *
- * This layout is a struct layout that describe a rectangle. It contains a single field, namely {@code points},
+ * This layout is a struct layout describing a rectangle. It contains a single field, namely {@code points},
  * an address layout whose {@linkplain AddressLayout#targetLayout() target layout} is a sequence layout of four
  * struct layouts. Each struct layout describes a two-dimensional point, and is defined as a pair or
  * {@link ValueLayout#JAVA_INT} coordinates, with names {@code x} and {@code y}, respectively.
