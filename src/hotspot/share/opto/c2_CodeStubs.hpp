@@ -97,6 +97,25 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
+class C2FastUnlockLightweightStub : public C2CodeStub {
+private:
+  Register _obj;
+  Register _mark;
+  Register _t;
+  Register _thread;
+  Label _push_and_slow_path;
+  Label _check_successor;
+  Label _unlocked;
+public:
+  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
+    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+  Label& push_and_slow_path() { return _push_and_slow_path; }
+  Label& check_successor() { return _check_successor; }
+  Label& unlocked() { return _unlocked; }
+};
+
 #ifdef _LP64
 class C2HandleAnonOMOwnerStub : public C2CodeStub {
 private:

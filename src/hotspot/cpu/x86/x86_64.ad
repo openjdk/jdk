@@ -13458,7 +13458,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP box, rReg
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}

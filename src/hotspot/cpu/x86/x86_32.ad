@@ -13816,14 +13816,15 @@ instruct cmpFastLockLightweight(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastUnlockLightweight(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
+instruct cmpFastUnlockLightweight(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp, eRegP thread) %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, USE_KILL box);
+  effect(TEMP tmp, USE_KILL box, TEMP thread);
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register);
+    __ get_thread($thread$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $thread$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -34,10 +34,12 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
@@ -58,10 +60,10 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     movl(hdr, Address(hdr, Klass::access_flags_offset()));
     testl(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, slow_case);
+  } else if (LockingMode == LM_LIGHTWEIGHT) {
+    // null check obj. load_klass performs load if DiagnoseSyncOnValueBasedClasses != 0.
+    testptr(hdr, Address(obj));
   }
-
-  // Load object header
-  movptr(hdr, Address(obj, hdr_offset));
 
   if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
@@ -73,6 +75,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     lightweight_lock(obj, hdr, thread, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    movptr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     orptr(hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -134,9 +138,14 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    movptr(disp_hdr, Address(obj, hdr_offset));
-    andptr(disp_hdr, ~(int32_t)markWord::lock_mask_in_place);
-    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
+#ifdef _LP64
+    lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
+#else
+    // This relies on the implementation of lightweight_unlock knowing that it
+    // will clobber its thread when using EAX.
+    get_thread(disp_hdr);
+    lightweight_unlock(obj, disp_hdr, disp_hdr, hdr, slow_case);
+#endif
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to

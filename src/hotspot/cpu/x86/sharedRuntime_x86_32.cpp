@@ -1715,8 +1715,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      // Load object header
-      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ lightweight_lock(obj_reg, swap_reg, thread, lock_reg, slow_path_lock);
     }
     __ bind(count_mon);
@@ -1874,9 +1872,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ dec_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, swap_reg, thread, lock_reg, slow_path_unlock);
       __ dec_held_monitor_count();
     }
 
