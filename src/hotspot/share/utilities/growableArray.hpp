@@ -424,28 +424,24 @@ public:
   }
 
   template<typename Constructor>
-  void at_put_grow_with(int i, Constructor ctr) {
+  void at_put_grow_with(int i, Constructor ctr, const E& elem) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++) {
         this->_data[j].~E();
-        ctr(&this->_data[j], /* last elem */false);
+        ctr(&this->_data[j]);
       }
       this->_len = i+1;
     }
-    ctr(&this->_data[i], /* last elem */true);
+    ::new (&this->_data[i]) E(elem);
   }
 
   template<typename... Args>
   void at_put_grow(int i, const E& elem, const Args&... args) {
-    at_put_grow_with(i, [&](E* ptr, bool is_last_elem) {
-      if (is_last_elem) {
-        ::new (ptr) E(elem);
-      } else {
+    at_put_grow_with(i, [&](E* ptr) {
         ::new (ptr) E(args...);
-      }
-    });
+    }, elem);
   }
 
   // inserts the given element before the element at index i
