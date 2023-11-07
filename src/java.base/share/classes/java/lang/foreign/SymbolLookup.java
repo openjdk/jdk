@@ -49,7 +49,7 @@ import java.util.function.BiFunction;
  * A symbol lookup is created with respect to a particular library (or libraries). Subsequently, the {@link SymbolLookup#find(String)}
  * method takes the name of a symbol and returns the address of the symbol in that library.
  * <p>
- * The address of a symbol is modelled as a zero-length {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
+ * The address of a symbol is modeled as a zero-length {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
  * <ul>
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's address.</li>
  *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
@@ -132,7 +132,7 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found,
+     * {@return a composed symbol lookup that returns the result of finding the symbol with this lookup if found,
      * otherwise returns the result of finding the symbol with the other lookup}
      *
      * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
@@ -143,7 +143,7 @@ public interface SymbolLookup {
      *         .or(SymbolLookup.loaderLookup());
      *}
      * The above code creates a symbol lookup that first searches for symbols in the "foo" library. If no symbol is found
-     * in "foo" then "bar" is searched. Finally, if a symbol is not found in neither "foo" nor "bar", the {@linkplain
+     * in "foo" then "bar" is searched. Finally, if a symbol is neither found in "foo" nor in "bar", the {@linkplain
      * SymbolLookup#loaderLookup() loader lookup} is used.
      *
      * @param other the symbol lookup that should be used to look for symbols not found in this lookup.

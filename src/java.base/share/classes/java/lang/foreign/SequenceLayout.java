@@ -89,7 +89,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * var reshapeSeq = MemoryLayout.sequenceLayout(2, MemoryLayout.sequenceLayout(6, ValueLayout.JAVA_INT));
      * }
      * <p>
-     * If one of the provided element count is the special value {@code -1}, then the element
+     * If one of the provided element counts is the special value {@code -1}, then the element
      * count in that position will be inferred from the remaining element counts and the
      * element count of the flattened projection of this layout. For instance, a layout equivalent to
      * the above {@code reshapeSeq} can also be computed in the following ways:

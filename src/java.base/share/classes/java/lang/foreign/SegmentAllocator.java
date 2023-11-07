@@ -346,7 +346,7 @@ public interface SegmentAllocator {
      * The contents of the source segment is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * MemorySegment dest = this.allocate(elementLayout, elementCount);
      * MemorySegment.copy(source, sourceElementLayout, sourceOffset, dest, elementLayout, 0, elementCount);
@@ -389,7 +389,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_BYTE, 0, array.length)
@@ -408,10 +408,10 @@ public interface SegmentAllocator {
      * {@return a new memory segment initialized with the elements in the provided short array.}
      * <p>
      * The size of the allocated memory segment is {@code elementLayout.byteSize() * elements.length}.
-     * The contents of the source array is copied into the result segment element by element, according to the byte
+     * The contents of the source array are copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_SHORT, 0, array.length)
@@ -433,7 +433,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_CHAR, 0, array.length)
@@ -455,7 +455,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_INT, 0, array.length)
@@ -477,7 +477,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_FLOAT, 0, array.length)
@@ -499,7 +499,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_LONG, 0, array.length)
@@ -521,7 +521,7 @@ public interface SegmentAllocator {
      * The contents of the source array is copied into the result segment element by element, according to the byte
      * order and alignment constraint of the given element layout.
      *
-     * @implSpec the default implementation for this method is equivalent to the following code:
+     * @implSpec The default implementation for this method is equivalent to the following code:
      * {@snippet lang = java:
      * this.allocateFrom(layout, MemorySegment.ofArray(array),
      *                   ValueLayout.JAVA_DOUBLE, 0, array.length)
@@ -592,7 +592,7 @@ public interface SegmentAllocator {
     MemorySegment allocate(long byteSize, long byteAlignment);
 
     /**
-     * Returns a segment allocator which responds to allocation requests by returning consecutive slices
+     * Returns a segment allocator that responds to allocation requests by returning consecutive slices
      * obtained from the provided segment. Each new allocation request will return a new slice starting at the
      * current offset (modulo additional padding to satisfy alignment constraint), with given size.
      * <p>
@@ -601,7 +601,7 @@ public interface SegmentAllocator {
      *
      * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
-     * @param segment the segment which the returned allocator should slice from.
+     * @param segment the segment from which the returned allocator should slice from.
      * @return a new slicing allocator
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
@@ -610,7 +610,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Returns a segment allocator which responds to allocation requests by recycling a single segment. Each
+     * Returns a segment allocator that responds to allocation requests by recycling a single segment. Each
      * new allocation request will return a new slice starting at the segment offset {@code 0}, hence the name
      * <em>prefix allocator</em>.
      * Equivalent to (but likely more efficient than) the following code:
@@ -628,7 +628,7 @@ public interface SegmentAllocator {
      * allocator might cause a thread to overwrite contents written to the underlying segment by a different thread.
      *
      * @param segment the memory segment to be recycled by the returned allocator.
-     * @return an allocator which recycles an existing segment upon each new allocation request.
+     * @return an allocator that recycles an existing segment upon each new allocation request.
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
         return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
