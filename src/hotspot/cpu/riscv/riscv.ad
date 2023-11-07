@@ -1894,7 +1894,8 @@ bool Matcher::match_rule_supported(int opcode) {
       return UseRVV;
 
     case Op_CompressBits:
-      return UseRVV && (MaxVectorSize >= 16);
+      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
+      return UseRVV;
 
     case Op_EncodeISOArray:
       return UseRVV && SpecialEncodeISOArray;
