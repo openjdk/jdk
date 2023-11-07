@@ -22,9 +22,9 @@
  *
  */
 
-#pragma GCC target("avx512dq", "avx512f")
-#include "avx512-32bit-qsort.hpp"
-#include "avx512-64bit-qsort.hpp"
+#pragma GCC target("avx2")
+#include "avx2-32bit-qsort.hpp"
+#include "avx2-64bit-qsort.hpp"
 #include "classfile_constants.h"
 
 
@@ -34,36 +34,36 @@
 
 extern "C" {
 
-    DLL_PUBLIC void avx512_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
+    DLL_PUBLIC void avx2_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_sort((int32_t*)array, from_index, to_index);
+                avx2_fast_sort((int32_t*)array, from_index, to_index);
                 break;
             case JVM_T_LONG:
-                avx512_fast_sort((int64_t*)array, from_index, to_index);
+                avx2_fast_sort((int64_t*)array, from_index, to_index);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_sort((float*)array, from_index, to_index);
+                avx2_fast_sort((float*)array, from_index, to_index);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_sort((double*)array, from_index, to_index);
+                avx2_fast_sort((double*)array, from_index, to_index);
                 break;
         }
     }
 
-    DLL_PUBLIC void avx512_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
+    DLL_PUBLIC void avx2_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx2_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_LONG:
-                avx512_fast_partition((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx2_fast_partition((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx2_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx2_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
         }
     }
