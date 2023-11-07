@@ -53,7 +53,7 @@ public class TestModeUnlock {
 
     private static void testWith(String h, Mode mode) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -74,7 +74,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -95,7 +95,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",

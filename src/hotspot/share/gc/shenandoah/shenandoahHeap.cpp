@@ -90,6 +90,8 @@
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -99,8 +101,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -596,6 +596,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _regions(nullptr),
   _affiliations(nullptr),
   _update_refs_iterator(this),
+  _gc_no_progress_count(0),
   _promoted_reserve(0),
   _old_evac_reserve(0),
   _young_evac_reserve(0),
@@ -1337,7 +1338,19 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool is_p
       result = allocate_memory_under_lock(req, in_new_region, is_promotion);
     }
 
-    // Allocation failed, block until control thread reacted, then retry allocation.
+    // Check that gc overhead is not exceeded.
+    //
+    // Shenandoah will grind along for quite a while allocating one
+    // object at a time using shared (non-tlab) allocations. This check
+    // is testing that the GC overhead limit has not been exceeded.
+    // This will notify the collector to start a cycle, but will raise
+    // an OOME to the mutator if the last Full GCs have not made progress.
+    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+      control_thread()->handle_alloc_failure(req, false);
+      return nullptr;
+    }
+
+    // Block until control thread reacted, then retry allocation.
     //
     // It might happen that one of the threads requesting allocation would unblock
     // way later after GC happened, only to fail the second allocation, because
@@ -1346,9 +1359,15 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool is_p
     // one full GC has completed).
     size_t original_count = shenandoah_policy()->full_gc_count();
     while (result == nullptr
-        && (_progress_last_gc.is_set() || original_count == shenandoah_policy()->full_gc_count())) {
+        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
       control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region, is_promotion);
+    }
+
+    if (log_is_enabled(Debug, gc, alloc)) {
+      ResourceMark rm;
+      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
     }
 
   } else {

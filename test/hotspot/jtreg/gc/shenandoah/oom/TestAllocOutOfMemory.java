@@ -132,14 +132,14 @@ public class TestAllocOutOfMemory {
     }
 
     private static void expectSuccess(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
         analyzer.shouldNotContain("java.lang.OutOfMemoryError: Java heap space");
     }
 
     private static void expectFailure(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(1);
         analyzer.shouldContain("java.lang.OutOfMemoryError: Java heap space");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,12 +130,16 @@ final class CertificateMessage {
                     byte[] encodedCert = Record.getBytes24(m);
                     listLen -= (3 + encodedCert.length);
                     encodedCerts.add(encodedCert);
-                    if (encodedCerts.size() > SSLConfiguration.maxCertificateChainLength) {
+                    int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                            SSLConfiguration.maxInboundServerCertChainLen :
+                            SSLConfiguration.maxInboundClientCertChainLen;
+
+                    if (encodedCerts.size() > maxAllowedChainLength) {
                         throw new SSLProtocolException(
                                 "The certificate chain length ("
                                 + encodedCerts.size()
                                 + ") exceeds the maximum allowed length ("
-                                + SSLConfiguration.maxCertificateChainLength
+                                + maxAllowedChainLength
                                 + ")");
                     }
 
@@ -861,12 +865,16 @@ final class CertificateMessage {
                 SSLExtensions extensions =
                         new SSLExtensions(this, m, enabledExtensions);
                 certList.add(new CertificateEntry(encodedCert, extensions));
-                if (certList.size() > SSLConfiguration.maxCertificateChainLength) {
+                int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                        SSLConfiguration.maxInboundServerCertChainLen :
+                        SSLConfiguration.maxInboundClientCertChainLen;
+
+                if (certList.size() > maxAllowedChainLength) {
                     throw new SSLProtocolException(
                             "The certificate chain length ("
                             + certList.size()
                             + ") exceeds the maximum allowed length ("
-                            + SSLConfiguration.maxCertificateChainLength
+                            + maxAllowedChainLength
                             + ")");
                 }
             }

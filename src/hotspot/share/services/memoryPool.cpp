@@ -179,6 +179,7 @@ CodeHeapPool::CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_us
 
 MemoryUsage CodeHeapPool::get_memory_usage() {
   size_t used      = used_in_bytes();
+  OrderAccess::acquire(); // ensure possible cache expansion in CodeCache::allocate is seen
   size_t committed = _codeHeap->capacity();
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
 
