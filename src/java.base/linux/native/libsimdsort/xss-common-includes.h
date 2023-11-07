@@ -33,7 +33,8 @@
 #include <cstring>
 /*
 Workaround for the bug in GCC12 (that was fixed in GCC 12.3.1).
-More details are available at: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105593
+More details are available at:
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105593
 */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -97,4 +98,4 @@ struct ymm_vector;
 template <typename type>
 struct avx2_vector;
 
-#endif // XSS_COMMON_INCLUDES
+#endif  // XSS_COMMON_INCLUDES

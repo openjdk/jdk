@@ -22,8 +22,7 @@
  *
  */
 
-// This implementation is based on
-// x86-simd-sort(https://github.com/intel/x86-simd-sort)
+// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
 
 #ifndef AVX512_64BIT_COMMON
 #define AVX512_64BIT_COMMON

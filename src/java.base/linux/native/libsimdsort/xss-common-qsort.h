@@ -23,8 +23,7 @@
  *
  */
 
-// This implementation is based on
-// x86-simd-sort(https://github.com/intel/x86-simd-sort)
+// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
 
 #ifndef XSS_COMMON_QSORT
 #define XSS_COMMON_QSORT
@@ -457,7 +456,7 @@ X86_SIMD_SORT_INLINE void simd_dual_pivot_partition(T *arr, int64_t from_index, 
 }
 
 template <typename vtype, typename T>
-X86_SIMD_SORT_INLINE void simd_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot){
+X86_SIMD_SORT_INLINE void simd_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot) {
     const T pivot = arr[index_pivot];
 
     const int64_t low = from_index;

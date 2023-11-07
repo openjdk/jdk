@@ -23,13 +23,12 @@
  *
  */
 
-// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
-// All of these sources files are generated from the optimal networks described in
+// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort) All of these sources
+// files are generated from the optimal networks described in
 // https://bertdobbelaere.github.io/sorting_networks.html
 
 template <typename vtype, typename reg_t = typename vtype::reg_t>
-X86_SIMD_SORT_FINLINE void optimal_sort_4(reg_t *vecs)
-{
+X86_SIMD_SORT_FINLINE void optimal_sort_4(reg_t *vecs) {
     COEX<vtype>(vecs[0], vecs[2]);
     COEX<vtype>(vecs[1], vecs[3]);
 
@@ -40,8 +39,7 @@ X86_SIMD_SORT_FINLINE void optimal_sort_4(reg_t *vecs)
 }
 
 template <typename vtype, typename reg_t = typename vtype::reg_t>
-X86_SIMD_SORT_FINLINE void optimal_sort_8(reg_t *vecs)
-{
+X86_SIMD_SORT_FINLINE void optimal_sort_8(reg_t *vecs) {
     COEX<vtype>(vecs[0], vecs[2]);
     COEX<vtype>(vecs[1], vecs[3]);
     COEX<vtype>(vecs[4], vecs[6]);
@@ -69,8 +67,7 @@ X86_SIMD_SORT_FINLINE void optimal_sort_8(reg_t *vecs)
 }
 
 template <typename vtype, typename reg_t = typename vtype::reg_t>
-X86_SIMD_SORT_FINLINE void optimal_sort_16(reg_t *vecs)
-{
+X86_SIMD_SORT_FINLINE void optimal_sort_16(reg_t *vecs) {
     COEX<vtype>(vecs[0], vecs[13]);
     COEX<vtype>(vecs[1], vecs[12]);
     COEX<vtype>(vecs[2], vecs[15]);
@@ -143,8 +140,7 @@ X86_SIMD_SORT_FINLINE void optimal_sort_16(reg_t *vecs)
 }
 
 template <typename vtype, typename reg_t = typename vtype::reg_t>
-X86_SIMD_SORT_FINLINE void optimal_sort_32(reg_t *vecs)
-{
+X86_SIMD_SORT_FINLINE void optimal_sort_32(reg_t *vecs) {
     COEX<vtype>(vecs[0], vecs[1]);
     COEX<vtype>(vecs[2], vecs[3]);
     COEX<vtype>(vecs[4], vecs[5]);
