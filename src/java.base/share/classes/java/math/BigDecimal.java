@@ -3503,7 +3503,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return "0";
             }
             int trailingZeros = checkScaleNonZero((-(long)scale));
-            StringBuilder buf;
             String str = intCompact != INFLATED
                 ? Long.toString(intCompact)
                 : intVal.toString();
@@ -3511,14 +3510,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (len < 0) {
                 throw new OutOfMemoryError("too large to fit in a String");
             }
-            buf = new StringBuilder(len);
+            StringBuilder buf = new StringBuilder(len);
             buf.append(str);
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
+            buf.repeat('0', trailingZeros);
             return buf.toString();
         }
-        String str ;
+        String str;
         if(intCompact!=INFLATED) {
             str = Long.toString(Math.abs(intCompact));
         } else {
@@ -3546,9 +3543,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
             buf = new StringBuilder(len);
             buf.append(signum<0 ? "-0." : "0.");
-            for (int i = insertionPoint; i < 0; ++i) {
-                buf.append('0');
-            }
+            buf.repeat('0', -insertionPoint);  // insertionPoint != MIN_VALUE
             buf.append(intString);
         }
         return buf.toString();
