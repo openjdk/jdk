@@ -675,18 +675,6 @@ bool PSScavenge::invoke_no_policy() {
 }
 
 void PSScavenge::clean_up_failed_promotion() {
-  // Restore all (failed) forwardings.
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  struct ResetForwardedMarkWord : ObjectClosure {
-    void do_object(oop obj) override {
-      if (obj->is_forwarded()) {
-        obj->init_mark();
-      }
-    }
-  } cl;
-  heap->young_gen()->eden_space()->object_iterate(&cl);
-  heap->young_gen()->from_space()->object_iterate(&cl);
-
   PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.

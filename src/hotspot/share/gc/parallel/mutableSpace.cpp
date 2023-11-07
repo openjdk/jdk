@@ -235,7 +235,10 @@ void MutableSpace::oop_iterate(OopIterateClosure* cl) {
 void MutableSpace::object_iterate(ObjectClosure* cl) {
   HeapWord* p = bottom();
   while (p < top()) {
-    cl->do_object(cast_to_oop(p));
+    oop obj = cast_to_oop(p);
+    if (!obj->is_forwarded()) {
+      cl->do_object(cast_to_oop(p));
+    }
     p += cast_to_oop(p)->size();
   }
 }
