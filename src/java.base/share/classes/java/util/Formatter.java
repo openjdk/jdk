@@ -4492,7 +4492,7 @@ public final class Formatter implements Closeable, Flushable {
                     char sep = '-';
                     int year = t.get(ChronoField.YEAR);
                     if (year < 0) {
-                        sb.append('-');
+                        sb.append(DecimalFormatSymbols.getInstance(l).getMinusSign());
                         year = -year;
                     } else if (year > 9999) {
                         sb.append('+');

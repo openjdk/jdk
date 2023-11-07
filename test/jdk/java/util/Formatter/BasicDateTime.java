@@ -34,6 +34,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -464,5 +465,11 @@ public class BasicDateTime extends Basic {
         test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
         test("%tF", "-1234-10-03", LocalDate.of(-1234, 10, 3));
         test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+
+        Locale localeEuES = Locale.forLanguageTag("eu-ES");
+        test(localeEuES,
+                "%tF",
+                DecimalFormatSymbols.getInstance(localeEuES).getMinusSign() + "2023-01-13",
+                LocalDate.of(-2023, 1, 13));
     }
 }
