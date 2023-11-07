@@ -78,14 +78,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
     tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_case);
+  } else if (LockingMode == LM_LIGHTWEIGHT) {
+    // null check obj. load_klass performs load if DiagnoseSyncOnValueBasedClasses != 0.
+    ldr(hdr, Address(obj));
   }
 
-  // Load object header
-  ldr(hdr, Address(obj, hdr_offset));
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    ldr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     orr(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -144,11 +147,6 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    ldr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
-    // We cannot use tbnz here, the target might be too far away and cannot
-    // be encoded.
-    tst(hdr, markWord::monitor_value);
-    br(Assembler::NE, slow_case);
     lightweight_unlock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
