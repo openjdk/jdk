@@ -4416,6 +4416,8 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef COMPILER2
 
+static const int64_t bits2 = right_n_bits(2);
+
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
   // Pack five 26-bit limbs into three 64-bit registers.
@@ -4464,6 +4466,18 @@ class StubGenerator: public StubCodeGenerator {
     pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
   }
 
+  // U_2:U_1:U_0: += (U_2 >> 2) * 5
+  void reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
+    assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
+
+    __ srli(tmp1, U_2, 2);
+    __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp2
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
+    __ add(U_2, U_2, tmp2);
+  }
+
   // Poly1305, RFC 7539
   // Intrinsified version of com.sun.crypto.provider.Poly1305.processMultipleBlocks
 
@@ -4483,7 +4497,6 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter();
     Label here;
-    const int64_t bits2 = right_n_bits(2);
 
     RegSet saved_regs = RegSet::range(x18, x21);
     RegSetIterator<Register> regs = (RegSet::range(x13, x31) - RegSet::range(x22, x27)).begin();
@@ -4551,12 +4564,7 @@ class StubGenerator: public StubCodeGenerator {
       // Sum is now in U_2:U_1:U_0.
 
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
-      __ srli(t1, U_2, 2);
-      __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
-      __ shadd(t1, t1, t1, t2, 2); // t1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(t1, U_2, 2)'
-      __ cad(U_0, U_0, t1, t2); // Add t1 (= (U_2 >> 2) * 5) to U_0 with carry output to t2
-      __ cad(U_1, U_1, t2, t2); // Add carry to U_1 with carry output to t2
-      __ add(U_2, U_2, t2);
+      reduce(U_2, U_1, U_0, t1, t2);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
@@ -4565,12 +4573,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Further reduce modulo 2^130 - 5
-    __ srli(t1, U_2, 2);
-    __ shadd(t1, t1, t1, t2, 2); // t1 = U_2 * 5
-    __ cad(U_0, U_0, t1, t2); // U_0 += U_2 * 5 with carry output to t2
-    __ cad(U_1, U_1, t2, t2); // Add carry to U_1 with carry output to t2
-    __ andi(U_2, U_2, bits2);
-    __ add(U_2, U_2, t2); // Add carry to U_2
+    reduce(U_2, U_1, U_0, t1, t2);
 
     // Unpack the sum into five 26-bit limbs and write to memory.
     // First 26 bits is the first limb
