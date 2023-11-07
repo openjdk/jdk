@@ -25,14 +25,21 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import java.lang.annotation.*;
 import java.io.*;
 import java.util.List;
-import com.sun.tools.classfile.*;
 
 import java.lang.annotation.*;
+import java.util.Objects;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
@@ -73,67 +80,53 @@ public class TestNewCastArray {
             System.out.println("PASS");
     }
 
-    void test(String clazz, String ttype, ClassFile cf, Method m, Field f,
-              String name, boolean codeattr) {
+    <T extends Attribute<T>> void test(String clazz, AttributedElement m, AttributeMapper<T> name, Boolean codeattr) {
         int actual = 0;
         int expected = 0, cexpected = 0;
-        int index = 0;
-        String memberName = null;
-        Attribute attr = null;
-        Code_attribute cAttr = null;
-        String testcase = "undefined";
-        try {
-        switch(ttype) {
-            case "METHOD":
-                index = m.attributes.getIndex(cf.constant_pool, name);
-                memberName = m.getName(cf.constant_pool);
-                if(index != -1)
-                    attr = m.attributes.get(index);
-                break;
-            case "MCODE":
-                memberName = m.getName(cf.constant_pool);
-                //fetch index of and code attribute and annotations from code attribute.
-                index = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-                if(index!= -1) {
-                    attr = m.attributes.get(index);
-                    assert attr instanceof Code_attribute;
-                    cAttr = (Code_attribute)attr;
-                    index = cAttr.attributes.getIndex(cf.constant_pool, name);
-                    if(index!= -1)
-                        attr = cAttr.attributes.get(index);
+        String memberName;
+        Attribute<T> attr = null;
+        CodeAttribute cAttr;
+        String testcase;
+        switch (m) {
+            case MethodModel mm -> {
+                memberName = mm.methodName().stringValue();
+                if(codeattr) {
+                    //fetch index of and code attribute and annotations from code attribute.
+                    cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+                    if(cAttr != null) {
+                        attr = cAttr.findAttribute(name).orElse(null);
+                    }
+                } else {
+                    attr = mm.findAttribute(name).orElse(null);
                 }
-                break;
-            case "FIELD":
-                index = f.attributes.getIndex(cf.constant_pool, name);
-                memberName = f.getName(cf.constant_pool);
-                if(index != -1)
-                    attr = f.attributes.get(index);
-                break;
-            case "CODE":
-                memberName = f.getName(cf.constant_pool);
-                //fetch index of and code attribute and annotations from code attribute.
-                index = cf.attributes.getIndex(cf.constant_pool, Attribute.Code);
-                if(index!= -1) {
-                    attr = cf.attributes.get(index);
-                    assert attr instanceof Code_attribute;
-                    cAttr = (Code_attribute)attr;
-                    index = cAttr.attributes.getIndex(cf.constant_pool, name);
-                    if(index!= -1)
-                        attr = cAttr.attributes.get(index);
+            }
+            case FieldModel fm -> {
+                memberName = fm.fieldName().stringValue();
+                if(codeattr) {
+                    cAttr = fm.findAttribute(Attributes.CODE).orElse(null);
+                    if(cAttr != null) {
+                        attr = cAttr.findAttribute(name).orElse(null);
+                    }
+                } else {
+                    attr = fm.findAttribute(name).orElse(null);
                 }
-                break;
-            default:
-                break;
+            }
+            default -> throw new AssertionError();
         }
-        } catch(ConstantPoolException cpe) { cpe.printStackTrace(); }
-        testcase = clazz+" "+ttype + ": " + memberName + ", " + name;
-        if(index != -1) {
+        testcase = clazz+" , Local: "+ codeattr + ": " + memberName + ", " + name;
+        if(attr != null) {
             //count RuntimeTypeAnnotations
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr =
-                    (RuntimeTypeAnnotations_attribute)attr;
-                actual += tAttr.annotations.length;
+            switch (attr) {
+                case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                    actual += tAttr.annotations().size();
+                }
+                case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                    actual += tAttr.annotations().size();
+                }
+                default -> throw new AssertionError();
+            }
         }
+        assert memberName != null;
         if(memberName.compareTo("<init>")==0) memberName=clazz+memberName;
         switch ( memberName ) {
             //METHOD:
@@ -204,27 +197,28 @@ public class TestNewCastArray {
     }
 
     public void run() {
-        ClassFile cf = null;
-        InputStream in = null;
+        ClassModel cm = null;
+        InputStream in;
         for( String clazz : testclasses) {
             String testclazz = "TestNewCastArray$" + clazz + ".class";
             System.out.println("Testing " + testclazz);
             try {
-                in = getClass().getResource(testclazz).openStream();
-                cf = ClassFile.read(in);
+                in = Objects.requireNonNull(getClass().getResource(testclazz)).openStream();
+                cm = Classfile.of().parse(in.readAllBytes());
                 in.close();
             } catch(Exception e) { e.printStackTrace();  }
 
+            assert cm != null;
             if(clazz.startsWith("Test1")) {
-                for (Field f: cf.fields)
-                    test(clazz, "FIELD", cf, null, f, Attribute.RuntimeVisibleTypeAnnotations, false);
-                for (Method m: cf.methods)
-                    test(clazz, "METHOD", cf, m, null, Attribute.RuntimeVisibleTypeAnnotations, false);
+                for (FieldModel fm: cm.fields())
+                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
+                for (MethodModel mm: cm.methods())
+                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
             } else {
-                for (Field f: cf.fields)
-                    test(clazz, "CODE", cf, null, f, Attribute.RuntimeVisibleTypeAnnotations, true);
-                for (Method m: cf.methods)
-                    test(clazz, "MCODE", cf, m, null, Attribute.RuntimeVisibleTypeAnnotations, true);
+                for (FieldModel fm: cm.fields())
+                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
+                for (MethodModel mm: cm.methods())
+                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
             }
         }
         report();
@@ -350,7 +344,7 @@ public class TestNewCastArray {
     // Cast expressions
     static class Test5a {
         Test5a(){}
-        Object o = new Integer(1);
+        Object o = 1;
         // expect 2+2=4
         Integer ci11 = (@A @B Integer)o;       // OK expect 3, got 3
         Integer ci21 = (@A @A @B Integer)o;    // OK expect 3, got 3
@@ -358,7 +352,7 @@ public class TestNewCastArray {
 
     static class Test5b {
         Test5b(){}
-        Object o = new Integer(1);
+        Object o = 1;
         // Cast expressions
         // expect 1+2=3
         Integer ci2 =  (@A @A Integer)o;       // FAIL expect 2, got 1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -912,7 +912,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Removes all the child components from the split pane. Resets the
-     * <code>leftComonent</code> and <code>rightComponent</code>
+     * <code>leftComponent</code> and <code>rightComponent</code>
      * instance variables.
      */
     public void removeAll() {

@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
 #include <jlong.h>
 
@@ -45,9 +46,8 @@
 #include "sun_awt_windows_WCanvasPeer.h"
 
 #include <windowsx.h>
-#include <math.h>
 #if !defined(__int3264)
-typedef __int32 LONG_PTR;
+typedef int32_t LONG_PTR;
 #endif // __int3264
 
 // Used for Swing's Menu/Tooltip animation Support

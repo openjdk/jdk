@@ -338,7 +338,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->name() != nullptr) {                                \
+    while (flag->name() != nullptr) {                             \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
@@ -416,7 +416,7 @@ TRACE_REQUEST_FUNC(GCConfiguration) {
   event.set_usesDynamicGCThreads(conf.uses_dynamic_gc_threads());
   event.set_isExplicitGCConcurrent(conf.is_explicit_gc_concurrent());
   event.set_isExplicitGCDisabled(conf.is_explicit_gc_disabled());
-  event.set_gcTimeRatio(conf.gc_time_ratio());
+  event.set_gcTimeRatio(static_cast<unsigned int>(conf.gc_time_ratio()));
   event.set_pauseTarget((s8)pause_target);
   event.commit();
 }
@@ -433,8 +433,8 @@ TRACE_REQUEST_FUNC(GCTLABConfiguration) {
 TRACE_REQUEST_FUNC(GCSurvivorConfiguration) {
   GCSurvivorConfiguration conf;
   EventGCSurvivorConfiguration event;
-  event.set_maxTenuringThreshold(conf.max_tenuring_threshold());
-  event.set_initialTenuringThreshold(conf.initial_tenuring_threshold());
+  event.set_maxTenuringThreshold(static_cast<u1>(conf.max_tenuring_threshold()));
+  event.set_initialTenuringThreshold(static_cast<u1>(conf.initial_tenuring_threshold()));
   event.commit();
 }
 
@@ -447,7 +447,7 @@ TRACE_REQUEST_FUNC(GCHeapConfiguration) {
   event.set_usesCompressedOops(conf.uses_compressed_oops());
   event.set_compressedOopsMode(conf.narrow_oop_mode());
   event.set_objectAlignment(conf.object_alignment_in_bytes());
-  event.set_heapAddressBits(conf.heap_address_size_in_bits());
+  event.set_heapAddressBits(static_cast<u1>(conf.heap_address_size_in_bits()));
   event.commit();
 }
 
@@ -457,7 +457,7 @@ TRACE_REQUEST_FUNC(YoungGenerationConfiguration) {
   EventYoungGenerationConfiguration event;
   event.set_maxSize((u8)max_size);
   event.set_minSize(conf.min_size());
-  event.set_newRatio(conf.new_ratio());
+  event.set_newRatio(static_cast<unsigned int>(conf.new_ratio()));
   event.commit();
 }
 
@@ -660,7 +660,7 @@ TRACE_REQUEST_FUNC(CompilerStatistics) {
 
 TRACE_REQUEST_FUNC(CompilerConfiguration) {
   EventCompilerConfiguration event;
-  event.set_threadCount(CICompilerCount);
+  event.set_threadCount(static_cast<s4>(CICompilerCount));
   event.set_tieredCompilation(TieredCompilation);
   event.set_dynamicCompilerThreadCount(UseDynamicNumberOfCompilerThreads);
   event.commit();

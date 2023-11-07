@@ -37,8 +37,8 @@
  * array index.
  */
 
+#include <cmath> // ceil()
 #include <awt.h>
-#include <sun_awt_Win32GraphicsDevice.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "awt_Window.h"
@@ -46,7 +46,6 @@
 #include "java_awt_color_ColorSpace.h"
 #include "sun_awt_Win32GraphicsDevice.h"
 #include "java_awt_image_DataBuffer.h"
-#include "dither.h"
 #include "img_util_md.h"
 #include "Devices.h"
 #include "systemScale.h"

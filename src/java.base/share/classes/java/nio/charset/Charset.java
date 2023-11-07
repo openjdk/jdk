@@ -954,15 +954,15 @@ public abstract class Charset
      * @return A negative integer, zero, or a positive integer as this charset
      *         is less than, equal to, or greater than the specified charset
      */
+    @Override
     public final int compareTo(Charset that) {
         return (name().compareToIgnoreCase(that.name()));
     }
 
     /**
-     * Computes a hashcode for this charset.
-     *
-     * @return  An integer hashcode
+     * {@return the hashcode for this charset}
      */
+    @Override
     public final int hashCode() {
         return name().hashCode();
     }
@@ -976,19 +976,17 @@ public abstract class Charset
      * @return  {@code true} if, and only if, this charset is equal to the
      *          given object
      */
+    @Override
     public final boolean equals(Object ob) {
-        if (!(ob instanceof Charset))
-            return false;
         if (this == ob)
             return true;
-        return name.equals(((Charset)ob).name());
+        return ob instanceof Charset other && name.equals(other.name());
     }
 
     /**
-     * Returns a string describing this charset.
-     *
-     * @return  A string describing this charset
+     * {@return a string describing this charset}
      */
+    @Override
     public final String toString() {
         return name();
     }

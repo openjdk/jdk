@@ -209,18 +209,18 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_invalidated_compilation;
   static elapsedTimer _t_bailedout_compilation;
 
-  static int _total_compile_count;
-  static int _total_bailout_count;
-  static int _total_invalidated_count;
-  static int _total_native_compile_count;
-  static int _total_osr_compile_count;
-  static int _total_standard_compile_count;
-  static int _total_compiler_stopped_count;
-  static int _total_compiler_restarted_count;
-  static int _sum_osr_bytes_compiled;
-  static int _sum_standard_bytes_compiled;
-  static int _sum_nmethod_size;
-  static int _sum_nmethod_code_size;
+  static uint _total_compile_count;
+  static uint _total_bailout_count;
+  static uint _total_invalidated_count;
+  static uint _total_native_compile_count;
+  static uint _total_osr_compile_count;
+  static uint _total_standard_compile_count;
+  static uint _total_compiler_stopped_count;
+  static uint _total_compiler_restarted_count;
+  static uint _sum_osr_bytes_compiled;
+  static uint _sum_standard_bytes_compiled;
+  static uint _sum_nmethod_size;
+  static uint _sum_nmethod_code_size;
   static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];
@@ -251,6 +251,8 @@ class CompileBroker: AllStatic {
 #if INCLUDE_JVMCI
   static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
 #endif
+
+  static void free_buffer_blob_if_allocated(CompilerThread* thread);
 
   static void invoke_compiler_on_method(CompileTask* task);
   static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
@@ -291,8 +293,7 @@ public:
     CompileQueue *q = compile_queue(comp_level);
     return q != nullptr ? q->size() : 0;
   }
-  static void compilation_init_phase1(JavaThread* THREAD);
-  static void compilation_init_phase2();
+  static void compilation_init(JavaThread* THREAD);
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
@@ -301,7 +302,7 @@ public:
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
-
+private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
@@ -311,6 +312,7 @@ public:
                                    DirectiveSet* directive,
                                    TRAPS);
 
+public:
   // Acquire any needed locks and assign a compile id
   static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 

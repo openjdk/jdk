@@ -320,8 +320,9 @@ protected:
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
   DCmdArgument<bool> _overwrite;
+  DCmdArgument<jlong> _parallel;
 public:
-  static int num_arguments() { return 4; }
+  static int num_arguments() { return 5; }
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "GC.heap_dump";
@@ -948,6 +949,30 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CompilationMemoryStatisticDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _human_readable;
+  DCmdArgument<MemorySizeArgument> _minsize;
+public:
+  static int num_arguments() { return 2; }
+  CompilationMemoryStatisticDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.memory";
+  }
+  static const char* description() {
+    return "Print compilation footprint";
+  }
+  static const char* impact() {
+    return "Medium: Pause time depends on number of compiled methods";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);

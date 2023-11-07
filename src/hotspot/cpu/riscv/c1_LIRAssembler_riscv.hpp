@@ -99,15 +99,11 @@ private:
                                   Register k_RInfo, Register klass_RInfo,
                                   Label* failure_target, Label* success_target);
   void profile_object(ciMethodData* md, ciProfileData* data, Register obj,
-                      Register klass_RInfo, Label* obj_is_null);
+                      Register k_RInfo, Register klass_RInfo, Label* obj_is_null);
   void typecheck_loaded(LIR_OpTypeCheck* op, ciKlass* k, Register k_RInfo);
 
   // emit_opTypeCheck sub functions
   void typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile);
-
-  void type_profile(Register obj, ciMethodData* md, Register klass_RInfo, Register k_RInfo,
-                    ciProfileData* data, Label* success, Label* failure,
-                    Label& profile_cast_success, Label& profile_cast_failure);
 
   void lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, Register Rtmp1,
                            Label* success_target, Label* failure_target);

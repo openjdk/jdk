@@ -2687,11 +2687,12 @@ bool LibraryCallKit::inline_vector_insert() {
 }
 
 //  public static
-//  <V extends Vector<E>,
+//  <VM extends VectorPayload,
 //   E>
-//  long extract(Class<? extends V> vectorClass, Class<E> elementType, int vlen,
-//               V vec, int ix,
-//               VecExtractOp<V> defaultImpl)
+//  long extract(Class<? extends VM> vClass, Class<E> eClass,
+//               int length,
+//               VM vm, int i,
+//               VecExtractOp<VM> defaultImpl)
 bool LibraryCallKit::inline_vector_extract() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
@@ -2701,13 +2702,12 @@ bool LibraryCallKit::inline_vector_extract() {
   if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || idx == nullptr) {
     return false; // dead code
   }
-  if (vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con() || !idx->is_con()) {
+  if (vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s idx=%s",
+      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(4)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()]);
     }
     return false; // not enough info for intrinsification
   }
@@ -2726,51 +2726,93 @@ bool LibraryCallKit::inline_vector_extract() {
   }
   BasicType elem_bt = elem_type->basic_type();
   int num_elem = vlen->get_con();
-  int vopc = ExtractNode::opcode(elem_bt);
-  if (!arch_supports_vector(vopc, num_elem, elem_bt, VecMaskNotUsed)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=1 op=extract vlen=%d etype=%s ismask=no",
-                    num_elem, type2name(elem_bt));
-    }
-    return false; // not supported
-  }
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
-  if (opd == nullptr) {
-    return false;
+  Node* opd = nullptr;
+
+  if (is_vector_mask(vbox_klass)) {
+    // vbox_klass is mask. This is used for VectorMask.laneIsSet(int).
+
+    Node* pos = argument(4); // can be variable
+    if (arch_supports_vector(Op_ExtractUB, num_elem, elem_bt, VecMaskUseAll)) {
+      // Transform mask to vector with type of boolean and utilize ExtractUB node.
+      opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+      if (opd == nullptr) {
+        return false;
+      }
+      opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
+      opd = gvn().transform(new ExtractUBNode(opd, pos));
+      opd = gvn().transform(new ConvI2LNode(opd));
+    } else if (arch_supports_vector(Op_VectorMaskToLong, num_elem, elem_bt, VecMaskUseLoad)) {
+      opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+      if (opd == nullptr) {
+        return false;
+      }
+      // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
+      if (opd->bottom_type()->isa_vectmask() == nullptr) {
+        opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
+      }
+      // ((toLong() >>> pos) & 1L
+      opd = gvn().transform(new VectorMaskToLongNode(opd, TypeLong::LONG));
+      opd = gvn().transform(new URShiftLNode(opd, pos));
+      opd = gvn().transform(new AndLNode(opd, gvn().makecon(TypeLong::ONE)));
+    } else {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected mask extraction because architecture does not support it");
+      }
+      return false; // not supported
+    }
+  } else {
+    // vbox_klass is vector. This is used for Vector.lane(int).
+    if (!idx->is_con()) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** missing constant: idx=%s", NodeClassNames[argument(4)->Opcode()]);
+      }
+      return false; // not enough info for intrinsification
+    }
+
+    int vopc = ExtractNode::opcode(elem_bt);
+    if (!arch_supports_vector(vopc, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: arity=1 op=extract vlen=%d etype=%s ismask=no",
+                      num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+
+    opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+    if (opd == nullptr) {
+      return false;
+    }
+    ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
+
+    opd = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
+    switch (elem_bt) {
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT: {
+        opd = gvn().transform(new ConvI2LNode(opd));
+        break;
+      }
+      case T_FLOAT: {
+        opd = gvn().transform(new MoveF2INode(opd));
+        opd = gvn().transform(new ConvI2LNode(opd));
+        break;
+      }
+      case T_DOUBLE: {
+        opd = gvn().transform(new MoveD2LNode(opd));
+        break;
+      }
+      case T_LONG: {
+        // no conversion needed
+        break;
+      }
+      default: fatal("%s", type2name(elem_bt));
+    }
   }
-
-  ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
-  Node* operation = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
-
-  Node* bits = nullptr;
-  switch (elem_bt) {
-    case T_BYTE:
-    case T_SHORT:
-    case T_INT: {
-      bits = gvn().transform(new ConvI2LNode(operation));
-      break;
-    }
-    case T_FLOAT: {
-      bits = gvn().transform(new MoveF2INode(operation));
-      bits = gvn().transform(new ConvI2LNode(bits));
-      break;
-    }
-    case T_DOUBLE: {
-      bits = gvn().transform(new MoveD2LNode(operation));
-      break;
-    }
-    case T_LONG: {
-      bits = operation; // no conversion needed
-      break;
-    }
-    default: fatal("%s", type2name(elem_bt));
-  }
-
-  set_result(bits);
+  set_result(opd);
   return true;
 }
 

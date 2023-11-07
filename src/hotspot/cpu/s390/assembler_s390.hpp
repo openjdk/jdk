@@ -140,7 +140,8 @@ class RelAddr {
     if ((target == nullptr) || (target == pc)) {
       return 0;  // Yet unknown branch destination.
     } else {
-      guarantee(is_in_range_of_RelAddr(target, pc, shortForm), "target not within reach");
+      guarantee(is_in_range_of_RelAddr(target, pc, shortForm),
+                "target not within reach at " INTPTR_FORMAT ", distance = " INTX_FORMAT, p2i(pc), (target - pc) );
       return (int)((target - pc)>>1);
     }
   }

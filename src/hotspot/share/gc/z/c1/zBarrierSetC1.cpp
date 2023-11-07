@@ -287,7 +287,6 @@ private:
   LIR_Opr       _new_zaddress;
   LIR_Opr       _new_zpointer;
   CodeStub*     _stub;
-  CodeEmitInfo* _info;
 
 public:
   LIR_OpZStoreBarrier(LIR_Opr addr,
@@ -295,12 +294,11 @@ public:
                       LIR_Opr new_zpointer,
                       CodeStub* stub,
                       CodeEmitInfo* info)
-    : LIR_Op(lir_none, new_zpointer, nullptr /* info */),
+    : LIR_Op(lir_none, new_zpointer, info),
       _addr(addr),
       _new_zaddress(new_zaddress),
       _new_zpointer(new_zpointer),
-      _stub(stub),
-      _info(info) {}
+      _stub(stub) {}
 
   virtual void visit(LIR_OpVisitState* state) {
     state->do_input(_new_zaddress);

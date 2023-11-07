@@ -71,11 +71,11 @@ class Bytecode: public StackObj {
   Bytecodes::Code invoke_code() const            { return (code() == Bytecodes::_invokehandle) ? code() : java_code(); }
 
   // Static functions for parsing bytecodes in place.
-  int get_index_u1(Bytecodes::Code bc) const {
+  u1 get_index_u1(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1);
+    return *(u1*)addr_at(1);
   }
-  int get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
+  u2 get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
     if (can_use_native_byte_order(bc, is_wide)) {
@@ -86,7 +86,7 @@ class Bytecode: public StackObj {
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
+    return *(u1*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
   }
   int get_index_u2_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(2, bc); assert_native_index(bc);
@@ -274,7 +274,7 @@ class Bytecode_checkcast: public Bytecode {
   void verify() const { assert(Bytecodes::java_code(code()) == Bytecodes::_checkcast, "check checkcast"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_checkcast); };
+  u2 index() const   { return get_index_u2(Bytecodes::_checkcast); };
 };
 
 // Abstraction for instanceof
@@ -284,7 +284,7 @@ class Bytecode_instanceof: public Bytecode {
   void verify() const { assert(code() == Bytecodes::_instanceof, "check instanceof"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_instanceof); };
+  u2 index() const   { return get_index_u2(Bytecodes::_instanceof); };
 };
 
 class Bytecode_new: public Bytecode {
@@ -293,7 +293,7 @@ class Bytecode_new: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_new, "check new"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_new); };
+  u2 index() const   { return get_index_u2(Bytecodes::_new); };
 };
 
 class Bytecode_multianewarray: public Bytecode {
@@ -302,7 +302,7 @@ class Bytecode_multianewarray: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_multianewarray, "check new"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_multianewarray); };
+  u2 index() const   { return get_index_u2(Bytecodes::_multianewarray); };
 };
 
 class Bytecode_anewarray: public Bytecode {
@@ -311,7 +311,7 @@ class Bytecode_anewarray: public Bytecode {
   void verify() const { assert(java_code() == Bytecodes::_anewarray, "check anewarray"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_anewarray); };
+  u2 index() const   { return get_index_u2(Bytecodes::_anewarray); };
 };
 
 // Abstraction for ldc, ldc_w and ldc2_w

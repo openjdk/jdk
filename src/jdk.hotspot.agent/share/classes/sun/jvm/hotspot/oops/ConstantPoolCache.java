@@ -55,6 +55,7 @@ public class ConstantPoolCache extends Metadata {
     intSize        = VM.getVM().getObjectHeap().getIntSize();
     resolvedReferences = type.getAddressField("_resolved_references");
     referenceMap   = type.getAddressField("_reference_map");
+    resolvedFieldArray = type.getAddressField("_resolved_field_entries");
     resolvedIndyArray = type.getAddressField("_resolved_indy_entries");
   }
 
@@ -72,6 +73,7 @@ public class ConstantPoolCache extends Metadata {
   private static long intSize;
   private static AddressField  resolvedReferences;
   private static AddressField  referenceMap;
+  private static AddressField  resolvedFieldArray;
   private static AddressField  resolvedIndyArray;
 
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
@@ -88,6 +90,12 @@ public class ConstantPoolCache extends Metadata {
   public ResolvedIndyEntry getIndyEntryAt(int i) {
     Address addr = resolvedIndyArray.getValue(getAddress());
     ResolvedIndyArray array = new ResolvedIndyArray(addr);
+    return array.getAt(i);
+  }
+
+  public ResolvedFieldEntry getFieldEntryAt(int i) {
+    Address addr = resolvedFieldArray.getValue(getAddress());
+    ResolvedFieldArray array = new ResolvedFieldArray(addr);
     return array.getAt(i);
   }
 

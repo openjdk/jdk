@@ -23,9 +23,7 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCaptureCallState
  */
 
@@ -81,7 +79,7 @@ public class TestCaptureCallState extends NativeTestHelper {
                 ? handle.invoke(arena, saveSeg, testValue)
                 : handle.invoke(saveSeg, testValue);
             testCase.resultCheck().accept(result);
-            int savedErrno = (int) errnoHandle.get(saveSeg);
+            int savedErrno = (int) errnoHandle.get(saveSeg, 0L);
             assertEquals(savedErrno, testValue);
         }
     }
@@ -138,7 +136,7 @@ public class TestCaptureCallState extends NativeTestHelper {
             MemoryLayout fieldLayout = field.getKey();
             VarHandle fieldHandle = layout.varHandle(MemoryLayout.PathElement.groupElement(fieldLayout.name().get()));
             Object value = field.getValue();
-            check = check.andThen(o -> assertEquals(fieldHandle.get(o), value));
+            check = check.andThen(o -> assertEquals(fieldHandle.get(o, 0L), value));
         }
 
         return new SaveValuesCase("set_errno_" + name, FunctionDescriptor.of(layout, JAVA_INT), "errno", check);

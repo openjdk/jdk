@@ -29,13 +29,16 @@
 #include <dlfcn.h>
 #include <string.h>
 #include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
 
 
 dynamicOdm::dynamicOdm() {
-  const char *libodmname = "/usr/lib/libodm.a(shr_64.o)";
-  _libhandle = dlopen(libodmname, RTLD_MEMBER | RTLD_NOW);
+  const char* libodmname = "/usr/lib/libodm.a(shr_64.o)";
+  char ebuf[512];
+  void* _libhandle = os::dll_load(libodmname, ebuf, sizeof(ebuf));
+
   if (!_libhandle) {
-    trcVerbose("Couldn't open %s", libodmname);
+    trcVerbose("Cannot load %s (error %s)", libodmname, ebuf);
     return;
   }
   _odm_initialize  = (fun_odm_initialize )dlsym(_libhandle, "odm_initialize" );

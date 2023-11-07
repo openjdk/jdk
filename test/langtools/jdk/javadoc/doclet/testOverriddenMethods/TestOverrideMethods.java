@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765 8223607 8261976 8281376
+ * @bug 8157000 8192850 8182765 8223607 8261976 8281376 8313204
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -78,13 +78,6 @@ public class TestOverrideMethods  extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("pkg5/Classes.C.html",
-                // Check properties
-                """
-                    Properties declared in class&nbsp;pkg5.<a href="Classes.P.html""",
-                "Classes.P",
-                """
-                    Classes.P.html#rateProperty">rate""",
-
                 // Check nested classes
                 "Nested classes/interfaces declared in class&nbsp;pkg5.",
                 "Classes.P",
@@ -94,6 +87,13 @@ public class TestOverrideMethods  extends JavadocTester {
                     type parameter in Classes.P.PN">K""",
                 "type parameter in Classes.P.PN",
                 "V",
+
+                // Check properties
+                """
+                    Properties declared in class&nbsp;pkg5.<a href="Classes.P.html""",
+                "Classes.P",
+                """
+                    Classes.P.html#rateProperty">rate""",
 
                 // Check fields
                 """
@@ -220,15 +220,15 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     Interfaces.C.html#o()"><code>Interfaces.C.o()""",
 
-                // Check properties
-                """
-                    Properties declared in interface&nbsp;pkg5.<a href="Interfaces.A.html" title="interface in pkg5">Interfaces.A</a>""",
-
                 // Check nested classes
                 "Nested classes/interfaces declared in interface&nbsp;pkg5.",
                 "Interfaces.A",
                 "Interfaces.A.AA.html",
                 "Interfaces.A.AA",
+
+                // Check properties
+                """
+                    Properties declared in interface&nbsp;pkg5.<a href="Interfaces.A.html" title="interface in pkg5">Interfaces.A</a>""",
 
                 // Check Fields
                 """

@@ -229,7 +229,7 @@ public:
   // object (ciConstant.as_object()->is_loaded() == false).
   ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
-  BasicType   get_basic_type_for_constant_at(int index) const;
+  BasicType   get_basic_type_for_constant_at(int cp_index) const;
 
   constantTag get_raw_pool_tag_at(int index) const;
 

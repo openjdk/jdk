@@ -165,7 +165,7 @@ void DowncallStubGenerator::generate() {
   int parameter_save_area_slots = MAX2(_input_registers.length(), 8);
   int allocated_frame_size = frame::native_abi_minframe_size + parameter_save_area_slots * BytesPerWord;
 
-  bool should_save_return_value = !_needs_return_buffer && _needs_transition;
+  bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 

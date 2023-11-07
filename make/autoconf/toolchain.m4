@@ -804,7 +804,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 
   case $TOOLCHAIN_TYPE in
     gcc|clang)
-      UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, c++filt)
+      if test "x$OPENJDK_TARGET_OS" = xaix; then
+        UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, ibm-llvm-cxxfilt)
+      else
+        UTIL_REQUIRE_TOOLCHAIN_PROGS(CXXFILT, c++filt)
+      fi
       ;;
   esac
 ])

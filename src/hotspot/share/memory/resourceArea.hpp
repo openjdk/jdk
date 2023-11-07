@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_RESOURCEAREA_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "runtime/javaThread.hpp"
 
 // The resource area holds temporary data structures in the VM.
@@ -51,10 +52,11 @@ class ResourceArea: public Arena {
 
 public:
   ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
   ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, init_size) DEBUG_ONLY(COMMA _nesting(0)) {}
+    Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
@@ -112,7 +114,7 @@ public:
              "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
-      state._chunk->next_chop();
+      Chunk::next_chop(state._chunk);
       assert(_hwm != state._hwm, "Sanity check: HWM moves when we have later chunks");
     } else {
       assert(size_in_bytes() == state._size_in_bytes, "Sanity check");

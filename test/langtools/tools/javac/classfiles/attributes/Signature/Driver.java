@@ -21,12 +21,13 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.SignatureAttribute;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
@@ -34,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.lang.reflect.AccessFlag;
 
 /**
  * The main class of Signature tests.
@@ -49,9 +51,6 @@ import java.util.stream.Stream;
  * of ExpectedSignature must return true.
  */
 public class Driver extends TestResult {
-
-    private final static String ACC_BRIDGE = "ACC_BRIDGE";
-
     private final String topLevelClassName;
     private final File[] files;
 
@@ -78,7 +77,7 @@ public class Driver extends TestResult {
         // is located in its enclosing class.
         boolean isAnonymous = isAnonymous(className);
         clazz = isAnonymous ? getEnclosingClass(className) : clazz;
-        return Stream.of(clazz.getAnnotationsByType(ExpectedSignature.class))
+        return Arrays.stream(clazz.getAnnotationsByType(ExpectedSignature.class))
                 .filter(s -> s.isAnonymous() == isAnonymous)
                 .collect(Collectors.toMap(ExpectedSignature::descriptor, Function.identity()))
                 .get(className);
@@ -97,7 +96,7 @@ public class Driver extends TestResult {
 
     private Map<String, ExpectedSignature> getExpectedExecutableSignatures(Executable[] executables,
                                                                            Predicate<Executable> filterBridge) {
-        return Stream.of(executables)
+        return Arrays.stream(executables)
                 .filter(filterBridge)
                 .map(e -> e.getAnnotation(ExpectedSignature.class))
                 .filter(Objects::nonNull)
@@ -115,7 +114,7 @@ public class Driver extends TestResult {
     }
 
     private Map<String, ExpectedSignature> getExpectedFieldSignatures(Class<?> clazz) {
-        return Stream.of(clazz.getDeclaredFields())
+        return Arrays.stream(clazz.getDeclaredFields())
                 .map(f -> f.getAnnotation(ExpectedSignature.class))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toMap(ExpectedSignature::descriptor, Function.identity()));
@@ -130,13 +129,12 @@ public class Driver extends TestResult {
                     String className = file.getName().replace(".class", "");
                     Class<?> clazz = Class.forName(className);
                     printf("Testing class %s\n", className);
-                    ClassFile classFile = readClassFile(file);
+                    ClassModel classFile = readClassFile(file);
 
                     // test class signature
                     testAttribute(
                             className,
-                            classFile,
-                            () -> (Signature_attribute) classFile.getAttribute(Attribute.Signature),
+                            () -> classFile.findAttribute(Attributes.SIGNATURE).orElse(null),
                             getClassExpectedSignature(className, clazz).get(className));
 
                     testFields(getExpectedFieldSignatures(clazz), classFile);
@@ -163,21 +161,19 @@ public class Driver extends TestResult {
         }
     }
 
-    private void testMethods(Map<String, ExpectedSignature> expectedSignatures, ClassFile classFile)
-            throws ConstantPoolException, Descriptor.InvalidDescriptor {
-        String className = classFile.getName();
+    private void testMethods(Map<String, ExpectedSignature> expectedSignatures, ClassModel classFile) {
+        String className = classFile.thisClass().name().stringValue();
         Set<String> foundMethods = new HashSet<>();
-        for (Method method : classFile.methods) {
-            String methodName = getMethodName(classFile, method);
+        for (MethodModel method : classFile.methods()) {
+            String methodName = getMethodName(method);
             printf("Testing method %s\n", methodName);
-            if (method.access_flags.getMethodFlags().contains(ACC_BRIDGE)) {
+            if (method.flags().has(AccessFlag.BRIDGE)) {
                 printf("Bridge method is skipped : %s\n", methodName);
                 continue;
             }
             testAttribute(
                     methodName,
-                    classFile,
-                    () -> (Signature_attribute) method.attributes.get(Attribute.Signature),
+                    () -> method.findAttribute(Attributes.SIGNATURE).orElse(null),
                     expectedSignatures.get(methodName));
             foundMethods.add(methodName);
         }
@@ -185,24 +181,30 @@ public class Driver extends TestResult {
                 "Checking that all methods of class " + className + " with Signature attribute found");
     }
 
-    private String getMethodName(ClassFile classFile, Method method)
-            throws ConstantPoolException, Descriptor.InvalidDescriptor {
-        return String.format("%s%s",
-                method.getName(classFile.constant_pool),
-                method.descriptor.getParameterTypes(classFile.constant_pool));
+    private String getMethodName(MethodModel method) {
+        StringBuilder methodName = new StringBuilder(method.methodName().stringValue() + "(");
+        List<ClassDesc> paras = method.methodTypeSymbol().parameterList();
+        for (int i = 0; i < method.methodTypeSymbol().parameterCount(); ++i) {
+            if (i != 0) {
+                methodName.append(", ");
+            }
+            ClassDesc para = paras.get(i);
+            String prefix = para.componentType() == null? para.packageName(): para.componentType().packageName();
+            methodName.append(prefix).append(Objects.equals(prefix, "") ? "":".").append(para.displayName());
+        }
+        methodName.append(")");
+        return methodName.toString();
     }
 
-    private void testFields(Map<String, ExpectedSignature> expectedSignatures, ClassFile classFile)
-            throws ConstantPoolException {
-        String className = classFile.getName();
+    private void testFields(Map<String, ExpectedSignature> expectedSignatures, ClassModel classFile) {
+        String className = classFile.thisClass().name().stringValue();
         Set<String> foundFields = new HashSet<>();
-        for (Field field : classFile.fields) {
-            String fieldName = field.getName(classFile.constant_pool);
+        for (FieldModel field : classFile.fields()) {
+            String fieldName = field.fieldName().stringValue();
             printf("Testing field %s\n", fieldName);
             testAttribute(
                     fieldName,
-                    classFile,
-                    () -> (Signature_attribute) field.attributes.get(Attribute.Signature),
+                    () -> field.findAttribute(Attributes.SIGNATURE).orElse(null),
                     expectedSignatures.get(fieldName));
             foundFields.add(fieldName);
         }
@@ -212,17 +214,15 @@ public class Driver extends TestResult {
 
     private void testAttribute(
             String memberName,
-            ClassFile classFile,
-            Supplier<Signature_attribute> sup,
-            ExpectedSignature expectedSignature)
-            throws ConstantPoolException {
+            Supplier<SignatureAttribute> sup,
+            ExpectedSignature expectedSignature) {
 
-        Signature_attribute attribute = sup.get();
+        SignatureAttribute attribute = sup.get();
         if (expectedSignature != null && checkNotNull(attribute, memberName + " must have attribute")) {
-            checkEquals(classFile.constant_pool.getUTF8Value(attribute.attribute_name_index),
+            checkEquals(attribute.attributeName(),
                     "Signature", "Attribute's name : " + memberName);
-            checkEquals(attribute.attribute_length, 2, "Attribute's length : " + memberName);
-            checkEquals(attribute.getSignature(classFile.constant_pool),
+            checkEquals(((BoundAttribute<?>)attribute).payloadLen(), 2, "Attribute's length : " + memberName);
+            checkEquals(attribute.signature().stringValue(),
                     expectedSignature.signature(),
                     "Testing signature of : " + memberName);
         } else {

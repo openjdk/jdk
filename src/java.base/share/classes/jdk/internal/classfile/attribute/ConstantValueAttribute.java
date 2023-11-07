@@ -37,6 +37,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * fields and indicates that the field's value is a constant.  Delivered as a
  * {@link jdk.internal.classfile.FieldElement} when traversing the elements of a
  * {@link jdk.internal.classfile.FieldModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface ConstantValueAttribute
         extends Attribute<ConstantValueAttribute>, FieldElement

@@ -59,24 +59,40 @@ import java.util.function.Consumer;
 
 @Test
 public class WhiteBox {
+
     final ThreadLocalRandom rnd = ThreadLocalRandom.current();
     final VarHandle HEAD, TAIL, ITEM, NEXT;
 
-    public WhiteBox() throws ReflectiveOperationException {
-        Class<?> qClass = LinkedTransferQueue.class;
-        Class<?> nodeClass = Class.forName(qClass.getName() + "$Node");
-        MethodHandles.Lookup lookup
-            = MethodHandles.privateLookupIn(qClass, MethodHandles.lookup());
-        HEAD = lookup.findVarHandle(qClass, "head", nodeClass);
-        TAIL = lookup.findVarHandle(qClass, "tail", nodeClass);
-        NEXT = lookup.findVarHandle(nodeClass, "next", nodeClass);
-        ITEM = lookup.findVarHandle(nodeClass, "item", Object.class);
+    public WhiteBox() throws Throwable { // throws ReflectiveOperationException {
+        try {
+            Class<?> qClass = LinkedTransferQueue.class;
+            Class<?> nodeClass = Class.forName(qClass.getName() + "$DualNode");
+            MethodHandles.Lookup lookup
+                = MethodHandles.privateLookupIn(qClass, MethodHandles.lookup());
+            HEAD = lookup.findVarHandle(qClass, "head", nodeClass);
+            TAIL = lookup.findVarHandle(qClass, "tail", nodeClass);
+            NEXT = lookup.findVarHandle(nodeClass, "next", nodeClass);
+            ITEM = lookup.findVarHandle(nodeClass, "item", Object.class);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
     }
 
     Object head(LinkedTransferQueue q) { return HEAD.getVolatile(q); }
     Object tail(LinkedTransferQueue q) { return TAIL.getVolatile(q); }
     Object item(Object node)           { return ITEM.getVolatile(node); }
     Object next(Object node)           { return NEXT.getVolatile(node); }
+
+    /*
+     * Modified for jdk22: Accommodate lazy initialization, so counts
+     * may vary by 1, and some nodes become headers vs unlinked,
+     * compared to previous versions.
+     */
+
+    static void checkCount(int val, int expect) {
+        assertTrue(val == expect || val == expect - 1);
+    }
 
     int nodeCount(LinkedTransferQueue q) {
         int i = 0;
@@ -124,13 +140,15 @@ public class WhiteBox {
     public void addRemove() {
         LinkedTransferQueue q = new LinkedTransferQueue();
         assertInvariants(q);
-        assertNull(next(head(q)));
-        assertNull(item(head(q)));
+        if (head(q) != null) {
+            assertNull(next(head(q)));
+            assertNull(item(head(q)));
+        }
         q.add(1);
-        assertEquals(nodeCount(q), 2);
+        checkCount(nodeCount(q), 2);
         assertInvariants(q);
         q.remove(1);
-        assertEquals(nodeCount(q), 1);
+        checkCount(nodeCount(q), 1);
         assertInvariants(q);
     }
 
@@ -158,12 +176,12 @@ public class WhiteBox {
         Object oldHead;
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
-        assertEquals(nodeCount(q), n + 1);
+        checkCount(nodeCount(q), n + 1);
         oldHead = head(q);
         traversalAction.accept(q);
         assertInvariants(q);
-        assertEquals(nodeCount(q), n);
-        assertIsSelfLinked(oldHead);
+        checkCount(nodeCount(q), n);
+        //        assertIsSelfLinked(oldHead);
     }
 
     @Test(dataProvider = "traversalActions")
@@ -204,7 +222,7 @@ public class WhiteBox {
 
         int c = nodeCount(q);
         traversalAction.accept(q);
-        assertEquals(nodeCount(q), c - 1);
+        checkCount(nodeCount(q), c - 1);
 
         assertSame(next(p0), p4);
         assertSame(next(p1), p4);
@@ -217,7 +235,7 @@ public class WhiteBox {
         traversalAction.accept(q);
         assertSame(next(p4), p5);
         assertNull(next(p5));
-        assertEquals(nodeCount(q), c - 1);
+        checkCount(nodeCount(q), c - 1);
     }
 
     /**
@@ -228,7 +246,7 @@ public class WhiteBox {
     public void traversalOperationsCollapseRandomNodes(
         Consumer<LinkedTransferQueue> traversalAction) {
         LinkedTransferQueue q = new LinkedTransferQueue();
-        int n = rnd.nextInt(6);
+        int n = 1 + rnd.nextInt(6);
         for (int i = 0; i < n; i++) q.add(i);
         ArrayList nulledOut = new ArrayList();
         for (Object p = head(q); p != null; p = next(p))
@@ -238,7 +256,7 @@ public class WhiteBox {
             }
         traversalAction.accept(q);
         int c = nodeCount(q);
-        assertEquals(q.size(), c - (q.contains(n - 1) ? 0 : 1));
+        checkCount(c - (q.contains(n - 1) ? 0 : 1), q.size() + 1);
         for (int i = 0; i < n; i++)
             assertTrue(nulledOut.contains(i) ^ q.contains(i));
     }
@@ -263,7 +281,7 @@ public class WhiteBox {
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
         bulkRemovalAction.accept(q);
-        assertEquals(nodeCount(q), 1);
+        checkCount(nodeCount(q), 1);
         assertInvariants(q);
     }
 
@@ -289,13 +307,13 @@ public class WhiteBox {
         LinkedTransferQueue q = new LinkedTransferQueue();
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
-        assertEquals(nodeCount(q), n + 1);
+        checkCount(nodeCount(q), n + 1);
         for (int i = 0; i < n; i++) {
             int c = nodeCount(q);
             boolean slack = item(head(q)) == null;
             if (slack) assertNotNull(item(next(head(q))));
             pollAction.accept(q);
-            assertEquals(nodeCount(q), q.isEmpty() ? 1 : c - (slack ? 2 : 0));
+            checkCount(nodeCount(q), q.isEmpty() ? 1 : c - (slack ? 2 : 0));
         }
         assertInvariants(q);
     }
@@ -318,11 +336,12 @@ public class WhiteBox {
         LinkedTransferQueue q = new LinkedTransferQueue();
         int n = 1 + rnd.nextInt(9);
         for (int i = 0; i < n; i++) {
-            boolean slack = next(tail(q)) != null;
+            boolean empty = (tail(q) == null);
+            boolean slack = !empty && (next(tail(q)) != null);
             addAction.accept(q);
             if (slack)
                 assertNull(next(tail(q)));
-            else {
+            else if (!empty) {
                 assertNotNull(next(tail(q)));
                 assertNull(next(next(tail(q))));
             }
@@ -365,10 +384,9 @@ public class WhiteBox {
 
     /** Checks conditions which should always be true. */
     void assertInvariants(LinkedTransferQueue q) {
-        assertNotNull(head(q));
-        assertNotNull(tail(q));
         // head is never self-linked (but tail may!)
-        for (Object h; next(h = head(q)) == h; )
-            assertNotSame(h, head(q)); // must be update race
+        Object h;
+        if ((h = head(q)) != null)
+            assertNotSame(h, next(h));
     }
 }

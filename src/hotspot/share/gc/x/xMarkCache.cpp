@@ -40,4 +40,3 @@ XMarkCache::~XMarkCache() {
     _cache[i].evict();
   }
 }
-

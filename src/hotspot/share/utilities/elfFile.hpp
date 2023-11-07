@@ -70,6 +70,7 @@ typedef Elf32_Sym       Elf_Sym;
 #include "jvm_md.h"
 #include "globalDefinitions.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 
 #ifdef ASSERT
@@ -483,7 +484,7 @@ class DwarfFile : public ElfFile {
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    uint32_t _section_start_address;
+    uintptr_t _section_start_address;
 
     // a calculated end position
     long _entry_end;

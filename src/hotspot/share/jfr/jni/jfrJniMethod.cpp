@@ -290,9 +290,13 @@ JVM_ENTRY_NO_ENV(jobject, jfr_new_event_writer(JNIEnv* env, jclass jvm))
   return JfrJavaEventWriter::new_event_writer(thread);
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
-  return JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
-JVM_END
+NO_TRANSITION(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
+  JfrJavaEventWriter::flush(writer, used_size, requested_size, JavaThread::current());
+NO_TRANSITION_END
+
+NO_TRANSITION(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
+  return JfrJavaEventWriter::commit(next_position);
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jclass jvm))
   JfrRepository::flush(thread);

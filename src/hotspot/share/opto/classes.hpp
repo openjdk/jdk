@@ -312,6 +312,7 @@ macro(RotateRight)
 macro(RotateRightV)
 macro(SafePoint)
 macro(SafePointScalarObject)
+macro(SafePointScalarMerge)
 #if INCLUDE_SHENANDOAHGC
 #define shmacro(x) macro(x)
 #else

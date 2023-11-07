@@ -27,7 +27,6 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.dcmd.MainClassJcmdExecutor;
 import jdk.test.lib.dcmd.FileJcmdExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
-import nsk.share.jdi.ArgumentHandler;
 
 import org.testng.annotations.Test;
 
@@ -45,6 +44,7 @@ import org.testng.annotations.Test;
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @library /test/lib
  *          /vmTestbase
+ * @requires vm.flagless
  * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
 public class VMVersionTest {

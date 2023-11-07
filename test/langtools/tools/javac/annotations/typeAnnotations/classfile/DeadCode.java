@@ -26,13 +26,18 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 
 /*
  * @test
  * @bug 6917130 8006775
  * @summary test that optimized away annotations are not emited to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 
 public class DeadCode extends ClassfileTestHelper {
@@ -43,14 +48,13 @@ public class DeadCode extends ClassfileTestHelper {
     public void run() throws Exception {
         expected_tinvisibles = 1;
         expected_tvisibles = 0;
-
-        ClassFile cf = getClassFile("DeadCode$Test.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("DeadCode$Test.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m, true);
+        for (MethodModel mm: cm.methods()) {
+            test(mm, true);
         }
 
         countAnnotations();

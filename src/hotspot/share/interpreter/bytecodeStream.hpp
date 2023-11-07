@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class BaseBytecodeStream: StackObj {
   int             dest_w() const                 { return bci() + bytecode().get_offset_s4(raw_code()); }
 
   // One-byte indices.
-  int             get_index_u1() const           { assert_raw_index_size(1); return *(jubyte*)(bcp()+1); }
+  u1              get_index_u1() const           { assert_raw_index_size(1); return *(jubyte*)(bcp()+1); }
 
  protected:
   void assert_raw_index_size(int size) const NOT_DEBUG_RETURN;
@@ -149,12 +149,12 @@ class RawBytecodeStream: public BaseBytecodeStream {
   Bytecodes::Code raw_next_special(Bytecodes::Code code);
 
   // Unsigned indices, widening, with no swapping of bytes
-  int             get_index() const          { return (is_wide()) ? get_index_u2_raw(bcp() + 2) : get_index_u1(); }
+  u2              get_index() const          { return (is_wide()) ? get_index_u2_raw(bcp() + 2) : get_index_u1(); }
   // Get an unsigned 2-byte index, with no swapping of bytes.
-  int             get_index_u2() const       { assert(!is_wide(), ""); return get_index_u2_raw(bcp() + 1);  }
+  u2              get_index_u2() const       { assert(!is_wide(), ""); return get_index_u2_raw(bcp() + 1);  }
 
  private:
-  int get_index_u2_raw(address p) const {
+  u2  get_index_u2_raw(address p) const {
     assert_raw_index_size(2); assert_raw_stream(true);
     return Bytes::get_Java_u2(p);
   }
@@ -218,9 +218,9 @@ class BytecodeStream: public BaseBytecodeStream {
   Bytecodes::Code code() const                   { return _code; }
 
   // Unsigned indices, widening
-  int             get_index() const              { return is_wide() ? bytecode().get_index_u2(raw_code(), true) : get_index_u1(); }
+  u2              get_index() const              { return is_wide() ? bytecode().get_index_u2(raw_code(), true) : get_index_u1(); }
   // Get an unsigned 2-byte index, swapping the bytes if necessary.
-  int             get_index_u2() const           { assert_raw_stream(false);
+  u2              get_index_u2() const           { assert_raw_stream(false);
                                                    return bytecode().get_index_u2(raw_code(), false); }
   // Get an unsigned 2-byte index in native order.
   int             get_index_u2_cpcache() const   { assert_raw_stream(false);

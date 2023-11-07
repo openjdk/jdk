@@ -469,10 +469,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   SwitchRangeArray* create_lookup_ranges(LookupSwitch* x);
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
-#ifdef JFR_HAVE_INTRINSICS
-  void do_getEventWriter(Intrinsic* x);
-#endif
-
   void do_RuntimeCall(address routine, Intrinsic* x);
 
   ciKlass* profile_type(ciMethodData* md, int md_first_offset, int md_offset, intptr_t profiled_k,

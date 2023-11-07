@@ -77,7 +77,7 @@ static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
 
   FILE* fp;
   char buf[BUF_LENGTH];
-  int len;
+  size_t len;
 
   jio_snprintf(buf, BUF_LENGTH, "/proc/%llu/psinfo", pid);
   fp = fopen(buf, "r");

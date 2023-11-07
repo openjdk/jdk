@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public interface ObjectReference extends Value {
      * the method is being invoked if they were previously
      * suspended by an event or by {@link VirtualMachine#suspend} or
      * {@link ThreadReference#suspend}. This is done to prevent the deadlocks
-     * that will occur if any of the threads own monitors
+     * that will occur if any of the threads own resources, such as monitors,
      * that will be needed by the invoked method.
      * Note, however, that this implicit resume acts exactly like
      * {@link ThreadReference#resume}, so if the thread's suspend
@@ -238,6 +238,15 @@ public interface ObjectReference extends Value {
      * <p>
      * If the target VM is disconnected during the invoke (for example, through
      * {@link VirtualMachine#dispose}) the method invocation continues.
+     *
+     * @apiNote
+     * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">Virtual threads</a>
+     * are typically user-mode threads scheduled by the Java runtime rather than
+     * the operating system. As such, there may be more cases with virtual threads
+     * where the {@link #INVOKE_SINGLE_THREADED} option may cause a deadlock.
+     * For example, suspending all threads in the target VM may suspend threads that
+     * support the timer mechanism for virtual threads, and thus methods such as
+     * {@link Thread#sleep} may deadlock.
      *
      * @param thread the thread in which to invoke.
      * @param method the {@link Method} to invoke.

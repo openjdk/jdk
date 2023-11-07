@@ -39,9 +39,10 @@ public:
   virtual void do_card_ptr(CardValue* card_ptr, uint worker_id) = 0;
 
   // Process all the card_ptrs in node.
-  void apply_to_buffer(BufferNode* node, size_t buffer_capacity, uint worker_id) {
+  void apply_to_buffer(BufferNode* node, uint worker_id) {
     void** buffer = BufferNode::make_buffer_from_node(node);
-    for (size_t i = node->index(); i < buffer_capacity; ++i) {
+    size_t capacity = node->capacity();
+    for (size_t i = node->index(); i < capacity; ++i) {
       CardValue* card_ptr = static_cast<CardValue*>(buffer[i]);
       do_card_ptr(card_ptr, worker_id);
     }

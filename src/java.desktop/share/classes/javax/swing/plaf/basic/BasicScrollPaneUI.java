@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ public class BasicScrollPaneUI
                         } else {
                            /* The following line can't handle a small value of
                             * viewPosition.x like Integer.MIN_VALUE correctly
-                            * because (max - extent - viewPositoiin.x) causes
+                            * because (max - extent - viewPosition.x) causes
                             * an overflow. As a result, value becomes zero.
                             * (e.g. setViewPosition(Integer.MAX_VALUE, ...)
                             *       in a user program causes a overflow.
@@ -998,7 +998,8 @@ public class BasicScrollPaneUI
         //
         public void mouseWheelMoved(MouseWheelEvent e) {
             if (scrollpane.isWheelScrollingEnabled() &&
-                e.getWheelRotation() != 0) {
+                    scrollpane.isEnabled() &&
+                    e.getWheelRotation() != 0) {
                 JScrollBar toScroll = scrollpane.getVerticalScrollBar();
                 int direction = e.getWheelRotation() < 0 ? -1 : 1;
                 int orientation = SwingConstants.VERTICAL;

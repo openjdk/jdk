@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm -XX:-UseGCOverheadLimit gc.gctests.WeakReference.WeakReferenceTest
  */
-

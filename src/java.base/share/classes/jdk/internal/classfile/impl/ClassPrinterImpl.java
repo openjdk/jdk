@@ -570,9 +570,8 @@ public final class ClassPrinterImpl {
     private static Node[] constantPoolToTree(ConstantPool cp, Verbosity verbosity) {
         if (verbosity == Verbosity.TRACE_ALL) {
             var cpNode = new MapNodeImpl(BLOCK, "constant pool");
-            for (int i = 1; i < cp.entryCount();) {
-                var e = cp.entryByIndex(i);
-                cpNode.with(new MapNodeImpl(FLOW, i)
+            for (PoolEntry e : cp) {
+                cpNode.with(new MapNodeImpl(FLOW, e.index())
                         .with(leaf("tag", switch (e.tag()) {
                             case TAG_UTF8 -> "Utf8";
                             case TAG_INTEGER -> "Integer";
@@ -637,7 +636,6 @@ public final class ClassPrinterImpl {
                                 "value", String.valueOf(ve.constantValue())
                             );
                         }));
-                i += e.width();
             }
             return new Node[]{cpNode};
         } else {

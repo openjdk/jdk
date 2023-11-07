@@ -32,6 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/sizes.hpp"
+#include <limits>
 
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
@@ -50,17 +51,7 @@ class PtrQueue {
   // Value is always pointer-size aligned.
   size_t _index;
 
-  // Size of the current buffer, in bytes.
-  // Value is always pointer-size aligned.
-  size_t _capacity_in_bytes;
-
   static const size_t _element_size = sizeof(void*);
-
-  // Get the capacity, in bytes.  The capacity must have been set.
-  size_t capacity_in_bytes() const {
-    assert(_capacity_in_bytes > 0, "capacity not set");
-    return _capacity_in_bytes;
-  }
 
   static size_t byte_index_to_index(size_t ind) {
     assert(is_aligned(ind, _element_size), "precondition");
@@ -92,17 +83,19 @@ public:
   }
 
   void set_index(size_t new_index) {
-    assert(new_index <= capacity(), "precondition");
+    assert(new_index <= current_capacity(), "precondition");
     _index = index_to_byte_index(new_index);
   }
 
-  size_t capacity() const {
-    return byte_index_to_index(capacity_in_bytes());
-  }
+  // Returns the capacity of the buffer, or 0 if the queue doesn't currently
+  // have a buffer.
+  size_t current_capacity() const;
 
-  // To support compiler.
+  bool is_empty() const { return index() == current_capacity(); }
+  size_t size() const { return current_capacity() - index(); }
 
 protected:
+  // To support compiler.
   template<typename Derived>
   static ByteSize byte_offset_of_index() {
     return byte_offset_of(Derived, _index);
@@ -119,12 +112,19 @@ protected:
 };
 
 class BufferNode {
-  size_t _index;
+  using InternalSizeType = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);
+  static_assert(sizeof(InternalSizeType) <= sizeof(size_t), "assumption");
+
+  InternalSizeType _index;
+  InternalSizeType _capacity;
   BufferNode* volatile _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
-  BufferNode() : _index(0), _next(nullptr) { }
-  ~BufferNode() { }
+  BufferNode(InternalSizeType capacity)
+    : _index(capacity), _capacity(capacity), _next(nullptr)
+  {}
+
+  ~BufferNode() = default;
 
   NONCOPYABLE(BufferNode);
 
@@ -133,19 +133,36 @@ class BufferNode {
   }
 
 public:
+  static constexpr size_t max_size() {
+    return std::numeric_limits<InternalSizeType>::max();
+  }
+
   static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
   typedef LockFreeStack<BufferNode, &next_ptr> Stack;
 
   BufferNode* next() const     { return _next;  }
   void set_next(BufferNode* n) { _next = n;     }
   size_t index() const         { return _index; }
-  void set_index(size_t i)     { _index = i; }
+
+  void set_index(size_t i)     {
+    assert(i <= capacity(), "precondition");
+    _index = static_cast<InternalSizeType>(i);
+  }
+
+  size_t capacity() const      { return _capacity; }
+
+  bool is_empty() const { return index() == capacity(); }
+  size_t size() const { return capacity() - index(); }
+
+  // Return the BufferNode containing the buffer, WITHOUT setting its index.
+  static BufferNode* make_node_from_buffer(void** buffer) {
+    char* base = reinterpret_cast<char*>(buffer) - buffer_offset();
+    return reinterpret_cast<BufferNode*>(base);
+  }
 
   // Return the BufferNode containing the buffer, after setting its index.
   static BufferNode* make_node_from_buffer(void** buffer, size_t index) {
-    BufferNode* node =
-      reinterpret_cast<BufferNode*>(
-        reinterpret_cast<char*>(buffer) - buffer_offset());
+    BufferNode* node = make_node_from_buffer(buffer);
     node->set_index(index);
     return node;
   }
@@ -166,6 +183,7 @@ public:
 // FreeListAllocator.
 class BufferNode::AllocatorConfig : public FreeListConfig {
   const size_t _buffer_capacity;
+
 public:
   explicit AllocatorConfig(size_t size);
 

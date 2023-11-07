@@ -25,15 +25,18 @@
  * @test
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
  * @run main LambdaTestStrictFPFlag
  */
 
 import java.io.*;
 import java.net.URL;
-import com.sun.tools.classfile.*;
-import static com.sun.tools.classfile.AccessFlags.ACC_STRICT;
+import jdk.internal.classfile.*;
 
 public class LambdaTestStrictFPFlag {
     public static void main(String[] args) throws Exception {
@@ -41,12 +44,11 @@ public class LambdaTestStrictFPFlag {
     }
 
     void run() throws Exception {
-        ClassFile cf = getClassFile("LambdaTestStrictFPFlag$Test.class");
-        ConstantPool cp = cf.constant_pool;
+        ClassModel cm = getClassFile("LambdaTestStrictFPFlag$Test.class");
         boolean found = false;
-        for (Method meth: cf.methods) {
-            if (meth.getName(cp).startsWith("lambda$")) {
-                if ((meth.access_flags.flags & ACC_STRICT) == 0) {
+        for (MethodModel meth: cm.methods()) {
+            if (meth.methodName().stringValue().startsWith("lambda$")) {
+                if ((meth.flags().flagsMask() & Classfile.ACC_STRICT) == 0){
                     throw new Exception("strict flag missing from lambda");
                 }
                 found = true;
@@ -57,13 +59,11 @@ public class LambdaTestStrictFPFlag {
         }
     }
 
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
+    ClassModel getClassFile(String name) throws IOException {
         URL url = getClass().getResource(name);
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
+        assert url != null;
+        try (InputStream in = url.openStream()) {
+            return Classfile.of().parse(in.readAllBytes());
         }
     }
 

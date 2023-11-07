@@ -30,8 +30,10 @@
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
+#include "oops/array.hpp"
 #include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_CDS
@@ -58,12 +60,22 @@ public:
 };
 
 class DynamicArchive : AllStatic {
+private:
+  static GrowableArray<ObjArrayKlass*>* _array_klasses;
+  static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
   static void check_for_dynamic_dump();
   static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump_at_exit(JavaThread* current, const char* archive_name);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != nullptr; }
   static bool validate(FileMapInfo* dynamic_info);
+  static void dump_array_klasses();
+  static void setup_array_klasses();
+  static void append_array_klass(ObjArrayKlass* oak);
+  static void serialize_array_klasses(SerializeClosure* soc);
+  static void make_array_klasses_shareable();
+  static void post_dump();
+  static int  num_array_klasses();
 };
 #endif // INCLUDE_CDS
 #endif // SHARE_CDS_DYNAMICARCHIVE_HPP

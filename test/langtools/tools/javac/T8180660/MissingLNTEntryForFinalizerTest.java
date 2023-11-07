@@ -25,7 +25,12 @@
  * @test
  * @bug 8180141
  * @summary Missing entry in LineNumberTable for break statement that jumps out of try-finally
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.file
@@ -42,7 +47,6 @@ import java.net.URI;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 
-import com.sun.tools.classfile.*;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -53,6 +57,8 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import static com.sun.tools.javac.util.List.of;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -83,19 +89,19 @@ public class MissingLNTEntryForFinalizerTest {
         }
         File testClasses = new File(".");
         File file = new File(testClasses, "Test1.class");
-        ClassFile classFile = ClassFile.read(file);
-        for (Method m : classFile.methods) {
-            if (classFile.constant_pool.getUTF8Value(m.name_index).equals("foo")) {
-                Code_attribute code = (Code_attribute)m.attributes.get(Attribute.Code);
-                LineNumberTable_attribute lnt = (LineNumberTable_attribute)code.attributes.get(Attribute.LineNumberTable);
+        ClassModel classFile = Classfile.of().parse(file.toPath());
+        for (MethodModel m : classFile.methods()) {
+            if (m.methodName().equalsString("foo")) {
+                CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
                 checkLNT(lnt, MyAttr.lineNumber);
             }
         }
     }
 
-    void checkLNT(LineNumberTable_attribute lnt, int lineToCheckFor) {
-        for (LineNumberTable_attribute.Entry e: lnt.line_number_table) {
-            if (e.line_number == lineToCheckFor) {
+    void checkLNT(LineNumberTableAttribute lnt, int lineToCheckFor) {
+        for (LineNumberInfo e: lnt.lineNumbers()) {
+            if (e.lineNumber() == lineToCheckFor) {
                 return;
             }
         }

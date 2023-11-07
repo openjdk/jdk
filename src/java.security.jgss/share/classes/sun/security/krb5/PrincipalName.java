@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,12 +209,9 @@ public class PrincipalName implements Cloneable {
         if (this == o) {
             return true;
         }
-        if (o instanceof PrincipalName) {
-            PrincipalName other = (PrincipalName)o;
-            return nameRealm.equals(other.nameRealm) &&
-                    Arrays.equals(nameStrings, other.nameStrings);
-        }
-        return false;
+        return o instanceof PrincipalName other
+                && nameRealm.equals(other.nameRealm)
+                && Arrays.equals(nameStrings, other.nameStrings);
     }
 
     /**
@@ -513,6 +510,7 @@ public class PrincipalName implements Cloneable {
         return temp.toString();
     }
 
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }

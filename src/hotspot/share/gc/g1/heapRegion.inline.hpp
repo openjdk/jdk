@@ -281,8 +281,8 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
-  if (is_old_or_humongous()) {
+  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
+  if (is_old_or_humongous() && !is_collection_set_candidate()) {
     set_top_at_mark_start(top());
   }
 }
@@ -501,14 +501,14 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   return oops_on_memregion_iterate<Closure, in_gc_pause>(mr, cl);
 }
 
-inline int HeapRegion::age_in_surv_rate_group() const {
+inline uint HeapRegion::age_in_surv_rate_group() const {
   assert(has_surv_rate_group(), "pre-condition");
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   return _surv_rate_group->age_in_group(_age_index);
 }
 
 inline bool HeapRegion::has_valid_age_in_surv_rate() const {
-  return G1SurvRateGroup::is_valid_age_index(_age_index);
+  return _surv_rate_group->is_valid_age_index(_age_index);
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
@@ -537,15 +537,13 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     _surv_rate_group = nullptr;
     _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
-    assert(!has_valid_age_in_surv_rate(), "pre-condition");
+    assert(_age_index == G1SurvRateGroup::InvalidAgeIndex, "inv");
   }
 }
 
 inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
-  assert(has_surv_rate_group(), "pre-condition");
-  assert(has_valid_age_in_surv_rate(), "pre-condition");
-  int age_in_group = age_in_surv_rate_group();
-  _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+  uint age = age_in_surv_rate_group();
+  _surv_rate_group->record_surviving_words(age, words_survived);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import javax.tools.Diagnostic;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.util.StringUtils;
 import jdk.javadoc.internal.doclint.Env.AccessKind;
 
@@ -96,6 +97,10 @@ public class Messages {
         report(group, Diagnostic.Kind.WARNING, tree, code, args);
     }
 
+    void note(Group group, String code, Object... args) {
+        report(group, Diagnostic.Kind.NOTE, code, args);
+    }
+
     void setOptions(String opts) {
         options.setOptions(opts);
     }
@@ -110,6 +115,18 @@ public class Messages {
 
     void reportStats(PrintWriter out) {
         stats.report(out);
+    }
+
+    protected void report(Group group, Diagnostic.Kind dkind, String code, Object... args) {
+        if (options.isEnabled(group, env.currAccess)) {
+            if (dkind == Diagnostic.Kind.WARNING && env.suppressWarnings(group)) {
+                return;
+            }
+            String msg = (code == null) ? (String) args[0] : localize(code, args);
+            ((JavacTrees) env.trees).printMessage(dkind, msg);
+
+            stats.record(group, dkind, code);
+        }
     }
 
     protected void report(Group group, Diagnostic.Kind dkind, DocTree tree, String code, Object... args) {

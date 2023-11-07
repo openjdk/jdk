@@ -843,9 +843,7 @@ class CompileReplay : public StackObj {
     // method to be rewritten (number of arguments at a call for instance)
     method->method_holder()->link_class(CHECK);
     assert(method->method_data() == nullptr, "Should only be initialized once");
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
-    method->set_method_data(method_data);
+    method->build_profiling_method_data(methodHandle(THREAD, method), CHECK);
 
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);

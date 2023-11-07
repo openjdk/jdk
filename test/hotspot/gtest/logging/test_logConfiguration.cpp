@@ -36,6 +36,8 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
+using testing::HasSubstr;
+
 class LogConfigurationTest : public LogTestFixture {
  protected:
   static char _all_decorators[256];
@@ -71,26 +73,26 @@ TEST_VM_F(LogConfigurationTest, describe) {
   const char* description = ss.as_string();
 
   // Verify that stdout and stderr are listed by default
-  EXPECT_PRED2(string_contains_substring, description, LogConfiguration::StdoutLog->name());
-  EXPECT_PRED2(string_contains_substring, description, LogConfiguration::StderrLog->name());
+  EXPECT_THAT(description, HasSubstr(LogConfiguration::StdoutLog->name()));
+  EXPECT_THAT(description, HasSubstr(LogConfiguration::StderrLog->name()));
 
   // Verify that each tag, level and decorator is listed
   for (size_t i = 0; i < LogTag::Count; i++) {
-    EXPECT_PRED2(string_contains_substring, description, LogTag::name(static_cast<LogTagType>(i)));
+    EXPECT_THAT(description, HasSubstr(LogTag::name(static_cast<LogTagType>(i))));
   }
   for (size_t i = 0; i < LogLevel::Count; i++) {
-    EXPECT_PRED2(string_contains_substring, description, LogLevel::name(static_cast<LogLevelType>(i)));
+    EXPECT_THAT(description, HasSubstr(LogLevel::name(static_cast<LogLevelType>(i))));
   }
   for (size_t i = 0; i < LogDecorators::Count; i++) {
-    EXPECT_PRED2(string_contains_substring, description, LogDecorators::name(static_cast<LogDecorators::Decorator>(i)));
+    EXPECT_THAT(description, HasSubstr(LogDecorators::name(static_cast<LogDecorators::Decorator>(i))));
   }
 
   // Verify that the default configuration is printed
   char expected_buf[256];
   int ret = jio_snprintf(expected_buf, sizeof(expected_buf), "=%s", LogLevel::name(LogLevel::Default));
   ASSERT_NE(-1, ret);
-  EXPECT_PRED2(string_contains_substring, description, expected_buf);
-  EXPECT_PRED2(string_contains_substring, description, "#1: stderr all=off");
+  EXPECT_THAT(description, HasSubstr(expected_buf));
+  EXPECT_THAT(description, HasSubstr("#1: stderr all=off"));
 
   // Verify default decorators are listed
   LogDecorators default_decorators;
@@ -107,7 +109,7 @@ TEST_VM_F(LogConfigurationTest, describe) {
       ASSERT_NE(-1, ret);
     }
   }
-  EXPECT_PRED2(string_contains_substring, description, expected_buf);
+  EXPECT_THAT(description, HasSubstr(expected_buf));
 
   // Add a new output and verify that it gets described after it has been added
   const char* what = "all=trace";
@@ -493,8 +495,8 @@ TEST_VM_F(LogConfigurationTest, parse_invalid_tagset) {
   bool success = LogConfiguration::parse_log_arguments("stdout", invalid_tagset, NULL, NULL, &ss);
   const char* msg = ss.as_string();
   EXPECT_TRUE(success) << "Should only cause a warning, not an error";
-  EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection:"));
-  EXPECT_TRUE(string_contains_substring(msg, invalid_tagset));
+  EXPECT_THAT(msg, HasSubstr("No tag set matches selection:"));
+  EXPECT_THAT(msg, HasSubstr(invalid_tagset));
 }
 
 TEST_VM_F(LogConfigurationTest, output_name_normalization) {
@@ -559,7 +561,7 @@ TEST_VM_F(LogConfigurationTest, suggest_similar_selection) {
 
   const char* suggestion = ss.as_string();
   SCOPED_TRACE(suggestion);
-  EXPECT_TRUE(string_contains_substring(ss.as_string(), "Did you mean any of the following?"));
+  EXPECT_THAT(suggestion, HasSubstr("Did you mean any of the following?"));
   EXPECT_TRUE(string_contains_substring(suggestion, "logging") ||
               string_contains_substring(suggestion, "start") ||
               string_contains_substring(suggestion, "exit") ||

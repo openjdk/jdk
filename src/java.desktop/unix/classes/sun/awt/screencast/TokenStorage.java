@@ -324,6 +324,10 @@ final class TokenStorage {
                         return tokenItem;
                     })
                     .filter(Objects::nonNull)
+                    .sorted((t1, t2) -> //Token with more screens preferred
+                            t2.allowedScreensBounds.size()
+                            - t1.allowedScreensBounds.size()
+                    )
                     .toList();
         }
 
@@ -364,6 +368,17 @@ final class TokenStorage {
         if (SCREENCAST_DEBUG) {
             System.out.println("// getTokens same sizes 2. " + result);
         }
+
+        // 3. add tokens with the same or greater number of screens
+        // This is useful if we once received a token with one screen resolution
+        // and the same screen was later scaled in the system.
+        // In that case, the token is still valid.
+
+        allTokenItems
+                .stream()
+                .filter(t ->
+                        t.allowedScreensBounds.size() >= affectedScreenBounds.size())
+                .forEach(result::add);
 
         return result;
     }

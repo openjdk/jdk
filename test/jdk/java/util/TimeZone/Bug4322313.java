@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,18 @@
  * @summary Make sure that new implementation of custom time zone
  * support for TimeZone.getTimeZone() works correctly and the
  * getDisplayName() methods are locale independent.
- * @library /java/text/testlib
+ * @run junit Bug4322313
  */
 
 import java.io.*;
 import java.text.*;
 import java.util.*;
 
-public class Bug4322313 extends IntlTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class Bug4322313 {
     private static final int MPM = 60 * 1000;    /* Milliseconds per minute */
     private static final Object[][] VALIDS = {
         /* given ID    rawOffset   normalized ID */
@@ -106,7 +110,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] Invalid TimeZone ID, expected:" +
                                            VALIDS[k][2] + ", got:" + tz.getID() + ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + VALIDS[k][0] +
                               "\"] Valid TimeZone ID, got:" + VALIDS[k][2]);
                     }
@@ -119,7 +123,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] Invalid RawOffset, expected:" + VALIDS[k][1] +
                                            ", got:" + offset + ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + VALIDS[k][0] +
                               "\"] Vaild RawOffset, got:" + offset);
                     }
@@ -132,7 +136,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] DSTSavings should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + VALIDS[k][0] +
                               "\"] DSTSavings is zero.");
                     }
@@ -150,7 +154,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] Invalid TimeZone ID, expected:GMT, got:" +
                                            tz.getID() + ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + INVALIDS[k] +
                               "\"] Valid TimeZone ID, got:" + tz.getID());
                     }
@@ -163,7 +167,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] RawOffset should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + INVALIDS[k] +
                               "\"] RawOffset is zero.");
                     }
@@ -176,7 +180,7 @@ public class Bug4322313 extends IntlTest {
                                            "\"] DSTSavings should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
-                        logln("\tPassed [Locale=" +
+                        System.out.println("\tPassed [Locale=" +
                               locale + ", \"" + INVALIDS[k] +
                               "\"] DSTSavings is zero.");
                     }
@@ -218,13 +222,10 @@ public class Bug4322313 extends IntlTest {
             TimeZone.setDefault(savedTimeZone);
         }
         if (err) {
-            errln("TimeZone.getTimeZone() test failed");
+            fail("TimeZone.getTimeZone() test failed");
         } else {
-            logln("TimeZone.getTimeZone() test passed");
+            System.out.println("TimeZone.getTimeZone() test passed");
         }
     }
 
-    public static void main (String[] args) throws Exception {
-        new Bug4322313().run(args);
-    }
 }

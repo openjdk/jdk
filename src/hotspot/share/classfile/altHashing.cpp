@@ -110,7 +110,7 @@ static void halfsiphash_adddata(uint32_t v[4], uint32_t newdata, int rounds) {
 
 static void halfsiphash_init32(uint32_t v[4], uint64_t seed) {
   v[0] = seed & 0xffffffff;
-  v[1] = seed >> 32;
+  v[1] = (uint32_t)(seed >> 32);
   v[2] = 0x6c796765 ^ v[0];
   v[3] = 0x74656462 ^ v[1];
 }

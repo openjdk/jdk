@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package jdk.test.lib.net;
+
+import jdk.test.lib.Platform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +50,9 @@ public class IPSupport {
     private static final boolean hasIPv6;
     private static final boolean preferIPv4Stack;
     private static final boolean preferIPv6Addresses;
+    private static final int IPV4_SNDBUF = 65507;
+    private static final int IPV6_SNDBUF = 65527;
+    private static final int IPV6_SNDBUF_AIX = 65487;
 
     static {
         hasIPv4 = runPrivilegedAction(() -> isSupported(Inet4Address.class));
@@ -111,7 +116,6 @@ public class IPSupport {
         return preferIPv6Addresses;
     }
 
-
     /**
      * Whether or not the current networking configuration is valid or not.
      *
@@ -154,4 +158,21 @@ public class IPSupport {
         out.println("preferIPv6Addresses: " + preferIPv6Addresses());
     }
 
+    /**
+     * Return current platform's maximum size for IPv4 UDP send buffer
+     */
+    public static final int getMaxUDPSendBufSizeIPv4() {
+        return IPV4_SNDBUF;
+    }
+
+    /**
+     * Return current platform's maximum size for IPv6 UDP send buffer
+     */
+    public static final int getMaxUDPSendBufSizeIPv6() {
+        if (Platform.isAix()) {
+            return IPV6_SNDBUF_AIX;
+        } else {
+            return IPV6_SNDBUF;
+        }
+    }
 }

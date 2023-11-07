@@ -23,12 +23,12 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "sun_awt_windows_ThemeReader.h"
 
 #include "awt.h"
 #include "awt_Toolkit.h"
-
-#include "math.h"
 
 #include <uxtheme.h>
 
@@ -421,6 +421,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
             NULL, 0);
     if (hDibSection == NULL) {
         DTRACE_PRINTLN("Error creating DIB section");
+        DeleteDC(memDC);
         ReleaseDC(NULL,defaultDC);
         return;
     }

@@ -224,14 +224,30 @@ inline oop* frame::interpreter_frame_temp_oop_addr() const {
 }
 
 inline intptr_t* frame::interpreter_frame_esp() const {
-  return (intptr_t*) at(ijava_idx(esp));
+  return (intptr_t*) at_relative(ijava_idx(esp));
 }
 
 // Convenient setters
-inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end)    { get_ijava_state()->monitors = (intptr_t) end;}
+inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized monitors
+  get_ijava_state()->monitors = (intptr_t) ((intptr_t*)end - fp());
+}
+
 inline void frame::interpreter_frame_set_cpcache(ConstantPoolCache* cp)       { *interpreter_frame_cache_addr() = cp; }
-inline void frame::interpreter_frame_set_esp(intptr_t* esp)                   { get_ijava_state()->esp = (intptr_t) esp; }
-inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) { get_ijava_state()->top_frame_sp = (intptr_t) top_frame_sp; }
+
+inline void frame::interpreter_frame_set_esp(intptr_t* esp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized esp
+  get_ijava_state()->esp = (intptr_t) (esp - fp());
+}
+
+inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized top_frame_sp
+  get_ijava_state()->top_frame_sp = (intptr_t) (top_frame_sp - fp());
+}
+
 inline void frame::interpreter_frame_set_sender_sp(intptr_t* sender_sp)       { get_ijava_state()->sender_sp = (intptr_t) sender_sp; }
 
 inline intptr_t* frame::interpreter_frame_expression_stack() const {
@@ -241,15 +257,11 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 
 // top of expression stack
 inline intptr_t* frame::interpreter_frame_tos_address() const {
-  return (intptr_t*)at(ijava_idx(esp)) + Interpreter::stackElementWords;
+  return interpreter_frame_esp() + Interpreter::stackElementWords;
 }
 
 inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
-}
-
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  return frame::interpreter_frame_monitor_size() * wordSize;
 }
 
 // entry frames

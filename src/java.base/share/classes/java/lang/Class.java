@@ -83,6 +83,7 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
@@ -438,6 +439,9 @@ public final class Class<T> implements java.io.Serializable,
      * If {@code name} denotes a primitive type or void, for example {@code I},
      * an attempt will be made to locate a user-defined class in the unnamed package
      * whose name is {@code I} instead.
+     * To obtain a {@code Class} object for a named primitive type
+     * such as {@code int} or {@code long} use {@link
+     * #forPrimitiveName(String)}.
      *
      * <p> To obtain the {@code Class} object associated with an array class,
      * the name consists of one or more {@code '['} representing the depth
@@ -626,6 +630,41 @@ public final class Class<T> implements java.io.Serializable,
         } else {
             return BootLoader.loadClass(module, name);
         }
+    }
+
+    /**
+     * {@return the {@code Class} object associated with the
+     * {@linkplain #isPrimitive() primitive type} of the given name}
+     * If the argument is not the name of a primitive type, {@code
+     * null} is returned.
+     *
+     * @param primitiveName the name of the primitive type to find
+     *
+     * @throws NullPointerException if the argument is {@code null}
+     *
+     * @jls 4.2 Primitive Types and Values
+     * @jls 15.8.2 Class Literals
+     * @since 22
+     */
+    public static Class<?> forPrimitiveName(String primitiveName) {
+        return switch(primitiveName) {
+        // Integral types
+        case "int"     -> int.class;
+        case "long"    -> long.class;
+        case "short"   -> short.class;
+        case "char"    -> char.class;
+        case "byte"    -> byte.class;
+
+        // Floating-point types
+        case "float"   -> float.class;
+        case "double"  -> double.class;
+
+        // Other types
+        case "boolean" -> boolean.class;
+        case "void"    -> void.class;
+
+        default        -> null;
+        };
     }
 
     /**
@@ -1022,6 +1061,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // set by VM
+    @Stable
     private transient Module module;
 
     // Initialized in JVM not by private constructor
@@ -1130,7 +1170,6 @@ public final class Class<T> implements java.io.Serializable,
      * this method returns {@code null}.
      *
      * @return the package of this class.
-     * @revised 9
      */
     public Package getPackage() {
         if (isPrimitive() || isArray()) {
@@ -2991,7 +3030,6 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @see Module#getResourceAsStream(String)
      * @since  1.1
-     * @revised 9
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) {
@@ -3087,7 +3125,6 @@ public final class Class<T> implements java.io.Serializable,
      *         manager.
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
-     * @revised 9
      */
     @CallerSensitive
     public URL getResource(String name) {

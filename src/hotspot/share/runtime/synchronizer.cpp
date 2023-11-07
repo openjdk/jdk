@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -54,6 +54,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -1168,8 +1169,8 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   }
   if (NoAsyncDeflationProgressMax != 0 &&
       _no_progress_cnt >= NoAsyncDeflationProgressMax) {
-    float remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-    size_t new_ceiling = ceiling + (ceiling * remainder) + 1;
+    double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
+    size_t new_ceiling = ceiling + (size_t)((double)ceiling * remainder) + 1;
     ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
     log_info(monitorinflation)("Too many deflations without progress; "
                                "bumping in_use_list_ceiling from " SIZE_FORMAT
@@ -1182,7 +1183,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
   if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
     log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
-                               ", monitor_usage=" SIZE_FORMAT ", threshold=" INTX_FORMAT,
+                               ", monitor_usage=" SIZE_FORMAT ", threshold=%d",
                                monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
     return true;
   }
@@ -1640,12 +1641,13 @@ public:
   bool evaluate_at_safepoint() const override { return false; }
   VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
   void doit() override {
-    SuspendibleThreadSet::synchronize();
-    SuspendibleThreadSet::desynchronize();
+    Universe::heap()->safepoint_synchronize_begin();
+    Universe::heap()->safepoint_synchronize_end();
   };
 };
 
 static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+  NativeHeapTrimmer::SuspendMark sm("monitor deletion");
   size_t count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;

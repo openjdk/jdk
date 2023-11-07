@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestSegmentCopy
  */
 
@@ -171,7 +170,7 @@ public class TestSegmentCopy {
         }
 
         VarHandle handle() {
-            return MethodHandles.memorySegmentViewVarHandle(layout);
+            return layout.varHandle();
         }
 
         void set(MemorySegment segment, long offset, int index, int val) {

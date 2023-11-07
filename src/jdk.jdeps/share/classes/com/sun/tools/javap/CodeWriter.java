@@ -28,14 +28,15 @@ package com.sun.tools.javap;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.DescriptorException;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Instruction.TypeKind;
-import com.sun.tools.classfile.Method;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Opcode;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.instruction.*;
 
 /*
  *  Write the contents of a Code attribute.
@@ -68,161 +69,148 @@ public class CodeWriter extends BasicWriter {
         options = Options.instance(context);
     }
 
-    void write(Code_attribute attr, ConstantPool constant_pool) {
+    void write(CodeAttribute attr) {
         println("Code:");
         indent(+1);
-        writeVerboseHeader(attr, constant_pool);
+        writeVerboseHeader(attr);
         writeInstrs(attr);
         writeExceptionTable(attr);
-        attrWriter.write(attr, attr.attributes, constant_pool);
+        attrWriter.write(attr.attributes(), attr);
         indent(-1);
     }
 
-    public void writeVerboseHeader(Code_attribute attr, ConstantPool constant_pool) {
-        Method method = classWriter.getMethod();
-        String argCount;
-        try {
-            int n = method.descriptor.getParameterCount(constant_pool);
-            if (!method.access_flags.is(AccessFlags.ACC_STATIC))
-                ++n;  // for 'this'
-            argCount = Integer.toString(n);
-        } catch (ConstantPoolException e) {
-            argCount = report(e);
-        } catch (DescriptorException e) {
-            argCount = report(e);
-        }
-
-        println("stack=" + attr.max_stack +
-                ", locals=" + attr.max_locals +
-                ", args_size=" + argCount);
-
+    public void writeVerboseHeader(CodeAttribute attr) {
+        MethodModel method = attr.parent().get();
+        int n = method.methodTypeSymbol().parameterCount();
+        if ((method.flags().flagsMask() & Classfile.ACC_STATIC) == 0)
+            ++n;  // for 'this'
+        println("stack=" + attr.maxStack() +
+                ", locals=" + attr.maxLocals() +
+                ", args_size=" + Integer.toString(n));
     }
 
-    public void writeInstrs(Code_attribute attr) {
+    public void writeInstrs(CodeAttribute attr) {
         List<InstructionDetailWriter> detailWriters = getDetailWriters(attr);
 
-        for (Instruction instr: attr.getInstructions()) {
-            try {
-                for (InstructionDetailWriter w: detailWriters)
-                    w.writeDetails(instr);
-                writeInstr(instr);
-            } catch (ArrayIndexOutOfBoundsException | IllegalStateException e) {
-                println(report("error at or after byte " + instr.getPC()));
-                break;
+        int pc = 0;
+        try {
+            for (var coe: attr) {
+                if (coe instanceof Instruction instr) {
+                    for (InstructionDetailWriter w: detailWriters)
+                        w.writeDetails(pc, instr);
+                    writeInstr(pc, instr, attr);
+                    pc += instr.sizeInBytes();
+                }
             }
+        } catch (IllegalArgumentException e) {
+            report("error at or after byte " + pc);
         }
 
         for (InstructionDetailWriter w: detailWriters)
-            w.flush();
+            w.flush(pc);
     }
 
-    public void writeInstr(Instruction instr) {
-        print(String.format("%4d: %-13s ", instr.getPC(), instr.getMnemonic()));
-        // compute the number of indentations for the body of multi-line instructions
-        // This is 6 (the width of "%4d: "), divided by the width of each indentation level,
-        // and rounded up to the next integer.
-        int indentWidth = options.indentWidth;
-        int indent = (6 + indentWidth - 1) / indentWidth;
-        instr.accept(instructionPrinter, indent);
-        println();
+    public void writeInstr(int pc, Instruction ins, CodeAttribute lr) {
+        print(String.format("%4d: %-13s ", pc, ins.opcode().name().toLowerCase(Locale.US)));
+        try {
+            // compute the number of indentations for the body of multi-line instructions
+            // This is 6 (the width of "%4d: "), divided by the width of each indentation level,
+            // and rounded up to the next integer.
+            int indentWidth = options.indentWidth;
+            int indent = (6 + indentWidth - 1) / indentWidth;
+            switch (ins) {
+                case BranchInstruction instr ->
+                    print(lr.labelToBci(instr.target()));
+                case ConstantInstruction.ArgumentConstantInstruction instr ->
+                    print(instr.constantValue());
+                case ConstantInstruction.LoadConstantInstruction instr ->
+                    printConstantPoolRef(instr.constantEntry());
+                case FieldInstruction instr ->
+                    printConstantPoolRef(instr.field());
+                case InvokeDynamicInstruction instr ->
+                    printConstantPoolRefAndValue(instr.invokedynamic(), 0);
+                case InvokeInstruction instr -> {
+                    if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
+                        printConstantPoolRefAndValue(instr.method(), instr.count());
+                    else printConstantPoolRef(instr.method());
+                }
+                case LoadInstruction instr ->
+                    print(instr.sizeInBytes() > 1 ? instr.slot() : "");
+                case StoreInstruction instr ->
+                    print(instr.sizeInBytes() > 1 ? instr.slot() : "");
+                case IncrementInstruction instr ->
+                    print(instr.slot() + ", " + instr.constant());
+                case LookupSwitchInstruction instr -> {
+                    var cases = instr.cases();
+                    print("{ // " + cases.size());
+                    indent(indent);
+                    for (var c : cases)
+                        print(String.format("%n%12d: %d", c.caseValue(),
+                                lr.labelToBci(c.target())));
+                    print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
+                    indent(-indent);
+                }
+                case NewMultiArrayInstruction instr ->
+                    printConstantPoolRefAndValue(instr.arrayType(), instr.dimensions());
+                case NewObjectInstruction instr ->
+                    printConstantPoolRef(instr.className());
+                case NewPrimitiveArrayInstruction instr ->
+                    print(" " + instr.typeKind().typeName());
+                case NewReferenceArrayInstruction instr ->
+                    printConstantPoolRef(instr.componentType());
+                case TableSwitchInstruction instr -> {
+                    print("{ // " + instr.lowValue() + " to " + instr.highValue());
+                    indent(indent);
+                    var caseMap = instr.cases().stream().collect(
+                            Collectors.toMap(SwitchCase::caseValue, SwitchCase::target));
+                    for (int i = instr.lowValue(); i <= instr.highValue(); i++)
+                        print(String.format("%n%12d: %d", i,
+                                lr.labelToBci(caseMap.getOrDefault(i, instr.defaultTarget()))));
+                    print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
+                    indent(-indent);
+                }
+                case TypeCheckInstruction instr ->
+                    printConstantPoolRef(instr.type());
+                default -> {}
+            }
+            println();
+        } catch (IllegalArgumentException e) {
+            println(report(e));
+        }
     }
-    // where
-    Instruction.KindVisitor<Void,Integer> instructionPrinter =
-            new Instruction.KindVisitor<>() {
 
-        public Void visitNoOperands(Instruction instr, Integer indent) {
-            return null;
-        }
+    private void printConstantPoolRef(PoolEntry entry) {
+        print("#" + entry.index());
+        tab();
+        print("// ");
+        constantWriter.write(entry.index());
+    }
 
-        public Void visitArrayType(Instruction instr, TypeKind kind, Integer indent) {
-            print(" " + kind.name);
-            return null;
-        }
+    private void printConstantPoolRefAndValue(PoolEntry entry, int value) {
+        print("#" + entry.index() + ",  " + value);
+        tab();
+        print("// ");
+        constantWriter.write(entry.index());
+    }
 
-        public Void visitBranch(Instruction instr, int offset, Integer indent) {
-            print((instr.getPC() + offset));
-            return null;
-        }
-
-        public Void visitConstantPoolRef(Instruction instr, int index, Integer indent) {
-            print("#" + index);
-            tab();
-            print("// ");
-            printConstant(index);
-            return null;
-        }
-
-        public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Integer indent) {
-            print("#" + index + ",  " + value);
-            tab();
-            print("// ");
-            printConstant(index);
-            return null;
-        }
-
-        public Void visitLocal(Instruction instr, int index, Integer indent) {
-            print(index);
-            return null;
-        }
-
-        public Void visitLocalAndValue(Instruction instr, int index, int value, Integer indent) {
-            print(index + ", " + value);
-            return null;
-        }
-
-        public Void visitLookupSwitch(Instruction instr,
-                int default_, int npairs, int[] matches, int[] offsets, Integer indent) {
-            int pc = instr.getPC();
-            print("{ // " + npairs);
-            indent(indent);
-            for (int i = 0; i < npairs; i++) {
-                print(String.format("%n%12d: %d", matches[i], (pc + offsets[i])));
-            }
-            print("\n     default: " + (pc + default_) + "\n}");
-            indent(-indent);
-            return null;
-        }
-
-        public Void visitTableSwitch(Instruction instr,
-                int default_, int low, int high, int[] offsets, Integer indent) {
-            int pc = instr.getPC();
-            print("{ // " + low + " to " + high);
-            indent(indent);
-            for (int i = 0; i < offsets.length; i++) {
-                print(String.format("%n%12d: %d", (low + i), (pc + offsets[i])));
-            }
-            print("\n     default: " + (pc + default_) + "\n}");
-            indent(-indent);
-            return null;
-        }
-
-        public Void visitValue(Instruction instr, int value, Integer indent) {
-            print(value);
-            return null;
-        }
-
-        public Void visitUnknown(Instruction instr, Integer indent) {
-            return null;
-        }
-    };
-
-
-    public void writeExceptionTable(Code_attribute attr) {
-        if (attr.exception_table_length > 0) {
+    public void writeExceptionTable(CodeAttribute attr) {
+        var excTable = attr.exceptionHandlers();
+        if (excTable.size() > 0) {
             println("Exception table:");
             indent(+1);
             println(" from    to  target type");
-            for (int i = 0; i < attr.exception_table.length; i++) {
-                Code_attribute.Exception_data handler = attr.exception_table[i];
+            for (var handler : excTable) {
                 print(String.format(" %5d %5d %5d",
-                        handler.start_pc, handler.end_pc, handler.handler_pc));
+                        attr.labelToBci(handler.tryStart()),
+                        attr.labelToBci(handler.tryEnd()),
+                        attr.labelToBci(handler.handler())));
                 print("   ");
-                int catch_type = handler.catch_type;
-                if (catch_type == 0) {
+                var catch_type = handler.catchType();
+                if (catch_type.isEmpty()) {
                     println("any");
                 } else {
                     print("Class ");
-                    println(constantWriter.stringValue(catch_type));
+                    println(constantWriter.stringValue(catch_type.get()));
                 }
             }
             indent(-1);
@@ -230,14 +218,10 @@ public class CodeWriter extends BasicWriter {
 
     }
 
-    private void printConstant(int index) {
-        constantWriter.write(index);
-    }
-
-    private List<InstructionDetailWriter> getDetailWriters(Code_attribute attr) {
+    private List<InstructionDetailWriter> getDetailWriters(CodeAttribute attr) {
         List<InstructionDetailWriter> detailWriters = new ArrayList<>();
         if (options.details.contains(InstructionDetailWriter.Kind.SOURCE)) {
-            sourceWriter.reset(classWriter.getClassFile(), attr);
+            sourceWriter.reset(attr);
             if (sourceWriter.hasSource())
                 detailWriters.add(sourceWriter);
             else

@@ -327,6 +327,10 @@ class StubGenerator: public StubCodeGenerator {
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
                       Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
+  // AVX2 AES Galois Counter Mode implementation
+  address generate_avx2_galoisCounterMode_AESCrypt();
+  void aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
+                   Register state, Register subkeyHtbl, Register counter);
 
  // Vector AES Counter implementation
   address generate_counterMode_VectorAESCrypt();
@@ -353,6 +357,17 @@ class StubGenerator: public StubCodeGenerator {
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
+  // AVX2 AES-GCM related functions
+  void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
+                           Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
+  void gfmul_avx2(XMMRegister GH, XMMRegister HK);
+  void generateHtbl_8_block_avx2(Register htbl);
+  void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
+                                     Register out, Register ct, Register pos, bool out_order, Register rounds,
+                                     XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                                     XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
+  void ghash_last_8_avx2(Register subkeyHtbl);
+
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
@@ -364,7 +379,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for increase 128bit counter (iv in CTR mode)
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
-
+  void ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                 int vector_len, KRegister ktmp, XMMRegister ones);
   void generate_aes_stubs();
 
 
@@ -520,12 +536,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception();
 
 #if INCLUDE_JFR
-
+  void generate_jfr_stubs();
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   RuntimeStub* generate_jfr_write_checkpoint();
-
+  // For c2: call to runtime to return a buffer lease.
+  RuntimeStub* generate_jfr_return_lease();
 #endif // INCLUDE_JFR
 
   // Continuation point for throwing of implicit exceptions that are
@@ -547,6 +564,9 @@ class StubGenerator: public StubCodeGenerator {
                                    address runtime_entry,
                                    Register arg1 = noreg,
                                    Register arg2 = noreg);
+
+  // shared exception handler for FFM upcall stubs
+  address generate_upcall_stub_exception_handler();
 
   void create_control_words();
 

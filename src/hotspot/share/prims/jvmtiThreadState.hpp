@@ -465,9 +465,12 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Callers are responsible to call recompute_thread_filtered() to update event bits
+  // if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = nullptr);
   // retrieve or create JvmtiThreadState
   // Can return null if JavaThread is exiting.
+  // Calls recompute_thread_filtered() to update event bits if thread-filtered events are enabled globally.
   static JvmtiThreadState *state_for(JavaThread *thread, Handle thread_handle = Handle());
 
   // JVMTI ForceEarlyReturn support

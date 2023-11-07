@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,21 @@
 /**
  * @test
  * @bug 4068067
- * @library /java/text/testlib
  * @summary test NumberFormat with exponential separator symbols. It also tests the new
  *          public methods in DecimalFormatSymbols, setExponentSeparator() and
  *          getExponentSeparator()
+ * @run junit DFSExponential
  */
 
 import java.util.*;
 import java.text.*;
 
-public class DFSExponential extends IntlTest
-{
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new DFSExponential().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class DFSExponential
+{
 
 
    public void DFSExponenTest() throws Exception {
@@ -55,30 +55,30 @@ public class DFSExponential extends IntlTest
 
 
         int ival = 0, ilval = 0;
-        logln("Default exponent separator: "+sym.getExponentSeparator());
+        System.out.println("Default exponent separator: "+sym.getExponentSeparator());
         try {
             sym.setExponentSeparator("x10^");
         } catch (NullPointerException e){
-            errln("null String was passed to set an exponent separator symbol");
+            fail("null String was passed to set an exponent separator symbol");
             throw new RuntimeException("Test Malfunction: null String was passed to set an exponent separator symbol" );
         }
-        logln("Current exponent separator: "+sym.getExponentSeparator());
+        System.out.println("Current exponent separator: "+sym.getExponentSeparator());
 
         for (int p=0; p<pat.length; ++p){
             DecimalFormat fmt = new DecimalFormat(pat[p], sym);
-            logln("     Pattern: " + fmt.toPattern());
+            System.out.println("     Pattern: " + fmt.toPattern());
             String locPattern = fmt.toLocalizedPattern();
-            logln("     Localized pattern: "+locPattern);
+            System.out.println("     Localized pattern: "+locPattern);
             //fmt.applyLocalizedPattern(locPattern);
             //System.out.println("      fmt.applyLocalizedPattern(): "+fmt.toLocalizedPattern());
 
             for (int v=0; v<val.length; ++v) {
                 String s = fmt.format(val[v]);
-                logln("         " + val[v]+" --> "+s);
+                System.out.println("         " + val[v]+" --> "+s);
                 if(valFormat[p][v].equals(s)){
-                    logln(": Passed");
+                    System.out.println(": Passed");
                 }else{
-                   errln(" Failed: Should be formatted as "+valFormat[p][v]+ "but got "+s);
+                   fail(" Failed: Should be formatted as "+valFormat[p][v]+ "but got "+s);
                    throw new RuntimeException(" Failed: Should be formatted as "+valFormat[p][v]+ "but got "+s);
                 }
            }

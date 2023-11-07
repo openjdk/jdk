@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,9 @@ public class ByteCodeRewriter
           // Invokedynamic require special handling
           cpCacheIndex = ~cpCacheIndex;
           cpCacheIndex = bytes.swapInt(cpCacheIndex);
-          return (short) cpCache.getEntryAt(cpCacheIndex).getConstantPoolIndex();
+          short cpIndex = (short) cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
+          Assert.that(cpool.getTagAt(cpIndex).isInvokeDynamic(), "CP Entry should be InvokeDynamic");
+          return cpIndex;
        } else if (fmt.contains("JJ")) {
           // change byte-ordering and go via cache
           return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();

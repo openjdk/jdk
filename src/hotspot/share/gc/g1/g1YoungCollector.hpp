@@ -126,6 +126,8 @@ class G1YoungCollector {
   void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
                                G1EvacInfo* evacuation_info);
 
+  // Enqueue collection set candidates as root regions.
+  void enqueue_candidates_as_root_regions();
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 

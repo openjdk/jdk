@@ -74,13 +74,9 @@ public:
 
 #ifdef _LP64
 
-  // Reserve a range of memory at an address suitable for en/decoding narrow
-  // Klass pointers (see: CompressedClassPointers::is_valid_base()).
-  // The returned address shall both be suitable as a compressed class pointers
-  //  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
-  //  multiple of allocation granularity).
-  // On error, returns an unreserved space.
-  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size);
+  // Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+  // is true, we will attempt to reserve memory suitable for zero-based encoding.
+  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges);
 
   // Given a prereserved space, use that to set up the compressed class space list.
   static void initialize_class_space(ReservedSpace rs);

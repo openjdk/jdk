@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -183,6 +181,8 @@ public class EventNames {
     public static final String ThreadContextSwitchRate = PREFIX + "ThreadContextSwitchRate";
     public static final String InitialEnvironmentVariable = PREFIX + "InitialEnvironmentVariable";
     public static final String NativeLibrary = PREFIX + "NativeLibrary";
+    public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
+    public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";

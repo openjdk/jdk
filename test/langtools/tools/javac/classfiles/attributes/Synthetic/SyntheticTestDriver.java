@@ -23,6 +23,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -31,8 +32,10 @@ import java.util.function.Supplier;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.lang.reflect.AccessFlag;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.SyntheticAttribute;
 
 /**
  * The tests work as follows. Firstly, it looks through the test cases
@@ -48,15 +51,12 @@ import com.sun.tools.classfile.*;
  * See the appropriate class for more information about a test case.
  */
 public class SyntheticTestDriver extends TestResult {
-
-    private static final String ACC_SYNTHETIC = "ACC_SYNTHETIC";
-
     private final String testCaseName;
-    private final Map<String, ClassFile> classes;
+    private final Map<String, ClassModel> classes;
     private final Map<String, ExpectedClass> expectedClasses;
 
     public static void main(String[] args)
-            throws TestFailedException, ConstantPoolException, IOException, ClassNotFoundException {
+            throws TestFailedException, IOException, ClassNotFoundException {
         if (args.length != 1 && args.length != 2) {
             throw new IllegalArgumentException("Usage: SyntheticTestDriver <class-name> [<number-of-synthetic-classes>]");
         }
@@ -64,7 +64,7 @@ public class SyntheticTestDriver extends TestResult {
         new SyntheticTestDriver(args[0]).test(numberOfSyntheticClasses);
     }
 
-    public SyntheticTestDriver(String testCaseName) throws IOException, ConstantPoolException, ClassNotFoundException {
+    public SyntheticTestDriver(String testCaseName) throws IOException, ClassNotFoundException {
         Class<?> clazz = Class.forName(testCaseName);
         this.testCaseName = testCaseName;
         this.expectedClasses = Stream.of(clazz.getAnnotationsByType(ExpectedClass.class))
@@ -75,7 +75,7 @@ public class SyntheticTestDriver extends TestResult {
         List<Path> paths = Files.walk(classDir)
                 .map(p -> classDir.relativize(p.toAbsolutePath()))
                 .filter(p -> filePattern.matcher(p.toString()).matches())
-                .collect(Collectors.toList());
+                .toList();
         for (Path path : paths) {
             String className = path.toString().replace(".class", "").replace(File.separatorChar, '.');
             classes.put(className, readClassFile(classDir.resolve(path).toFile()));
@@ -91,11 +91,19 @@ public class SyntheticTestDriver extends TestResult {
         }
     }
 
-    private String getMethodName(ClassFile classFile, Method method)
-            throws ConstantPoolException, Descriptor.InvalidDescriptor {
-        String methodName = method.getName(classFile.constant_pool);
-        String parameters = method.descriptor.getParameterTypes(classFile.constant_pool);
-        return methodName + parameters;
+    private String getMethodName(MethodModel method) {
+        StringBuilder methodName = new StringBuilder(method.methodName().stringValue() + "(");
+        List<ClassDesc> paras = method.methodTypeSymbol().parameterList();
+        for (int i = 0; i < method.methodTypeSymbol().parameterCount(); ++i) {
+            if (i != 0) {
+                methodName.append(", ");
+            }
+            ClassDesc para = paras.get(i);
+            String prefix = para.componentType() == null? para.packageName(): para.componentType().packageName();
+            methodName.append(prefix).append(Objects.equals(prefix, "") ? "":".").append(para.displayName());
+        }
+        methodName.append(")");
+        return methodName.toString();
     }
 
     public void test(int expectedNumberOfSyntheticClasses) throws TestFailedException {
@@ -104,14 +112,14 @@ public class SyntheticTestDriver extends TestResult {
             Set<String> foundClasses = new HashSet<>();
 
             int numberOfSyntheticClasses = 0;
-            for (Map.Entry<String, ClassFile> entry : classes.entrySet()) {
+            for (Map.Entry<String, ClassModel> entry : classes.entrySet()) {
                 String className = entry.getKey();
-                ClassFile classFile = entry.getValue();
+                ClassModel classFile = entry.getValue();
                 foundClasses.add(className);
                 if (testAttribute(
                         classFile,
-                        () -> (Synthetic_attribute) classFile.getAttribute(Attribute.Synthetic),
-                        classFile.access_flags::getClassFlags,
+                        () -> classFile.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                        classFile.flags()::flags,
                         expectedClasses.keySet(),
                         className,
                         "Testing class " + className)) {
@@ -123,13 +131,13 @@ public class SyntheticTestDriver extends TestResult {
                         : new HashSet<>();
                 int numberOfSyntheticMethods = 0;
                 Set<String> foundMethods = new HashSet<>();
-                for (Method method : classFile.methods) {
-                    String methodName = getMethodName(classFile, method);
+                for (MethodModel method : classFile.methods()) {
+                    String methodName = getMethodName(method);
                     foundMethods.add(methodName);
                     if (testAttribute(
                             classFile,
-                            () -> (Synthetic_attribute) method.attributes.get(Attribute.Synthetic),
-                            method.access_flags::getMethodFlags,
+                            () -> method.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                            method.flags()::flags,
                             expectedMethods,
                             methodName,
                             "Testing method " + methodName + " in class "
@@ -149,13 +157,13 @@ public class SyntheticTestDriver extends TestResult {
                         : new HashSet<>();
                 int numberOfSyntheticFields = 0;
                 Set<String> foundFields = new HashSet<>();
-                for (Field field : classFile.fields) {
-                    String fieldName = field.getName(classFile.constant_pool);
+                for (FieldModel field : classFile.fields()) {
+                    String fieldName = field.fieldName().stringValue();
                     foundFields.add(fieldName);
                     if (testAttribute(
                             classFile,
-                            () -> (Synthetic_attribute) field.attributes.get(Attribute.Synthetic),
-                            field.access_flags::getFieldFlags,
+                            () -> field.findAttribute(Attributes.SYNTHETIC).orElse(null),
+                            field.flags()::flags,
                             expectedFields,
                             fieldName,
                             "Testing field " + fieldName + " in class "
@@ -181,25 +189,25 @@ public class SyntheticTestDriver extends TestResult {
         }
     }
 
-    private boolean testAttribute(ClassFile classFile,
-                               Supplier<Synthetic_attribute> getSyntheticAttribute,
-                               Supplier<Set<String>> getAccessFlags,
+    private boolean testAttribute(ClassModel classFile,
+                               Supplier<SyntheticAttribute> getSyntheticAttribute,
+                               Supplier<Set<AccessFlag>> getAccessFlags,
                                Set<String> expectedMembers, String memberName,
-                               String info) throws ConstantPoolException {
+                               String info) {
         echo(info);
-        String className = classFile.getName();
-        Synthetic_attribute attr = getSyntheticAttribute.get();
-        Set<String> flags = getAccessFlags.get();
+        String className = classFile.thisClass().name().stringValue();
+        SyntheticAttribute attr = getSyntheticAttribute.get();
+        Set<AccessFlag> flags = getAccessFlags.get();
         if (expectedMembers.contains(memberName)) {
             checkNull(attr, "Member must not have synthetic attribute : "
                     + memberName);
-            checkFalse(flags.contains(ACC_SYNTHETIC),
+            checkFalse(flags.contains(AccessFlag.SYNTHETIC),
                     "Member must not have synthetic flag : " + memberName
                             + " in class : " + className);
             return false;
         } else {
             return checkNull(attr, "Synthetic attribute should not be generated")
-                    && checkTrue(flags.contains(ACC_SYNTHETIC), "Member must have synthetic flag : "
+                    && checkTrue(flags.contains(AccessFlag.SYNTHETIC), "Member must have synthetic flag : "
                                 + memberName + " in class : " + className);
         }
     }

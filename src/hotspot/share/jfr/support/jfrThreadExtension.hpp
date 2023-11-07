@@ -26,6 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRTHREADEXTENSION_HPP
 
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 
 #define DEFINE_THREAD_LOCAL_FIELD_JFR mutable JfrThreadLocal _jfr_thread_local
@@ -48,6 +49,18 @@
 #define VTHREAD_EPOCH_OFFSET_JFR JfrThreadLocal::vthread_epoch_offset()
 
 #define VTHREAD_EXCLUDED_OFFSET_JFR JfrThreadLocal::vthread_excluded_offset()
+
+#define JAVA_BUFFER_OFFSET_JFR \
+  JfrThreadLocal::java_buffer_offset() + THREAD_LOCAL_OFFSET_JFR
+
+#define NOTIFY_OFFSET_JFR \
+  JfrThreadLocal::notified_offset() + THREAD_LOCAL_OFFSET_JFR
+
+#define JFR_BUFFER_POS_OFFSET \
+  JfrBuffer::pos_offset()
+
+#define JFR_BUFFER_FLAGS_OFFSET \
+  JfrBuffer::flags_offset()
 
 #define THREAD_LOCAL_WRITER_OFFSET_JFR \
   JfrThreadLocal::java_event_writer_offset() + THREAD_LOCAL_OFFSET_JFR

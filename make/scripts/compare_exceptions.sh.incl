@@ -49,8 +49,8 @@ elif [ "$OPENJDK_TARGET_OS" = "windows" ]; then
   SKIP_BIN_DIFF="true"
   SKIP_FULLDUMP_DIFF="true"
   ACCEPTED_JARZIP_CONTENTS="
-      /modules_libs/java.security.jgss/w2k_lsa_auth.pdb
-      /modules_libs/java.security.jgss/w2k_lsa_auth.map
+      /modules_libs/java.security.jgss/w2k_lsa_auth.dll.pdb
+      /modules_libs/java.security.jgss/w2k_lsa_auth.dll.map
       /modules_libs/java.security.jgss/w2k_lsa_auth.dll
       "
 elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then

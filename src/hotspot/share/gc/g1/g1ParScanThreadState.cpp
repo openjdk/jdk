@@ -88,7 +88,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
-    _evac_failure_regions(evac_failure_regions)
+    _evac_failure_regions(evac_failure_regions),
+    _evac_failure_enqueued_cards(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -145,6 +146,10 @@ size_t G1ParScanThreadState::lab_waste_words() const {
 
 size_t G1ParScanThreadState::lab_undo_waste_words() const {
   return _plab_allocator->undo_waste();
+}
+
+size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
+  return _evac_failure_enqueued_cards;
 }
 
 #ifdef ASSERT
@@ -595,10 +600,12 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
+    size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_enqueued_cards, G1GCPhaseTimes::MergePSSEvacFailExtra);
 
     delete pss;
     _states[worker_id] = nullptr;
@@ -640,12 +647,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the
-    // existing closure to scan evacuated objects because:
-    // - for objects referring into the collection set we do not need to gather
-    // cards at this time. The regions they are in will be unconditionally turned
-    // to old regions without remembered sets.
-    // - since we are iterating from a collection set region (i.e. never a Survivor
-    // region), we always need to gather cards for this case.
+    // existing closure to scan evacuated objects; since we are iterating from a
+    // collection set region (i.e. never a Survivor region), we always need to
+    // gather cards for this case.
     G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
     old->oop_iterate_backwards(&_scanner);
 
