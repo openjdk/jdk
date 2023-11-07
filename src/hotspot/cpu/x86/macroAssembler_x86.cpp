@@ -1340,7 +1340,7 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
 #ifdef _LP64
-  // Should never be shortened. Needs full 64-immediate.
+  // Needs full 64-bit immediate for later patching.
   mov64(rax, (intptr_t)Universe::non_oop_word());
 #else
   movptr(rax, (intptr_t)Universe::non_oop_word());
