@@ -45,6 +45,7 @@
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -387,6 +388,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
+  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
@@ -479,6 +481,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
+  // Write module name into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -763,8 +767,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     log_info(cds)("Reading extra data: done.");
   }
 
-  HeapShared::init_for_dumping(CHECK);
-
   // Rewrite and link classes
   log_info(cds)("Rewriting and linking classes ...");
 
@@ -778,6 +780,11 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     StringTable::allocate_shared_strings_array(CHECK);
+    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+      log_info(cds)("archivedBootLayer not available, disabling full module graph");
+      disable_full_module_graph();
+    }
+    HeapShared::init_for_dumping(CHECK);
     ArchiveHeapWriter::init();
     if (use_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
@@ -1163,8 +1170,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           static_mapinfo->map_or_load_heap_region();
         }
 #endif // _LP64
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);

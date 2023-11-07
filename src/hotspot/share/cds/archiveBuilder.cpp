@@ -573,6 +573,12 @@ void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   _other_region_used_bytes = 0;
 }
 
+char* ArchiveBuilder::ro_strdup(const char* s) {
+  char* archived_str = ro_region_alloc((int)strlen(s) + 1);
+  strcpy(archived_str, s);
+  return archived_str;
+}
+
 void ArchiveBuilder::dump_rw_metadata() {
   ResourceMark rm;
   log_info(cds)("Allocating RW objects ... ");
@@ -1133,6 +1139,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       // The address of _source_obj at runtime
       oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
       // The address of this field in the requested space
+      assert(requested_obj != nullptr, "Attempting to load field from null oop");
       address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
 
       fd->print_on(_st);
