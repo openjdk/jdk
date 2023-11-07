@@ -60,7 +60,7 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Need to make sure that mtChunks don't get deallocated while the
+  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
   ThreadCritical tc;
