@@ -3966,7 +3966,7 @@ class StubGenerator: public StubCodeGenerator {
     // Round to nearest, 24-bit mode, exceptions masked
     StubRoutines::x86::_fpu_cntrl_wrd_24    = 0x007F;
     // Round to nearest, 64-bit mode, exceptions masked, flags specialized
-    StubRoutines::x86::_mxcsr_std           = DoEcoreOpt ? 0x1FBF : 0x1F80;
+    StubRoutines::x86::_mxcsr_std           = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
     // Note: the following two constants are 80-bit values
     //       layout is critical for correct loading by FPU.
     // Bias for strict fp multiply/divide

@@ -3908,9 +3908,9 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
 
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked, flags specialized
-  StubRoutines::x86::_mxcsr_std = DoEcoreOpt ? 0x1FBF : 0x1F80;
+  StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
   // Round to zero, 64-bit mode, exceptions masked, flags specialized
-  StubRoutines::x86::_mxcsr_rz = DoEcoreOpt ? 0x7FBF : 0x7F80;
+  StubRoutines::x86::_mxcsr_rz = EnableX86ECoreOpts ? 0x7FBF : 0x7F80;
 }
 
 // Initialization

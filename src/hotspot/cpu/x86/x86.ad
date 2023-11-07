@@ -7423,7 +7423,7 @@ instruct vround_float_avx(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, vec
   format %{ "vector_round_float $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $xtmp3, $xtmp4 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress((jint)(DoEcoreOpt ? 0x3FBF : 0x3F80));
+    InternalAddress new_mxcsr = $constantaddress((jint)(EnableX86ECoreOpts ? 0x3FBF : 0x3F80));
     __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister,
                               ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), new_mxcsr, vlen_enc,
                               $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister);
@@ -7440,7 +7440,7 @@ instruct vround_float_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kR
   format %{ "vector_round_float $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $ktmp1, $ktmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress((jint)(DoEcoreOpt ? 0x3FBF : 0x3F80));
+    InternalAddress new_mxcsr = $constantaddress((jint)(EnableX86ECoreOpts ? 0x3FBF : 0x3F80));
     __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister,
                                ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), new_mxcsr, vlen_enc,
                                $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
@@ -7455,7 +7455,7 @@ instruct vround_reg_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg
   format %{ "vector_round_long $dst,$src\t! using $tmp, $xtmp1, $xtmp2, $ktmp1, $ktmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress((jint)(DoEcoreOpt ? 0x3FBF : 0x3F80));
+    InternalAddress new_mxcsr = $constantaddress((jint)(EnableX86ECoreOpts ? 0x3FBF : 0x3F80));
     __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister,
                                 ExternalAddress(StubRoutines::x86::vector_double_sign_flip()), new_mxcsr, vlen_enc,
                                 $tmp$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);

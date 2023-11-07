@@ -215,7 +215,7 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Use Libm Intrinsics")                                            \
                                                                             \
   /* Autodetected, see vm_version_x86.cpp */                                \
-  product(bool, DoEcoreOpt, false, DIAGNOSTIC,                              \
+  product(bool, EnableX86ECoreOpts, false, DIAGNOSTIC,                      \
           "Perform Ecore Optimization")                                     \
                                                                             \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
