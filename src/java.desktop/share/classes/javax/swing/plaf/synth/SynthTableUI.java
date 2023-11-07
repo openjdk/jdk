@@ -857,20 +857,20 @@ public class SynthTableUI extends BasicTableUI
         TableColumnModel cm = table.getColumnModel();
 
         if (column < 0) {
-            if( !table.getComponentOrientation().isLeftToRight() ) {
+            if (!table.getComponentOrientation().isLeftToRight()) {
                 x = getWidthInRightToLeft();
             }
         }
         else if (column >= cm.getColumnCount()) {
-            if( table.getComponentOrientation().isLeftToRight() ) {
+            if (table.getComponentOrientation().isLeftToRight()) {
                 x = table.getWidth();
             }
         }
         else {
-            for(int i = 0; i < column; i++) {
+            for (int i = 0; i < column; i++) {
                 x += cm.getColumn(i).getWidth();
             }
-            if( !table.getComponentOrientation().isLeftToRight() ) {
+            if (!table.getComponentOrientation().isLeftToRight()) {
                 x = getWidthInRightToLeft() - x - cm.getColumn(column).getWidth();
             }
         }
