@@ -4545,15 +4545,10 @@ class StubGenerator: public StubCodeGenerator {
       __ andi(U_2, R_0, bits2);
       __ mul(U_2, S_2, U_2);
 
-      // Recycle registers S_0, S_1, S_2
-      regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
-
       // Partial reduction mod 2**130 - 5
       __ cad(U_1, U_1, U_0HI, t1); // Add U_0HI to U_1 with carry output to t1
       __ adc(U_2, U_2, U_1HI, t1);
-      // Sum now in U_2:U_1:U_0.
-      // Dead: U_0HI, U_1HI.
-      regs = (regs.remaining() + U_0HI + U_1HI).begin();
+      // Sum is now in U_2:U_1:U_0.
 
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
       __ srli(t1, U_2, 2);
