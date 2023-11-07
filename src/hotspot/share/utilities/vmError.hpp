@@ -170,6 +170,11 @@ public:
                              void* context, const char* detail_fmt, ...);
 
   ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(6, 7)
+  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, ...);
+
+  ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
