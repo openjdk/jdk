@@ -48,15 +48,15 @@ public class TestPinnedObjectTypes {
     }
 
     private static void testPinning(String type, boolean shouldSucceed) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                                  "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:+WhiteBoxAPI",
-                                                                  "-Xbootclasspath/a:.",
-                                                                  "-Xmx32M",
-                                                                  "-Xmn16M",
-                                                                  "-Xlog:gc",
-                                                                  TestObjectPin.class.getName(),
-                                                                  type);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
+                                                                             "-XX:+UnlockDiagnosticVMOptions",
+                                                                             "-XX:+WhiteBoxAPI",
+                                                                             "-Xbootclasspath/a:.",
+                                                                             "-Xmx32M",
+                                                                             "-Xmn16M",
+                                                                             "-Xlog:gc",
+                                                                             TestObjectPin.class.getName(),
+                                                                             type);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
