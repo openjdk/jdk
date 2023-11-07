@@ -3956,19 +3956,19 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef RegCache<8> BufRegCache;
 
-  // a += rtmp1 + x + ac;
+  // a += value + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void m5_FF_GG_HH_II_epilogue(BufRegCache& reg_cache,
                                Register a, Register b, Register c, Register d,
                                int k, int s, int t,
-                               Register rtmp1) {
+                               Register value) {
     // a += ac
     __ addw(a, a, t, t1);
 
     // a += x;
     reg_cache.add_u32(a, k);
-    // a += rtmp1;
-    __ addw(a, a, rtmp1);
+    // a += value;
+    __ addw(a, a, value);
 
     // a = Integer.rotateLeft(a, s) + b;
     __ rolw_imm(a, a, s);
