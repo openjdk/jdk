@@ -2168,6 +2168,8 @@ private:
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
+  DataLayout* ex_handler_bci_to_data_helper(int bci);
+
 public:
   void clean_extra_data(CleanExtraDataClosure* cl);
 
@@ -2361,6 +2363,7 @@ public:
     return bci_to_extra_data(bci, nullptr, true);
   }
 
+  BitData* ex_handler_bci_to_data_or_null(int bci);
   BitData ex_handler_bci_to_data(int bci);
 
   // Add a handful of extra data records, for trap tracking.

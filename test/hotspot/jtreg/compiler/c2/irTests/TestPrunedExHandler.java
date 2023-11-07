@@ -37,6 +37,7 @@ public class TestPrunedExHandler {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
             "-XX:+TieredCompilation", // we only profile in tier 3
+            "-XX:CompileCommand=inline,compiler.c2.irTests.TestPrunedExHandler::inlinee",
             "-XX:CompileCommand=dontinline,compiler.c2.irTests.TestPrunedExHandler::outOfLine");
     }
 
@@ -107,4 +108,38 @@ public class TestPrunedExHandler {
             testNoTrapAfterDeopt(false); // should have no trap
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.UNREACHED_TRAP, "0"})
+    public static void testNoTrapAfterDeoptInlined(boolean shouldThrow) {
+        // check that we handle exception thrown in inlinee, caught in caller.
+        // C2 handles exception dispatch differently for those cases
+        try {
+            inlinee(shouldThrow);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void inlinee(boolean shouldThrow) {
+        outOfLine(shouldThrow);
+    }
+
+    @Run(test = "testNoTrapAfterDeoptInlined", mode = RunMode.STANDALONE)
+    public static void runNoTrapAfterDeoptInlined(RunInfo info) {
+        for (int i = 0; i < 20_000; i++) { // tier 4
+            testNoTrapAfterDeoptInlined(false);
+        }
+
+        TestFramework.assertCompiledByC2(info.getTest());
+
+        testNoTrapAfterDeoptInlined(true); // deopt + mark ex handler as entered
+
+        TestFramework.assertDeoptimizedByC2(info.getTest());
+
+        for (int i = 0; i < 20_000; i++) { // tier 4 again
+            testNoTrapAfterDeoptInlined(false); // should have no trap
+        }
+    }
+
 }
