@@ -37,16 +37,16 @@ extern "C" {
     DLL_PUBLIC void avx512_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_sort((int32_t*)array, from_index, to_index);
+                avx512_fast_sort((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
             case JVM_T_LONG:
-                avx512_fast_sort((int64_t*)array, from_index, to_index);
+                avx512_fast_sort((int64_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_sort((float*)array, from_index, to_index);
+                avx512_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_sort((double*)array, from_index, to_index);
+                avx512_fast_sort((double*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
         }
     }
