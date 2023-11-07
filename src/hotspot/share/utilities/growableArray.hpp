@@ -402,14 +402,14 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  template<typename Constructor>
-  E& at_grow_with(int i, Constructor ctr) {
+  template<typename FillConstructor>
+  E& at_grow_with(int i, FillConstructor fill_ctr) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j <= i; j++) {
         this->_data[j].~E();
-        ctr(&this->_data[j]);
+        fill_ctr(&this->_data[j]);
       }
       this->_len = i + 1;
     }
@@ -423,14 +423,14 @@ public:
     });
   }
 
-  template<typename Constructor>
-  void at_put_grow_with(int i, Constructor ctr, const E& elem) {
+  template<typename FillConstructor>
+  void at_put_grow_with(int i, const E& elem, FillConstructor fill_ctr) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++) {
         this->_data[j].~E();
-        ctr(&this->_data[j]);
+        fill_ctr(&this->_data[j]);
       }
       this->_len = i+1;
     }
@@ -439,9 +439,9 @@ public:
 
   template<typename... Args>
   void at_put_grow(int i, const E& elem, const Args&... args) {
-    at_put_grow_with(i, [&](E* ptr) {
+    at_put_grow_with(i, elem, [&](E* ptr) {
         ::new (ptr) E(args...);
-    }, elem);
+    });
   }
 
   // inserts the given element before the element at index i
