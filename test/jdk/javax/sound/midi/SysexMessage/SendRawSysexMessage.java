@@ -122,7 +122,7 @@ public final class SendRawSysexMessage {
                         (byte) SPECIAL_SYSTEM_EXCLUSIVE, 0x03, 0x04}, 3), -1);
                 System.err.println("sysex part 3 of 3");
                 r.send(new SysexMessage(new byte[]{
-                        (byte) SPECIAL_SYSTEM_EXCLUSIVE, 0x05, 0x06,
+                        (byte) SPECIAL_SYSTEM_EXCLUSIVE, 0x05, 0x06, 0x07
                         (byte) SPECIAL_SYSTEM_EXCLUSIVE}, 4), -1);
                 System.err.println("done, should quit");
                 System.err.println();
