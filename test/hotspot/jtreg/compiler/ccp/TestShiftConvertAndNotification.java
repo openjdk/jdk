@@ -28,7 +28,7 @@
  *          ConvI2L.
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -XX:RepeatCompilation=20 -XX:-TieredCompilation
- *                   -XX:+StressIGVN -XX:-CICompileOSR -Xcomp
+ *                   -XX:+StressIGVN -Xcomp
  *                   -XX:CompileCommand=compileonly,compiler.ccp.TestShiftConvertAndNotification::test
  *                   compiler.ccp.TestShiftConvertAndNotification
  */
