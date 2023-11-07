@@ -242,6 +242,14 @@ public class Annotate {
         s.resetAnnotations(); // mark Annotations as incomplete for now
 
         normal(() -> {
+            // Packages are unusual, in that they are the only type of declaration that can legally appear
+            // more than once in a compilation, and in all cases refer to the same underlying symbol.
+            // This means they are the only kind of declaration that syntactically may have multiple sets
+            // of annotations, each on a different package declaration, even though that is ultimately
+            // forbidden by JLS 8 section 7.4.
+            // The corollary here is that all of the annotations on a package symbol may have already
+            // been handled, meaning that the set of annotations pending completion is now empty.
+            Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
             JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
             DiagnosticPosition prevLintPos =
                     deferPos != null
