@@ -25,7 +25,7 @@ package separate;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.instruction.InvokeInstruction;
-import static jdk.internal.classfile.Opcode.*;
+import static jdk.internal.classfile.Classfile.*;
 
 public class ClassToInterfaceConverter implements ClassFilePreprocessor {
 
@@ -36,45 +36,24 @@ public class ClassToInterfaceConverter implements ClassFilePreprocessor {
     }
 
     private byte[] convertToInterface(ClassModel classModel) {
-        return Classfile.of().build(classModel.thisClass().asSymbol(),
-                classBuilder ->  {
-                    for (ClassElement ce : classModel) {
-                        if (ce instanceof AccessFlags accessFlags) {
-                            classBuilder.withFlags(0x0601); // ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC);
-                        } else if (ce instanceof MethodModel mm) {
-                            // Find <init> method and delete it
-                            if (mm.methodName().stringValue().equals("<init>")) {
-                                continue;
-                            }
-                            //  Convert method tag. Find Methodref, which is not "<init>" and only invoked
-                            //  by other methods in the interface, convert it to InterfaceMethodref and
-                            //  if opcode is invokevirtual, convert it to invokeinterface
-                            classBuilder.withMethod(mm.methodName().stringValue(),
-                                    mm.methodTypeSymbol(),
-                                    mm.flags().flagsMask(),
-                                    methodBuilder -> {
-                                        for (MethodElement me : mm) {
-                                            if (me instanceof CodeModel xm) {
-                                                methodBuilder.withCode(codeBuilder -> {
-                                                    for (CodeElement e : xm) {
-                                                        if (e instanceof InvokeInstruction i && i.owner() == classModel.thisClass()) {
-                                                            Opcode opcode = i.opcode() == INVOKEVIRTUAL ? INVOKEINTERFACE : i.opcode();
-                                                            codeBuilder.invokeInstruction(opcode, i.owner().asSymbol(),
-                                                                    i.name().stringValue(), i.typeSymbol(), true);
-                                                        } else {
-                                                            codeBuilder.with(e);
-                                                        }
-                                                    }});
-                                            } else {
-                                                methodBuilder.with(me);
-                                            }
-                                        }
-                                    });
-                        } else {
-                            classBuilder.with(ce);
-                        }
-                    }
-                });
+        //  Convert method tag. Find Methodref which is only invoked by other methods
+        //  in the interface, convert it to InterfaceMethodref.  If opcode is invokevirtual,
+        //  convert it to invokeinterface
+        CodeTransform ct = (b, e) -> {
+            if (e instanceof InvokeInstruction i && i.owner() == classModel.thisClass()) {
+                Opcode opcode = i.opcode() == Opcode.INVOKEVIRTUAL ? Opcode.INVOKEINTERFACE : i.opcode();
+                b.invokeInstruction(opcode, i.owner().asSymbol(),
+                        i.name().stringValue(), i.typeSymbol(), true);
+            } else {
+                b.with(e);
+            }
+        };
+        
+        return Classfile.of().transform(classModel,
+            ClassTransform.dropping(ce -> ce instanceof MethodModel mm && mm.methodName().stringValue().equals("<init>"))
+                          .andThen(ClassTransform.transformingMethodBodies(ct))
+                          .andThen(ClassTransform.endHandler(b -> b.withFlags(ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC)))
+        );
     }
 
     public byte[] preprocess(String classname, byte[] bytes) {
