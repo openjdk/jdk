@@ -30,7 +30,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseLargePages -XX:LargePageSizeInBytes=1g compiler.codecache.CheckLargePages
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseLargePages -XX:+UseTransparentHugePages compiler.codecache.CheckLargePages
  */
 
 package compiler.codecache;
@@ -48,21 +48,21 @@ public class CheckLargePages {
 
     public static void main(String[] args) throws Exception {
         final boolean largePages = WHITE_BOX.getBooleanVMFlag("UseLargePages");
-        final long largePageSize = WHITE_BOX.getVMLargePageSize();
-        if (largePages && (largePageSize == 1024 * 1024 * 1024)) {
+        if (largePages) {
+            final long largePageSize = WHITE_BOX.getVMLargePageSize();
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-XX:+UseLargePages",
+                    "-XX:+UseTransparentHugePages",
                     "-XX:+SegmentedCodeCache",
-                    "-XX:InitialCodeCacheSize=2g",
-                    "-XX:ReservedCodeCacheSize=2g",
-                    "-XX:LargePageSizeInBytes=1g",
+                    "-XX:InitialCodeCacheSize=15m",
+                    "-XX:ReservedCodeCacheSize=15m",
                     "-Xlog:pagesize=info",
                     "-version");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
             out.shouldMatch("Code cache size too small for \\S* pages\\. Reverting to smaller page size \\((\\S*)\\)\\.");
             out.shouldHaveExitValue(0);
             // Parse page sizes to find next biggest page
-            String sizes = out.firstMatch("Usable page sizes:(.*)", 1);
+            String sizes = out.firstMatch("Usable page sizes:([^.]+)", 1);
             List<Long> sizeList = Arrays.stream(sizes.trim().split("\\s*,\\s*")).map(CheckLargePages::parseMemoryString).sorted().toList();
             final int smallerPageSizeIndex = sizeList.indexOf(largePageSize) - 1;
             Asserts.assertGreaterThanOrEqual(smallerPageSizeIndex, 0);
@@ -71,8 +71,7 @@ public class CheckLargePages {
             String revertedSizeString = out.firstMatch("Code cache size too small for (\\S*) pages. Reverting to smaller page size \\((\\S*)\\)\\.", 2);
             Asserts.assertEquals(parseMemoryString(revertedSizeString), smallerPageSize);
         } else {
-            System.out.println("1GB large pages not supported: UseLargePages=" + largePages +
-                    (largePages ? ", largePageSize=" + largePageSize : "") + ". Skipping");
+            System.out.println("UseLargePages is disabled. Skipping");
         }
     }
 
