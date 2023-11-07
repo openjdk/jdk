@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
 #include "gc/g1/g1BatchedTask.hpp"
-#include "gc/g1/g1EvacFailure.hpp"
 
 class FreeCSetStats;
 
