@@ -62,15 +62,18 @@ package test.java.time.format;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.util.Locale.US;
 import static org.testng.Assert.assertEquals;
 
+import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -80,7 +83,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
+import java.util.Locale;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -88,7 +93,7 @@ import org.testng.annotations.Test;
 /**
  * @test
  * @summary Test parsing of edge cases.
- * @bug 8223773 8272473
+ * @bug 8223773 8272473 8319640
  */
 public class TestDateTimeParsing {
 
@@ -236,5 +241,22 @@ public class TestDateTimeParsing {
                 throw e;
             }
         }
+    }
+
+    // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
+    @Test
+    public void test_toFormat_2arg_null_on_error() {
+        var f = new DateTimeFormatterBuilder()
+            .appendValue(HOUR_OF_DAY, 2, 2, SignStyle.NOT_NEGATIVE)
+            .optionalStart()
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2, 2, SignStyle.NOT_NEGATIVE)
+            .optionalEnd()
+            .optionalStart()
+            .appendOffset("+HHmm", "Z")
+            .optionalEnd()
+            .toFormatter(Locale.ROOT)
+            .toFormat();
+        assertEquals(f.parseObject("17-30", new ParsePosition(0)), null);
     }
 }
