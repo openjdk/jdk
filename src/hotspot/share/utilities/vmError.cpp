@@ -1579,6 +1579,14 @@ void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void*
   va_end(detail_args);
 }
 
+void VMError::report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, ...) {
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  report_and_die(thread, context, filename, lineno, message, detail_fmt, detail_args);
+  va_end(detail_args);
+}
+
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo, void* context)
 {
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");

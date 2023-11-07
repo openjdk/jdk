@@ -142,7 +142,7 @@ void CompileTask::initialize(int compile_id,
 /**
  * Returns the compiler for this task.
  */
-AbstractCompiler* CompileTask::compiler() {
+AbstractCompiler* CompileTask::compiler() const {
   return CompileBroker::compiler(_comp_level);
 }
 
