@@ -345,10 +345,14 @@ public class SwitchBootstraps {
 
             if (result == null) {
                 try {
+                    if (!(value instanceof Enum<?> enumValue)) {
+                        return false;
+                    }
+
                     EnumDesc<?> label = enumDescs[labelIndex];
                     Class<?> clazz = label.constantType().resolveConstantDesc(lookup);
 
-                    if (value.getClass() != clazz) {
+                    if (enumValue.getDeclaringClass() != clazz) {
                         return false;
                     }
 

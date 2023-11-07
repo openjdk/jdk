@@ -562,7 +562,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
     # compilation of all source files regardless of the active code page on Windows.
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -permissive- -utf-8 -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -Zc:wchar_t-"
   fi
 
