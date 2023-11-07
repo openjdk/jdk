@@ -38,11 +38,8 @@ private:
 
     Semaphore _sem;
 
-    // Cell state, tracks the arming + waiter status
-    //   <= -1: disarmed, have abs(n)-1 unreported waiters
-    //       0: forbidden value
-    //   >=  1: armed, have abs(n)-1 waiters
-    volatile int _state;
+    // Cell state, tracks the arming + waiters status
+    volatile int64_t _state;
 
     // Wakeups to deliver for current waiters
     volatile int _outstanding_wakeups;
@@ -51,13 +48,29 @@ private:
 
     int signal_if_needed(int max);
 
+    static int64_t encode(int32_t barrier_tag, int32_t waiters) {
+      int64_t val = (((int64_t) barrier_tag) << 32) |
+                    (((int64_t) waiters) & 0xFFFFFFFF);
+      assert(decode_tag(val) == barrier_tag, "Encoding is reversible");
+      assert(decode_waiters(val) == waiters, "Encoding is reversible");
+      return val;
+    }
+
+    static int32_t decode_tag(int64_t value) {
+      return (int32_t)(value >> 32);
+    }
+
+    static int32_t decode_waiters(int64_t value) {
+      return (int32_t)(value & 0xFFFFFFFF);
+    }
+
   public:
-    Cell() : _sem(0), _state(-1), _outstanding_wakeups(0) {}
+    Cell() : _sem(0), _state(encode(0, 0)), _outstanding_wakeups(0) {}
     NONCOPYABLE(Cell);
 
-    void arm();
-    void disarm();
-    void wait();
+    void arm(int32_t requested_tag);
+    void disarm(int32_t expected_tag);
+    void wait(int32_t expected_tag);
   };
 
   // Should be enough for most uses without exploding the footprint.

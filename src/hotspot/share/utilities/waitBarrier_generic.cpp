@@ -60,13 +60,17 @@
 // threads to catch up.
 //
 // The correctness is guaranteed by using a single atomic state variable per cell,
-// with updates always done with CASes. For the cell state, positive values mean
-// the cell is armed and maybe has waiters. Negative values mean the cell is disarmed
-// and maybe has completing waiters. The cell starts with "-1". Arming a cell swings
-// from "-1" to "+1". Every new waiter swings from (n) to (n+1), as long as "n" is
-// positive. Disarm swings from (n) to (-n). Every completing waiter swings from (n)
-// to (n+1), where "n" is guaranteed to stay negative. When all waiters complete,
-// a cell ends up at "-1" again. This allows accurate tracking of how many signals
+// with updates always done with CASes:
+//
+//   [.......... barrier tag ..........][.......... waiters ..........]
+//  63                                  31                            0
+//
+// Cell starts with zero tag and zero waiters. Arming the cell swings barrier tag from
+// zero to some tag, while checking that no waiters have appeared. Disarming swings
+// the barrier tag back from tag to zero. Every waiter registers itself by incrementing
+// the "waiters", while checking that barrier tag is still the same. Every completing waiter
+// decrements the "waiters". When all waiters complete, a cell ends up in initial state,
+// ready to be armed again. This allows accurate tracking of how many signals
 // to issue and does not race with disarm.
 //
 // The implementation uses the strongest (default) barriers for extra safety, even
@@ -82,19 +86,19 @@ void GenericWaitBarrier::arm(int barrier_tag) {
   Atomic::release_store(&_barrier_tag, barrier_tag);
 
   Cell &cell = tag_to_cell(barrier_tag);
-  cell.arm();
+  cell.arm(barrier_tag);
 
   // API specifies arm() must provide a trailing fence.
   OrderAccess::fence();
 }
 
 void GenericWaitBarrier::disarm() {
-  int tag = Atomic::load_acquire(&_barrier_tag);
-  assert(tag != 0, "Pre disarm: Should be armed. Tag: %d", tag);
+  int barrier_tag = Atomic::load_acquire(&_barrier_tag);
+  assert(barrier_tag != 0, "Pre disarm: Should be armed. Tag: %d", barrier_tag);
   Atomic::release_store(&_barrier_tag, 0);
 
-  Cell &cell = tag_to_cell(tag);
-  cell.disarm();
+  Cell &cell = tag_to_cell(barrier_tag);
+  cell.disarm(barrier_tag);
 
   // API specifies disarm() must provide a trailing fence.
   OrderAccess::fence();
@@ -104,29 +108,39 @@ void GenericWaitBarrier::wait(int barrier_tag) {
   assert(barrier_tag != 0, "Pre wait: Should be waiting on armed value");
 
   Cell &cell = tag_to_cell(barrier_tag);
-  cell.wait();
+  cell.wait(barrier_tag);
 
   // API specifies wait() must provide a trailing fence.
   OrderAccess::fence();
 }
 
-void GenericWaitBarrier::Cell::arm() {
-  assert(Atomic::load_acquire(&_state) < 0, "Pre arm: should be disarmed");
-
+void GenericWaitBarrier::Cell::arm(int32_t requested_tag) {
   // Before we continue to arm, we need to make sure that all threads
-  // have left the previous cell. This means the cell state has rolled to -1.
+  // have left the previous cell.
+
+  int64_t state;
+
   SpinYield sp;
-  while (Atomic::load_acquire(&_state) < -1) {
+  while (true) {
+    state = Atomic::load_acquire(&_state);
+    assert(decode_tag(state) == 0,
+           "Pre arm: Should not be armed. "
+           "Tag: " INT32_FORMAT "; Waiters: " INT32_FORMAT,
+           decode_tag(state), decode_waiters(state));
+    if (decode_waiters(state) == 0) {
+      break;
+    }
     sp.wait();
   }
 
   // Try to swing cell to armed. This should always succeed after the check above.
-  int ps = Atomic::cmpxchg(&_state, -1, 1);
-  if (ps != -1) {
-    fatal("Mid arm: Cannot arm the wait barrier. State: %d", ps);
+  int64_t new_state = encode(requested_tag, 0);
+  int64_t prev_state = Atomic::cmpxchg(&_state, state, new_state);
+  if (prev_state != state) {
+    fatal("Cannot arm the wait barrier. "
+          "Tag: " INT32_FORMAT "; Waiters: " INT32_FORMAT,
+          decode_tag(prev_state), decode_waiters(prev_state));
   }
-
-  assert(Atomic::load(&_state) > 0, "Post arm: should be armed");
 }
 
 int GenericWaitBarrier::Cell::signal_if_needed(int max) {
@@ -155,14 +169,23 @@ int GenericWaitBarrier::Cell::signal_if_needed(int max) {
   }
 }
 
-void GenericWaitBarrier::Cell::disarm() {
+void GenericWaitBarrier::Cell::disarm(int32_t expected_tag) {
+  int32_t waiters;
+
   SpinYield sp;
-  int s;
   while (true) {
-    s = Atomic::load_acquire(&_state);
-    assert(s > 0, "Mid disarm: Should be armed. State: %d", s);
-    if (Atomic::cmpxchg(&_state, s, -s) == s) {
-      // Successfully disarmed. Break out and deal with the rest.
+    int64_t state = Atomic::load_acquire(&_state);
+    int32_t tag = decode_tag(state);
+    waiters = decode_waiters(state);
+
+    assert((tag == expected_tag) && (waiters >= 0),
+           "Mid disarm: Should be armed with expected tag and have sane waiters. "
+           "Tag: " INT32_FORMAT "; Waiters: " INT32_FORMAT,
+           tag, waiters);
+
+    int64_t new_state = encode(0, waiters);
+    if (Atomic::cmpxchg(&_state, state, new_state) == state) {
+      // Successfully disarmed.
       break;
     }
     sp.wait();
@@ -170,30 +193,38 @@ void GenericWaitBarrier::Cell::disarm() {
 
   // Wake up waiters, if we have at least one.
   // Allow other threads to assist with wakeups, if possible.
-  int waiters = s - 1;
   if (waiters > 0) {
     Atomic::release_store(&_outstanding_wakeups, waiters);
     while (signal_if_needed(INT_MAX) > 0) {
       sp.wait();
     }
   }
-
   assert(Atomic::load(&_outstanding_wakeups) == 0, "Post disarm: Should not have outstanding wakeups");
-  assert(Atomic::load(&_state) < 0, "Post disarm: Should be disarmed");
 }
 
-void GenericWaitBarrier::Cell::wait() {
-  // Try to register ourselves as pending waiter. If we got disarmed while
-  // trying to register, return immediately.
-  {
-    int s;
-    do {
-      s = Atomic::load_acquire(&_state);
-      if (s < 0) {
-        return;
-      }
-      assert(s > 0, "Before wait: Should be armed. State: %d", s);
-    } while (Atomic::cmpxchg(&_state, s, s + 1) != s);
+void GenericWaitBarrier::Cell::wait(int32_t expected_tag) {
+  // Try to register ourselves as pending waiter.
+  while (true) {
+    int64_t state = Atomic::load_acquire(&_state);
+    int32_t tag = decode_tag(state);
+    if (tag != expected_tag) {
+      // Cell tag had changed while waiting here. This means either the cell had
+      // been disarmed, or we are late and the cell was armed with a new tag.
+      // Exit without touching anything else.
+      return;
+    }
+    int32_t waiters = decode_waiters(state);
+
+    assert((tag == expected_tag) && (waiters >= 0 && waiters < INT32_MAX),
+           "Before wait: Should be armed with expected tag and waiters are in range. "
+           "Tag: " INT32_FORMAT "; Waiters: " INT32_FORMAT,
+           tag, waiters);
+
+    int64_t new_state = encode(tag, waiters + 1);
+    if (Atomic::cmpxchg(&_state, state, new_state) == state) {
+      // Success! Proceed to wait.
+      break;
+    }
   }
 
   // Wait for notification.
@@ -208,11 +239,20 @@ void GenericWaitBarrier::Cell::wait() {
   signal_if_needed(2);
 
   // Register ourselves as completed waiter before leaving.
-  {
-    int s;
-    do {
-      s = Atomic::load_acquire(&_state);
-      assert(s < -1, "After wait: Should be disarmed and have returning waiters. State: %d", s);
-    } while (Atomic::cmpxchg(&_state, s, s + 1) != s);
+  while (true) {
+    int64_t state = Atomic::load_acquire(&_state);
+    int32_t tag = decode_tag(state);
+    int32_t waiters = decode_waiters(state);
+
+    assert((tag == 0) && (waiters > 0),
+           "After wait: Should be not armed and have non-complete waiters. "
+           "Tag: " INT32_FORMAT "; Waiters: " INT32_FORMAT,
+           tag, waiters);
+
+    int64_t new_state = encode(tag, waiters - 1);
+    if (Atomic::cmpxchg(&_state, state, new_state) == state) {
+      // Success!
+      break;
+    }
   }
 }
