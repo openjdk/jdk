@@ -29,8 +29,8 @@
 
 
 #define DLL_PUBLIC __attribute__((visibility("default")))
-#define INSERTION_SORT_THRESHOLD_32BIT 16
-#define INSERTION_SORT_THRESHOLD_64BIT 20
+#define INSERTION_SORT_THRESHOLD_32BIT 10
+#define INSERTION_SORT_THRESHOLD_64BIT 16
 
 extern "C" {
 
