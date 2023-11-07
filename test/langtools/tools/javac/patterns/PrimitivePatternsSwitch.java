@@ -49,6 +49,7 @@ public class PrimitivePatternsSwitch {
         assertEquals(2,  exhaustive5());
         assertEquals(1,  exhaustive6());
         assertEquals(1,  exhaustive7(true));
+        assertEquals(1,  exhaustive7s(true));
         assertEquals(1,  exhaustive8(true));
         assertEquals(1,  exhaustive9(true));
         assertEquals(1,  exhaustive9(false));
@@ -221,7 +222,6 @@ public class PrimitivePatternsSwitch {
         };
     }
 
-    // todo run tests
     public static int exhaustive7(Boolean b) {
         switch (b) {
             case true: return 1;
