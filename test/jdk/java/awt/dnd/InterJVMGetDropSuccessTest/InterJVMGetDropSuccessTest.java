@@ -218,9 +218,9 @@ class Child {
         }
 
         public void dragDropEnd(DragSourceDropEvent dsde) {
-            finished = true;
-            dropSuccess = dsde.getDropSuccess();
             synchronized (Util.SYNC_LOCK) {
+                finished = true;
+                dropSuccess = dsde.getDropSuccess();
                 Util.SYNC_LOCK.notifyAll();
             }
         }
@@ -267,6 +267,7 @@ class Child {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            Thread.sleep(50);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                  p.translate(Util.sign(targetPoint.x - p.x),
@@ -275,19 +276,20 @@ class Child {
                 Thread.sleep(50);
             }
 
+            boolean success1 = false;
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_MASK);
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
+                if (!dragSourceListener.isDropFinished()) {
+                    throw new RuntimeException("Drop not finished");
+                }
+                success1 = dragSourceListener.getDropSuccess();
+                dragSourceListener.reset();
             }
 
-            if (!dragSourceListener.isDropFinished()) {
-                throw new RuntimeException("Drop not finished");
-            }
 
-            boolean success1 = dragSourceListener.getDropSuccess();
-
-            dragSourceListener.reset();
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            Thread.sleep(50);
             robot.mousePress(InputEvent.BUTTON1_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                  p.translate(Util.sign(targetPoint.x - p.x),
@@ -296,16 +298,16 @@ class Child {
                 Thread.sleep(50);
             }
 
+            boolean success2 = false;
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_MASK);
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
+                if (!dragSourceListener.isDropFinished()) {
+                    throw new RuntimeException("Drop not finished");
+                }
+                success2 = dragSourceListener.getDropSuccess();
             }
 
-            if (!dragSourceListener.isDropFinished()) {
-                throw new RuntimeException("Drop not finished");
-            }
-
-            boolean success2 = dragSourceListener.getDropSuccess();
             int retCode = 0;
 
             if (success1) {
