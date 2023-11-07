@@ -26,12 +26,12 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
@@ -48,7 +48,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
        heap_word_size(_virtual_space.committed_size());
     MemRegion mr(space()->bottom(), new_word_size);
     // Expand card table
-    GenCollectedHeap::heap()->rem_set()->resize_covered_region(mr);
+    SerialHeap::heap()->rem_set()->resize_covered_region(mr);
     // Expand shared block offset array
     _bts->resize(new_word_size);
 
@@ -135,7 +135,7 @@ void TenuredGeneration::shrink(size_t bytes) {
   _bts->resize(new_word_size);
   MemRegion mr(space()->bottom(), new_word_size);
   // Shrink the card table
-  GenCollectedHeap::heap()->rem_set()->resize_covered_region(mr);
+  SerialHeap::heap()->rem_set()->resize_covered_region(mr);
 
   size_t new_mem_size = _virtual_space.committed_size();
   size_t old_mem_size = new_mem_size + size;
@@ -295,8 +295,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
   assert((reserved_byte_size & 3) == 0, "bad alignment");
   MemRegion reserved_mr(start, heap_word_size(reserved_byte_size));
-  _bts = new BlockOffsetSharedArray(reserved_mr,
-                                    heap_word_size(initial_byte_size));
+  _bts = new SerialBlockOffsetSharedArray(reserved_mr,
+                                          heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
 
@@ -305,7 +305,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
   guarantee(_rs->is_aligned(reserved_mr.start()), "generation must be card aligned");
-  if (reserved_mr.end() != GenCollectedHeap::heap()->reserved_region().end()) {
+  if (reserved_mr.end() != SerialHeap::heap()->reserved_region().end()) {
     // Don't check at the very end of the heap as we'll assert that we're probing off
     // the end if we try.
     guarantee(_rs->is_aligned(reserved_mr.end()), "generation must be card aligned");
@@ -390,7 +390,7 @@ void TenuredGeneration::update_gc_stats(Generation* current_generation,
                                         bool full) {
   // If the young generation has been collected, gather any statistics
   // that are of interest at this point.
-  bool current_is_young = GenCollectedHeap::heap()->is_young_gen(current_generation);
+  bool current_is_young = SerialHeap::heap()->is_young_gen(current_generation);
   if (!full && current_is_young) {
     // Calculate size of data promoted from the young generation
     // before doing the collection.
@@ -429,7 +429,7 @@ void TenuredGeneration::collect(bool   full,
                                 bool   clear_all_soft_refs,
                                 size_t size,
                                 bool   is_tlab) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
   gc_timer->register_gc_start();
@@ -474,11 +474,10 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
   TenuredSpace* space = _the_space;
-  space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
-    size_t word_size = _the_space->block_size(start);
-    space->alloc_block(start, start + word_size);
+    size_t word_size = cast_to_oop(start)->size();;
+    space->update_for_block(start, start + word_size);
     start += word_size;
   }
 }

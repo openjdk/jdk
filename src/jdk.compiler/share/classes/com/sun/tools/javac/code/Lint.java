@@ -335,7 +335,12 @@ public class Lint
         /**
          * Warn about use of preview features.
          */
-        PREVIEW("preview");
+        PREVIEW("preview"),
+
+        /**
+         * Warn about use of restricted methods.
+         */
+        RESTRICTED("restricted");
 
         LintCategory(String option) {
             this(option, false);

@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A compound layout that is an aggregation of multiple, heterogeneous <em>member layouts</em>. There are two ways in which member layouts
@@ -38,9 +37,8 @@ import jdk.internal.javac.PreviewFeature;
  * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
  * @sealedGraph
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface GroupLayout extends MemoryLayout permits StructLayout, UnionLayout {
 
     /**
@@ -67,8 +65,8 @@ public sealed interface GroupLayout extends MemoryLayout permits StructLayout, U
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws IllegalArgumentException if {@code byteAlignment} is less than {@code M}, where {@code M} is the maximum alignment
-     * constraint in any of the member layouts associated with this group layout.
+     * @throws IllegalArgumentException if {@code byteAlignment} is less than {@code M}, where {@code M} is
+     *         the maximum alignment constraint in any of the member layouts associated with this group layout
      */
     @Override
     GroupLayout withByteAlignment(long byteAlignment);

@@ -537,6 +537,16 @@ public abstract class AbstractMemberWriter {
         writer.addPreviewInfo(member, content);
     }
 
+    /**
+     * Add the restricted information for the given method.
+     *
+     * @param method the method being documented.
+     * @param content the content to which the preview information will be added.
+     */
+    protected void addRestrictedInfo(ExecutableElement method, Content content) {
+        writer.addRestrictedInfo(method, content);
+    }
+
     protected String name(Element member) {
         return utils.getSimpleName(member);
     }

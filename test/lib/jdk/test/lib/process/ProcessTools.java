@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.Thread.State;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -377,25 +376,15 @@ public final class ProcessTools {
         return ProcessHandle.current().pid();
     }
 
-    /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     *
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createJavaProcessBuilder(List<String> command) {
-        return createJavaProcessBuilder(command.toArray(String[]::new));
-    }
-
     /*
-      Convert arguments for tests running with virtual threads main wrapper
-      When test is executed with process wrapper the line is changed from
+      Convert arguments for tests running with virtual threads test thread factory.
+      When test is executed with test thread factory the line is changed from
       java <jvm-args> <test-class> <test-args>
       to
-      java <jvm-args> -Dmain.wrapper=<wrapper-name> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
+      java <jvm-args> -Dtest.thread.factory=<test-thread-factory-name> jdk.test.lib.process.ProcessTools <test-thread-factory-name> <test-class> <test-args>
      */
 
-    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
+    private static List<String> addTestThreadFactoryArgs(String testThreadFactoryName, List<String> command) {
 
         final List<String> unsupportedArgs = List.of(
                 "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
@@ -408,9 +397,9 @@ public final class ProcessTools {
         ArrayList<String> args = new ArrayList<>();
 
         boolean expectSecondArg = false;
-        boolean isWrapperClassAdded = false;
+        boolean isTestThreadFactoryAdded = false;
         for (String cmd : command) {
-            if (isWrapperClassAdded) {
+            if (isTestThreadFactoryAdded) {
                 args.add(cmd);
                 continue;
             }
@@ -443,10 +432,10 @@ public final class ProcessTools {
             }
             // Some tests might check property to understand
             // if virtual threads are tested
-            args.add("-Dmain.wrapper=" + mainWrapper);
+            args.add("-Dtest.thread.factory=" + testThreadFactoryName);
             args.add("jdk.test.lib.process.ProcessTools");
-            args.add(mainWrapper);
-            isWrapperClassAdded = true;
+            args.add(testThreadFactoryName);
+            isTestThreadFactoryAdded = true;
             args.add(cmd);
         }
         return args;
@@ -458,7 +447,7 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) {
+    private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -471,9 +460,9 @@ public final class ProcessTools {
             args.add(System.getProperty("java.class.path"));
         }
 
-        String mainWrapper = System.getProperty("main.wrapper");
-        if (mainWrapper != null) {
-            args.addAll(addMainWrapperArgs(mainWrapper, Arrays.asList(command)));
+        String testThreadFactoryName = System.getProperty("test.thread.factory");
+        if (testThreadFactoryName != null) {
+            args.addAll(addTestThreadFactoryArgs(testThreadFactoryName, Arrays.asList(command)));
         } else {
             Collections.addAll(args, command);
         }
@@ -513,8 +502,8 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(List<String> command) {
-        return createTestJvm(command.toArray(String[]::new));
+    public static ProcessBuilder createTestJavaProcessBuilder(List<String> command) {
+        return createTestJavaProcessBuilder(command.toArray(String[]::new));
     }
 
     /**
@@ -528,8 +517,52 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(String... command) {
+    public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
         return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b>Please observe that you likely should use
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedTestJavaProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(List<String> command) {
+        return createLimitedTestJavaProcessBuilder(command.toArray(String[]::new));
+    }
+
+   /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b>Please observe that you likely should use
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedTestJavaProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(String... command) {
+        return createJavaProcessBuilder(command);
     }
 
     /**
@@ -563,7 +596,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createTestJvm(cmds);
+        ProcessBuilder pb = createTestJavaProcessBuilder(cmds);
         return executeProcess(pb);
     }
 
@@ -881,18 +914,18 @@ public final class ProcessTools {
 
     public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
-    // ProcessTools as a wrapper
+    // ProcessTools as a wrapper for test execution
     // It executes method main in a separate virtual or platform thread
     public static void main(String[] args) throws Throwable {
-        String wrapper = args[0];
+        String testThreadFactoryName = args[0];
         String className = args[1];
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
-        Class c = Class.forName(className);
+        Class<?> c = Class.forName(className);
         Method mainMethod = c.getMethod("main", new Class[] { String[].class });
         mainMethod.setAccessible(true);
 
-        if (wrapper.equals("Virtual")) {
+        if (testThreadFactoryName.equals("Virtual")) {
             // MainThreadGroup used just as a container for exceptions
             // when main is executed in virtual thread
             MainThreadGroup tg = new MainThreadGroup();
@@ -912,7 +945,7 @@ public final class ProcessTools {
             if (tg.uncaughtThrowable != null) {
                 throw tg.uncaughtThrowable;
             }
-        } else if (wrapper.equals("Kernel")) {
+        } else if (testThreadFactoryName.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {
                     try {

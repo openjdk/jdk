@@ -35,12 +35,14 @@
 #include "utilities/tribool.hpp"
 
   //      Directives flag name,    type, default value, compile command name
-  #define compilerdirectives_common_flags(cflags) \
+  #define compilerdirectives_common_other_flags(cflags) \
     cflags(Enable,                  bool, false, Unknown) \
     cflags(Exclude,                 bool, false, Unknown) \
     cflags(BreakAtExecute,          bool, false, BreakAtExecute) \
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
+    cflags(MemLimit,                intx, 0, MemLimit) \
+    cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
@@ -50,18 +52,28 @@
     cflags(DumpReplay,              bool, false, DumpReplay) \
     cflags(DumpInline,              bool, false, DumpInline) \
     cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, Unknown) \
-    cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
-    cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic) \
     cflags(RepeatCompilation,       intx, RepeatCompilation, RepeatCompilation)
+#define compilerdirectives_common_string_flags(cflags)                           \
+  cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic) \
+  cflags(ControlIntrinsic,        ccstrlist, ControlIntrinsic, ControlIntrinsic)
+#define compilerdirectives_common_flags(cflags) \
+  compilerdirectives_common_other_flags(cflags) \
+  compilerdirectives_common_string_flags(cflags)
 
 #ifdef COMPILER1
-  #define compilerdirectives_c1_flags(cflags)
+  #define compilerdirectives_c1_other_flags(cflags)
+  #define compilerdirectives_c1_string_flags(cflags)
 #else
-  #define compilerdirectives_c1_flags(cflags)
+  #define compilerdirectives_c1_other_flags(cflags)
+  #define compilerdirectives_c1_string_flags(cflags)
 #endif
 
+#define compilerdirectives_c1_flags(cflags) \
+  compilerdirectives_c1_other_flags(cflags) \
+  compilerdirectives_c1_string_flags(cflags)
+
 #ifdef COMPILER2
-  #define compilerdirectives_c2_flags(cflags) \
+  #define compilerdirectives_c2_other_flags(cflags) \
     cflags(BlockLayoutByFrequency,  bool, BlockLayoutByFrequency,  BlockLayoutByFrequency) \
     cflags(PrintOptoAssembly,       bool, PrintOptoAssembly, PrintOptoAssembly) \
     cflags(PrintIntrinsics,         bool, PrintIntrinsics, PrintIntrinsics) \
@@ -69,7 +81,6 @@ NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipe
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
 NOT_PRODUCT(cflags(TraceEscapeAnalysis, bool, false, TraceEscapeAnalysis)) \
 NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
-NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
@@ -77,9 +88,16 @@ NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLeve
     cflags(VectorizeDebug,          uintx, 0, VectorizeDebug) \
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
+#define compilerdirectives_c2_string_flags(cflags) \
+NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
-  #define compilerdirectives_c2_flags(cflags)
+  #define compilerdirectives_c2_other_flags(cflags)
+  #define compilerdirectives_c2_string_flags(cflags)
 #endif
+
+#define compilerdirectives_c2_flags(cflags) \
+  compilerdirectives_c2_other_flags(cflags) \
+  compilerdirectives_c2_string_flags(cflags)
 
 class AbstractCompiler;
 class CompilerDirectives;
@@ -131,12 +149,17 @@ public:
   void finalize(outputStream* st);
   bool is_c1(CompilerDirectives* directive) const;
   bool is_c2(CompilerDirectives* directive) const;
+  bool should_collect_memstat() const;
+  bool should_print_memstat() const;
+  size_t mem_limit() const;
+  bool should_crash_at_mem_limit() const; // true: crash false: stop compilation
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,
     compilerdirectives_common_flags(enum_of_flags)
     compilerdirectives_c2_flags(enum_of_flags)
     compilerdirectives_c1_flags(enum_of_flags)
+#undef enum_of_flags
     number_of_flags
   } flags;
 
@@ -147,12 +170,32 @@ public:
   compilerdirectives_common_flags(flag_store_definition)
   compilerdirectives_c2_flags(flag_store_definition)
   compilerdirectives_c1_flags(flag_store_definition)
+#undef flag_store_definition
 
 // Casting to get the same function signature for all setters. Used from parser.
 #define set_function_definition(name, type, dvalue, cc_flag) void set_##name(void* value) { type val = *(type*)value; name##Option = val; _modified[name##Index] = true; }
-  compilerdirectives_common_flags(set_function_definition)
-  compilerdirectives_c2_flags(set_function_definition)
-  compilerdirectives_c1_flags(set_function_definition)
+  compilerdirectives_common_other_flags(set_function_definition)
+  compilerdirectives_c2_other_flags(set_function_definition)
+  compilerdirectives_c1_other_flags(set_function_definition)
+#undef set_function_definition
+
+// Casting to get the same function signature for all setters. Used from parser.
+//
+// IMPORTANT: Takes ownership, will use os::free. Ensure the memory was dynamically allocated on the
+//            C heap.
+#define set_string_function_definition(name, type, dvalue, cc_flag) \
+void set_##name(void* value) {                                      \
+  if (_modified[name##Index]) {                                     \
+    os::free(const_cast<char*>(name##Option));                      \
+  }                                                                 \
+  type val = *(type*)value;                                         \
+  name##Option = val;                                               \
+  _modified[name##Index] = true;                                    \
+}
+  compilerdirectives_common_string_flags(set_string_function_definition)
+  compilerdirectives_c2_string_flags(set_string_function_definition)
+  compilerdirectives_c1_string_flags(set_string_function_definition)
+#undef set_string_function_definition
 
   void set_ideal_phase_mask(uint64_t mask) { _ideal_phase_name_mask = mask; };
   uint64_t ideal_phase_mask() { return _ideal_phase_name_mask; };
@@ -171,6 +214,7 @@ void print(outputStream* st) {
     compilerdirectives_common_flags(print_function_definition)
     compilerdirectives_c2_flags(print_function_definition)
     compilerdirectives_c1_flags(print_function_definition)
+#undef print_function_definition
     st->cr();
   }
 };

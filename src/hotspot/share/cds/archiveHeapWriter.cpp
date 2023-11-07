@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapWriter.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -137,7 +139,7 @@ oop ArchiveHeapWriter::requested_obj_from_buffer_offset(size_t offset) {
 }
 
 oop ArchiveHeapWriter::source_obj_to_requested_obj(oop src_obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
   HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
   if (p != nullptr) {
     return requested_obj_from_buffer_offset(p->buffer_offset());
@@ -317,6 +319,12 @@ size_t ArchiveHeapWriter::get_filler_size_at(address buffered_addr) {
   }
 }
 
+template <typename T>
+void update_buffered_object_field(address buffered_obj, int field_offset, T value) {
+  T* field_addr = cast_to_oop(buffered_obj)->field_addr<T>(field_offset);
+  *field_addr = value;
+}
+
 size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   assert(!is_too_large_to_archive(src_obj), "already checked");
   size_t byte_size = src_obj->size() * HeapWordSize;
@@ -341,6 +349,20 @@ size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   assert(is_object_aligned(_buffer_used), "sanity");
   assert(is_object_aligned(byte_size), "sanity");
   memcpy(to, from, byte_size);
+
+  // These native pointers will be restored explicitly at run time.
+  if (java_lang_Module::is_instance(src_obj)) {
+    update_buffered_object_field<ModuleEntry*>(to, java_lang_Module::module_entry_offset(), nullptr);
+  } else if (java_lang_ClassLoader::is_instance(src_obj)) {
+#ifdef ASSERT
+    // We only archive these loaders
+    if (src_obj != SystemDictionary::java_platform_loader() &&
+        src_obj != SystemDictionary::java_system_loader()) {
+      assert(src_obj->klass()->name()->equals("jdk/internal/loader/ClassLoaders$BootClassLoader"), "must be");
+    }
+#endif
+    update_buffered_object_field<ClassLoaderData*>(to, java_lang_ClassLoader::loader_data_offset(), nullptr);
+  }
 
   size_t buffered_obj_offset = _buffer_used;
   _buffer_used = new_used;
