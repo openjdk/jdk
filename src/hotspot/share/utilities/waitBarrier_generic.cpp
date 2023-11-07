@@ -129,8 +129,8 @@ void GenericWaitBarrier::Cell::arm() {
   assert(Atomic::load(&_state) > 0, "Post arm: should be armed");
 }
 
-int GenericWaitBarrier::Cell::wake_if_needed(int max) {
-  int wakeups = 0;
+int GenericWaitBarrier::Cell::signal_if_needed(int max) {
+  int signals = 0;
   while (true) {
     int cur = Atomic::load_acquire(&_outstanding_wakeups);
     if (cur == 0) {
@@ -148,8 +148,8 @@ int GenericWaitBarrier::Cell::wake_if_needed(int max) {
     // Signal!
     _sem.signal();
 
-    if (wakeups++ > max) {
-      // Over the wakeup limit, break out.
+    if (++signals >= max) {
+      // Signalled requested number of times, break out.
       return prev;
     }
   }
@@ -157,22 +157,25 @@ int GenericWaitBarrier::Cell::wake_if_needed(int max) {
 
 void GenericWaitBarrier::Cell::disarm() {
   SpinYield sp;
+  int s;
   while (true) {
-    int s = Atomic::load_acquire(&_state);
+    s = Atomic::load_acquire(&_state);
     assert(s > 0, "Mid disarm: Should be armed. State: %d", s);
     if (Atomic::cmpxchg(&_state, s, -s) == s) {
-      // Successfully disarmed. Wake up waiters, if we have at least one.
-      // Allow other threads to assist with wakeups, if possible.
-      int waiters = s - 1;
-      if (waiters > 0) {
-        Atomic::release_store(&_outstanding_wakeups, waiters);
-        while (wake_if_needed(INT_MAX) > 0) {
-          sp.wait();
-        }
-      }
+      // Successfully disarmed. Break out and deal with the rest.
       break;
     }
     sp.wait();
+  }
+
+  // Wake up waiters, if we have at least one.
+  // Allow other threads to assist with wakeups, if possible.
+  int waiters = s - 1;
+  if (waiters > 0) {
+    Atomic::release_store(&_outstanding_wakeups, waiters);
+    while (signal_if_needed(INT_MAX) > 0) {
+      sp.wait();
+    }
   }
 
   assert(Atomic::load(&_outstanding_wakeups) == 0, "Post disarm: Should not have outstanding wakeups");
@@ -202,7 +205,7 @@ void GenericWaitBarrier::Cell::wait() {
   // otherwise we might prematurely wake up threads for another barrier tag.
   // Current arm() sequence protects us from this trouble by waiting until all waiters
   // leave.
-  wake_if_needed(2);
+  signal_if_needed(2);
 
   // Register ourselves as completed waiter before leaving.
   {

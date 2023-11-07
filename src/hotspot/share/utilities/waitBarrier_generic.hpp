@@ -49,7 +49,7 @@ private:
 
     DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
 
-    int wake_if_needed(int max);
+    int signal_if_needed(int max);
 
   public:
     Cell() : _sem(0), _state(-1), _outstanding_wakeups(0) {}
