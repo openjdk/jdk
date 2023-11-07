@@ -28,7 +28,8 @@
  * @summary displays an animating fps (frames per second)
  *  counter.  When the window is dragged from monitor to monitor,
  *  the speed of the animation should not change too greatly.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual MultimonVImage
  */
 
@@ -181,3 +182,4 @@ class AnimatingFrame extends JFrame implements Runnable {
         }
     }
 }
+
