@@ -303,7 +303,7 @@ void VM_Version::c2_initialize() {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
     } else if (!is_power_of_2(MaxVectorSize)) {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
     } else if (MaxVectorSize > _initial_vector_length) {
       warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
               _initial_vector_length, _initial_vector_length);
