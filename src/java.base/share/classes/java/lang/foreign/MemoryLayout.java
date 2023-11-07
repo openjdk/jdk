@@ -875,7 +875,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         MemoryLayoutUtil.requireNonNegative(elementCount);
         Objects.requireNonNull(elementLayout);
-        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
+        Utils.checkElementAlignment(elementLayout,
+                "Element layout size is not multiple of alignment");
         return Utils.wrapOverflow(() ->
                 SequenceLayoutImpl.of(elementCount, elementLayout));
     }
