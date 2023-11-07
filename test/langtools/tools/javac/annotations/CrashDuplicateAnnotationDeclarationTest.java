@@ -78,16 +78,17 @@ public class CrashDuplicateAnnotationDeclarationTest extends TestRunner {
     public void testDupAnnoDeclaration(Path base) throws Exception {
         Path src = base.resolve("src");
         Path pkg = src.resolve("pkg");
-        Path y = pkg.resolve("Y");
-        Path t = pkg.resolve("T");
+        Path y = pkg.resolve("Y.java");
+        Path t = pkg.resolve("T.java");
 
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
 
-        tb.writeJavaFiles(y,
+        tb.writeJavaFiles(src,
                 """
                 package pkg;
+                @SuppressWarnings("deprecation")
                 class Y {
                     @interface A {}
                     @interface A {} // error: class A is already defined
@@ -95,7 +96,7 @@ public class CrashDuplicateAnnotationDeclarationTest extends TestRunner {
                 }
                 """);
 
-        tb.writeJavaFiles(t,
+        tb.writeJavaFiles(src,
                 """
                 package pkg;
                 @Deprecated class T {}
@@ -103,25 +104,22 @@ public class CrashDuplicateAnnotationDeclarationTest extends TestRunner {
 
         // we need to compile T first
         new JavacTask(tb)
-                .files(findJavaFiles(t))
+                .files(t)
                 .outdir(classes)
                 .run();
 
         List<String> expected = List.of(
-                "Y.java:4: error: class A is already defined in class Y",
-                "    @interface A {} // error: class A is already defined",
-                "     ^",
-                "Y.java uses or overrides a deprecated API.",
-                "Recompile with -Xlint:deprecation for details.",
+                "Y.java:5:6: compiler.err.already.defined: kindname.class, pkg.Y.A, kindname.class, pkg.Y",
                 "1 error");
 
         Path classDir = getClassDir();
         List<String> found = new JavacTask(tb)
                 .classpath(classes, classDir)
-                .options("-processor", SimpleProcessor.class.getName())
-                .files(findJavaFiles(y, t))
+                .options("-processor", SimpleProcessor.class.getName(),
+                         "-XDrawDiagnostics")
+                .files(y, t)
                 .outdir(classes)
-                .run(Task.Expect.FAIL)
+                .run(Task.Expect.FAIL, 1)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         checkOutputAcceptable(expected, found);
