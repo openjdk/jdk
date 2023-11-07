@@ -302,17 +302,17 @@ void VM_Version::c2_initialize() {
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
+    } else if (!is_power_of_2(MaxVectorSize)) {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
+    } else if (MaxVectorSize > _initial_vector_length) {
+      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
+              _initial_vector_length, _initial_vector_length);
+      MaxVectorSize = _initial_vector_length;
+    }
+    if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-        MaxVectorSize = _initial_vector_length;
-      }
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
   }
 
