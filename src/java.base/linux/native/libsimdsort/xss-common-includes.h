@@ -72,28 +72,12 @@ More details are available at: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=1055
 #define UNUSED(x) (void)(x)
 
 /* Compiler specific macros specific */
-#ifdef _MSC_VER
-#define X86_SIMD_SORT_INLINE static inline
-#define X86_SIMD_SORT_FINLINE static __forceinline
-#define LIKELY(x) (x)
-#define UNLIKELY(x) (x)
-#elif defined(__CYGWIN__)
-/*
- * Force inline in cygwin to work around a compiler bug. See
- * https://github.com/numpy/numpy/pull/22315#issuecomment-1267757584
- */
-#define X86_SIMD_SORT_INLINE static __attribute__((always_inline))
-#define X86_SIMD_SORT_FINLINE static __attribute__((always_inline))
-#elif defined(__GNUC__)
+#if defined(__GNUC__)
 #define X86_SIMD_SORT_INLINE static inline
 #define X86_SIMD_SORT_FINLINE static inline __attribute__((always_inline))
-#define LIKELY(x) __builtin_expect((x), 1)
-#define UNLIKELY(x) __builtin_expect((x), 0)
 #else
 #define X86_SIMD_SORT_INLINE static
 #define X86_SIMD_SORT_FINLINE static
-#define LIKELY(x) (x)
-#define UNLIKELY(x) (x)
 #endif
 
 #if __GNUC__ >= 8
