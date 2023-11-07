@@ -406,11 +406,15 @@ public:
   E& at_grow_with(int i, FillConstructor fill_ctr) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
-      if (i >= this->_capacity) grow(i);
+      if (i >= this->_capacity) {
+        grow(i);
+      }
+
       for (int j = this->_len; j <= i; j++) {
         this->_data[j].~E();
         fill_ctr(&this->_data[j]);
       }
+
       this->_len = i + 1;
     }
     return this->_data[i];
@@ -426,14 +430,21 @@ public:
   template<typename FillConstructor>
   void at_put_grow_with(int i, const E& elem, FillConstructor fill_ctr) {
     assert(0 <= i, "negative index %d", i);
-    if (i >= this->_len) {
-      if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j < i; j++) {
-        this->_data[j].~E();
-        fill_ctr(&this->_data[j]);
-      }
-      this->_len = i+1;
+    if (i < this->_len) {
+      this->_data[i] = E(elem);
+      return;
     }
+
+    if (i >= this->_capacity) {
+      grow(i);
+    }
+
+    for (int j = this->_len; j < i; j++) {
+      this->_data[j].~E();
+      fill_ctr(&this->_data[j]);
+    }
+
+    this->_len = i + 1;
     ::new (&this->_data[i]) E(elem);
   }
 
