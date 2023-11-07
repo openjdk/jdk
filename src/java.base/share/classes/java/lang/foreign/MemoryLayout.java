@@ -716,8 +716,7 @@ public sealed interface MemoryLayout
      *
      * @since 22
      */
-    sealed interface PathElement
-            permits LayoutPath.PathElementImpl {
+    sealed interface PathElement permits LayoutPath.PathElementImpl {
 
         /**
          * Returns a path element which selects a member layout with the given name in a group layout.
