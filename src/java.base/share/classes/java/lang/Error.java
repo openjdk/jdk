@@ -55,7 +55,7 @@ public class Error extends Throwable {
      */
     public Error() {
         super();
-        if (Throwable.tracing) {
+        if (Throwable.jfrTracing) {
             ThrowableTracer.traceError(getClass(), null);
         }
     }
@@ -70,7 +70,7 @@ public class Error extends Throwable {
      */
     public Error(String message) {
         super(message);
-        if (Throwable.tracing) {
+        if (Throwable.jfrTracing) {
             ThrowableTracer.traceError(getClass(), message);
         }
     }
@@ -91,7 +91,7 @@ public class Error extends Throwable {
      */
     public Error(String message, Throwable cause) {
         super(message, cause);
-        if (Throwable.tracing) {
+        if (Throwable.jfrTracing) {
             ThrowableTracer.traceError(getClass(), message);
         }
     }
@@ -111,7 +111,7 @@ public class Error extends Throwable {
      */
     public Error(Throwable cause) {
         super(cause);
-        if (Throwable.tracing) {
+        if (Throwable.jfrTracing) {
             ThrowableTracer.traceError(getClass(), null);
         }
     }
@@ -135,7 +135,7 @@ public class Error extends Throwable {
                     boolean enableSuppression,
                     boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
-        if (Throwable.tracing) {
+        if (Throwable.jfrTracing) {
             ThrowableTracer.traceError(getClass(), message);
         }
     }

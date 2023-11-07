@@ -122,7 +122,7 @@ public class Throwable implements Serializable {
     /**
      * Flag that determines if exceptions should be traced by JFR
      */
-    static volatile boolean tracing;
+    static volatile boolean jfrTracing;
 
     /**
      * The JVM saves some indication of the stack backtrace in this slot.
@@ -262,7 +262,7 @@ public class Throwable implements Serializable {
      */
     public Throwable() {
         fillInStackTrace();
-        if (tracing) {
+        if (jfrTracing) {
             ThrowableTracer.traceThrowable(getClass(), null);
         }
     }
@@ -281,7 +281,7 @@ public class Throwable implements Serializable {
     public Throwable(String message) {
         fillInStackTrace();
         detailMessage = message;
-        if (tracing) {
+        if (jfrTracing) {
             ThrowableTracer.traceThrowable(getClass(), message);
         }
     }
@@ -307,7 +307,7 @@ public class Throwable implements Serializable {
         fillInStackTrace();
         detailMessage = message;
         this.cause = cause;
-        if (tracing) {
+        if (jfrTracing) {
             ThrowableTracer.traceThrowable(getClass(), message);
         }
     }
@@ -333,7 +333,7 @@ public class Throwable implements Serializable {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
         this.cause = cause;
-        if (tracing) {
+        if (jfrTracing) {
             ThrowableTracer.traceThrowable(getClass(), null);
         }
     }
@@ -391,7 +391,7 @@ public class Throwable implements Serializable {
         if (!enableSuppression) {
             suppressedExceptions = null;
         }
-        if (tracing) {
+        if (jfrTracing) {
             ThrowableTracer.traceThrowable(getClass(), message);
         }
     }
