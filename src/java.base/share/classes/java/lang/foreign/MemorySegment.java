@@ -433,8 +433,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *
  * @since 22
  */
-public sealed interface MemorySegment
-        permits AbstractMemorySegmentImpl {
+public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * {@return the address of this memory segment}
@@ -2207,8 +2206,7 @@ public sealed interface MemorySegment
      * assert segment1.scope().equals(segment2.scope());
      * }
      */
-    sealed interface Scope
-            permits MemorySessionImpl {
+    sealed interface Scope permits MemorySessionImpl {
         /**
          * {@return {@code true}, if the regions of memory backing the memory segments associated with this scope are
          * still valid}

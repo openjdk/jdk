@@ -35,8 +35,7 @@ import jdk.internal.foreign.layout.StructLayoutImpl;
  *
  * @since 22
  */
-public sealed interface StructLayout extends GroupLayout
-        permits StructLayoutImpl {
+public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
 
     /**
      * {@inheritDoc}

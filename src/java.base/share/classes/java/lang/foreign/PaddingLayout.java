@@ -36,8 +36,7 @@ import jdk.internal.foreign.layout.PaddingLayoutImpl;
  *
  * @since 22
  */
-public sealed interface PaddingLayout extends MemoryLayout
-        permits PaddingLayoutImpl {
+public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
 
     /**
      * {@inheritDoc}
