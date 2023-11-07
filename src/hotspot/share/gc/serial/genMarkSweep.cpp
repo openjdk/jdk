@@ -199,19 +199,26 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
-    CodeCache::UnloadingScope scope(&is_alive);
 
-    // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(gc_timer());
+    bool unloading_occurred;
+    {
+      CodeCache::UnlinkingScope scope(&is_alive);
 
-    // Unload nmethods.
-    CodeCache::do_unloading(purged_class);
+      // Unload classes and purge the SystemDictionary.
+      unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Unload nmethods.
+      CodeCache::do_unloading(unloading_occurred);
+    }
+
+    // Release unloaded nmethod's memory.
+    CodeCache::flush_unlinked_nmethods();
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(purged_class);
+    Klass::clean_weak_klass_links(unloading_occurred);
 
     // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
+    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {

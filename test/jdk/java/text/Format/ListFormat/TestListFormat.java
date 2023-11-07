@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488 8316974
+ * @bug 8041488 8316974 8318569
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -200,6 +200,7 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE4),
         };
     }
+
     static Arguments[] getInstance_3Arg_InheritPatterns() {
         return new Arguments[] {
                 arguments(ListFormat.Type.STANDARD, ListFormat.Style.FULL),
@@ -213,6 +214,17 @@ public class TestListFormat {
                 arguments(ListFormat.Type.UNIT, ListFormat.Style.NARROW),
         };
     }
+
+    static Arguments[] getLocale_localeDependent() {
+        return new Arguments[] {
+                arguments(Locale.ROOT),
+                arguments(Locale.US),
+                arguments(Locale.GERMANY),
+                arguments(Locale.JAPAN),
+                arguments(Locale.SIMPLIFIED_CHINESE),
+        };
+    }
+
     @ParameterizedTest
     @MethodSource
     void getInstance_1Arg(String[] patterns, List<String> input, String expected) throws ParseException {
@@ -233,6 +245,33 @@ public class TestListFormat {
     void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
         var f = ListFormat.getInstance(l, type, style);
         compareResult(f, SAMPLE3, expected, roundTrip);
+    }
+
+    @Test
+    void getLocale_invariant() {
+        var f = ListFormat.getInstance(CUSTOM_PATTERNS_FULL);
+        assertEquals(Locale.ROOT, f.getLocale());
+    }
+
+    @Test
+    void getLocale_default() {
+        var f = ListFormat.getInstance();
+        assertEquals(Locale.getDefault(Locale.Category.FORMAT), f.getLocale());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getLocale_localeDependent(Locale l) {
+        var f = ListFormat.getInstance(l, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
+        assertEquals(l, f.getLocale());
+    }
+
+    @Test
+    void getPatterns_immutability() {
+        var f = ListFormat.getInstance(CUSTOM_PATTERNS_FULL);
+        var p = f.getPatterns();
+        p[0] = null;
+        assertArrayEquals(CUSTOM_PATTERNS_FULL, f.getPatterns());
     }
 
     @Test
