@@ -1973,8 +1973,7 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
-// Pattern: parent -> LShift (use) -> ConstraintCast* -> And
-// Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> ConstraintCast* -> And
+// Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, Node* use) const {
   uint use_op = use->Opcode();
   if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
