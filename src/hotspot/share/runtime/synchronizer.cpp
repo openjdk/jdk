@@ -36,6 +36,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -60,6 +61,7 @@
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -385,6 +387,19 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
     return false;
   }
 
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    LockStack& lock_stack = current->lock_stack();
+    if (lock_stack.is_full()) {
+      // Always go into runtime if the lock stack is full.
+      return false;
+    }
+    if (lock_stack.try_recursive_enter(obj)) {
+      // Recursive lock successful.
+      current->inc_held_monitor_count();
+      return true;
+    }
+  }
+
   const markWord mark = obj->mark();
 
   if (mark.has_monitor()) {
@@ -511,9 +526,18 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast-locking does not use the 'lock' argument.
       LockStack& lock_stack = current->lock_stack();
-      if (lock_stack.can_push()) {
-        markWord mark = obj()->mark_acquire();
-        while (mark.is_unlocked()) {
+      if (lock_stack.is_full()) {
+        // The emitted code always goes into the runtime incase the lock stack
+        // is full. We unconditionally make room on the lock stack by inflating
+        // the least recently locked object on the lock stack.
+        ObjectMonitor* monitor = inflate(current, lock_stack.bottom(), inflate_cause_vm_internal);
+        assert(monitor->owner() == current, "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
+               p2i(monitor->owner()), p2i(current), monitor->object()->mark_acquire().value());
+        assert(!lock_stack.is_full(), "must have made room here");
+      }
+
+      markWord mark = obj()->mark_acquire();
+      while (mark.is_unlocked()) {
           // Try to swing into 'fast-locked' state.
           assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
           const markWord new_mark = mark.set_fast_locked();
@@ -525,6 +549,10 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
             return;
           }
         }
+
+        if (mark.is_fast_locked() && lock_stack.try_recursive_enter(obj())) {
+        // Recursive lock successful.
+        return;
       }
       // All other paths fall-through to inflate-enter.
     } else if (LockingMode == LM_LEGACY) {
@@ -573,13 +601,22 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
     markWord mark = object->mark();
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast-locking does not use the 'lock' argument.
-      while (mark.is_fast_locked()) {
-        const markWord new_mark = mark.set_unlocked();
-        const markWord old_mark = mark;
-        mark = object->cas_set_mark(new_mark, old_mark);
-        if (old_mark == mark) {
-          current->lock_stack().remove(object);
-          return;
+      LockStack& lock_stack = current->lock_stack();
+      if (mark.is_fast_locked() && lock_stack.try_recursive_exit(object)) {
+        // Recursively unlocked.
+        return;
+      } else if (mark.is_fast_locked() && lock_stack.is_recursive(object)) {
+        // This lock is recursive but unstructured exit. Just inflate the lock.
+      } else {
+        while (mark.is_fast_locked()) {
+          const markWord new_mark = mark.set_unlocked();
+          const markWord old_mark = mark;
+          mark = object->cas_set_mark(new_mark, old_mark);
+          if (old_mark == mark) {
+            size_t recursions = lock_stack.remove(object) - 1;
+            assert(recursions == 0, "must not be recursive here");
+            return;
+          }
         }
       }
     } else if (LockingMode == LM_LEGACY) {
@@ -1322,7 +1359,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
       if (LockingMode == LM_LIGHTWEIGHT && inf->is_owner_anonymous() && is_lock_owned(current, object)) {
         inf->set_owner_from_anonymous(current);
-        JavaThread::cast(current)->lock_stack().remove(object);
+        size_t removed = JavaThread::cast(current)->lock_stack().remove(object);
+        inf->set_recursions(removed - 1);
       }
       return inf;
     }
@@ -1368,7 +1406,8 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       if (old_mark == mark) {
         // Success! Return inflated monitor.
         if (own) {
-          JavaThread::cast(current)->lock_stack().remove(object);
+          size_t removed = JavaThread::cast(current)->lock_stack().remove(object);
+          monitor->set_recursions(removed - 1);
         }
         // Once the ObjectMonitor is configured and object is associated
         // with the ObjectMonitor, it is safe to allow async deflation:

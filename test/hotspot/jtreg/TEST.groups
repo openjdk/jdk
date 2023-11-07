@@ -135,6 +135,7 @@ serviceability_ttf_virtual = \
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
+  gtest/LockStackGtests.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \

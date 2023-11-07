@@ -26,14 +26,18 @@
 #ifndef SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 #define SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 
+#include "runtime/lockStack.hpp"
+
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/lockStack.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline int LockStack::to_index(uint32_t offset) {
+  assert(is_aligned(offset, oopSize), "Bad alignment: %u", offset);
   return (offset - lock_stack_base_offset) / oopSize;
 }
 
@@ -42,8 +46,8 @@ JavaThread* LockStack::get_thread() const {
   return reinterpret_cast<JavaThread*>(addr - lock_stack_offset);
 }
 
-inline bool LockStack::can_push() const {
-  return to_index(_top) < CAPACITY;
+inline bool LockStack::is_full() const {
+  return to_index(_top) == CAPACITY;
 }
 
 inline bool LockStack::is_owning_thread() const {
@@ -61,32 +65,97 @@ inline void LockStack::push(oop o) {
   verify("pre-push");
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
-  assert(can_push(), "must have room");
+  assert(!is_full(), "must have room");
   assert(_base[to_index(_top)] == nullptr, "expect zapped entry");
   _base[to_index(_top)] = o;
   _top += oopSize;
   verify("post-push");
 }
 
-inline void LockStack::remove(oop o) {
-  verify("pre-remove");
-  assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));
+inline oop LockStack::bottom() const {
+  assert(to_index(_top) > 0, "must contain an oop");
+  return _base[0];
+}
+
+inline bool LockStack::is_empty() const {
+  return to_index(_top) == 0;
+}
+
+inline bool LockStack::is_recursive(oop o) const {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+
+  assert(contains(o), "entries must exist");
   int end = to_index(_top);
-  for (int i = 0; i < end; i++) {
-    if (_base[i] == o) {
-      int last = end - 1;
-      for (; i < last; i++) {
-        _base[i] = _base[i + 1];
-      }
-      _top -= oopSize;
-#ifdef ASSERT
-      _base[to_index(_top)] = nullptr;
-#endif
-      break;
+  for (int i = 1; i < end; i++) {
+    if (_base[i - 1] == o && _base[i] == o) {
+      return true;
     }
   }
-  assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
+
+  return false;
+}
+
+inline bool LockStack::try_recursive_enter(oop o) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+
+  assert(!is_full(), "precond");
+
+  int end = to_index(_top);
+  if (end == 0 || _base[end - 1] != o) {
+    // Topmost oop does not match o.
+    return false;
+  }
+
+  _base[end] = o;
+  _top += oopSize;
+  return true;
+}
+
+inline bool LockStack::try_recursive_exit(oop o) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+
+  assert(contains(o), "entries must exist");
+
+  int end = to_index(_top);
+  if (end <= 1 || _base[end - 1] != o ||  _base[end - 2] != o) {
+    // The two topmost oop does not match o.
+    return false;
+  }
+
+  _top -= oopSize;
+  DEBUG_ONLY(_base[to_index(_top)] = nullptr;)
+  return true;
+}
+
+inline size_t LockStack::remove(oop o) {
+  verify("pre-remove");
+  assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));
+
+  int end = to_index(_top);
+  int inserted = 0;
+  for (int i = 0; i < end; i++) {
+    if (_base[i] != o) {
+      _base[inserted++] = _base[i];
+    }
+  }
+
+#ifdef ASSERT
+  for (int i = inserted; i < end; i++) {
+    _base[i] = nullptr;
+  }
+#endif
+
+  uint32_t removed = end - inserted;
+  _top -= removed * oopSize;
+  assert(!contains(o), "entry must have been removed: " PTR_FORMAT, p2i(o));
   verify("post-remove");
+  return removed;
 }
 
 inline bool LockStack::contains(oop o) const {

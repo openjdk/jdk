@@ -102,6 +102,12 @@ inline void ObjectMonitor::add_to_contentions(int value) {
   Atomic::add(&_contentions, value);
 }
 
+inline void ObjectMonitor::set_recursions(size_t recursions) {
+  assert(_recursions == 0, "must be");
+  assert(has_owner(), "must be owned");
+  _recursions = checked_cast<intx>(recursions);
+}
+
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(void* old_value) {
 #ifdef ASSERT
