@@ -34,6 +34,10 @@ class GenericWaitBarrier : public CHeapObj<mtInternal> {
 private:
   class Cell : public CHeapObj<mtInternal> {
   private:
+    // Pad out the cells to avoid interference between the cells.
+    // This would insulate from stalls when adjacent cells have returning
+    // workers and contend over the cache line for current latency-critical
+    // cell.
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
 
     Semaphore _sem;
@@ -43,8 +47,6 @@ private:
 
     // Wakeups to deliver for current waiters
     volatile int _outstanding_wakeups;
-
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
 
     int signal_if_needed(int max);
 
@@ -77,11 +79,20 @@ private:
   static constexpr int CELLS_COUNT = 16;
 
   Cell _cells[CELLS_COUNT];
-  Cell& tag_to_cell(int tag) { return _cells[tag & (CELLS_COUNT - 1)]; }
+
+  // Trailing padding to protect the last cell.
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
 
   volatile int _barrier_tag;
 
+  // Trailing padding to insulate the rest of the barrier from adjacent
+  // data structures. The leading padding is not needed, as cell padding
+  // handles this for us.
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+
   NONCOPYABLE(GenericWaitBarrier);
+
+  Cell& tag_to_cell(int tag) { return _cells[tag & (CELLS_COUNT - 1)]; }
 
 public:
   GenericWaitBarrier() : _cells(), _barrier_tag(0) {}
