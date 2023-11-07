@@ -121,7 +121,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     }
 
     /**
-     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful for modelling functions
+     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful for modeling functions
      * that return no values.
      * @param argLayouts the argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout
