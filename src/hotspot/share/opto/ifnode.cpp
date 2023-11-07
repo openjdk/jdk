@@ -1872,6 +1872,46 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // then we are guaranteed to fail, so just start interpreting there.
     // We 'expand' the top 3 range checks to include all post-dominating
     // checks.
+    //
+    // Example:
+    // a[i+x] // (1) 1 < x < 6
+    // a[i+3] // (2)
+    // a[i+4] // (3)
+    // a[i+6] // max = max of all constants
+    // a[i+2]
+    // a[i+1] // min = min of all constants
+    //
+    // If x < 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+max] = a[i+6]: i+x < i+3 <= i+6  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+min] = a[i+1]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // If x >= 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+min] = a[i+1]: i+1 < i+3 <= i+x  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+max] = a[i+6]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // We only need the top 2 range checks if x is the min or max of all constants.
+    //
+    // This, however, only works if the interval [i+min,i+max] is not larger than max_int (i.e. abs(max - min) < max_int):
+    // The theoretical max size of an array is max_int with:
+    // - Valid index space: [0,max_int-1]
+    // - Invalid index space: [max_int,-1] // max_int, min_int, min_int - 1 ..., -1
+    //
+    // The size of the consecutive valid index space is smaller than the size of the consecutive invalid index space.
+    // If we choose min and max in such a way that:
+    // - abs(max - min) < max_int
+    // - i+max and i+min are inside the valid index space
+    // then all indices [i+min,i+max] must be in the valid index space. Otherwise, the invalid index space must be
+    // smaller than the valid index space which is never the case for any array size.
+    //
+    // Choosing a smaller array size only makes the valid index space smaller and the invalid index space larger and
+    // the argument above still holds.
+    //
+    // Note that the same optimization with the same maximal accepted interval size can also be found in C1.
+    const jlong maximum_number_of_min_max_interval_indices = (jlong)max_jint;
 
     // The top 3 range checks seen
     const int NRC = 3;
@@ -1906,13 +1946,18 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             found_immediate_dominator = true;
             break;
           }
-          // Gather expanded bounds
-          off_lo = MIN2(off_lo,offset2);
-          off_hi = MAX2(off_hi,offset2);
-          // Record top NRC range checks
-          prev_checks[nb_checks%NRC].ctl = prev_dom;
-          prev_checks[nb_checks%NRC].off = offset2;
-          nb_checks++;
+
+          // "x - y" -> must add one to the difference for number of elements in [x,y]
+          const jlong diff = (jlong)MIN2(offset2, off_lo) - (jlong)MAX2(offset2, off_hi);
+          if (ABS(diff) < maximum_number_of_min_max_interval_indices) {
+            // Gather expanded bounds
+            off_lo = MIN2(off_lo, offset2);
+            off_hi = MAX2(off_hi, offset2);
+            // Record top NRC range checks
+            prev_checks[nb_checks % NRC].ctl = prev_dom;
+            prev_checks[nb_checks % NRC].off = offset2;
+            nb_checks++;
+          }
         }
       }
       prev_dom = dom;
