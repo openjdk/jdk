@@ -46,6 +46,9 @@ module jdk.internal.md {
     exports jdk.internal.org.commonmark.parser to
             jdk.javadoc,
             jdk.jshell;
+    exports jdk.internal.org.commonmark.renderer to
+            jdk.javadoc,
+            jdk.jshell;
     exports jdk.internal.org.commonmark.renderer.html to
             jdk.javadoc,
             jdk.jshell;

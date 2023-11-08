@@ -41,8 +41,8 @@ import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.tree.DCTree;
 import com.sun.tools.javac.tree.DocTreeMaker;
-
 import com.sun.tools.javac.util.DefinedBy;
+
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
 import jdk.internal.org.commonmark.internal.InlineParserImpl;
 import jdk.internal.org.commonmark.node.AbstractVisitor;

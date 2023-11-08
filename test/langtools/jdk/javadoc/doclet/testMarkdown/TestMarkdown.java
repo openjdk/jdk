@@ -541,6 +541,11 @@ public class TestMarkdown extends JavadocTester {
         checkOutput("p/doc-files/markdown.html", true,
                 """
                     <title>This is a Markdown heading</title>
+                    """,
+                """
+                    <main role="main"><h1 id="this-is-a-markdown-heading-heading1">This is a <em>Markdown</em> heading</h1>
+                    <p>Lorem ipsum</p>
+                    </main>
                     """);
     }
 
@@ -569,5 +574,159 @@ public class TestMarkdown extends JavadocTester {
                 """
                     <div class="block">This is a <em>Markdown</em> overview.
                     Lorem ipsum</div>""");
+    }
+
+    @Test
+    public void testHeading_ATX(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    /// First sentence.
+                    ///
+                    /// # ATX-style heading for package
+                    ///
+                    /// Lorem ipsum.
+                    ///
+                    /// ## ATX-style subheading for package
+                    ///
+                    /// Lorem ipsum.
+                    package p;
+                    """,
+                """
+                    package p;
+                    /// First sentence.
+                    ///
+                    /// # ATX-style heading for class
+                    ///
+                    /// Lorum ipsum.
+                    ///
+                    /// ## ATX-style subheading for class
+                    ///
+                    /// Lorem ipsum.
+                    public class C {
+                        /// Constructor.
+                        ///
+                        /// # ATX-style heading for executable
+                        ///
+                        /// Lorem ipsum.
+                        ///
+                        /// ## ATX-style subheading for executable
+                        ///
+                        /// Lorem ipsum.
+                        public C() { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p");
+
+        checkOutput("p/package-summary.html", true,
+                """
+                    <div class="block"><p>First sentence.</p>
+                    <h2 id="atx-style-heading-for-package-heading">ATX-style heading for package</h2>
+                    <p>Lorem ipsum.</p>
+                    <h3 id="atx-style-subheading-for-package-heading">ATX-style subheading for package</h3>
+                    <p>Lorem ipsum.</p>
+                    </div>""");
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="block"><p>First sentence.</p>
+                    <h2 id="atx-style-heading-for-class-heading">ATX-style heading for class</h2>
+                    <p>Lorum ipsum.</p>
+                    <h3 id="atx-style-subheading-for-class-heading">ATX-style subheading for class</h3>
+                    <p>Lorem ipsum.</p>
+                    </div>
+                    """, """
+                    <div class="block"><p>Constructor.</p>
+                    <h4 id="atx-style-heading-for-executable-heading">ATX-style heading for executable</h4>
+                    <p>Lorem ipsum.</p>
+                    <h5 id="atx-style-subheading-for-executable-heading">ATX-style subheading for executable</h5>
+                    <p>Lorem ipsum.</p>
+                    </div>
+                    """);
+
+    }
+
+    @Test
+    public void testHeading_Setext(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    /// First sentence.
+                    ///
+                    /// Setext-style heading for package
+                    /// ================================
+                    ///
+                    /// Lorem ipsum.
+                    ///
+                    /// Setext-style subheading for package
+                    /// -----------------------------------
+                    ///
+                    /// Lorem ipsum.
+                    package p;
+                    """,
+                """
+                    package p;
+                    /// First sentence.
+                    ///
+                    /// Setext-style heading for class
+                    /// ==============================
+                    ///
+                    /// Lorum ipsum.
+                    ///
+                    /// Setext-style subheading for class
+                    /// ---------------------------------
+                    ///
+                    /// Lorem ipsum.
+                    public class C {
+                        /// Constructor.
+                        ///
+                        /// Setext-style heading for executable
+                        /// ===================================
+                        ///
+                        /// Lorem ipsum.
+                        ///
+                        /// Setext-style subheading for executable
+                        /// --------------------------------------
+                        ///
+                        /// Lorem ipsum.
+                        public C() { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p");
+
+
+        checkOutput("p/package-summary.html", true,
+                """
+                    <div class="block"><p>First sentence.</p>
+                    <h2 id="setext-style-heading-for-package-heading">Setext-style heading for package</h2>
+                    <p>Lorem ipsum.</p>
+                    <h3 id="setext-style-subheading-for-package-heading">Setext-style subheading for package</h3>
+                    <p>Lorem ipsum.</p>
+                    </div>""");
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="block"><p>First sentence.</p>
+                    <h2 id="setext-style-heading-for-class-heading">Setext-style heading for class</h2>
+                    <p>Lorum ipsum.</p>
+                    <h3 id="setext-style-subheading-for-class-heading">Setext-style subheading for class</h3>
+                    <p>Lorem ipsum.</p>
+                    </div>
+                    """, """
+                    <div class="block"><p>Constructor.</p>
+                    <h4 id="setext-style-heading-for-executable-heading">Setext-style heading for executable</h4>
+                    <p>Lorem ipsum.</p>
+                    <h5 id="setext-style-subheading-for-executable-heading">Setext-style subheading for executable</h5>
+                    <p>Lorem ipsum.</p>
+                    </div>
+                    """);
     }
 }

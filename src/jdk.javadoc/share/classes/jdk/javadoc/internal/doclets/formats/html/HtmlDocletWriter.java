@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
@@ -82,9 +83,17 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 
 import jdk.internal.org.commonmark.Extension;
 import jdk.internal.org.commonmark.ext.gfm.tables.TablesExtension;
+import jdk.internal.org.commonmark.node.AbstractVisitor;
+import jdk.internal.org.commonmark.node.Code;
+import jdk.internal.org.commonmark.node.Heading;
 import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.renderer.NodeRenderer;
+import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererContext;
+import jdk.internal.org.commonmark.renderer.html.HtmlNodeRendererFactory;
 import jdk.internal.org.commonmark.renderer.html.HtmlRenderer;
+import jdk.internal.org.commonmark.renderer.html.HtmlWriter;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
@@ -1341,7 +1350,7 @@ public abstract class HtmlDocletWriter {
         commentRemoved = false;
 
         var useMarkdown = trees.stream().anyMatch(t -> t.getKind() == Kind.MARKDOWN);
-        var markdownHandler = useMarkdown ? new MarkdownHandler() : null;
+        var markdownHandler = useMarkdown ? new MarkdownHandler(element) : null;
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext(); ) {
             boolean isFirstNode = !iterator.hasPrevious();
@@ -1367,7 +1376,6 @@ public abstract class HtmlDocletWriter {
             }
 
             var docTreeVisitor = new InlineVisitor(element, tag, isLastNode, context, ch, trees);
-
             boolean allDone = useMarkdown
                     ? markdownHandler.handle(tag, docTreeVisitor)
                     : docTreeVisitor.visit(tag, result);
@@ -1386,19 +1394,25 @@ public abstract class HtmlDocletWriter {
 
     private class MarkdownHandler {
         private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
-        StringBuilder markdownInput = new StringBuilder() ;
-        ArrayList<Content> fffcObjects = new ArrayList<>();
+        private final StringBuilder markdownInput = new StringBuilder() ;
+        private final ArrayList<Content> fffcObjects = new ArrayList<>();
 
-        List<Extension> extns = List.of(
-                TablesExtension.create()
-        );
+        private final Extension tablesExtn = TablesExtension.create();
+        private final HtmlNodeRendererFactory headingRendererFactory = HeadingNodeRenderer::new;
 
-        Parser parser = Parser.builder()
-                .extensions(extns)
+        private final Element element;
+
+        private final Parser parser = Parser.builder()
+                .extensions(List.of(tablesExtn))
                 .build();
-        HtmlRenderer renderer = HtmlRenderer.builder()
-                .extensions(extns)
+        private final HtmlRenderer renderer = HtmlRenderer.builder()
+                .nodeRendererFactory(headingRendererFactory)
+                .extensions(List.of(tablesExtn/*, headingIdsExtn*/))
                 .build();
+
+        MarkdownHandler(Element element) {
+            this.element = element;
+        }
 
         boolean handle(DocTree tree, InlineVisitor visitor) {
             boolean allDone;
@@ -1463,6 +1477,80 @@ public abstract class HtmlDocletWriter {
                 }
             }
             return s;
+        }
+
+        /**
+         * A renderer for Markdown {@code Heading} nodes, which represent
+         * both ATX headings (using {@code ####}) and Setext (using underlines).
+         * The mapping to HTML takes into account the context within the overall
+         * generated page, and automatically includes an id, to allow the heading
+         * to be referenced from elsewhere.
+         */
+        private class HeadingNodeRenderer extends AbstractVisitor implements NodeRenderer {
+            private final HtmlWriter htmlWriter;
+            private final HtmlNodeRendererContext context;
+
+            HeadingNodeRenderer(HtmlNodeRendererContext context) {
+                this.htmlWriter = context.getWriter();
+                this.context = context;
+            }
+
+            @Override
+            public Set<Class<? extends Node>> getNodeTypes() {
+                return Set.of(Heading.class);
+            }
+
+            @Override
+            public void render(Node node) {
+                node.accept(this);
+            }
+
+            @Override
+            public void visit(Heading heading) {
+                var htag = getTag(heading);
+                var id = getId(heading);
+
+                htmlWriter.line();
+                htmlWriter.tag(htag, Map.of("id", id.name()));
+                visitChildren(heading);
+                htmlWriter.tag('/' + htag);
+                htmlWriter.line();
+            }
+
+            @Override
+            protected void visitChildren(Node parent) {
+                Node node = parent.getFirstChild();
+                while (node != null) {
+                    Node next = node.getNext();
+                    context.render(node);
+                    node = next;
+                }
+            }
+
+            private String getTag(Heading heading) {
+                // offset the heading level to allow for its position in the overall page
+                var eKind = element.getKind();
+                var offset = eKind.isField() || eKind.isExecutable() ? 3 // members
+                        : eKind != ElementKind.OTHER ? 1   // module, package, class, interface
+                        : 0; // doc file
+                return "h" + Math.min(heading.getLevel() + offset, 6);
+            }
+
+            private HtmlId getId(Heading heading) {
+                var list = new ArrayList<String>();
+                heading.accept(new AbstractVisitor() {
+                    @Override
+                    public void visit(jdk.internal.org.commonmark.node.Text text) {
+                        list.add(text.getLiteral());
+                    }
+
+                    @Override
+                    public void visit(Code code) {
+                        list.add(code.getLiteral());
+                    }
+                });
+                return htmlIds.forHeading(String.join(" ", list), headingIds);
+            }
         }
     }
 
@@ -1706,6 +1794,8 @@ public abstract class HtmlDocletWriter {
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
             if (docTree instanceof TextTree text) {
                 sb.append(text.getBody());
+            } else if (docTree instanceof RawTextTree raw) {
+                sb.append(raw.getContent().replaceAll("[^A-Za-z0-9]+", " "));
             } else if (docTree instanceof LiteralTree literal) {
                 sb.append(literal.getBody().getBody());
             } else if (docTree instanceof LinkTree link) {
