@@ -261,15 +261,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <p>In particular, a correctly rounded decimal to binary conversion
  * of any string representing a number in this range, say by {@link
- * Float#valueOf(String)}, will be converted to the same value:
+ * Float#parseFloat(String)}, will be converted to the same value:
  *
  * {@snippet lang="java" :
- * Float.valueOf("0.0999999977648258209228515625000001"); // rounds up to oneTenthApproxAsFloat
- * Float.valueOf("0.099999998");                          // rounds up to oneTenthApproxAsFloat
- * Float.valueOf("0.1");                                  // rounds up to oneTenthApproxAsFloat
- * Float.valueOf("0.100000001490116119384765625");        // exact conversion
- * Float.valueOf("0.100000005215406417846679687");        // rounds down to oneTenthApproxAsFloat
- * Float.valueOf("0.100000005215406417846679687499999");  // rounds down to oneTenthApproxAsFloat
+ * Float.parseFloat("0.0999999977648258209228515625000001"); // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.099999998");                          // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.1");                                  // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.100000001490116119384765625");        // exact conversion
+ * Float.parseFloat("0.100000005215406417846679687");        // rounds down to oneTenthApproxAsFloat
+ * Float.parseFloat("0.100000005215406417846679687499999");  // rounds down to oneTenthApproxAsFloat
  * }
  *
  * <p>An analogous range can be constructed similarly for the {@code
@@ -882,7 +882,7 @@ public final class Double extends Number
      * @return     a {@code Double} object holding the value
      *             represented by the {@code String} argument.
      * @throws     NumberFormatException  if the string does not contain a
-     *             parsable number.
+     * @see Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      */
     public static Double valueOf(String s) throws NumberFormatException {
         return new Double(parseDouble(s));
@@ -919,6 +919,7 @@ public final class Double extends Number
      * @throws NumberFormatException if the string does not contain
      *         a parsable {@code double}.
      * @see    java.lang.Double#valueOf(String)
+     * @see    Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      * @since 1.2
      */
     public static double parseDouble(String s) throws NumberFormatException {
