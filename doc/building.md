@@ -334,11 +334,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                          |
-| ------------------ | ------------------------------------------ |
-| Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
-| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
+| Operating system   | Toolchain version                           |
+| ------------------ | ------------------------------------------- |
+| Linux              | gcc 11.2.0                                  |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
+| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio

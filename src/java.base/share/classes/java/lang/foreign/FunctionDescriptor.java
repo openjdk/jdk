@@ -61,7 +61,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Returns a function descriptor with the given argument layouts appended to the argument layouts
      * of this function descriptor.
      * @param addedLayouts the argument layouts to append.
-     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout.
+     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout
      * @return a new function descriptor, with the provided additional argument layouts.
      */
     FunctionDescriptor appendArgumentLayouts(MemoryLayout... addedLayouts);
@@ -70,17 +70,17 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Returns a function descriptor with the given argument layouts inserted at the given index, into the argument
      * layout array of this function descriptor.
      * @param index the index at which to insert the arguments
-     * @param addedLayouts the argument layouts to insert at given index.
+     * @param addedLayouts the argument layouts to insert at the given index.
      * @return a new function descriptor, with the provided additional argument layouts.
-     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout.
-     * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}.
+     * @throws IllegalArgumentException if one of the layouts in {@code addedLayouts} is a padding layout
+     * @throws IllegalArgumentException if {@code index < 0 || index > argumentLayouts().size()}
      */
     FunctionDescriptor insertArgumentLayouts(int index, MemoryLayout... addedLayouts);
 
     /**
      * Returns a function descriptor with the provided return layout.
      * @param newReturn the new return layout.
-     * @throws IllegalArgumentException if {@code newReturn} is a padding layout.
+     * @throws IllegalArgumentException if {@code newReturn} is a padding layout
      * @return a new function descriptor, with the provided return layout.
      */
     FunctionDescriptor changeReturnLayout(MemoryLayout newReturn);
@@ -100,7 +100,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * </ul>
      *
      * @apiNote A function descriptor cannot, by construction, contain any padding layouts. As such, it is not
-     * necessary to specify how padding layout should be mapped to carrier types.
+     * necessary to specify how padding layouts should be mapped to carrier types.
      *
      * @return the method type consisting of the carrier types of the layouts in this function descriptor.
      */
@@ -110,8 +110,8 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
      * Creates a function descriptor with the given return and argument layouts.
      * @param resLayout the return layout.
      * @param argLayouts the argument layouts.
-     * @throws IllegalArgumentException if {@code resLayout} is a padding layout.
-     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout.
+     * @throws IllegalArgumentException if {@code resLayout} is a padding layout
+     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout
      * @return a new function descriptor with the provided return and argument layouts.
      */
     static FunctionDescriptor of(MemoryLayout resLayout, MemoryLayout... argLayouts) {
@@ -121,10 +121,10 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     }
 
     /**
-     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful to model functions
+     * Creates a function descriptor with the given argument layouts and no return layout.  This is useful for modeling functions
      * that return no values.
      * @param argLayouts the argument layouts.
-     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout.
+     * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout
      * @return a new function descriptor with the provided argument layouts.
      */
     static FunctionDescriptor ofVoid(MemoryLayout... argLayouts) {
