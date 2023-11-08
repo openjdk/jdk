@@ -25,11 +25,17 @@
  * @test
  * @bug 8186046
  * @summary Test invalid name in name and type
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyTypeValidationTest
  */
 
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
@@ -49,29 +55,36 @@ public class CondyTypeValidationTest {
             .toMethodDescriptorString();
 
     @DataProvider
-    public Object[][] invalidTypesProvider() throws Exception {
+    public Object[][] invalidTypesProvider() {
         return Stream.of(
 //                         ByteCode API checks for the following invalid types
 //                         "",
 //                         "[",
 //                         "A",
 //                         "a",
-                "L/java/lang/Object",
-                Stream.generate(() -> "[").limit(256).collect(Collectors.joining("", "", "I")))
-                .map(e -> new Object[]{e}).toArray(Object[][]::new);
+                new Object[]{"L/java/lang/Object", "not a valid reference type descriptor"},
+                new Object[]{
+                        Stream.generate(() -> "[").limit(256)
+                                .collect(Collectors.joining("", "", "I")),
+                        "Cannot create an array type descriptor with more than 255 dimensions"
+                }
+        ).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "invalidTypesProvider", expectedExceptions = ClassFormatError.class)
-    public void testInvalidTypes(String type) throws Exception {
-        MethodHandle mh = InstructionHelper.ldcDynamicConstant(
-                L, "name", type,
-                "bsm", BSM_TYPE,
-                S -> {
-                });
+    @Test(dataProvider = "invalidTypesProvider")
+    public void testInvalidTypes(String type, String errMessContent) throws Exception {
+        try {
+            MethodHandle mh = InstructionHelper.ldcDynamicConstant(
+                    L, "name", type,
+                    "bsm", BSM_TYPE
+            );
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains(errMessContent));
+        }
     }
 
     @DataProvider
-    public Object[][] validTypesProvider() throws Exception {
+    public Object[][] validTypesProvider() {
         List<String> t = new ArrayList<>(List.of("B", "C", "D", "F", "I", "J", "Ljava/lang/Object;", "S", "Z"));
         int l = t.size();
         for (int i = 0; i < l; i++) {
@@ -86,8 +99,7 @@ public class CondyTypeValidationTest {
     public void testValidTypes(String type) throws Exception {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, "name", type,
-                "bsm", BSM_TYPE,
-                S -> {
-                });
+                "bsm", BSM_TYPE
+        );
     }
 }
