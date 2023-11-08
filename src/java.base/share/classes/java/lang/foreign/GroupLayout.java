@@ -44,7 +44,7 @@ public sealed interface GroupLayout extends MemoryLayout permits StructLayout, U
     /**
      * {@return the member layouts of this group layout}
      *
-     * @apiNote the order in which member layouts are returned is the same order in which member layouts have
+     * @apiNote the order in which member layouts are returned in the same order in which member layouts have
      * been passed to one of the group layout factory methods (see {@link MemoryLayout#structLayout(MemoryLayout...)},
      * {@link MemoryLayout#unionLayout(MemoryLayout...)}).
      */
