@@ -177,7 +177,7 @@ class SignaturesTest {
 
     @Test
     void testClassSignatureClassDesc() throws IOException {
-        var observerCf = Classfile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
+        var observerCf = ClassFile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
         var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
         var innerSig = (ClassTypeSig) ((ClassTypeSig) sig.superclassSignature()) // ArrayList
                 .typeArgs().getFirst() // Outer<String>.Inner<Long>
