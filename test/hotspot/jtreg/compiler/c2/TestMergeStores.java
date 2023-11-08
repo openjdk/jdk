@@ -397,6 +397,8 @@ public class TestMergeStores {
     @Test
     @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
     static Object[] test1b(byte[] a) {
+        // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
+        if (a == null) {return null;}
         UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, 0xdeadbeefbaadbabeL);
         return new Object[]{ a };
     }
@@ -454,10 +456,10 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
-        applyIfPlatformAnd = {"64-bit", "true", "linux", "true"})
-    // unaligned load only has the class info on some platforms, hence the platform restriction
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
     static Object[] test2b(byte[] a, int offset, long v) {
+        // Add custom null check, to ensure the unsafe access always recognizes its type as an array store
+        if (a == null) {return null;}
         UNSAFE.putLongUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset, v);
         return new Object[]{ a };
     }
