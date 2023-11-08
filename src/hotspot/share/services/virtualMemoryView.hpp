@@ -141,12 +141,12 @@ private:
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   class NativeCallStackStorage : public CHeapObj<mtNMT> {
-    static constexpr const int static_stack_size = 1024;
     GrowableArrayCHeap<NativeCallStack, mtNMT> all_the_stacks;
   public:
+    static constexpr const int static_stack_size = 1024;
     int push(const NativeCallStack& stack) {
       if (!VirtualMemoryView::_is_detailed_mode) {
-        all_the_stacks.at_put(0, NativeCallStack{});
+        all_the_stacks.at_put_grow(0, NativeCallStack{});
         return 0;
       }
       int len = all_the_stacks.length();
@@ -173,7 +173,8 @@ private:
       }
       return all_the_stacks.at(idx);
     }
-    NativeCallStackStorage() : all_the_stacks{static_stack_size} {}
+    NativeCallStackStorage(int capacity = static_stack_size) : all_the_stacks{capacity} {
+    }
   };
 
   static NativeCallStackStorage* _stack_storage;

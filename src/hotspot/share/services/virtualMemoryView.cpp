@@ -236,7 +236,7 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
 void VirtualMemoryView::initialize(bool is_detailed_mode) {
   _reserved_regions = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
   _committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{5};
-  _stack_storage = new NativeCallStackStorage{};
+  _stack_storage = new NativeCallStackStorage{is_detailed_mode ? NativeCallStackStorage::static_stack_size : 1};
   _names = new GrowableArrayCHeap<const char*, mtNMT>{5};
   _is_detailed_mode = is_detailed_mode;
 }
