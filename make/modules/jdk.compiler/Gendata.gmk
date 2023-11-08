@@ -23,10 +23,6 @@
 # questions.
 #
 
-default:all
-
-include $(SPEC)
-include MakeBase.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
@@ -39,11 +35,14 @@ $(eval $(call IncludeCustomExtension, modules/jdk.compiler/Gendata.gmk))
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
 
-# Modules that should be visible for 9 - the documented modules:
+# Modules that should be visible - the documented modules:
 CT_MODULES := $(filter-out $(MODULES_FILTER), $(DOCS_MODULES))
+CT_TRANSITIVE_MODULES := $(call FindTransitiveIndirectDepsForModules, $(CT_MODULES))
+CT_MODULES_API_TARGETS := \
+    $(foreach m, $(CT_MODULES) $(CT_TRANSITIVE_MODULES), \
+      $(call SetupJavaCompilationApiTarget, $m, $(JDK_OUTPUTDIR)/modules/$m))
 
-# Get the complete module source path:
-CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
+SYMBOL_FILES := $(wildcard $(MODULE_SRC)/share/data/symbols/*)
 
 CT_DATA_DESCRIPTION += $(MODULE_SRC)/share/data/symbols/symbols
 
@@ -68,16 +67,12 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
-$(SUPPORT_OUTPUTDIR)/symbols/ct.sym: \
-    $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(MODULE_SRC)/share/data/symbols/*) \
-    $(MODULE_INFOS) \
-    $(foreach m, $(CT_MODULES) $(call FindTransitiveIndirectDepsForModules, $(CT_MODULES)), \
-      $(call SetupJavaCompilationApiTarget, $m, $(JDK_OUTPUTDIR)/modules/$m))
+$(SUPPORT_OUTPUTDIR)/symbols/ct.sym: $(COMPILE_CREATE_SYMBOLS) $(SYMBOL_FILES) \
+    $(MODULE_INFOS) $(CT_MODULES_API_TARGETS)
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating ct.sym classes
-	$(BUILD_JAVA) \
+	$(BUILD_JAVA_SMALL) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
 	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac \
 	    build.tools.symbolgenerator.CreateSymbols \
