@@ -10315,6 +10315,26 @@ instruct ShouldNotReachHere() %{
   ins_pipe(pipe_class_default);
 %}
 
+//----------Overflow Math Instructions-----------------------------------------
+instruct overflowMulI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label lbl, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow
+            || n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, USE op1, USE op2, KILL cr);
+
+  format %{ "mul    t0, $op1, $op2\n\t"
+            "sext.w t1, t0\n\t"
+            "b$cmp t0, t1" %}
+  ins_cost(IMUL_COST + ALU_COST);
+  ins_encode %{
+    BoolTest::mask test = $cmp$$cmpcode == BoolTest::overflow ? BoolTest::eq : BoolTest::ne;
+    __ mul(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(t0, t1);
+    __ cmp_branch(test, t0, t1, *($lbl$$label));
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 //----------PEEPHOLE RULES-----------------------------------------------------
 // These must follow all instruction definitions as they use the names
