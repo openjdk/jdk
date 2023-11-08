@@ -65,7 +65,9 @@ public class MergeStores {
     public static long vL;
 
     public static int offset = 5;
-    public static byte[] aB = new byte[RANGE];
+    public static byte[]  aB = new byte[RANGE];
+    public static short[] aS = new short[RANGE];
+    public static int[]   aI = new int[RANGE];
 
     // -------------------------------------------
     // -------     Little-Endian API    ----------
@@ -626,5 +628,69 @@ public class MergeStores {
         storeIntLE(aB, offset + 0, vI);
         storeIntLE(aB, offset + 4, vI);
         return aB;
+    }
+
+    @Benchmark
+    public short[] store_2S_con_offs_allocate_direct() {
+        short[] aS = new short[RANGE];
+        aS[offset + 0] = (short)0x0102;
+        aS[offset + 1] = (short)0x0304;
+        return aS;
+    }
+
+    @Benchmark
+    public short[] store_2S_con_offs_nonalloc_direct() {
+        aS[offset + 0] = (short)0x0102;
+        aS[offset + 1] = (short)0x0304;
+        return aS;
+    }
+
+    @Benchmark
+    public short[] store_4S_con_offs_allocate_direct() {
+        short[] aS = new short[RANGE];
+        aS[offset + 0] = (short)0x0102;
+        aS[offset + 1] = (short)0x0304;
+        aS[offset + 2] = (short)0x0506;
+        aS[offset + 3] = (short)0x0708;
+        return aS;
+    }
+
+    @Benchmark
+    public short[] store_4S_con_offs_nonalloc_direct() {
+        aS[offset + 0] = (short)0x0102;
+        aS[offset + 1] = (short)0x0304;
+        aS[offset + 2] = (short)0x0506;
+        aS[offset + 3] = (short)0x0708;
+        return aS;
+    }
+
+    @Benchmark
+    public int[] store_2I_con_offs_allocate_direct() {
+        int[] aI = new int[RANGE];
+        aI[offset + 0] = 0x01020304;
+        aI[offset + 1] = 0x05060708;
+        return aI;
+    }
+
+    @Benchmark
+    public int[] store_2I_con_offs_nonalloc_direct() {
+        aI[offset + 0] = 0x01020304;
+        aI[offset + 1] = 0x05060708;
+        return aI;
+    }
+
+    @Benchmark
+    public int[] store_2I_zero_offs_allocate_direct() {
+        int[] aI = new int[RANGE];
+        aI[offset + 0] = 0;
+        aI[offset + 1] = 0;
+        return aI;
+    }
+
+    @Benchmark
+    public int[] store_2I_zero_offs_nonalloc_direct() {
+        aI[offset + 0] = 0;
+        aI[offset + 1] = 0;
+        return aI;
     }
 }
