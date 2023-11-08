@@ -125,9 +125,10 @@ private:
   static GrowableArrayCHeap<RegionStorage, mtNMT>* committed_regions;
   static GrowableArrayCHeap<const char*, mtNMT>* names; // Map memory space to name
 
-  struct NativeCallStackStorage : public CHeapObj<mtNMT> {
+  class NativeCallStackStorage : public CHeapObj<mtNMT> {
     static constexpr const int static_stack_size = 1024;
     GrowableArrayCHeap<NativeCallStack, mtNMT> all_the_stacks;
+  public:
     int push(const NativeCallStack& stack) {
       int len = all_the_stacks.length();
       int idx = stack.calculate_hash() % static_stack_size;
