@@ -384,7 +384,7 @@ public final class ProcessTools {
       java <jvm-args> -Dtest.thread.factory=<test-thread-factory-name> jdk.test.lib.process.ProcessTools <test-thread-factory-name> <test-class> <test-args>
      */
 
-    private static List<String> addTestThreadFactoryArgs(String testThreadFactoryName, List<String> command) {
+    private static String[] addTestThreadFactoryArgs(String testThreadFactoryName, String[] command) {
 
         final List<String> unsupportedArgs = List.of(
                 "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
@@ -438,7 +438,7 @@ public final class ProcessTools {
             isTestThreadFactoryAdded = true;
             args.add(cmd);
         }
-        return args;
+        return args.toArray(String[]::new);
     }
 
     /**
@@ -513,12 +513,12 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
-        List<String> additionalArgs = Arrays.asList(Utils.prependTestJavaOpts(command));
+        String[] newCommand = Utils.prependTestJavaOpts(command);
         String testThreadFactoryName = System.getProperty("test.thread.factory");
         if (testThreadFactoryName != null) {
-            additionalArgs = addTestThreadFactoryArgs(testThreadFactoryName, additionalArgs);
+            newCommand = addTestThreadFactoryArgs(testThreadFactoryName, newCommand);
         }
-        return createJavaProcessBuilder(additionalArgs.toArray(String[]::new));
+        return createJavaProcessBuilder(newCommand);
     }
 
     /**
