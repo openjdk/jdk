@@ -3940,7 +3940,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // add i'th 32-bit integer to dest
     void add_u32(const Register dest, uint i, const Register rtmp = t0) {
-       assert(i < 2 * L, "invalid i: %u", i);
+      assert(i < 2 * L, "invalid i: %u", i);
 
       if (is_even(i)) {
         // Use the bottom 32 bits. No need to mask off the top 32 bits
