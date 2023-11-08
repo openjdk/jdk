@@ -64,8 +64,67 @@ public class MergeStores {
     @Param("1")
     public static long vL;
 
-    public static int offset = 5; // TODO randomize?
+    public static int offset = 5;
     public static byte[] a = new byte[RANGE];
+
+    // -------------------------------------------
+    // -------     Little-Endian API    ----------
+    // -------------------------------------------
+
+    // Store a short LE into an array using store bytes in an array
+    static void storeShortLE(byte[] bytes, int offset, short value) {
+        storeBytes(bytes, offset, (byte)(value >> 0),
+                                  (byte)(value >> 8));
+    }
+
+    // Store an int LE into an array using store bytes in an array
+    static void storeIntLE(byte[] bytes, int offset, int value) {
+        storeBytes(bytes, offset, (byte)(value >> 0 ),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 24));
+    }
+
+    // Store an int LE into an array using store bytes in an array
+    static void storeLongLE(byte[] bytes, int offset, long value) {
+        storeBytes(bytes, offset, (byte)(value >> 0 ),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 24),
+                                  (byte)(value >> 32),
+                                  (byte)(value >> 40),
+                                  (byte)(value >> 48),
+                                  (byte)(value >> 56));
+    }
+
+    // Store 2 bytes into an array
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1) {
+        bytes[offset + 0] = b0;
+        bytes[offset + 1] = b1;
+    }
+
+    // Store 4 bytes into an array
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3) {
+        bytes[offset + 0] = b0;
+        bytes[offset + 1] = b1;
+        bytes[offset + 2] = b2;
+        bytes[offset + 3] = b3;
+    }
+
+    // Store 8 bytes into an array
+    static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3,
+                                                     byte b4, byte b5, byte b6, byte b7) {
+        bytes[offset + 0] = b0;
+        bytes[offset + 1] = b1;
+        bytes[offset + 2] = b2;
+        bytes[offset + 3] = b3;
+        bytes[offset + 4] = b4;
+        bytes[offset + 5] = b5;
+        bytes[offset + 6] = b6;
+        bytes[offset + 7] = b7;
+    }
+
+    // -------------------------------- BENCHMARKS --------------------------------
 
     @Benchmark
     public void baseline() {
@@ -116,6 +175,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_2B_con_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeShortLE(a, offset, (short)0x0201);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_2B_con_offs_nonalloc_direct() {
         a[offset + 0] = (byte)0x01;
         a[offset + 1] = (byte)0x02;
@@ -131,6 +197,12 @@ public class MergeStores {
     @Benchmark
     public byte[] store_2B_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setShort(a, offset, (short)0x0201);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_2B_con_offs_nonalloc_leapi() {
+        storeShortLE(a, offset, (short)0x0201);
         return a;
     }
 
@@ -157,6 +229,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_2B_S_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeShortLE(a, offset, vS);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_2B_S_offs_nonalloc_direct() {
         a[offset + 0] = (byte)(vS >> 0 );
         a[offset + 1] = (byte)(vS >> 8 );
@@ -175,6 +254,11 @@ public class MergeStores {
         return a;
     }
 
+    @Benchmark
+    public byte[] store_2B_S_offs_nonalloc_leapi() {
+        storeShortLE(a, offset, vS);
+        return a;
+    }
 
     @Benchmark
     public byte[] store_4B_con_adr0_allocate_direct() {
@@ -221,6 +305,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_4B_con_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeIntLE(a, offset, 0x04030201);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_4B_con_offs_nonalloc_direct() {
         a[offset + 0] = (byte)0x01;
         a[offset + 1] = (byte)0x02;
@@ -238,6 +329,12 @@ public class MergeStores {
     @Benchmark
     public byte[] store_4B_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(a, offset, 0x04030201);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_4B_con_offs_nonalloc_leapi() {
+        storeIntLE(a, offset, 0x04030201);
         return a;
     }
 
@@ -266,6 +363,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_4B_I_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeIntLE(a, offset, vI);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_4B_I_offs_nonalloc_direct() {
         a[offset + 0] = (byte)(vI >> 0 );
         a[offset + 1] = (byte)(vI >> 8 );
@@ -283,6 +387,12 @@ public class MergeStores {
     @Benchmark
     public byte[] store_4B_I_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(a, offset, vI);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_4B_I_offs_nonalloc_leapi() {
+        storeIntLE(a, offset, vI);
         return a;
     }
 
@@ -343,6 +453,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_8B_con_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeLongLE(a, offset, 0x0807060504030201L);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_8B_con_offs_nonalloc_direct() {
         a[offset + 0] = (byte)0x01;
         a[offset + 1] = (byte)0x02;
@@ -364,6 +481,12 @@ public class MergeStores {
     @Benchmark
     public byte[] store_8B_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setLong(a, offset, 0x0807060504030201L);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_8B_con_offs_nonalloc_leapi() {
+        storeLongLE(a, offset, 0x0807060504030201L);
         return a;
     }
 
@@ -396,6 +519,13 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_8B_L_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeLongLE(a, offset, vL);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_8B_L_offs_nonalloc_direct() {
         a[offset + 0] = (byte)(vL >> 0 );
         a[offset + 1] = (byte)(vL >> 8 );
@@ -417,6 +547,12 @@ public class MergeStores {
     @Benchmark
     public byte[] store_8B_L_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setLong(a, offset, vL);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_8B_L_offs_nonalloc_leapi() {
+        storeLongLE(a, offset, vL);
         return a;
     }
 
@@ -451,6 +587,14 @@ public class MergeStores {
     }
 
     @Benchmark
+    public byte[] store_8B_2I_offs_allocate_leapi() {
+        byte[] a = new byte[RANGE];
+        storeIntLE(a, offset + 0, vI);
+        storeIntLE(a, offset + 4, vI);
+        return a;
+    }
+
+    @Benchmark
     public byte[] store_8B_2I_offs_nonalloc_direct() {
         a[offset + 0] = (byte)(vI >> 0 );
         a[offset + 1] = (byte)(vI >> 8 );
@@ -474,6 +618,13 @@ public class MergeStores {
     public byte[] store_8B_2I_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(a, offset + 0, vI);
         ByteArrayLittleEndian.setInt(a, offset + 4, vI);
+        return a;
+    }
+
+    @Benchmark
+    public byte[] store_8B_2I_offs_nonalloc_leapi() {
+        storeIntLE(a, offset + 0, vI);
+        storeIntLE(a, offset + 4, vI);
         return a;
     }
 }

@@ -311,42 +311,43 @@ public class TestMergeStores {
     // Store a short LE into an array using store bytes in an array
     @ForceInline
     static void storeShortLE(byte[] bytes, int offset, short value) {
-        storeBytes(bytes, offset, (byte)value, (byte)(value >> 8));
+        storeBytes(bytes, offset, (byte)(value >> 0),
+                                  (byte)(value >> 8));
     }
 
     // Store an int LE into an array using store bytes in an array
     @ForceInline
     static void storeIntLE(byte[] bytes, int offset, int value) {
-        storeBytes(bytes, offset, (byte)value,
-                (byte)(value >> 8),
-                (byte)(value >> 16),
-                (byte)(value >> 24));
+        storeBytes(bytes, offset, (byte)(value >> 0 ),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 24));
     }
 
     // Store an int LE into an array using store bytes in an array
     @ForceInline
     static void storeLongLE(byte[] bytes, int offset, long value) {
-        storeBytes(bytes, offset, (byte)value,
-                (byte)(value >> 8),
-                (byte)(value >> 16),
-                (byte)(value >> 24),
-                (byte)(value >> 32),
-                (byte)(value >> 40),
-                (byte)(value >> 48),
-                (byte)(value >> 56));
+        storeBytes(bytes, offset, (byte)(value >> 0 ),
+                                  (byte)(value >> 8 ),
+                                  (byte)(value >> 16),
+                                  (byte)(value >> 24),
+                                  (byte)(value >> 32),
+                                  (byte)(value >> 40),
+                                  (byte)(value >> 48),
+                                  (byte)(value >> 56));
     }
 
     // Store 2 bytes into an array
     @ForceInline
     static void storeBytes(byte[] bytes, int offset, byte b0, byte b1) {
-        bytes[offset] = b0;
+        bytes[offset + 0] = b0;
         bytes[offset + 1] = b1;
     }
 
     // Store 4 bytes into an array
     @ForceInline
     static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3) {
-        bytes[offset] = b0;
+        bytes[offset + 0] = b0;
         bytes[offset + 1] = b1;
         bytes[offset + 2] = b2;
         bytes[offset + 3] = b3;
@@ -356,7 +357,7 @@ public class TestMergeStores {
     @ForceInline
     static void storeBytes(byte[] bytes, int offset, byte b0, byte b1, byte b2, byte b3,
                                                      byte b4, byte b5, byte b6, byte b7) {
-        bytes[offset] = b0;
+        bytes[offset + 0] = b0;
         bytes[offset + 1] = b1;
         bytes[offset + 2] = b2;
         bytes[offset + 3] = b3;
@@ -469,8 +470,7 @@ public class TestMergeStores {
     }
 
     @Test
-    // TODO investigate, probably all the casting leads to issues
-    //@IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    // No optimization, casting long -> int -> byte does not work
     static Object[] test2d(byte[] a, int offset, long v) {
         storeIntLE(a, offset + 0, (int)(v >> 0));
         storeIntLE(a, offset + 4, (int)(v >> 32));
@@ -478,8 +478,7 @@ public class TestMergeStores {
     }
 
     @Test
-    // TODO investigate, probably all the casting leads to issues
-    //@IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    // No optimization, casting long -> short -> byte does not work
     static Object[] test2e(byte[] a, int offset, long v) {
         storeShortLE(a, offset + 0, (short)(v >> 0));
         storeShortLE(a, offset + 2, (short)(v >> 16));
