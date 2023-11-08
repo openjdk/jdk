@@ -46,8 +46,8 @@ public class TestMulAddS2I {
 
     static {
         for (int i = 0; i < RANGE; i++) {
-            sArr1[i] = (short)(i + (1000 * AbstractInfo.getRandom().nextDouble()));
-            sArr2[i] = (short)(RANGE - i + (2000 * AbstractInfo.getRandom().nextDouble()));
+            sArr1[i] = (short)(AbstractInfo.getRandom().nextInt());
+            sArr2[i] = (short)(AbstractInfo.getRandom().nextInt());
         }
         GOLDEN = test();
     }
@@ -80,7 +80,7 @@ public class TestMulAddS2I {
     @IR(applyIfCPUFeature = {"sse2", "true"}, applyIf = {"UseUnalignedLoadStores", "false"},
         failOn = {IRNode.MUL_ADD_VS2VI}, // Can only pack LoadS if UseUnalignedLoadStores is true (default if sse4.2)
         counts = {IRNode.MUL_ADD_S2I, "> 0"})
-    @IR(applyIfCPUFeature = {"asimd", "true"}, applyIf = {"MaxVectorSize", "16"},
+    @IR(applyIfCPUFeature = {"asimd", "true"}, applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
             counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"}, applyIf = {"UseUnalignedLoadStores", "true"},
             counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})

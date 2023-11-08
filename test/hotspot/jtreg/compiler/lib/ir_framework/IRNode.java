@@ -932,9 +932,9 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_ADD_S2I, "MulAddS2I");
     }
 
-    public static final String MUL_ADD_VS2VI = PREFIX + "MUL_ADD_VS2VI" + POSTFIX;
+    public static final String MUL_ADD_VS2VI = VECTOR_PREFIX + "MUL_ADD_VS2VI" + POSTFIX;
     static {
-        superWordNodes(MUL_ADD_VS2VI, "MulAddVS2VI");
+        vectorNode(MUL_ADD_VS2VI, "MulAddVS2VI", TYPE_INT);
     }
 
     // Can only be used if avx512_vnni is available.
