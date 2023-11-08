@@ -211,8 +211,8 @@ void StubGenerator::generate_aes_stubs() {
 //   out        = r9  (c_rarg3) | rcx (c_rarg3)
 //   key        = r10           | r8  (c_rarg4)
 //   state      = r13           | r9  (c_rarg5)
-//   subkeyHtbl = r14           | r11
-//   counter    = rsi           | r12
+//   subkeyHtbl = r11           | r11
+//   counter    = r12           | r12
 //
 // Output:
 //   rax - number of processed bytes
@@ -240,10 +240,10 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   const Address state_mem(rbp, 7 * wordSize);
   const Register state = r13;
   const Address subkeyH_mem(rbp, 8 * wordSize);
-  const Register subkeyHtbl = r14;
-  const Register avx512_subkeyHtbl = r12;
+  const Register subkeyHtbl = r11;
+  const Register avx512_subkeyHtbl = r14;
   const Address counter_mem(rbp, 9 * wordSize);
-  const Register counter = rsi;
+  const Register counter = r12;
 #endif
   __ enter();
  // Save state before entering routine
@@ -254,15 +254,11 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ push(rbx);
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
-  __ push(rsi);
   __ movptr(key, key_mem);
   __ movptr(state, state_mem);
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
-// Save rbp and rsp
-  __ push(rbp);
-  __ movq(rbp, rsp);
 // Align stack
   __ andq(rsp, -64);
   __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
@@ -272,13 +268,8 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 
   __ vzeroupper();
 
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
   // Restore state before leaving routine
-#ifdef _WIN64
-  __ pop(rsi);
-#endif
+  __ lea(rsp, Address(rbp, -5 * wordSize));
   __ pop(rbx);
   __ pop(r15);
   __ pop(r14);
