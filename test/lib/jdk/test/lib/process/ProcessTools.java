@@ -384,7 +384,7 @@ public final class ProcessTools {
       java <jvm-args> -Dtest.thread.factory=<test-thread-factory-name> jdk.test.lib.process.ProcessTools <test-thread-factory-name> <test-class> <test-args>
      */
 
-    private static String[] addTestThreadFactoryArgs(String testThreadFactoryName, String[] command) {
+    private static String[] addTestThreadFactoryArgs(String testThreadFactoryName, String[] commandArgs) {
 
         final List<String> unsupportedArgs = List.of(
                 "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
@@ -398,7 +398,7 @@ public final class ProcessTools {
 
         boolean expectSecondArg = false;
         boolean isTestThreadFactoryAdded = false;
-        for (String cmd : command) {
+        for (String cmd : commandArgs) {
             if (isTestThreadFactoryAdded) {
                 args.add(cmd);
                 continue;
@@ -410,7 +410,7 @@ public final class ProcessTools {
                 continue;
             }
             if (unsupportedArgs.contains(cmd)) {
-                return command;
+                return commandArgs;
             }
             if (doubleWordArgs.contains(cmd)) {
                 expectSecondArg = true;
@@ -428,7 +428,7 @@ public final class ProcessTools {
 
             // if command is like 'java source.java' then return
             if (cmd.endsWith(".java")) {
-                return command;
+                return commandArgs;
             }
             // Some tests might check property to understand
             // if virtual threads are tested
