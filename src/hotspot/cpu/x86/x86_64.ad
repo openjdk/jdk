@@ -1457,7 +1457,7 @@ void BoxLockNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   int reg = ra_->get_encode(this);
 
   MacroAssembler masm(&cbuf);
-  masm.lea(as_Register(reg), Address(as_Register(RSP_enc), offset));
+  masm.lea(as_Register(reg), Address(rsp, offset));
 }
 
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
