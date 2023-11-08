@@ -882,6 +882,7 @@ public final class Double extends Number
      * @return     a {@code Double} object holding the value
      *             represented by the {@code String} argument.
      * @throws     NumberFormatException  if the string does not contain a
+     *             parsable number.
      * @see Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      */
     public static Double valueOf(String s) throws NumberFormatException {
