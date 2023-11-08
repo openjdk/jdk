@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.internal.jimage.decompressor;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -55,24 +54,6 @@ public class CompressIndexes {
         }
 
         return lst;
-    }
-
-    public static int readInt(DataInputStream cr) throws IOException {
-        // Get header byte.
-        byte header = cr.readByte();
-        // Determine size.
-        int size = getHeaderLength(header);
-        // Prepare result.
-        int result = getHeaderValue(header);
-
-        // For each value byte
-        for (int i = 1; i < size; i++) {
-            // Merge byte value.
-            result <<= Byte.SIZE;
-            result |= cr.readByte() & 0xFF;
-        }
-
-        return result;
     }
 
     public static int readInt(ByteBuffer cr) throws IOException {

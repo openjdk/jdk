@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,15 +83,15 @@ public class CompressIndexesTest {
         check(flow, arrays);
         System.err.println(arrays.size() * 4 + " compressed in " + flow.length
                 + " gain of " + (100 - ((flow.length * 100) / (arrays.size() * 4))) + "%");
-        try (DataInputStream is = new DataInputStream(new ByteArrayInputStream(flow))) {
-            int index = 0;
-            while (is.available() > 0) {
-                int d = CompressIndexes.readInt(is);
-                if (data[index] != d) {
-                    throw new AssertionError("Expected: " + data[index] + ", got: " + d);
-                }
-                ++index;
+
+        ByteBuffer bf = ByteBuffer.wrap(flow);
+        int index = 0;
+        while (bf.hasRemaining()) {
+            int d = CompressIndexes.readInt(bf);
+            if (data[index] != d) {
+                throw new AssertionError("Expected: " + data[index] + ", got: " + d);
             }
+            ++index;
         }
     }
 
