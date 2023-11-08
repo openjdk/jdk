@@ -139,7 +139,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_2B_con_adr0_allocate_direct() {
+    public byte[] store_B2_con_adr0_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[0] = (byte)0x01;
         aB[1] = (byte)0x02;
@@ -147,7 +147,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_2B_con_adr1_allocate_direct() {
+    public byte[] store_B2_con_adr1_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[1] = (byte)0x01;
         aB[2] = (byte)0x02;
@@ -155,7 +155,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_allocate_direct() {
+    public byte[] store_B2_con_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
@@ -163,53 +163,53 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_allocate_unsafe() {
+    public byte[] store_B2_con_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_allocate_bale() {
+    public byte[] store_B2_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_allocate_leapi() {
+    public byte[] store_B2_con_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeShortLE(aB, offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_nonalloc_direct() {
+    public byte[] store_B2_con_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_nonalloc_unsafe() {
+    public byte[] store_B2_con_offs_nonalloc_unsafe() {
         UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_nonalloc_bale() {
+    public byte[] store_B2_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_con_offs_nonalloc_leapi() {
+    public byte[] store_B2_con_offs_nonalloc_leapi() {
         storeShortLE(aB, offset, (short)0x0201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_allocate_direct() {
+    public byte[] store_B2_S_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)(vS >> 0 );
         aB[offset + 1] = (byte)(vS >> 8 );
@@ -217,53 +217,53 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_allocate_unsafe() {
+    public byte[] store_B2_S_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_allocate_bale() {
+    public byte[] store_B2_S_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setShort(aB, offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_allocate_leapi() {
+    public byte[] store_B2_S_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeShortLE(aB, offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_nonalloc_direct() {
+    public byte[] store_B2_S_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)(vS >> 0 );
         aB[offset + 1] = (byte)(vS >> 8 );
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_nonalloc_unsafe() {
+    public byte[] store_B2_S_offs_nonalloc_unsafe() {
         UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_nonalloc_bale() {
+    public byte[] store_B2_S_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setShort(aB, offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_2B_S_offs_nonalloc_leapi() {
+    public byte[] store_B2_S_offs_nonalloc_leapi() {
         storeShortLE(aB, offset, vS);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_adr0_allocate_direct() {
+    public byte[] store_B4_con_adr0_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[0] = (byte)0x01;
         aB[1] = (byte)0x02;
@@ -273,7 +273,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_con_adr1_allocate_direct() {
+    public byte[] store_B4_con_adr1_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[1] = (byte)0x01;
         aB[2] = (byte)0x02;
@@ -283,7 +283,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_allocate_direct() {
+    public byte[] store_B4_con_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
@@ -293,28 +293,28 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_allocate_unsafe() {
+    public byte[] store_B4_con_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_allocate_bale() {
+    public byte[] store_B4_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_allocate_leapi() {
+    public byte[] store_B4_con_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeIntLE(aB, offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_nonalloc_direct() {
+    public byte[] store_B4_con_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
         aB[offset + 2] = (byte)0x03;
@@ -323,25 +323,25 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_nonalloc_unsafe() {
+    public byte[] store_B4_con_offs_nonalloc_unsafe() {
         UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_nonalloc_bale() {
+    public byte[] store_B4_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_con_offs_nonalloc_leapi() {
+    public byte[] store_B4_con_offs_nonalloc_leapi() {
         storeIntLE(aB, offset, 0x04030201);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_allocate_direct() {
+    public byte[] store_B4_I_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)(vI >> 0 );
         aB[offset + 1] = (byte)(vI >> 8 );
@@ -351,28 +351,28 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_allocate_unsafe() {
+    public byte[] store_B4_I_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_allocate_bale() {
+    public byte[] store_B4_I_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setInt(aB, offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_allocate_leapi() {
+    public byte[] store_B4_I_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeIntLE(aB, offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_nonalloc_direct() {
+    public byte[] store_B4_I_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)(vI >> 0 );
         aB[offset + 1] = (byte)(vI >> 8 );
         aB[offset + 2] = (byte)(vI >> 16);
@@ -381,25 +381,25 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_nonalloc_unsafe() {
+    public byte[] store_B4_I_offs_nonalloc_unsafe() {
         UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_nonalloc_bale() {
+    public byte[] store_B4_I_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(aB, offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_4B_I_offs_nonalloc_leapi() {
+    public byte[] store_B4_I_offs_nonalloc_leapi() {
         storeIntLE(aB, offset, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_adr0_allocate_direct() {
+    public byte[] store_B8_con_adr0_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[0] = (byte)0x01;
         aB[1] = (byte)0x02;
@@ -413,7 +413,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_con_adr1_allocate_direct() {
+    public byte[] store_B8_con_adr1_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[1] = (byte)0x01;
         aB[2] = (byte)0x02;
@@ -427,7 +427,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_allocate_direct() {
+    public byte[] store_B8_con_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
@@ -441,28 +441,28 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_allocate_unsafe() {
+    public byte[] store_B8_con_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_allocate_bale() {
+    public byte[] store_B8_con_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_allocate_leapi() {
+    public byte[] store_B8_con_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeLongLE(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_nonalloc_direct() {
+    public byte[] store_B8_con_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)0x01;
         aB[offset + 1] = (byte)0x02;
         aB[offset + 2] = (byte)0x03;
@@ -475,25 +475,25 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_nonalloc_unsafe() {
+    public byte[] store_B8_con_offs_nonalloc_unsafe() {
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_nonalloc_bale() {
+    public byte[] store_B8_con_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_con_offs_nonalloc_leapi() {
+    public byte[] store_B8_con_offs_nonalloc_leapi() {
         storeLongLE(aB, offset, 0x0807060504030201L);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_allocate_direct() {
+    public byte[] store_B8_L_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)(vL >> 0 );
         aB[offset + 1] = (byte)(vL >> 8 );
@@ -507,28 +507,28 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_allocate_unsafe() {
+    public byte[] store_B8_L_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_allocate_bale() {
+    public byte[] store_B8_L_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setLong(aB, offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_allocate_leapi() {
+    public byte[] store_B8_L_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeLongLE(aB, offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_nonalloc_direct() {
+    public byte[] store_B8_L_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)(vL >> 0 );
         aB[offset + 1] = (byte)(vL >> 8 );
         aB[offset + 2] = (byte)(vL >> 16);
@@ -541,25 +541,25 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_nonalloc_unsafe() {
+    public byte[] store_B8_L_offs_nonalloc_unsafe() {
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_nonalloc_bale() {
+    public byte[] store_B8_L_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setLong(aB, offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_L_offs_nonalloc_leapi() {
+    public byte[] store_B8_L_offs_nonalloc_leapi() {
         storeLongLE(aB, offset, vL);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_allocate_direct() {
+    public byte[] store_B8_I2_offs_allocate_direct() {
         byte[] aB = new byte[RANGE];
         aB[offset + 0] = (byte)(vI >> 0 );
         aB[offset + 1] = (byte)(vI >> 8 );
@@ -573,7 +573,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_allocate_unsafe() {
+    public byte[] store_B8_I2_offs_allocate_unsafe() {
         byte[] aB = new byte[RANGE];
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
@@ -581,7 +581,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_allocate_bale() {
+    public byte[] store_B8_I2_offs_allocate_bale() {
         byte[] aB = new byte[RANGE];
         ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
         ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
@@ -589,7 +589,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_allocate_leapi() {
+    public byte[] store_B8_I2_offs_allocate_leapi() {
         byte[] aB = new byte[RANGE];
         storeIntLE(aB, offset + 0, vI);
         storeIntLE(aB, offset + 4, vI);
@@ -597,7 +597,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_nonalloc_direct() {
+    public byte[] store_B8_I2_offs_nonalloc_direct() {
         aB[offset + 0] = (byte)(vI >> 0 );
         aB[offset + 1] = (byte)(vI >> 8 );
         aB[offset + 2] = (byte)(vI >> 16);
@@ -610,28 +610,28 @@ public class MergeStores {
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_nonalloc_unsafe() {
+    public byte[] store_B8_I2_offs_nonalloc_unsafe() {
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
         UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_nonalloc_bale() {
+    public byte[] store_B8_I2_offs_nonalloc_bale() {
         ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
         ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
         return aB;
     }
 
     @Benchmark
-    public byte[] store_8B_2I_offs_nonalloc_leapi() {
+    public byte[] store_B8_I2_offs_nonalloc_leapi() {
         storeIntLE(aB, offset + 0, vI);
         storeIntLE(aB, offset + 4, vI);
         return aB;
     }
 
     @Benchmark
-    public short[] store_2S_con_offs_allocate_direct() {
+    public short[] store_S2_con_offs_allocate_direct() {
         short[] aS = new short[RANGE];
         aS[offset + 0] = (short)0x0102;
         aS[offset + 1] = (short)0x0304;
@@ -639,14 +639,14 @@ public class MergeStores {
     }
 
     @Benchmark
-    public short[] store_2S_con_offs_nonalloc_direct() {
+    public short[] store_S2_con_offs_nonalloc_direct() {
         aS[offset + 0] = (short)0x0102;
         aS[offset + 1] = (short)0x0304;
         return aS;
     }
 
     @Benchmark
-    public short[] store_4S_con_offs_allocate_direct() {
+    public short[] store_S4_con_offs_allocate_direct() {
         short[] aS = new short[RANGE];
         aS[offset + 0] = (short)0x0102;
         aS[offset + 1] = (short)0x0304;
@@ -656,7 +656,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public short[] store_4S_con_offs_nonalloc_direct() {
+    public short[] store_S4_con_offs_nonalloc_direct() {
         aS[offset + 0] = (short)0x0102;
         aS[offset + 1] = (short)0x0304;
         aS[offset + 2] = (short)0x0506;
@@ -665,7 +665,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public int[] store_2I_con_offs_allocate_direct() {
+    public int[] store_I2_con_offs_allocate_direct() {
         int[] aI = new int[RANGE];
         aI[offset + 0] = 0x01020304;
         aI[offset + 1] = 0x05060708;
@@ -673,14 +673,14 @@ public class MergeStores {
     }
 
     @Benchmark
-    public int[] store_2I_con_offs_nonalloc_direct() {
+    public int[] store_I2_con_offs_nonalloc_direct() {
         aI[offset + 0] = 0x01020304;
         aI[offset + 1] = 0x05060708;
         return aI;
     }
 
     @Benchmark
-    public int[] store_2I_zero_offs_allocate_direct() {
+    public int[] store_I2_zero_offs_allocate_direct() {
         int[] aI = new int[RANGE];
         aI[offset + 0] = 0;
         aI[offset + 1] = 0;
@@ -688,7 +688,7 @@ public class MergeStores {
     }
 
     @Benchmark
-    public int[] store_2I_zero_offs_nonalloc_direct() {
+    public int[] store_I2_zero_offs_nonalloc_direct() {
         aI[offset + 0] = 0;
         aI[offset + 1] = 0;
         return aI;
