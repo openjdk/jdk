@@ -162,8 +162,8 @@ public final class Gatherers {
         }
 
         @Override
-        public <AAA, RRR> Gatherer<T, ?, RRR> andThen(
-                Gatherer<? super RR, AAA, ? extends RRR> that) {
+        public <RRR> Gatherer<T, ?, RRR> andThen(
+                Gatherer<? super RR, ?, ? extends RRR> that) {
             if (that.getClass() == Composite.class) {
                 @SuppressWarnings("unchecked")
                 final var c =

@@ -120,7 +120,8 @@ public final class BenchmarkGathererImpls {
         @Override public Void apply(Void left, Void right) { return left; }
 
         @Override
-        public <AA, RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, AA, ? extends RR> that) {
+        public <RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, ?, ?
+                extends RR> that) {
             if (that.getClass() == MappingGatherer.class) { // Implicit null-check of that
                 @SuppressWarnings("unchecked")
                 var thatMapper = ((MappingGatherer<R,RR>)that).mapper;
@@ -153,7 +154,8 @@ public final class BenchmarkGathererImpls {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <AA, RR> Gatherer<TR, ?, RR> andThen(Gatherer<? super TR, AA, ? extends RR> that) {
+        public <RR> Gatherer<TR, ?, RR> andThen(Gatherer<? super TR, ?, ?
+                extends RR> that) {
             if (that.getClass() == FilteringGatherer.class) {
                 var first = predicate;
                 var second = ((FilteringGatherer<TR>) that).predicate;
@@ -185,7 +187,8 @@ public final class BenchmarkGathererImpls {
         @Override public Void apply(Void left, Void right) { return left; }
 
         @Override
-        public <AA, RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, AA, ? extends RR> that) {
+        public <RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, ?, ?
+                extends RR> that) {
             if (that.getClass() == MappingGatherer.class) { // Implicit null-check of that
                 @SuppressWarnings("unchecked")
                 var thatMapper = ((MappingGatherer<R, RR>)that).mapper;
@@ -248,7 +251,8 @@ public final class BenchmarkGathererImpls {
 
         @Override
         @SuppressWarnings("unchecked")
-        public final <AA, RR> Gatherer<TR, ?, RR> andThen(Gatherer<? super TR, AA, ? extends RR> that) {
+        public final <RR> Gatherer<TR, ?, RR> andThen(Gatherer<? super TR, ?,
+                ? extends RR> that) {
             if (that.getClass() == TakeWhileGatherer.class) {
                 final var thisPredicate = predicate;
                 final var thatPredicate = ((TakeWhileGatherer<TR>)that).predicate;

@@ -243,13 +243,12 @@ public interface Gatherer<T, A, R> {
      * to the input of that Gatherer.
      *
      * @param that the other gatherer
-     * @param <AA> The type of the state of that Gatherer
      * @param <RR> The type of output of that Gatherer
      * @throws NullPointerException if the argument is null
      * @return returns a composed Gatherer which connects the output of this
      *         Gatherer as input that Gatherer
      */
-    default <AA, RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, AA, ? extends RR> that) {
+    default <RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, ?, ? extends RR> that) {
         Objects.requireNonNull(that);
         return Gatherers.Composite.of(this, that);
     }
