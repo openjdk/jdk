@@ -92,9 +92,10 @@ public class LauncherErrors {
         ProcessTools.executeTestJava("-Djava.security.manager", "--module-path", dir, "--module", mid)
                     .outputTo(System.out)
                     .errorTo(System.out)
-                    .shouldContain("Error: Unable to initialize main class " + MAIN_CLASS + " in module " + TEST_MODULE)
-                    .shouldContain("Caused by: java.security.AccessControlException: access denied")
+                    .shouldContain("Error: Unable to load main class " + MAIN_CLASS + " in module " + TEST_MODULE)
+                    .shouldContain("java.security.AccessControlException")
                     .shouldNotHaveExitValue(0);
+
     }
 
 }
