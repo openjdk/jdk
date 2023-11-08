@@ -118,6 +118,7 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
     if (o_r == OverlappingResult::NoOverlap) {
       continue;
     }
+    int stack_idx = crng.stack_idx;
     // Delete old region
     commits.delete_at(i);
     // delete_at replaces the ith elt with the last one, so we need to rewind
@@ -128,7 +129,9 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
     // And push on the new ones.
     for (int j = 0; j < len; j++) {
       commits.push(out[j]);
+      _stack_storage->increment(stack_idx);
     }
+    _stack_storage->decrement(stack_idx);
     // We're not breaking, no guarantee that there's exactly 1 region that matches
   }
 
@@ -159,10 +162,6 @@ void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& spac
 
 }
 
-void VirtualMemoryView::remove_all_views_into_space(const PhysicalMemorySpace& space) {
-  _reserved_regions->at(space.id).clear_and_deallocate();
-}
-
 void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
                                                      address base_addr, size_t size) {
   Range range_to_remove{base_addr, size};
@@ -170,15 +169,20 @@ void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
   TrackedOffsetRange out[2];
   int len;
   for (int i = 0; i < range_array.length(); i++) {
+    TrackedOffsetRange& range = range_array.at(i);
     bool has_overlap =
-        OverlappingResult::NoOverlap != overlap_of(range_array.at(i), range_to_remove, out, &len);
+        OverlappingResult::NoOverlap != overlap_of(range, range_to_remove, out, &len);
     if (has_overlap) {
+      int stack_idx = range.stack_idx;
       // Delete old region.
       range_array.delete_at(i);
       // Replace with the remaining ones
       for (int j = 0; j < len; j++) {
+        _stack_storage->increment(stack_idx);
         range_array.push(out[j]);
       }
+      // Decrement after incrementing to avoid triggering resizing
+      _stack_storage->decrement(stack_idx);
     }
   }
 }

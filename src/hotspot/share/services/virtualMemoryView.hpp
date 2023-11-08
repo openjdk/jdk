@@ -140,38 +140,73 @@ private:
   static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
+  // Singleton class used by VirtualMemoryView.
   class NativeCallStackStorage : public CHeapObj<mtNMT> {
-    GrowableArrayCHeap<NativeCallStack, mtNMT> all_the_stacks;
+    struct RefCountedNCS {
+      NativeCallStack stack;
+      int ref_count;
+      RefCountedNCS() : stack(), ref_count(0) {}
+      RefCountedNCS(NativeCallStack stack, int ref_count)
+        : stack(stack), ref_count(ref_count) {}
+    };
+    GrowableArrayCHeap<RefCountedNCS, mtNMT> all_the_stacks;
+    int unused_stacks = 0;
   public:
     static constexpr const int static_stack_size = 1024;
+
     int push(const NativeCallStack& stack) {
       if (!VirtualMemoryView::_is_detailed_mode) {
-        all_the_stacks.at_put_grow(0, NativeCallStack{});
+        all_the_stacks.at_put_grow(0, RefCountedNCS{});
         return 0;
       }
       int len = all_the_stacks.length();
       int idx = stack.calculate_hash() % static_stack_size;
       if (len < idx) {
-        all_the_stacks.at_put_grow(idx, stack);
+        all_the_stacks.at_put_grow(idx, RefCountedNCS{stack, 1});
         return idx;
       }
       // Exists and already there? No need for double storage
-      const NativeCallStack& pre_existing = all_the_stacks.at(idx);
-      if (pre_existing.is_empty()) {
-        all_the_stacks.at_put(idx, stack);
+      RefCountedNCS& pre_existing = all_the_stacks.at(idx);
+      if (pre_existing.stack.is_empty()) {
+        all_the_stacks.at_put(idx, RefCountedNCS{stack, 1});
         return idx;
-      } else if (all_the_stacks.at(idx).equals(stack)) {
+      } else if (pre_existing.stack.equals(stack)) {
+        pre_existing.ref_count++;
         return idx;
       }
       // There was a collision, just push it
-      all_the_stacks.push(stack);
+      all_the_stacks.push(RefCountedNCS{stack, 1});
       return len;
     }
+
     const NativeCallStack& get(int idx) {
       if (!VirtualMemoryView::_is_detailed_mode) {
-        return all_the_stacks.at(0);
+        return all_the_stacks.at(0).stack;
       }
-      return all_the_stacks.at(idx);
+      return all_the_stacks.at(idx).stack;
+    }
+
+    void increment(int idx) {
+      if (idx >= static_stack_size) {
+        all_the_stacks.at(idx).ref_count++;
+      }
+    }
+    void decrement(int idx) {
+      if (idx < static_stack_size) {
+        return;
+      }
+      RefCountedNCS& rncs = all_the_stacks.at(idx);
+      if (rncs.ref_count == 0) {
+        return;
+      }
+      rncs.ref_count--;
+      if (rncs.ref_count == 0) {
+        unused_stacks++;
+      }
+
+      // If we have a lot of unused stacks then we should clean up.
+      if (unused_stacks > 512) {
+      }
     }
     NativeCallStackStorage(int capacity = static_stack_size) : all_the_stacks{capacity} {
     }
@@ -188,7 +223,6 @@ public:
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
   static void remove_view_into_space(const PhysicalMemorySpace& space, address base_addr,
                                      size_t size);
-  static void remove_all_views_into_space(const PhysicalMemorySpace& space);
 
   static void commit_memory_into_space(const PhysicalMemorySpace& space, address offset, size_t size,
                                        const NativeCallStack& stack);
