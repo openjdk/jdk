@@ -470,7 +470,7 @@
   notproduct(bool, TraceReduceAllocationMerges, false,                      \
              "Trace decision for simplifying allocation merges.")           \
                                                                             \
-  develop(bool, VerifyReduceAllocationMerges , true,                        \
+  develop(bool, VerifyReduceAllocationMerges, true,                         \
           "Verify reduce allocation merges in escape analysis")             \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
