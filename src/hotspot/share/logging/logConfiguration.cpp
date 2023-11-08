@@ -505,10 +505,10 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
     }
-  } else if (0 == strcmp(outputstr, StdoutLog->name())) { // stdout
+  } else if (strcmp(outputstr, StdoutLog->name()) == 0) { // stdout
     idx = 0;
     assert(find_output(outputstr) == idx, "sanity check");
-  } else if (0 == strcmp(outputstr, StderrLog->name())) { // stderr
+  } else if (strcmp(outputstr, StderrLog->name()) == 0) { // stderr
     idx = 1;
     assert(find_output(outputstr) == idx, "sanity check");
   } else { // Output specified using name
