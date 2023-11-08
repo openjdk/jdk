@@ -56,3 +56,9 @@ TEST_F(NmtVirtualMemoryViewTest, OverlappingRanges) {
   ASSERT_TRUE(result.result == OverlappingResult::ShortenedFromLeft);
   ASSERT_TRUE(result.len == 1);
 }
+
+TEST_VM_F(NmtVirtualMemoryViewTest, ReservingMemoryInSpace) {
+}
+
+TEST_VM_F(NmtVirtualMemoryViewTest, CommittingMemoryInSpace) {
+}
