@@ -171,7 +171,10 @@ public class Enter extends JCTree.Visitor {
      */
     ListBuffer<ClassSymbol> uncompleted;
 
-    List<ClassSymbol> pendingCompleter = List.nil();
+    /** The queue of classes that should have typeEnter completer installed after
+     *  all the classes are discovered.
+     */
+    List<ClassSymbol> pendingCompleter = null;
 
     /** The queue of modules whose imports still need to be checked. */
     ListBuffer<JCCompilationUnit> unfinishedModules = new ListBuffer<>();
@@ -527,7 +530,11 @@ public class Enter extends JCTree.Visitor {
         ct.allparams_field = null;
 
         // schedule installation of further completer for this type.
-        pendingCompleter = pendingCompleter.prepend(c);
+        if (pendingCompleter != null) {
+            pendingCompleter = pendingCompleter.prepend(c);
+        } else {
+            c.completer = typeEnter;
+        }
 
         // Add non-local class to uncompleted, to make sure it will be
         // completed later.
@@ -608,6 +615,7 @@ public class Enter extends JCTree.Visitor {
         try {
             List<ClassSymbol> prevPendingCompleter = pendingCompleter;
             try {
+                pendingCompleter = List.nil();
                 // enter all classes, and construct uncompleted list
                 classEnter(trees, null);
                 // install further completer for classes recognized by the above task:
