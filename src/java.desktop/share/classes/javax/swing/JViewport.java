@@ -48,6 +48,7 @@ import java.util.Collections;
 
 import sun.awt.AWTAccessor;
 import sun.swing.SwingUtilities2;
+import sun.java2d.SunGraphics2D;
 
 /**
  * The "viewport" or "porthole" through which you see the underlying
@@ -614,7 +615,11 @@ public class JViewport extends JComponent implements Accessible
     private void paintViaBackingStore(Graphics g) {
         Graphics bsg = getBackingStoreGraphics(g);
         try {
-            super.paint(bsg);
+            if (g instanceof SunGraphics2D) {
+                super.paint(bsg);
+            } else {
+                super.paint(g);
+            }
             g.drawImage(backingStoreImage, 0, 0, this);
         } finally {
             bsg.dispose();
@@ -624,7 +629,11 @@ public class JViewport extends JComponent implements Accessible
     private void paintViaBackingStore(Graphics g, Rectangle oClip) {
         Graphics bsg = getBackingStoreGraphics(g);
         try {
-            super.paint(bsg);
+            if (g instanceof SunGraphics2D) {
+                super.paint(bsg);
+            } else {
+                super.paint(g);
+            }
             g.setClip(oClip);
             g.drawImage(backingStoreImage, 0, 0, this);
         } finally {
