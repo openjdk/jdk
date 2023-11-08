@@ -827,7 +827,7 @@ public:
     this->_len = other._len;
   }
 
-  GrowableArrayCHeap<E,F>& operator=(GrowableArrayCHeap<E,F>& other) {
+  GrowableArrayCHeap<E,F>& operator=(const GrowableArrayCHeap<E,F>& other) {
     assert(&other != this, "must be different");
     this->clear_and_deallocate();
     this->grow(other._len);
