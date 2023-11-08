@@ -1130,16 +1130,14 @@ public:
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
-  // reaching a boundary node, defined by is_boundary.
-  // Note: the function definition appears after the complete type definition
-  // of Unique_Node_List.
+  // reaching a boundary node, defined by is_boundary. Note: the function
+  // definition appears after the complete type definition of Unique_Node_List.
   template <typename Callback, typename Check>
   void visit_uses(Callback callback, Check is_boundary);
 
-  // Visit all non-cast uses of the node, bypassing ConstraintCasts.
-  // Pattern: this (-> ConstraintCast)* -> non_cast
-  // In other words: find all non_cast nodes such that
-  // non_cast->uncast() == this.
+  // Visit all non-cast uses of the node, bypassing ConstraintCasts. Pattern:
+  // this (-> ConstraintCast)* -> non_cast. In other words: find all non_cast
+  // nodes such that non_cast->uncast() == this.
   template <typename Callback>
   void visit_uncasted_uses(Callback callback) {
      visit_uses(callback, [](Node* n){ return !n->is_ConstraintCast(); });
