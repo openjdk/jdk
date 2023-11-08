@@ -246,7 +246,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * The returned segment is associated with this {@linkplain #scope() arena scope}.
      * The segment's {@link MemorySegment#address() address} is the starting address of the
      * allocated off-heap region of memory backing the segment, and the address is
-     * aligned according the provided alignment constraint.
+     * aligned according to the provided alignment constraint.
      *
      * @implSpec
      * Implementations of this method must return a native segment featuring the requested size,

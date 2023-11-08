@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
 import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
- * A layout that models values of basic data types. Examples of values modelled by a value layout are
+ * A layout that models values of basic data types. Examples of values modeled by a value layout are
  * <em>integral</em> values (either signed or unsigned), <em>floating-point</em> values and
  * <em>address</em> values.
  * <p>
@@ -42,7 +42,7 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * @apiNote Some characteristics of the Java layout constants are platform-dependent. For instance, the byte order of
  * these constants is set to the {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy to work
  * with other APIs, such as arrays and {@link java.nio.ByteBuffer}. Moreover, the alignment constraint of
- * {@link ValueLayout#JAVA_LONG} and {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms, but only to
+ * {@link ValueLayout#JAVA_LONG} and {@link ValueLayout#JAVA_DOUBLE} are set to 8 bytes on 64-bit platforms, but only to
  * 4 bytes on 32-bit platforms.
  *
  * @implSpec implementing classes and subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -50,9 +50,10 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * @sealedGraph
  * @since 22
  */
-public sealed interface ValueLayout extends MemoryLayout permits
-        ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar, ValueLayout.OfShort, ValueLayout.OfInt,
-        ValueLayout.OfFloat, ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
+public sealed interface ValueLayout extends MemoryLayout
+        permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
+        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
      * {@return the value's byte order}
@@ -102,7 +103,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * The returned var handle checks that accesses are aligned according to this value layout's
      * {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
      *
-     * @apiNote This method is similar, but more efficient, than calling {@code MemoryLayout#varHandle(PathElement...)}
+     * @apiNote This method is similar, but more efficient than calling {@code MemoryLayout#varHandle(PathElement...)}
      * with an empty path element array, as it avoids the creation of the var args array.
      *
      * @apiNote The returned var handle features certain <a href="MemoryLayout.html#access-mode-restrictions">access mode
