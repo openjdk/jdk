@@ -125,9 +125,31 @@ private:
   static GrowableArrayCHeap<RegionStorage, mtNMT>* committed_regions;
   static GrowableArrayCHeap<const char*, mtNMT>* names; // Map memory space to name
 
-  static constexpr const int static_stack_size = 256;
-  static GrowableArrayCHeap<NativeCallStack, mtNMT>* all_the_stacks;
-  static int push_stack(const NativeCallStack& stack);
+  struct NativeCallStackStorage : public CHeapObj<mtNMT> {
+    static constexpr const int static_stack_size = 1024;
+    GrowableArrayCHeap<NativeCallStack, mtNMT> all_the_stacks;
+    int push(const NativeCallStack& stack) {
+      int len = all_the_stacks.length();
+      int idx = stack.calculate_hash() % static_stack_size;
+      if (len < idx) {
+        all_the_stacks.at_put_grow(idx, stack);
+        return idx;
+      }
+      // Exists and already there? No need for double storage
+      if (all_the_stacks.at(idx).equals(stack)) {
+        return idx;
+      }
+      // There was a collision, just push it
+      all_the_stacks.push(stack);
+      return len;
+    }
+    const NativeCallStack& get(int idx) {
+      return all_the_stacks.at(idx);
+    }
+    NativeCallStackStorage() : all_the_stacks{static_stack_size} {}
+  };
+
+  static NativeCallStackStorage* stack_storage;
 
   // Utilities
   static bool overlaps(Range a, Range b);
