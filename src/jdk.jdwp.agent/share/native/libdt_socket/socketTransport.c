@@ -460,6 +460,12 @@ parseAllowedMask(const char *buffer, int isIPv4, struct in6_addr *result) {
     int maxValue = isIPv4 ? 32 : 128;
     int i;
 
+    // on AIX we might get IPv6 detected (by getaddrinfo) as IPv4,
+    // so the default maxValue does not always work
+#if defined(_AIX)
+    maxValue = 128;
+#endif
+
     do {
         if (*buffer < '0' || *buffer > '9') {
             return JDWPTRANSPORT_ERROR_ILLEGAL_ARGUMENT;
