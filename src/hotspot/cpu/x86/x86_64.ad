@@ -1833,8 +1833,7 @@ encode %{
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      cbuf.relocate(cbuf.insts_mark(), rspec, RELOC_DISP32);
-      cbuf.insts()->emit_int32((int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4));
+      __ call(AddressLiteral(CAST_FROM_FN_PTR(address, $meth$$method), rtype), noreg);
       address mark = cbuf.insts_mark();
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
