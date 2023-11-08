@@ -4012,7 +4012,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isImplicitClass ?  construcImplictClass(defs.toList()) : defs.toList();
+        List<JCTree> topLevelDefs = isImplicitClass ?  constructImplictClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.docComment());
@@ -4028,7 +4028,7 @@ public class JavacParser implements Parser {
     }
 
     // Restructure top level to be an implicit class.
-    private List<JCTree> construcImplictClass(List<JCTree> origDefs) {
+    private List<JCTree> constructImplictClass(List<JCTree> origDefs) {
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
