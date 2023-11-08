@@ -29,6 +29,9 @@ import java.util.Map;
 
 import jdk.jfr.Event;
 import jdk.jfr.events.DeserializationEvent;
+import jdk.jfr.events.ErrorThrownEvent;
+import jdk.jfr.events.ExceptionStatisticsEvent;
+import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -58,7 +61,10 @@ public final class MirrorEvents {
         VirtualThreadPinnedEvent.class,
         VirtualThreadSubmitFailedEvent.class,
         X509CertificateEvent.class,
-        X509ValidationEvent.class
+        X509ValidationEvent.class,
+        ErrorThrownEvent.class,
+        ExceptionStatisticsEvent.class,
+        ExceptionThrownEvent.class,
     };
 
     private static final Map<String, Class<? extends Event>> mirrorLookup = createLookup();
