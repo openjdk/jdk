@@ -30,12 +30,14 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
+#include "memory/resourceArea.hpp"
 #include "services/allocationSite.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/pair.hpp"
 
 /*
   Remaining issues:
@@ -206,9 +208,20 @@ private:
 
       // If we have a lot of unused stacks then we should clean up.
       if (unused_stacks > 512) {
+        compact();
       }
     }
     NativeCallStackStorage(int capacity = static_stack_size) : all_the_stacks{capacity} {
+    }
+
+  private:
+    // Compact the stack storage by reassigning the indices stored in the reserved and committed memory regions.
+    void compact() {
+      ResourceMark rm;
+      // remap[i] = x => stack index i+static_stack_size needs to be remapped to index x
+      // side-condition: x > 0
+      GrowableArray<int> remap{all_the_stacks.length() - static_stack_size};
+      // TODO: Actually implement this, thanks!
     }
   };
 
