@@ -815,7 +815,7 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   // Note that VerifyStackAtCalls' Majik cookie does not change the frame size popped here
 
   if (framesize) {
-    __ addq(as_Register(RSP_enc), framesize);
+    __ addq(rsp, framesize);
   }
 
   __ popq(as_Register(RBP_enc));
