@@ -34,14 +34,14 @@
 #include "utilities/ostream.hpp"
 
 uint32_t VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
-GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::names = nullptr;
-GrowableArrayCHeap<VirtualMemoryView::OffsetRegionStorage, mtNMT>* VirtualMemoryView::reserved_regions = nullptr;
-GrowableArrayCHeap<VirtualMemoryView::RegionStorage, mtNMT>* VirtualMemoryView::committed_regions = nullptr;
-VirtualMemoryView::NativeCallStackStorage* VirtualMemoryView::stack_storage = nullptr;
+GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
+GrowableArrayCHeap<VirtualMemoryView::OffsetRegionStorage, mtNMT>* VirtualMemoryView::_reserved_regions = nullptr;
+GrowableArrayCHeap<VirtualMemoryView::RegionStorage, mtNMT>* VirtualMemoryView::_committed_regions = nullptr;
+VirtualMemoryView::NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 
 void VirtualMemoryView::report(outputStream* output, size_t scale) {
   auto print_virtual_memory_region = [&](TrackedOffsetRange& reserved_range) -> void {
-    const NativeCallStack& stack = stack_storage->get(reserved_range.stack_idx);
+    const NativeCallStack& stack = _stack_storage->get(reserved_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
     output->print("[" PTR_FORMAT " - " PTR_FORMAT "]" " reserved " SIZE_FORMAT "%s",
                   p2i(reserved_range.start), p2i(reserved_range.end()),
@@ -59,7 +59,7 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
     }
   };
   const auto print_committed_memory = [&](TrackedRange& committed_range) {
-    const NativeCallStack& stack = stack_storage->get(committed_range.stack_idx);
+    const NativeCallStack& stack = _stack_storage->get(committed_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
     output->print("\n\t");
     output->print("[" PTR_FORMAT " - " PTR_FORMAT "]" " committed " SIZE_FORMAT "%s",
@@ -73,13 +73,13 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
     }
   };
   for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
-    OffsetRegionStorage& reserved_ranges = reserved_regions->at(space_id);
-    RegionStorage& committed_ranges = committed_regions->at(space_id);
+    OffsetRegionStorage& reserved_ranges = _reserved_regions->at(space_id);
+    RegionStorage& committed_ranges = _committed_regions->at(space_id);
     bool found_committed[committed_ranges.length()];
     for (int i = 0; i < committed_ranges.length(); i++) {
       found_committed[i] = false;
     }
-    output->print_cr("%s:", names->at(space_id));
+    output->print_cr("%s:", _names->at(space_id));
     for (int reserved_range_idx = 0; reserved_range_idx < reserved_ranges.length(); reserved_range_idx++) {
       output->bol();
       TrackedOffsetRange& reserved_range = reserved_ranges.at(reserved_range_idx);
@@ -109,7 +109,7 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
   TrackedOffsetRange out[2];
   int len;
 
-  RegionStorage& commits = committed_regions->at(space.id);
+  RegionStorage& commits = _committed_regions->at(space.id);
   int orig_len = commits.length();
   for (int i = 0; i < orig_len; i++) {
     TrackedRange& crng = commits.at(i);
@@ -138,19 +138,19 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,
                                                        address offset, size_t size,
                                                        const NativeCallStack& stack) {
-  RegionStorage& crngs = committed_regions->at(space.id);
+  RegionStorage& crngs = _committed_regions->at(space.id);
   // Small optimization: Is the next commit overlapping with the last one? Then we don't need to push.
   if (crngs.length() > 0) {
     TrackedRange& crng = crngs.at(crngs.length() - 1);
     if (overlaps(crng, Range{offset, size})
         || adjacent(crng, Range{offset, size})
-        && stack_storage->get(crng.stack_idx).equals(stack)) {
+        && _stack_storage->get(crng.stack_idx).equals(stack)) {
       crng.start = MIN2(offset, crng.start);
       crng.size = MAX2(offset+size, crng.end()) - crng.start;
       return;
     }
   }
-  int idx = stack_storage->push(stack);
+  int idx = _stack_storage->push(stack);
   crngs.push(TrackedRange{offset, size, idx, mtNone});
 
   sort_regions(crngs);
@@ -159,13 +159,13 @@ void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& spac
 }
 
 void VirtualMemoryView::remove_all_views_into_space(const PhysicalMemorySpace& space) {
-  reserved_regions->at(space.id).clear_and_deallocate();
+  _reserved_regions->at(space.id).clear_and_deallocate();
 }
 
 void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
                                                      address base_addr, size_t size) {
   Range range_to_remove{base_addr, size};
-  OffsetRegionStorage& range_array = reserved_regions->at(space.id);
+  OffsetRegionStorage& range_array = _reserved_regions->at(space.id);
   TrackedOffsetRange out[2];
   int len;
   for (int i = 0; i < range_array.length(); i++) {
@@ -188,8 +188,8 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
                                                   MEMFLAGS flag, const NativeCallStack& stack) {
   // This method is a bit tricky because we need to care about preserving the offsets of any already existing view
   // that overlaps with the view being added.
-  int stack_idx = stack_storage->push(stack);
-  OffsetRegionStorage& rngs = reserved_regions->at(space.id);
+  int stack_idx = _stack_storage->push(stack);
+  OffsetRegionStorage& rngs = _reserved_regions->at(space.id);
   // We need to find overlapping regions and split on them, because the offsets may differ.
   for (int i = 0; i < rngs.length(); i++) {
     TrackedOffsetRange& rng = rngs.at(i);
@@ -226,17 +226,18 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
   // These are allocated just to be copied for at_put_grow.
   OffsetRegionStorage to_copy_res{};
   RegionStorage to_copy_comm{};
-  reserved_regions->at_put_grow(next_space.id, to_copy_res);
-  committed_regions->at_put_grow(next_space.id, to_copy_comm);
-  names->at_put_grow(next_space.id, descriptive_name, "");
+  _reserved_regions->at_put_grow(next_space.id, to_copy_res);
+  _committed_regions->at_put_grow(next_space.id, to_copy_comm);
+  _names->at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
 }
 
-void VirtualMemoryView::initialize() {
-  reserved_regions = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
-  committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{5};
-  stack_storage = new NativeCallStackStorage{};
-  names = new GrowableArrayCHeap<const char*, mtNMT>{5};
+void VirtualMemoryView::initialize(bool is_detailed_mode) {
+  _reserved_regions = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
+  _committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{5};
+  _stack_storage = new NativeCallStackStorage{};
+  _names = new GrowableArrayCHeap<const char*, mtNMT>{5};
+  _is_detailed_mode = is_detailed_mode;
 }
 
 void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
@@ -254,8 +255,8 @@ void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
     const TrackedRange potential_range = ranges.at(i);
     if (merging_range.end() >=
             potential_range.start // There's overlap, known because of pre-condition
-        && stack_storage->get(merging_range.stack_idx)
-               .equals(stack_storage->get(potential_range.stack_idx))) {
+        && _stack_storage->get(merging_range.stack_idx)
+               .equals(_stack_storage->get(potential_range.stack_idx))) {
       // Merge it
       merging_range.size = potential_range.end() - merging_range.start;
     } else {

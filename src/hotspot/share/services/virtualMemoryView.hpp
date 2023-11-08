@@ -104,6 +104,23 @@ public:
   };
 
 private:
+  using OffsetRegionStorage = GrowableArrayCHeap<TrackedOffsetRange, mtNMT>;
+  using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
+
+  // Utilities
+  static bool overlaps(Range a, Range b);
+  static bool adjacent(Range a, Range b);
+
+  // Pre-condition: ranges is sorted in a left-aligned fashion
+  // That is: (a,b) comes before (c,d) if a <= c
+  // Merges the ranges into a minimal sequence, taking into account that two ranges can only be merged if:
+  // 1. Their NativeCallStacks are the same
+  // 2. Their starts align correctly
+  static void merge_committed(RegionStorage& ranges);
+
+  static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
+  static void sort_regions(OffsetRegionStorage& storage);
+  static void sort_regions(RegionStorage& storage);
 
   // Split the range to_split by removing to_remove from it, storing the remaining parts in out.
   // Returns true if an overlap was found and will fill the out array with at most 2 elements.
@@ -119,11 +136,9 @@ private:
   static OverlappingResult overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                       TrackedOffsetRange* out, int* len);
 
-  using OffsetRegionStorage = GrowableArrayCHeap<TrackedOffsetRange, mtNMT>;
-  using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
-  static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* reserved_regions;
-  static GrowableArrayCHeap<RegionStorage, mtNMT>* committed_regions;
-  static GrowableArrayCHeap<const char*, mtNMT>* names; // Map memory space to name
+  static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* _reserved_regions;
+  static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
+  static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   class NativeCallStackStorage : public CHeapObj<mtNMT> {
     static constexpr const int static_stack_size = 1024;
@@ -154,25 +169,10 @@ private:
     NativeCallStackStorage() : all_the_stacks{static_stack_size} {}
   };
 
-  static NativeCallStackStorage* stack_storage;
-
-  // Utilities
-  static bool overlaps(Range a, Range b);
-  static bool adjacent(Range a, Range b);
-
-  // Pre-condition: ranges is sorted in a left-aligned fashion
-  // That is: (a,b) comes before (c,d) if a <= c
-  // Merges the ranges into a minimal sequence, taking into account that two ranges can only be merged if:
-  // 1. Their NativeCallStacks are the same
-  // 2. Their starts align correctly
-  static void merge_committed(RegionStorage& ranges);
-
-  static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
-  static void sort_regions(OffsetRegionStorage& storage);
-  static void sort_regions(RegionStorage& storage);
-
+  static NativeCallStackStorage* _stack_storage;
+  static bool _is_detailed_mode;
 public:
-  static void initialize();
+  static void initialize(bool is_detailed_mode);
 
   static PhysicalMemorySpace register_space(const char* descriptive_name);
 
@@ -189,6 +189,10 @@ public:
 
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
+  // Record reserved and committed memory for
+  // snapshotting in summary mode.
+  static void record_reserved_memory();
+  static void record_committed_memory();
 };
 
 #endif // SHARE_SERVICES_VIRTUALMEMORYVIEW_HPP
