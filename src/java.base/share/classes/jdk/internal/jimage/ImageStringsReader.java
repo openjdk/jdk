@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,7 @@ public class ImageStringsReader implements ImageStrings {
         return length;
     }
 
-    static void mutf8FromString(byte[] bytes, int offset, String s) {
+    public static int mutf8FromString(byte[] bytes, int offset, String s) {
         int j = offset;
         byte[] buffer = null;
         int slen = s.length();
@@ -375,6 +375,8 @@ public class ImageStringsReader implements ImageStrings {
                 bytes[j++] = (byte)uch;
             }
         }
+
+        return j - offset;
     }
 
     public static byte[] mutf8FromString(String string) {

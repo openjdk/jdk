@@ -75,6 +75,24 @@ public class CompressIndexes {
         return result;
     }
 
+    public static int readInt(ByteBuffer cr) throws IOException {
+        // Get header byte.
+        byte header = cr.get();
+        // Determine size.
+        int size = getHeaderLength(header);
+        // Prepare result.
+        int result = getHeaderValue(header);
+
+        // For each value byte
+        for (int i = 1; i < size; i++) {
+            // Merge byte value.
+            result <<= Byte.SIZE;
+            result |= cr.get() & 0xFF;
+        }
+
+        return result;
+    }
+
     private static boolean isCompressed(byte b) {
         return (b & COMPRESSED_FLAG) != 0;
     }

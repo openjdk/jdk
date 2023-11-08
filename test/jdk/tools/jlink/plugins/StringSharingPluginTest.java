@@ -136,7 +136,8 @@ public class StringSharingPluginTest {
             if (res.path().endsWith(".class")) {
                 try {
                     byte[] uncompacted = StringSharingDecompressor.normalize(reversedMap::get, res.contentBytes(),
-                        CompressedResourceHeader.getSize());
+                        CompressedResourceHeader.getSize(),
+                        ((ResourcePoolManager.CompressedModuleData) res).getUncompressedSize());
                     JImageValidator.readClass(uncompacted);
                 } catch (IOException exp) {
                     throw new UncheckedIOException(exp);

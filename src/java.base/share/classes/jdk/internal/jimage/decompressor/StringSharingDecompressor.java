@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,14 @@
  */
 package jdk.internal.jimage.decompressor;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import jdk.internal.jimage.ImageStringsReader;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
 /**
- *
  * A Decompressor that reconstructs the constant pool of classes.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -95,39 +90,53 @@ public class StringSharingDecompressor implements ResourceDecompressor {
 
     @SuppressWarnings("fallthrough")
     public static byte[] normalize(StringsProvider provider, byte[] transformed,
-            int offset) throws IOException {
-        DataInputStream stream = new DataInputStream(new ByteArrayInputStream(transformed,
-                offset, transformed.length - offset));
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream(transformed.length);
-        DataOutputStream out = new DataOutputStream(outStream);
-        byte[] header = new byte[8]; //maginc/4, minor/2, major/2
-        stream.readFully(header);
-        out.write(header);
-        int count = stream.readUnsignedShort();
-        out.writeShort(count);
+                                   int offset, long originalSize) throws IOException {
+        if (originalSize > Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required array size too large");
+        }
+
+        byte[] bytesOut = new byte[(int) originalSize];
+        int bytesOutOffset = 0;
+
+        // maginc/4, minor/2, major/2
+        final int headerSize = 8;
+
+        System.arraycopy(transformed, offset, bytesOut, bytesOutOffset, headerSize);
+        bytesOutOffset += headerSize;
+
+        ByteBuffer bytesIn = ByteBuffer.wrap(transformed);
+        bytesIn.position(offset + headerSize);
+        int count = Short.toUnsignedInt(bytesIn.getShort());
+        bytesOut[bytesOutOffset++] = (byte) ((count >> 8) & 0xff);
+        bytesOut[bytesOutOffset++] = (byte) (count & 0xff);
         for (int i = 1; i < count; i++) {
-            int tag = stream.readUnsignedByte();
-            byte[] arr;
+            int tag = bytesIn.get() & 0xff;
             switch (tag) {
                 case CONSTANT_Utf8: {
-                    out.write(tag);
-                    String utf = stream.readUTF();
-                    out.writeUTF(utf);
+                    int stringLength = Short.toUnsignedInt(bytesIn.getShort());
+                    bytesOut[bytesOutOffset++] = (byte) tag;
+                    bytesOut[bytesOutOffset++] = (byte) ((stringLength >> 8) & 0xff);
+                    bytesOut[bytesOutOffset++] = (byte) (stringLength & 0xff);
+                    bytesIn.get(bytesOut, bytesOutOffset, stringLength);
+                    bytesOutOffset += stringLength;
                     break;
                 }
 
                 case EXTERNALIZED_STRING: {
-                    int index = CompressIndexes.readInt(stream);
+                    int index = CompressIndexes.readInt(bytesIn);
                     String orig = provider.getString(index);
-                    out.write(CONSTANT_Utf8);
-                    out.writeUTF(orig);
+                    bytesOut[bytesOutOffset++] = CONSTANT_Utf8;
+
+                    int bytesLength = ImageStringsReader.mutf8FromString(bytesOut, bytesOutOffset + 2, orig);
+                    bytesOut[bytesOutOffset++] = (byte) ((bytesLength >> 8) & 0xff);
+                    bytesOut[bytesOutOffset++] = (byte) (bytesLength & 0xff);
+                    bytesOutOffset += bytesLength;
                     break;
                 }
 
                 case EXTERNALIZED_STRING_DESCRIPTOR: {
-                    String orig = reconstruct(provider, stream);
-                    out.write(CONSTANT_Utf8);
-                    out.writeUTF(orig);
+                    bytesOut[bytesOutOffset++] = CONSTANT_Utf8;
+                    bytesOutOffset += reconstruct(provider, bytesIn, bytesOut, bytesOutOffset);
                     break;
                 }
                 case CONSTANT_Long:
@@ -135,92 +144,55 @@ public class StringSharingDecompressor implements ResourceDecompressor {
                     i++;
                 }
                 default: {
-                    out.write(tag);
+                    bytesOut[bytesOutOffset++] = (byte) tag;
                     int size = SIZES[tag];
-                    arr = new byte[size];
-                    stream.readFully(arr);
-                    out.write(arr);
+                    bytesIn.get(bytesOut, bytesOutOffset, size);
+                    bytesOutOffset += size;
                 }
             }
         }
-        out.write(transformed, transformed.length - stream.available(),
-                stream.available());
-        out.flush();
 
-        return outStream.toByteArray();
+        if (bytesIn.remaining() != bytesOut.length - bytesOutOffset) {
+            throw new IOException("Resource content size mismatch");
+        }
+
+        bytesIn.get(bytesOut, bytesOutOffset, bytesIn.remaining());
+        return bytesOut;
     }
 
-    private static String reconstruct(StringsProvider reader, DataInputStream cr)
+    private static int reconstruct(StringsProvider reader, ByteBuffer bytesIn, byte[] bytesOut, int bytesOutOffset)
             throws IOException {
-        int descIndex = CompressIndexes.readInt(cr);
+        int descIndex = CompressIndexes.readInt(bytesIn);
         String desc = reader.getString(descIndex);
-        byte[] encodedDesc = getEncoded(desc);
-        int indexes_length = CompressIndexes.readInt(cr);
+        byte[] encodedDesc = ImageStringsReader.mutf8FromString(desc);
+        int indexes_length = CompressIndexes.readInt(bytesIn);
         byte[] bytes = new byte[indexes_length];
-        cr.readFully(bytes);
+        bytesIn.get(bytes);
         List<Integer> indices = CompressIndexes.decompressFlow(bytes);
-        ByteBuffer buffer = ByteBuffer.allocate(encodedDesc.length * 2);
-        buffer.order(ByteOrder.BIG_ENDIAN);
         int argIndex = 0;
+        int current = bytesOutOffset + 2;
         for (byte c : encodedDesc) {
             if (c == 'L') {
-                buffer = safeAdd(buffer, c);
+                bytesOut[current++] = c;
                 int index = indices.get(argIndex);
                 argIndex += 1;
                 String pkg = reader.getString(index);
                 if (!pkg.isEmpty()) {
                     pkg = pkg + "/";
-                    byte[] encoded = getEncoded(pkg);
-                    buffer = safeAdd(buffer, encoded);
+                    current += ImageStringsReader.mutf8FromString(bytesOut, current, pkg);
                 }
                 int classIndex = indices.get(argIndex);
                 argIndex += 1;
                 String clazz = reader.getString(classIndex);
-                byte[] encoded = getEncoded(clazz);
-                buffer = safeAdd(buffer, encoded);
+                current += ImageStringsReader.mutf8FromString(bytesOut, current, clazz);
             } else {
-                buffer = safeAdd(buffer, c);
+                bytesOut[current++] = c;
             }
         }
-
-        byte[] encoded = buffer.array();
-        ByteBuffer result = ByteBuffer.allocate(encoded.length + 2);
-        result.order(ByteOrder.BIG_ENDIAN);
-        result.putShort((short) buffer.position());
-        result.put(encoded, 0, buffer.position());
-        ByteArrayInputStream stream = new ByteArrayInputStream(result.array());
-        DataInputStream inStream = new DataInputStream(stream);
-        String str = inStream.readUTF();
-        return str;
-    }
-
-    public static byte[] getEncoded(String pre) throws IOException {
-        ByteArrayOutputStream resultStream = new ByteArrayOutputStream();
-        DataOutputStream resultOut = new DataOutputStream(resultStream);
-        resultOut.writeUTF(pre);
-        byte[] content = resultStream.toByteArray();
-        // first 2 items are length;
-        if (content.length <= 2) {
-            return new byte[0];
-        }
-        return Arrays.copyOfRange(content, 2, content.length);
-    }
-
-    private static ByteBuffer safeAdd(ByteBuffer current, byte b) {
-        byte[] bytes = {b};
-        return safeAdd(current, bytes);
-    }
-
-    private static ByteBuffer safeAdd(ByteBuffer current, byte[] bytes) {
-        if (current.remaining() < bytes.length) {
-            ByteBuffer newBuffer = ByteBuffer.allocate((current.capacity()
-                    + bytes.length) * 2);
-            newBuffer.order(ByteOrder.BIG_ENDIAN);
-            newBuffer.put(current.array(), 0, current.position());
-            current = newBuffer;
-        }
-        current.put(bytes);
-        return current;
+        int stringLength = current - bytesOutOffset - 2;
+        bytesOut[bytesOutOffset] = (byte) ((stringLength >> 8) & 0xff);
+        bytesOut[bytesOutOffset + 1] = (byte) (stringLength & 0xff);
+        return stringLength + 2;
     }
 
     @Override
@@ -234,7 +206,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
 
     @Override
     public byte[] decompress(StringsProvider reader, byte[] content,
-            int offset, long originalSize) throws Exception {
-        return normalize(reader, content, offset);
+                             int offset, long originalSize) throws Exception {
+        return normalize(reader, content, offset, originalSize);
     }
 }
