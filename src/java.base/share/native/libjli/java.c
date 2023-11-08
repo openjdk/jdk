@@ -524,10 +524,11 @@ JavaMain(void* _args)
      * consistent in the UI we need to track and report the application main class.
      */
     appClass = GetApplicationClass(env);
-    NULL_CHECK_RETURN_VALUE(appClass, -1);
+    CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
     /*  Get launcher helper class. */
     helperClass = GetLauncherHelperClass(env);
+    CHECK_EXCEPTION_NULL_LEAVE(helperClass);
 
     /*  Validate and fetch main method from application class. */
     validateMainMethod = (*env)->GetStaticMethodID(env, helperClass,
@@ -535,7 +536,7 @@ JavaMain(void* _args)
                                          "(Ljava/lang/Class;)Ljava/lang/reflect/Method;");
     CHECK_EXCEPTION_NULL_LEAVE(validateMainMethod);
     mainMethod = (*env)->CallStaticObjectMethod(env, helperClass, validateMainMethod, mainClass);
-    NULL_CHECK_RETURN_VALUE(mainMethod, -1);
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethod);
 
     /*
      * validateMainMethod ensures that the main method's signature is correct,
@@ -553,7 +554,7 @@ JavaMain(void* _args)
                                                       "(Ljava/lang/reflect/Method;)I");
     CHECK_EXCEPTION_NULL_LEAVE(getMainType);
     mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType, mainMethod);
-    CHECK_EXCEPTION_LEAVE(-1);
+    CHECK_EXCEPTION_LEAVE(ret);
 
     /* Build platform specific argument array */
     if ((mainType & MAIN_WITHOUT_ARGS) == 0) {
