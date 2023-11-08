@@ -799,7 +799,7 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   loop->record_for_igvn();
 
-  C->print_method(PHASE_AFTER_LOOP_PEELING, 4, head);
+  C->print_method(PHASE_AFTER_LOOP_PEELING, 4, new_head);
 }
 
 //------------------------------policy_maximally_unroll------------------------
