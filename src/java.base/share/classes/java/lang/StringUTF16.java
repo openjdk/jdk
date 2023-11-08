@@ -84,11 +84,6 @@ final class StringUTF16 {
                       ((val[index]   & 0xff) << LO_BYTE_SHIFT));
     }
 
-    // Like StringLatin1.isLatin1At, determine if a compact string UTF16-encoded bytes are latin1
-    private static boolean isLatin1At(byte[] val, int index) {
-        return val[index * 2 + HI_BYTE_OFFSET] == 0;
-    }
-
     public static int length(byte[] value) {
         return value.length >> 1;
     }
@@ -218,7 +213,7 @@ final class StringUTF16 {
             byte[] utf16 = toBytes(val, off, count);
             // If the original character that was found to be non-latin1 is latin1 in the copy
             // try to make a latin1 string from the copy
-            if (!isLatin1At(utf16, ndx)
+            if (getChar(utf16, ndx) > 0xff
                     || compress(utf16, 0, latin1, 0, count) != count) {
                 return utf16;
             }
@@ -244,7 +239,7 @@ final class StringUTF16 {
             byte[] utf16 = Arrays.copyOfRange(val, off << 1, newBytesLength(off + count));
             // If the original character that was found to be non-latin1 is latin1 in the copy
             // try to make a latin1 string from the copy
-            if (!isLatin1At(utf16, ndx)
+            if (getChar(utf16, ndx) > 0xff
                     || compress(utf16, 0, latin1, 0, count) != count) {
                 return utf16;
             }
@@ -304,7 +299,7 @@ final class StringUTF16 {
 
                     // The original character that was found to be UTF16 is not UTF16 in the copy
                     // Try to make a latin1 string from the copy
-                    if (isLatin1At(utf16, ndx) &&
+                    if (getChar(utf16, ndx) <= 0xff &&
                             compress(utf16, 0, latin1, 0, count) == count) {
                         return latin1;     // latin1 success
                     }
@@ -1690,16 +1685,13 @@ final class StringUTF16 {
 
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
-    private static final int HI_BYTE_OFFSET;
     static {
         if (isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
-            HI_BYTE_OFFSET = 0;
         } else {
             HI_BYTE_SHIFT = 0;
             LO_BYTE_SHIFT = 8;
-            HI_BYTE_OFFSET = 1;
         }
     }
 
