@@ -50,9 +50,10 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * @sealedGraph
  * @since 22
  */
-public sealed interface ValueLayout extends MemoryLayout permits
-        ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar, ValueLayout.OfShort, ValueLayout.OfInt,
-        ValueLayout.OfFloat, ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
+public sealed interface ValueLayout extends MemoryLayout
+        permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
+        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
      * {@return the value's byte order}
