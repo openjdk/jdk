@@ -45,7 +45,7 @@ TEST_VM(LogTagSet, defaults) {
   }
 }
 
-TEST(LogTagSet, has_output) {
+TEST_VM(LogTagSet, has_output) {
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   ts.set_output_level(LogConfiguration::StderrLog, LogLevel::Trace);
   EXPECT_TRUE(ts.has_output(LogConfiguration::StderrLog));
@@ -54,14 +54,14 @@ TEST(LogTagSet, has_output) {
   EXPECT_FALSE(ts.has_output(LogConfiguration::StderrLog));
 }
 
-TEST(LogTagSet, ntags) {
+TEST_VM(LogTagSet, ntags) {
   const LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   EXPECT_EQ(1u, ts.ntags());
   const LogTagSet& ts2 = LogTagSetMapping<LOG_TAGS(logging, gc, class, safepoint, heap)>::tagset();
   EXPECT_EQ(5u, ts2.ntags());
 }
 
-TEST(LogTagSet, is_level) {
+TEST_VM(LogTagSet, is_level) {
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   // Set info level on stdout and verify that is_level() reports correctly
   ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Info);
@@ -75,7 +75,7 @@ TEST(LogTagSet, is_level) {
   ts.set_output_level(LogConfiguration::StdoutLog, LogLevel::Off);
 }
 
-TEST(LogTagSet, level_for) {
+TEST_VM(LogTagSet, level_for) {
   LogOutput* output = LogConfiguration::StdoutLog;
   LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   for (uint i = 0; i < LogLevel::Count; i++) {
@@ -87,7 +87,7 @@ TEST(LogTagSet, level_for) {
   ts.set_output_level(output, LogLevel::Off);
 }
 
-TEST(LogTagSet, contains) {
+TEST_VM(LogTagSet, contains) {
   // Verify that contains works as intended for a few predetermined tagsets
   const LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging)>::tagset();
   EXPECT_TRUE(ts.contains(PREFIX_LOG_TAG(logging)));
@@ -113,7 +113,7 @@ TEST(LogTagSet, contains) {
   EXPECT_TRUE(ts4.contains(PREFIX_LOG_TAG(heap)));
 }
 
-TEST(LogTagSet, label) {
+TEST_VM(LogTagSet, label) {
   char buf[256];
   const LogTagSet& ts = LogTagSetMapping<LOG_TAGS(logging, safepoint)>::tagset();
   ASSERT_NE(-1, ts.label(buf, sizeof(buf)));
@@ -139,7 +139,7 @@ TEST(LogTagSet, label) {
 
 }
 
-TEST(LogTagSet, duplicates) {
+TEST_VM(LogTagSet, duplicates) {
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     char ts_name[512];
     ts->label(ts_name, sizeof(ts_name), ",");
