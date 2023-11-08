@@ -161,7 +161,7 @@ public class TestStylesheet extends JavadocTester {
                         font-weight:bold;
                     }""",
                 """
-                    .deprecation-block {
+                    .deprecation-block, .preview-block, .restricted-block {
                         font-size:1em;
                         font-family:var(--block-font-family);
                         border-style:solid;

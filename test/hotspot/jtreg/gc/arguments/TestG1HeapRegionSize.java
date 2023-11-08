@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ package gc.arguments;
 /*
  * @test TestG1HeapRegionSize
  * @bug 8021879
- * @requires vm.gc.G1
+ * @requires vm.gc.G1 & vm.opt.G1HeapRegionSize == null
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
@@ -53,7 +53,7 @@ public class TestG1HeapRegionSize {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flagList);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flagList);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(exitValue);
 

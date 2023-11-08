@@ -80,7 +80,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   // We may not even need a shift if the range fits into 32bit:
   const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
-  if (range < UnscaledClassSpaceMax) {
+  if (range <= UnscaledClassSpaceMax) {
     shift = 0;
   } else {
     shift = LogKlassAlignmentInBytes;

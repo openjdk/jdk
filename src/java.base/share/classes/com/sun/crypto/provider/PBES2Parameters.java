@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,15 +92,15 @@ import sun.security.util.*;
  */
 abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
-    private static ObjectIdentifier pkcs5PBKDF2_OID =
+    private static final ObjectIdentifier pkcs5PBKDF2_OID =
             ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
-    private static ObjectIdentifier pkcs5PBES2_OID =
+    private static final ObjectIdentifier pkcs5PBES2_OID =
             ObjectIdentifier.of(KnownOIDs.PBES2);
-    private static ObjectIdentifier aes128CBC_OID =
+    private static final ObjectIdentifier aes128CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_128$CBC$NoPadding);
-    private static ObjectIdentifier aes192CBC_OID =
+    private static final ObjectIdentifier aes192CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_192$CBC$NoPadding);
-    private static ObjectIdentifier aes256CBC_OID =
+    private static final ObjectIdentifier aes256CBC_OID =
             ObjectIdentifier.of(KnownOIDs.AES_256$CBC$NoPadding);
 
     // the PBES2 algorithm name
