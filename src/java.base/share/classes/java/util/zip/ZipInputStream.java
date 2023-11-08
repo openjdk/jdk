@@ -648,7 +648,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * To guard against invalid or corrupt extra fields, this method validates that
      * any Zip64 extended field has a valid block size.
      *
-     * This method returns false for any invalid extra field lengths, as if the extra
+     * This method returns false for any invalid extra block sizes, as if the extra
      * data contained no Zip64 field.
      */
     private boolean hasZip64Extra(ZipEntry e) throws IOException {
