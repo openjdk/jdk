@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
@@ -52,6 +54,8 @@ import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.StringEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
+import jdk.internal.util.ArraysSupport;
+
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 
@@ -142,6 +146,8 @@ public abstract sealed class AbstractPoolEntry {
 
         enum State { RAW, BYTE, CHAR, STRING }
 
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
         private State state;
         private final byte[] rawBytes; // null if initialized directly from a string
         private final int offset;
@@ -226,34 +232,21 @@ public abstract sealed class AbstractPoolEntry {
          * two-times-three-byte format instead.
          */
         private void inflate() {
-            int hash = 0;
-            boolean foundHigh = false;
-
-            int px = offset;
-            int utfend = px + rawLen;
-            while (px < utfend) {
-                int c = (int) rawBytes[px] & 0xff;
-                if (c > 127) {
-                    foundHigh = true;
-                    break;
-                }
-                hash = 31 * hash + c;
-                px++;
-            }
-
-            if (!foundHigh) {
+            int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
+            int hash = ArraysSupport.vectorizedHashCode(rawBytes, offset, singleBytes, 0, ArraysSupport.T_BOOLEAN);
+            if (singleBytes == rawLen) {
                 this.hash = hashString(hash);
                 charLen = rawLen;
                 state = State.BYTE;
             }
             else {
                 char[] chararr = new char[rawLen];
-                int chararr_count = 0;
+                int chararr_count = singleBytes;
                 // Inflate prefix of bytes to characters
-                for (int i = offset; i < px; i++) {
-                    int c = (int) rawBytes[i] & 0xff;
-                    chararr[chararr_count++] = (char) c;
-                }
+                JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+
+                int px = offset + singleBytes;
+                int utfend = offset + rawLen;
                 while (px < utfend) {
                     int c = (int) rawBytes[px] & 0xff;
                     switch (c >> 4) {
@@ -331,7 +324,7 @@ public abstract sealed class AbstractPoolEntry {
             if (state != State.STRING) {
                 stringValue = (chars != null)
                               ? new String(chars, 0, charLen)
-                              : new String(rawBytes, offset, charLen, StandardCharsets.UTF_8);
+                              : new String(rawBytes, offset, charLen, StandardCharsets.ISO_8859_1);
                 state = State.STRING;
             }
             return stringValue;

@@ -49,7 +49,7 @@ import java.util.function.BiFunction;
  * A symbol lookup is created with respect to a particular library (or libraries). Subsequently, the {@link SymbolLookup#find(String)}
  * method takes the name of a symbol and returns the address of the symbol in that library.
  * <p>
- * The address of a symbol is modelled as a zero-length {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
+ * The address of a symbol is modeled as a zero-length {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
  * <ul>
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which can then be used to call the foreign function at the segment's address.</li>
  *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
@@ -132,7 +132,7 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found,
+     * {@return a composed symbol lookup that returns the result of finding the symbol with this lookup if found,
      * otherwise returns the result of finding the symbol with the other lookup}
      *
      * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
@@ -143,7 +143,7 @@ public interface SymbolLookup {
      *         .or(SymbolLookup.loaderLookup());
      *}
      * The above code creates a symbol lookup that first searches for symbols in the "foo" library. If no symbol is found
-     * in "foo" then "bar" is searched. Finally, if a symbol is not found in neither "foo" nor "bar", the {@linkplain
+     * in "foo" then "bar" is searched. Finally, if a symbol is neither found in "foo" nor in "bar", the {@linkplain
      * SymbolLookup#loaderLookup() loader lookup} is used.
      *
      * @param other the symbol lookup that should be used to look for symbols not found in this lookup.
@@ -165,7 +165,7 @@ public interface SymbolLookup {
      * <p>
      * Libraries associated with a class loader are unloaded when the class loader becomes
      * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>. The symbol lookup
-     * returned by this method is associated with a fresh {@linkplain MemorySegment.Scope scope} which keeps the caller's
+     * returned by this method is associated with an automatic {@linkplain MemorySegment.Scope scope} which keeps the caller's
      * class loader reachable. Therefore, libraries associated with the caller's class loader are kept loaded
      * (and their symbols available) as long as a loader lookup for that class loader, or any of the segments
      * obtained by it, is reachable.
@@ -189,7 +189,7 @@ public interface SymbolLookup {
         if ((loader == null || loader instanceof BuiltinClassLoader)) {
             loaderArena = Arena.global();
         } else {
-            MemorySessionImpl session = MemorySessionImpl.heapSession(loader);
+            MemorySessionImpl session = MemorySessionImpl.createHeap(loader);
             loaderArena = session.asArena();
         }
         return name -> {
@@ -211,10 +211,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
      * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
@@ -225,14 +221,15 @@ public interface SymbolLookup {
      * @return a new symbol lookup suitable to find symbols in a library with the given name.
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
-     * thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalArgumentException if {@code name} does not identify a valid library.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *         thread {@code T}, other than the arena's owner thread
+     * @throws IllegalArgumentException if {@code name} does not identify a valid library
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
+                SymbolLookup.class, "libraryLookup");
         if (Utils.containsNullChars(name)) {
             throw new IllegalArgumentException("Cannot open library: " + name);
         }
@@ -245,10 +242,6 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption.
      *
      * @implNote On Linux, the functionalities provided by this factory method and the returned symbol lookup are
      * implemented using the {@code dlopen}, {@code dlsym} and {@code dlclose} functions.
@@ -257,18 +250,23 @@ public interface SymbolLookup {
      * @return a new symbol lookup suitable to find symbols in a library with the given path.
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
-     * thread {@code T}, other than the arena's owner thread.
-     * @throws IllegalArgumentException if {@code path} does not point to a valid library.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *         thread {@code T}, other than the arena's owner thread
+     * @throws IllegalArgumentException if {@code path} does not point to a valid library
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      */
     @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
+                SymbolLookup.class, "libraryLookup");
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
+    private static <Z>
+    SymbolLookup libraryLookup(Z libDesc,
+                               BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc,
+                               Arena libArena) {
+
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
         // attempt to load native library from path or name

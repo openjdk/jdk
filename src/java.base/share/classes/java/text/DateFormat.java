@@ -944,9 +944,12 @@ public abstract class DateFormat extends Format {
         /**
          * Returns the {@code Calendar} field associated with this
          * attribute. For example, if this represents the hours field of
-         * a {@code Calendar}, this would return
-         * {@code Calendar.HOUR}. If there is no corresponding
-         * {@code Calendar} constant, this will return -1.
+         * a {@code Calendar}, this method would return {@code Calendar.HOUR}.
+         * The return value of {@code -1} guarantees that this field does not
+         * represent any corresponding constant in {@code Calendar}.
+         *
+         * @implSpec The default implementation always returns {@code -1} if it does
+         * not represent any corresponding constant in {@code Calendar}.
          *
          * @return Calendar constant for this field
          * @see java.util.Calendar

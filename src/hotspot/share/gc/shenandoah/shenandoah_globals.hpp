@@ -294,6 +294,11 @@
           "How many back-to-back Degenerated GCs should happen before "     \
           "going to a Full GC.")                                            \
                                                                             \
+  product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
+          "After this number of consecutive Full GCs fail to make "         \
+          "progress, Shenandoah will raise out of memory errors. Note "     \
+          "that progress is determined by ShenandoahCriticalFreeThreshold") \
+                                                                            \
   product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
           "Should internally-caused GC requests invoke concurrent cycles, " \
           "should they do the stop-the-world (Degenerated / Full GC)? "     \

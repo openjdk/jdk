@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class BasicTestLauncher {
      */
     private static OutputAnalyzer RunTest(String timeZone) throws IOException{
         // Build and run Basic class with correct configuration
-        ProcessBuilder pb = ProcessTools.createTestJvm(JAVA_OPTS, TEST_CLASS);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(JAVA_OPTS, TEST_CLASS);
         pb.environment().put("TZ", timeZone);
         Process process = pb.start();
         return new OutputAnalyzer(process);

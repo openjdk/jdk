@@ -521,6 +521,20 @@ Allows classes to depend on \f[B]preview features\f[R]
 [https://docs.oracle.com/en/java/javase/12/language/index.html#JSLAN-GUID-5A82FE0E-0CA4-4F1F-B075-564874FE2823]
 of the release.
 .TP
+\f[V]--enable-native-access\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
+Native access involves access to code or data outside the Java runtime.
+This is generally unsafe and, if done incorrectly, might crash the JVM
+or result in memory corruption.
+Methods that provide native access are restricted, and by default their
+use causes warnings.
+This option allows code in the specified modules to use restricted
+methods without warnings.
+\f[I]module\f[R] can be \f[V]ALL-UNNAMED\f[R] to indicate code on the
+class path.
+When this option is present, any use of restricted methods by code
+outside the specified modules causes an
+\f[V]IllegalCallerException\f[R].
+.TP
 \f[V]--finalization=\f[R]\f[I]value\f[R]
 Controls whether the JVM performs finalization of objects.
 Valid values are \[dq]enabled\[dq] and \[dq]disabled\[dq].
@@ -555,7 +569,7 @@ list; on other platforms it is a colon (\f[V]:\f[R]).
 .TP
 \f[V]--add-modules\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
 Specifies the root modules to resolve in addition to the initial module.
-\f[I]module\f[R] also can be \f[V]ALL-DEFAULT\f[R],
+\f[I]module\f[R] can also be \f[V]ALL-DEFAULT\f[R],
 \f[V]ALL-SYSTEM\f[R], and \f[V]ALL-MODULE-PATH\f[R].
 .TP
 \f[V]--list-modules\f[R]
@@ -1117,13 +1131,14 @@ This option is similar to \f[V]-XX:ThreadStackSize\f[R].
 \f[V]--add-reads\f[R] \f[I]module\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to read the \f[I]target-module\f[R], regardless
 of the module declaration.
-\f[I]target-module\f[R] can be all unnamed to read all unnamed modules.
+\f[I]target-module\f[R] can be \f[V]ALL-UNNAMED\f[R] to read all unnamed
+modules.
 .TP
 \f[V]--add-exports\f[R] \f[I]module\f[R]\f[V]/\f[R]\f[I]package\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to export \f[I]package\f[R] to
 \f[I]target-module\f[R], regardless of module declaration.
-The \f[I]target-module\f[R] can be all unnamed to export to all unnamed
-modules.
+\f[I]target-module\f[R] can be \f[V]ALL-UNNAMED\f[R] to export to all
+unnamed modules.
 .TP
 \f[V]--add-opens\f[R] \f[I]module\f[R]\f[V]/\f[R]\f[I]package\f[R]\f[V]=\f[R]\f[I]target-module\f[R](\f[V],\f[R]\f[I]target-module\f[R])*
 Updates \f[I]module\f[R] to open \f[I]package\f[R] to
@@ -5054,6 +5069,18 @@ The output of this command should contain the following text:
 \f[V][info][class,load] test.Hello source: shared objects file\f[R]
 .RE
 .RE
+.PP
+By default, when the \f[V]-Xshare:dump\f[R] option is used, the JVM runs
+in interpreter-only mode (as if the \f[V]-Xint\f[R] option were
+specified).
+This is required for generating deterministic output in the shared
+archive file.
+I.e., the exact same archive will be generated, bit-for-bit, every time
+you dump it.
+However, if deterministic output is not needed, and you have a large
+classlist, you can explicitly add \f[V]-Xmixed\f[R] to the command-line
+to enable the JIT compiler.
+This will speed up the archive creation.
 .SS Creating a Dynamic CDS Archive File with -XX:ArchiveClassesAtExit
 .PP
 Advantages of dynamic CDS archives are:
