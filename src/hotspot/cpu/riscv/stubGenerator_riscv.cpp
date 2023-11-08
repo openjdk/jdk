@@ -4421,7 +4421,7 @@ static const int64_t bits2 = right_n_bits(2);
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
   // Pack five 26-bit limbs into three 64-bit registers.
-  void pack_26(Register dest0, Register dest1, Register dest2, Register src, Register tmp1, Register tmp2) {
+  void poly1305_pack_26(Register dest0, Register dest1, Register dest2, Register src, Register tmp1, Register tmp2) {
     assert_different_registers(dest0, dest1, dest2, src, tmp1, tmp2);
 
     // The goal is to have 128-bit value in dest2:dest1:dest0
@@ -4462,12 +4462,12 @@ static const int64_t bits2 = right_n_bits(2);
 
   // As above, but return only a 128-bit integer, packed into two
   // 64-bit registers.
-  void pack_26(Register dest0, Register dest1, Register src, Register tmp1, Register tmp2) {
-    pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
+  void poly1305_pack_26(Register dest0, Register dest1, Register src, Register tmp1, Register tmp2) {
+    poly1305_pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
   }
 
   // U_2:U_1:U_0: += (U_2 >> 2) * 5
-  void reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
+  void poly1305_reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
     assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
 
     __ srli(tmp1, U_2, 2);
@@ -4509,7 +4509,7 @@ static const int64_t bits2 = right_n_bits(2);
     // registers. The caller passes this key to us as long[5], with
     // BITS_PER_LIMB = 26.
     const Register R_0 = *++regs, R_1 = *++regs;
-    pack_26(R_0, R_1, r_start, t1, t2);
+    poly1305_pack_26(R_0, R_1, r_start, t1, t2);
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
@@ -4520,7 +4520,7 @@ static const int64_t bits2 = right_n_bits(2);
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
-    pack_26(U_0, U_1, U_2, acc_start, t1, t2);
+    poly1305_pack_26(U_0, U_1, U_2, acc_start, t1, t2);
 
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
@@ -4564,7 +4564,7 @@ static const int64_t bits2 = right_n_bits(2);
       // Sum is now in U_2:U_1:U_0.
 
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
-      reduce(U_2, U_1, U_0, t1, t2);
+      poly1305_reduce(U_2, U_1, U_0, t1, t2);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ addi(input_start, input_start, 2 * wordSize);
@@ -4573,12 +4573,12 @@ static const int64_t bits2 = right_n_bits(2);
     }
 
     // Further reduce modulo 2^130 - 5
-    reduce(U_2, U_1, U_0, t1, t2);
+    poly1305_reduce(U_2, U_1, U_0, t1, t2);
 
     Label no_final_reduce;
     __ srli(t1, U_2, 2);
     __ beqz(t1, no_final_reduce);
-    reduce(U_2, U_1, U_0, t1, t2);
+    poly1305_reduce(U_2, U_1, U_0, t1, t2);
     __ bind(no_final_reduce);
 
     // Unpack the sum into five 26-bit limbs and write to memory.
