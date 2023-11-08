@@ -466,10 +466,15 @@ public class BasicDateTime extends Basic {
         test("%tF", "-1234-10-03", LocalDate.of(-1234, 10, 3));
         test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
 
-        Locale localeEuES = Locale.forLanguageTag("eu-ES");
-        test(localeEuES,
-                "%tF",
-                DecimalFormatSymbols.getInstance(localeEuES).getMinusSign() + "2023-01-13",
-                LocalDate.of(-2023, 1, 13));
+        // check minusSign
+        int year = 2023, month = 1, dayOfMonth = 13;
+        String specifier = "%tF";
+        for (Locale locale : Locale.getAvailableLocales()) {
+            char minusSign = DecimalFormatSymbols.getInstance(locale).getMinusSign();
+            String str = new Formatter(new StringBuilder(), locale)
+                    .format(specifier, LocalDate.of(year, month, dayOfMonth))
+                    .toString();
+            test(locale, specifier, minusSign + str, LocalDate.of(-year, month, dayOfMonth));
+        }
     }
 }

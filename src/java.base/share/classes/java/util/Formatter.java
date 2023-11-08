@@ -2050,6 +2050,11 @@ public final class Formatter implements Closeable, Flushable {
         return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
     }
 
+    // Use minus sign from cached DecimalFormatSymbols.
+    private static char getMinusSign(Locale locale) {
+        return locale == null ? '-' : getDecimalFormatSymbols(locale).getMinusSign();
+    }
+
     private Appendable a;
     private final Locale l;
     private IOException lastException;
@@ -4492,7 +4497,7 @@ public final class Formatter implements Closeable, Flushable {
                     char sep = '-';
                     int year = t.get(ChronoField.YEAR);
                     if (year < 0) {
-                        sb.append(DecimalFormatSymbols.getInstance(l).getMinusSign());
+                        sb.append(getMinusSign(l));
                         year = -year;
                     } else if (year > 9999) {
                         sb.append('+');
