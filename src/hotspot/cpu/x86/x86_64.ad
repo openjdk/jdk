@@ -1822,9 +1822,7 @@ encode %{
     cbuf.set_insts_mark();
 
     if (!_method) {
-      cbuf.insts()->emit_int8((unsigned char) 0xE8);
-      cbuf.relocate(cbuf.insts_mark(), runtime_call_Relocation::spec(), RELOC_DISP32);
-      cbuf.insts()->emit_int32((int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4));
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, $meth$$method)));
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
