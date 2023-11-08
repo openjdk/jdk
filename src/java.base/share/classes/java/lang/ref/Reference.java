@@ -527,9 +527,9 @@ public abstract sealed class Reference<T>
      * regardless of any other actions of the program that might otherwise cause
      * the object to become unreachable; thus, the object is not
      * reclaimable by garbage collection at least until after the invocation of
-     * this method. {@link Reference}s referring to the given object will not be
-     * enqueued on a {@link ReferenceQueue} by the garbage collector until after
-     * invocation of this method.
+     * this method. References to the given object will not be cleared (or
+     * enqueued, if applicable) by the garbage collector until after invocation
+     * of this method.
      * Invocation of this method does not itself initiate reference processing,
      * garbage collection, or finalization.
      *
@@ -541,9 +541,10 @@ public abstract sealed class Reference<T>
      * such as for objects with finalizers or that use Cleaner.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
-     * reachabilityFence(x)
+     * {@code reachabilityFence(x)}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * the garbage collector enqueues any Reference to x on a ReferenceQueue.
+     * the garbage collector clears any reference to {code x}.
+
      *
      * @apiNote
      * Reference processing or finalization may occur whenever the virtual machine detects that no
