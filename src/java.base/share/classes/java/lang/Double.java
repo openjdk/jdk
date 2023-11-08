@@ -209,7 +209,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * a function of the base. For example, in base 10, 1/3 is a repeating
  * fraction (0.33333....); but in base 3, 1/3 is exactly
  * 0.1<sub>(3)</sub>, that is 1&nbsp;&times;&nbsp;3<sup>-1</sup>.
- * Similarly, in base 10, 1/10 is exactly presentable as 0.1, but in
+ * Similarly, in base 10, 1/10 is exactly representable as 0.1, but in
  * base 2, it is a repeating fraction
  * (0.0001100110011...<sub>(2)</sub>).
  *
@@ -231,7 +231,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * respectively, to the numerical value of 0.1.  These results are
  * consistent with a {@code float} value having the equivalent of 6 to
  * 9 digits of decimal precision and a {@code double} value having the
- * equivalent of 15 and 17 digits of decimal precision. (The
+ * equivalent of 15 to 17 digits of decimal precision. (The
  * equivalent precision varies according to the different relative
  * densities of binary and decimal values at different points along the
  * real number line).
@@ -254,14 +254,14 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <br>// Numeric values listed are exact values
  * <br>oneTenthApproxAsFloat = 0.100000001490116119384765625;
- * <br>ulpOfoneTenthApproxAsFloat = Math.ulp(1.0f) = 7.450580596923828125E-9;
+ * <br>ulpOfoneTenthApproxAsFloat = Math.ulp(0.1f) = 7.450580596923828125E-9;
  * <br>// Numeric range that is converted to the float closest to 0.1, _excludes_ endpoints
  * <br>(oneTenthApproxAsFloat - &frac12;ulpOfoneTenthApproxAsFloat, oneTenthApproxAsFloat + &frac12;ulpOfoneTenthApproxAsFloat) =
  * <br>(0.0999999977648258209228515625, 0.1000000052154064178466796875)
  *
  * <p>In particular, a correctly rounded decimal to binary conversion
  * of any string representing a number in this range, say by {@link
- * Float#valueOf(float)}, will be converted to the same value:
+ * Float#valueOf(String)}, will be converted to the same value:
  *
  * {@snippet lang="java" :
  * Float.valueOf("0.0999999977648258209228515625000001"); // rounds up to oneTenthApproxAsFloat
