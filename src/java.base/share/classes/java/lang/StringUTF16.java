@@ -295,7 +295,7 @@ final class StringUTF16 {
                     }
                 } else {
                     // Some codepoint is a surrogate pair
-                    extractCodepoints(val, off, end, utf16, ndx);
+                    utf16 = extractCodepoints(val, off, end, utf16, ndx);
 
                     // The original character that was found to be UTF16 is not UTF16 in the copy
                     // Try to make a latin1 string from the copy
@@ -316,20 +316,27 @@ final class StringUTF16 {
     // computation of the required output size and storing the bmp or surrogates.
     // If a BMP code point is changed to a supplementary code point it would require 2 chars
     // in the output. Changing a supplementary char to BMP would reduce the size.
-    // The destination is resized as needed or truncated to the exact size.
+    // If the utf16 destination is not large enough, it is resized to fit the
+    // remaining codepoints assuming they occupy 2 characters.
+    // The destination may be copied to return exactly the final length.
+    // The additional allocations and compression only occur if the input array is modified.
     private static byte[] extractCodepoints(int[] val, int off, int end, byte[] dst, int dstOff) {
         while (off < end) {
             // Compute a minimum estimate on the number of characters can be put into the dst
             // given the current codepoint and the number of remaining codepoints
             int codePoint = val[off];           // read each codepoint from val only once
             int dstLimit = dstOff
-                    + (Character.isBmpCodePoint(codePoint) ? 1 : 2)
+                    + Character.charCount(codePoint)
                     + (end - off - 1);
             if (dstLimit > (dst.length >> 1)) {
-                // Resize to hold at least the estimated number of chars
-                dst = Arrays.copyOf(dst, newBytesLength(dstLimit));
+                // Resize to hold the remaining codepoints assuming they are all surrogates.
+                // By resizing to the maximum that might be needed, only a single resize will occur.
+                // dstLimit includes only a single char per codepoint, pad with an additional for each.
+                int maxRemaining = dstLimit + (end - off - 1);
+                dst = Arrays.copyOf(dst, newBytesLength(maxRemaining));
             }
             // Efficiently copy as many codepoints as fit within the current estimated limit
+            // The dst at least enough space for the current codepoint.
             while (true) {
                 if (Character.isBmpCodePoint(codePoint)) {
                     putChar(dst, dstOff++, codePoint);
@@ -407,16 +414,6 @@ final class StringUTF16 {
         byte[] buf = newBytesFor(n);
         return extractCodepoints(val, index, len, buf, 0);
      }
-
-    // Return the number of chars needed to store the code point.
-    private static int charsPerCodePoint(int codePoint) {
-        if (Character.isBmpCodePoint(codePoint)) {
-            return 1;
-        } else if (Character.isValidCodePoint(codePoint)) {
-            return 2;
-        } else
-            throw new IllegalArgumentException(Integer.toString(codePoint));
-    }
 
     public static byte[] toBytes(char c) {
         byte[] result = new byte[2];
