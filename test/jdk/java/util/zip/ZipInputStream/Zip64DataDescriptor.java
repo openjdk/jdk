@@ -25,12 +25,12 @@
  * @test
  * @summary ZipInputStream should read 8-byte data descriptors if the LOC has
  *   a ZIP64 extended information extra field
- * @run testng Zip64DataDescriptor
+ * @run junit Zip64DataDescriptor
  */
 
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,15 +42,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.expectThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Zip64DataDescriptor {
 
     // A byte array holding a small-sized Zip64 ZIP file, described below
     private byte[] zip64File;
 
-    @BeforeMethod
+    @BeforeEach
     public void setup() {
         /*
          * Structure of the ZIP64 file used below . Note the precense
@@ -117,11 +117,11 @@ public class Zip64DataDescriptor {
 
         setExtraSize((short) 42);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             readZipInputStream();
         });
 
-        assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 6 bytes)");
+        assertEquals("invalid entry size (expected 0 but got 6 bytes)", ex.getMessage());
     }
 
     /*
@@ -132,11 +132,11 @@ public class Zip64DataDescriptor {
 
         setExtraSize(Short.MAX_VALUE);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             readZipInputStream();
         });
 
-        assertEquals(ex.getMessage(), "invalid entry size (expected 0 but got 6 bytes)");
+        assertEquals("invalid entry size (expected 0 but got 6 bytes)", ex.getMessage());
     }
 
     /**
