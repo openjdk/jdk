@@ -398,7 +398,7 @@ inline Register AbstractRegSet<Register>::first() {
 template <>
 inline Register AbstractRegSet<Register>::last() {
   if (_bitset == 0) { return noreg; }
-  uint32_t last = 31 - count_leading_zeros(_bitset);
+  uint32_t last = max_size() - 1 - count_leading_zeros(_bitset);
   return as_Register(last);
 }
 
@@ -411,7 +411,7 @@ inline XMMRegister AbstractRegSet<XMMRegister>::first() {
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::last() {
   if (_bitset == 0) { return xnoreg; }
-  uint32_t last = 31 - count_leading_zeros(_bitset);
+  uint32_t last = max_size() - 1 - count_leading_zeros(_bitset);
   return as_XMMRegister(last);
 }
 

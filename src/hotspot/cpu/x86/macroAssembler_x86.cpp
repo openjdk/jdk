@@ -6532,11 +6532,6 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
   bind(L_post_third_loop_done);
 }
 
-void diff(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
-                                     Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rax, rbx, rcx, rdx);
-}
-
 /**
  * Code for BigInteger::multiplyToLen() intrinsic.
  *
@@ -6556,9 +6551,7 @@ void diff(Register x, Register xlen, Register y, Register ylen, Register z, Regi
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
   ShortBranchVerifier sbv(this);
-  static volatile int x_reg = rdx->encoding();
-  Register y_reg = as_Register(x_reg);
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, y_reg);
+  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
 
   push(tmp1);
   push(tmp2);

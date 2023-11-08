@@ -3451,10 +3451,7 @@ void Assembler::movl(Register dst, Register src) {
   emit_int16((unsigned char)0x8B, (0xC0 | encode));
 }
 
-static_assert(different_registers(rax, rbx, rcx, rdx, rsi, rdi, rbp));
-
 void Assembler::movl(Register dst, Address src) {
-  assert_different_registers(rax, rbx, rcx, rdx, rsi, rdi, rbp);
   InstructionMark im(this);
   prefix(src, dst);
   emit_int8((unsigned char)0x8B);
