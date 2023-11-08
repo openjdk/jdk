@@ -341,6 +341,9 @@ public class Main {
                     tmpFile = createTemporaryFile("tmpjar", ".jar");
                 }
                 expand();
+                if (!ok) {
+                    return false;
+                }
                 try (FileInputStream in = (fname != null) ? new FileInputStream(inputFile)
                         : new FileInputStream(FileDescriptor.in);
                      FileOutputStream out = new FileOutputStream(tmpFile);
