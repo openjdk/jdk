@@ -589,33 +589,33 @@ TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCopyTrivialElementsWhenCopy
   }
 }
 
-struct IncrementingCopying {
+struct IncrementIdOnCopy {
   static int current_id;
 public:
   int id;
-  IncrementingCopying() {
+  IncrementIdOnCopy() {
     this->id = 0;
   }
-  IncrementingCopying(const IncrementingCopying&) {
-    this->id = IncrementingCopying::current_id++;
+  IncrementIdOnCopy(const IncrementIdOnCopy&) {
+    this->id = IncrementIdOnCopy::current_id++;
   }
-  IncrementingCopying& operator=(const IncrementingCopying&) {
-    this->id = IncrementingCopying::current_id++;
+  IncrementIdOnCopy& operator=(const IncrementIdOnCopy&) {
+    this->id = IncrementIdOnCopy::current_id++;
     return *this;
   }
 };
-int IncrementingCopying::current_id = 0;
+int IncrementIdOnCopy::current_id = 0;
 TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCallCopyConstructorWhenCopyConstructed) {
-  GrowableArrayCHeap<IncrementingCopying, mtTest> a(1);
-  a.push(IncrementingCopying{});
-  GrowableArrayCHeap<IncrementingCopying, mtTest> b(a);
+  GrowableArrayCHeap<IncrementIdOnCopy, mtTest> a(1);
+  a.push(IncrementIdOnCopy{});
+  GrowableArrayCHeap<IncrementIdOnCopy, mtTest> b(a);
   ASSERT_TRUE(a.at(0).id != b.at(0).id) << "The copy constructor should have been called but wasn't";
 }
 
 TEST_VM_F(GrowableArrayTest, GrowableArrayCHeapShouldCallCopyConstructorWhenCopyAssigned) {
-  GrowableArrayCHeap<IncrementingCopying, mtTest> a(1);
-  a.push(IncrementingCopying{});
-  GrowableArrayCHeap<IncrementingCopying, mtTest> b(0);
+  GrowableArrayCHeap<IncrementIdOnCopy, mtTest> a(1);
+  a.push(IncrementIdOnCopy{});
+  GrowableArrayCHeap<IncrementIdOnCopy, mtTest> b(0);
   b = a;
   ASSERT_TRUE(a.at(0).id != b.at(0).id) << "The copy constructor should have been called but wasn't";
 }
