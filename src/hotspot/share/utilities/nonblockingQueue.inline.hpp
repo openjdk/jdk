@@ -42,6 +42,14 @@ void NonblockingQueue<T, next_ptr>::set_next(T& node, T* new_next) {
 template<typename T, T* volatile* (*next_ptr)(T&)>
 NonblockingQueue<T, next_ptr>::NonblockingQueue() : _head(nullptr), _tail(nullptr) {}
 
+#ifdef ASSERT
+template<typename T, T* volatile* (*next_ptr)(T&)>
+NonblockingQueue<T, next_ptr>::~NonblockingQueue() {
+  assert(_head == nullptr, "precondition");
+  assert(_tail == nullptr, "precondition");
+}
+#endif
+
 // The end_marker must be uniquely associated with the specific queue, in
 // case queue elements can make their way through multiple queues.  A
 // pointer to the queue itself (after casting) satisfies that requirement.

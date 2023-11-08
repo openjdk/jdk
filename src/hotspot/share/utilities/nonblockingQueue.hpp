@@ -83,7 +83,7 @@ class NonblockingQueue {
 
 public:
   inline NonblockingQueue();
-  inline ~NonblockingQueue() = default;
+  inline ~NonblockingQueue() NOT_DEBUG(= default);
 
   // Return true if the queue is empty.
   // Not thread-safe.  There must be no concurrent modification while the

@@ -34,7 +34,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   // the thread should be in vm to use locks
   ThreadInVMfromNative ThreadInVMfromNative(THREAD);
   // Disable the temp symbol cleanup delay queue because it increases refcounts.
-  TempNewSymbol::set_cleanup_delay_max_entries(0);
+  TempNewSymbol::set_cleanup_delay_enabled(false);
 
   Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
@@ -90,6 +90,9 @@ TEST_VM(SymbolTable, temp_new_symbol) {
     bigsym->decrement_refcount();
   }
   ASSERT_EQ(bigsym->refcount(), PERM_REFCOUNT) << "should be sticky";
+
+  // Reset for other tests
+  TempNewSymbol::set_cleanup_delay_enabled(true);
 }
 
 // TODO: Make two threads one decrementing the refcount and the other trying to increment.
@@ -146,18 +149,21 @@ TEST_VM(SymbolTable, test_cleanup_delay) {
   // Check that new temp symbols have an extra refcount increment, which is then
   // decremented when the queue spills over.
 
-  // Fill up the queue
-  TempNewSymbol::set_cleanup_delay_max_entries(3);
   TempNewSymbol s1 = SymbolTable::new_symbol("temp-s1");
   ASSERT_EQ(s1->refcount(), 2) << "TempNewSymbol refcount just created is 2";
-  TempNewSymbol s2 = SymbolTable::new_symbol("temp-s2");
-  ASSERT_EQ(s2->refcount(), 2) << "TempNewSymbol refcount just created is 2";
-  TempNewSymbol s3 = SymbolTable::new_symbol("temp-s3");
-  ASSERT_EQ(s3->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+
+  // Fill up the queue
+  constexpr int symbol_name_length = 30;
+  char symbol_name[symbol_name_length];
+  for (int i = 1; i < 100; i++) {
+    os::snprintf(symbol_name, symbol_name_length, "temp-filler-%d", i);
+    TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
+    ASSERT_EQ(s->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+  }
 
   // Add one more
-  TempNewSymbol s4 = SymbolTable::new_symbol("temp-s4-spillover");
-  ASSERT_EQ(s4->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+  TempNewSymbol spillover = SymbolTable::new_symbol("temp-spillover");
+  ASSERT_EQ(spillover->refcount(), 2) << "TempNewSymbol refcount just created is 2";
 
   // The first symbol should have been removed from the queue and decremented
   ASSERT_EQ(s1->refcount(), 1) << "TempNewSymbol off queue refcount is 1";
