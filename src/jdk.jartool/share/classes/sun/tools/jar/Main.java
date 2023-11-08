@@ -292,6 +292,9 @@ public class Main {
                     }
                 }
                 expand();
+                if (!ok) {
+                    return false;
+                }
                 if (!moduleInfos.isEmpty()) {
                     // All actual file entries (excl manifest and module-info.class)
                     Set<String> jentries = new HashSet<>();
@@ -855,7 +858,8 @@ public class Main {
                     expand(f, dirFiles, cpaths, version);
                 }
             } else {
-                throw new IOException(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
+                error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
+                ok = false;
             }
         }
     }
