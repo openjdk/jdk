@@ -604,22 +604,22 @@ public class JViewport extends JComponent implements Accessible
 
 
     private Graphics getBackingStoreGraphics(Graphics g) {
-        Graphics bsg = backingStoreImage.getGraphics();
-        bsg.setColor(g.getColor());
-        bsg.setFont(g.getFont());
-        bsg.setClip(g.getClipBounds());
-        return bsg;
+        if (g instanceof SunGraphics2D) {
+            Graphics bsg = backingStoreImage.getGraphics();
+            bsg.setColor(g.getColor());
+            bsg.setFont(g.getFont());
+            bsg.setClip(g.getClipBounds());
+            return bsg;
+        } else {
+            return g;
+        }
     }
 
 
     private void paintViaBackingStore(Graphics g) {
         Graphics bsg = getBackingStoreGraphics(g);
         try {
-            if (g instanceof SunGraphics2D) {
-                super.paint(bsg);
-            } else {
-                super.paint(g);
-            }
+            super.paint(bsg);
             g.drawImage(backingStoreImage, 0, 0, this);
         } finally {
             bsg.dispose();
@@ -629,11 +629,7 @@ public class JViewport extends JComponent implements Accessible
     private void paintViaBackingStore(Graphics g, Rectangle oClip) {
         Graphics bsg = getBackingStoreGraphics(g);
         try {
-            if (g instanceof SunGraphics2D) {
-                super.paint(bsg);
-            } else {
-                super.paint(g);
-            }
+            super.paint(bsg);
             g.setClip(oClip);
             g.drawImage(backingStoreImage, 0, 0, this);
         } finally {
