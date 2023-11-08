@@ -224,8 +224,8 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const char* descriptive_name) {
   const PhysicalMemorySpace next_space = PhysicalMemorySpace{PhysicalMemorySpace::next_unique()};
   // These are allocated just to be copied for at_put_grow.
-  const OffsetRegionStorage to_copy_res{};
-  const RegionStorage to_copy_comm{};
+  OffsetRegionStorage to_copy_res{};
+  RegionStorage to_copy_comm{};
   reserved_regions->at_put_grow(next_space.id, to_copy_res);
   committed_regions->at_put_grow(next_space.id, to_copy_comm);
   names->at_put_grow(next_space.id, descriptive_name, "");
