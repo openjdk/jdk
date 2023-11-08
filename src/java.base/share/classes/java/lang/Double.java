@@ -256,7 +256,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <br>oneTenthApproxAsFloat = 0.100000001490116119384765625;
  * <br>ulpOfoneTenthApproxAsFloat = Math.ulp(1.0f) = 7.450580596923828125E-9;
  * <br>// Numeric range that is converted to the float closest to 0.1, _excludes_ endpoints
- * <br>(oneTenthApproxAsFloat - &frac12;ulpOfoneTenthApproxAsFloat, oneTenthApproxAsFloat + &frac12;ulpOfoneTenthApproxAsFloat) = 
+ * <br>(oneTenthApproxAsFloat - &frac12;ulpOfoneTenthApproxAsFloat, oneTenthApproxAsFloat + &frac12;ulpOfoneTenthApproxAsFloat) =
  * <br>(0.0999999977648258209228515625, 0.1000000052154064178466796875)
  *
  * <p>In particular, a correctly rounded decimal to binary conversion
@@ -325,7 +325,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@snippet lang="java" :
  *  double d = 0.0;
  *  while(d <= 1.0) {
- *	  d += 0.1;
+ *    d += 0.1;
  *  } // Value of d approximately 1.0999999999999999
  *  }
  *
