@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public final class MinimumSizeDPIVariation {
 
     private static void runProcess(String dpi, String comp, int w, int h)
             throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dsun.java2d.uiScale=" + dpi,
                 MinimumSizeDPIVariation.class.getSimpleName(), comp,
                 String.valueOf(w), String.valueOf(h), dpi);

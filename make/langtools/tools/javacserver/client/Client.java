@@ -51,9 +51,9 @@ import javacserver.util.Log;
 public class Client {
     private static final Log.Level LOG_LEVEL = Log.Level.INFO;
 
-    // Wait 2 seconds for response, before giving up on javac server.
-    private static final int CONNECTION_TIMEOUT = 2000;
-    private static final int MAX_CONNECT_ATTEMPTS = 3;
+    // Wait 4 seconds for response, before giving up on javac server.
+    private static final int CONNECTION_TIMEOUT = 4000;
+    private static final int MAX_CONNECT_ATTEMPTS = 10;
     private static final int WAIT_BETWEEN_CONNECT_ATTEMPTS = 2000;
 
     private final ClientConfiguration conf;
@@ -130,7 +130,7 @@ public class Client {
                 Log.error("Connection attempt failed: " + ex.getMessage());
                 if (attempt >= MAX_CONNECT_ATTEMPTS) {
                     Log.error("Giving up");
-                    throw new IOException("Could not connect to server", ex);
+                    throw new IOException("Could not connect to server after " + MAX_CONNECT_ATTEMPTS + " attempts with timeout " + CONNECTION_TIMEOUT, ex);
                 }
             }
             Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS);

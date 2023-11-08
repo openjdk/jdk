@@ -573,6 +573,8 @@ CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
       }
       return nullptr;
+    } else {
+      OrderAccess::release(); // ensure heap expansion is visible to an asynchronous observer (e.g. CodeHeapPool::get_memory_usage())
     }
     if (PrintCodeCacheExtension) {
       ResourceMark rm;

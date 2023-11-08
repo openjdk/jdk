@@ -42,6 +42,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,7 +60,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -1262,8 +1262,7 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   }
 
 #if INCLUDE_CDS
-  if (is_internal_module_property(key) ||
-      strcmp(key, "jdk.module.main") == 0) {
+  if (is_internal_module_property(key)) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
