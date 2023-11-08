@@ -4821,28 +4821,22 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
     // n is a ctrl node.
     // Verify that not has_ctrl, and that get_loop_idx is the same.
 
-    // Broken part of VerifyLoopOptimizations (B)
-    // Reason:
-    //   NeverBranch node for example is added to loop outside its scope.
-    //   Once we run build_loop_tree again, it is added to the correct loop.
-    /*
     if (!C->major_progress()) {
       // Loop selection can be messed up if we did a major progress
       // operation, like split-if.  Do not verify in that case.
-      IdealLoopTree *us = get_loop_idx(n);
-      IdealLoopTree *them = loop_verify->get_loop_idx(n);
-      if( us->_head != them->_head ||  us->_tail != them->_tail ) {
-        tty->print("Unequals loops for: ");
+      IdealLoopTree* loop_this = get_loop_idx(n);
+      IdealLoopTree* loop_verify = phase_verify->get_loop_idx(n);
+      if(loop_this->_head != loop_verify->_head ||
+	 loop_this->_tail != loop_verify->_tail ) {
+        tty->print_cr("Mismatch get_loop_idx for ctrl node:");
         n->dump();
-        if( fail++ > 10 ) return;
-        tty->print("We have it as: ");
-        us->dump();
-        tty->print("Verify thinks: ");
-        them->dump();
+        tty->print_cr("Loop for this:");
+        loop_this->dump();
+        tty->print_cr("Loop for verif::");
+        loop_verify->dump();
         tty->cr();
       }
     }
-    */
     return true; // pass
   }
 }
