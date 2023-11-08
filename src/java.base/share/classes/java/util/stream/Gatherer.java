@@ -72,14 +72,14 @@ import java.util.function.Supplier;
  * <p>Performing a gathering operation with a {@code Gatherer} should produce a
  * result equivalent to:
  *
- * <pre>{@code
- *     Gatherer.Downstream<? super R> downstream = ...;
- *     A state = gatherer.initializer().get();
- *     for (T t : data) {
- *         gatherer.integrator().integrate(state, t, downstream);
- *     }
- *     gatherer.finisher().accept(state, downstream);
- * }</pre>
+ * {@snippet lang = java:
+ * Gatherer.Downstream<? super R> downstream = ...;
+ * A state = gatherer.initializer().get();
+ * for (T t : data) {
+ *     gatherer.integrator().integrate(state, t, downstream);
+ * }
+ * gatherer.finisher().accept(state, downstream);
+ * }
  *
  * <p>However, the library is free to partition the input, perform the
  * integrations on the partitions, and then use the combiner function to
@@ -93,32 +93,32 @@ import java.util.function.Supplier;
  * that implements the equivalent of
  * {@link java.util.stream.Stream#map(java.util.function.Function)} with:
  *
- * <pre>{@code
+ * {@snippet lang = java:
  * public static <T, R> Gatherer<T, ?, R> map(Function<? super T, ? extends R> mapper) {
  *     return Gatherer.of(
  *         (unused, element, downstream) -> // integrator
  *             downstream.push(mapper.apply(element))
  *     );
  * }
- * }</pre>
+ * }
  *
  * <p>Gatherers are designed to be <em>composed</em>; two or more Gatherers can
  * be composed into a single Gatherer using the {@link #andThen(Gatherer)}
  * method.
  *
- * <pre>{@code
+ * {@snippet lang = java:
  * // using the implementation of `map` as seen above
  * Gatherer<Integer, ?, Integer> increment = map(i -> i + 1);
  *
  * Gatherer<Object, ?, String> toString = map(i -> i.toString());
  *
  * Gatherer<Integer, ?, String> incrementThenToString = plusOne.andThen(intToString);
- * }</pre>
+ * }
  *
  * As an example, in order to create a gatherer to implement a sequential
  * Prefix Scan as a Gatherer, it could be done the following way:
  *
- * <pre>{@code
+ * {@snippet lang = java:
  * public static <T, R> Gatherer<T, ?, R> scan(
  *     Supplier<R> initial,
  *     BiFunction<? super R, ? super T, ? extends R> scanner) {
@@ -135,7 +135,7 @@ import java.util.function.Supplier;
  *          })
  *     );
  * }
- * }</pre>
+ * }
  *
  * @implSpec Libraries that implement transformation based on {@code Gatherer},
  * such as {@link Stream#gather(Gatherer)}, must adhere to the following
@@ -482,7 +482,7 @@ public interface Gatherer<T, A, R> {
          * @apiNote This is best-effort only, once this returns true it should
          *          never return false again for the same instance.
          *
-         * By default this method returns {@code false}.
+         * <p>By default this method returns {@code false}.
          *
          * @return {@code true} if this Downstream is known not to want any
          *         more elements sent to it, {@code false} if otherwise

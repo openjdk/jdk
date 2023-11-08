@@ -331,11 +331,16 @@ public final class Gatherers {
      *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowFixed(3)).toList();
      * }
      *
+     * @apiNote For efficiency reasons, windows may be allocated contiguously
+     *          and eagerly. This means that choosing large window sizes for
+     *          small streams may use excessive memory for the duration of
+     *          evaluation of this operation.
+     *
      * @param windowSize the size of the windows
      * @param <TR> the type of elements the returned gatherer consumes
      *             and the contents of the windows it produces
      * @return a new gatherer which groups elements into fixed-size windows
-     * @throws IllegalArgumentException when groupSize is less than 1
+     * @throws IllegalArgumentException when windowSize is less than 1
      */
     public static <TR> Gatherer<TR, ?, List<TR>> windowFixed(int windowSize) {
         if (windowSize < 1)
@@ -403,6 +408,11 @@ public final class Gatherers {
      * List<List<Integer>> windows =
      *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowSliding(2)).toList();
      * }
+     *
+     * @apiNote For efficiency reasons, windows may be allocated contiguously
+     *          and eagerly. This means that choosing large window sizes for
+     *          small streams may use excessive memory for the duration of
+     *          evaluation of this operation.
      *
      * @param windowSize the size of the windows
      * @param <TR> the type of elements the returned gatherer consumes
