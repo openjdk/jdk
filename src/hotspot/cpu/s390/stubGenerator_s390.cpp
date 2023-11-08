@@ -37,6 +37,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -3094,6 +3095,21 @@ class StubGenerator: public StubCodeGenerator {
 
   #endif // INCLUDE_JFR
 
+  // exception handler for upcall stubs
+  address generate_upcall_stub_exception_handler() {
+    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    address start = __ pc();
+
+    // Native caller has no idea how to handle exceptions,
+    // so we just crash here. Up to callee to catch exceptions.
+    __ verify_oop(Z_ARG1);
+    __ load_const_optimized(Z_R1_scratch, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
+    __ call_c(Z_R1_scratch);
+    __ should_not_reach_here();
+
+    return start;
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
@@ -3174,6 +3190,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
     }
 
+    StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
   }
 
   void generate_compiler_stubs() {

@@ -114,7 +114,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 1024; // depends on GC (resolve_jobject)
+static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                                        BasicType* in_sig_bt, int total_in_args,
@@ -202,6 +202,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ z_aghik(Z_ARG1, Z_SP, frame_data_offset);
+  __ load_const_optimized(Z_ARG2, (intptr_t)receiver);
   __ call(call_target_address);
   __ z_lgr(Z_thread, Z_RET);
   __ block_comment("} on_entry");
@@ -212,8 +213,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ load_const_optimized(Z_ARG1, (intptr_t)receiver);
-  __ resolve_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+  __ get_vm_result(Z_ARG1);
   __ block_comment("} receiver ");
 
   __ load_const_optimized(Z_method, (intptr_t)entry);
@@ -266,19 +266,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // Native caller has no idea how to handle exceptions,
-  // so we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(Z_ARG1);
-  __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
-  __ call_c(call_target_address);
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
-
   _masm->flush();
 
 #ifndef PRODUCT
@@ -293,7 +280,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
 #ifndef PRODUCT

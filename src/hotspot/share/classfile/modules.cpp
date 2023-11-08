@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
@@ -557,6 +558,49 @@ void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_m
 
 void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
+}
+
+#if INCLUDE_CDS_JAVA_HEAP
+char* Modules::_archived_main_module_name = nullptr;
+#endif
+
+void Modules::dump_main_module_name() {
+  const char* module_name = Arguments::get_property("jdk.module.main");
+  if (module_name != nullptr) {
+    _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
+  }
+  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
+}
+
+void Modules::serialize(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_main_module_name);
+  if (soc->reading()) {
+    const char* runtime_main_module = Arguments::get_property("jdk.module.main");
+    log_info(cds)("_archived_main_module_name %s",
+      _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
+    bool disable = false;
+    if (runtime_main_module == nullptr) {
+      if (_archived_main_module_name != nullptr) {
+        log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
+        disable = true;
+      }
+    } else {
+      if (_archived_main_module_name == nullptr) {
+        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
+        disable = true;
+      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
+        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
+        disable = true;
+      }
+    }
+
+    if (disable) {
+      log_info(cds)("Disabling optimized module handling");
+      MetaspaceShared::disable_optimized_module_handling();
+    }
+    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+  }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
