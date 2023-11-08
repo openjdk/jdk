@@ -305,35 +305,4 @@ class ZipUtils {
     static int getBufferOffset(ByteBuffer byteBuffer) {
         return unsafe.getInt(byteBuffer, byteBufferOffsetOffset);
     }
-
-    /**
-     * Validate the size and contents of a Zip64 extended information field
-     * The order of the Zip64 fields is fixed, but the fields MUST
-     * only appear if the corresponding LOC or CEN field is set to 0xFFFF:
-     * or 0xFFFFFFFF:
-     * Uncompressed Size - 8 bytes
-     * Compressed Size   - 8 bytes
-     * LOC Header offset - 8 bytes
-     * Disk Start Number - 4 bytes
-     * See PKWare APP.Note Section 4.5.3 for more details
-     *
-     * @param blockSize the Zip64 Extended Information Extra Field size
-     * @return true if the extra block size is valid; false otherwise
-     */
-    static boolean isZip64ExtBlockSizeValid(int blockSize) {
-        /*
-         * As the fields must appear in order, the block size indicates which
-         * fields to expect:
-         *  8 - uncompressed size
-         * 16 - uncompressed size, compressed size
-         * 24 - uncompressed size, compressed sise, LOC Header offset
-         * 28 - uncompressed size, compressed sise, LOC Header offset,
-         * and Disk start number
-         */
-        return switch(blockSize) {
-            case 8, 16, 24, 28 -> true;
-            default -> false;
-        };
-    }
-
 }

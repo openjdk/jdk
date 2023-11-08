@@ -37,7 +37,6 @@ import sun.nio.cs.UTF_8;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
-import static java.util.zip.ZipUtils.isZip64ExtBlockSizeValid;
 
 /**
  * An input stream for reading compressed and uncompressed
@@ -669,6 +668,26 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             }
         }
         return false;
+    }
+
+    /**
+     * Validate the size of a Zip64 extended information field in the
+     * LOC header.
+     *
+     * The order of the Zip64 fields is fixed, but the fields MUST
+     * only appear if the corresponding LOC field is set to 0xFFFFFFFF:
+     * Uncompressed Size - 8 bytes
+     * Compressed Size   - 8 bytes
+     * See PKWare APP.Note Section 4.5.3 for more details
+     *
+     * @param blockSize the Zip64 Extended Information Extra Field size
+     * @return true if the extra block size is valid; false otherwise
+     */
+    private static boolean isZip64ExtBlockSizeValid(int blockSize) {
+        return switch (blockSize) {
+            case 8, 16 -> true;
+            default -> false;
+        };
     }
 
     /*
