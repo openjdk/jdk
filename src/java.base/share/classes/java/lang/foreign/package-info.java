@@ -30,13 +30,13 @@
  *
  * <p>
  * The main abstraction introduced to support foreign memory access is
- * {@link java.lang.foreign.MemorySegment}, which models a contiguous region of memory,
+ * {@link java.lang.foreign.MemorySegment}, that models a contiguous region of memory,
  * residing either inside or outside the Java heap. Memory segments are typically
- * allocated using an {@link java.lang.foreign.Arena}, which controls the lifetime of the
- * regions of memory backing the segments it allocates. The contents of a memory segment
- * can be described using a {@link java.lang.foreign.MemoryLayout memory layout}, which
- * provides basic operations to query sizes, offsets and alignment constraints. Memory
- * layouts also provide an alternate, more abstract way, to
+ * allocated using an {@link java.lang.foreign.Arena}, which controls the lifetime of
+ * the regions of memory backing the segments it allocates. The contents of a
+ * memory segment can be described using a {@link java.lang.foreign.MemoryLayout memory layout},
+ * which provides basic operations to query sizes, offsets, and alignment constraints.
+ * Memory layouts also provide an alternate, more abstract way, to
  * <a href=MemorySegment.html#segment-deref>access memory segments</a> using
  * {@linkplain java.lang.foreign.MemoryLayout#varHandle(java.lang.foreign.MemoryLayout.PathElement...) var handles},
  * which can be computed using <a href="MemoryLayout.html#layout-paths"><em>layout paths</em></a>.
@@ -67,7 +67,7 @@
  * <p>
  * Memory segments provide strong safety guarantees when it comes to memory access.
  * First, when accessing a memory segment, the access coordinates are validated
- * (upon access), to make sure that access does not occur at any address which resides
+ * (upon access), to make sure that access does not occur at any address that resides
  * <em>outside</em> the boundaries of the memory segment used by the access operation.
  * We call this guarantee <em>spatial safety</em>; in other words, access to
  * memory segments is bounds-checked, in the same way as array access is, as described in
@@ -139,20 +139,19 @@
  * interacting with native functions.
  * <p>
  * Binding foreign data and/or functions is generally unsafe and, if done incorrectly,
- * can result in VM crashes, or memory corruption when the bound Java API element is
- * accessed. For instance, incorrectly resizing a native memory segment using
+ * can result in VM crashes, or memory corruption when the bound Java API element
+ * is accessed. For instance, incorrectly resizing a native memory segment using
  * {@link java.lang.foreign.MemorySegment#reinterpret(long)} can lead to a JVM crash, or,
  * worse, lead to silent memory corruption when attempting to access the resized segment.
  * For these reasons, it is crucial for code that calls a restricted method to never pass
- * arguments that might cause incorrect binding of foreign data and/or functions to a
- * Java API.
+ * arguments that might cause incorrect binding of foreign data and/or functions to
+ * a Java API.
  * <p>
  * Given the potential danger of restricted methods, the Java runtime issues a warning on
- * the standard error stream every time a restricted method is invoked. Such warnings
- * can be disabled by granting access to restricted methods to selected modules. This
- * can be done either via implementation-specific command line options, or
- * programmatically, e.g. by calling
- * {@link java.lang.ModuleLayer.Controller#enableNativeAccess(java.lang.Module)}.
+ * the standard error stream every time a restricted method is invoked. Such warnings can
+ * be disabled by granting access to restricted methods to selected modules. This can be
+ * done either via implementation-specific command line options or programmatically, e.g.
+ * by calling {@link java.lang.ModuleLayer.Controller#enableNativeAccess(java.lang.Module)}.
  * <p>
  * For every class in this package, unless specified otherwise, any method arguments of
  * reference type must not be {@code null}, and any null argument will elicit a
@@ -167,7 +166,7 @@
  * specific modules using the command line option {@code --enable-native-access=M1,M2, ... Mn},
  * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module,
  * the special value {@code ALL-UNNAMED} can be used). If this option is specified,
- * access to restricted methods is only granted to the modules listed by that option.
+ * access to restricted methods are only granted to the modules listed by that option.
  * If this option is not specified, access to restricted methods is enabled for all
  * modules, but access to restricted methods will result in runtime warnings.
  *

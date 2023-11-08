@@ -30,8 +30,8 @@ import java.nio.ByteOrder;
 import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
- * A layout that models values of basic data types. Examples of values modelled by a
- * value layout are <em>integral</em> values (either signed or unsigned),
+ * A layout that models values of basic data types. Examples of values modeled by
+ * a value layout are <em>integral</em> values (either signed or unsigned),
  * <em>floating-point</em> values and <em>address</em> values.
  * <p>
  * Each value layout has a size, an alignment (both expressed in bytes),
@@ -39,6 +39,7 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * that should be used when {@linkplain MemorySegment#get(OfInt, long) accessing} a
  * region of memory using the value layout.
  * <p>
+
  * This class defines useful value layout constants for Java primitive types and
  * addresses.
  *
@@ -56,9 +57,10 @@ import jdk.internal.foreign.layout.ValueLayouts;
  * @sealedGraph
  * @since 22
  */
-public sealed interface ValueLayout extends MemoryLayout permits
-        ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar, ValueLayout.OfShort, ValueLayout.OfInt,
-        ValueLayout.OfFloat, ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
+public sealed interface ValueLayout extends MemoryLayout
+        permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
+        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
      * {@return the value's byte order}
@@ -111,7 +113,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * The returned var handle checks that accesses are aligned according to
      * this value layout's {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
      *
-     * @apiNote This method is similar, but more efficient, than calling
+     * @apiNote This method is similar, but more efficient than calling
      *          {@code MemoryLayout#varHandle(PathElement...)} with an empty path
      *          element array, as it avoids the creation of the var args array.
      *

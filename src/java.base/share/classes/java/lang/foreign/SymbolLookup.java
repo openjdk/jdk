@@ -50,7 +50,7 @@ import java.util.function.BiFunction;
  * Subsequently, the {@link SymbolLookup#find(String)} method takes the name of a symbol
  * and returns the address of the symbol in that library.
  * <p>
- * The address of a symbol is modelled as a zero-length
+ * The address of a symbol is modeled as a zero-length
  * {@linkplain MemorySegment memory segment}. The segment can be used in different ways:
  * <ul>
  *     <li>It can be passed to a {@link Linker} to create a downcall method handle, which
@@ -147,9 +147,9 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
-     * {@return a composed symbol lookup that returns result of finding the symbol with
-     * this lookup if found, otherwise returns the result of finding the symbol with the
-     * other lookup}
+     * {@return a composed symbol lookup that returns the result of finding the symbol
+     *          with this lookup if found, otherwise returns the result of finding
+     *          the symbol with the other lookup}
      *
      * @apiNote This method could be used to chain multiple symbol lookups together,
      *          e.g. so that symbols could be retrieved, in order, from multiple
@@ -161,7 +161,7 @@ public interface SymbolLookup {
      *}
      * The above code creates a symbol lookup that first searches for symbols in
      * the "foo" library. If no symbol is found in "foo" then "bar" is searched.
-     * Finally, if a symbol is not found in neither "foo" nor "bar", the
+     * Finally, if a symbol is neither found in "foo" nor in "bar", the
      * {@linkplain SymbolLookup#loaderLookup() loader lookup} is used.
      *
      * @param other the symbol lookup that should be used to look for symbols not found
@@ -257,7 +257,8 @@ public interface SymbolLookup {
     @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(String name, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
+                SymbolLookup.class, "libraryLookup");
         if (Utils.containsNullChars(name)) {
             throw new IllegalArgumentException("Cannot open library: " + name);
         }
@@ -289,11 +290,16 @@ public interface SymbolLookup {
     @CallerSensitive
     @Restricted
     static SymbolLookup libraryLookup(Path path, Arena arena) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(),
+                SymbolLookup.class, "libraryLookup");
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
-    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, Arena libArena) {
+    private static <Z>
+    SymbolLookup libraryLookup(Z libDesc,
+                               BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc,
+                               Arena libArena) {
+
         Objects.requireNonNull(libDesc);
         Objects.requireNonNull(libArena);
         // attempt to load native library from path or name
