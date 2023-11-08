@@ -444,11 +444,10 @@ public final class ProcessTools {
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested.
      *
-     * @param isLimited Defines if jtreg options and test thread factory should be added
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    private static ProcessBuilder createJavaProcessBuilder(boolean isLimited, String... command) {
+    private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -461,16 +460,7 @@ public final class ProcessTools {
             args.add(System.getProperty("java.class.path"));
         }
 
-        if (isLimited) {
-            Collections.addAll(args, command);
-        } else {
-            List<String> additionalArgs = Arrays.asList(Utils.prependTestJavaOpts(command));
-            String testThreadFactoryName = System.getProperty("test.thread.factory");
-            if (testThreadFactoryName != null) {
-               additionalArgs = addTestThreadFactoryArgs(testThreadFactoryName, additionalArgs);
-            }
-            args.addAll(additionalArgs);
-        }
+        Collections.addAll(args, command);
 
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
@@ -523,7 +513,12 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
-        return createJavaProcessBuilder(false, command);
+        List<String> additionalArgs = Arrays.asList(Utils.prependTestJavaOpts(command));
+        String testThreadFactoryName = System.getProperty("test.thread.factory");
+        if (testThreadFactoryName != null) {
+            additionalArgs = addTestThreadFactoryArgs(testThreadFactoryName, additionalArgs);
+        }
+        return createJavaProcessBuilder(additionalArgs.toArray(String[]::new));
     }
 
     /**
@@ -567,7 +562,7 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createLimitedTestJavaProcessBuilder(String... command) {
-        return createJavaProcessBuilder(true, command);
+        return createJavaProcessBuilder(command);
     }
 
     /**
