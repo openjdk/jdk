@@ -104,10 +104,6 @@ ifneq ($(DEBUG_LEVEL), release)
   DISABLED_WARNINGS_gcc += strict-overflow
 endif
 
-ifeq ($(call check-jvm-feature, zero), true)
-  DISABLED_WARNINGS_gcc += dangling-pointer
-endif
-
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127 4722

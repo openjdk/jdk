@@ -193,17 +193,7 @@ class ResourceMark: public StackObj {
 #ifndef ASSERT
   ResourceMark(ResourceArea* area, Thread* thread) : _impl(area) {}
 #else
-  ResourceMark(ResourceArea* area, Thread* thread) :
-    _impl(area),
-    _thread(thread),
-    _previous_resource_mark(nullptr)
-  {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current(), "not the current thread");
-      _previous_resource_mark = _thread->current_resource_mark();
-      _thread->set_current_resource_mark(this);
-    }
-  }
+  ResourceMark(ResourceArea* area, Thread* thread);
 #endif // ASSERT
 
 public:
