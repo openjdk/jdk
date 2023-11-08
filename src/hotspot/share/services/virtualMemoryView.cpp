@@ -223,12 +223,8 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
 
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const char* descriptive_name) {
   const PhysicalMemorySpace next_space = PhysicalMemorySpace{PhysicalMemorySpace::next_unique()};
-  reserved_regions->at_ref_grow(next_space.id, [](OffsetRegionStorage* p) -> void {
-    ::new (p) OffsetRegionStorage{128};
-  });
-  committed_regions->at_ref_grow(next_space.id, [](RegionStorage* p) -> void {
-    ::new (p) RegionStorage{128};
-  });
+  reserved_regions->at_put_grow(next_space.id, OffsetRegionStorage{});
+  committed_regions->at_put_grow(next_space.id,RegionStorage{});
   names->at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
 }
