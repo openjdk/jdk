@@ -812,9 +812,9 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "Processing histograms ...\n\n");
   print_histogram(entries, count);
 #endif
-//  fprintf(stderr, "#####################################\n");
-//  fprintf(stderr, "Processing memory usage by thread ...\n");
-//  report_by_thread(entries, count);
+  fprintf(stderr, "#####################################\n");
+  fprintf(stderr, "Processing memory usage by thread ...\n");
+  report_by_thread(entries, count);
 
   fprintf(stderr, "\n\n");
   fprintf(stderr, "##########################################################\n");
