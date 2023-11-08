@@ -328,7 +328,7 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
   if (level >= NMT_summary) {
-    VirtualMemoryView::initialize();
+    VirtualMemoryView::initialize(level == NMT_detail);
     VirtualMemorySummary::initialize();
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
