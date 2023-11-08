@@ -194,10 +194,4 @@ public class JTableScrollPrintTest {
             currentManager.setDoubleBufferingEnabled(true);
         }
     }
-
-    protected void processWindowEvent(WindowEvent e) {
-        if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-            System.exit(0);
-        }
-    }
 }
