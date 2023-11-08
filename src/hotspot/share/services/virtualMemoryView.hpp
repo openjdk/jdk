@@ -145,6 +145,10 @@ private:
     GrowableArrayCHeap<NativeCallStack, mtNMT> all_the_stacks;
   public:
     int push(const NativeCallStack& stack) {
+      if (!VirtualMemoryView::_is_detailed_mode) {
+        all_the_stacks.at_put(0, NativeCallStack{});
+        return 0;
+      }
       int len = all_the_stacks.length();
       int idx = stack.calculate_hash() % static_stack_size;
       if (len < idx) {
@@ -164,6 +168,9 @@ private:
       return len;
     }
     const NativeCallStack& get(int idx) {
+      if (!VirtualMemoryView::_is_detailed_mode) {
+        return all_the_stacks.at(0);
+      }
       return all_the_stacks.at(idx);
     }
     NativeCallStackStorage() : all_the_stacks{static_stack_size} {}
