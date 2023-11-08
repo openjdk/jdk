@@ -4471,7 +4471,7 @@ static const int64_t bits2 = right_n_bits(2);
     assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
 
     __ srli(tmp1, U_2, 2);
-    __ shadd(tmp1, tmp1, tmp1, tmp2, 2); // tmp1 is impossible to overflow since two leftmost bits are zero'ed in 'srli(tmp1, U_2, 2)'
+    __ shadd(tmp1, tmp1, tmp1, tmp2, 2);
     __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp2
     __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
     __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
@@ -4574,6 +4574,12 @@ static const int64_t bits2 = right_n_bits(2);
 
     // Further reduce modulo 2^130 - 5
     reduce(U_2, U_1, U_0, t1, t2);
+
+    Label no_final_reduce;
+    __ srli(t1, U_2, 2);
+    __ beqz(t1, no_final_reduce);
+    reduce(U_2, U_1, U_0, t1, t2);
+    __ bind(no_final_reduce);
 
     // Unpack the sum into five 26-bit limbs and write to memory.
     // First 26 bits is the first limb
