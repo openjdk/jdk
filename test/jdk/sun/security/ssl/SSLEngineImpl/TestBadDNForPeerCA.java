@@ -37,6 +37,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.File;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
@@ -101,13 +102,10 @@ public class TestBadDNForPeerCA {
 
     public TestBadDNForPeerCA() throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
         char[] passphrase = passwd.toCharArray();
 
-        ks.load(new FileInputStream(keyStoreFile), passphrase);
-        ts.load(new FileInputStream(keyStoreFile), passphrase);
+        KeyStore ks = KeyStore.getInstance(new File(keyStoreFile), passphrase);
+        KeyStore ts = KeyStore.getInstance(new File(keyStoreFile), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

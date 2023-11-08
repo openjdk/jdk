@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,35 @@
  * questions.
  */
 
-package jdk.experimental.bytecode;
+/**
+ * @test
+ * @bug 8295159
+ * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
+ * @run main/othervm/native compiler.floatingpoint.TestSubnormalFloat
+ */
 
-public interface Type {
-    TypeTag getTag();
+package compiler.floatingpoint;
+
+import static java.lang.System.loadLibrary;
+
+public class TestSubnormalFloat {
+    static volatile float lastFloat;
+
+    private static void testFloats() {
+        lastFloat = 0x1.0p-149f;
+        for (float x = lastFloat * 2; x <= 0x1.0p127f; x *= 2) {
+            if (x != x || x <= lastFloat) {
+                throw new RuntimeException("TEST FAILED: " + x);
+            }
+            lastFloat = x;
+        }
+    }
+
+    public static void main(String[] args) {
+        testFloats();
+        System.out.println("Loading libfast-math.so");
+        loadLibrary("fast-math");
+        testFloats();
+        System.out.println("Test passed.");
+    }
 }

@@ -293,11 +293,9 @@ class bufferedStream : public outputStream {
   size_t buffer_pos;
   size_t buffer_max;
   size_t buffer_length;
-  bool   buffer_fixed;
   bool   truncated;
  public:
   bufferedStream(size_t initial_bufsize = 256, size_t bufmax = 1024*1024*10);
-  bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax = 1024*1024*10);
   ~bufferedStream();
   virtual void write(const char* c, size_t len);
   size_t      size() { return buffer_pos; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,43 +21,35 @@
  * questions.
  */
 
-package jdk.experimental.bytecode;
+/**
+ * @test
+ * @bug 8295159
+ * @summary DSO created with -ffast-math breaks Java floating-point arithmetic
+ * @run main/othervm/native compiler.floatingpoint.TestSubnormalDouble
+ */
 
-import java.util.EnumSet;
+package compiler.floatingpoint;
 
-public enum Flag {
-    ACC_PUBLIC(0x0001),
-    ACC_PROTECTED(0x0004),
-    ACC_PRIVATE(0x0002),
-    ACC_INTERFACE(0x0200),
-    ACC_ENUM(0x4000),
-    ACC_ANNOTATION(0x2000),
-    ACC_SUPER(0x0020),
-    ACC_ABSTRACT(0x0400),
-    ACC_VOLATILE(0x0040),
-    ACC_TRANSIENT(0x0080),
-    ACC_SYNTHETIC(0x1000),
-    ACC_STATIC(0x0008),
-    ACC_FINAL(0x0010),
-    ACC_SYNCHRONIZED(0x0020),
-    ACC_BRIDGE(0x0040),
-    ACC_VARARGS(0x0080),
-    ACC_NATIVE(0x0100),
-    ACC_STRICT(0x0800);
+import static java.lang.System.loadLibrary;
 
-    public int flag;
+public class TestSubnormalDouble {
+    static volatile double lastDouble;
 
-    Flag(int flag) {
-        this.flag = flag;
+    private static void testDoubles() {
+        lastDouble = 0x1.0p-1074;
+        for (double x = lastDouble * 2; x <= 0x1.0p1022; x *= 2) {
+            if (x != x || x <= lastDouble) {
+                throw new RuntimeException("TEST FAILED: " + x);
+            }
+            lastDouble = x;
+        }
     }
 
-    static Flag[] parse(int flagsMask) {
-        EnumSet<Flag> flags = EnumSet.noneOf(Flag.class);
-        for (Flag f : Flag.values()) {
-            if ((f.flag & flagsMask) != 0) {
-                flags.add(f);
-            }
-        }
-        return flags.stream().toArray(Flag[]::new);
+    public static void main(String[] args) {
+        testDoubles();
+        System.out.println("Loading libfast-math.so");
+        loadLibrary("fast-math");
+        testDoubles();
+        System.out.println("Test passed.");
     }
 }

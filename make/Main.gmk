@@ -405,8 +405,9 @@ JMOD_TARGETS := $(addsuffix -jmod, $(JMOD_MODULES))
 
 define DeclareJmodRecipe
   $1-jmod:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
-	    MODULE=$1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    $(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
+	    -f CreateJmods.gmk MODULE=$1)
 endef
 
 $(foreach m, $(JMOD_MODULES), $(eval $(call DeclareJmodRecipe,$m)))
