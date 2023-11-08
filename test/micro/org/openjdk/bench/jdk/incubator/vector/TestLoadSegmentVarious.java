@@ -69,21 +69,18 @@ public class TestLoadSegmentVarious {
     @Setup
     public void setup() {
         byteSrcArray = new byte[size];
-        byteDstArray = byteSrcArray.clone();
         for (int i = 0; i < byteSrcArray.length; i++) {
             byteSrcArray[i] = (byte) i;
         }
         byteSegment = MemorySegment.ofArray(byteSrcArray);
 
         intSrcArray = new int[size / Integer.BYTES];
-        intDstArray = intSrcArray.clone();
         for (int i = 0; i < intSrcArray.length; i++) {
             intSrcArray[i] = i;
         }
         intSegment = MemorySegment.ofArray(intSrcArray);
 
         doubleSrcArray = new double[size / Double.BYTES];
-        doubleDstArray = doubleSrcArray.clone();
         for (int i = 0; i < doubleSrcArray.length; i++) {
             intSrcArray[i] = i;
         }

@@ -3398,6 +3398,11 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
       return false;
     }
 
+    // If mincore is not supported.
+    if (mincore_return_value == -1 && errno == ENOSYS) {
+      return false;
+    }
+
     assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe

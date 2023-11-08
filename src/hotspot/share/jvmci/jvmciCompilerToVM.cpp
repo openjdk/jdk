@@ -1978,6 +1978,7 @@ C2V_VMENTRY(void, ensureInitialized, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)
 C2V_END
 
 C2V_VMENTRY(void, ensureLinked, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  CompilerThreadCanCallJava canCallJava(thread, true); // Linking requires Java calls
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
     JVMCI_THROW(NullPointerException);
