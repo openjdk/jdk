@@ -136,7 +136,11 @@ private:
         return idx;
       }
       // Exists and already there? No need for double storage
-      if (all_the_stacks.at(idx).equals(stack)) {
+      const NativeCallStack& pre_existing = all_the_stacks.at(idx);
+      if (pre_existing.is_empty()) {
+        all_the_stacks.at_put(idx, stack);
+        return idx;
+      } else if (all_the_stacks.at(idx).equals(stack)) {
         return idx;
       }
       // There was a collision, just push it
