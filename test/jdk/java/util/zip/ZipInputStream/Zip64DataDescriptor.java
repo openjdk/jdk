@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8303866
  * @summary ZipInputStream should read 8-byte data descriptors if the LOC has
  *   a ZIP64 extended information extra field
  * @run junit Zip64DataDescriptor
