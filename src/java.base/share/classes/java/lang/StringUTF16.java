@@ -53,6 +53,19 @@ final class StringUTF16 {
         return new byte[len << 1];
     }
 
+    // Check the size of a UTF16-coded string
+    // Throw an exception if out of range
+    public static int newBytesLength(int len) {
+        if (len < 0) {
+            throw new NegativeArraySizeException();
+        }
+        if (len > MAX_LENGTH) {
+            throw new OutOfMemoryError("UTF16 String size is " + len +
+                                       ", should be less than " + MAX_LENGTH);
+        }
+        return len << 1;
+    }
+
     @IntrinsicCandidate
     // intrinsic performs no bounds checks
     static void putChar(byte[] val, int index, int c) {
@@ -154,8 +167,7 @@ final class StringUTF16 {
 
     /**
      * {@return an encoded byte[] for the UTF16 characters in char[]}
-     * **Only** use this if it is known that at least one character is UTF16.
-     * Otherwise, an untrusted char array may have racy contents and really be latin1.
+     * No checking is done on the characters, some may or may not be latin1.
      * @param value a char array
      * @param off an offset
      * @param len a length
@@ -195,7 +207,7 @@ final class StringUTF16 {
      *
      * @param val   a char array
      * @param off   starting offset
-     * @param count length of chars to be compressed, length > 0
+     * @param count count of chars to be compressed, {@code count} > 0
      */
     @ForceInline
     public static byte[] compress(final char[] val, final int off, final int count) {
@@ -223,13 +235,13 @@ final class StringUTF16 {
      *
      * @param val   a byte array with UTF16 coding
      * @param off   starting offset
-     * @param count length of chars to be compressed, length > 0
+     * @param count count of chars to be compressed, {@code count} > 0
      */
     public static byte[] compress(final byte[] val, final int off, final int count) {
         byte[] latin1 = new byte[count];
         int ndx = compress(val, off, latin1, 0, count);
         if (ndx != count) {// Switch to UTF16
-            byte[] utf16 = Arrays.copyOfRange(val, off << 1, (off + count) << 1);
+            byte[] utf16 = Arrays.copyOfRange(val, off << 1, newBytesLength(off + count));
             // If the original character that was found to be non-latin1 is latin1 in the copy
             // try to make a latin1 string from the copy
             if (!isLatin1At(utf16, ndx)
@@ -320,7 +332,7 @@ final class StringUTF16 {
                     + (end - off - 1);
             if (dstLimit > (dst.length >> 1)) {
                 // Resize to hold at least the estimated number of chars
-                dst = Arrays.copyOf(dst, dstLimit << 1);
+                dst = Arrays.copyOf(dst, newBytesLength(dstLimit));
             }
             // Efficiently copy as many codepoints as fit within the current estimated limit
             while (true) {
@@ -339,7 +351,7 @@ final class StringUTF16 {
         if (dstOff != (dst.length >> 1)) {
             // Truncate to actual length; should only occur if a codepoint was racily
             // changed from a surrogate to a BMP character.
-            return Arrays.copyOf(dst, dstOff << 1);
+            return Arrays.copyOf(dst, newBytesLength(dstOff));
         }
         return dst;
     }

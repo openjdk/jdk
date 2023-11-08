@@ -599,7 +599,7 @@ public final class String
                     utf16 = Arrays.copyOf(utf16, dp << 1);
                 }
                 this.value = utf16;
-                this.coder = (utf16.length == dp) ? LATIN1 : UTF16;
+                this.coder = UTF16;
             } else { // !COMPACT_STRINGS
                 byte[] dst = new byte[length << 1];
                 int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
