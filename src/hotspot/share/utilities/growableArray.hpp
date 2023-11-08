@@ -25,8 +25,6 @@
 #ifndef SHARE_UTILITIES_GROWABLEARRAY_HPP
 #define SHARE_UTILITIES_GROWABLEARRAY_HPP
 
-#include <utility>
-
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/debug.hpp"
@@ -73,6 +71,7 @@
 
 class GrowableArrayBase : public AnyObj {
   friend class VMStructs;
+  friend class GrowableArrayTest;
 
 protected:
   // Current number of accessible elements
@@ -85,15 +84,6 @@ public:
       _len(initial_len),
       _capacity(capacity) {
     assert(_len >= 0 && _len <= _capacity, "initial_len too big");
-  }
-  GrowableArrayBase(GrowableArrayBase&& gab) :
-    _len(gab._len), _capacity(gab._capacity) {}
-  GrowableArrayBase(const GrowableArrayBase& gab) :
-    AnyObj(),
-    _len(gab._len), _capacity(gab._capacity) {}
-  GrowableArrayBase& operator= ( const GrowableArrayBase& gab) {
-    _len = gab._len; _capacity = gab._capacity;
-    return *this;
   }
 
   ~GrowableArrayBase() {}
@@ -126,25 +116,16 @@ template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator
 // of GrowableArrayWithAllocator.
 template <typename E>
 class GrowableArrayView : public GrowableArrayBase {
+  friend class GrowableArrayTest;
 protected:
   E* _data; // data array
-public:
+
   GrowableArrayView<E>(E* data, int capacity, int initial_len) :
-    GrowableArrayBase(capacity, initial_len), _data(data) {}
+      GrowableArrayBase(capacity, initial_len), _data(data) {}
 
   ~GrowableArrayView() {}
 
-  GrowableArrayView(GrowableArrayView<E>&& gav) :
-    GrowableArrayBase(std::move(gav)), _data(gav._data) {}
-  GrowableArrayView(const GrowableArrayView<E>& gav) :
-    GrowableArrayBase(gav), _data(gav._data) {}
-
-  GrowableArrayView<E>& operator= (const GrowableArrayView<E>& gav) {
-    GrowableArrayBase::operator=(gav);
-    _data = gav._data;
-    return *this;
-  }
-
+public:
   const static GrowableArrayView EMPTY;
 
   bool operator==(const GrowableArrayView<E>& rhs) const {
@@ -392,19 +373,19 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E> {
   friend class VMStructs;
 
   void expand_to(int j);
-  void grow(int j);
 
 protected:
-public:
+  void grow(int j);
+
   GrowableArrayWithAllocator(E* data, int capacity) :
-    GrowableArrayView<E>(data, capacity, 0) {
+      GrowableArrayView<E>(data, capacity, 0) {
     for (int i = 0; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
   }
 
   GrowableArrayWithAllocator(E* data, int capacity, int initial_len, const E& filler) :
-    GrowableArrayView<E>(data, capacity, initial_len) {
+      GrowableArrayView<E>(data, capacity, initial_len) {
     int i = 0;
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
@@ -415,15 +396,8 @@ public:
   }
 
   ~GrowableArrayWithAllocator() {}
-  GrowableArrayWithAllocator(GrowableArrayWithAllocator<E, Derived>&& gawa) :
-    GrowableArrayView<E>(std::move(gawa)) {}
-  GrowableArrayWithAllocator(const GrowableArrayWithAllocator<E, Derived>& gawa) :
-    GrowableArrayView<E>(gawa) {}
-  GrowableArrayWithAllocator<E, Derived>& operator= (const GrowableArrayWithAllocator<E, Derived> gawa) {
-    GrowableArrayView<E>::operator=(gawa);
-    return *this;
-  }
 
+public:
   int append(const E& elem) {
     if (this->_len == this->_capacity) grow(this->_len);
     int idx = this->_len++;
@@ -440,24 +414,12 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  E& at_ref_grow(int i, void(*filler)(E* )) {
-    assert(0 <= i, "negative index %d", i);
-    if (i >= this->_len) {
-      if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j <= i; j++)
-        filler(&this->_data[j]);
-      this->_len = i+1;
-    }
-    return this->_data[i];
-  }
-
   E at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j <= i; j++) {
+      for (int j = this->_len; j <= i; j++)
         this->_data[j] = fill;
-      }
       this->_len = i+1;
     }
     return this->_data[i];
@@ -553,7 +515,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   this->_capacity = new_capacity;
   E* newData = static_cast<Derived*>(this)->allocate();
   int i = 0;
-  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(std::move(this->_data[i]));
+  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
   for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
   for (i = 0; i < old_capacity; i++) this->_data[i].~E();
   if (this->_data != nullptr) {
@@ -592,7 +554,7 @@ void GrowableArrayWithAllocator<E, Derived>::shrink_to_fit() {
   this->_capacity = len;        // Must preceed allocate().
   if (len > 0) {
     new_data = static_cast<Derived*>(this)->allocate();
-    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(std::move(old_data[i]));
+    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
   }
   // Destroy contents of old data, and deallocate it.
   for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
@@ -780,18 +742,6 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
 public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
 
-  GrowableArray(GrowableArray<E>&& ga)
-    : GrowableArrayWithAllocator<E, GrowableArray<E>>(std::move(ga)),
-      _metadata(ga._metadata) {}
-  GrowableArray(const GrowableArray<E>& ga)
-    : GrowableArrayWithAllocator<E, GrowableArray<E>>(ga),
-      _metadata(ga._metadata) {}
-  GrowableArray<E>& operator= (const GrowableArray<E> ga) {
-    GrowableArrayWithAllocator<E, GrowableArray<E>>::operator=(ga);
-    _metadata = ga._metadata;
-    return *this;
-  }
-
   explicit GrowableArray(int initial_capacity) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity),
@@ -854,8 +804,6 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
   }
 
-  NONCOPYABLE(GrowableArrayCHeap);
-
   E* allocate() {
     return allocate(this->_capacity, F);
   }
@@ -875,21 +823,32 @@ public:
           allocate(initial_capacity, F),
           initial_capacity, initial_len, filler) {}
 
-  GrowableArrayCHeap(GrowableArrayCHeap<E, F>&& gach)
-    : GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F>>(std::move(gach)) {}
-
-
-
   ~GrowableArrayCHeap() {
     this->clear_and_deallocate();
   }
 
-  void* operator new(size_t size) {
-    return AnyObj::operator new(size, F);
+  GrowableArrayCHeap(GrowableArrayCHeap<E,F>& other)
+  : GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F>>(allocate(0, F), 0) {
+    this->grow(other._len);
+    for (int i = 0; i < other._len; i++) {
+      this->_data[i] = other._data[i];
+    }
+    this->_len = other._len;
   }
 
-  void* operator new(size_t size, void* place) {
-    return place;
+  GrowableArrayCHeap<E,F>& operator=(GrowableArrayCHeap<E,F>& other) {
+    assert(&other != this, "must be different");
+    this->clear_and_deallocate();
+    this->grow(other._len);
+    for (int i = 0; i < other._len; i++) {
+      this->_data[i] = other._data[i];
+    }
+    this->_len = other._len;
+    return *this;
+  }
+
+  void* operator new(size_t size) {
+    return AnyObj::operator new(size, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
