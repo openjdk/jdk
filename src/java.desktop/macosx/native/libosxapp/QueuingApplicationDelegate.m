@@ -203,7 +203,11 @@
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
 {
-    return YES;
+    BOOL supportsSecureState = YES;
+    if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
+        supportsSecureState = NO;
+    }
+    return supportsSecureState;
 }
 
 - (void)processQueuedEventsWithTargetDelegate:(id <NSApplicationDelegate>)delegate
