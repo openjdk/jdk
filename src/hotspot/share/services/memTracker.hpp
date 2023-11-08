@@ -101,9 +101,6 @@ class MemTracker : AllStatic {
     if (enabled()) {
       return MallocTracker::record_malloc(mem_base, size, flag, stack, malloc_base_old);
     }
-#ifdef ASSERT
-    NMT_MemoryLogRecorder::log(flag, size, (address)mem_base, (address)malloc_base_old, &stack);
-#endif
     return mem_base;
   }
 
@@ -115,9 +112,6 @@ class MemTracker : AllStatic {
     if (enabled()) {
       return MallocTracker::record_free_block(memblock);
     }
-#ifdef ASSERT
-    NMT_MemoryLogRecorder::log(mtNone, 0, (address)memblock);
-#endif
     return memblock;
   }
 

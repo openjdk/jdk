@@ -137,6 +137,9 @@ int compare(const void* ptr_a, const void* ptr_b) {
 }
 
 static inline double percent_diff(double initial_value, double final_value) {
+  if (final_value < final_value) {
+    fprintf(stderr, "percent_diff(%f, %f)\n", initial_value, final_value);
+  }
   return 100.0 * (final_value - initial_value) / initial_value;
 }
 
@@ -182,7 +185,7 @@ const char* NMT_MemoryLogRecorder::recall_thread_name(intx tid) {
 // on Linux malloc can return different values for the same sizes
 static inline size_t _malloc_good_size_native(size_t size) {
   void *ptr = malloc(size);
-  assert(ptr != nullptr, "must be, size=%zu", size);
+  assert(ptr != nullptr, "must be, _malloc_good_size_native(%zu) == nullptr", size);
   size_t actual = 0;
 #if defined(LINUX)
   actual = malloc_usable_size(ptr);
@@ -346,9 +349,9 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
   size_t a_total = 0;
   size_t o_total = 0;
   size_t buckets_count = 0;
-  fprintf(stderr, "Histogram of memory overhead (quadratic scale)\n");
-  fprintf(stderr, "----------------------------------------------\n");
-  fprintf(stderr, "requested:    actual: overhead:  count: ratio:\n");
+  fprintf(stderr, "Histogram of memory overhead (quadratic scale)  \n");
+  fprintf(stderr, "------------------------------------------------\n");
+  fprintf(stderr, "requested:    actual:    count: overhead: ratio:\n");
   for (size_t i=0; i<_malloc_requests_count; i++) {
     if (_malloc_requests_buckets[i] > 0) {
       buckets_count++;
@@ -366,11 +369,11 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
 
       if (overhead_ratio > cutoff) {
         if (overhead_ratio < 10.0) {
-          fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.3f ",
-                  _malloc_requests_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+          fprintf(stderr, "%10zu%c %9zu %9zu    %6zu  %02.3f ",
+                  _malloc_requests_buckets[i], flag, histogram_actual_sizes[i], histogram_counts[i], overhead, overhead_ratio);
         } else {
-          fprintf(stderr, "%9zu%c %9zu %9zu   %6zu  %02.2f ",
-                  _malloc_requests_buckets[i], flag, histogram_actual_sizes[i], overhead, histogram_counts[i], overhead_ratio);
+          fprintf(stderr, "%10zu%c %9zu %9zu    %6zu  %02.2f ",
+                  _malloc_requests_buckets[i], flag, histogram_actual_sizes[i], histogram_counts[i], overhead, overhead_ratio);
         }
         for (size_t j=0; j<mark; j++) {
           fprintf(stderr, "*");
@@ -408,12 +411,11 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
 
 void NMT_MemoryLogRecorder::print_entry(Entry* e) {
   if (e != nullptr) {
-    fprintf(stderr, "{ %18p, %18p", e->ptr, e->old);
+    fprintf(stderr, "{ %18ld, %18p, %18p", e->time, e->ptr, e->old);
     for (int i=0; i<NMT_TrackingStackDepth; i++) {
       fprintf(stderr, ", %18p", e->stack[i]);
     }
-    fprintf(stderr, ", %7u, %7u, %7u", (unsigned)e->requested, (unsigned)e->actual,
-            (unsigned)e->flags);
+    fprintf(stderr, ", %7u, %7u, %7u", (unsigned)e->requested, (unsigned)e->actual, (unsigned)e->flags);
     if (!is_empty(e)) {
       fprintf(stderr, ", \"%s\"},\n", NMTUtil::flag_to_name(e->flags));
     } else {
@@ -437,6 +439,18 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
   fprintf(stderr, "         component name:     mallocs:   requested:   allocated:   overhead:\n");
   fprintf(stderr, "                             (count)      (bytes)      (bytes)        (%%) \n");
   fprintf(stderr, "---------------------------------------------------------------------------\n");
+
+  size_t total_requested = 0;
+  size_t total_actual = 0;
+  for (size_t c=0; c<count; c++) {
+    Entry* e = access_non_empty(entries, c);
+    if ((e != nullptr) && (is_alloc(e))) {
+      total_requested += e->requested;
+      total_actual += e->actual;
+    }
+  }
+  size_t alloc_overhead = (total_actual - total_requested);
+
   for (int i=0; i<mt_number_of_types; i++) {
     size_t mallocs = 0;
     size_t requested = 0;
@@ -449,6 +463,8 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
             mallocs++;
             requested += e->requested;
             allocated += e->actual;
+            assert(e->actual >= e->requested, "e->actual >= e->requested [%zu, %zu]", e->actual, e->requested);
+            assert(allocated >= requested, "allocated >= requested [%zu, %zu]", allocated, requested);
           } else {
             print_entry(e);
             assert(false, "HUH? %d:%d:%d", is_malloc(e), is_realloc(e), is_free(e));
@@ -458,7 +474,7 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
     }
     double overhead = 0.0;
     if (mallocs > 0) {
-      overhead = percent_diff(requested, allocated);
+      overhead = ratio((allocated-requested), alloc_overhead);
     }
     if (overhead > 10.0) {
       fprintf(stderr, "%24s %12ld %12ld %12ld      %.3f\n",
@@ -527,6 +543,7 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
             counter_free[i]++;
             total_count_frees++;
           } else {
+            print_entry(e);
             assert(false, "HUH?");
           }
           if (is_alloc(e)) {
@@ -537,8 +554,6 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
           } else if (is_free(e)) {
             total_size_freed += e->actual;
             sizes_freed[i] += e->actual;
-          } else {
-            assert(false, "HUH?");
           }
           break;
         }
@@ -561,7 +576,11 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
         if (i==0) {
           strcpy(&buf[0], "Main");
         } else {
+#if defined(__APPLE__)
+          strcpy(&buf[0], "AppKit ?");
+#else
           strcpy(&buf[0], "?");
+#endif
         }
       }
       fprintf(stderr, "%33s %9ld %9ld %9ld %12ld %12ld %12ld\n", buf,
@@ -623,43 +642,38 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
       fprintf(stderr, "%3ld", (steps - (c/gap))); fflush(stderr);
     }
     Entry* e = &entries[c];
-    if (is_alloc(e)) {
-      if (is_realloc(e)) {
-        Entry* found = find_realloc_entry(entries, c);
-        if (found != nullptr) {
-          assert(found->flags == e->flags, "found->flags == e->flags");
-          assert(is_alloc(found), "is_alloc(found)");
-          memset(found, 0, sizeof(Entry));
-        } else {
-          // realloc without initial malloc -> turn it into a malloc
-          e->old = nullptr;
-        }
+    if (is_realloc(e)) {
+      Entry* found = find_realloc_entry(entries, c);
+      if (found != nullptr) {
+        assert(found->flags == e->flags, "found->flags == e->flags");
+        assert(is_alloc(found), "is_alloc(found)");
+        memset(found, 0, sizeof(Entry));
       }
     } else if (is_free(e)) {
       Entry* found = find_free_entry(entries, c);
       if (found != nullptr) {
-        assert(found->actual == e->actual, "found->actual == e->actual");
         assert(is_alloc(found), "is_alloc(found)");
         memset(e, 0, sizeof(Entry));
         memset(found, 0, sizeof(Entry));
       }
-    } else {
-      assert(false, "HUH?");
+    } else if (!is_empty(e) && !is_malloc(e)) {
+      print_entry(e);
+      assert(false, "(!is_empty(e) && !is_malloc(e))?");
     }
   }
   if (count > _feedback_cutoff_count) {
     fprintf(stderr, "\n");
   }
   fprintf(stderr, "\n");
-
   for (size_t c=start; c<count; c++) {
     Entry* e = &entries[c];
     if (is_realloc(e)) {
-      // unchained realloc -> malloc
+      // last realloc in the chain, turn it into malloc
+      //print_entry(e);
       e->old = nullptr;
     } else if (is_free(e)) {
-      // nuke any unchained free's
-      memset(e, 0, sizeof(Entry));
+      print_entry(e);
+      assert(false, "free without corresponding alloc?");
     }
   }
 }
@@ -683,9 +697,7 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
       fprintf(stderr, "%3ld", (steps - (c/gap))); fflush(stderr);
     }
     Entry* e = access_non_empty(entries, c);
-    if (e == nullptr) {
-      //
-    } else if (is_alloc(e)) {
+    if (e != nullptr) {
       if (is_malloc(e)) {
         count_mallocs++;
         count_Objects++;
@@ -698,63 +710,10 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
           total_requested_no_NMT += (e->requested - overhead_per_malloc);
           total_actual_no_NMT += _malloc_good_size(e->requested - overhead_per_malloc); // this is an estimate
         }
-      } else if (is_realloc(e)) {
-        count_reallocs++;
-        Entry* found = find_realloc_entry(entries, c);
-        if (found != nullptr) {
-          assert(found->flags == e->flags, "found->flags == e->flags");
-          assert(is_alloc(found), "is_alloc(found)");
-#if 0
-          fprintf(stderr, "\nREALLOC:\n");
-          print_entry(found);
-          print_entry(e);
-#endif
-          if (is_nmt(e)) {
-            total_NMTObjects += e->actual;
-            total_requested += e->requested;
-            total_actual += e->actual;
-
-            total_NMTObjects -= found->actual;
-            total_requested -= found->requested;
-            total_actual -= found->actual;
-          } else {
-            total_requested += e->requested;
-            total_actual += e->actual;
-            total_requested_no_NMT += (e->requested - overhead_per_malloc);
-            total_actual_no_NMT += _malloc_good_size(e->requested - overhead_per_malloc); // this is an estimate
-
-            total_requested -= found->requested;
-            total_actual -= found->actual;
-            total_requested_no_NMT -= (found->requested - overhead_per_malloc);
-            total_actual_no_NMT -= _malloc_good_size(found->requested - overhead_per_malloc); // this is an estimate
-          }
-        }
-      }
-    } else if (is_free(e)) {
-      Entry* found = find_free_entry(entries, c);
-      if (found != nullptr) {
-        assert(found->actual == e->actual, "found->actual == e->actual");
-        assert(is_alloc(found), "is_alloc(found)");
-#if 0
-        fprintf(stderr, "FREE:\n");
-        print_entry(found);
+      } else {
         print_entry(e);
-#endif
-        count_Objects--;
-        count_frees++;
-        total_requested -= found->requested;
-        total_actual -= found->actual;
-        if (is_nmt(e)) {
-          count_NMTObjects--;
-          total_NMTObjects -= found->actual;
-        } else {
-          total_requested_no_NMT -= (found->requested - overhead_per_malloc);
-          total_actual_no_NMT -= _malloc_good_size(found->requested - overhead_per_malloc); // this is an estimate
-        }
+        assert(false, "HUH?");
       }
-    } else {
-      print_entry(e);
-      assert(false, "HUH?");
     }
   }
   if (count > _feedback_cutoff_count) {
@@ -765,14 +724,14 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   long alloc_overhead = (total_actual - total_requested);
 
   fprintf(stderr, "\n\n");
-  fprintf(stderr, "                             Current requested: %12ld bytes, %4ld Mb\n",
-          total_requested, total_requested/1024/1024);
-  fprintf(stderr, "                                Current actual: %12ld bytes, %4ld Mb\n",
-          total_actual, total_actual/1024/1024);
+  fprintf(stderr, "                             Current requested: %12ld bytes, %05.1f Mb\n",
+          total_requested, total_requested/1024.0/1024.0);
+  fprintf(stderr, "                                Current actual: %12ld bytes, %05.1f Mb\n",
+          total_actual, total_actual/1024.0/1024.0);
   double overhead_ratio_requested = ratio(alloc_overhead, total_requested);
   double overhead_ratio_actual    = ratio(alloc_overhead, total_actual);
-  fprintf(stderr, "            Overhead due to malloc rounding up: %12ld bytes, %4ld Mb : %.3f%%, %.3f%% [#%zu]\n",
-          alloc_overhead, alloc_overhead/1024/1024,
+  fprintf(stderr, "            Overhead due to malloc rounding up: %12ld bytes, %05.1f Mb : %.3f%%, %.3f%% [#%zu]\n",
+          alloc_overhead, alloc_overhead/1024.0/1024.0,
           overhead_ratio_requested,
           overhead_ratio_actual,
           (count_Objects));
@@ -784,27 +743,27 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
     double total_NMTObjects_ratio_requested = ratio(total_NMTObjects, total_requested);
     double total_NMTObjects_ratio_actual    = ratio(total_NMTObjects, total_actual);
 
-    fprintf(stderr, "                   Overhead due to NMT headers: %12ld bytes, %4ld Mb : %.3f%%, %.3f%% [#%zu]\n",
-            total_NMTHeaders, total_NMTHeaders/1024/1024,
+    fprintf(stderr, "                   Overhead due to NMT headers: %12ld bytes, %05.1f Mb : %.3f%%, %.3f%% [#%zu]\n",
+            total_NMTHeaders, total_NMTHeaders/1024.0/1024.0,
             total_NMTHeaders_ratio_requested,
             total_NMTHeaders_ratio_actual,
             count_Objects);
-    fprintf(stderr, "                   Overhead due to NMT objects: %12ld bytes, %4ld Mb : %.3f%%, %.3f%% [#%zu]\n",
-            total_NMTObjects, total_NMTObjects/1024/1024,
+    fprintf(stderr, "                   Overhead due to NMT objects: %12ld bytes, %05.1f Mb : %.3f%%, %.3f%% [#%zu]\n",
+            total_NMTObjects, total_NMTObjects/1024.0/1024.0,
             total_NMTObjects_ratio_requested,
             total_NMTObjects_ratio_actual,
             count_NMTObjects);
 
     fprintf(stderr, "\n\n");
     long alloc_overhead_no_NMT = (total_actual_no_NMT - total_requested_no_NMT);
-    fprintf(stderr, "                    Current requested (no NMT): %12ld bytes, %4ld Mb\n",
-            total_requested_no_NMT, total_requested_no_NMT/1024/1024);
-    fprintf(stderr, "                       Current actual (no NMT): %12ld bytes, %4ld Mb\n",
-            total_actual_no_NMT, total_actual_no_NMT/1024/1024);
+    fprintf(stderr, "                    Current requested (no NMT): %12ld bytes, %05.1f Mb\n",
+            total_requested_no_NMT, total_requested_no_NMT/1024.0/1024.0);
+    fprintf(stderr, "                       Current actual (no NMT): %12ld bytes, %05.1f Mb\n",
+            total_actual_no_NMT, total_actual_no_NMT/1024.0/1024.0);
     double overhead_ratio_requested_no_NMT = ratio(alloc_overhead_no_NMT, total_requested_no_NMT);
     double overhead_ratio_actual_no_NMT    = ratio(alloc_overhead_no_NMT, total_actual_no_NMT);
-    fprintf(stderr, "   Overhead due to malloc rounding up (no NMT): %12ld bytes, %4ld Mb : %.3f%%, %.3f%% [#%zu]\n",
-            alloc_overhead_no_NMT, alloc_overhead_no_NMT/1024/1024,
+    fprintf(stderr, "   Overhead due to malloc rounding up (no NMT): %12ld bytes, %05.1f Mb : %.3f%%, %.3f%% [#%zu]\n",
+            alloc_overhead_no_NMT, alloc_overhead_no_NMT/1024.0/1024.0,
             overhead_ratio_requested_no_NMT,
             overhead_ratio_actual_no_NMT,
             (count_Objects - count_NMTObjects));
@@ -841,7 +800,7 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
 void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "Processing recorded NMT entries ...\n");
   fprintf(stderr, "\n\n");
-
+  fprintf(stderr, "MemTracker::overhead_per_malloc(): %zu\n\n", MemTracker::overhead_per_malloc());
   calculate_good_sizes(entries, count);
 
   if (PrintRecordedNMTEntries) {
@@ -853,9 +812,9 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "Processing histograms ...\n\n");
   print_histogram(entries, count);
 #endif
-  fprintf(stderr, "#####################################\n");
-  fprintf(stderr, "Processing memory usage by thread ...\n");
-  report_by_thread(entries, count);
+//  fprintf(stderr, "#####################################\n");
+//  fprintf(stderr, "Processing memory usage by thread ...\n");
+//  report_by_thread(entries, count);
 
   fprintf(stderr, "\n\n");
   fprintf(stderr, "##########################################################\n");
@@ -903,14 +862,18 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
 
   Entry* _entry = nullptr;
   if (!done) {
+#if defined(LINUX) || defined(__APPLE__)
     pthread_mutex_lock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
     {
       if (_entries == nullptr) {
-        _entries = (Entry*)calloc(RecordNMTEntries+1, sizeof(Entry));
+        _entries = (Entry*)calloc(RecordNMTEntries, sizeof(Entry));
         assert(_entries != nullptr, "_entries != nullptr");
       }
       if (!done) {
-        bool triggered_by_limit = (count >= (size_t)RecordNMTEntries);
+        bool triggered_by_limit = (count >= (size_t)(RecordNMTEntries));
         bool triggered_by_request = ((requested == 0) && (ptr == nullptr));
         if (triggered_by_limit) {
           fprintf(stderr, "\n\n");
@@ -931,23 +894,27 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
         }
       }
     }
+#if defined(LINUX) || defined(__APPLE__)
     pthread_mutex_unlock(&_mutex);
+#elif defined(WINDOWS)
+    // ???
+#endif
   }
 
   if (_entry != nullptr) {
+    //_entry->time = os::javaTimeNanos();
+    _entry->time = count;
     _entry->thread = os::current_thread_id();
     _entry->ptr = ptr;
     _entry->old = old;
     _entry->requested = requested;
-    if (_entry->requested > 0) {
-      _entry->requested += MemTracker::overhead_per_malloc();
-    }
 #if defined(LINUX)
     _entry->actual = malloc_usable_size(ptr);
 #elif defined(WINDOWS)
     _entry->actual = _msize(ptr);
 #elif defined(__APPLE__)
     _entry->actual = malloc_size(ptr);
+    assert(_entry->requested <= _entry->actual, "_entry->requested <= _entry->actual [%zu,%zu]", _entry->requested, _entry->actual);
 #endif
     _entry->flags = flags;
     if (stack != nullptr) {
@@ -955,7 +922,45 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
         _entry->stack[i] = stack->get_frame(i);
       }
     }
+    
+//    if ((_entry->requested == 1114) && (_entry->actual == 1536) && (_entry->flags == NMTUtil::index_to_flag(9))) {
+//      fprintf(stderr, "GOT YA!\n\n");
+//      print_entry(_entry);
+//      abort();
+//    }
+//    print_entry(_entry);
   }
 }
 
 #endif // ASSERT
+
+/*
+ 
+ Stack: [0x000070000f242000,0x000070000f342000],  sp=0x000070000f341030,  free space=1020k
+ Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+ V  [libjvm.dylib+0xf63962]  os::realloc(void*, unsigned long, MEMFLAGS, NativeCallStack const&) (.cold.1)+0x20
+ V  [libjvm.dylib+0x5edaf2]  os::realloc(void*, unsigned long, MEMFLAGS, NativeCallStack const&)+0x158
+ V  [libjvm.dylib+0x463a0d]  ReallocateHeap(char*, unsigned long, MEMFLAGS, AllocFailStrategy::AllocFailEnum)+0x5f
+ V  [libjvm.dylib+0x939af1]  stringStream::grow(unsigned long)+0x59
+ V  [libjvm.dylib+0x939d1a]  stringStream::write(char const*, unsigned long)+0xb2
+ V  [libjvm.dylib+0x939301]  outputStream::do_vsnprintf_and_write(char const*, __va_list_tag*, bool)+0x6f
+ V  [libjvm.dylib+0x93943f]  outputStream::print_cr(char const*, ...)+0x81
+ V  [libjvm.dylib+0xadd804]  GCLogPrecious::vwrite_inner(LogTargetHandle, char const*, __va_list_tag*)+0x5c
+ V  [libjvm.dylib+0xadd86d]  GCLogPrecious::vwrite(LogTargetHandle, char const*, __va_list_tag*)+0x41
+ V  [libjvm.dylib+0xafa61e]  GCLogPreciousHandle::write(char const*, ...)+0x8a
+ V  [libjvm.dylib+0xb29a54]  GCInitLogger::print_workers()+0x4a
+ V  [libjvm.dylib+0xa121f7]  G1InitLogger::print_workers()+0xd
+ V  [libjvm.dylib+0xb2944f]  GCInitLogger::print_all()+0x4d
+ V  [libjvm.dylib+0xa12321]  G1InitLogger::print()+0x1b
+ V  [libjvm.dylib+0x9fcbb9]  G1CollectedHeap::initialize()+0x61f
+ V  [libjvm.dylib+0x4715cc]  universe_init()+0x8e
+ V  [libjvm.dylib+0x6924e1]  init_globals()+0x33
+ V  [libjvm.dylib+0x6c267e]  Threads::create_vm(JavaVMInitArgs*, bool*)+0x23a
+ V  [libjvm.dylib+0x7f99e7]  JNI_CreateJavaVM+0x63
+ C  [libjli.dylib+0x3fe2]  JavaMain+0x112
+ C  [libjli.dylib+0x74e9]  ThreadJavaMain+0x9
+ C  [libsystem_pthread.dylib+0x61d3]  _pthread_start+0x7d
+ C  [libsystem_pthread.dylib+0x1bd3]  thread_start+0xf
+
+ */
+
