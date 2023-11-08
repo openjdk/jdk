@@ -65,7 +65,7 @@ public class MergeStores {
     public static long vL;
 
     public static int offset = 5;
-    public static byte[] a = new byte[RANGE];
+    public static byte[] aB = new byte[RANGE];
 
     // -------------------------------------------
     // -------     Little-Endian API    ----------
@@ -132,499 +132,499 @@ public class MergeStores {
 
     @Benchmark
     public byte[] baseline_allocate() {
-        byte[] a = new byte[RANGE];
-        return a;
+        byte[] aB = new byte[RANGE];
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_adr0_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[0] = (byte)0x01;
-        a[1] = (byte)0x02;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[0] = (byte)0x01;
+        aB[1] = (byte)0x02;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_adr1_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[1] = (byte)0x01;
-        a[2] = (byte)0x02;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[1] = (byte)0x01;
+        aB[2] = (byte)0x02;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putShortUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setShort(a, offset, (short)0x0201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeShortLE(a, offset, (short)0x0201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeShortLE(aB, offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        return a;
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_nonalloc_unsafe() {
-        UNSAFE.putShortUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
-        return a;
+        UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setShort(a, offset, (short)0x0201);
-        return a;
+        ByteArrayLittleEndian.setShort(aB, offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_con_offs_nonalloc_leapi() {
-        storeShortLE(a, offset, (short)0x0201);
-        return a;
+        storeShortLE(aB, offset, (short)0x0201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)(vS >> 0 );
-        a[offset + 1] = (byte)(vS >> 8 );
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)(vS >> 0 );
+        aB[offset + 1] = (byte)(vS >> 8 );
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putShortUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setShort(a, offset, vS);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setShort(aB, offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeShortLE(a, offset, vS);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeShortLE(aB, offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)(vS >> 0 );
-        a[offset + 1] = (byte)(vS >> 8 );
-        return a;
+        aB[offset + 0] = (byte)(vS >> 0 );
+        aB[offset + 1] = (byte)(vS >> 8 );
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_nonalloc_unsafe() {
-        UNSAFE.putShortUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
-        return a;
+        UNSAFE.putShortUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setShort(a, offset, vS);
-        return a;
+        ByteArrayLittleEndian.setShort(aB, offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_2B_S_offs_nonalloc_leapi() {
-        storeShortLE(a, offset, vS);
-        return a;
+        storeShortLE(aB, offset, vS);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_adr0_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[0] = (byte)0x01;
-        a[1] = (byte)0x02;
-        a[2] = (byte)0x03;
-        a[3] = (byte)0x04;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[0] = (byte)0x01;
+        aB[1] = (byte)0x02;
+        aB[2] = (byte)0x03;
+        aB[3] = (byte)0x04;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_adr1_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[1] = (byte)0x01;
-        a[2] = (byte)0x02;
-        a[3] = (byte)0x03;
-        a[4] = (byte)0x04;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[1] = (byte)0x01;
+        aB[2] = (byte)0x02;
+        aB[3] = (byte)0x03;
+        aB[4] = (byte)0x04;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        a[offset + 2] = (byte)0x03;
-        a[offset + 3] = (byte)0x04;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        aB[offset + 2] = (byte)0x03;
+        aB[offset + 3] = (byte)0x04;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putIntUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(a, offset, 0x04030201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeIntLE(a, offset, 0x04030201);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeIntLE(aB, offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        a[offset + 2] = (byte)0x03;
-        a[offset + 3] = (byte)0x04;
-        return a;
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        aB[offset + 2] = (byte)0x03;
+        aB[offset + 3] = (byte)0x04;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_nonalloc_unsafe() {
-        UNSAFE.putIntUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
-        return a;
+        UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(a, offset, 0x04030201);
-        return a;
+        ByteArrayLittleEndian.setInt(aB, offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_con_offs_nonalloc_leapi() {
-        storeIntLE(a, offset, 0x04030201);
-        return a;
+        storeIntLE(aB, offset, 0x04030201);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)(vI >> 0 );
-        a[offset + 1] = (byte)(vI >> 8 );
-        a[offset + 2] = (byte)(vI >> 16);
-        a[offset + 3] = (byte)(vI >> 24);
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)(vI >> 0 );
+        aB[offset + 1] = (byte)(vI >> 8 );
+        aB[offset + 2] = (byte)(vI >> 16);
+        aB[offset + 3] = (byte)(vI >> 24);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putIntUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(a, offset, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setInt(aB, offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeIntLE(a, offset, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeIntLE(aB, offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)(vI >> 0 );
-        a[offset + 1] = (byte)(vI >> 8 );
-        a[offset + 2] = (byte)(vI >> 16);
-        a[offset + 3] = (byte)(vI >> 24);
-        return a;
+        aB[offset + 0] = (byte)(vI >> 0 );
+        aB[offset + 1] = (byte)(vI >> 8 );
+        aB[offset + 2] = (byte)(vI >> 16);
+        aB[offset + 3] = (byte)(vI >> 24);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_nonalloc_unsafe() {
-        UNSAFE.putIntUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
-        return a;
+        UNSAFE.putIntUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(a, offset, vI);
-        return a;
+        ByteArrayLittleEndian.setInt(aB, offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_4B_I_offs_nonalloc_leapi() {
-        storeIntLE(a, offset, vI);
-        return a;
+        storeIntLE(aB, offset, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_adr0_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[0] = (byte)0x01;
-        a[1] = (byte)0x02;
-        a[2] = (byte)0x03;
-        a[3] = (byte)0x04;
-        a[4] = (byte)0x05;
-        a[5] = (byte)0x06;
-        a[6] = (byte)0x07;
-        a[7] = (byte)0x08;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[0] = (byte)0x01;
+        aB[1] = (byte)0x02;
+        aB[2] = (byte)0x03;
+        aB[3] = (byte)0x04;
+        aB[4] = (byte)0x05;
+        aB[5] = (byte)0x06;
+        aB[6] = (byte)0x07;
+        aB[7] = (byte)0x08;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_adr1_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[1] = (byte)0x01;
-        a[2] = (byte)0x02;
-        a[3] = (byte)0x03;
-        a[4] = (byte)0x04;
-        a[5] = (byte)0x05;
-        a[6] = (byte)0x06;
-        a[7] = (byte)0x07;
-        a[8] = (byte)0x08;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[1] = (byte)0x01;
+        aB[2] = (byte)0x02;
+        aB[3] = (byte)0x03;
+        aB[4] = (byte)0x04;
+        aB[5] = (byte)0x05;
+        aB[6] = (byte)0x06;
+        aB[7] = (byte)0x07;
+        aB[8] = (byte)0x08;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        a[offset + 2] = (byte)0x03;
-        a[offset + 3] = (byte)0x04;
-        a[offset + 4] = (byte)0x05;
-        a[offset + 5] = (byte)0x06;
-        a[offset + 6] = (byte)0x07;
-        a[offset + 7] = (byte)0x08;
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        aB[offset + 2] = (byte)0x03;
+        aB[offset + 3] = (byte)0x04;
+        aB[offset + 4] = (byte)0x05;
+        aB[offset + 5] = (byte)0x06;
+        aB[offset + 6] = (byte)0x07;
+        aB[offset + 7] = (byte)0x08;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setLong(a, offset, 0x0807060504030201L);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeLongLE(a, offset, 0x0807060504030201L);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeLongLE(aB, offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)0x01;
-        a[offset + 1] = (byte)0x02;
-        a[offset + 2] = (byte)0x03;
-        a[offset + 3] = (byte)0x04;
-        a[offset + 4] = (byte)0x05;
-        a[offset + 5] = (byte)0x06;
-        a[offset + 6] = (byte)0x07;
-        a[offset + 7] = (byte)0x08;
-        return a;
+        aB[offset + 0] = (byte)0x01;
+        aB[offset + 1] = (byte)0x02;
+        aB[offset + 2] = (byte)0x03;
+        aB[offset + 3] = (byte)0x04;
+        aB[offset + 4] = (byte)0x05;
+        aB[offset + 5] = (byte)0x06;
+        aB[offset + 6] = (byte)0x07;
+        aB[offset + 7] = (byte)0x08;
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_nonalloc_unsafe() {
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
-        return a;
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setLong(a, offset, 0x0807060504030201L);
-        return a;
+        ByteArrayLittleEndian.setLong(aB, offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_con_offs_nonalloc_leapi() {
-        storeLongLE(a, offset, 0x0807060504030201L);
-        return a;
+        storeLongLE(aB, offset, 0x0807060504030201L);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)(vL >> 0 );
-        a[offset + 1] = (byte)(vL >> 8 );
-        a[offset + 2] = (byte)(vL >> 16);
-        a[offset + 3] = (byte)(vL >> 24);
-        a[offset + 4] = (byte)(vL >> 32);
-        a[offset + 5] = (byte)(vL >> 40);
-        a[offset + 6] = (byte)(vL >> 48);
-        a[offset + 7] = (byte)(vL >> 56);
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)(vL >> 0 );
+        aB[offset + 1] = (byte)(vL >> 8 );
+        aB[offset + 2] = (byte)(vL >> 16);
+        aB[offset + 3] = (byte)(vL >> 24);
+        aB[offset + 4] = (byte)(vL >> 32);
+        aB[offset + 5] = (byte)(vL >> 40);
+        aB[offset + 6] = (byte)(vL >> 48);
+        aB[offset + 7] = (byte)(vL >> 56);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setLong(a, offset, vL);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setLong(aB, offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeLongLE(a, offset, vL);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeLongLE(aB, offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)(vL >> 0 );
-        a[offset + 1] = (byte)(vL >> 8 );
-        a[offset + 2] = (byte)(vL >> 16);
-        a[offset + 3] = (byte)(vL >> 24);
-        a[offset + 4] = (byte)(vL >> 32);
-        a[offset + 5] = (byte)(vL >> 40);
-        a[offset + 6] = (byte)(vL >> 48);
-        a[offset + 7] = (byte)(vL >> 56);
-        return a;
+        aB[offset + 0] = (byte)(vL >> 0 );
+        aB[offset + 1] = (byte)(vL >> 8 );
+        aB[offset + 2] = (byte)(vL >> 16);
+        aB[offset + 3] = (byte)(vL >> 24);
+        aB[offset + 4] = (byte)(vL >> 32);
+        aB[offset + 5] = (byte)(vL >> 40);
+        aB[offset + 6] = (byte)(vL >> 48);
+        aB[offset + 7] = (byte)(vL >> 56);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_nonalloc_unsafe() {
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
-        return a;
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setLong(a, offset, vL);
-        return a;
+        ByteArrayLittleEndian.setLong(aB, offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_L_offs_nonalloc_leapi() {
-        storeLongLE(a, offset, vL);
-        return a;
+        storeLongLE(aB, offset, vL);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_allocate_direct() {
-        byte[] a = new byte[RANGE];
-        a[offset + 0] = (byte)(vI >> 0 );
-        a[offset + 1] = (byte)(vI >> 8 );
-        a[offset + 2] = (byte)(vI >> 16);
-        a[offset + 3] = (byte)(vI >> 24);
-        a[offset + 4] = (byte)(vI >> 0 );
-        a[offset + 5] = (byte)(vI >> 8 );
-        a[offset + 6] = (byte)(vI >> 16);
-        a[offset + 7] = (byte)(vI >> 24);
-        return a;
+        byte[] aB = new byte[RANGE];
+        aB[offset + 0] = (byte)(vI >> 0 );
+        aB[offset + 1] = (byte)(vI >> 8 );
+        aB[offset + 2] = (byte)(vI >> 16);
+        aB[offset + 3] = (byte)(vI >> 24);
+        aB[offset + 4] = (byte)(vI >> 0 );
+        aB[offset + 5] = (byte)(vI >> 8 );
+        aB[offset + 6] = (byte)(vI >> 16);
+        aB[offset + 7] = (byte)(vI >> 24);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_allocate_unsafe() {
-        byte[] a = new byte[RANGE];
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_allocate_bale() {
-        byte[] a = new byte[RANGE];
-        ByteArrayLittleEndian.setInt(a, offset + 0, vI);
-        ByteArrayLittleEndian.setInt(a, offset + 4, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
+        ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_allocate_leapi() {
-        byte[] a = new byte[RANGE];
-        storeIntLE(a, offset + 0, vI);
-        storeIntLE(a, offset + 4, vI);
-        return a;
+        byte[] aB = new byte[RANGE];
+        storeIntLE(aB, offset + 0, vI);
+        storeIntLE(aB, offset + 4, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_nonalloc_direct() {
-        a[offset + 0] = (byte)(vI >> 0 );
-        a[offset + 1] = (byte)(vI >> 8 );
-        a[offset + 2] = (byte)(vI >> 16);
-        a[offset + 3] = (byte)(vI >> 24);
-        a[offset + 4] = (byte)(vI >> 0 );
-        a[offset + 5] = (byte)(vI >> 8 );
-        a[offset + 6] = (byte)(vI >> 16);
-        a[offset + 7] = (byte)(vI >> 24);
-        return a;
+        aB[offset + 0] = (byte)(vI >> 0 );
+        aB[offset + 1] = (byte)(vI >> 8 );
+        aB[offset + 2] = (byte)(vI >> 16);
+        aB[offset + 3] = (byte)(vI >> 24);
+        aB[offset + 4] = (byte)(vI >> 0 );
+        aB[offset + 5] = (byte)(vI >> 8 );
+        aB[offset + 6] = (byte)(vI >> 16);
+        aB[offset + 7] = (byte)(vI >> 24);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_nonalloc_unsafe() {
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
-        UNSAFE.putLongUnaligned(a, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
-        return a;
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vI);
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_nonalloc_bale() {
-        ByteArrayLittleEndian.setInt(a, offset + 0, vI);
-        ByteArrayLittleEndian.setInt(a, offset + 4, vI);
-        return a;
+        ByteArrayLittleEndian.setInt(aB, offset + 0, vI);
+        ByteArrayLittleEndian.setInt(aB, offset + 4, vI);
+        return aB;
     }
 
     @Benchmark
     public byte[] store_8B_2I_offs_nonalloc_leapi() {
-        storeIntLE(a, offset + 0, vI);
-        storeIntLE(a, offset + 4, vI);
-        return a;
+        storeIntLE(aB, offset + 0, vI);
+        storeIntLE(aB, offset + 4, vI);
+        return aB;
     }
 }
