@@ -52,12 +52,12 @@ import java.util.function.Supplier;
  * @apiNote
  * <p>A {@code Gatherer} is specified by four functions that work together to
  * process input elements, optionally using intermediate state, and optionally
- * perform a final operation at the end of input.  They are: <ul>
+ * perform a final action at the end of input.  They are: <ul>
  *     <li>creating a new, potentially mutable, state ({@link #initializer()}
  *     )</li>
  *     <li>integrating a new input element ({@link #integrator()})</li>
  *     <li>combining two states into one ({@link #combiner()})</li>
- *     <li>performing an optional final operation ({@link #finisher()})</li>
+ *     <li>performing an optional final action ({@link #finisher()})</li>
  * </ul>
  *
  * <p>Each invocation to {@link #initializer()}, {@link #integrator()},
@@ -191,7 +191,8 @@ public interface Gatherer<T, A, R> {
      * A function that produces an instance of the intermediate state used for
      * this gathering operation.
      *
-     * <p>By default, this method returns {@link #defaultInitializer()}
+     * @implSpec The implementation in this interface returns
+     *           {@link #defaultInitializer()}.
      *
      * @return A function that produces an instance of the intermediate state
      * used for this gathering operation
@@ -215,7 +216,8 @@ public interface Gatherer<T, A, R> {
      * A function which accepts two intermediate states and combines them into
      * one.
      *
-     * <p>By default, this method returns {@link #defaultCombiner()}
+     * @implSpec The implementation in this interface returns
+     *           {@link #defaultCombiner()}.
      *
      * @return a function which accepts two intermediate states and combines
      *         them into one
@@ -229,7 +231,8 @@ public interface Gatherer<T, A, R> {
      * and a {@link Downstream} object, allowing to perform a final action at
      * the end of input elements.
      *
-     * <p>By default, this method returns {@link #defaultFinisher()}
+     * @implSpec The implementation in this interface returns
+     *           {@link #defaultFinisher()}.
      *
      * @return a function which transforms the intermediate result to the final
      *         result(s) which are then passed on to the provided Downstream
@@ -456,6 +459,7 @@ public interface Gatherer<T, A, R> {
      * A Downstream object is the next stage in a pipeline of operations,
      * to which elements can be sent.
      * @param <T> the type of elements this downstream accepts
+     * @since 22
      */
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
@@ -497,6 +501,7 @@ public interface Gatherer<T, A, R> {
      * @param <A> the type of state used by this integrator
      * @param <T> the type of elements this integrator consumes
      * @param <R> the type of results this integrator can produce
+     * @since 22
      */
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
@@ -557,6 +562,7 @@ public interface Gatherer<T, A, R> {
          * @param <A> the type of elements this greedy integrator receives
          * @param <T> the type of initializer this greedy integrator consumes
          * @param <R> the type of results this greedy integrator can produce
+         * @since 22
          */
         @FunctionalInterface
         @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)

@@ -1079,20 +1079,15 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *     var stream2 = Stream.of(...).gather(gatherer1.andThen(gatherer2));
      * }</pre>
      *
-     * @implSpec The implementation in this interface returns a Stream produced as if by the following:
-     * <pre>{@code
-     * StreamSupport.stream(spliterator(), isParallel()).gather(gatherer)
-     * }</pre>
-     *
-     *      * @implSpec
-     *      * The default implementation obtains the {@link #spliterator() spliterator}
-     *      * of this stream, wraps that spliterator so as to support the semantics
-     *      * of this operation on traversal, and returns a new stream associated with
-     *      * the wrapped spliterator.  The returned stream preserves the execution
-     *      * characteristics of this stream (namely parallel or sequential execution
-     *      * as per {@link #isParallel()}) but the wrapped spliterator may choose to
-     *      * not support splitting.  When the returned stream is closed, the close
-     *      * handlers for both the returned and this stream are invoked.
+     * @implSpec
+     * The default implementation obtains the {@link #spliterator() spliterator}
+     * of this stream, wraps that spliterator so as to support the semantics
+     * of this operation on traversal, and returns a new stream associated with
+     * the wrapped spliterator.  The returned stream preserves the execution
+     * characteristics of this stream (namely parallel or sequential execution
+     * as per {@link #isParallel()}) but the wrapped spliterator may choose to
+     * not support splitting.  When the returned stream is closed, the close
+     * handlers for both the returned and this stream are invoked.
      *
      * @implNote Implementations of this interface should provide their own
      * implementation of this method.
@@ -1102,10 +1097,13 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <R> The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
+     * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
-        return StreamSupport.stream(spliterator(), isParallel()).gather(gatherer);
+        return StreamSupport.stream(spliterator(), isParallel())
+                            .gather(gatherer)
+                            .onClose(this::close);
     }
 
     /**

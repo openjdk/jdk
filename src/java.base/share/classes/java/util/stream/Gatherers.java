@@ -46,6 +46,8 @@ import java.util.stream.Gatherer.Downstream;
  * Implementations of {@link Gatherer} that implement various useful intermediate
  * operations, such as windowing functions, folding functions,
  * transforming elements concurrently, etc.
+ *
+ * @since 22
 */
 @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public final class Gatherers {
