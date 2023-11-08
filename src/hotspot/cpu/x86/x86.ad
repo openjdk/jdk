@@ -8971,8 +8971,9 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
 %}
 
 #ifdef _LP64
-instruct verify_vector_alignment(rRegP r, immL32 mask) %{
+instruct verify_vector_alignment(rRegP r, immL32 mask, rFlagsReg cr) %{
   match(Set r (VerifyVectorAlignment r mask));
+  effect(KILL cr);
   format %{ "verify_vector_alignment $r $mask \t! verify alignment" %}
   ins_encode %{
     Label Lskip;
