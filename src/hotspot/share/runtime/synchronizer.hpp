@@ -125,14 +125,14 @@ class ObjectSynchronizer : AllStatic {
 
   // Iterate owned ObjectMonitors where the owner `filter` returns true.
   template <typename OwnerFilter>
-  static void monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
+  static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
   // Iterate ObjectMonitors where the owner == thread; this does NOT include
   // ObjectMonitors where owner is set to a stack lock address in thread.
-  static void monitors_iterate(MonitorClosure* m, JavaThread* thread);
+  static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
 
   // Iterate owned ObjectMonitors.
-  static void monitors_iterate(MonitorClosure* closure);
+  static void owned_monitors_iterate(MonitorClosure* closure);
 
   // Initialize the gInflationLocks
   static void initialize();

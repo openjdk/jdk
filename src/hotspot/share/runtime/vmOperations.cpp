@@ -386,7 +386,7 @@ void VM_ThreadDump::doit() {
   ObjectMonitorsDump object_monitors;
   if (_with_locked_monitors) {
     // Gather information about owned monitors.
-    ObjectSynchronizer::monitors_iterate(&object_monitors);
+    ObjectSynchronizer::owned_monitors_iterate(&object_monitors);
 
     // If there are many object monitors in the system then the above iteration
     // can start to to take time. Be friendly to following thread dumps by

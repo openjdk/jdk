@@ -1062,7 +1062,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Iterate owned ObjectMonitors where the owner `filter` returns true.
 template <typename OwnerFilter>
-void ObjectSynchronizer::monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
+void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
   MonitorList::Iterator iter = _in_use_list.iterator();
   while (iter.has_next()) {
     ObjectMonitor* mid = iter.next();
@@ -1084,15 +1084,15 @@ void ObjectSynchronizer::monitors_iterate_filtered(MonitorClosure* closure, Owne
 
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
 // ObjectMonitors where owner is set to a stack-lock address in thread.
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
+void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
   auto thread_filter = [&](void* owner) { return owner == thread; };
-  return monitors_iterate_filtered(closure, thread_filter);
+  return owned_monitors_iterate_filtered(closure, thread_filter);
 }
 
 // Iterate owned ObjectMonitors.
-void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
+void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure) {
   auto all_filter = [&](void* owner) { return true; };
-  return monitors_iterate_filtered(closure, all_filter);
+  return owned_monitors_iterate_filtered(closure, all_filter);
 }
 
 static bool monitors_used_above_threshold(MonitorList* list) {
@@ -1748,7 +1748,7 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(JavaThread* current) {
   assert(current == JavaThread::current(), "must be current Java thread");
   NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(current);
-  ObjectSynchronizer::monitors_iterate(&rjmc, current);
+  ObjectSynchronizer::owned_monitors_iterate(&rjmc, current);
   assert(!current->has_pending_exception(), "Should not be possible");
   current->clear_pending_exception();
   assert(current->held_monitor_count() == 0, "Should not be possible");
