@@ -159,6 +159,7 @@ private:
   // Utilities
   static bool overlaps(Range a, Range b);
   static bool adjacent(Range a, Range b);
+
   // Pre-condition: ranges is sorted in a left-aligned fashion
   // That is: (a,b) comes before (c,d) if a <= c
   // Merges the ranges into a minimal sequence, taking into account that two ranges can only be merged if:
@@ -174,6 +175,7 @@ public:
   static void initialize();
 
   static PhysicalMemorySpace register_space(const char* descriptive_name);
+
   static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
   static void remove_view_into_space(const PhysicalMemorySpace& space, address base_addr,
@@ -184,7 +186,7 @@ public:
                                        const NativeCallStack& stack);
   static void uncommit_memory_into_space(const PhysicalMemorySpace& space, address offset,
                                          size_t size);
-public:
+
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
 };
