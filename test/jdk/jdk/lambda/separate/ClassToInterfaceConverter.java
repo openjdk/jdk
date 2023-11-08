@@ -25,6 +25,7 @@ package separate;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.instruction.InvokeInstruction;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static jdk.internal.classfile.Classfile.*;
 
 public class ClassToInterfaceConverter implements ClassFilePreprocessor {
@@ -48,9 +49,9 @@ public class ClassToInterfaceConverter implements ClassFilePreprocessor {
                 b.with(e);
             }
         };
-        
+
         return Classfile.of().transform(classModel,
-            ClassTransform.dropping(ce -> ce instanceof MethodModel mm && mm.methodName().stringValue().equals("<init>"))
+            ClassTransform.dropping(ce -> ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
                           .andThen(ClassTransform.transformingMethodBodies(ct))
                           .andThen(ClassTransform.endHandler(b -> b.withFlags(ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC)))
         );
