@@ -1246,10 +1246,13 @@ public:
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
   // will trigger exception, we need to deal with these situations
   // to get correct results.
-  void fcvt_w_s_safe(Register dst, FloatRegister src, RoundingMode rm = RoundingMode::rtz, Register tmp = t0);
-  void fcvt_l_s_safe(Register dst, FloatRegister src, RoundingMode rm = RoundingMode::rtz, Register tmp = t0);
-  void fcvt_w_d_safe(Register dst, FloatRegister src, RoundingMode rm = RoundingMode::rtz, Register tmp = t0);
-  void fcvt_l_d_safe(Register dst, FloatRegister src, RoundingMode rm = RoundingMode::rtz, Register tmp = t0);
+  void fcvt_w_s_safe(Register dst, FloatRegister src, Register tmp = t0);
+  void fcvt_l_s_safe(Register dst, FloatRegister src, Register tmp = t0);
+  void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
+  void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
+
+  void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp, Register tmp = t0);
+  void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp, Register tmp = t0);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
