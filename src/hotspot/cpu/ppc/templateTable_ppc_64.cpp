@@ -4214,15 +4214,12 @@ void TemplateTable::monitorenter() {
   // ------------------------------------------------------------------------------
   // Check if we found a free slot.
   __ cmpdi(CCR0, Rfree_slot, 0);
-  __ beq(CCR0, Lallocate_new);
-  __ mr(Rcurrent_monitor, Rfree_slot);
-  __ b(Lfound);
+  __ bne(CCR0, Lfound);
 
   // We didn't find a free BasicObjLock => allocate one.
-  __ align(32, 12);
   __ bind(Lallocate_new);
   __ add_monitor_to_stack(false, Rscratch1, Rscratch2);
-  __ mr(Rcurrent_monitor, R26_monitor);
+  __ mr(Rfree_slot, R26_monitor);
 
   // ------------------------------------------------------------------------------
   // We now have a slot to lock.
@@ -4232,8 +4229,8 @@ void TemplateTable::monitorenter() {
   // The object has already been popped from the stack, so the expression stack looks correct.
   __ addi(R14_bcp, R14_bcp, 1);
 
-  __ std(Robj_to_lock, in_bytes(BasicObjectLock::obj_offset()), Rcurrent_monitor);
-  __ lock_object(Rcurrent_monitor, Robj_to_lock);
+  __ std(Robj_to_lock, in_bytes(BasicObjectLock::obj_offset()), Rfree_slot);
+  __ lock_object(Rfree_slot, Robj_to_lock);
 
   // Check if there's enough space on the stack for the monitors after locking.
   // This emits a single store.
