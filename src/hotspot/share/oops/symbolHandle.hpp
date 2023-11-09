@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomic.hpp"
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
