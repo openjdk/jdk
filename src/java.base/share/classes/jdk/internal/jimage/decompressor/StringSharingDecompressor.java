@@ -28,7 +28,6 @@ import jdk.internal.jimage.ImageStringsReader;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -168,20 +167,20 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         int indexes_length = CompressIndexes.readInt(bytesIn);
         byte[] bytes = new byte[indexes_length];
         bytesIn.get(bytes);
-        List<Integer> indices = CompressIndexes.decompressFlow(bytes);
+        int[] indices = CompressIndexes.decompressFlow(bytes);
         int argIndex = 0;
         int current = bytesOutOffset + 2;
         for (byte c : encodedDesc) {
             if (c == 'L') {
                 bytesOut[current++] = c;
-                int index = indices.get(argIndex);
+                int index = indices[argIndex];
                 argIndex += 1;
                 String pkg = reader.getString(index);
                 if (!pkg.isEmpty()) {
                     pkg = pkg + "/";
                     current += ImageStringsReader.mutf8FromString(bytesOut, current, pkg);
                 }
-                int classIndex = indices.get(argIndex);
+                int classIndex = indices[argIndex];
                 argIndex += 1;
                 String clazz = reader.getString(classIndex);
                 current += ImageStringsReader.mutf8FromString(bytesOut, current, clazz);

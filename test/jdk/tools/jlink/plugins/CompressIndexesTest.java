@@ -34,6 +34,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.internal.jimage.decompressor.CompressIndexes;
@@ -96,7 +97,7 @@ public class CompressIndexesTest {
     }
 
     private void check(byte[] flow, List<byte[]> arrays) {
-        List<Integer> d = CompressIndexes.decompressFlow(flow);
+        List<Integer> d = Arrays.stream(CompressIndexes.decompressFlow(flow)).boxed().toList();
         List<Integer> dd = new ArrayList<>();
         for (byte[] b : arrays) {
             int i = CompressIndexes.decompress(b, 0);

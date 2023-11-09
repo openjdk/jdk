@@ -26,8 +26,7 @@ package jdk.internal.jimage.decompressor;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  *
@@ -45,15 +44,16 @@ public class CompressIndexes {
     private static final int HEADER_WIDTH = 3;
     private static final int HEADER_SHIFT = Byte.SIZE - HEADER_WIDTH;
 
-    public static List<Integer> decompressFlow(byte[] values) {
-        List<Integer> lst = new ArrayList<>();
+    public static int[] decompressFlow(byte[] values) {
+        int[] ints = new int[values.length];
 
+        int count = 0;
         for (int i = 0; i < values.length; i += getHeaderLength(values[i])) {
             int decompressed = decompress(values, i);
-            lst.add(decompressed);
+            ints[count++] = decompressed;
         }
 
-        return lst;
+        return count == ints.length ? ints : Arrays.copyOf(ints, count);
     }
 
     public static int readInt(ByteBuffer cr) throws IOException {
