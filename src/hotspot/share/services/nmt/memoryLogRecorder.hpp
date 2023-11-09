@@ -42,25 +42,27 @@ private:
     size_t requested;
     size_t actual;
     MEMFLAGS flags;
+    uint8_t active;
   };
 
   static const char* recall_thread_name(intx tid);
 
-  static bool is_empty(Entry* e)   { return (e->ptr == nullptr); };
-  static bool is_nmt(Entry* e)     { return !is_empty(e) && (e->flags == MEMFLAGS::mtNMT); };
-  static bool is_free(Entry* e)    { return !is_empty(e) && (e->requested == 0) && (e->old == nullptr); };
-  static bool is_realloc(Entry* e) { return !is_empty(e) && (e->requested > 0)  && (e->old != nullptr); };
-  static bool is_malloc(Entry* e)  { return !is_empty(e) && (e->requested > 0)  && (e->old == nullptr); };
+  static bool is_active(Entry* e)   { return (e->active == 1); };
+  static void deactivate(Entry* e)  { e->active = 0; };
+  static bool is_type_nmt(Entry* e) { return (e->flags == MEMFLAGS::mtNMT); };
+  static bool is_free(Entry* e)     { return (e->requested == 0) && (e->old == nullptr); };
+  static bool is_realloc(Entry* e)  { return (e->requested > 0)  && (e->old != nullptr); };
+  static bool is_malloc(Entry* e)   { return (e->requested > 0)  && (e->old == nullptr); };
+  static bool is_alloc(Entry* e)    { return is_malloc(e) || is_realloc(e); };
 
-  static bool is_alloc(Entry* e)   { return is_malloc(e) || is_realloc(e); };
-  static Entry* find_free_entry(Entry* entries, size_t count);
-  static Entry* find_realloc_entry(Entry* entries, size_t count);
+  static size_t find_previous_entry(Entry* entries, size_t index, address ptr);
   static void print_entry(Entry* entries);
+
   static void calculate_good_sizes(Entry* entries, size_t count);
   static void find_malloc_requests_buckets_sizes(Entry* entries, size_t count);
-  static Entry* access_non_empty(Entry* entries, size_t count) {
+  static Entry* access_active(Entry* entries, size_t count) {
     Entry* e = &entries[count];
-    if (!is_empty(e))
+    if (is_active(e))
       return e;
     else
       return nullptr;

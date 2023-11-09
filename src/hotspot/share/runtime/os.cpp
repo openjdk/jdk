@@ -796,15 +796,18 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
+#ifdef ASSERT
+  MEMFLAGS flags = mtNone;
+  if (MemTracker::enabled()) {
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    flags = header->flags();
+  }
+#endif
+
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
 #ifdef ASSERT
-  MEMFLAGS flags = mtNone;
-//  if (MemTracker::enabled()) {
-//    MallocHeader* header = MallocHeader::resolve_checked(memblock);
-//    flags = header->flags();
-//  }
   //fprintf(stderr, "   free %d:%12p\n", MemTracker::enabled(), old_outer_ptr);
   NMT_MemoryLogRecorder::log(flags, 0, (address)old_outer_ptr);
 #endif
