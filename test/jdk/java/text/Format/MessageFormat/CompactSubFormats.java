@@ -34,8 +34,12 @@ import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -87,17 +91,25 @@ public class CompactSubFormats {
     }
 
     // Test that the cnFmt Subformats format properly within the MessageFormat
-    @Test
-    public void formatTest() {
+    @ParameterizedTest
+    @MethodSource
+    public void formatTest(MessageFormat mFmt, CompactNumberFormat cnFmt) {
         long[] values = new long[]{1, 10, 100, 1000, 10000, 100000};
-        var mFmt = new MessageFormat(
-                "foo{0,number,compact-short}foo");
-        var compactShort = NumberFormat.getCompactNumberInstance(
-                mFmt.getLocale(), NumberFormat.Style.SHORT);
         for (long value : values) {
             Object[] data = {value};
             // Check cnFmt sub-format is formatting properly
-            assertEquals(mFmt.format(data), "foo"+compactShort.format(value)+"foo");
+            assertEquals(mFmt.format(data), "foo"+cnFmt.format(value)+"foo");
         }
+    }
+
+    // MessageFormat with patterns that contain the associated cnFmt
+    private static Stream<Arguments> formatTest() {
+        Locale loc = Locale.getDefault(Locale.Category.FORMAT);
+        return Stream.of(
+                Arguments.of(new MessageFormat("foo{0,number,compact-short}foo"),
+                        NumberFormat.getCompactNumberInstance(loc, NumberFormat.Style.SHORT)),
+                Arguments.of(new MessageFormat("foo{0,number,compact-long}foo"),
+                        NumberFormat.getCompactNumberInstance(loc, NumberFormat.Style.LONG))
+        );
     }
 }
