@@ -822,14 +822,8 @@ private:
   // sized table from overloading.
   static constexpr int CACHE_TOP = 256;
 
-  static unsigned int ptr_hash(InstanceKlass* const& s1) {
-    // 2654435761 = 2^32 * Phi (golden ratio)
-    return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
-  }
-
-  typedef ResourceHashtable<InstanceKlass*, DumperClassCacheTableEntry*, TABLE_SIZE,
-                            AnyObj::C_HEAP, mtServiceability,
-                            &DumperClassCacheTable::ptr_hash> PtrTable;
+  typedef ResourceHashtable<InstanceKlass*, DumperClassCacheTableEntry*,
+                            TABLE_SIZE, AnyObj::C_HEAP, mtServiceability> PtrTable;
   PtrTable* _ptrs;
 
   // Single-slot cache to handle the major case of objects of the same
