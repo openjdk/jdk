@@ -40,6 +40,7 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import jdk.internal.jimage.decompressor.Decompressor;
+import jdk.internal.jimage.decompressor.ResourceDecompressor;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -344,6 +345,23 @@ public class BasicImageReader implements AutoCloseable {
         return ImageStringsReader.stringFromByteBuffer(strings, offset);
     }
 
+    int getStringMUTF8(int offset, byte[] bytesOut, int bytesOutOffset) {
+        if (offset < 0 || offset >= strings.limit()) {
+            throw new IndexOutOfBoundsException("offset");
+        }
+
+        for (int i = 0, end = strings.limit() - offset; i < end; i++) {
+            byte b = strings.get(offset + i);
+            if (b == 0) {
+                return i;
+            } else {
+                bytesOut[bytesOutOffset + i] = b;
+            }
+        }
+
+        throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
+    }
+
     public int match(int offset, String string, int stringOffset) {
         if (offset < 0 || offset >= strings.limit()) {
             throw new IndexOutOfBoundsException("offset");
@@ -446,7 +464,17 @@ public class BasicImageReader implements AutoCloseable {
 
                 try {
                     bytesOut = decompressor.decompressResource(byteOrder,
-                            (int strOffset) -> getString(strOffset), bytesIn);
+                            new ResourceDecompressor.StringsProvider() {
+                                @Override
+                                public String getString(int strOffset) {
+                                    return BasicImageReader.this.getString(strOffset);
+                                }
+
+                                @Override
+                                public int getStringMUTF8(int offset, byte[] bytesOut, int bytesOutOffset) {
+                                    return BasicImageReader.this.getStringMUTF8(offset, bytesOut, bytesOutOffset);
+                                }
+                            }, bytesIn);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }

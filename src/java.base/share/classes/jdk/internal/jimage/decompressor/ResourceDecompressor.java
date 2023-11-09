@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.internal.jimage.decompressor;
 
+import jdk.internal.jimage.ImageStringsReader;
+
 /**
  *
  * JLink Image Decompressor.
@@ -36,14 +38,20 @@ package jdk.internal.jimage.decompressor;
  */
 public interface ResourceDecompressor {
 
-    public interface StringsProvider {
-        public String getString(int offset);
+    interface StringsProvider {
+        String getString(int offset);
+
+        default int getStringMUTF8(int offset, byte[] bytesOut, int bytesOutOffset) {
+            byte[] bytes = ImageStringsReader.mutf8FromString(getString(offset));
+            System.arraycopy(bytes, 0, bytesOut, bytesOutOffset, bytes.length);
+            return bytes.length;
+        }
     }
     /**
      * Decompressor unique name.
      * @return The decompressor name.
      */
-    public String getName();
+    String getName();
 
     /**
      * Decompress a resource.
@@ -54,6 +62,6 @@ public interface ResourceDecompressor {
      * @return Uncompressed resource
      * @throws Exception
      */
-    public byte[] decompress(StringsProvider strings, byte[] content, int offset,
+    byte[] decompress(StringsProvider strings, byte[] content, int offset,
             long originalSize) throws Exception;
 }

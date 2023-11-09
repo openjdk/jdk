@@ -112,8 +112,8 @@ public class StringSharingDecompressor implements ResourceDecompressor {
             int tag = Byte.toUnsignedInt(bytesIn.get());
             switch (tag) {
                 case CONSTANT_Utf8: {
-                    int stringLength = Short.toUnsignedInt(bytesIn.getShort());
                     bytesOut[bytesOutOffset++] = (byte) tag;
+                    int stringLength = Short.toUnsignedInt(bytesIn.getShort());
                     bytesOut[bytesOutOffset++] = (byte) ((stringLength >> 8) & 0xff);
                     bytesOut[bytesOutOffset++] = (byte) (stringLength & 0xff);
                     bytesIn.get(bytesOut, bytesOutOffset, stringLength);
@@ -122,11 +122,9 @@ public class StringSharingDecompressor implements ResourceDecompressor {
                 }
 
                 case EXTERNALIZED_STRING: {
-                    int index = CompressIndexes.readInt(bytesIn);
-                    String orig = provider.getString(index);
                     bytesOut[bytesOutOffset++] = CONSTANT_Utf8;
-
-                    int bytesLength = ImageStringsReader.mutf8FromString(bytesOut, bytesOutOffset + 2, orig);
+                    int index = CompressIndexes.readInt(bytesIn);
+                    int bytesLength = provider.getStringMUTF8(index, bytesOut, bytesOutOffset + 2);
                     bytesOut[bytesOutOffset++] = (byte) ((bytesLength >> 8) & 0xff);
                     bytesOut[bytesOutOffset++] = (byte) (bytesLength & 0xff);
                     bytesOutOffset += bytesLength;
@@ -175,15 +173,14 @@ public class StringSharingDecompressor implements ResourceDecompressor {
                 bytesOut[current++] = c;
                 int index = indices[argIndex];
                 argIndex += 1;
-                String pkg = reader.getString(index);
-                if (!pkg.isEmpty()) {
-                    current += ImageStringsReader.mutf8FromString(bytesOut, current, pkg);
+                int pkgLen = reader.getStringMUTF8(index, bytesOut, current);
+                if (pkgLen > 0) {
+                    current += pkgLen;
                     bytesOut[current++] = '/';
                 }
                 int classIndex = indices[argIndex];
                 argIndex += 1;
-                String clazz = reader.getString(classIndex);
-                current += ImageStringsReader.mutf8FromString(bytesOut, current, clazz);
+                current += reader.getStringMUTF8(classIndex, bytesOut, current);
             } else {
                 bytesOut[current++] = c;
             }
