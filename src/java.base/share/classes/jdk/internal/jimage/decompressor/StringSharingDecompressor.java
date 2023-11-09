@@ -109,7 +109,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         bytesOut[bytesOutOffset++] = (byte) ((count >> 8) & 0xff);
         bytesOut[bytesOutOffset++] = (byte) (count & 0xff);
         for (int i = 1; i < count; i++) {
-            int tag = bytesIn.get() & 0xff;
+            int tag = Byte.toUnsignedInt(bytesIn.get());
             switch (tag) {
                 case CONSTANT_Utf8: {
                     int stringLength = Short.toUnsignedInt(bytesIn.getShort());
