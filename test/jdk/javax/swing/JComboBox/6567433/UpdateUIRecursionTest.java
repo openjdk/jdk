@@ -59,8 +59,8 @@ public class UpdateUIRecursionTest extends JFrame implements ListCellRenderer {
         };
 
         combo = new JComboBox(listData);
-        combo.setRenderer(this);
         renderer = new DefaultListCellRenderer();
+        combo.setRenderer(this);
         getContentPane().add(new JScrollPane(combo), BorderLayout.CENTER);
 
         setVisible(true);

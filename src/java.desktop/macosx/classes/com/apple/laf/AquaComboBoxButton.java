@@ -30,29 +30,27 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Insets;
 
+import javax.accessibility.AccessibleContext;
 import javax.swing.ButtonModel;
 import javax.swing.CellRendererPane;
 import javax.swing.DefaultButtonModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
-import apple.laf.JRSUIState;
-import apple.laf.JRSUIConstants.ArrowsOnly;
 import apple.laf.JRSUIConstants.AlignmentHorizontal;
 import apple.laf.JRSUIConstants.AlignmentVertical;
+import apple.laf.JRSUIConstants.ArrowsOnly;
 import apple.laf.JRSUIConstants.Focused;
 import apple.laf.JRSUIConstants.IndicatorOnly;
 import apple.laf.JRSUIConstants.Size;
 import apple.laf.JRSUIConstants.State;
 import apple.laf.JRSUIConstants.Widget;
-
-import javax.accessibility.AccessibleContext;
+import apple.laf.JRSUIState;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxButton extends JButton {
@@ -87,10 +85,14 @@ class AquaComboBoxButton extends JButton {
 
         setEnabled(comboBox.isEnabled());
 
-        AccessibleContext ac = this.getAccessibleContext();
-        if (ac != null && !comboBox.isEditable() && list.getModel().getSize() > 0) {
-            ac.setAccessibleName(String.valueOf(list.getModel()
-                    .getElementAt(0)));
+        updateAccessibleName();
+    }
+
+    protected void updateAccessibleName() {
+        AccessibleContext ac = getAccessibleContext();
+        if (ac != null && !comboBox.isEditable() && comboBox.getSelectedItem() != null) {
+            Component c = getRendererComponent();
+            ac.setAccessibleName(c.getAccessibleContext().getAccessibleName());
         }
     }
 
@@ -196,12 +198,15 @@ class AquaComboBoxButton extends JButton {
         }
     }
 
-    protected void doRendererPaint(final Graphics g, final ButtonModel buttonModel, final boolean editable, final Insets insets, int left, int top, int width, int height) {
+    final Component getRendererComponent() {
         final ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
+        return renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);
+    }
+
+    protected void doRendererPaint(final Graphics g, final ButtonModel buttonModel, final boolean editable, final Insets insets, int left, int top, int width, int height) {
         // fake it out! not renderPressed
-        final Component c = renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);
-        // System.err.println("Renderer: " + renderer);
+        final Component c = getRendererComponent();
 
         if (!editable && !AquaComboBoxUI.isTableCellEditor(comboBox)) {
             final int indentLeft = 10;

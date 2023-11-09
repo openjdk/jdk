@@ -38,6 +38,8 @@ import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -80,6 +82,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     static final String POPDOWN_CLIENT_PROPERTY_KEY = "JComboBox.isPopDown";
     static final String ISSQUARE_CLIENT_PROPERTY_KEY = "JComboBox.isSquare";
 
+    private static final String RENDERER_PROPERTY = "renderer";
+
     public static ComponentUI createUI(final JComponent c) {
         return new AquaComboBoxUI();
     }
@@ -104,11 +108,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     protected void installListeners() {
         super.installListeners();
         AquaUtilControlSize.addSizePropertyListener(comboBox);
+        comboBox.addPropertyChangeListener(RENDERER_PROPERTY, propertyRendererListener);
     }
 
     protected void uninstallListeners() {
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         super.uninstallListeners();
+        comboBox.removePropertyChangeListener(RENDERER_PROPERTY, propertyRendererListener);
     }
 
     protected void installComponents() {
@@ -136,9 +142,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
                 if (e.getStateChange() != ItemEvent.SELECTED) return;
 
-                AccessibleContext ac = ((Accessible)arrowButton).getAccessibleContext();
-                if (ac != null && !comboBox.isEditable() && comboBox.getSelectedItem() != null) {
-                    ac.setAccessibleName(String.valueOf(comboBox.getSelectedItem()));
+                if (!comboBox.isEditable() && comboBox.getSelectedItem() != null) {
+                    ((AquaComboBoxButton) arrowButton).updateAccessibleName();
                 }
 
                 if (!popup.isVisible()) return;
@@ -759,12 +764,21 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                     AccessibleContext ac = accessibleEditor.getAccessibleContext();
                     ac.setAccessibleParent(comboBox);
                     return accessibleEditor;
-                } else if (!comboBox.isEditable()
-                        && (arrowButton instanceof Accessible accessibleArrowButton)) {
-                    return accessibleArrowButton;
+                } else if (!comboBox.isEditable()) {
+                    return arrowButton;
                 }
                 break;
         }
         return null;
     }
+
+    private final PropertyChangeListener propertyRendererListener =
+            new PropertyChangeListener() {
+                @Override
+                public void propertyChange(final PropertyChangeEvent evt) {
+                    if (RENDERER_PROPERTY.equals(evt.getPropertyName())) {
+                        ((AquaComboBoxButton) arrowButton).updateAccessibleName();
+                    }
+                }
+            };
 }
