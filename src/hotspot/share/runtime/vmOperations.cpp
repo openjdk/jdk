@@ -388,12 +388,8 @@ void VM_ThreadDump::doit() {
     // If there are many object monitors in the system then the above iteration
     // can start to take time. Be friendly to following thread dumps by telling
     // the MonitorDeflationThread to deflate monitors.
-    //
-    // The limit has been arbitrarily chosen to be where the iteration started
-    // to take more then a few milliseconds.
     size_t monitors_count = ObjectSynchronizer::in_use_list_count();
-    const int DeflateRequestLimit = 100000;
-    if (monitors_count > DeflateRequestLimit) {
+    if (monitors_count > AsyncMonitorDeflationForThreadDumpLimit) {
       ObjectSynchronizer::request_deflate_idle_monitors();
     }
   }

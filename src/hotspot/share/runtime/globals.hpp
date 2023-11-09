@@ -745,6 +745,12 @@ const int ObjectAlignmentInBytes = 8;
           "before adjusting the in_use_list_ceiling up (0 is off).")        \
           range(0, max_uintx)                                               \
                                                                             \
+                                                                            \
+  product(size_t, AsyncMonitorDeflationForThreadDumpLimit, SIZE_MAX, DIAGNOSTIC, \
+          "Let the deadlock-finding mechanism inside VM_ThreadDump "        \
+          "trigger an asynchronous monitor deflation pass when the number " \
+          "of monitors have been found to be above this limit")             \
+                                                                            \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \
