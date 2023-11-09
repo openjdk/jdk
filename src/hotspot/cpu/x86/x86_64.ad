@@ -1819,7 +1819,6 @@ encode %{
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
     MacroAssembler _masm(&cbuf);
-    cbuf.set_insts_mark();
 
     if (!_method) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, $meth$$method)));
@@ -1832,12 +1831,12 @@ encode %{
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      __ call(AddressLiteral(CAST_FROM_FN_PTR(address, $meth$$method), rtype), noreg);
-      address mark = cbuf.insts_mark();
+      address mark = cbuf.insts()->end();
+      __ call(AddressLiteral(CAST_FROM_FN_PTR(address, $meth$$method), rspec));
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+        cbuf.shared_stub_to_interp_for(_method, mark - cbuf.insts()->start());
       } else {
         // Emit stubs for static call.
         address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
@@ -1847,7 +1846,6 @@ encode %{
         }
       }
     }
-    _masm.clear_inst_mark();
     __ post_call_nop();
   %}
 
