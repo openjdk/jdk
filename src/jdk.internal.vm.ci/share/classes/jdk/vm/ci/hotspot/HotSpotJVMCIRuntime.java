@@ -671,6 +671,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         HotSpotResolvedObjectTypeImpl javaType = null;
         if (klassReference != null) {
             javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
+            if (Services.IS_IN_NATIVE_IMAGE && javaType != null) {
+                IndirectHotSpotObjectConstantImpl javaMirror = (IndirectHotSpotObjectConstantImpl) javaType.getJavaMirror();
+                if (!javaMirror.isValid()) {
+                    javaType = null;
+                }
+            }
         }
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);

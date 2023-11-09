@@ -97,7 +97,9 @@ public final class HotSpotObjectConstantScope implements AutoCloseable {
     }
 
     void add(IndirectHotSpotObjectConstantImpl obj) {
-        assert !isGlobal();
+        if (isGlobal()) {
+            throw new IllegalStateException("Cannot add handle to global scope");
+        }
         if (foreignObjects == null) {
             foreignObjects = new ArrayList<>();
         }

@@ -72,14 +72,14 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
 
     @SuppressWarnings("serial")
     @VMEntryPoint
-    private IndirectHotSpotObjectConstantImpl(long objectHandle, boolean compressed, boolean skipRegister) {
+    private IndirectHotSpotObjectConstantImpl(long objectHandle, boolean compressed, boolean skipRegister, boolean forceGlobal) {
         super(compressed);
         assert objectHandle != 0 && UnsafeAccess.UNSAFE.getLong(objectHandle) != 0;
         this.objectHandle = objectHandle;
         this.base = null;
         if (!skipRegister) {
             HotSpotObjectConstantScope scope = HotSpotObjectConstantScope.CURRENT.get();
-            if (scope != null && !scope.isGlobal()) {
+            if (!forceGlobal && scope != null && !scope.isGlobal()) {
                 scope.add(this);
                 if (HotSpotJVMCIRuntime.Option.AuditHandles.getBoolean()) {
                     rawAudit = new Audit(scope.localScopeDescription, objectHandle, new Throwable() {
@@ -110,7 +110,7 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
         return objectHandle;
     }
 
-    private void checkHandle() {
+    void checkHandle() {
         if (objectHandle == 0L) {
             String message;
             if (rawAudit instanceof Audit) {

@@ -57,6 +57,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaField;
 import jdk.vm.ci.meta.UnresolvedJavaType;
+import jdk.vm.ci.services.Services;
 
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes. This class is not
@@ -130,14 +131,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         super(name);
         assert klass != 0;
         this.klassPointer = klass;
-
-        // The mirror object must be in the global scope since
-        // this object will be cached in HotSpotJVMCIRuntime.resolvedJavaTypes
-        // and live across more than one compilation.
-        try (HotSpotObjectConstantScope global = HotSpotObjectConstantScope.enterGlobalScope()) {
-            this.mirror = runtime().compilerToVm.getJavaMirror(this);
-            assert getName().charAt(0) != '[' || isArray() : getName();
-        }
+        this.mirror = runtime().compilerToVm.getJavaMirror(this, klass);
+        assert getName().charAt(0) != '[' || isArray() : getName();
     }
 
     /**
@@ -153,6 +148,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public long getMetaspacePointer() {
+        validate();
         return klassPointer;
     }
 
@@ -664,7 +660,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     JavaConstant getJavaMirror() {
+        validate();
         return mirror;
+    }
+
+    void validate() {
+        if (Services.IS_IN_NATIVE_IMAGE) {
+            ((IndirectHotSpotObjectConstantImpl) mirror).checkHandle();
+        }
     }
 
     @Override

@@ -213,7 +213,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     /**
-     * A {@code jmetadata} value that is a handle to {@code ConstantPool*} value.
+     * A {@code jmetadata} value that is a handle to a {@code ConstantPool*} value.
      */
     private final long constantPoolHandle;
 

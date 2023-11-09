@@ -177,7 +177,7 @@
   end_class                                                                                                   \
   start_class(IndirectHotSpotObjectConstantImpl, jdk_vm_ci_hotspot_IndirectHotSpotObjectConstantImpl)         \
     long_field(IndirectHotSpotObjectConstantImpl, objectHandle)                                               \
-    jvmci_constructor(IndirectHotSpotObjectConstantImpl, "(JZZ)V")                                            \
+    jvmci_constructor(IndirectHotSpotObjectConstantImpl, "(JZZZ)V")                                           \
   end_class                                                                                                   \
   start_class(JavaKind, jdk_vm_ci_meta_JavaKind)                                                              \
     char_field(JavaKind, typeChar)                                                                            \

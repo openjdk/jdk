@@ -2386,7 +2386,11 @@ C2V_VMENTRY_NULL(jobject, getJavaMirror, (JNIEnv* env, jobject, ARGUMENT_PAIR(kl
     JVMCI_THROW_0(NullPointerException);
   }
   Handle mirror(THREAD, klass->java_mirror());
-  JVMCIObject result = JVMCIENV->get_object_constant(mirror());
+  ClassLoaderData* cld = klass->class_loader_data();
+  bool compressed = false;
+  bool dont_register = false;
+  bool force_global = cld->is_permanent_class_loader_data() || !THREAD->is_Compiler_thread();
+  JVMCIObject result = JVMCIENV->get_object_constant(mirror(), compressed, dont_register, force_global);
   return JVMCIENV->get_jobject(result);
 C2V_END
 

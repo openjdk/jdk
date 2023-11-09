@@ -1226,11 +1226,7 @@ final class CompilerToVM {
     /**
      * Gets a {@link JavaConstant} wrapping the {@link java.lang.Class} mirror for {@code klass}.
      */
-    HotSpotObjectConstantImpl getJavaMirror(HotSpotResolvedObjectTypeImpl klass) {
-        return getJavaMirror(klass, klass.getKlassPointer());
-    }
-
-    native HotSpotObjectConstantImpl getJavaMirror(HotSpotResolvedObjectTypeImpl type, long klassPointer);
+    native HotSpotObjectConstantImpl getJavaMirror(HotSpotResolvedObjectTypeImpl klass, long klassPointer);
 
     /**
      * Returns the length of the array if {@code object} represents an array or -1 otherwise.

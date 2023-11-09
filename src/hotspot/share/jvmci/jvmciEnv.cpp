@@ -1563,7 +1563,7 @@ JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
   }
 }
 
-JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont_register) {
+JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont_register, bool force_global) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   Handle obj = Handle(THREAD, objOop);
   if (obj.is_null()) {
@@ -1580,7 +1580,7 @@ JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::IndirectHotSpotObjectConstantImpl::clazz(),
                                       JNIJVMCI::IndirectHotSpotObjectConstantImpl::constructor(),
-                                      handle, compressed, dont_register);
+                                      handle, compressed, dont_register, force_global);
     return wrap(result);
   }
 }
