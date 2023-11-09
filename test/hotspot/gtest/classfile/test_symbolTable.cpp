@@ -155,7 +155,7 @@ TEST_VM(SymbolTable, test_cleanup_delay) {
   // Fill up the queue
   constexpr int symbol_name_length = 30;
   char symbol_name[symbol_name_length];
-  for (int i = 1; i < 100; i++) {
+  for (uint i = 1; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
     os::snprintf(symbol_name, symbol_name_length, "temp-filler-%d", i);
     TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
     ASSERT_EQ(s->refcount(), 2) << "TempNewSymbol refcount just created is 2";

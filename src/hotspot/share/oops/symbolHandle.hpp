@@ -44,7 +44,6 @@
 // probe() and lookup_only() will increment the refcount if symbol is found.
 template <bool TEMP>
 class SymbolHandleBase : public StackObj {
-  static const uint CLEANUP_DELAY_MAX_ENTRIES;
   static Symbol* volatile _cleanup_delay_queue[];
   static volatile uint _cleanup_delay_index;
   static volatile bool _cleanup_delay_enabled;
@@ -52,6 +51,8 @@ class SymbolHandleBase : public StackObj {
   Symbol* _temp;
 
 public:
+  static const uint CLEANUP_DELAY_MAX_ENTRIES = 128;
+
   SymbolHandleBase() : _temp(nullptr) { }
 
   // Conversion from a Symbol* to a SymbolHandleBase.
@@ -129,8 +130,6 @@ public:
   }
 };
 
-template<bool TEMP>
-const uint SymbolHandleBase<TEMP>::CLEANUP_DELAY_MAX_ENTRIES = 100;
 template<bool TEMP>
 Symbol* volatile SymbolHandleBase<TEMP>::_cleanup_delay_queue[CLEANUP_DELAY_MAX_ENTRIES] = {};
 template<bool TEMP>
