@@ -868,21 +868,4 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
 };
 
-// Class to compute the total CPU time for a set of threads, then update an
-// hsperfdata counter.
-class ThreadTotalCPUTimeClosure: public ThreadClosure {
- private:
-  jlong _total;
-  PerfCounter* _counter;
-  bool _is_gc_threads;
-
- public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter, bool is_gc_threads = false) :
-      _total(0), _counter(counter), _is_gc_threads(is_gc_threads) {}
-
-  ~ThreadTotalCPUTimeClosure();
-
-  virtual void do_thread(Thread* thread);
-};
-
 #endif // SHARE_RUNTIME_PERFDATA_HPP

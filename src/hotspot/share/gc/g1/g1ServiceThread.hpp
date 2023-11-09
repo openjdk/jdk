@@ -108,9 +108,6 @@ class G1ServiceThread: public ConcurrentGCThread {
   Monitor _monitor;
   G1ServiceTaskQueue _task_queue;
 
-  // Perf data for CPU time consumed by G1 service thread.
-  PerfCounter* _g1_service_threads_cpu_time;
-
   void run_service();
   void stop_service();
 

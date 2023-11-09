@@ -364,9 +364,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
-  // Perf data for CPU time consumed by concurrent mark threads.
-  PerfCounter* _g1_concurrent_mark_threads_cpu_time;
-
   enum class VerifyLocation {
     RemarkBefore,
     RemarkAfter,
@@ -452,7 +449,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Update the perf data counter _g1_concurrent_mark_threads_cpu_time.
+  // Update the perf data counter for concurrent mark.
   void update_concurrent_mark_threads_cpu_time();
 
   // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is

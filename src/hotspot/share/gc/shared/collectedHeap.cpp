@@ -159,23 +159,6 @@ bool CollectedHeap::contains_null(const oop* p) const {
   return *p == nullptr;
 }
 
-void CollectedHeap::inc_total_cpu_time(jlong diff) {
-  Atomic::add(&_total_cpu_time_diff, diff);
-}
-
-void CollectedHeap::publish_total_cpu_time() {
-  // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
-  // to set the value to zero after we obtain the new CPU time difference.
-  jlong old_value;
-  jlong fetched_value = Atomic::load(&_total_cpu_time_diff);
-  jlong new_value = 0;
-  do {
-    old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, new_value);
-  } while (old_value != fetched_value);
-  _total_cpu_time->inc(fetched_value);
-}
-
 void CollectedHeap::print_heap_before_gc() {
   LogTarget(Debug, gc, heap) lt;
   if (lt.is_enabled()) {
@@ -293,17 +276,6 @@ CollectedHeap::CollectedHeap() :
     _perf_gc_lastcause =
                 PerfDataManager::create_string_variable(SUN_GC, "lastCause",
                              80, GCCause::to_string(_gc_lastcause), CHECK);
-
-    if (os::is_thread_cpu_time_supported()) {
-      _total_cpu_time =
-                  PerfDataManager::create_counter(SUN_THREADS, "total_gc_cpu_time",
-                                                  PerfData::U_Ticks, CHECK);
-      _total_cpu_time_diff = 0;
-
-      _perf_parallel_worker_threads_cpu_time =
-                  PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "gc_parallel_workers",
-                                                  PerfData::U_Ticks, CHECK);
-    }
   }
 
   // Create the ring log

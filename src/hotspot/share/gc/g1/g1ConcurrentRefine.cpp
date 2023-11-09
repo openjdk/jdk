@@ -113,13 +113,6 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
     }
   }
 
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    EXCEPTION_MARK;
-    _g1_concurrent_refine_threads_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "gc_conc_refine",
-                                        PerfData::U_Ticks, CHECK_JNI_ERR);
-  }
-
   return JNI_OK;
 }
 
@@ -169,7 +162,8 @@ void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   // reading CPU time of a terminated worker thread.
   assert_current_thread_is_primary_refinement_thread();
   assert(UsePerfData && os::is_thread_cpu_time_supported(), "Must be enabled");
-  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_refine_threads_cpu_time, true);
+  CPUTimeCounters* counters = G1CollectedHeap::heap()->cpu_time_counters();
+  ThreadTotalCPUTimeClosure tttc(counters, CPUTimeGroups::gc_conc_refine);
   worker_threads_do(&tttc);
 }
 

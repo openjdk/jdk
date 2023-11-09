@@ -47,9 +47,6 @@ class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefineThread** _threads;
   uint _max_num_threads;
 
-  // Perf data for CPU time consumed by concurrent refine threads.
-  PerfCounter* _g1_concurrent_refine_threads_cpu_time;
-
   // Create the refinement thread for the given worker id.
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
   G1ConcurrentRefineThread* create_refinement_thread(uint worker_id, bool initializing);
@@ -76,7 +73,7 @@ public:
   void worker_threads_do(ThreadClosure* tc);
   void stop();
 
-  // Update the perf data counter _g1_concurrent_refine_threads_cpu_time.
+  // Update the perf data counter for concurrent refine.
   void update_threads_cpu_time();
 };
 
@@ -226,8 +223,7 @@ public:
   // Maximum number of refinement threads.
   static uint max_num_threads();
 
-  // Update the perf data counter
-  // G1ConcurrentRefineThreadControl::_g1_concurrent_refine_threads_cpu_time
+  // Update the perf data counter for concurrent refine.
   void update_concurrent_refine_threads_cpu_time();
 };
 

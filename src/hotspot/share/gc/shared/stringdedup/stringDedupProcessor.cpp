@@ -39,6 +39,7 @@
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/perfData.hpp"
