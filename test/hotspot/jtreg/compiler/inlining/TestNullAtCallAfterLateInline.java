@@ -23,7 +23,7 @@
 
 /*
  * @test
- * bug 8318826 	
+ * bug 8318826
  * @summary C2: "Bad graph detected in build_loop_late" with incremental inlining
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+AlwaysIncrementalInline -XX:-BackgroundCompilation TestNullAtCallAfterLateInline
