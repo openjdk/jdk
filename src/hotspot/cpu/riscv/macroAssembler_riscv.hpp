@@ -1398,7 +1398,6 @@ private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
 
 public:
-
   // compare src1 and src2 and get -1/0/1 in dst.
   // if [src1 > src2], dst = 1;
   // if [src1 == src2], dst = 0;
