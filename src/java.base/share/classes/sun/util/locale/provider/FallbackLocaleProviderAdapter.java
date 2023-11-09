@@ -52,9 +52,9 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     protected Set<String> createLanguageTagSet(String category) {
         return switch (category) {
             case "BreakIteratorInfo", "BreakIteratorRules", "CollationData" -> {
-                // ensure to include en-US
+                // ensure to include en-US/en/ROOT
                 var s = new HashSet<>(super.createLanguageTagSet(category));
-                s.add("en-US");
+                s.addAll(Set.of("en-US", "en", "und"));
                 yield Collections.unmodifiableSet(s);
             }
             case "FormatData" -> Set.of("ja", "und");

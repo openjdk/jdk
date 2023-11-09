@@ -48,7 +48,7 @@ public class Bug8152817 {
         }
 
         s = HijrahChronology.INSTANCE.getDisplayName(TextStyle.FULL, Locale.GERMAN);
-        if (!s.contains("Islamischer Umm-al-Qura-Kalender")) {
+        if (!s.contains("Hidschri-Kalender (Umm al-Qura)")) {
             throw new RuntimeException("Test failed: " + s);
         }
     }
