@@ -810,7 +810,7 @@ public:
   u4 instance_size()            { return _instance_size; }
 };
 
-class DumperClassCacheTable : public StackObj {
+class DumperClassCacheTable {
 private:
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
