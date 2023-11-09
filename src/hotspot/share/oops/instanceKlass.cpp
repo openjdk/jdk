@@ -2503,10 +2503,11 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      InstanceKlass* impl = Atomic::load_acquire(adr_implementor());
+      InstanceKlass* volatile* iklass = adr_implementor();
+      assert(iklass != nullptr, "Klass must not be null");
+      InstanceKlass* impl = Atomic::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        InstanceKlass* volatile* iklass = adr_implementor();
         if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi.ppc64;
 
 /**
- * PPC64 CallArranger specialized for ABI v2.
+ * @test
+ * @bug 8316533
+ * @summary Oop of abstract class A with no subclass is subtype checked after null-check
+ * @run driver compiler.types.TestSubTypeOfAbstractClass
  */
-public class ABIv2CallArranger extends CallArranger {
 
-    @Override
-    protected boolean useABIv2() {
-        return true;
+/**
+ * @test
+ * @bug 8316533
+ * @summary Oop of abstract class A is subtype checked after null-check
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:CompileCommand=compileonly,*A::test
+ *                   -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
+ *                   compiler.types.TestSubTypeOfAbstractClass
+ */
+
+package compiler.types;
+
+public class TestSubTypeOfAbstractClass {
+
+    abstract class A {
+        public static A get_null() {
+            return null;
+        }
+
+        public static boolean test() {
+            // NullCheck -> CastPP with type A:NotNull
+            // But A is abstract with no subclass, hence this type is impossible
+            return get_null() instanceof A;
+        }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; i++ ) {
+            A.test();
+        }
     }
 }
