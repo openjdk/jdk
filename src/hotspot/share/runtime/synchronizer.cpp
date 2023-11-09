@@ -193,6 +193,20 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                             ls, timer_p);
     }
   }
+
+#ifdef ASSERT
+  // Invariant: the code above should unlink all deflated monitors.
+  // The code that runs after this unlinking does not expect deflated monitors.
+  // Notably, attempting to deflate the already deflated monitor would break.
+  {
+    ObjectMonitor* m = Atomic::load_acquire(&_head);
+    while (m != nullptr) {
+      assert(!m->is_being_async_deflated(), "All deflated monitors should be unlinked");
+      m = m->next_om();
+    }
+  }
+#endif
+
   Atomic::sub(&_count, unlinked_count);
   return unlinked_count;
 }
