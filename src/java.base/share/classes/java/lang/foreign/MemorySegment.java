@@ -1931,9 +1931,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a byte value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1953,9 +1953,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *             segment address) at which the access operation will occur can be
-     *             expressed as {@code (index * layout.byteSize())}
+     *             expressed as {@code (index * layout.byteSize())}.
      * @return a boolean value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -1975,7 +1975,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}.
      * @return a char value read from this segment
@@ -1997,9 +1997,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the char value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2020,9 +2020,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a short value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2041,9 +2041,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a byte into this segment at the given index, scaled by the given layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2064,9 +2064,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2087,9 +2087,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the short value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2110,9 +2110,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read.
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return an int value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2132,9 +2132,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation
-     *              will occur can be expressed as {@code (index * layout.byteSize())}
+     *              will occur can be expressed as {@code (index * layout.byteSize())}.
      * @param value the int value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2155,9 +2155,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a float value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2177,9 +2177,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the float value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2200,9 +2200,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a long value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2222,9 +2222,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the long value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2245,9 +2245,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a double value read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2267,9 +2267,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the double value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2294,9 +2294,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * of the returned segment is set to {@code T.byteSize()}.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @return a native segment wrapping an address read from this segment
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
@@ -2321,9 +2321,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index denoting the offset in bytes (relative to this
+     * @param index a logical index. The offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
-     *              expressed as {@code (index * layout.byteSize())}
+     *              expressed as {@code (index * layout.byteSize())}.
      * @param value the address value to be written
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
