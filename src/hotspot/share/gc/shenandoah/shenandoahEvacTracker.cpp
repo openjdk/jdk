@@ -57,7 +57,9 @@ void ShenandoahEvacuationStats::end_evacuation(size_t bytes) {
 
 void ShenandoahEvacuationStats::record_age(size_t bytes, uint age) {
   assert(_use_age_table, "Don't call!");
-  _age_table->add(age, bytes >> LogBytesPerWord);
+  if (age <= markWord::max_age) { // Filter age sentinel.
+    _age_table->add(age, bytes >> LogBytesPerWord);
+  }
 }
 
 void ShenandoahEvacuationStats::accumulate(const ShenandoahEvacuationStats* other) {

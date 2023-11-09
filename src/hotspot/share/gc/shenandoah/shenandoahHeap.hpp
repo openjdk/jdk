@@ -859,14 +859,10 @@ public:
 
   static inline void increase_object_age(oop obj, uint additional_age);
 
-  // Return the object's age (at a safepoint or when object isn't
-  // mutable by the mutator)
-  static inline uint get_object_age(oop obj);
-
   // Return the object's age, or a sentinel value when the age can't
   // necessarily be determined because of concurrent locking by the
   // mutator
-  static inline uint get_object_age_concurrent(oop obj);
+  static inline uint get_object_age(oop obj);
 
   void transfer_old_pointers_from_satb();
 

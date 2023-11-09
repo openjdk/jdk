@@ -119,7 +119,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
     assert(heap->mode()->is_generational(), "Only if generational");
     if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
       assert(region->is_young(), "Only for young objects");
-      uint age = ShenandoahHeap::get_object_age_concurrent(obj);
+      uint age = ShenandoahHeap::get_object_age(obj);
       CENSUS_NOISE(heap->age_census()->add(age, region->age(), region->youth(), size, worker_id);)
       NO_CENSUS_NOISE(heap->age_census()->add(age, region->age(), size, worker_id);)
     }
