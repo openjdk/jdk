@@ -747,7 +747,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
                                                                             \
   product(size_t, AsyncMonitorDeflationForThreadDumpLimit, SIZE_MAX, DIAGNOSTIC, \
-          "Let the deadlock-finding mechanism inside VM_ThreadDump "        \
+          "Let the monitor-collecting mechanism inside VM_ThreadDump "      \
           "trigger an asynchronous monitor deflation pass when the number " \
           "of monitors have been found to be above this limit")             \
                                                                             \
