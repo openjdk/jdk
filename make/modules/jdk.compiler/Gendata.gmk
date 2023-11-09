@@ -86,6 +86,7 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym: \
 	    $(@D)/ct.sym \
 	    $(SOURCE_DATE_EPOCH) \
 	    $(JDK_SOURCE_TARGET_VERSION) \
+	    "$(VERSION_PRE)" \
 	    $(JDK_OUTPUTDIR)/modules/
 	$(TOUCH) $@
 

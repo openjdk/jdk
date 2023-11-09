@@ -41,6 +41,8 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
@@ -55,13 +57,31 @@ import toolbox.ToolBox;
 import static org.junit.Assert.*;
 public class ModuleVersionTest {
 
+    private static final Pattern VERSION_PATTERN =
+            Pattern.compile("^([0-9]+)(.[0-9]+)*(-.*)?");
+
     @Test
     public void testVersionInDependency() throws Exception {
-        doTestVersionInDependency("17");
-        doTestVersionInDependency(System.getProperty("java.specification.version"));
+        doTestVersionInDependency("11", "11");
+
+        String expectedVersion = System.getProperty("java.version");
+        Matcher m = VERSION_PATTERN.matcher(expectedVersion);
+
+        if (m.find()) {
+            String preRelease = m.group(3);
+
+            expectedVersion = m.group(1);
+
+            if (preRelease != null) {
+                expectedVersion += preRelease;
+            }
+        }
+
+        doTestVersionInDependency(System.getProperty("java.specification.version"), expectedVersion);
     }
 
-    private void doTestVersionInDependency(String specificationVersion) throws Exception {
+    private void doTestVersionInDependency(String specificationVersion,
+                                           String expectedVersion) throws Exception {
         Path root = Paths.get(".");
         Path classes = root.resolve("classes");
         Files.createDirectories(classes);
@@ -88,7 +108,7 @@ public class ModuleVersionTest {
         ModuleAttribute module = clazz.findAttribute(Attributes.MODULE).get();
         ModuleRequireInfo req = module.requires().get(0);
         assertEquals("java.base", req.requires().name().stringValue());
-        assertEquals(specificationVersion, req.requiresVersion().get().stringValue());
+        assertEquals(expectedVersion, req.requiresVersion().get().stringValue());
     }
 
 }

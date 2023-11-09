@@ -230,7 +230,7 @@ public class CreateSymbols {
      */
     @SuppressWarnings("unchecked")
     public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation,
-                              long timestamp, String currentVersion, String moduleClasses) throws IOException {
+                              long timestamp, String currentVersion, String preReleaseTag, String moduleClasses) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
@@ -260,7 +260,16 @@ public class CreateSymbols {
                 writeModulesForVersions(directory2FileData,
                                         md,
                                         mhd,
-                                        mhd.versions);
+                                        mhd.versions,
+                                        version -> {
+                                            String versionString = Character.toString(version);
+                                            int versionNumber = Integer.parseInt(versionString, Character.MAX_RADIX);
+                                            versionString = Integer.toString(versionNumber);
+                                            if (versionNumber == currentVersionParsed && !preReleaseTag.isEmpty()) {
+                                                versionString = versionString + "-" + preReleaseTag;
+                                            }
+                                            return versionString;
+                                        });
                 List<String> packages = new ArrayList<>();
                 mhd.exports.stream()
                            .map(ExportsDescription::packageName)
@@ -795,12 +804,14 @@ public class CreateSymbols {
     void writeModulesForVersions(Map<String, Set<FileData>> directory2FileData,
                                  ModuleDescription moduleDescription,
                                  ModuleHeaderDescription header,
-                                 String versions)
+                                 String versions,
+                                 Function<Character, String> version2ModuleVersion)
             throws IOException {
         //ensure every module-info.class is written separatelly,
         //so that the correct version is used for it:
         for (char ver : versions.toCharArray()) {
-            writeModule(directory2FileData, moduleDescription, header, ver);
+            writeModule(directory2FileData, moduleDescription, header, ver,
+                        version2ModuleVersion);
         }
     }
 
@@ -808,7 +819,8 @@ public class CreateSymbols {
     void writeModule(Map<String, Set<FileData>> directory2FileData,
                     ModuleDescription moduleDescription,
                     ModuleHeaderDescription header,
-                    char version) throws IOException {
+                    char version,
+                    Function<Character, String> version2ModuleVersion) throws IOException {
         List<CPInfo> constantPool = new ArrayList<>();
         constantPool.add(null);
         int currentClass = addClass(constantPool, "module-info");
@@ -817,8 +829,8 @@ public class CreateSymbols {
         AccessFlags flags = new AccessFlags(header.flags);
         Map<String, Attribute> attributesMap = new HashMap<>();
         String versionString = Character.toString(version);
-        int versionNumber = Integer.parseInt(versionString, Character.MAX_RADIX);
-        addAttributes(moduleDescription, header, constantPool, attributesMap, versionNumber);
+        addAttributes(moduleDescription, header, constantPool, attributesMap,
+                      version2ModuleVersion.apply(version));
         Attributes attributes = new Attributes(attributesMap);
         CPInfo[] cpData = constantPool.toArray(new CPInfo[constantPool.size()]);
         ConstantPool cp = new ConstantPool(cpData);
@@ -936,7 +948,7 @@ public class CreateSymbols {
                                ModuleHeaderDescription header,
                                List<CPInfo> cp,
                                Map<String, Attribute> attributes,
-                               int version) {
+                               String moduleVersion) {
         addGenericAttributes(header, cp, attributes);
         if (header.moduleResolution != null) {
             int attrIdx = addString(cp, Attribute.ModuleResolution);
@@ -957,7 +969,7 @@ public class CreateSymbols {
             attributes.put(Attribute.ModuleMainClass,
                            new ModuleMainClass_attribute(attrIdx, targetIdx));
         }
-        int versionIdx = addString(cp, Integer.toString(version));
+        int versionIdx = addString(cp, moduleVersion);
         int attrIdx = addString(cp, Attribute.Module);
         attributes.put(Attribute.Module,
                        new Module_attribute(attrIdx,
@@ -4628,22 +4640,25 @@ public class CreateSymbols {
                 String ctSymLocation;
                 String timestampSpec;
                 String currentVersion;
+                String preReleaseTag;
                 String moduleClasses;
 
-                if (args.length == 6) {
+                if (args.length == 7) {
                     ctDescriptionFileExtra = null;
                     ctDescriptionFile = args[1];
                     ctSymLocation = args[2];
                     timestampSpec = args[3];
                     currentVersion = args[4];
-                    moduleClasses = args[5];
-                } else if (args.length == 7) {
+                    preReleaseTag = args[5];
+                    moduleClasses = args[6];
+                } else if (args.length == 8) {
                     ctDescriptionFileExtra = args[1];
                     ctDescriptionFile = args[2];
                     ctSymLocation = args[3];
                     timestampSpec = args[4];
                     currentVersion = args[5];
-                    moduleClasses = args[6];
+                    preReleaseTag = args[6];
+                    moduleClasses = args[7];
                 } else {
                     help();
                     return ;
@@ -4659,6 +4674,7 @@ public class CreateSymbols {
                                                   ctSymLocation,
                                                   timestamp,
                                                   currentVersion,
+                                                  preReleaseTag,
                                                   moduleClasses);
                 break;
             }
