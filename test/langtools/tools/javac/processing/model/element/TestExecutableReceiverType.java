@@ -48,11 +48,11 @@ public class TestExecutableReceiverType extends JavacTestingAbstractProcessor {
             int count = 0;
             for (ExecutableElement e : ElementFilter.methodsIn(
                   roundEnv.getElementsAnnotatedWith(ReceiverTypeKind.class))) {
-              count += testExecutable(e);
+                count += testExecutable(e);
             }
             for (ExecutableElement e : ElementFilter.constructorsIn(
                   roundEnv.getElementsAnnotatedWith(ReceiverTypeKind.class))) {
-              count += testExecutable(e);
+                count += testExecutable(e);
             }
 
             if (count == 0) {

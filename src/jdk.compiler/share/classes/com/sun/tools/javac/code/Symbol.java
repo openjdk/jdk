@@ -81,7 +81,6 @@ import static com.sun.tools.javac.jvm.ByteCodes.iadd;
 import static com.sun.tools.javac.jvm.ByteCodes.ishll;
 import static com.sun.tools.javac.jvm.ByteCodes.lushrl;
 import static com.sun.tools.javac.jvm.ByteCodes.lxor;
-import static com.sun.tools.javac.jvm.ByteCodes.ret;
 import static com.sun.tools.javac.jvm.ByteCodes.string_add;
 
 /** Root class for Java symbols. It contains subclasses
