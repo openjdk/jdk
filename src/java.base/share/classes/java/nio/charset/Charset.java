@@ -719,7 +719,7 @@ public abstract class Charset
             }
         }
         this.name = canonicalName;
-        this.aliases = as;
+        this.aliases = Arrays.copyOf(as, as.length);
     }
 
     /**
