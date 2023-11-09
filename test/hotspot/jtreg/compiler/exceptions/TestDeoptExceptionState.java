@@ -25,8 +25,9 @@
 * @test
 * @bug 8316422
 * @summary Test exception state used for deoptimization.
-* @run main/othervm -XX:+VerifyStack -Xcomp -XX:TieredStopAtLevel=1 -XX:+DeoptimizeALot
-*      -XX:CompileOnly=compiler.exceptions.TestDeoptExceptionState::test compiler.exceptions.TestDeoptExceptionState
+* @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack -XX:+DeoptimizeALot
+*      -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileOnly=compiler.exceptions.TestDeoptExceptionState::test
+*      compiler.exceptions.TestDeoptExceptionState
 */
 
 package compiler.exceptions;
