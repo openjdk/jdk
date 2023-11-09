@@ -49,27 +49,27 @@
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after vector box elimination") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before beautify loops") \
   flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
-  flags(BEFORE_LOOP_UNROLLING,          "Before loop unrolling") \
-  flags(AFTER_LOOP_UNROLLING,           "After loop unrolling") \
-  flags(BEFORE_SPLIT_IF,                "Before split if") \
-  flags(AFTER_SPLIT_IF,                 "After split if") \
-  flags(BEFORE_LOOP_PREDICATION_IC,     "Before loop predication IC") \
-  flags(AFTER_LOOP_PREDICATION_IC,      "After loop predication IC") \
-  flags(BEFORE_LOOP_PREDICATION_RC,     "Before loop predication RC") \
-  flags(AFTER_LOOP_PREDICATION_RC,      "After loop predication RC") \
-  flags(BEFORE_PARTIAL_PEELING,         "Before partial peeling") \
-  flags(AFTER_PARTIAL_PEELING,          "After partial peeling") \
-  flags(BEFORE_LOOP_PEELING,            "Before loop peeling") \
-  flags(AFTER_LOOP_PEELING,             "After loop peeling") \
-  flags(BEFORE_LOOP_UNSWITCHING,        "Before loop unswitching") \
-  flags(AFTER_LOOP_UNSWITCHING,         "After loop unswitching") \
-  flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before range check elimination") \
-  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After range check elimination") \
-  flags(BEFORE_PRE_MAIN_POST,           "Before pre/main/post loops") \
-  flags(AFTER_PRE_MAIN_POST,            "After pre/main/post loops") \
-  flags(BEFORE_SUPERWORD_SCHEDULE,      "Before superword schedule")\
-  flags(BEFORE_SUPERWORD_OUTPUT,        "Before superword output")\
-  flags(AFTER_SUPERWORD_OUTPUT,         "After superword output")\
+  flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
+  flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
+  flags(BEFORE_SPLIT_IF,                "Before Split If") \
+  flags(AFTER_SPLIT_IF,                 "After Split If") \
+  flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
+  flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After Loop Predication RC") \
+  flags(BEFORE_PARTIAL_PEELING,         "Before Partial Peeling") \
+  flags(AFTER_PARTIAL_PEELING,          "After Partial Peeling") \
+  flags(BEFORE_LOOP_PEELING,            "Before Loop Peeling") \
+  flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
+  flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
+  flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
+  flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
+  flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
+  flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
+  flags(BEFORE_SUPERWORD_SCHEDULE,      "Before Superword Schedule")\
+  flags(BEFORE_SUPERWORD_OUTPUT,        "Before Superword Output")\
+  flags(AFTER_SUPERWORD_OUTPUT,         "After Superword Output")\
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
@@ -89,10 +89,10 @@
   flags(BEFORE_MATCHING,                "Before matching") \
   flags(MATCHING,                       "After matching") \
   flags(GLOBAL_CODE_MOTION,             "Global code motion") \
-  flags(REGISTER_ALLOCATION,            "Register allocation") \
-  flags(BLOCK_ORDERING,                 "Block ordering") \
+  flags(REGISTER_ALLOCATION,            "Register Allocation") \
+  flags(BLOCK_ORDERING,                 "Block Ordering") \
   flags(PEEPHOLE,                       "Peephole") \
-  flags(POSTALLOC_EXPAND,               "Post-allocation expand") \
+  flags(POSTALLOC_EXPAND,               "Post-Allocation Expand") \
   flags(MACH_ANALYSIS,                  "After mach analysis") \
   flags(FINAL_CODE,                     "Final Code") \
   flags(END,                            "End") \
