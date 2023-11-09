@@ -1337,29 +1337,33 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
   subw(dst, rscratch1, dst);
 }
 
+typedef void (C2_MacroAssembler::* xtl_insn)(FloatRegister Vd, Assembler::SIMD_Arrangement Ta,
+                                             FloatRegister Vn, Assembler::SIMD_Arrangement Tb);
+
 // Extend integer vector src to dst with the same lane count
 // but larger element size, e.g. 4B -> 4I
 void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
-                                           FloatRegister src, BasicType src_bt) {
+                                           FloatRegister src, BasicType src_bt, bool is_unsigned) {
+  xtl_insn ext = is_unsigned ? &C2_MacroAssembler::uxtl : &C2_MacroAssembler::sxtl;
   if (src_bt == T_BYTE) {
     if (dst_bt == T_SHORT) {
       // 4B/8B to 4S/8S
       assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
-      sxtl(dst, T8H, src, T8B);
+      (this->*ext)(dst, T8H, src, T8B);
     } else {
       // 4B to 4I
       assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
-      sxtl(dst, T8H, src, T8B);
-      sxtl(dst, T4S, dst, T4H);
+      (this->*ext)(dst, T8H, src, T8B);
+      (this->*ext)(dst, T4S, dst, T4H);
     }
   } else if (src_bt == T_SHORT) {
     // 4S to 4I
     assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
-    sxtl(dst, T4S, src, T4H);
+    (this->*ext)(dst, T4S, src, T4H);
   } else if (src_bt == T_INT) {
     // 2I to 2L
     assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
-    sxtl(dst, T2D, src, T2S);
+    (this->*ext)(dst, T2D, src, T2S);
   } else {
     ShouldNotReachHere();
   }
@@ -1392,35 +1396,42 @@ void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
   }
 }
 
+typedef void (C2_MacroAssembler::* unpklo_insn)(FloatRegister Zd, Assembler::SIMD_RegVariant T,
+                                                FloatRegister Zn);
+
 void C2_MacroAssembler::sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
-                                          FloatRegister src, SIMD_RegVariant src_size) {
+                                          FloatRegister src, SIMD_RegVariant src_size,
+                                          bool is_unsigned) {
   assert(dst_size > src_size && dst_size <= D && src_size <= S, "invalid element size");
+
+  unpklo_insn unpklo = is_unsigned ? &C2_MacroAssembler::sve_uunpklo : &C2_MacroAssembler::sve_sunpklo;
+
   if (src_size == B) {
     switch (dst_size) {
     case H:
-      sve_sunpklo(dst, H, src);
+      (this->*unpklo)(dst, H, src);
       break;
     case S:
-      sve_sunpklo(dst, H, src);
-      sve_sunpklo(dst, S, dst);
+      (this->*unpklo)(dst, H, src);
+      (this->*unpklo)(dst, S, dst);
       break;
     case D:
-      sve_sunpklo(dst, H, src);
-      sve_sunpklo(dst, S, dst);
-      sve_sunpklo(dst, D, dst);
+      (this->*unpklo)(dst, H, src);
+      (this->*unpklo)(dst, S, dst);
+      (this->*unpklo)(dst, D, dst);
       break;
     default:
       ShouldNotReachHere();
     }
   } else if (src_size == H) {
     if (dst_size == S) {
-      sve_sunpklo(dst, S, src);
+      (this->*unpklo)(dst, S, src);
     } else { // D
-      sve_sunpklo(dst, S, src);
-      sve_sunpklo(dst, D, dst);
+      (this->*unpklo)(dst, S, src);
+      (this->*unpklo)(dst, D, dst);
     }
   } else if (src_size == S) {
-    sve_sunpklo(dst, D, src);
+    (this->*unpklo)(dst, D, src);
   }
 }
 
