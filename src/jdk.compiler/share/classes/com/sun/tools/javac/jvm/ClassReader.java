@@ -2335,9 +2335,11 @@ public class ClassReader {
             mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
 
             Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
-            Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
-            if (annotated != recvtype) {
-                mt.recvtype = annotated;
+            if (recvtype != null) {
+                Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
+                if (annotated != recvtype) {
+                    mt.recvtype = annotated;
+                }
             }
             return null;
         }
