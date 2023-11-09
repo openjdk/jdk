@@ -875,7 +875,7 @@ public sealed interface Linker permits AbstractLinker {
 
          /**
          * {@return a struct layout that represents the layout of the capture state
-          *         segment that is passedto a downcall handle linked with
+          *         segment that is passed to a downcall handle linked with
           *         {@link #captureCallState(String...)}}
          * <p>
          * The capture state layout is <em>platform-dependent</em> but is guaranteed to be

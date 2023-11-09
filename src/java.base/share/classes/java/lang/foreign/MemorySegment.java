@@ -488,7 +488,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * <em>expand</em> the size of the native memory segment returned by the access operation
  * so that the size of the segment is the same as the size of the target layout . In other
  * words, the returned segment is no longer a zero-length memory segment, and the pointer
- * it represents can be de-referenced directly:
+ * it represents can be dereferenced directly:
  *
  * {@snippet lang = java:
  * AddressLayout intArrPtrLayout = ValueLayout.ADDRESS.withTargetLayout(
@@ -1931,7 +1931,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a byte value read from this segment
@@ -1953,7 +1953,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *             segment address) at which the access operation will occur can be
      *             expressed as {@code (index * layout.byteSize())}
      * @return a boolean value read from this segment
@@ -1975,7 +1975,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}.
      * @return a char value read from this segment
@@ -1997,7 +1997,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the char value to be written
@@ -2020,7 +2020,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a short value read from this segment
@@ -2041,7 +2041,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Writes a byte into this segment at the given index, scaled by the given layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the short value to be written
@@ -2064,7 +2064,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the short value to be written
@@ -2087,7 +2087,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the short value to be written
@@ -2110,7 +2110,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read.
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return an int value read from this segment
@@ -2132,7 +2132,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation
      *              will occur can be expressed as {@code (index * layout.byteSize())}
      * @param value the int value to be written
@@ -2155,7 +2155,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a float value read from this segment
@@ -2177,7 +2177,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the float value to be written
@@ -2200,7 +2200,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a long value read from this segment
@@ -2222,7 +2222,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the long value to be written
@@ -2245,7 +2245,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a double value read from this segment
@@ -2267,7 +2267,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the double value to be written
@@ -2294,7 +2294,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * of the returned segment is set to {@code T.byteSize()}.
      *
      * @param layout the layout of the region of memory to be read
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @return a native segment wrapping an address read from this segment
@@ -2321,7 +2321,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * layout size.
      *
      * @param layout the layout of the region of memory to be written
-     * @param index a logical index, the offset in bytes (relative to this
+     * @param index a logical index denoting the offset in bytes (relative to this
      *              segment address) at which the access operation will occur can be
      *              expressed as {@code (index * layout.byteSize())}
      * @param value the address value to be written
