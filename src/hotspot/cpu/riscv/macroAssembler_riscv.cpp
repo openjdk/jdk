@@ -2386,7 +2386,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 }
 
 int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java idiv and irem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2402,15 +2402,24 @@ int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
 
   int idivl_offset = offset();
   if (!want_remainder) {
-    divw(result, rs1, rs2);
+    if (is_signed) {
+      divw(result, rs1, rs2);
+    } else {
+      divuw(result, rs1, rs2);
+    }
   } else {
-    remw(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      remw(result, rs1, rs2);
+    } else {
+      remuw(result, rs1, rs2);
+    }
   }
   return idivl_offset;
 }
 
 int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java ldiv and lrem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2425,9 +2434,18 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
 
   int idivq_offset = offset();
   if (!want_remainder) {
-    div(result, rs1, rs2);
+    if (is_signed) {
+      div(result, rs1, rs2);
+    } else {
+      divu(result, rs1, rs2);
+    }
   } else {
-    rem(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      rem(result, rs1, rs2);
+    } else {
+      remu(result, rs1, rs2);
+    }
   }
   return idivq_offset;
 }
@@ -2592,11 +2610,11 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   Label retry_load, nope;
   bind(retry_load);
   // Load reserved from the memory location
-  lr_d(tmp, addr, Assembler::aqrl);
+  load_reserved(tmp, addr, int64, Assembler::aqrl);
   // Fail and exit if it is not what we expect
   bne(tmp, oldv, nope);
   // If the store conditional succeeds, tmp will be zero
-  sc_d(tmp, newv, addr, Assembler::rl);
+  store_conditional(tmp, newv, addr, int64, Assembler::rl);
   beqz(tmp, succeed);
   // Retry only when the store conditional failed
   j(retry_load);
@@ -2615,18 +2633,19 @@ void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register o
   cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
 }
 
-void MacroAssembler::load_reserved(Register addr,
+void MacroAssembler::load_reserved(Register dst,
+                                   Register addr,
                                    enum operand_size size,
                                    Assembler::Aqrl acquire) {
   switch (size) {
     case int64:
-      lr_d(t0, addr, acquire);
+      lr_d(dst, addr, acquire);
       break;
     case int32:
-      lr_w(t0, addr, acquire);
+      lr_w(dst, addr, acquire);
       break;
     case uint32:
-      lr_w(t0, addr, acquire);
+      lr_w(dst, addr, acquire);
       zero_extend(t0, t0, 32);
       break;
     default:
@@ -2634,17 +2653,18 @@ void MacroAssembler::load_reserved(Register addr,
   }
 }
 
-void MacroAssembler::store_conditional(Register addr,
+void MacroAssembler::store_conditional(Register dst,
                                        Register new_val,
+                                       Register addr,
                                        enum operand_size size,
                                        Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      sc_d(t0, new_val, addr, release);
+      sc_d(dst, new_val, addr, release);
       break;
     case int32:
     case uint32:
-      sc_w(t0, new_val, addr, release);
+      sc_w(dst, new_val, addr, release);
       break;
     default:
       ShouldNotReachHere();
@@ -2778,9 +2798,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
 
   Label retry_load, done, ne_done;
   bind(retry_load);
-  load_reserved(addr, size, acquire);
+  load_reserved(t0, addr, size, acquire);
   bne(t0, expected, ne_done);
-  store_conditional(addr, new_val, size, release);
+  store_conditional(t0, new_val, addr, size, release);
   bnez(t0, retry_load);
 
   // equal, succeed
@@ -2812,9 +2832,9 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
   assert_different_registers(new_val, t0);
 
   Label fail, done;
-  load_reserved(addr, size, acquire);
+  load_reserved(t0, addr, size, acquire);
   bne(t0, expected, fail);
-  store_conditional(addr, new_val, size, release);
+  store_conditional(t0, new_val, addr, size, release);
   bnez(t0, fail);
 
   // Success
@@ -4226,7 +4246,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, 0b1100000000);                                                           \
+  andi(tmp, tmp, fclass_mask::nan);                                                       \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \
@@ -4402,8 +4422,8 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
   }
 }
 
-void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
-{
+void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
+                             Register tmp, bool is_signed) {
   if (src1 == src2) {
     mv(dst, zr);
     return;
@@ -4422,12 +4442,33 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   }
 
   // installs 1 if gt else 0
-  slt(dst, right, left);
+  if (is_signed) {
+    slt(dst, right, left);
+  } else {
+    sltu(dst, right, left);
+  }
   bnez(dst, done);
-  slt(dst, left, right);
+  if (is_signed) {
+    slt(dst, left, right);
+  } else {
+    sltu(dst, left, right);
+  }
   // dst = -1 if lt; else if eq , dst = 0
   neg(dst, dst);
   bind(done);
+}
+
+void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
+{
+  cmp_x2i(dst, src1, src2, tmp);
+}
+
+void MacroAssembler::cmp_ul2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
+}
+
+void MacroAssembler::cmp_uw2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -4636,23 +4677,29 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   }
 }
 
-void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp) {
+void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   assert(bit_pos < 64, "invalid bit range");
   if (UseZbs) {
     bexti(Rd, Rs, bit_pos);
     return;
   }
-  andi(Rd, Rs, 1UL << bit_pos, tmp);
+  int64_t imm = (int64_t)(1UL << bit_pos);
+  if (is_simm12(imm)) {
+    and_imm12(Rd, Rs, imm);
+  } else {
+    srli(Rd, Rs, bit_pos);
+    and_imm12(Rd, Rd, 1);
+  }
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object.
 // Falls through upon success.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - tmp1, tmp2: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp1, tmp2);
 
@@ -4679,14 +4726,14 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register tmp1, Regist
   sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements fast-unlocking.
+// Implements ligthweight-unlocking.
 // Branches to slow upon failure.
 // Falls through upon success.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object
 // - tmp1, tmp2: temporary registers
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp1, tmp2);
 

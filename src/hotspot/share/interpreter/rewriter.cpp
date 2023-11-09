@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -35,9 +36,9 @@
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Computes a CPC map (new_index -> original_index) for constant pool entries
 // that are referred to by the interpreter at runtime via the constant pool cache.
@@ -117,7 +118,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
                                         _resolved_reference_limit,
                                         THREAD);
 #if INCLUDE_CDS
-  if (!HAS_PENDING_EXCEPTION && Arguments::is_dumping_archive()) {
+  if (!HAS_PENDING_EXCEPTION && CDSConfig::is_dumping_archive()) {
     if (_pool->pool_holder()->is_shared()) {
       assert(DynamicDumpSharedSpaces, "must be");
       // We are linking a shared class from the base archive. This

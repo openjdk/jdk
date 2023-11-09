@@ -29,6 +29,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_NameAndType_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
  */
 public sealed interface NameAndTypeEntry extends PoolEntry
         permits AbstractPoolEntry.NameAndTypeEntryImpl {

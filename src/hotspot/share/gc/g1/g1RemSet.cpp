@@ -257,7 +257,6 @@ private:
 public:
   G1RemSetScanState() :
     _max_reserved_regions(0),
-    _collection_set_iter_state(nullptr),
     _card_table_scan_state(nullptr),
     _scan_chunks_per_region(G1CollectedHeap::get_chunks_per_region()),
     _log_scan_chunks_per_region(log2i(_scan_chunks_per_region)),
@@ -270,16 +269,14 @@ public:
   }
 
   ~G1RemSetScanState() {
-    FREE_C_HEAP_ARRAY(G1RemsetIterState, _collection_set_iter_state);
     FREE_C_HEAP_ARRAY(uint, _card_table_scan_state);
     FREE_C_HEAP_ARRAY(bool, _region_scan_chunks);
     FREE_C_HEAP_ARRAY(HeapWord*, _scan_top);
   }
 
   void initialize(size_t max_reserved_regions) {
-    assert(_collection_set_iter_state == nullptr, "Must not be initialized twice");
+    assert(_card_table_scan_state == nullptr, "Must not be initialized twice");
     _max_reserved_regions = max_reserved_regions;
-    _collection_set_iter_state = NEW_C_HEAP_ARRAY(G1RemsetIterState, max_reserved_regions, mtGC);
     _card_table_scan_state = NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC);
     _num_total_scan_chunks = max_reserved_regions * _scan_chunks_per_region;
     _region_scan_chunks = NEW_C_HEAP_ARRAY(bool, _num_total_scan_chunks, mtGC);
@@ -294,7 +291,6 @@ public:
     // become used during the collection these values must be valid
     // for those regions as well.
     for (size_t i = 0; i < _max_reserved_regions; i++) {
-      reset_region_claim((uint)i);
       clear_scan_top((uint)i);
     }
 
@@ -397,20 +393,6 @@ public:
         cur = 0;
       }
     } while (cur != start_pos);
-  }
-
-  void reset_region_claim(uint region_idx) {
-    _collection_set_iter_state[region_idx] = false;
-  }
-
-  // Attempt to claim the given region in the collection set for iteration. Returns true
-  // if this call caused the transition from Unclaimed to Claimed.
-  inline bool claim_collection_set_region(uint region) {
-    assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-    if (_collection_set_iter_state[region]) {
-      return false;
-    }
-    return !Atomic::cmpxchg(&_collection_set_iter_state[region], false, true);
   }
 
   bool has_cards_to_scan(uint region) {
@@ -545,7 +527,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   void do_claimed_block(uint const region_idx, CardValue* const dirty_l, CardValue* const dirty_r) {
     _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
-    size_t num_cards = dirty_r - dirty_l;
+    size_t num_cards = pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
@@ -757,6 +739,25 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
+// Wrapper around a CodeBlobClosure to count the number of code blobs scanned.
+class G1ScanAndCountCodeBlobClosure : public CodeBlobClosure {
+  CodeBlobClosure* _cl;
+  size_t _count;
+
+public:
+  G1ScanAndCountCodeBlobClosure(CodeBlobClosure* cl) : _cl(cl), _count(0) {
+  }
+
+  void do_code_blob(CodeBlob* cb) override {
+    _cl->do_code_blob(cb);
+    _count++;
+  }
+
+  size_t count() const {
+    return _count;
+  }
+};
+
 // Heap region closure to be applied to all regions in the current collection set
 // increment to fix up non-card related roots.
 class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
@@ -767,6 +768,8 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
   G1GCPhaseTimes::GCParPhases _code_roots_phase;
 
   uint _worker_id;
+
+  size_t _code_roots_scanned;
 
   size_t _opt_roots_scanned;
   size_t _opt_refs_scanned;
@@ -798,6 +801,7 @@ public:
     _scan_phase(scan_phase),
     _code_roots_phase(code_roots_phase),
     _worker_id(worker_id),
+    _code_roots_scanned(0),
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
@@ -807,8 +811,6 @@ public:
     _rem_set_opt_trim_partially_time() { }
 
   bool do_heap_region(HeapRegion* r) {
-    uint const region_idx = r->hrm_index();
-
     // The individual references for the optional remembered set are per-worker, so we
     // always need to scan them.
     if (r->has_index_in_opt_cset()) {
@@ -819,11 +821,16 @@ public:
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_scan_phase));
     }
 
-    if (_scan_state->claim_collection_set_region(region_idx)) {
+    // Scan code root remembered sets.
+    {
       EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      G1ScanAndCountCodeBlobClosure cl(_pss->closures()->weak_codeblobs());
+
       // Scan the code root list attached to the current region
-      r->code_roots_do(_pss->closures()->weak_codeblobs());
+      r->code_roots_do(&cl);
+
+      _code_roots_scanned += cl.count();
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
@@ -833,6 +840,8 @@ public:
 
   Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
   Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
+
+  size_t code_roots_scanned() const { return _code_roots_scanned; }
 
   Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
   Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
@@ -856,6 +865,8 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
 
   p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
+  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+
   p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
 
   // At this time we record some metrics only for the evacuations after the initial one.
@@ -1175,23 +1186,17 @@ class G1MergeHeapRootsTask : public WorkerTask {
       guarantee(r->rem_set()->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold),
                 "Found a not-small remembered set here. This is inconsistent with previous assumptions.");
 
-
       _cl.merge_card_set_for_region(r);
 
       // We should only clear the card based remembered set here as we will not
       // implicitly rebuild anything else during eager reclaim. Note that at the moment
       // (and probably never) we do not enter this path if there are other kind of
       // remembered sets for this region.
-      r->rem_set()->clear_locked(true /* only_cardset */);
-      // Clear_locked() above sets the state to Empty. However we want to continue
-      // collecting remembered set entries for humongous regions that were not
-      // reclaimed.
-      r->rem_set()->set_state_complete();
-#ifdef ASSERT
-      G1HeapRegionAttr region_attr = g1h->region_attr(region_index);
-      assert(region_attr.remset_is_tracked(), "must be");
-#endif
-      assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
+      // We want to continue collecting remembered set entries for humongous regions
+      // that were not reclaimed.
+      r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+
+      assert(r->rem_set()->is_empty() && r->rem_set()->is_complete(), "must be for eager reclaim candidates");
 
       return false;
     }
@@ -1264,9 +1269,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    size_t buffer_capacity = dcqs.buffer_capacity();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_capacity, worker_id);
+      cl->apply_to_buffer(node, worker_id);
       dcqs.deallocate_buffer(node);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test TestHeapDumpOnOutOfMemoryError
  * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dumps heap when OutOfMemory is thrown in heap
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestHeapDumpOnOutOfMemoryError run heap
  */
 
@@ -32,6 +33,7 @@
  * @test TestHeapDumpOnOutOfMemoryError
  * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dumps heap when OutOfMemory is thrown in metaspace.
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
  */
 
@@ -73,7 +75,7 @@ public class TestHeapDumpOnOutOfMemoryError {
 
     static void test(String type) throws Exception {
         String heapdumpFilename = type + ".hprof";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + heapdumpFilename,
                 // Note: When trying to provoke a metaspace OOM we may generate a lot of classes. In debug VMs this
                 //  can cause considerable wait times since:

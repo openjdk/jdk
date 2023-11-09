@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -149,7 +150,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
             username = s;
             ntdomain = defaultDomain;
         } else {
-            ntdomain = s.substring (0, i).toUpperCase();
+            ntdomain = s.substring (0, i).toUpperCase(Locale.ROOT);
             username = s.substring (i+1);
         }
         password = pw.getPassword();

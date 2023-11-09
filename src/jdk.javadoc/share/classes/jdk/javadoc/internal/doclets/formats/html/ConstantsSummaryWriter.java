@@ -475,8 +475,8 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
         content.add(bodyContents);
         printHtmlDocument(null, "summary of constants", content);
 
-        if (hasConstants && configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+        if (hasConstants && configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS,
                     resources.getText("doclet.Constants_Summary"), path));
         }
     }

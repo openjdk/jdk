@@ -176,7 +176,26 @@ public sealed interface Signature {
          * an upper bound, or a lower bound
          */
         public enum WildcardIndicator {
-            DEFAULT, UNBOUNDED, EXTENDS, SUPER;
+
+            /**
+             * default bound wildcard (empty)
+             */
+            DEFAULT,
+
+            /**
+             * unbounded indicator {@code *}
+             */
+            UNBOUNDED,
+
+            /**
+             * upper-bounded indicator {@code +}
+             */
+            EXTENDS,
+
+            /**
+             * lower-bounded indicator {@code -}
+             */
+            SUPER;
         }
 
         /** {@return the wildcard indicator} */

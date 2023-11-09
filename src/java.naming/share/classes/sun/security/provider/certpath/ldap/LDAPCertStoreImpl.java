@@ -779,9 +779,13 @@ final class LDAPCertStoreImpl {
                 } catch (IllegalArgumentException e) {
                     continue;
                 }
-            } else {
+            } else if (nameObject instanceof String) {
                 issuerName = (String)nameObject;
+            } else {
+                throw new CertStoreException(
+                    "unrecognized issuerName: must be String or byte[]");
             }
+
             // If all we want is CA certs, try to get the (probably shorter) ARL
             Collection<X509CRL> entryCRLs = Collections.emptySet();
             if (certChecking == null || certChecking.getBasicConstraints() != -1) {

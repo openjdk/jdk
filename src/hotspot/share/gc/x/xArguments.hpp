@@ -31,6 +31,7 @@ class CollectedHeap;
 class XArguments : AllStatic {
 public:
   static void initialize_alignments();
+  static void initialize_heap_flags_and_sizes();
   static void initialize();
   static size_t heap_virtual_to_physical_ratio();
   static CollectedHeap* create_heap();

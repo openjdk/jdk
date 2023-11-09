@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -483,7 +483,7 @@ static bool _seen_system_unnamed_module = false;
 // Validate the states of an java.lang.Module oop to be archived.
 //
 // Returns true iff the oop has an archived ModuleEntry.
-bool Modules::check_module_oop(oop orig_module_obj) {
+bool Modules::check_archived_module_oop(oop orig_module_obj) {
   assert(DumpSharedSpaces, "must be");
   assert(MetaspaceShared::use_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
@@ -544,7 +544,7 @@ bool Modules::check_module_oop(oop orig_module_obj) {
 
 void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index) {
   // This java.lang.Module oop must have an archived ModuleEntry
-  assert(check_module_oop(orig_module_obj) == true, "sanity");
+  assert(check_archived_module_oop(orig_module_obj) == true, "sanity");
 
   // We remember the oop inside the ModuleEntry::_archived_module_index. At runtime, we use
   // this index to reinitialize the ModuleEntry inside ModuleEntry::restore_archived_oops().

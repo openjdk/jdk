@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,16 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         return middleWidget.isHitAt(localLocation);
     }
 
+    private void formatExtraLabel(boolean selected) {
+        // If the figure contains an extra label, use a light italic font to
+        // differentiate it from the regular label.
+        if (getFigure().getProperties().get("extra_label") != null) {
+            LabelWidget extraLabelWidget = labelWidgets.get(labelWidgets.size() - 1);
+            extraLabelWidget.setFont(Diagram.FONT.deriveFont(Font.ITALIC));
+            extraLabelWidget.setForeground(selected ? getTextColor() : Color.DARK_GRAY);
+        }
+    }
+
     public FigureWidget(final Figure f, DiagramScene scene) {
         super(scene);
 
@@ -139,6 +149,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             lw.setBorder(BorderFactory.createEmptyBorder());
             lw.setCheckClipping(false);
         }
+        formatExtraLabel(false);
 
         if (getFigure().getWarning() != null) {
             ImageWidget warningWidget = new ImageWidget(scene, warningSign);
@@ -194,6 +205,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         for (LabelWidget labelWidget : labelWidgets) {
             labelWidget.setFont(font);
         }
+        formatExtraLabel(state.isSelected());
         repaint();
     }
 

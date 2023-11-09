@@ -27,7 +27,12 @@
  * @summary Lambda back-end should generate invokespecial for method handles referring to
  *          private instance methods when compiling with --release 14
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
@@ -35,13 +40,11 @@
  * @run main TestLambdaBytecodeTargetRelease14
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
+import jdk.internal.classfile.constantpool.MethodHandleEntry;
+import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +54,7 @@ import combo.ComboParameter;
 import combo.ComboTask.Result;
 import combo.ComboTestHelper;
 
+import java.lang.invoke.MethodHandleInfo;
 import javax.tools.JavaFileObject;
 
 public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaBytecodeTargetRelease14> {
@@ -208,10 +212,10 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassFile cf = ClassFile.read(is);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals("test")) {
+            ClassModel cm = Classfile.of().parse(is.readAllBytes());
+            MethodModel testMethod = null;
+            for (MethodModel m : cm.methods()) {
+                if (m.methodName().equalsString("test")) {
                     testMethod = m;
                     break;
                 }
@@ -220,24 +224,21 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
                 fail("Test method not found");
                 return;
             }
-            Code_attribute ea =
-                    (Code_attribute)testMethod.attributes.get(Attribute.Code);
-            if (testMethod == null) {
+            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
             }
 
             int bsmIdx = -1;
 
-            for (Instruction i : ea.getInstructions()) {
-                if (i.getMnemonic().equals("invokedynamic")) {
-                    CONSTANT_InvokeDynamic_info indyInfo =
-                         (CONSTANT_InvokeDynamic_info)cf
-                            .constant_pool.get(i.getShort(1));
-                    bsmIdx = indyInfo.bootstrap_method_attr_index;
-                    if (!indyInfo.getNameAndTypeInfo().getType().equals(makeIndyType())) {
+            for (CodeElement ce : ea.elementList()) {
+                if (ce instanceof InvokeDynamicInstruction indy) {
+                    InvokeDynamicEntry indyInfo = indy.invokedynamic();
+                    bsmIdx = indyInfo.bootstrap().bsmIndex();
+                    if (!indyInfo.type().equalsString(makeIndyType())) {
                         fail("type mismatch for CONSTANT_InvokeDynamic_info " +
-                                res.compilationInfo() + "\n" + indyInfo.getNameAndTypeInfo().getType() +
+                                res.compilationInfo() + "\n" + indyInfo.type().stringValue() +
                                 "\n" + makeIndyType());
                         return;
                     }
@@ -248,43 +249,36 @@ public class TestLambdaBytecodeTargetRelease14 extends ComboInstance<TestLambdaB
                 return;
             }
 
-            BootstrapMethods_attribute bsm_attr =
-                    (BootstrapMethods_attribute)cf
-                    .getAttribute(Attribute.BootstrapMethods);
-            if (bsm_attr.bootstrap_method_specifiers.length != 1) {
+            BootstrapMethodsAttribute bsm_attr = cm.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
                 return;
             }
-            BootstrapMethods_attribute.BootstrapMethodSpecifier bsm_spec =
-                    bsm_attr.bootstrap_method_specifiers[0];
+            BootstrapMethodEntry bsm_spec = bsm_attr.bootstrapMethods().get(0);
 
-            if (bsm_spec.bootstrap_arguments.length != MF_ARITY) {
+            if (bsm_spec.arguments().size() != MF_ARITY) {
                 fail("Bad number of static invokedynamic args " +
                         "in BootstrapMethod attribute");
                 return;
             }
 
-            CONSTANT_MethodHandle_info mh =
-                    (CONSTANT_MethodHandle_info)cf.constant_pool.get(bsm_spec.bootstrap_arguments[1]);
+            MethodHandleEntry mh = (MethodHandleEntry) bsm_spec.arguments().get(1);
 
-            boolean kindOK;
-            switch (mh.reference_kind) {
-                case REF_invokeStatic: kindOK = mk2.isStatic(); break;
-                case REF_invokeSpecial: kindOK = !mk2.isStatic(); break;
-                case REF_invokeInterface: kindOK = mk2.inInterface(); break;
-                default:
-                    kindOK = false;
-            }
+            boolean kindOK = switch (mh.kind()) {
+                case MethodHandleInfo.REF_invokeStatic -> mk2.isStatic();
+                case MethodHandleInfo.REF_invokeSpecial -> !mk2.isStatic();
+                case MethodHandleInfo.REF_invokeInterface -> mk2.inInterface();
+                default -> false;
+            };
 
             if (!kindOK) {
                 fail("Bad invoke kind in implementation method handle");
                 return;
             }
 
-            if (!mh.getCPRefInfo().getNameAndTypeInfo().getType().toString().equals(MH_SIG)) {
+            if (!mh.reference().type().equalsString(MH_SIG)) {
                 fail("Type mismatch in implementation method handle");
-                return;
             }
         } catch (Exception e) {
             e.printStackTrace();

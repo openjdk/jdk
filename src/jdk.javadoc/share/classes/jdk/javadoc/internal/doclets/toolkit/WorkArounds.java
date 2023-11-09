@@ -429,6 +429,11 @@ public class WorkArounds {
         }
     }
 
+    public boolean isRestrictedAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return sym.kind == MTH && (sym.flags() & Flags.RESTRICTED) != 0;
+    }
+
     public boolean isPreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_API) != 0;

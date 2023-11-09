@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class ClassFileVersionTest {
      * compilation. If a particular class becomes non-preview, any
      * currently preview class can be substituted in.
      */
-    private static final Class<?> PREVIEW_API = java.lang.foreign.MemorySegment.class;
+    private static final Class<?> PREVIEW_API = java.lang.ScopedValue.class;
     static Method m;
 
     public static void testIt(String className, int expectedResult) throws Exception {

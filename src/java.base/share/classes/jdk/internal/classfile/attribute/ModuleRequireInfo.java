@@ -56,6 +56,9 @@ public sealed interface ModuleRequireInfo
      */
     int requiresFlagsMask();
 
+    /**
+     * {@return the access flags}
+     */
     default Set<AccessFlag> requiresFlags() {
         return AccessFlag.maskToAccessFlags(requiresFlagsMask(), AccessFlag.Location.MODULE_REQUIRES);
     }

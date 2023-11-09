@@ -238,7 +238,7 @@ const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 #endif
 
-#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+#if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
@@ -270,7 +270,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
-#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
+#endif // !X86
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -520,7 +520,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
-    return ((UpcallStub*)blob)->exception_handler();
+    return StubRoutines::upcall_stub_exception_handler();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
@@ -1872,7 +1872,8 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
   // nmethod could be deoptimized by the time we get here
   // so no update to the caller is needed.
 
-  if (caller.is_compiled_frame() && !caller.is_deoptimized_frame()) {
+  if ((caller.is_compiled_frame() && !caller.is_deoptimized_frame()) ||
+      (caller.is_native_frame() && ((CompiledMethod*)caller.cb())->method()->is_continuation_enter_intrinsic())) {
 
     address pc = caller.pc();
 
@@ -3256,16 +3257,24 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      // Inflate so the object's header no longer refers to the BasicLock.
-      if (lock->displaced_header().is_unlocked()) {
-        // The object is locked and the resulting ObjectMonitor* will also be
-        // locked so it can't be async deflated until ownership is dropped.
-        // See the big comment in basicLock.cpp: BasicLock::move_to().
-        ObjectSynchronizer::inflate_helper(kptr2->obj());
+      if (LockingMode == LM_LEGACY) {
+        // Inflate so the object's header no longer refers to the BasicLock.
+        if (lock->displaced_header().is_unlocked()) {
+          // The object is locked and the resulting ObjectMonitor* will also be
+          // locked so it can't be async deflated until ownership is dropped.
+          // See the big comment in basicLock.cpp: BasicLock::move_to().
+          ObjectSynchronizer::inflate_helper(kptr2->obj());
+        }
+        // Now the displaced header is free to move because the
+        // object's header no longer refers to it.
+        buf[i] = (intptr_t)lock->displaced_header().value();
       }
-      // Now the displaced header is free to move because the
-      // object's header no longer refers to it.
-      buf[i++] = (intptr_t)lock->displaced_header().value();
+#ifdef ASSERT
+      else {
+        buf[i] = badDispHeaderOSR;
+      }
+#endif
+      i++;
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

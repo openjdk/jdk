@@ -1693,8 +1693,6 @@ public class Thread implements Runnable {
      *
      * @throws  SecurityException
      *          if the current thread cannot modify this thread
-     *
-     * @revised 6.0, 14
      */
     public void interrupt() {
         if (this != Thread.currentThread()) {
@@ -1726,7 +1724,6 @@ public class Thread implements Runnable {
      * @return  {@code true} if the current thread has been interrupted;
      *          {@code false} otherwise.
      * @see #isInterrupted()
-     * @revised 6.0, 14
      */
     public static boolean interrupted() {
         return currentThread().getAndClearInterrupt();
@@ -1739,7 +1736,6 @@ public class Thread implements Runnable {
      * @return  {@code true} if this thread has been interrupted;
      *          {@code false} otherwise.
      * @see     #interrupted()
-     * @revised 6.0, 14
      */
     public boolean isInterrupted() {
         return interrupted;

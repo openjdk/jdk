@@ -43,6 +43,10 @@ import jdk.internal.classfile.impl.Util;
  * on classes, and indicates that the class is a local or anonymous class.
  * Delivered as a {@link ClassElement} when traversing the elements of a {@link
  * jdk.internal.classfile.ClassModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface EnclosingMethodAttribute
         extends Attribute<EnclosingMethodAttribute>, ClassElement

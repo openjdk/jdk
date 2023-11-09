@@ -138,9 +138,9 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 
 class JfrVframeStream : public vframeStreamCommon {
  private:
+  bool _vthread;
   const ContinuationEntry* _cont_entry;
   bool _async_mode;
-  bool _vthread;
   bool step_to_sender();
   void next_frame();
  public:
@@ -165,8 +165,9 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
                                  walk_continuation(jt))),
-    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
-    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
+    _vthread(JfrThreadLocal::is_vthread(jt)),
+    _cont_entry(_vthread ? jt->last_continuation() : nullptr),
+    _async_mode(async_mode) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);
   _frame = fr;

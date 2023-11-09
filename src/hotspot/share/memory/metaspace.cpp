@@ -31,7 +31,6 @@
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -42,11 +41,13 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-#include "memory/metaspaceTracer.hpp"
+#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/metaspaceStats.hpp"
+#include "memory/metaspaceTracer.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -54,11 +55,11 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "virtualspace.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -403,12 +404,11 @@ size_t MetaspaceGC::allowed_expansion() {
   size_t committed_bytes = MetaspaceUtils::committed_bytes();
   size_t capacity_until_gc = capacity_until_GC();
 
-  assert(capacity_until_gc >= committed_bytes,
-         "capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
-         capacity_until_gc, committed_bytes);
-
   size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
-  size_t left_until_GC = capacity_until_gc - committed_bytes;
+  // capacity_until_GC may have been decreased concurrently and may
+  // temporarily be lower than what metaspace has committed. Allow for that.
+  size_t left_until_GC = capacity_until_gc > committed_bytes ?
+      capacity_until_gc - committed_bytes : 0;
   size_t left_to_commit = MIN2(left_until_GC, left_until_max);
   log_trace(gc, metaspace, freelist)("allowed expansion words: " SIZE_FORMAT
             " (left_until_max: " SIZE_FORMAT ", left_until_GC: " SIZE_FORMAT ".",
@@ -430,7 +430,7 @@ void MetaspaceGC::compute_new_size() {
   // Including the chunk free lists in the definition of "in use" is therefore
   // necessary. Not including the chunk free lists can cause capacity_until_GC to
   // shrink below committed_bytes() and this has caused serious bugs in the past.
-  const size_t used_after_gc = MetaspaceUtils::committed_bytes();
+  const double used_after_gc = (double)MetaspaceUtils::committed_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
@@ -464,10 +464,10 @@ void MetaspaceGC::compute_new_size() {
                                                new_capacity_until_GC,
                                                MetaspaceGCThresholdUpdater::ComputeNewSize);
       log_trace(gc, metaspace)("    expanding:  minimum_desired_capacity: %6.1fKB  expand_bytes: %6.1fKB  MinMetaspaceExpansion: %6.1fKB  new metaspace HWM:  %6.1fKB",
-                               minimum_desired_capacity / (double) K,
-                               expand_bytes / (double) K,
-                               MinMetaspaceExpansion / (double) K,
-                               new_capacity_until_GC / (double) K);
+                               (double) minimum_desired_capacity / (double) K,
+                               (double) expand_bytes / (double) K,
+                               (double) MinMetaspaceExpansion / (double) K,
+                               (double) new_capacity_until_GC / (double) K);
     }
     return;
   }
@@ -490,7 +490,7 @@ void MetaspaceGC::compute_new_size() {
     log_trace(gc, metaspace)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
                              maximum_free_percentage, minimum_used_percentage);
     log_trace(gc, metaspace)("    minimum_desired_capacity: %6.1fKB  maximum_desired_capacity: %6.1fKB",
-                             minimum_desired_capacity / (double) K, maximum_desired_capacity / (double) K);
+                             (double) minimum_desired_capacity / (double) K, (double) maximum_desired_capacity / (double) K);
 
     assert(minimum_desired_capacity <= maximum_desired_capacity,
            "sanity check");
@@ -517,9 +517,9 @@ void MetaspaceGC::compute_new_size() {
         _shrink_factor = MIN2(current_shrink_factor * 4, (uint) 100);
       }
       log_trace(gc, metaspace)("    shrinking:  initThreshold: %.1fK  maximum_desired_capacity: %.1fK",
-                               MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
+                               (double) MetaspaceSize / (double) K, (double) maximum_desired_capacity / (double) K);
       log_trace(gc, metaspace)("    shrink_bytes: %.1fK  current_shrink_factor: %d  new shrink factor: %d  MinMetaspaceExpansion: %.1fK",
-                               shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, MinMetaspaceExpansion / (double) K);
+                               (double) shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, (double) MinMetaspaceExpansion / (double) K);
     }
   }
 
@@ -568,12 +568,6 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
          "wrong alignment");
 
   MetaspaceContext::initialize_class_space_context(rs);
-
-  // This does currently not work because rs may be the result of a split
-  // operation and NMT seems not to be able to handle splits.
-  // Will be fixed with JDK-8243535.
-  // MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
-
 }
 
 // Returns true if class space has been setup (initialize_class_space).
@@ -581,86 +575,71 @@ bool Metaspace::class_space_is_initialized() {
   return MetaspaceContext::context_class() != nullptr;
 }
 
-// Reserve a range of memory at an address suitable for en/decoding narrow
-// Klass pointers (see: CompressedClassPointers::is_valid_base()).
-// The returned address shall both be suitable as a compressed class pointers
-//  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
-//  multiple of allocation granularity).
-// On error, returns an unreserved space.
-ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
+// Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+// is true, we will attempt to reserve memory suitable for zero-based encoding.
+ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges) {
 
-#if defined(AARCH64) || defined(PPC64)
-  const size_t alignment = Metaspace::reserve_alignment();
+  char* result = nullptr;
+  const bool randomize = RandomizeClassSpaceLocation;
 
-  // AArch64: Try to align metaspace class space so that we can decode a
-  // compressed klass with a single MOVK instruction. We can do this iff the
-  // compressed class base is a multiple of 4G.
-  // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
-  // of the upper 32-bits of the address are zero so we can handle a shift
-  // when decoding.
-
-  // PPC64: smaller heaps up to 2g will be mapped just below 4g. Then the
-  // attempt to place the compressed class space just after the heap fails on
-  // Linux 4.1.42 and higher because the launcher is loaded at 4g
-  // (ELF_ET_DYN_BASE). In that case we reach here and search the address space
-  // below 32g to get a zerobased CCS. For simplicity we reuse the search
-  // strategy for AARCH64.
-
-  static const struct {
-    address from;
-    address to;
-    size_t increment;
-  } search_ranges[] = {
-    {  (address)(4*G),   (address)(32*G),   4*G, },
-    {  (address)(32*G),  (address)(1024*G), (4 << LogKlassAlignmentInBytes) * G },
-    {  nullptr, nullptr, 0 }
-  };
-
-  // Calculate a list of all possible values for the starting address for the
-  // compressed class space.
-  ResourceMark rm;
-  GrowableArray<address> list(36);
-  for (int i = 0; search_ranges[i].from != nullptr; i ++) {
-    address a = search_ranges[i].from;
-    assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
-    while (a < search_ranges[i].to) {
-      list.append(a);
-      a +=  search_ranges[i].increment;
+  // First try to reserve in low address ranges.
+  if (try_in_low_address_ranges) {
+    constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
+    log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for unscaled narrow Klass encoding", unscaled_max);
+    result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max,
+                                                size, Metaspace::reserve_alignment(), randomize);
+    if (result == nullptr) {
+      constexpr uintptr_t zerobased_max = unscaled_max << LogKlassAlignmentInBytes;
+      log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for zero-based narrow Klass encoding", zerobased_max);
+      result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max,
+                                                  size, Metaspace::reserve_alignment(), randomize);
     }
+  } // end: low-address reservation
+
+#if defined(AARCH64) || defined(PPC64) || defined(S390)
+  if (result == nullptr) {
+    // Failing zero-based allocation, or in strict_base mode, try to come up with
+    // an optimized start address that is amenable to JITs that use 16-bit moves to
+    // load the encoding base as a short immediate.
+    // Therefore we try here for an address that when right-shifted by
+    // LogKlassAlignmentInBytes has only 1s in the third 16-bit quadrant.
+    //
+    // Example: for shift=3, the address space searched would be
+    // [0x0080_0000_0000 - 0xFFF8_0000_0000].
+
+    // Number of least significant bits that should be zero
+    constexpr int lo_zero_bits = 32 + LogKlassAlignmentInBytes;
+    // Number of most significant bits that should be zero
+    constexpr int hi_zero_bits = 16;
+
+    constexpr size_t alignment = nth_bit(lo_zero_bits);
+    assert(alignment >= Metaspace::reserve_alignment(), "Sanity");
+    constexpr uint64_t min = alignment;
+    constexpr uint64_t max = nth_bit(64 - hi_zero_bits);
+
+    log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X
+                              " with " SIZE_FORMAT_X " alignment", min, max, alignment);
+    result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
+  }
+#endif // defined(AARCH64) || defined(PPC64) || defined(S390)
+
+  if (result == nullptr) {
+    // Fallback: reserve anywhere and hope the resulting block is usable.
+    log_debug(metaspace, map)("Trying anywhere...");
+    result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
 
-  int len = list.length();
-  int r = 0;
-  if (!DumpSharedSpaces) {
-    // Starting from a random position in the list. If the address cannot be reserved
-    // (the OS already assigned it for something else), go to the next position, wrapping
-    // around if necessary, until we exhaust all the items.
-    os::init_random((int)os::javaTimeNanos());
-    r = os::random();
-    log_info(metaspace)("Randomizing compressed class space: start from %d out of %d locations",
-                        r % len, len);
+  // Wrap resulting range in ReservedSpace
+  ReservedSpace rs;
+  if (result != nullptr) {
+    assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
+    rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
+                                                      os::vm_page_size(), false, false);
+  } else {
+    rs = ReservedSpace();
   }
-  for (int i = 0; i < len; i++) {
-    address a = list.at((i + r) % len);
-    ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                     os::vm_page_size(), (char*)a);
-    if (rs.is_reserved()) {
-      assert(a == (address)rs.base(), "Sanity");
-      return rs;
-    }
-  }
-#endif // defined(AARCH64) || defined(PPC64)
-
-#ifdef AARCH64
-  // Note: on AARCH64, if the code above does not find any good placement, we
-  // have no recourse. We return an empty space and the VM will exit.
-  return ReservedSpace();
-#else
-  // Default implementation: Just reserve anywhere.
-  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)nullptr);
-#endif // AARCH64
+  return rs;
 }
-
 #endif // _LP64
 
 size_t Metaspace::reserve_alignment_words() {
@@ -708,7 +687,7 @@ void Metaspace::ergo_initialize() {
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = MaxMetaspaceSize * 0.8;
+    size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
     size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
 
     // CCS must be aligned to root chunk size, and be at least the size of one
@@ -781,14 +760,13 @@ void Metaspace::global_initialize() {
     // case (b) (No CDS)
     ReservedSpace rs;
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
-    address base = nullptr;
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
-      base = (address)CompressedClassSpaceBaseAddress;
+      const address base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
@@ -800,33 +778,21 @@ void Metaspace::global_initialize() {
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
+        LogTarget(Debug, metaspace) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          os::print_memory_mappings((char*)base, size, &ls);
+        }
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",
                 CompressedClassSpaceBaseAddress));
       }
     }
 
-    if (!rs.is_reserved()) {
-      // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
-      //  territory, i.e. its base is under 32G, then we attempt to place ccs
-      //  right above the java heap.
-      // Otherwise the lower 32G are still free. We try to place ccs at the lowest
-      // allowed mapping address.
-      base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
-              CompressedOops::end() : (address)HeapBaseMinAddress;
-      base = align_up(base, Metaspace::reserve_alignment());
-
-      if (base != nullptr) {
-        if (CompressedKlassPointers::is_valid_base(base)) {
-          rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                             os::vm_page_size(), (char*)base);
-        }
-      }
-    }
-
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
-      rs = Metaspace::reserve_address_space_for_compressed_classes(size);
+      log_info(metaspace)("Reserving compressed class space anywhere");
+      rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
     }
 
     // ...failing that, give up.
@@ -835,6 +801,9 @@ void Metaspace::global_initialize() {
           err_msg("Could not allocate compressed class space: " SIZE_FORMAT " bytes",
                    CompressedClassSpaceSize));
     }
+
+    // Mark class space as such
+    MemTracker::record_virtual_memory_type((address)rs.base(), mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);

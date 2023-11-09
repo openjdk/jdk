@@ -1155,8 +1155,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock)("SharedRuntime lock fast");
-      __ fast_lock_2(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                     0x7 /* savemask */, slow_lock);
+      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                          0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
     } else if (LockingMode == LM_LEGACY) {
       const Register mark = tmp;
@@ -1242,8 +1242,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_synchronized()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
       log_trace(fastlock)("SharedRuntime unlock fast");
-      __ fast_unlock_2(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                       7 /* savemask */, slow_unlock);
+      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                            7 /* savemask */, slow_unlock);
       // Fall through
     } else if (LockingMode == LM_LEGACY) {
       // See C1_MacroAssembler::unlock_object() for more comments

@@ -139,13 +139,13 @@ SurfaceData_GetOps(JNIEnv *env, jobject sData)
     return GetSDOps(env, sData, JNI_TRUE);
 }
 
-JNIEXPORT SurfaceDataOps * JNICALL
+SurfaceDataOps *
 SurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData)
 {
     return GetSDOps(env, sData, JNI_FALSE);
 }
 
-JNIEXPORT void JNICALL
+void
 SurfaceData_SetOps(JNIEnv *env, jobject sData, SurfaceDataOps *ops)
 {
     if (JNU_GetLongFieldAsPtr(env, sData, pDataID) == NULL) {

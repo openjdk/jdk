@@ -39,8 +39,10 @@ public enum CABI {
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
     WIN_AARCH_64,
+    LINUX_PPC_64,
     LINUX_PPC_64_LE,
     LINUX_RISCV_64,
+    LINUX_S390,
     FALLBACK,
     UNSUPPORTED;
 
@@ -73,6 +75,10 @@ public enum CABI {
                     // The Linux ABI follows the standard AAPCS ABI
                     return LINUX_AARCH_64;
                 }
+            } else if (arch.equals("ppc64")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_PPC_64;
+                }
             } else if (arch.equals("ppc64le")) {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_PPC_64_LE;
@@ -81,7 +87,11 @@ public enum CABI {
                 if (OperatingSystem.isLinux()) {
                     return LINUX_RISCV_64;
                 }
-            }
+            } else if (arch.equals("s390x")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_S390;
+                }
+        }
         } else if (FallbackLinker.isSupported()) {
             return FALLBACK; // fallback linker
         }

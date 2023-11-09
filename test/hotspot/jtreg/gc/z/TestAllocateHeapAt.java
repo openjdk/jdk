@@ -41,7 +41,7 @@ public class TestAllocateHeapAt {
         final String heapBackingFile = "Heap Backing File: " + directory;
         final String failedToCreateFile = "Failed to create file " + directory;
 
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
+        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UseZGC",
                 "-XX:+ZGenerational",
                 "-Xlog:gc*",

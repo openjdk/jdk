@@ -430,6 +430,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AbortVMOnSafepointTimeout, false, DIAGNOSTIC,               \
           "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
+  product(uint64_t, AbortVMOnSafepointTimeoutDelay, 0, DIAGNOSTIC,          \
+          "Delay in milliseconds for option AbortVMOnSafepointTimeout")     \
+          range(0, max_jlong)                                               \
+                                                                            \
   product(bool, AbortVMOnVMOperationTimeout, false, DIAGNOSTIC,             \
           "Abort upon failure to complete VM operation promptly")           \
                                                                             \
@@ -553,7 +557,7 @@ const int ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+  product(int, HeapDumpGzipLevel, 0, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
           "level of the dump file. 0 (the default) disables gzip "          \
           "compression. Otherwise the level must be between 1 and 9.")      \
@@ -1060,13 +1064,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  develop(bool, UseHeavyMonitors, false,                                    \
-          "(Deprecated) Use heavyweight instead of lightweight Java "       \
-          "monitors")                                                       \
-                                                                            \
   develop(bool, VerifyHeavyMonitors, false,                                 \
           "Checks that no stack locking happens when using "                \
-          "+UseHeavyMonitors")                                              \
+          "-XX:LockingMode=0 (LM_MONITOR)")                                 \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
@@ -1320,7 +1320,7 @@ const int ObjectAlignmentInBytes = 8;
           "max number of compiled code units to print in error log")        \
           range(0, VMError::max_error_log_print_code)                       \
                                                                             \
-  notproduct(intx, MaxElementPrintSize, 256,                                \
+  notproduct(int, MaxElementPrintSize, 256,                                 \
           "maximum number of elements to print")                            \
                                                                             \
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
@@ -1424,6 +1424,9 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
+  develop(bool, RandomizeClassSpaceLocation, true,                          \
+          "Randomize location of class space.")                             \
+                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
@@ -1462,13 +1465,13 @@ const int ObjectAlignmentInBytes = 8;
           "The minimum expansion of Metaspace (in bytes)")                  \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxMetaspaceFreeRatio,    70,                              \
+  product(uint, MaxMetaspaceFreeRatio,    70,                               \
           "The maximum percentage of Metaspace free after GC to avoid "     \
           "shrinking")                                                      \
           range(0, 100)                                                     \
           constraint(MaxMetaspaceFreeRatioConstraintFunc,AfterErgo)         \
                                                                             \
-  product(uintx, MinMetaspaceFreeRatio,    40,                              \
+  product(uint, MinMetaspaceFreeRatio,    40,                               \
           "The minimum percentage of Metaspace free after GC to avoid "     \
           "expansion")                                                      \
           range(0, 99)                                                      \
@@ -1890,10 +1893,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(size_t, ArrayAllocatorMallocLimit, SIZE_MAX, EXPERIMENTAL,        \
-          "Allocation less than this value will be allocated "              \
-          "using malloc. Larger allocations will use mmap.")                \
-                                                                            \
   product(bool, AlwaysAtomicAccesses, false, EXPERIMENTAL,                  \
           "Accesses to all variables should always be atomic")              \
                                                                             \
@@ -1984,11 +1983,11 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
+  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
+          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \

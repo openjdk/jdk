@@ -2250,7 +2250,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     b(failure);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    fast_lock(oop, displaced_header, temp, failure);
+    lightweight_lock(oop, displaced_header, temp, failure);
     b(success);
   }
 
@@ -2334,7 +2334,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     b(success);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    fast_unlock(oop, current_header, failure);
+    lightweight_unlock(oop, current_header, failure);
     b(success);
   }
 
@@ -3993,14 +3993,14 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with CCR0 NE.
 // Falls through upon success with CCR0 EQ.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1: temporary register
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1);
 
@@ -4026,13 +4026,13 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Label& s
   stw(t1, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with CCR0 NE.
 // Falls through upon success, with CCR0 EQ.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object, will be destroyed
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr);
 

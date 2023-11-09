@@ -178,15 +178,12 @@ PSPromotionManager::PSPromotionManager() {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
 
-  uint queue_size;
-  queue_size = claimed_stack_depth()->max_elems();
+  uint queue_size = claimed_stack_depth()->max_elems();
 
   if (ParallelGCThreads == 1) {
     _target_stack_size = 0;
   } else {
-    // don't let the target stack size to be more than 1/4 of the entries
-    _target_stack_size = (uint) MIN2((uint) GCDrainStackTargetSize,
-                                     (uint) (queue_size / 4));
+    _target_stack_size = GCDrainStackTargetSize;
   }
 
   _array_chunk_size = ParGCArrayScanChunk;

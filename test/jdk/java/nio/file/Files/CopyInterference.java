@@ -24,6 +24,8 @@
 /* @test
  * @bug 8114830
  * @summary Verify FileAlreadyExistsException is not thrown for REPLACE_EXISTING
+ * @library ..
+ * @build CopyInterference
  * @run junit CopyInterference
  */
 import java.io.InputStream;
@@ -112,17 +114,22 @@ public class CopyInterference {
                             new CopyOption[] {REPLACE_EXISTING});
         list.add(args);
 
-        // symblic link, followed
-        Path link = dir.resolve("link");
-        Files.createSymbolicLink(link, sourceFile);
-        args = Arguments.of(link, dir.resolve("linkFollowed"),
-                            new CopyOption[] {REPLACE_EXISTING});
-        list.add(args);
+        if (TestUtil.supportsLinks(dir)) {
+            // symbolic link, followed
+            Path link = dir.resolve("link");
+            Files.createSymbolicLink(link, sourceFile);
+            args = Arguments.of(link, dir.resolve("linkFollowed"),
+                                new CopyOption[] {REPLACE_EXISTING});
+            list.add(args);
 
-        // symblic link, not followed
-        args = Arguments.of(link, dir.resolve("linkNotFollowed"),
-                            new CopyOption[] {REPLACE_EXISTING, NOFOLLOW_LINKS});
-        list.add(args);
+            // symbolic link, not followed
+            args = Arguments.of(link, dir.resolve("linkNotFollowed"),
+                                new CopyOption[] {REPLACE_EXISTING,
+                                                  NOFOLLOW_LINKS});
+            list.add(args);
+        } else {
+            System.out.println("Links not supported: not testing links");
+        }
 
         return list.stream();
     }

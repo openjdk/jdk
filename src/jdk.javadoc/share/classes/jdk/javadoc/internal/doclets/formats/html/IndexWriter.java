@@ -79,7 +79,7 @@ public class IndexWriter extends HtmlDocletWriter {
      */
     public static void generate(HtmlConfiguration configuration) throws DocletException {
         var writerFactory = configuration.getWriterFactory();
-        IndexBuilder mainIndex = configuration.mainIndex;
+        IndexBuilder mainIndex = configuration.indexBuilder;
         List<Character> firstCharacters = mainIndex.getFirstCharacters();
         if (configuration.getOptions().splitIndex()) {
             ListIterator<Character> iter = firstCharacters.listIterator();
@@ -104,7 +104,7 @@ public class IndexWriter extends HtmlDocletWriter {
     protected IndexWriter(HtmlConfiguration configuration, DocPath path,
                           List<Character> allFirstCharacters, List<Character> displayFirstCharacters) {
         super(configuration, path);
-        this.mainIndex = configuration.mainIndex;
+        this.mainIndex = configuration.indexBuilder;
         this.splitIndex = configuration.getOptions().splitIndex();
         this.allFirstCharacters = allFirstCharacters;
         this.displayFirstCharacters = displayFirstCharacters;

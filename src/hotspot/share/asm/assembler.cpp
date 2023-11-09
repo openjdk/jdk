@@ -32,6 +32,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Implementation of AbstractAssembler
 //

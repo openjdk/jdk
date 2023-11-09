@@ -5187,6 +5187,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             groupIndex = groupCount + groupCount;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5223,6 +5229,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.doUnicodeCase = doUnicodeCase;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5529,10 +5541,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * they are ignored for purposes of finding word boundaries.
      */
     static final class Bound extends Node {
-        static int LEFT = 0x1;
-        static int RIGHT= 0x2;
-        static int BOTH = 0x3;
-        static int NONE = 0x4;
+        static final int LEFT = 0x1;
+        static final int RIGHT= 0x2;
+        static final int BOTH = 0x3;
+        static final int NONE = 0x4;
         int type;
         boolean useUWORD;
         Bound(int n, boolean useUWORD) {

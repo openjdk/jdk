@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -95,12 +96,14 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
+#include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -541,16 +544,30 @@ JVM_END
 JVM_ENTRY(void, JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo))
   Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(stackFrameInfo));
   Handle stack_trace_element(THREAD, JNIHandles::resolve_non_null(element));
-  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, THREAD);
+  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, CHECK);
 JVM_END
 
 
 // java.lang.StackWalker //////////////////////////////////////////////////////
+JVM_ENTRY(void, JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj))
+  Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(obj));
 
+  bool have_name = (java_lang_StackFrameInfo::name(stack_frame_info()) != nullptr);
+  bool have_type = (java_lang_StackFrameInfo::type(stack_frame_info()) != nullptr);
+  Method* method = java_lang_StackFrameInfo::get_method(stack_frame_info());
+  if (!have_name) {
+    oop name = StringTable::intern(method->name(), CHECK);
+    java_lang_StackFrameInfo::set_name(stack_frame_info(), name);
+  }
+  if (!have_type) {
+    Handle type = java_lang_String::create_from_symbol(method->signature(), CHECK);
+    java_lang_StackFrameInfo::set_type(stack_frame_info(), type());
+  }
+JVM_END
 
-JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                                      jint skip_frames, jobject contScope, jobject cont,
-                                     jint frame_count, jint start_index, jobjectArray frames))
+                                     jint buffer_size, jint start_index, jobjectArray frames))
   if (!thread->has_last_Java_frame()) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: no stack trace", nullptr);
   }
@@ -558,39 +575,37 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
   Handle contScope_h(THREAD, JNIHandles::resolve(contScope));
   Handle cont_h(THREAD, JNIHandles::resolve(cont));
-  // frames array is a Class<?>[] array when only getting caller reference,
+  // frames array is a ClassFrameInfo[] array when only getting caller reference,
   // and a StackFrameInfo[] array (or derivative) otherwise. It should never
   // be null.
   objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
   objArrayHandle frames_array_h(THREAD, fa);
 
-  int limit = start_index + frame_count;
-  if (frames_array_h->length() < limit) {
+  if (frames_array_h->length() < buffer_size) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", nullptr);
   }
 
   oop result = StackWalk::walk(stackStream_h, mode, skip_frames, contScope_h, cont_h,
-                               frame_count, start_index, frames_array_h, CHECK_NULL);
+                               buffer_size, start_index, frames_array_h, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
 JVM_END
 
 
-JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
-                                  jint frame_count, jint start_index,
+JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
+                                  jint last_batch_count, jint buffer_size, jint start_index,
                                   jobjectArray frames))
-  // frames array is a Class<?>[] array when only getting caller reference,
+  // frames array is a ClassFrameInfo[] array when only getting caller reference,
   // and a StackFrameInfo[] array (or derivative) otherwise. It should never
   // be null.
   objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
   objArrayHandle frames_array_h(THREAD, fa);
 
-  int limit = start_index+frame_count;
-  if (frames_array_h->length() < limit) {
+  if (frames_array_h->length() < buffer_size) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers");
   }
 
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-  return StackWalk::fetchNextBatch(stackStream_h, mode, anchor, frame_count,
+  return StackWalk::fetchNextBatch(stackStream_h, mode, anchor, last_batch_count, buffer_size,
                                   start_index, frames_array_h, THREAD);
 JVM_END
 
@@ -3399,8 +3414,7 @@ JVM_END
 // Library support ///////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(void*, JVM_LoadZipLibrary())
-  ClassLoader::load_zip_library_if_needed();
-  return ClassLoader::zip_library_handle();
+  return ZipLibrary::handle();
 JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
@@ -3593,7 +3607,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jobject dynamicMethodType,
                                               jclass lambdaProxyClass))
 #if INCLUDE_CDS
-  if (!Arguments::is_dumping_archive()) {
+  if (!CDSConfig::is_dumping_archive()) {
     return;
   }
 
@@ -3681,7 +3695,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-  return Arguments::is_dumping_archive();
+  return CDSConfig::is_dumping_archive();
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsSharingEnabled(JNIEnv* env))

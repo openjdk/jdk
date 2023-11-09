@@ -30,6 +30,7 @@ import java.lang.constant.ModuleDesc;
 /**
  * Models a {@code CONSTANT_Module_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.11 The CONSTANT_Module_info Structure
  */
 public sealed interface ModuleEntry extends PoolEntry
         permits AbstractPoolEntry.ModuleEntryImpl {

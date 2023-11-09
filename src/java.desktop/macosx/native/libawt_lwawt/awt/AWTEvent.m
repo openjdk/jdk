@@ -291,7 +291,7 @@ const nsKeyToJavaModifierTable[] =
         //kCGSFlagsMaskAppleLeftAlternateKey,
         //kCGSFlagsMaskAppleRightAlternateKey,
         58,
-        0,
+        61,
         java_awt_event_InputEvent_ALT_DOWN_MASK,
         java_awt_event_InputEvent_ALT_MASK,
         java_awt_event_KeyEvent_VK_ALT

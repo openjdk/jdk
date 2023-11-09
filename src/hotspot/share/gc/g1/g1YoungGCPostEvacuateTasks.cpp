@@ -414,13 +414,12 @@ public:
 
   void do_work(uint worker_id) override {
     RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-    const size_t buffer_capacity = _rdcqs->buffer_capacity();
     BufferNode* next = Atomic::load(&_nodes);
     while (next != nullptr) {
       BufferNode* node = next;
       next = Atomic::cmpxchg(&_nodes, node, node->next());
       if (next == node) {
-        cl.apply_to_buffer(node, buffer_capacity, worker_id);
+        cl.apply_to_buffer(node, worker_id);
         next = node->next();
       }
     }
@@ -435,7 +434,7 @@ class FreeCSetStats {
   size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
   size_t _failure_waste_words; // Wasted size in failed regions
-  size_t _rs_length;           // Remembered set size
+  size_t _card_rs_length;      // (Card Set) Remembered set size
   uint _regions_freed;         // Number of regions freed
 
 public:
@@ -445,7 +444,7 @@ public:
       _bytes_allocated_in_old_since_last_gc(0),
       _failure_used_words(0),
       _failure_waste_words(0),
-      _rs_length(0),
+      _card_rs_length(0),
       _regions_freed(0) { }
 
   void merge_stats(FreeCSetStats* other) {
@@ -455,7 +454,7 @@ public:
     _bytes_allocated_in_old_since_last_gc += other->_bytes_allocated_in_old_since_last_gc;
     _failure_used_words += other->_failure_used_words;
     _failure_waste_words += other->_failure_waste_words;
-    _rs_length += other->_rs_length;
+    _card_rs_length += other->_card_rs_length;
     _regions_freed += other->_regions_freed;
   }
 
@@ -469,7 +468,7 @@ public:
 
     G1Policy *policy = g1h->policy();
     policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
-    policy->record_rs_length(_rs_length);
+    policy->record_card_rs_length(_card_rs_length);
     policy->cset_regions_freed();
   }
 
@@ -496,8 +495,8 @@ public:
     _regions_freed += 1;
   }
 
-  void account_rs_length(HeapRegion* r) {
-    _rs_length += r->rem_set()->occupied();
+  void account_card_rs_length(HeapRegion* r) {
+    _card_rs_length += r->rem_set()->occupied();
   }
 };
 
@@ -618,7 +617,7 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    stats()->account_rs_length(r);
+    stats()->account_card_rs_length(r);
 
     if (r->is_young()) {
       assert_tracks_surviving_words(r);

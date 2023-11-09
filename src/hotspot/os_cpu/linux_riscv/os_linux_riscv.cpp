@@ -367,7 +367,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::fetch_frame_from_context(uc).pc();
-  print_instructions(st, pc, UseRVC ? sizeof(char) : (int)NativeInstruction::instruction_size);
+  print_instructions(st, pc);
   st->cr();
 }
 

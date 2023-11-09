@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,12 @@ import jdk.test.lib.process.ProcessTools;
 public class TestRemsetLoggingThreads {
 
   private static void runTest(int refinementThreads, int workerThreads) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-XX:+UnlockDiagnosticVMOptions",
-                                                              "-Xlog:gc+remset+exit=trace",
-                                                              "-XX:G1ConcRefinementThreads=" + refinementThreads,
-                                                              "-XX:ParallelGCThreads=" + workerThreads,
-                                                              "-version");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
+                                                                         "-XX:+UnlockDiagnosticVMOptions",
+                                                                         "-Xlog:gc+remset+exit=trace",
+                                                                         "-XX:G1ConcRefinementThreads=" + refinementThreads,
+                                                                         "-XX:ParallelGCThreads=" + workerThreads,
+                                                                         "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

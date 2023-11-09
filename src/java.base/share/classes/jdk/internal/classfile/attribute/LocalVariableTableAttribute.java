@@ -37,6 +37,8 @@ import java.util.List;
  * Delivered as a {@link jdk.internal.classfile.instruction.LocalVariable} when traversing the
  * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
  * {@link jdk.internal.classfile.Classfile.DebugElementsOption} option.
+ * <p>
+ * The attribute permits multiple instances in a given location.
  */
 public sealed interface LocalVariableTableAttribute
         extends Attribute<LocalVariableTableAttribute>

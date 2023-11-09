@@ -22,15 +22,16 @@ for building and running IGV.
 
 # Usage
 
-The JVM support is controlled by the flag `-XX:PrintIdealGraphLevel=#` where `#`
-is:
+The JVM support is controlled by the flag `-XX:PrintIdealGraphLevel=N`, where
+Ideal graphs are dumped at the following points:
 
-* 0: no output, the default
-* 1: dumps graph after parsing, before matching, and final code (also dumps
-     graphs for failed compilations, if available)
-* 2: more detail, including after loop opts
-* 3: even more detail
-* 4: prints graph after parsing every bytecode (very slow)
+* `N=0`: no output (default)
+* `N=1`: after parsing, before matching, and final code (also for failed
+  compilations, if available)
+* `N=2`: additionally, after every major phase (including loop opts)
+* `N=3`: additionally, after every minor phase
+* `N=4`: additionally, after every effective IGVN step (slow)
+* `N=5`: additionally, after parsing every bytecode (very slow)
 
 By default the JVM expects that it will connect to a visualizer on the local
 host on port 4444. This can be configured using the options

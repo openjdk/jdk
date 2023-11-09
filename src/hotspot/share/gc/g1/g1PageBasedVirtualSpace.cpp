@@ -26,11 +26,11 @@
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -98,10 +98,6 @@ size_t G1PageBasedVirtualSpace::reserved_size() const {
 
 size_t G1PageBasedVirtualSpace::uncommitted_size()  const {
   return reserved_size() - committed_size();
-}
-
-size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
-  return (addr - _low_boundary) / _page_size;
 }
 
 bool G1PageBasedVirtualSpace::is_area_committed(size_t start_page, size_t size_in_pages) const {

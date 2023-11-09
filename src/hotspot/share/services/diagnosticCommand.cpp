@@ -24,13 +24,15 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
@@ -38,6 +40,7 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/nmtDCmd.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -57,15 +60,15 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
-#include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "trimCHeapDCmd.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "trimCHeapDCmd.hpp"
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -137,6 +140,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
@@ -878,11 +882,11 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   const char* max_value = _max.value();
-  long max = -1;
+  int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    max = ::strtol(max_value, &endptr, 10);
-    if (max == 0 && max_value == endptr) {
+    int max;
+    if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
     }
@@ -1132,4 +1136,18 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
+}
+
+CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_minsize);
+}
+
+void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
+  const bool human_readable = _human_readable.value();
+  const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
+  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }

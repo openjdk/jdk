@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,12 @@
  * @summary check that potentially applicable type annotations are skip if the variable or parameter was declared with var
  * @library /tools/lib
  * @modules
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile
+ *      java.base/jdk.internal.classfile.attribute
+ *      java.base/jdk.internal.classfile.constantpool
+ *      java.base/jdk.internal.classfile.instruction
+ *      java.base/jdk.internal.classfile.components
+ *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code
@@ -45,7 +50,8 @@ import java.nio.file.Paths;
 import java.lang.annotation.*;
 import java.util.Arrays;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -97,41 +103,45 @@ public class VariablesDeclaredWithVarTest {
     }
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = Classfile.of().parse(cfile.toPath());
         List<TypeAnnotation> annos = new ArrayList<>();
-        for (Method method : classFile.methods) {
+        for (MethodModel method : classFile.methods()) {
             findAnnotations(classFile, method, annos);
-            String methodName = method.getName(classFile.constant_pool);
+            String methodName = method.methodName().stringValue();
             Assert.check(annos.size() == 0, "there shouldn't be any type annotations in any method, found " + annos.size() +
                     " type annotations at method " + methodName);
         }
     }
 
-    void findAnnotations(ClassFile cf, Method m, List<TypeAnnotation> annos) {
-        findAnnotations(cf, m, Attribute.RuntimeVisibleTypeAnnotations, annos);
-        findAnnotations(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, annos);
+    void findAnnotations(ClassModel cf, MethodModel m, List<TypeAnnotation> annos) {
+        findAnnotations(cf, m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cf, m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
     }
 
-    void findAnnotations(ClassFile cf, Method m, String name, List<TypeAnnotation> annos) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            annos.addAll(Arrays.asList(tAttr.annotations));
+    <T extends Attribute<T>> void findAnnotations(ClassModel cf, AttributedElement m, AttributeMapper<T> attrName, List<TypeAnnotation> annos) {
+        Attribute<T> attr = m.findAttribute(attrName).orElse(null);
+        addAnnos(annos, attr);
+        if (m instanceof MethodModel) {
+            CodeAttribute cattr = m.findAttribute(Attributes.CODE).orElse(null);
+            if (cattr != null) {
+                attr = cattr.findAttribute(attrName).orElse(null);
+                addAnnos(annos, attr);
+            }
         }
+    }
 
-        int cindex = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-        if (cindex != -1) {
-            Attribute cattr = m.attributes.get(cindex);
-            assert cattr instanceof Code_attribute;
-            Code_attribute cAttr = (Code_attribute)cattr;
-            index = cAttr.attributes.getIndex(cf.constant_pool, name);
-            if (index != -1) {
-                Attribute attr = cAttr.attributes.get(index);
-                assert attr instanceof RuntimeTypeAnnotations_attribute;
-                RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-                annos.addAll(Arrays.asList(tAttr.annotations));
+    private <T extends Attribute<T>> void addAnnos(List<TypeAnnotation> annos, Attribute<T> attr) {
+        if (attr != null) {
+            switch (attr) {
+                case RuntimeVisibleTypeAnnotationsAttribute vanno -> {
+                    annos.addAll(vanno.annotations());
+                }
+                case RuntimeInvisibleTypeAnnotationsAttribute ivanno -> {
+                    annos.addAll(ivanno.annotations());
+                }
+                default -> {
+                    throw new AssertionError();
+                }
             }
         }
     }

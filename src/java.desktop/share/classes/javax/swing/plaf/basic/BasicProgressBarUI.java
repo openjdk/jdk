@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -913,7 +913,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
                 // there is more than enough room in the progress bar
                 // for everything.
                 // This does have a strange dependency on
-                // getStringPlacememnt() in a funny way.
+                // getStringPlacement() in a funny way.
                 int stringHeight = fontSizer.getHeight() +
                                    fontSizer.getDescent();
                 if (stringHeight > size.height) {
@@ -980,7 +980,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
 
     /**
      * Returns the number of frames for the complete animation loop
-     * used by an indeterminate JProgessBar. The progress chunk will go
+     * used by an indeterminate JProgressBar. The progress chunk will go
      * from one end to the other and back during the entire loop. This
      * visual behavior may be changed by subclasses in other Look and Feels.
      *

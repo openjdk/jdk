@@ -144,7 +144,7 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY(ATTRIBUTE_NORETURN static void raise_fail_fast(void* exrecord, void* context);)
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
 
 public:
 
