@@ -1,9 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006733 8006775
+ * @bug 8006733 8006775 8043226
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
- * @ignore 8057679 clarify error messages trying to annotate scoping
  * @compile/fail/ref=CantAnnotateScoping.out -XDrawDiagnostics CantAnnotateScoping.java
  */
 
@@ -35,16 +34,20 @@ class Test {
     // Legal
     List<Outer. @TA SInner> li;
 
-    // Illegal
+    // Illegal: inadmissible location for type-use annotations: @TA
     @TA Outer.SInner osi;
-    // Illegal
+    // Illegal: inadmissible location for type-use annotations: @TA
     List<@TA Outer.SInner> aloi;
     // Illegal
+    // 1: inadmissible location for type-use annotations: @TA,@TA2
+    // 2: annotation @DA not applicable in this type context
     Object o1 = new @TA @DA @TA2 Outer.SInner();
     // Illegal
+    // 1: inadmissible location for type-use annotations: @TA
+    // 2: annotation @DA not applicable in this type context
     Object o = new ArrayList<@TA @DA Outer.SInner>();
 
-    // Illegal: @TA is only a type-use annotation
+    // Illegal: inadmissible location for type-use annotations: @TA
     @TA java.lang.Object f1;
 
     // Legal: @DA is only a declaration annotation
@@ -53,20 +56,17 @@ class Test {
     // Legal: @DTA is both a type-use and declaration annotation
     @DTA java.lang.Object f3;
 
-    // Illegal: @TA and @TA2 are only type-use annotations
+    // Illegal: inadmissible location for type-use annotations: @TA,@TA2
     @DTA @DA @TA @DA2 @TA2 java.lang.Object f4;
 
-    // Illegal: Do we want one or two messages?
-    // 1: @DA in invalid location
-    // 2: Not finding class "lang"
+    // Illegal: annotation @DA not applicable in this type context
     java. @DA lang.Object f5;
 
-    // Illegal: Do we want one or two messages?
-    // 1: @DA in invalid location
-    // 2: Not finding class "XXX"
+    // Illegal: two messages:
+    // 1: package java.XXX does not exist
+    // 2: annotation @DA not applicable in this type context
     java. @DA XXX.Object f6;
 
-    // Illegal: Can't find class "lang".
-    // Would a different error message be desirable?
+    // Illegal: inadmissible location for type-use annotations: @TA
     java. @TA lang.Object f7;
 }
