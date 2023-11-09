@@ -44,6 +44,11 @@ class os::win32 {
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
 
+  static int    _major_version;
+  static int    _minor_version;
+  static int    _build_number;
+  static int    _build_minor;
+
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
 
@@ -56,6 +61,25 @@ class os::win32 {
   // Windows-specific interface:
   static void   initialize_system_info();
   static void   setmode_streams();
+  static bool   is_windows_11_or_greater();
+  static bool   is_windows_server_2022_or_greater();
+  static DWORD  system_logical_processor_count();
+  static int windows_major_version() {
+    initialize_windows_version();
+    return _major_version;
+  }
+  static int windows_minor_version() {
+    initialize_windows_version();
+    return _minor_version;
+  }
+  static int windows_build_number() {
+    initialize_windows_version();
+    return _build_number;
+  }
+  static int windows_build_minor() {
+    initialize_windows_version();
+    return _build_minor;
+  }
 
   // Processor info as provided by NT
   static int processor_type()  { return _processor_type;  }
@@ -72,6 +96,8 @@ class os::win32 {
  private:
 
   static void initialize_performance_counter();
+  static void initialize_windows_version();
+  static DWORD active_processors_in_job_object();
 
  public:
   // Generic interface:

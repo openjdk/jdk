@@ -76,6 +76,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
 #if INCLUDE_JFR
@@ -867,21 +868,54 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  // Starting with Windows 11 and Windows Server 2022, the OS has changed to
+  // make processes and their threads span all processors in the system,
+  // across all processor groups, by default. Therefore, we will allow all
+  // processors to be active processors on these operating systems. However,
+  // job objects can be used to restrict processor affinity across the
+  // processor groups. In this case, the number of active processors must be
+  // obtained from the processor affinity in the job object.
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  if (schedules_all_processor_groups) {
+    DWORD processors_in_job_object = win32::active_processors_in_job_object();
+
+    if (processors_in_job_object > 0) {
+      return processors_in_job_object;
+    }
+  }
+
+  DWORD logical_processors = 0;
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+
+  // There is no associated job object so get the number of available logical processors from the process affinity mask
   DWORD_PTR lpProcessAffinityMask = 0;
   DWORD_PTR lpSystemAffinityMask = 0;
-  int proc_count = processor_count();
-  if (proc_count <= sizeof(UINT_PTR) * BitsPerByte &&
-      GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask)) {
-    // Nof active processors is number of bits in process affinity mask
-    int bitcount = 0;
-    while (lpProcessAffinityMask != 0) {
-      lpProcessAffinityMask = lpProcessAffinityMask & (lpProcessAffinityMask-1);
-      bitcount++;
+  if (GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask)) {
+    logical_processors = population_count(lpProcessAffinityMask);
+
+    if (logical_processors < si.dwNumberOfProcessors) {
+      // Respect the custom processor affinity since it is not equal to all processors in the current processor group
+      return logical_processors;
     }
-    return bitcount;
   } else {
-    return proc_count;
+    warning("GetProcessAffinityMask() failed: GetLastError->%ld.", GetLastError());
   }
+
+  // There are no processor affinity restrictions at this point so we can return
+  // the overall processor count if the OS automatically schedules threads across
+  // all processors on the system. Note that older operating systems can
+  // correctly report processor count but will not schedule threads across
+  // processor groups unless the application explicitly uses group affinity APIs
+  // to assign threads to processor groups. On these older operating systems, we
+  // will continue to use the dwNumberOfProcessors field. For details on the
+  // latest Windows scheduling behavior, see
+  // https://learn.microsoft.com/en-us/windows/win32/procthread/processor-groups#behavior-starting-with-windows-11-and-windows-server-2022
+  if (schedules_all_processor_groups) {
+    logical_processors = processor_count();
+  }
+
+  return logical_processors == 0 ? si.dwNumberOfProcessors : logical_processors;
 }
 
 uint os::processor_id() {
@@ -1770,52 +1804,13 @@ void os::print_os_info(outputStream* st) {
 }
 
 void os::win32::print_windows_version(outputStream* st) {
-  VS_FIXEDFILEINFO *file_info;
-  TCHAR kernel32_path[MAX_PATH];
-  UINT len, ret;
-
   bool is_workstation = !IsWindowsServer();
 
-  // Get the full path to \Windows\System32\kernel32.dll and use that for
-  // determining what version of Windows we're running on.
-  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
-  ret = GetSystemDirectory(kernel32_path, len);
-  if (ret == 0 || ret > len) {
-    st->print_cr("Call to GetSystemDirectory failed");
-    return;
-  }
-  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
-
-  DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
-  if (version_size == 0) {
-    st->print_cr("Call to GetFileVersionInfoSize failed");
-    return;
-  }
-
-  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
-  if (version_info == nullptr) {
-    st->print_cr("Failed to allocate version_info");
-    return;
-  }
-
-  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
-    os::free(version_info);
-    st->print_cr("Call to GetFileVersionInfo failed");
-    return;
-  }
-
-  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
-    os::free(version_info);
-    st->print_cr("Call to VerQueryValue failed");
-    return;
-  }
-
-  int major_version = HIWORD(file_info->dwProductVersionMS);
-  int minor_version = LOWORD(file_info->dwProductVersionMS);
-  int build_number = HIWORD(file_info->dwProductVersionLS);
-  int build_minor = LOWORD(file_info->dwProductVersionLS);
+  int major_version = windows_major_version();
+  int minor_version = windows_minor_version();
+  int build_number = windows_build_number();
+  int build_minor = windows_build_minor();
   int os_vers = major_version * 1000 + minor_version;
-  os::free(version_info);
 
   st->print(" Windows ");
   switch (os_vers) {
@@ -1911,6 +1906,12 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   if (proc_count < 1) {
     SYSTEM_INFO si;
     GetSystemInfo(&si);
+
+    // This is the number of logical processors in the current processor group only and is therefore
+    // at most 64. The GetLogicalProcessorInformation function is used to compute the total number
+    // of processors. However, it requires memory to be allocated for the processor information buffer.
+    // Since this method is used in paths where memory allocation should not be done (i.e. after a crash),
+    // only the number of processors in the current group will be returned.
     proc_count = si.dwNumberOfProcessors;
   }
 
@@ -3978,14 +3979,186 @@ bool   os::win32::_is_windows_server         = false;
 // including the latest one (as of this writing - Windows Server 2012 R2)
 bool   os::win32::_has_exit_bug              = true;
 
+int    os::win32::_major_version             = 0;
+int    os::win32::_minor_version             = 0;
+int    os::win32::_build_number              = 0;
+int    os::win32::_build_minor               = 0;
+
+void os::win32::initialize_windows_version() {
+  if (_major_version > 0) {
+    return; // nothing to do if the version has already been set
+  }
+
+  VS_FIXEDFILEINFO *file_info;
+  TCHAR kernel32_path[MAX_PATH];
+  UINT len, ret;
+
+  bool is_workstation = !IsWindowsServer();
+
+  // Get the full path to \Windows\System32\kernel32.dll and use that for
+  // determining what version of Windows we're running on.
+  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
+  ret = GetSystemDirectory(kernel32_path, len);
+  if (ret == 0 || ret > len) {
+    warning("GetSystemDirectory() failed: GetLastError->%ld.", GetLastError());
+    return;
+  }
+  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+
+  DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
+  if (version_size == 0) {
+    warning("GetFileVersionInfoSize() failed: GetLastError->%ld.", GetLastError());
+    return;
+  }
+
+  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
+  if (version_info == nullptr) {
+    warning("os::malloc() failed to allocate %ld bytes for GetFileVersionInfo buffer", version_size);
+    return;
+  }
+
+  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
+    os::free(version_info);
+    warning("GetFileVersionInfo() failed: GetLastError->%ld.", GetLastError());
+    return;
+  }
+
+  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
+    os::free(version_info);
+    warning("VerQueryValue() failed. Cannot determine Windows version.");
+    return;
+  }
+
+  _major_version = HIWORD(file_info->dwProductVersionMS);
+  _minor_version = LOWORD(file_info->dwProductVersionMS);
+  _build_number  = HIWORD(file_info->dwProductVersionLS);
+  _build_minor   = LOWORD(file_info->dwProductVersionLS);
+}
+
+bool os::win32::is_windows_11_or_greater() {
+  // Windows 11 starts at build 22000 (Version 21H2) as per
+  // https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information
+  return (windows_major_version() >= 10 && windows_build_number() >= 22000 && !IsWindowsServer());
+}
+
+bool os::win32::is_windows_server_2022_or_greater() {
+  // Windows Server 2022 starts at build 20348.169 as per
+  // https://learn.microsoft.com/en-us/windows/release-health/release-information
+  return (windows_major_version() >= 10 && windows_build_number() >= 20348 && IsWindowsServer());
+}
+
+DWORD os::win32::active_processors_in_job_object() {
+  BOOL is_in_job_object = false;
+  if (!IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object)) {
+    warning("IsProcessInJob() failed: GetLastError->%ld.", GetLastError());
+    return 0;
+  }
+
+  if (!is_in_job_object) {
+    return 0;
+  }
+
+  DWORD processors = 0;
+
+  LPVOID job_object_information = nullptr;
+  DWORD job_object_information_length = 0;
+
+  if (!QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, nullptr, 0, &job_object_information_length)) {
+    DWORD last_error = GetLastError();
+    if (last_error == ERROR_INSUFFICIENT_BUFFER) {
+      DWORD group_count = job_object_information_length / sizeof(GROUP_AFFINITY);
+
+      job_object_information = os::malloc(job_object_information_length, mtInternal);
+      if (job_object_information != nullptr) {
+          if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, job_object_information, job_object_information_length, &job_object_information_length)) {
+            assert(group_count == job_object_information_length / sizeof(GROUP_AFFINITY), "Unexpected group count");
+
+            for (DWORD i = 0; i < group_count; i++) {
+              KAFFINITY group_affinity = ((GROUP_AFFINITY*)job_object_information)[i].Mask;
+              processors += population_count(group_affinity);
+            }
+
+            assert(processors > 0, "Must find at least 1 logical processor");
+          } else {
+            warning("QueryInformationJobObject() failed: GetLastError->%ld.", GetLastError());
+          }
+
+          os::free(job_object_information);
+      } else {
+          warning("os::malloc() failed to allocate %ld bytes for QueryInformationJobObject", job_object_information_length);
+      }
+    }
+  }
+
+  return processors;
+}
+
+DWORD os::win32::system_logical_processor_count() {
+  DWORD logical_processors = 0;
+  typedef BOOL(WINAPI* LPFN_GET_LOGICAL_PROCESSOR_INFORMATION_EX)(
+      LOGICAL_PROCESSOR_RELATIONSHIP, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, PDWORD);
+
+  LPFN_GET_LOGICAL_PROCESSOR_INFORMATION_EX glpiex;
+
+  glpiex = (LPFN_GET_LOGICAL_PROCESSOR_INFORMATION_EX)GetProcAddress(
+      GetModuleHandle(TEXT("kernel32")),
+      "GetLogicalProcessorInformationEx");
+
+  if (glpiex != nullptr) {
+    LOGICAL_PROCESSOR_RELATIONSHIP relationship_type = RelationGroup;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX system_logical_processor_info = nullptr;
+    DWORD returned_length = 0;
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex
+    if (!glpiex(relationship_type, nullptr, &returned_length)) {
+      DWORD last_error = GetLastError();
+
+      if (last_error == ERROR_INSUFFICIENT_BUFFER) {
+        system_logical_processor_info = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)os::malloc(returned_length, mtInternal);
+
+        if (nullptr == system_logical_processor_info) {
+          warning("os::malloc() failed to allocate %ld bytes for GetLogicalProcessorInformationEx buffer", returned_length);
+        } else if (!glpiex(relationship_type, system_logical_processor_info, &returned_length)) {
+          warning("GetLogicalProcessorInformationEx() failed: GetLastError->%ld.", GetLastError());
+        } else {
+          DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
+
+          for (DWORD i = 0; i < processor_groups; i++) {
+            PROCESSOR_GROUP_INFO group_info = system_logical_processor_info->Group.GroupInfo[i];
+            logical_processors += group_info.ActiveProcessorCount;
+          }
+
+          assert(logical_processors > 0, "Must find at least 1 logical processor");
+        }
+
+        os::free(system_logical_processor_info);
+      }
+      else {
+        warning("GetLogicalProcessorInformationEx() failed: GetLastError->%ld.", last_error);
+      }
+    }
+  }
+
+  return logical_processors;
+}
+
 void os::win32::initialize_system_info() {
+  initialize_windows_version();
+
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   OSInfo::set_vm_page_size(si.dwPageSize);
   OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
-  set_processor_count(si.dwNumberOfProcessors);
+
+  DWORD processors = 0;
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  if (schedules_all_processor_groups) {
+    processors = system_logical_processor_count();
+  }
+
+  set_processor_count(processors > 0 ? processors : si.dwNumberOfProcessors);
 
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
