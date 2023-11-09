@@ -177,8 +177,8 @@ public class StringSharingDecompressor implements ResourceDecompressor {
                 argIndex += 1;
                 String pkg = reader.getString(index);
                 if (!pkg.isEmpty()) {
-                    pkg = pkg + "/";
                     current += ImageStringsReader.mutf8FromString(bytesOut, current, pkg);
+                    bytesOut[current++] = '/';
                 }
                 int classIndex = indices[argIndex];
                 argIndex += 1;
