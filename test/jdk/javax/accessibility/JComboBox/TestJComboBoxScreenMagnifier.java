@@ -27,8 +27,8 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires (os.family == "mac")
- * @summary Verifies if JComboBox selected item magnifies using
- * screen magnifier a11y tool.
+ * @summary Verifies if item selected in JComboBox magnifies using
+ *          screen magnifier a11y tool
  * @run main/manual TestJComboBoxScreenMagnifier
  */
 
@@ -45,17 +45,23 @@ import javax.swing.SwingUtilities;
 public class TestJComboBoxScreenMagnifier {
     private static JFrame frame;
     private static final String INSTRUCTIONS =
-            "1) Enable Screen magnifier on the Mac \n\n" +
+            "1) Enable Screen magnifier on the Mac\n\n" +
                 "System Preference -> Accessibility -> Zoom -> " +
                 "Select \"Enable Hover Text\"\n\n" +
-            "2) Move the mouse over the combobox selected item by pressing  " +
-                "\"command\" button.\n\n" +
-            "3) If magnified label is visible, Press Pass else Fail.";
+            "2) Move the mouse over the combo box and press " +
+                "\"Command\" button.\n\n" +
+            "3) If magnified label is visible, press Pass else Fail.";
 
     public static void main(String[] args) throws InterruptedException,
              InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame(
-                "JComboBox Screen Magnifier Test Instructions", INSTRUCTIONS, 5, 12, 40);
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("JComboBox Screen Magnifier Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .testTimeOut(5)
+                .rows(12)
+                .columns(40)
+                .screenCapture()
+                .build();
 
         SwingUtilities.invokeAndWait(TestJComboBoxScreenMagnifier::createAndShowUI);
         passFailJFrame.awaitAndCheck();
@@ -65,20 +71,19 @@ public class TestJComboBoxScreenMagnifier {
         frame = new JFrame("JComboBox A11Y Screen Magnifier Test");
 
         String[] fruits = new String[] {"Apple", "Orange",
-                "Mango", "Pine Apple", "Banana"};
+                "Mango", "Pineapple", "Banana"};
         JComboBox<String> comboBox = new JComboBox<String>(fruits);
         JPanel fruitPanel = new JPanel(new GridLayout(1, 2));
-        JLabel fruitLabel = new JLabel("Fruits : ", JLabel.CENTER);
+        JLabel fruitLabel = new JLabel("Fruits:", JLabel.CENTER);
         fruitLabel.getAccessibleContext().setAccessibleName("Fruits Label");
         fruitPanel.add(fruitLabel);
         fruitPanel.add(comboBox);
-        comboBox.getAccessibleContext().setAccessibleName("Fruit jCombobox");
+        comboBox.getAccessibleContext().setAccessibleName("Fruit Combo box");
         frame.getContentPane().add(fruitPanel, BorderLayout.CENTER);
 
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame,
                 PassFailJFrame.Position.HORIZONTAL);
-        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);

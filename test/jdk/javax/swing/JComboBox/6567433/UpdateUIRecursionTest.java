@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 6567433
+ * @bug 6567433 8283214
  *
  * @summary  JComboBox.updateUI() invokes updateUI() on its cellrenderer via
  * SwingUtilities.updateComponentTreeUI().
@@ -59,8 +59,8 @@ public class UpdateUIRecursionTest extends JFrame implements ListCellRenderer {
         };
 
         combo = new JComboBox(listData);
-        renderer = new DefaultListCellRenderer();
         combo.setRenderer(this);
+        renderer = new DefaultListCellRenderer();
         getContentPane().add(new JScrollPane(combo), BorderLayout.CENTER);
 
         setVisible(true);

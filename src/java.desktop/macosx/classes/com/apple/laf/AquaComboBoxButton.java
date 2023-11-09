@@ -84,16 +84,6 @@ class AquaComboBoxButton extends JButton {
         });
 
         setEnabled(comboBox.isEnabled());
-
-        updateAccessibleName();
-    }
-
-    protected void updateAccessibleName() {
-        AccessibleContext ac = getAccessibleContext();
-        if (ac != null && !comboBox.isEditable() && comboBox.getSelectedItem() != null) {
-            Component c = getRendererComponent();
-            ac.setAccessibleName(c.getAccessibleContext().getAccessibleName());
-        }
     }
 
     @Override
@@ -198,7 +188,7 @@ class AquaComboBoxButton extends JButton {
         }
     }
 
-    final Component getRendererComponent() {
+    private Component getRendererComponent() {
         final ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         return renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);
@@ -264,5 +254,27 @@ class AquaComboBoxButton extends JButton {
 
         // Remove component from renderer pane, allowing it to be gc'ed.
         rendererPane.remove(c);
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleAquaComboBoxButton();
+        }
+        return accessibleContext;
+    }
+
+    private final class AccessibleAquaComboBoxButton extends AccessibleJButton {
+        @Override
+        public String getAccessibleName() {
+            String name = super.getAccessibleName();
+            if (name == null || name.isEmpty()) {
+                if (!comboBox.isEditable() && comboBox.getSelectedItem() != null) {
+                    Component c = getRendererComponent();
+                    name = c.getAccessibleContext().getAccessibleName();
+                }
+            }
+            return name;
+        }
     }
 }
