@@ -158,10 +158,11 @@ class PhaseNameIter {
 class PhaseNameValidator {
  private:
   bool _valid;
+  bool _set;
   char* _bad;
 
  public:
-  PhaseNameValidator(ccstrlist option, uint64_t& mask) : _valid(true), _bad(nullptr) {
+  PhaseNameValidator(ccstrlist option, bool (&mask)[PHASE_NUM_TYPES]) : _valid(true), _set(false), _bad(nullptr) {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
@@ -172,10 +173,13 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        mask = ~(UINT64_C(0));
+        /* mask = ~(UINT64_C(0)); */
+        memset(mask, true, sizeof(mask));
+        _set = true;
       } else {
-        assert(cpt < 64, "out of bounds");
-        mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
+        /* assert(cpt < 64, "out of bounds"); */
+        mask[cpt] = true;
+        _set = true;
       }
     }
   }
@@ -188,6 +192,10 @@ class PhaseNameValidator {
 
   bool is_valid() const {
     return _valid;
+  }
+
+  bool is_set() const {
+    return _set;
   }
 
   const char* what() const {

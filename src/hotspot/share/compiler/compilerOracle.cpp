@@ -777,7 +777,8 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       }
 #ifndef PRODUCT
       else if (option == CompileCommand::PrintIdealPhase) {
-        uint64_t mask = 0;
+        bool mask[PHASE_NUM_TYPES];
+        memset(mask, false, sizeof(mask));
         PhaseNameValidator validator(value, mask);
 
         if (!validator.is_valid()) {
