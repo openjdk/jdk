@@ -740,7 +740,7 @@ class DumperSupport : AllStatic {
   static u4 sig2size(Symbol* sig);
 
   // returns the size of the instance of the given class
-  static u4 instance_size(Klass* k, DumperClassCacheTableEntry* class_cache_entry = nullptr);
+  static u4 instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry = nullptr);
 
   // dump a jfloat
   static void dump_float(AbstractDumpWriter* writer, jfloat f);
@@ -822,13 +822,14 @@ private:
   // sized table from overloading.
   static constexpr int CACHE_TOP = 256;
 
-  static unsigned int ptr_hash(void* const& s1) {
+  static unsigned int ptr_hash(InstanceKlass* const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  typedef ResourceHashtable<void*, DumperClassCacheTableEntry*, TABLE_SIZE, AnyObj::C_HEAP, mtServiceability,
-          &DumperClassCacheTable::ptr_hash> PtrTable;
+  typedef ResourceHashtable<InstanceKlass*, DumperClassCacheTableEntry*, TABLE_SIZE,
+                            AnyObj::C_HEAP, mtServiceability,
+                            &DumperClassCacheTable::ptr_hash> PtrTable;
   PtrTable* _ptrs;
 
   // Single-slot cache to handle the major case of objects of the same
@@ -839,7 +840,7 @@ private:
   void unlink_all(PtrTable* table) {
     class CleanupEntry: StackObj {
     public:
-      bool do_entry(void*& key, DumperClassCacheTableEntry*& entry) {
+      bool do_entry(InstanceKlass*& key, DumperClassCacheTableEntry*& entry) {
         delete entry;
         return true;
       }
@@ -1038,11 +1039,10 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
 }
 
 // returns the size of the instance of the given class
-u4 DumperSupport::instance_size(Klass* k, DumperClassCacheTableEntry* class_cache_entry) {
+u4 DumperSupport::instance_size(InstanceKlass* ik, DumperClassCacheTableEntry* class_cache_entry) {
   if (class_cache_entry != nullptr) {
     return class_cache_entry->instance_size();
   } else {
-    InstanceKlass* ik = InstanceKlass::cast(k);
     u4 size = 0;
     for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
       if (!fld.access_flags().is_static()) {
@@ -1123,7 +1123,7 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
 
 // dump the raw values of the instance fields of the given object
 void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, DumperClassCacheTableEntry* class_cache_entry) {
-  assert(class_cache_entry, "Pre-condition: should be provided");
+  assert(class_cache_entry != nullptr, "Pre-condition: must be provided");
   for (int idx = 0; idx < class_cache_entry->field_count(); idx++) {
     dump_field_value(writer, class_cache_entry->sig_start(idx), o, class_cache_entry->offset(idx));
   }
