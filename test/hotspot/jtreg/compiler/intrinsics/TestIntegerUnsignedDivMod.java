@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /**
 * @test
-* @summary Test x86_64 intrinsic for divideUnsigned() and remainderUnsigned() methods for Integer
-* @requires os.arch=="amd64" | os.arch=="x86_64"
+* @summary Test intrinsic for divideUnsigned() and remainderUnsigned() methods for Integer
+* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestIntegerUnsignedDivMod
 */

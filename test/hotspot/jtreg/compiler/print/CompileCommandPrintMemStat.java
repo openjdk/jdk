@@ -73,11 +73,11 @@ public class CompileCommandPrintMemStat {
 
         // Should see final report
         // Looks like this:
-        // total     NA        RA        #nodes  time    type  #rc thread              method
-        // 621832    0         589104    0       0,025   c1    1   0x00007f5ccc1951a0  java/util/zip/ZipFile$Source::checkAndAddEntry((II)I)
+        // total     NA        RA        result  #nodes  time    type  #rc thread              method
+        // 211488    66440     77624     ok      13      0.057   c2    2   0x00007fb49428db70  compiler/print/CompileCommandPrintMemStat$TestMain::method1(()V)
         oa.shouldMatch("total.*method");
-        oa.shouldMatch("\\d+ +\\d+ +\\d+ +\\d+.*" + expectedNameIncl + ".*");
-        oa.shouldNotMatch("\\d+ +\\d+ +\\d+ +\\d+.*" + expectedNameExcl + ".*");
+        oa.shouldMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameIncl + ".*");
+        oa.shouldNotMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameExcl + ".*");
     }
 
     // Test class that is invoked by the sub process

@@ -486,23 +486,26 @@ public final class Duration
      * @throws ArithmeticException if the calculation exceeds the capacity of {@code Duration}
      */
     public static Duration between(Temporal startInclusive, Temporal endExclusive) {
-        try {
+        long secs = startInclusive.until(endExclusive, SECONDS);
+        if (secs == 0) {
+            // We don't know which Temporal is earlier, so the adjustment below would not work.
+            // But we do know that there's no danger of until(NANOS) overflowing in that case.
             return ofNanos(startInclusive.until(endExclusive, NANOS));
-        } catch (DateTimeException | ArithmeticException ex) {
-            long secs = startInclusive.until(endExclusive, SECONDS);
-            long nanos;
-            try {
-                nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
-                if (secs > 0 && nanos < 0) {
-                    secs++;
-                } else if (secs < 0 && nanos > 0) {
-                    secs--;
-                }
-            } catch (DateTimeException ex2) {
-                nanos = 0;
-            }
-            return ofSeconds(secs, nanos);
         }
+        long nanos;
+        try {
+            nanos = endExclusive.getLong(NANO_OF_SECOND) - startInclusive.getLong(NANO_OF_SECOND);
+        } catch (DateTimeException ex2) {
+            nanos = 0;
+        }
+        if (nanos < 0 && secs > 0) {
+            // ofSeconds will subtract one even though until(SECONDS) already gave the correct
+            // number of seconds. So compensate. Similarly for the secs < 0 case below.
+            secs++;
+        } else if (nanos > 0 && secs < 0) {
+            secs--;
+        }
+        return ofSeconds(secs, nanos);
     }
 
     //-----------------------------------------------------------------------
