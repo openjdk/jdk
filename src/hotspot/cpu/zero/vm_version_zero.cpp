@@ -145,6 +145,10 @@ void VM_Version::initialize_cpu_information(void) {
     return;
   }
 
+  // Unconditionally supports 8-byte cmpxchg either with
+  // compiler intrinsics or with library/kernel helpers.
+  _supports_cx8 = true;
+
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
