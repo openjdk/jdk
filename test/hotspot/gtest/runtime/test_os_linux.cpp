@@ -209,6 +209,14 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_re
   }
 }
 
+TEST_VM(os_linux, can_execute_large_page_memory) {
+  if (!using_static_hugepages()) {
+    return;
+  }
+
+  EXPECT_TRUE(os::can_execute_large_page_memory());
+}
+
 class TestReserveMemorySpecial : AllStatic {
  public:
   static void small_page_write(void* addr, size_t size) {
