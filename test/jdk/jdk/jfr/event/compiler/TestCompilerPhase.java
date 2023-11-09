@@ -78,7 +78,7 @@ public class TestCompilerPhase {
             System.out.println("Event:" + event);
             Events.assertField(event, "phase").notEmpty();
             Events.assertField(event, "compileId").atLeast(0);
-            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)4);
+            Events.assertField(event, "phaseLevel").atLeast((short)0).atMost((short)5);
             Events.assertEventThread(event);
         }
     }
