@@ -531,7 +531,7 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-    if ([ApplicationDelegate sharedDelegate] != nil) {
+    if (delegate != nil) {
         if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
             [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
             [delegate.fProgressIndicator setHidden:NO];
