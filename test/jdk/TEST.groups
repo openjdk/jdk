@@ -366,28 +366,8 @@ jdk_vector = \
     jdk/incubator/vector
 
 jdk_vector_sanity = \
-    jdk/incubator/vector/AddTest.java \
-    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ByteMaxVectorTests.java \
-    jdk/incubator/vector/CovarOverrideTest.java \
-    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/DoubleMaxVectorTests.java \
-    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/FloatMaxVectorTests.java \
-    jdk/incubator/vector/ImageTest.java \
-    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/IntMaxVectorTests.java \
-    jdk/incubator/vector/LoadJsvmlTest.java \
-    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/LongMaxVectorTests.java \
-    jdk/incubator/vector/MethodOverideTest.java \
-    jdk/incubator/vector/MismatchTest.java \
     jdk/incubator/vector/PreferredSpeciesTest.java \
-    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ShortMaxVectorTests.java \
     jdk/incubator/vector/VectorHash.java \
-    jdk/incubator/vector/VectorMaxConversionTests.java \
-    jdk/incubator/vector/VectorReshapeTests.java \
     jdk/incubator/vector/VectorRuns.java
 
 #############################
@@ -616,7 +596,8 @@ jdk_core_manual_no_input = \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
-    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java
+    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
+    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java
 
 jdk_core_manual_no_input_security = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
@@ -639,7 +620,8 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
-    sun/security/tools/jarsigner/compatibility/Compatibility.java
+    sun/security/tools/jarsigner/compatibility/Compatibility.java \
+    sun/security/tools/keytool/ListKeyChainStore.java
 
 jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \

@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808 8248863 8305710
+ *      8266808 8248863 8305710 8318082
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -434,8 +434,6 @@ public class TestSearch extends JavadocTester {
                     <input type="text" id="search-input" disabled placeholder="Search">
                     <input type="reset" id="reset-button" disabled value="reset">
                     """);
-        checkOutput(fileName, true,
-                "<div class=\"flex-box\">");
     }
 
     void checkSingleIndex() {
@@ -505,14 +503,6 @@ public class TestSearch extends JavadocTester {
                     <dt><a href="pkg2/TestEnum.html#TWO" class="member-name-link">TWO</a> - Enum con\
                     stant in enum class pkg2.<a href="pkg2/TestEnum.html" title="enum class in pkg2"\
                     >TestEnum</a></dt>""");
-        checkOutput("index-all.html", true,
-                """
-                    <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
-                    TagDeprecatedClass" class="search-tag-result">SearchTagDeprecatedClass</span></d\
-                    iv>""",
-                """
-                    <div class="deprecation-comment">error_test3 passes. Search tag for
-                     method <span id="SearchTagDeprecatedMethod" class="search-tag-result">SearchTagDeprecatedMethod</span></div>""");
     }
 
     void checkSplitIndex() {
@@ -623,13 +613,7 @@ public class TestSearch extends JavadocTester {
                     k">SearchTagDeprecatedClass</a> - Search tag in class pkg2.TestClass</dt>""",
                 """
                     <dt><a href="pkg/package-summary.html#SingleWord" class="search-tag-link">Single\
-                    Word</a> - Search tag in package pkg</dt>""",
-                """
-                    <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
-                    TagDeprecatedClass">SearchTagDeprecatedClass</div>""",
-                """
-                    <div class="deprecation-comment">error_test3 passes. Search tag for
-                     method <span id="SearchTagDeprecatedMethod">SearchTagDeprecatedMethod</span></div>""");
+                    Word</a> - Search tag in package pkg</dt>""");
         checkOutput("index-all.html", true,
                 """
                     <dt><a href="pkg2/TestEnum.html#searchphrasedeprecated" class="search-tag-link">\
@@ -667,13 +651,7 @@ public class TestSearch extends JavadocTester {
                     search phrase deprecated</a> - Search tag in pkg2.TestEnum.ONE</dt>""",
                 """
                     <dt><a href="pkg2/TestError.html#SearchTagDeprecatedMethod" class="search-tag-li\
-                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""",
-                """
-                    <div class="deprecation-comment">class_test1 passes. Search tag <span id="Search\
-                    TagDeprecatedClass">SearchTagDeprecatedClass</span></div>""",
-                """
-                    <div class="deprecation-comment">error_test3 passes. Search tag for
-                     method <span id="SearchTagDeprecatedMethod">SearchTagDeprecatedMethod</span></div>""");
+                    nk">SearchTagDeprecatedMethod</a> - Search tag in pkg2.TestError.TestError()</dt>""");
     }
 
     void checkJavaFXOutput() {
@@ -842,19 +820,11 @@ public class TestSearch extends JavadocTester {
                 """
                     {"l":"search phrase","h":"class pkg1.RegClass","d":"with description","u":"pkg1/RegClass.html#searchphrase"}""",
                 """
-                    {"l":"search phrase deprecated","h":"pkg2.TestEnum.ONE","u":"deprecated-list.html#searchphrasedeprecated"}""",
-                """
                     {"l":"search phrase deprecated","h":"pkg2.TestEnum.ONE","u":"pkg2/TestEnum.html#searchphrasedeprecated"}""",
-                """
-                    {"l":"search phrase with desc deprecated","h":"annotation interface pkg2.TestAnnotationType","d":"description for phrase deprecated","u":"deprecated-list.html#searchphrasewithdescdeprecated"}""",
                 """
                     {"l":"search phrase with desc deprecated","h":"annotation interface pkg2.TestAnnotationType","d":"description for phrase deprecated","u":"pkg2/TestAnnotationType.html#searchphrasewithdescdeprecated"}""",
                 """
-                    {"l":"SearchTagDeprecatedClass","h":"class pkg2.TestClass","u":"deprecated-list.html#SearchTagDeprecatedClass"}""",
-                """
                     {"l":"SearchTagDeprecatedClass","h":"class pkg2.TestClass","u":"pkg2/TestClass.html#SearchTagDeprecatedClass"}""",
-                """
-                    {"l":"SearchTagDeprecatedMethod","h":"pkg2.TestError.TestError()","d":"with description","u":"deprecated-list.html#SearchTagDeprecatedMethod"}""",
                 """
                     {"l":"SearchTagDeprecatedMethod","h":"pkg2.TestError.TestError()","d":"with description","u":"pkg2/TestError.html#SearchTagDeprecatedMethod"}""",
                 """

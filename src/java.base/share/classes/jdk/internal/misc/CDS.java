@@ -44,10 +44,12 @@ public class CDS {
     private static final boolean isDumpingClassList;
     private static final boolean isDumpingArchive;
     private static final boolean isSharingEnabled;
+    private static final boolean isDumpingStaticArchive;
     static {
         isDumpingClassList = isDumpingClassList0();
         isDumpingArchive = isDumpingArchive0();
         isSharingEnabled = isSharingEnabled0();
+        isDumpingStaticArchive = isDumpingArchive && !isSharingEnabled;
     }
 
     /**
@@ -69,6 +71,13 @@ public class CDS {
       */
     public static boolean isSharingEnabled() {
         return isSharingEnabled;
+    }
+
+    /**
+      * Is dumping static archive.
+      */
+    public static boolean isDumpingStaticArchive() {
+        return isDumpingStaticArchive;
     }
 
     private static native boolean isDumpingClassList0();

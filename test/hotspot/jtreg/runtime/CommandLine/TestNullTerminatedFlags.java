@@ -58,7 +58,7 @@ public class TestNullTerminatedFlags {
         for (String option : options) {
             String testOption = option + "junk";
             ProcessBuilder pb =
-                ProcessTools.createJavaProcessBuilder(testOption, "-version");
+                ProcessTools.createLimitedTestJavaProcessBuilder(testOption, "-version");
             new OutputAnalyzer(pb.start())
                     .shouldContain("Unrecognized option: " + testOption)
                     .shouldHaveExitValue(1);

@@ -15,11 +15,15 @@
         </file>
         <file name="Show custom node info.js" url="filters/customNodeInfo.filter">
             <attr name="enabled" boolvalue="true"/>
-            <attr name="after" stringvalue="Color by execution frequency"/>
+            <attr name="after" stringvalue="Show node warnings"/>
+        </file>
+        <file name="Show types.js" url="filters/showTypes.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Show custom node info"/>
         </file>
         <file name="Simplify graph.js" url="filters/simplifyGraph.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show custom node info"/>
+            <attr name="after" stringvalue="Show types"/>
         </file>
         <file name="Condense graph.js" url="filters/condenseGraph.filter">
             <attr name="enabled" boolvalue="false"/>

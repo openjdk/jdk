@@ -26,10 +26,16 @@
 
 package javax.swing;
 
-import java.awt.*;
+import java.awt.AWTError;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager2;
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.io.PrintStream;
+import java.io.Serializable;
 
 /**
  * A layout manager that allows multiple components to be laid out either
@@ -44,20 +50,22 @@ import java.io.PrintStream;
  * </div>
  * <p>
  * Nesting multiple panels with different combinations of horizontal and
- * vertical gives an effect similar to GridBagLayout, without the
+ * vertical gives an effect similar to
+ * {@link java.awt.GridBagLayout GridBagLayout}, without the
  * complexity. The diagram shows two panels arranged horizontally, each
  * of which contains 3 components arranged vertically.
  *
- * <p> The BoxLayout manager is constructed with an axis parameter that
+ * <p> The {@code BoxLayout} manager is constructed with an axis parameter that
  * specifies the type of layout that will be done. There are four choices:
  *
- * <blockquote><b>{@code X_AXIS}</b> - Components are laid out horizontally
- * from left to right.</blockquote>
+ * <ul>
+ * <li><b>{@code X_AXIS}</b> - Components are laid out horizontally
+ * from left to right.</li>
  *
- * <blockquote><b>{@code Y_AXIS}</b> - Components are laid out vertically
- * from top to bottom.</blockquote>
+ * <li><b>{@code Y_AXIS}</b> - Components are laid out vertically
+ * from top to bottom.</li>
  *
- * <blockquote><b>{@code LINE_AXIS}</b> - Components are laid out the way
+ * <li><b>{@code LINE_AXIS}</b> - Components are laid out the way
  * words are laid out in a line, based on the container's
  * {@code ComponentOrientation} property. If the container's
  * {@code ComponentOrientation} is horizontal then components are laid out
@@ -65,9 +73,9 @@ import java.io.PrintStream;
  * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left. For vertical orientations components are always laid out
- * from top to bottom.</blockquote>
+ * from top to bottom.</li>
  *
- * <blockquote><b>{@code PAGE_AXIS}</b> - Components are laid out the way
+ * <li><b>{@code PAGE_AXIS}</b> - Components are laid out the way
  * text lines are laid out on a page, based on the container's
  * {@code ComponentOrientation} property. If the container's
  * {@code ComponentOrientation} is horizontal then components are laid out
@@ -75,20 +83,23 @@ import java.io.PrintStream;
  * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left.&nbsp; For vertical orientations components are always
- * laid out from top to bottom.</blockquote>
+ * laid out from top to bottom.</li>
+ * </ul>
+ *
  * <p>
  * For all directions, components are arranged in the same order as they were
  * added to the container.
  * <p>
  * BoxLayout attempts to arrange components
- * at their preferred widths (for horizontal layout)
- * or heights (for vertical layout).
+ * at their preferred widths (for a horizontal layout)
+ * or heights (for a vertical layout).
+ * <p>
  * For a horizontal layout,
  * if not all the components are the same height,
  * BoxLayout attempts to make all the components
  * as high as the highest component.
  * If that's not possible for a particular component,
- * then BoxLayout aligns that component vertically,
+ * then {@code BoxLayout} aligns that component vertically,
  * according to the component's Y alignment.
  * By default, a component has a Y alignment of 0.5,
  * which means that the vertical center of the component
@@ -96,18 +107,20 @@ import java.io.PrintStream;
  * the vertical centers of other components with 0.5 Y alignment.
  * <p>
  * Similarly, for a vertical layout,
- * BoxLayout attempts to make all components in the column
+ * {@code BoxLayout} attempts to make all components in the column
  * as wide as the widest component.
  * If that fails, it aligns them horizontally
  * according to their X alignments.  For {@code PAGE_AXIS} layout,
  * horizontal alignment is done based on the leading edge of the component.
  * In other words, an X alignment value of 0.0 means the left edge of a
  * component if the container's {@code ComponentOrientation} is left to
- * right and it means the right edge of the component otherwise.
+ * right, and it means the right edge of the component otherwise.
  * <p>
- * Instead of using BoxLayout directly, many programs use the Box class.
- * The Box class is a lightweight container that uses a BoxLayout.
- * It also provides handy methods to help you use BoxLayout well.
+ * Instead of using {@code BoxLayout} directly,
+ * many programs use the {@link Box} class.
+ * The {@code Box} class is a lightweight container that uses
+ * the {@code BoxLayout} layout manager.
+ * It also provides handy methods to help you use {@code BoxLayout} well.
  * Adding components to multiple nested boxes is a powerful way to get
  * the arrangement you want.
  * <p>

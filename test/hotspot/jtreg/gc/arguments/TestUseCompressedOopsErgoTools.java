@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ class TestUseCompressedOopsErgoTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
+    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     return output;
@@ -157,7 +157,7 @@ class TestUseCompressedOopsErgoTools {
   }
 
   private static String expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flags);
+    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(flags);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(errorcode);
     return output.getStdout();

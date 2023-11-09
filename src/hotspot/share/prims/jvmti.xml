@@ -13041,7 +13041,7 @@ myInit() {
   </event>
 
  <event label="Virtual Thread Start"
-         id="VirtualThreadStart" const="JVMTI_EVENT_VIRTUAL_THREAD_START" filtered="thread" num="87" phase="start" since="21">
+         id="VirtualThreadStart" const="JVMTI_EVENT_VIRTUAL_THREAD_START" num="87" phase="start" since="21">
     <description>
       A virtual thread start event is generated before its initial method executes.
       <p/>

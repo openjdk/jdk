@@ -482,7 +482,6 @@ public final class PlatformRecorder {
                     Duration rDuration = r.getDuration();
                     ActiveRecordingEvent.commit(
                         timestamp,
-                        0L,
                         r.getId(),
                         r.getName(),
                         path == null ? null : path.getRealPathText(),

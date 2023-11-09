@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,13 +53,13 @@ public abstract class JavaHeapObject extends JavaThing {
     //
     // Who we refer to.  This is heavily optimized for space, because it's
     // well worth trading a bit of speed for less swapping.
-    // referers and referersLen go through two phases:  Building and
-    // resolved.  When building, referers might have duplicates, but can
-    // be appended to.  When resolved, referers has no duplicates or
+    // referrers and referrersLen go through two phases:  Building and
+    // resolved.  When building, referrers might have duplicates, but can
+    // be appended to.  When resolved, referrers has no duplicates or
     // empty slots.
     //
-    private JavaThing[] referers = null;
-    private int referersLen = 0;        // -1 when resolved
+    private JavaThing[] referrers = null;
+    private int referrersLen = 0;        // -1 when resolved
 
     public abstract JavaClass getClazz();
     public abstract long getSize();
@@ -77,25 +77,25 @@ public abstract class JavaHeapObject extends JavaThing {
     }
 
     //
-    //  Eliminate duplicates from referers, and size the array exactly.
+    // Eliminate duplicates from referrers, and size the array exactly.
     // This sets us up to answer queries.  See the comments around the
-    // referers data member for details.
+    // referrers data member for details.
     //
-    void setupReferers() {
-        if (referersLen > 1) {
-            // Copy referers to map, screening out duplicates
+    void setupReferrers() {
+        if (referrersLen > 1) {
+            // Copy referrers to map, screening out duplicates
             Map<JavaThing, JavaThing> map = new HashMap<JavaThing, JavaThing>();
-            for (int i = 0; i < referersLen; i++) {
-                if (map.get(referers[i]) == null) {
-                    map.put(referers[i], referers[i]);
+            for (int i = 0; i < referrersLen; i++) {
+                if (map.get(referrers[i]) == null) {
+                    map.put(referrers[i], referrers[i]);
                 }
             }
 
             // Now copy into the array
-            referers = new JavaThing[map.size()];
-            map.keySet().toArray(referers);
+            referrers = new JavaThing[map.size()];
+            map.keySet().toArray(referrers);
         }
-        referersLen = -1;
+        referrersLen = -1;
     }
 
 
@@ -134,15 +134,15 @@ public abstract class JavaHeapObject extends JavaThing {
     }
 
     void addReferenceFrom(JavaHeapObject other) {
-        if (referersLen == 0) {
-            referers = new JavaThing[1];        // It was null
-        } else if (referersLen == referers.length) {
-            JavaThing[] copy = new JavaThing[(3 * (referersLen + 1)) / 2];
-            System.arraycopy(referers, 0, copy, 0, referersLen);
-            referers = copy;
+        if (referrersLen == 0) {
+            referrers = new JavaThing[1];        // It was null
+        } else if (referrersLen == referrers.length) {
+            JavaThing[] copy = new JavaThing[(3 * (referrersLen + 1)) / 2];
+            System.arraycopy(referrers, 0, copy, 0, referrersLen);
+            referrers = copy;
         }
-        referers[referersLen++] = other;
-        // We just append to referers here.  Measurements have shown that
+        referrers[referrersLen++] = other;
+        // We just append to referrers here.  Measurements have shown that
         // around 10% to 30% are duplicates, so it's better to just append
         // blindly and screen out all the duplicates at once.
     }
@@ -164,8 +164,8 @@ public abstract class JavaHeapObject extends JavaThing {
      *
      * @return an Enumeration of JavaHeapObject instances
      */
-    public Enumeration<JavaThing> getReferers() {
-        if (referersLen != -1) {
+    public Enumeration<JavaThing> getReferrers() {
+        if (referrersLen != -1) {
             throw new RuntimeException("not resolved: " + getIdString());
         }
         return new Enumeration<JavaThing>() {
@@ -173,17 +173,17 @@ public abstract class JavaHeapObject extends JavaThing {
             private int num = 0;
 
             public boolean hasMoreElements() {
-                return referers != null && num < referers.length;
+                return referrers != null && num < referrers.length;
             }
 
             public JavaThing nextElement() {
-                return referers[num++];
+                return referrers[num++];
             }
         };
     }
 
     /**
-     * Given other, which the caller promises is in referers, determines if
+     * Given other, which the caller promises is in referrers, determines if
      * the reference is only a weak reference.
      */
     public boolean refersOnlyWeaklyTo(Snapshot ss, JavaThing other) {

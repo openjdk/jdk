@@ -25,9 +25,10 @@
 
 package sun.nio.fs;
 
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Arrays;
 
 /**
@@ -100,6 +101,10 @@ class BsdFileStore
             UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
             return isExtendedAttributesEnabled(dir);
         }
+        // POSIX attributes not supported on FAT32
+        if (type == PosixFileAttributeView.class &&
+            entry().fstype().equals("msdos"))
+            return false;
         return super.supportsFileAttributeView(type);
     }
 
@@ -107,6 +112,9 @@ class BsdFileStore
     public boolean supportsFileAttributeView(String name) {
         if (name.equals("user"))
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        // UNIX attributes not supported on FAT32
+        if (name.equals("unix") && entry().fstype().equals("msdos"))
+            return false;
         return super.supportsFileAttributeView(name);
     }
 }
