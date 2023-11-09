@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -1299,12 +1297,6 @@ void G1ConcurrentMark::remark() {
       reclaim_empty_regions();
     }
 
-    // Clean out dead classes
-    if (ClassUnloadingWithConcurrentMark) {
-      GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-    }
-
     // Potentially, some empty-regions have been reclaimed; make this a
     // "collection" so that pending allocation can retry before attempting a
     // GC pause.
@@ -1629,9 +1621,6 @@ public:
 void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
-  // Is alive closure.
-  G1CMIsAliveClosure g1_is_alive(_g1h);
-
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1686,20 +1675,15 @@ void G1ConcurrentMark::weak_refs_work() {
 
   assert(_global_mark_stack.is_empty(), "Marking should have completed");
 
+  G1CMIsAliveClosure is_alive(_g1h);
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
-    WeakProcessor::weak_oops_do(_g1h->workers(), &g1_is_alive, &do_nothing_cl, 1);
+    WeakProcessor::weak_oops_do(_g1h->workers(), &is_alive, &do_nothing_cl, 1);
   }
 
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
-    GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    {
-      CodeCache::UnlinkingScope scope(&g1_is_alive);
-      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
-      _g1h->complete_cleaning(unloading_occurred);
-    }
-    CodeCache::flush_unlinked_nmethods();
+    _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
   }
 }
 
