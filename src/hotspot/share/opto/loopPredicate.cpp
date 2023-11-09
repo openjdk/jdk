@@ -1198,7 +1198,6 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
     _igvn.hash_delete(new_predicate_iff);
     new_predicate_iff->set_req(1, new_predicate_bol);
-    C->print_method(PHASE_AFTER_LOOP_PREDICATION_IC, 4, new_predicate_iff);
 #ifndef PRODUCT
     if (TraceLoopPredicate) {
       tty->print("Predicate invariant if%s: %d ", negated ? " negated" : "", new_predicate_iff->_idx);
@@ -1273,7 +1272,6 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj, upper_bound_proj, scale,
                                                           offset, init, limit, stride, rng, overflow, reason);
 
-    C->print_method(PHASE_AFTER_LOOP_PREDICATION_RC, 4, new_predicate_proj->in(0));
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {
       tty->print("Predicate RC ");
@@ -1291,6 +1289,8 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 
   // Eliminate the old If in the loop body
   dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con);
+
+  C->print_method(PHASE_AFTER_LOOP_PREDICATION, 4, new_predicate_proj->in(0));
 
   C->set_major_progress();
   return true;
