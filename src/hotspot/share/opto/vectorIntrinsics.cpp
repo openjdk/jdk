@@ -1575,10 +1575,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     }
   }
 
-  Node* index    = argument(11);
-  Node* indexMap = argument(12);
-  Node* indexM   = argument(13);
-
   const TypeVect* vector_type = TypeVect::make(elem_bt, num_elem);
   if (is_scatter) {
     Node* val = unbox_vector(argument(9), vbox_type, elem_bt, num_elem);
@@ -1598,6 +1594,9 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     set_memory(vstore, addr_type);
   } else {
     Node* vload = nullptr;
+    Node* index    = argument(11);
+    Node* indexMap = argument(12);
+    Node* indexM   = argument(13);
     if (mask != nullptr) {
       if (is_subword_type(elem_bt)) {
         Node* index_arr_base = array_element_address(indexMap, indexM, T_INT);

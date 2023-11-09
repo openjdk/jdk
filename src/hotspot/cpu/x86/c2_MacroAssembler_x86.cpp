@@ -1526,7 +1526,6 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
 #ifdef _LP64
 void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register mask, Register midx, Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
     Label* larr[] = { &case0, &case1, &case2, &case3 };
@@ -1555,7 +1554,6 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Reg
 
 void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                                  Register offset, Register mask, Register midx, Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
     Label* larr[] = { &case0, &case1, &case2, &case3 };
@@ -1586,7 +1584,6 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister d
 #endif // _LP64
 
 void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
       movl(rtmp, Address(idx_base, i*4));
@@ -1603,7 +1600,6 @@ void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register b
 
 void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register offset, Register rtmp, int vlen_enc) {
-  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
       movl(rtmp, Address(idx_base, i*4));
@@ -1633,6 +1629,7 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,  Reg
   vpslld(xtmp2, xtmp2, 1, vlen_enc);
   load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT);
   bind(GATHER8_LOOP);
+    vpxor(xtmp3, xtmp3, xtmp3, vlen_enc);
     if (offset == noreg) {
       if (mask == noreg) {
         vgather8b(elem_ty, xtmp3, base, idx_base, rtmp, vlen_enc);

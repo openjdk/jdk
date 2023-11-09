@@ -1920,10 +1920,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (!is_subword_type(bt) && size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
         return false;
       }
-      if (is_subword_type(bt) &&
-         (!is_LP64                                                ||
-         (size_in_bits > 256 && !VM_Version::supports_avx512bw()) ||
-         (bt == T_SHORT && !VM_Version::supports_bmi2()))) {
+      if (is_subword_type(bt) && (!is_LP64 || (size_in_bits > 256 && !VM_Version::supports_avx512bw()))) {
         return false;
       }
       break;
