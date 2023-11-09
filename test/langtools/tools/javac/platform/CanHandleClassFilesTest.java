@@ -126,6 +126,7 @@ public class CanHandleClassFilesTest {
                                                targetDir.resolve("ct.sym").toAbsolutePath().toString(),
                                                Long.toString(System.currentTimeMillis() / 1000),
                                                "" + SourceVersion.latest().ordinal(),
+                                               "",
                                                modules.toAbsolutePath().toString()});
         }
     }

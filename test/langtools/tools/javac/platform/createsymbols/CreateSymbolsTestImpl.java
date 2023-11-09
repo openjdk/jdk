@@ -758,7 +758,7 @@ public class CreateSymbolsTestImpl {
         Path classesZip = output.resolve("classes.zip");
         Path classesDir = output.resolve("classes");
 
-        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classesZip.toAbsolutePath().toString(), 0, "9", modules.toString());
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classesZip.toAbsolutePath().toString(), 0, "9", "", modules.toString());
 
         try (JarFile jf = new JarFile(classesZip.toFile())) {
             Enumeration<JarEntry> en = jf.entries();
@@ -1042,7 +1042,7 @@ public class CreateSymbolsTestImpl {
         Files.createDirectories(modules);
 
         try {
-        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", modules.toString());
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", "", modules.toString());
         } catch (Throwable t) {
             t.printStackTrace();
             throw t;
