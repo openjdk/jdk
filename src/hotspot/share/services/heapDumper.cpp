@@ -812,14 +812,22 @@ public:
 
 class DumperClassCacheTable : public StackObj {
 private:
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
+  static constexpr size_t TABLE_SIZE = 1031;
+
+  // Maintain the cache for N classes. This limits memory footprint
+  // impact, regardless of how many classes we have in the dump.
+  // This also improves look up performance by keeping the statically
+  // sized table from overloading.
+  static constexpr int CACHE_TOP = 256;
+
   static unsigned int ptr_hash(void* const& s1) {
     // 2654435761 = 2^32 * Phi (golden ratio)
     return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
   }
 
-  // ResourceHashtable SIZE is specified at compile time so we
-  // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void*, DumperClassCacheTableEntry*, 1031, AnyObj::C_HEAP, mtServiceability,
+  typedef ResourceHashtable<void*, DumperClassCacheTableEntry*, TABLE_SIZE, AnyObj::C_HEAP, mtServiceability,
           &DumperClassCacheTable::ptr_hash> PtrTable;
   PtrTable* _ptrs;
 
@@ -827,6 +835,17 @@ private:
   // class back-to-back, e.g. from T[].
   InstanceKlass* _last_ik;
   DumperClassCacheTableEntry* _last_entry;
+
+  void unlink_all(PtrTable* table) {
+    class CleanupEntry: StackObj {
+    public:
+      bool do_entry(void*& key, DumperClassCacheTableEntry*& entry) {
+        delete entry;
+        return true;
+      }
+    } cleanup;
+    table->unlink(&cleanup);
+  }
 
 public:
   DumperClassCacheTableEntry* lookup_or_create(InstanceKlass* ik) {
@@ -847,6 +866,14 @@ public:
           entry->_instance_size += DumperSupport::sig2size(sig);
         }
       }
+
+      if (_ptrs->number_of_entries() >= CACHE_TOP) {
+        // We do not track the individual hit rates for table entries.
+        // Purge the entire table, and let the cache catch up with new
+        // distribution.
+        unlink_all(_ptrs);
+      }
+
       _ptrs->put(ik, entry);
     } else {
       entry = *from_cache;
@@ -862,14 +889,7 @@ public:
   DumperClassCacheTable() : _ptrs(new (mtServiceability) PtrTable), _last_ik(nullptr), _last_entry(nullptr) {}
 
   ~DumperClassCacheTable() {
-    class CleanupEntry: StackObj {
-    public:
-      bool do_entry(void*& key, DumperClassCacheTableEntry*& entry) {
-        delete entry;
-        return true;
-      }
-    } cleanup;
-    _ptrs->unlink(&cleanup);
+    unlink_all(_ptrs);
     delete _ptrs;
   }
 };
