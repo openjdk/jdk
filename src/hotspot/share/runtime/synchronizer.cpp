@@ -129,7 +129,6 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                     elapsedTimer* timer_p,
                                     GrowableArray<ObjectMonitor*>* unlinked_list) {
   size_t unlinked_count = 0;
-  size_t unlink_batch = 0;
   ObjectMonitor* prev = nullptr;
   ObjectMonitor* m = Atomic::load_acquire(&_head);
 
@@ -138,6 +137,7 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor. Batch up the unlinkable monitors, so we can
       // modify the list once per batch. The batch starts at "m".
+      size_t unlink_batch = 0;
       ObjectMonitor* next = m;
       do {
         ObjectMonitor* next_next = next->next_om();
