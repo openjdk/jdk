@@ -55,7 +55,7 @@ public class TestEvacuationFailure {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
-        output.shouldContain("(Allocation Failure)");
+        output.shouldContain("(Evacuation Failure:");
         output.shouldHaveExitValue(0);
     }
 

@@ -196,7 +196,7 @@ public class TestPLABEvacuationFailure {
 
     private static List<Long> getGcIdPlabEvacFailures(OutputAnalyzer out) {
         return out.asLines().stream()
-                .filter(line -> line.contains("(Allocation Failure)"))
+                .filter(line -> line.contains("(Evacuation Failure"))
                 .map(line -> LogParser.getGcIdFromLine(line, GC_ID_PATTERN))
                 .collect(Collectors.toList());
     }

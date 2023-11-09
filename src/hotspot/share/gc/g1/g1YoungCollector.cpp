@@ -78,13 +78,23 @@ class G1YoungGCTraceTime {
   GCTraceTime(Info, gc) _tt;
 
   const char* update_young_gc_name() {
+    char evacuation_failed_string[48];
+    evacuation_failed_string[0] = '\0';
+
+    if (_collector->evacuation_failed()) {
+      snprintf(evacuation_failed_string,
+               ARRAY_SIZE(evacuation_failed_string),
+               " (Evacuation Failure: %s%s%s)",
+               _collector->evacuation_alloc_failed() ? "Allocation" : "",
+               _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
+               _collector->evacuation_pinned() ? "Pinned" : "");
+    }
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
-             "Pause Young (%s) (%s)%s%s",
+             "Pause Young (%s) (%s)%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
              GCCause::to_string(_pause_cause),
-             _collector->evacuation_pinned() ? " (Pinned)" : "",
-             _collector->evacuation_alloc_failed() ? " (Allocation Failure)" : "");
+             evacuation_failed_string);
     return _young_gc_name_data;
   }
 
