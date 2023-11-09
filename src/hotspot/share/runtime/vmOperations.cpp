@@ -340,10 +340,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
   // Implements MonitorClosure used to collect all owned monitors in the system
   void do_monitor(ObjectMonitor* monitor) override {
-    // The caller is interested in the owned ObjectMonitors. This does
-    // not include when owner is set to a stack-lock address in thread.
-    // This also does not capture unowned ObjectMonitors that cannot be
-    // deflated because of a waiter.
+    assert(monitor->has_owner(), "Expects only owned monitors");
 
     if (monitor->is_owner_anonymous()) {
       // There's no need to collect anonymous owned monitors
