@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                 """
                     <section class="detail" id="getValue()">
                     <h3>getValue</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">boolean</span>&nbsp;<span class="element-name">getValue</span\
                     >()</div>
@@ -105,6 +106,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     </ul>
                     </dd>
                     </dl>
+                    </div>
                     </section>"""
                 );
     }
@@ -153,6 +155,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                 """
                     <section class="detail" id="getValue()">
                     <h3>getValue</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">boolean</span>&nbsp;<span class="element-name">getValue</span\
                     >()</div>
@@ -169,6 +172,7 @@ public class TestJavaFXMissingPropComments extends JavadocTester {
                     </ul>
                     </dd>
                     </dl>
+                    </div>
                     </section>"""
         );
     }

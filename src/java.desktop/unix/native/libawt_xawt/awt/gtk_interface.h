@@ -532,6 +532,8 @@ typedef void (*GClosureNotify)(gpointer data, GClosure *closure);
 typedef void (*GDestroyNotify)(gpointer data);
 typedef void (*GCallback)(void);
 
+typedef void GdkPixbuf;
+typedef void (* GdkPixbufDestroyNotify) (guchar *pixels, gpointer data);
 
 typedef struct GtkApi {
     int version;
@@ -796,6 +798,46 @@ typedef struct GtkApi {
     gint (*g_unix_fd_list_get)(GUnixFDList *list,
                                gint index_,
                                GError **error);
+
+    GdkPixbuf *(*gdk_pixbuf_new)(GdkColorspace colorspace,
+                                 gboolean has_alpha,
+                                 int bits_per_sample,
+                                 int width,
+                                 int height);
+
+
+    GdkPixbuf *(*gdk_pixbuf_new_from_data)(
+            const guchar *data,
+            GdkColorspace colorspace,
+            gboolean has_alpha,
+            int bits_per_sample,
+            int width,
+            int height,
+            int rowstride,
+            GdkPixbufDestroyNotify destroy_fn,
+            gpointer destroy_fn_data
+    );
+
+
+    GdkPixbuf *(*gdk_pixbuf_scale_simple)(GdkPixbuf *src,
+                                          int dest_width,
+                                          int dest_heigh,
+                                          GdkInterpType interp_type
+    );
+
+    guchar* (*gdk_pixbuf_get_pixels) (const GdkPixbuf* pixbuf);
+
+
+    void (*gdk_pixbuf_copy_area) (
+            const GdkPixbuf* src_pixbuf,
+            int src_x,
+            int src_y,
+            int width,
+            int height,
+            GdkPixbuf* dest_pixbuf,
+            int dest_x,
+            int dest_y
+    );
 
     /* </for screencast, used only with GTK3>  */
 } GtkApi;

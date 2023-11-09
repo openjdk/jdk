@@ -500,7 +500,8 @@ class RuntimeStub: public RuntimeBlob {
     int         frame_complete,
     int         frame_size,
     OopMapSet*  oop_maps,
-    bool        caller_must_gc_arguments
+    bool        caller_must_gc_arguments,
+    bool        alloc_fail_is_fatal=true
   );
 
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
@@ -732,13 +733,10 @@ class UpcallLinker;
 class UpcallStub: public RuntimeBlob {
   friend class UpcallLinker;
  private:
-  intptr_t _exception_handler_offset;
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  UpcallStub(const char* name, CodeBuffer* cb, int size,
-                     intptr_t exception_handler_offset,
-                     jobject receiver, ByteSize frame_data_offset);
+  UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset);
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -753,13 +751,10 @@ class UpcallStub: public RuntimeBlob {
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static UpcallStub* create(const char* name, CodeBuffer* cb,
-                            intptr_t exception_handler_offset,
-                            jobject receiver, ByteSize frame_data_offset);
+  static UpcallStub* create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset);
 
   static void free(UpcallStub* blob);
 
-  address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;

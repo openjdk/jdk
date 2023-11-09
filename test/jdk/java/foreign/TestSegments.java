@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -84,7 +83,7 @@ public class TestSegments {
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(1000, 1);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
@@ -95,7 +94,7 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(10, 1);
             //init
@@ -263,7 +262,7 @@ public class TestSegments {
 
     @Test(dataProvider = "segmentFactories")
     public void testFill(Supplier<MemorySegment> segmentSupplier) {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
             MemorySegment segment = segmentSupplier.get();

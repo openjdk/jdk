@@ -119,6 +119,20 @@ class VPointer : public ArenaObj {
     }
   }
 
+  bool overlap_possible_with_any_in(Node_List* p) {
+    for (uint k = 0; k < p->size(); k++) {
+      MemNode* mem = p->at(k)->as_Mem();
+      VPointer p_mem(mem, phase(), lpt(), nullptr, false);
+      // Only if we know that we have Less or Greater can we
+      // be sure that there can never be an overlap between
+      // the two memory regions.
+      if (!not_equal(p_mem)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool not_equal(VPointer& q)     { return not_equal(cmp(q)); }
   bool equal(VPointer& q)         { return equal(cmp(q)); }
   bool comparable(VPointer& q)    { return comparable(cmp(q)); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,16 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires !vm.musl
  *
  * @library /test/lib
  * @build TestEnableNativeAccess
  *        panama_module/*
- *        org.openjdk.foreigntest.PanamaMainUnnamedModule
+ *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
  * @run testng/othervm/timeout=180 TestEnableNativeAccess
  * @summary Basic test for java --enable-native-access
  */
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -57,75 +54,7 @@ import static org.testng.Assert.*;
 */
 
 @Test
-public class TestEnableNativeAccess {
-
-    static final String MODULE_PATH = System.getProperty("jdk.module.path");
-
-    static final String PANAMA_MAIN = "panama_module/org.openjdk.foreigntest.PanamaMainDirect";
-    static final String PANAMA_REFLECTION = "panama_module/org.openjdk.foreigntest.PanamaMainReflection";
-    static final String PANAMA_INVOKE = "panama_module/org.openjdk.foreigntest.PanamaMainInvoke";
-    static final String PANAMA_JNI = "panama_module/org.openjdk.foreigntest.PanamaMainJNI";
-    static final String UNNAMED = "org.openjdk.foreigntest.PanamaMainUnnamedModule";
-
-    /**
-     * Represents the expected result of a test.
-     */
-    static final class Result {
-        private final boolean success;
-        private final List<String> expectedOutput = new ArrayList<>();
-        private final List<String> notExpectedOutput = new ArrayList<>();
-
-        Result(boolean success) {
-            this.success = success;
-        }
-
-        Result expect(String msg) {
-            expectedOutput.add(msg);
-            return this;
-        }
-
-        Result doNotExpect(String msg) {
-            notExpectedOutput.add(msg);
-            return this;
-        }
-
-        boolean shouldSucceed() {
-            return success;
-        }
-
-        Stream<String> expectedOutput() {
-            return expectedOutput.stream();
-        }
-
-        Stream<String> notExpectedOutput() {
-            return notExpectedOutput.stream();
-        }
-
-        @Override
-        public String toString() {
-            String s = (success) ? "success" : "failure";
-            for (String msg : expectedOutput) {
-                s += "/" + msg;
-            }
-            return s;
-        }
-    }
-
-    static Result success() {
-        return new Result(true);
-    }
-
-    static Result successNoWarning() {
-        return success().doNotExpect("WARNING");
-    }
-
-    static Result successWithWarning(String moduleName) {
-        return success().expect("WARNING").expect("--enable-native-access=" + moduleName);
-    }
-
-    static Result failWithWarning(String expectedOutput) {
-        return new Result(false).expect(expectedOutput).expect("WARNING");
-    }
+public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
 
     @DataProvider(name = "succeedCases")
     public Object[][] succeedCases() {
@@ -151,21 +80,6 @@ public class TestEnableNativeAccess {
     }
 
     /**
-     * Checks an expected result with the output captured by the given
-     * OutputAnalyzer.
-     */
-    void checkResult(Result expectedResult, OutputAnalyzer outputAnalyzer) {
-        expectedResult.expectedOutput().forEach(outputAnalyzer::shouldContain);
-        expectedResult.notExpectedOutput().forEach(outputAnalyzer::shouldNotContain);
-        int exitValue = outputAnalyzer.getExitValue();
-        if (expectedResult.shouldSucceed()) {
-            assertTrue(exitValue == 0);
-        } else {
-            assertTrue(exitValue != 0);
-        }
-    }
-
-    /**
      * Runs the test to execute the given test action. The VM is run with the
      * given VM options and the output checked to see that it matches the
      * expected result.
@@ -176,8 +90,8 @@ public class TestEnableNativeAccess {
         Stream<String> s1 = Stream.concat(
                 Stream.of(vmopts),
                 Stream.of("-Djava.library.path=" + System.getProperty("java.library.path")));
-        Stream<String> s2 = cls.equals(UNNAMED) ? Stream.of("--enable-preview", "-p", MODULE_PATH, cls, action)
-                : Stream.of("--enable-preview", "-p", MODULE_PATH, "-m", cls, action);
+        Stream<String> s2 = cls.equals(UNNAMED) ? Stream.of("-p", MODULE_PATH, cls, action)
+                : Stream.of("-p", MODULE_PATH, "-m", cls, action);
         String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
         OutputAnalyzer outputAnalyzer = ProcessTools
                 .executeTestJava(opts)
@@ -199,7 +113,7 @@ public class TestEnableNativeAccess {
     public void testWarnFirstAccess() throws Exception {
         List<String> output1 = run("panama_enable_native_access_first", PANAMA_MAIN,
                 successWithWarning("panama")).asLines();
-        assertTrue(count(output1, "WARNING") == 3);  // 3 on first access, none on subsequent access
+        assertTrue(count(output1, "WARNING") == 4);  // 4 on first access, none on subsequent access
     }
 
     /**

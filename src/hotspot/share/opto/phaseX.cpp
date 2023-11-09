@@ -364,6 +364,7 @@ NodeHash::~NodeHash() {
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist, PhaseNumber phase_num) : Phase(phase_num) {
+  C->print_method(PHASE_BEFORE_REMOVEUSELESS, 3);
   // Implementation requires an edge from root to each SafePointNode
   // at a backward branch. Inserted in add_safepoint().
 
@@ -1594,17 +1595,18 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    // If changed Cast input, notify down for Phi and Sub - both do "uncast"
+    // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
     // Patterns:
     // ConstraintCast+ -> Sub
     // ConstraintCast+ -> Phi
+    // ConstraintCast+ -> Xor
     if (use->is_ConstraintCast()) {
-      auto push_phi_or_sub_uses_to_worklist = [&](Node* n){
-        if (n->is_Phi() || n->is_Sub()) {
+      auto push_the_uses_to_worklist = [&](Node* n){
+        if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
           _worklist.push(n);
         }
       };
-      ConstraintCastNode::visit_uncasted_uses(use, push_phi_or_sub_uses_to_worklist);
+      ConstraintCastNode::visit_uncasted_uses(use, push_the_uses_to_worklist);
     }
     // If changed LShift inputs, check RShift users for useless sign-ext
     if( use_op == Op_LShiftI ) {

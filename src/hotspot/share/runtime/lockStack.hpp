@@ -36,6 +36,7 @@ class outputStream;
 
 class LockStack {
   friend class VMStructs;
+  JVMCI_ONLY(friend class JVMCIVMStructs;)
 private:
   static const int CAPACITY = 8;
 

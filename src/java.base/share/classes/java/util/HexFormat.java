@@ -27,6 +27,7 @@ package java.util;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.HexDigits;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -150,15 +151,7 @@ public final class HexFormat {
             -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
     };
     /**
      * Format each byte of an array as a pair of hexadecimal digits.
@@ -403,21 +396,20 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                out.append(prefix);
-                toHexDigits(out, bytes[fromIndex]);
-                if (suffix.isEmpty() && delimiter.isEmpty() && prefix.isEmpty()) {
-                    for (int i = 1; i < length; i++) {
-                        toHexDigits(out, bytes[fromIndex + i]);
-                    }
+                String s = formatOptDelimiter(bytes, fromIndex, toIndex);
+                if (s != null) {
+                    out.append(s);
                 } else {
+                    out.append(prefix);
+                    toHexDigits(out, bytes[fromIndex]);
                     for (int i = 1; i < length; i++) {
                         out.append(suffix);
                         out.append(delimiter);
                         out.append(prefix);
                         toHexDigits(out, bytes[fromIndex + i]);
                     }
+                    out.append(suffix);
                 }
-                out.append(suffix);
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe.getMessage(), ioe);
             }
@@ -438,29 +430,36 @@ public final class HexFormat {
      *         or non-empty prefix or suffix
      */
     private String formatOptDelimiter(byte[] bytes, int fromIndex, int toIndex) {
+        char sep;
         byte[] rep;
         if (!prefix.isEmpty() || !suffix.isEmpty()) {
             return null;
         }
+
+        boolean ucase = digitCase == Case.UPPERCASE;
         int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
             for (int i = 0; i < length; i++) {
-                rep[i * 2] = (byte)toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[fromIndex + i]);
+                short pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                int pos = i * 2;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
-        } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
+        } else if (delimiter.length() == 1 && (sep = delimiter.charAt(0)) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
-            char sep = delimiter.charAt(0);
             rep = new byte[checkMaxArraySize(length * 3L - 1L)];
-            rep[0] = (byte) toHighHexDigit(bytes[fromIndex]);
-            rep[1] = (byte) toLowHexDigit(bytes[fromIndex]);
+            short pair = HexDigits.digitPair(bytes[fromIndex], ucase);
+            rep[0] = (byte)pair;
+            rep[1] = (byte)(pair >>> 8);
             for (int i = 1; i < length; i++) {
-                rep[i * 3 - 1] = (byte) sep;
-                rep[i * 3    ] = (byte) toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[fromIndex + i]);
+                int pos = i * 3;
+                pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
+                rep[pos - 1] = (byte) sep;
+                rep[pos] = (byte)pair;
+                rep[pos + 1] = (byte)(pair >>> 8);
             }
         } else {
             // Delimiter formatting not to a single byte
@@ -887,7 +886,7 @@ public final class HexFormat {
      *          otherwise {@code false}
      */
     public static boolean isHexDigit(int ch) {
-        return ((ch >>> 8) == 0 && DIGITS[ch] >= 0);
+        return ((ch >>> 7) == 0 && DIGITS[ch] >= 0);
     }
 
     /**
@@ -905,7 +904,7 @@ public final class HexFormat {
      */
     public static int fromHexDigit(int ch) {
         int value;
-        if ((ch >>> 8) == 0 && (value = DIGITS[ch]) >= 0) {
+        if ((ch >>> 7) == 0 && (value = DIGITS[ch]) >= 0) {
             return value;
         }
         throw new NumberFormatException("not a hexadecimal digit: \"" + (char) ch + "\" = " + ch);

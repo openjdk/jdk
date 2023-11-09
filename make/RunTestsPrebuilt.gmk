@@ -122,6 +122,7 @@ $(eval $(call SetupVariable,JT_HOME))
 $(eval $(call SetupVariable,JDK_IMAGE_DIR,$(OUTPUTDIR)/images/jdk))
 $(eval $(call SetupVariable,TEST_IMAGE_DIR,$(OUTPUTDIR)/images/test))
 $(eval $(call SetupVariable,SYMBOLS_IMAGE_DIR,$(OUTPUTDIR)/images/symbols,NO_CHECK))
+$(eval $(call SetupVariable,JTREG_JDK,$(BOOT_JDK)))
 
 # Provide default values for tools that we need
 $(eval $(call SetupVariable,MAKE,make,NO_CHECK))
@@ -157,6 +158,10 @@ ifeq ($(UNAME_OS), CYGWIN)
   OPENJDK_TARGET_OS := windows
   OPENJDK_TARGET_OS_TYPE := windows
   OPENJDK_TARGET_OS_ENV := windows.cygwin
+else ifeq ($(UNAME_OS), MINGW64)
+  OPENJDK_TARGET_OS := windows
+  OPENJDK_TARGET_OS_TYPE := windows
+  OPENJDK_TARGET_OS_ENV := windows.msys2
 else
   OPENJDK_TARGET_OS_TYPE:=unix
   ifeq ($(UNAME_OS), Linux)
@@ -168,6 +173,9 @@ else
   endif
   OPENJDK_TARGET_OS_ENV := $(OPENJDK_TARGET_OS)
 endif
+
+# Sanity check env detection
+$(info Detected target OS, type and env: [$(OPENJDK_TARGET_OS)] [$(OPENJDK_TARGET_OS_TYPE)] [$(OPENJDK_TARGET_OS_ENV)])
 
 # Assume little endian unless otherwise specified
 OPENJDK_TARGET_CPU_ENDIAN := little
@@ -248,6 +256,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     TOPDIR := $(TOPDIR), \
     OUTPUTDIR := $(OUTPUTDIR), \
     BOOT_JDK := $(BOOT_JDK), \
+    JTREG_JDK := $(JTREG_JDK), \
     JT_HOME := $(JT_HOME), \
     JDK_IMAGE_DIR := $(JDK_IMAGE_DIR), \
     JCOV_IMAGE_DIR := $(JCOV_IMAGE_DIR), \

@@ -191,6 +191,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+  }
+
   if (UseRVV) {
     if (!ext_V.enabled()) {
       warning("RVV is not supported on this CPU");
@@ -253,6 +261,16 @@ void VM_Version::initialize() {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
 
 #ifdef COMPILER2
   c2_initialize();
@@ -284,17 +302,17 @@ void VM_Version::c2_initialize() {
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
+    } else if (!is_power_of_2(MaxVectorSize)) {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
+    } else if (MaxVectorSize > _initial_vector_length) {
+      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
+              _initial_vector_length, _initial_vector_length);
+      MaxVectorSize = _initial_vector_length;
+    }
+    if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-        MaxVectorSize = _initial_vector_length;
-      }
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
   }
 

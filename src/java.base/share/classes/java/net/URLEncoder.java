@@ -34,14 +34,13 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException ;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
 import jdk.internal.util.ImmutableBitSetPredicate;
-import jdk.internal.util.StaticProperty;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -87,7 +86,6 @@ import jdk.internal.util.StaticProperty;
  */
 public class URLEncoder {
     private static final IntPredicate DONT_NEED_ENCODING;
-    private static final String DEFAULT_ENCODING_NAME;
 
     static {
 
@@ -139,8 +137,6 @@ public class URLEncoder {
         bitSet.set('*');
 
         DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
-
-        DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
     /**
@@ -161,16 +157,7 @@ public class URLEncoder {
      */
     @Deprecated
     public static String encode(String s) {
-
-        String str = null;
-
-        try {
-            str = encode(s, DEFAULT_ENCODING_NAME);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return encode(s, Charset.defaultCharset());
     }
 
     /**
