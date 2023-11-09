@@ -69,9 +69,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.HeapMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
 import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
@@ -987,9 +984,9 @@ public class TestByteBuffer {
 
     @DataProvider(name = "bufferSources")
     public static Object[][] bufferSources() {
-        Predicate<MemorySegment> heapTest = segment -> segment instanceof HeapMemorySegmentImpl;
-        Predicate<MemorySegment> nativeTest = segment -> segment instanceof NativeMemorySegmentImpl;
-        Predicate<MemorySegment> mappedTest = segment -> segment instanceof MappedMemorySegmentImpl;
+        Predicate<MemorySegment> heapTest = segment -> !segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> nativeTest = segment -> segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> mappedTest = segment -> segment.isNative() && segment.isMapped();
         try (FileChannel channel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             return new Object[][]{
                     { ByteBuffer.wrap(new byte[256]), heapTest },
@@ -1001,7 +998,7 @@ public class TestByteBuffer {
                     { ByteBuffer.allocate(256).asReadOnlyBuffer(), heapTest },
                     { ByteBuffer.allocateDirect(256).asReadOnlyBuffer(), nativeTest },
                     { channel.map(FileChannel.MapMode.READ_WRITE, 0L, 256).asReadOnlyBuffer(),
-                            nativeTest /* this seems to be an existing bug in the BB implementation */ }
+                            mappedTest }
             };
         } catch (IOException ex) {
             throw new ExceptionInInitializerError(ex);

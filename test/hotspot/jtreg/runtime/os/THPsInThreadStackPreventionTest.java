@@ -179,7 +179,7 @@ public class THPsInThreadStackPreventionTest {
         switch (args[0]) {
             case "PATCH-ENABLED": {
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
 
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
@@ -216,7 +216,7 @@ public class THPsInThreadStackPreventionTest {
                 finalargs.add("-XX:-THPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
                 output.shouldHaveExitValue(0);

@@ -50,8 +50,9 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @test
  * @bug 8205654
  * @summary Unit test for sun.tools.ProcessHelper class. The test launches Java processes with different Java options
- * and checks that sun.tools.ProcessHelper.getMainClass(pid) method returns a correct main class.                                                                                                                               return a .
+ * and checks that sun.tools.ProcessHelper.getMainClass(pid) method returns a correct main class.
  *
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @modules jdk.jcmd/sun.tools.common:+open
  *          java.base/jdk.internal.classfile

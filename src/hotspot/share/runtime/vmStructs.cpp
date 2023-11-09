@@ -1493,6 +1493,7 @@
   declare_c2_type(CastPPNode, ConstraintCastNode)                         \
   declare_c2_type(CheckCastPPNode, TypeNode)                              \
   declare_c2_type(Conv2BNode, Node)                                       \
+  declare_c2_type(ConvertNode, TypeNode)                                  \
   declare_c2_type(ConvD2FNode, Node)                                      \
   declare_c2_type(ConvD2INode, Node)                                      \
   declare_c2_type(ConvD2LNode, Node)                                      \

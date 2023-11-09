@@ -241,9 +241,9 @@ class MacroAssembler: public Assembler {
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
   int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1240,7 +1240,7 @@ public:
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
   // test single bit in Rs, result is set to Rd
-  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
@@ -1394,11 +1394,17 @@ public:
   void zero_extend(Register dst, Register src, int bits);
   void sign_extend(Register dst, Register src, int bits);
 
+private:
+  void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
+
+public:
   // compare src1 and src2 and get -1/0/1 in dst.
   // if [src1 > src2], dst = 1;
   // if [src1 == src2], dst = 0;
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_ul2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_uw2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
   // support for argument shuffling
   void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);

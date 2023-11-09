@@ -366,28 +366,8 @@ jdk_vector = \
     jdk/incubator/vector
 
 jdk_vector_sanity = \
-    jdk/incubator/vector/AddTest.java \
-    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ByteMaxVectorTests.java \
-    jdk/incubator/vector/CovarOverrideTest.java \
-    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/DoubleMaxVectorTests.java \
-    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/FloatMaxVectorTests.java \
-    jdk/incubator/vector/ImageTest.java \
-    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/IntMaxVectorTests.java \
-    jdk/incubator/vector/LoadJsvmlTest.java \
-    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/LongMaxVectorTests.java \
-    jdk/incubator/vector/MethodOverideTest.java \
-    jdk/incubator/vector/MismatchTest.java \
     jdk/incubator/vector/PreferredSpeciesTest.java \
-    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ShortMaxVectorTests.java \
     jdk/incubator/vector/VectorHash.java \
-    jdk/incubator/vector/VectorMaxConversionTests.java \
-    jdk/incubator/vector/VectorReshapeTests.java \
     jdk/incubator/vector/VectorRuns.java
 
 #############################
