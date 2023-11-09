@@ -249,6 +249,7 @@ class EATestsTarget {
 
         // Relocking test cases
         new EARelockingSimpleTarget()                                                       .run();
+        new EARelockingSimpleWithAccessInOtherThreadTarget()                                .run();
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
@@ -370,6 +371,7 @@ public class EATests extends TestScaffold {
 
         // Relocking test cases
         new EARelockingSimple()                                                       .run(this);
+        new EARelockingSimpleWithAccessInOtherThread()                                .run(this);
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
@@ -1745,6 +1747,62 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
         synchronized (l1) {
             dontinline_brkpt();
         }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+// The debugger reads and publishes an object with eliminated locking to a static variable.
+// A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
+// Without eager relocking the accesses are unsynchronized which can be observed.
+class EARelockingSimpleWithAccessInOtherThread extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        String l1ClassName = EARelockingSimpleWithAccessInOtherThreadTarget.SyncCounter.class.getName();
+        ObjectReference ctr = getLocalRef(bpe.thread().frame(1), l1ClassName, "l1");
+        setField(testCase, "sharedCounter", ctr);
+        terminateEndlessLoop();
+    }
+}
+
+class EARelockingSimpleWithAccessInOtherThreadTarget extends EATestCaseBaseTarget {
+
+    public static class SyncCounter {
+        private int val;
+        public synchronized int inc() { return val++; }
+    }
+
+    public volatile SyncCounter sharedCounter;
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        doLoop = true;
+        Thread.ofPlatform().daemon().start(() -> {
+                while (doLoop) {
+                    SyncCounter ctr = sharedCounter;
+                    if (ctr != null) {
+                        ctr.inc();
+                    }
+                }
+            });
+    }
+
+    public void dontinline_testMethod() {
+        SyncCounter l1 = new SyncCounter();
+        synchronized (l1) {      // Eliminated locking
+            l1.inc();
+            dontinline_brkpt();  // Debugger publishes l1 to sharedCounter.
+            iResult = l1.inc();  // Changes by the 2nd thread will be observed if l1
+                                 // was not relocked before passing it to the debugger.
+        }
+    }
+
+    @Override
+    public int getExpectedIResult() {
+        return 1;
     }
 }
 
