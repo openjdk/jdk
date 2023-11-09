@@ -927,6 +927,22 @@ public class IRNode {
         beforeMatchingNameRegex(MUL, "Mul(I|L|F|D)");
     }
 
+    public static final String MUL_ADD_S2I = PREFIX + "MUL_ADD_S2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_ADD_S2I, "MulAddS2I");
+    }
+
+    public static final String MUL_ADD_VS2VI = VECTOR_PREFIX + "MUL_ADD_VS2VI" + POSTFIX;
+    static {
+        vectorNode(MUL_ADD_VS2VI, "MulAddVS2VI", TYPE_INT);
+    }
+
+    // Can only be used if avx512_vnni is available.
+    public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
+    static {
+        machOnly(MUL_ADD_VS2VI_VNNI, "vmuladdaddS2I_reg");
+    }
+
     public static final String MUL_D = PREFIX + "MUL_D" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_D, "MulD");
