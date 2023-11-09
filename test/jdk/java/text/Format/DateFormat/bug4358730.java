@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@ import java.io.*;
 import java.util.*;
 import java.text.*;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * @test
  * @bug 4358730
- * @library /java/text/testlib
  * @summary test that confirms Zero-Padding on year.
+ * @run junit bug4358730
  */
 
-public class bug4358730 extends IntlTest {
-
-    public static void main(String[] args) throws Exception {
-        new bug4358730().run(args);
-    }
+public class bug4358730 {
 
     String[] patterns = {"y",    "yy", "yyy",  "yyyy", "yyyyy"};
     String[][] data = {
@@ -50,6 +50,7 @@ public class bug4358730 extends IntlTest {
     int datasize = data.length;
     int nPatterns = data[0].length;
 
+    @Test
     public void Test4358730() {
         TimeZone saveZone = TimeZone.getDefault();
         Locale saveLocale = Locale.getDefault();
@@ -65,7 +66,7 @@ public class bug4358730 extends IntlTest {
                 for (int j = 0; j < nPatterns; j++) {
                     sdf.applyPattern(patterns[j]);
                     if (!data[i][j].equals(sdf.format(d))) {
-                        errln("Invalid format : " + sdf.format(d) +
+                        fail("Invalid format : " + sdf.format(d) +
                             ", expected : " + data[i][j]);
                     }
                 }

@@ -142,9 +142,6 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
-
  public:
   jint compute_modifier_flags() const;
 

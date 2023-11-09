@@ -16420,10 +16420,10 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP tmp2);
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
 
   // TODO
   // identify correct cost
@@ -16431,7 +16431,7 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegP
   format %{ "fastlock $object,$box\t! kills $tmp,$tmp2" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

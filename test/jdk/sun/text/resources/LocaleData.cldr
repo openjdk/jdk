@@ -5240,9 +5240,9 @@ FormatData/de/TimePatterns/0=HH:mm:ss zzzz
 FormatData/fi/AmPmMarkers/0=ap.
 FormatData/fi/AmPmMarkers/1=ip.
 
-# bug 6507067
+# bug 6507067 8317979
 TimeZoneNames/zh_TW/Asia\/Taipei/1=\u53f0\u5317\u6a19\u6e96\u6642\u9593
-TimeZoneNames/zh_TW/Asia\/Taipei/2=
+TimeZoneNames/zh_TW/Asia\/Taipei/2=CST
 
 # bug 6645271
 FormatData/hr_HR/DatePatterns/2=d. MMM y.

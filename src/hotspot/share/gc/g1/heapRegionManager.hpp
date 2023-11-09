@@ -106,7 +106,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   void assert_contiguous_range(uint start, uint num_regions) NOT_DEBUG_RETURN;
 
-  // Finds the next sequence of empty regions starting from start_idx, going backwards in
+  // Finds the next sequence of empty regions starting from start_idx (exclusive), going backwards in
   // the heap. Returns the length of the sequence found. If this value is zero, no
   // sequence could be found, otherwise res_idx contains the start index of this range.
   uint find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const;

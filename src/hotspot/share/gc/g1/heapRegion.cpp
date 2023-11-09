@@ -105,7 +105,7 @@ void HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
+  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -122,7 +122,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear_locked();
+  rem_set()->clear();
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -205,7 +205,7 @@ void HeapRegion::clear_humongous() {
 }
 
 void HeapRegion::prepare_remset_for_scan() {
-  return _rem_set->reset_table_scanner();
+  _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -275,24 +275,15 @@ void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
 
 // Code roots support
 void HeapRegion::add_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root(nm);
-}
-
-void HeapRegion::add_code_root_locked(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root_locked(nm);
+  rem_set()->add_code_root(nm);
 }
 
 void HeapRegion::remove_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_code_root(nm);
+  rem_set()->remove_code_root(nm);
 }
 
 void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->code_roots_do(blk);
+  rem_set()->code_roots_do(blk);
 }
 
 class VerifyCodeRootOopClosure: public OopClosure {

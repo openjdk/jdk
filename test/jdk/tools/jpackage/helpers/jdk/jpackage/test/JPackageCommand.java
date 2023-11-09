@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -832,6 +832,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
         if (isRuntime() || (!isImagePackageType() && !TKit.isOSX())) {
             assertFileInAppImage(lookupPath, null);
+        } else if (!TKit.isOSX()) {
+            assertFileInAppImage(lookupPath, lookupPath);
         } else {
             assertFileInAppImage(lookupPath, lookupPath);
 
@@ -842,15 +844,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 final Path rootDir = isImagePackageType() ? outputBundle() :
                         pathToUnpackedPackageFile(appInstallationDirectory());
 
+                AppImageFile aif = AppImageFile.load(rootDir);
+
                 boolean expectedValue = hasArgument("--mac-sign");
-                boolean actualValue = AppImageFile.load(rootDir).isSigned();
-                TKit.assertTrue(expectedValue == actualValue,
-                    "Unexptected value in app image file for <signed>");
+                boolean actualValue = aif.isSigned();
+                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
+                    "Check for unexptected value in app image file for <signed>");
 
                 expectedValue = hasArgument("--mac-app-store");
-                actualValue = AppImageFile.load(rootDir).isAppStore();
-                TKit.assertTrue(expectedValue == actualValue,
-                    "Unexptected value in app image file for <app-store>");
+                actualValue = aif.isAppStore();
+                TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
+                    "Check for unexptected value in app image file for <app-store>");
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class CustomTzIDCheckDST {
     private static String CUSTOM_TZ2 = "MEZ-1MESZ,M10.5.0,M3.5.0/3";
     public static void main(String args[]) throws Throwable {
         if (args.length == 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest"));
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest"));
             pb.environment().put("TZ", CUSTOM_TZ);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
