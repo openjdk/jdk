@@ -32,7 +32,7 @@ import java.lang.foreign.MemorySegment.Scope;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible
- * allocation and timely de-allocation.
+ * allocation and timely deallocation.
  * <p>
  * An arena has a {@linkplain MemorySegment.Scope scope} - the <em>arena scope</em>.
  * All the segments allocated by the arena are associated with the arena scope. As such,
@@ -70,8 +70,8 @@ import java.lang.foreign.MemorySegment.Scope;
  * Memory segments allocated with an automatic arena can also be
  * {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
  * <p>
- * Rather than leaving de-allocation in the hands of the Java runtime, clients will often
- * wish to exercise control over the timing of de-allocation for regions of memory that
+ * Rather than leaving deallocation in the hands of the Java runtime, clients will often
+ * wish to exercise control over the timing of deallocation for regions of memory that
  * back memory segments. Two kinds of arenas support this, namely {@linkplain #ofConfined() confined}
  * and {@linkplain #ofShared() shared} arenas. They both feature bounded lifetimes that
  * are managed manually. For instance, when a confined arena is {@linkplain #close() closed}
@@ -192,7 +192,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * }
  *
  * In other words, a slicing arena provides a vastly more efficient and scalable
- * allocation strategy, while still retaining the timely de-allocation guarantee provided
+ * allocation strategy, while still retaining the timely deallocation guarantee provided
  * by the underlying confined arena:
  *
  * {@snippet lang = java:
