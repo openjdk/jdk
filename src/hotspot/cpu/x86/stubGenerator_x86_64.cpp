@@ -32,6 +32,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -3887,6 +3888,24 @@ address StubGenerator::generate_throw_exception(const char* name,
   return stub->entry_point();
 }
 
+// exception handler for upcall stubs
+address StubGenerator::generate_upcall_stub_exception_handler() {
+  StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+  address start = __ pc();
+
+  // native caller has no idea how to handle exceptions
+  // we just crash here. Up to callee to catch exceptions.
+  __ verify_oop(rax);
+  __ vzeroupper();
+  __ mov(c_rarg0, rax);
+  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
+  __ should_not_reach_here();
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_std = 0x1F80;
@@ -4039,6 +4058,8 @@ void StubGenerator::generate_final_stubs() {
   if (UseVectorizedMismatchIntrinsic) {
     StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
   }
+
+  StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 }
 
 void StubGenerator::generate_compiler_stubs() {

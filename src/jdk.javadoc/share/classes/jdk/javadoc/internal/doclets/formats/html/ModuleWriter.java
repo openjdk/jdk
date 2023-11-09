@@ -923,4 +923,9 @@ public class ModuleWriter extends HtmlDocletWriter {
             li.add(deprDiv);
         }
     }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
+    }
 }

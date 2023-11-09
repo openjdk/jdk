@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,20 +134,39 @@ public class IPAddressUtil {
      * If string can't be parsed by following IETF IPv4 address string literals
      * formatting style rules (default one), but can be parsed by following BSD formatting
      * style rules, the IPv4 address string content is treated as ambiguous and
-     * {@code IllegalArgumentException} is thrown.
+     * either {@code IllegalArgumentException} is thrown, or {@code null} is returned.
      *
      * @param src input string
+     * @param throwIAE {@code true} - throw {@code IllegalArgumentException} when cannot be parsed
+     *                            as IPv4 address string;
+     *                 {@code false} - throw {@code IllegalArgumentException} only when IPv4 address
+     *                            string is ambiguous.
      * @return bytes array if string is a valid IPv4 address string
      * @throws IllegalArgumentException if "jdk.net.allowAmbiguousIPAddressLiterals" SP is set to
-     *                                  "false" and IPv4 address string {@code "src"} is ambiguous
+     *                                  {@code false}, IPv4 address string {@code src} is ambiguous,
+     *                                  or when address string cannot be parsed as an IPv4 address
+     *                                  string and {@code throwIAE} is set to {@code true}.
      */
-    public static byte[] validateNumericFormatV4(String src) {
+    public static byte[] validateNumericFormatV4(String src, boolean throwIAE) {
         byte[] parsedBytes = textToNumericFormatV4(src);
         if (!ALLOW_AMBIGUOUS_IPADDRESS_LITERALS_SP_VALUE
                 && parsedBytes == null && isBsdParsableV4(src)) {
-            throw new IllegalArgumentException("Invalid IP address literal: " + src);
+            throw invalidIpAddressLiteral(src);
+        }
+        if (parsedBytes == null && throwIAE) {
+            throw invalidIpAddressLiteral(src);
         }
         return parsedBytes;
+    }
+
+    /**
+     * Creates {@code IllegalArgumentException} with invalid IP address literal message.
+     *
+     * @param src address literal string to include to the exception message
+     * @return an {@code IllegalArgumentException} instance
+     */
+    public static IllegalArgumentException invalidIpAddressLiteral(String src) {
+        return new IllegalArgumentException("Invalid IP address literal: " + src);
     }
 
     /*
