@@ -39,6 +39,7 @@ import java.lang.management.ThreadMXBean;
 
 public class ConcurrentDeflation {
     public static final int TOTAL_RUN_TIME = 10 * 1000;
+    public static Object[] monitors = new Object[1000];
 
     public static void main(String[] args) throws Exception {
         Thread thread_dumper  = new Thread(() -> dumpThreads());
@@ -66,7 +67,7 @@ public class ConcurrentDeflation {
     }
 
     static private void createMonitors() {
-        Object[] monitors = new Object[1000];
+        monitors = new Object[1000];
         int monitorCount = 0;
 
         int index = 0;
