@@ -2206,7 +2206,7 @@ public class JavacParserTest extends TestCase {
                              /*public static final*/ _ /* = new Test() */ /*enum*/ ;
                          } """,
                          """
-                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
                          """),
             new TestCase("""
                          package t;
@@ -2241,7 +2241,7 @@ public class JavacParserTest extends TestCase {
                              /*public static final*/ _ /* = new Test() */ /*enum*/ ;
                          } """,
                          """
-                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
                          """),
             new TestCase("""
                          package t;
@@ -2330,7 +2330,7 @@ public class JavacParserTest extends TestCase {
                              /*public static final*/ A /* = new Test() */ /*enum*/ ;
                          } """,
                          """
-                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         Test.java:3:5: compiler.err.use.of.underscore.not.allowed.non.variable
                          """),
         };
         for (TestCase testCase : testCases) {

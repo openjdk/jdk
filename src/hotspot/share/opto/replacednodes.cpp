@@ -106,88 +106,175 @@ void ReplacedNodes::apply(Node* n, uint idx) {
   }
 }
 
-static void enqueue_use(Node* n, Node* use, Unique_Node_List& work) {
-  if (use->is_Phi()) {
-    Node* r = use->in(0);
-    assert(r->is_Region(), "Phi should have Region");
-    for (uint i = 1; i < use->req(); i++) {
-      if (use->in(i) == n) {
-        work.push(r->in(i));
-      }
-    }
-  } else {
-    work.push(use);
-  }
-}
-
 // Perform node replacement following late inlining.
 void ReplacedNodes::apply(Compile* C, Node* ctl) {
   // ctl is the control on exit of the method that was late inlined
   if (is_empty()) {
     return;
   }
+  ResourceMark rm;
+  Node_Stack stack(0);
+  Unique_Node_List to_fix; // nodes to clone + uses at the end of the chain that need to updated
+  VectorSet seen;
+  VectorSet valid_control;
+
   for (int i = 0; i < _replaced_nodes->length(); i++) {
     ReplacedNode replaced = _replaced_nodes->at(i);
     Node* initial = replaced.initial();
     Node* improved = replaced.improved();
     assert (ctl != nullptr && !ctl->is_top(), "replaced node should have actual control");
 
-    ResourceMark rm;
-    Unique_Node_List work;
-    // Go over all the uses of the node that is considered for replacement...
-    for (DUIterator j = initial->outs(); initial->has_out(j); j++) {
-      Node* use = initial->out(j);
+    if (initial->outcnt() == 0) {
+      continue;
+    }
 
-      if (use == improved || use->outcnt() == 0) {
-        continue;
-      }
-      work.clear();
-      enqueue_use(initial, use, work);
-      bool replace = true;
-      // Check that this use is dominated by ctl. Go ahead with the replacement if it is.
-      while (work.size() != 0 && replace) {
-        Node* n = work.pop();
-        if (use->outcnt() == 0) {
-          continue;
+    // Find uses of initial that are dominated by ctl so, initial can be replaced by improved.
+    // Proving domination here is not straightforward. To do so, we follow uses of initial, and uses of uses until we
+    // encounter a node which is a control node or is pinned at some control. Then, we try to prove this control is
+    // dominated by ctl. If that's the case, it's legal to replace initial by improved but for this chain of uses only.
+    // It may not be the case for some other chain of uses, so we clone that chain and perform the replacement only for
+    // these uses.
+    assert(stack.is_empty(), "");
+    stack.push(initial, 1);
+    Node* use = initial->raw_out(0);
+    stack.push(use, 0);
+
+    while (!stack.is_empty()) {
+      assert(stack.size() > 1, "at least initial + one use");
+      Node* n = stack.node();
+
+      uint current_size = stack.size();
+
+      if (seen.test_set(n->_idx)) {
+        if (to_fix.member(n)) {
+          collect_nodes_to_clone(stack, to_fix);
         }
-        if (n->is_CFG() || (n->in(0) != nullptr && !n->in(0)->is_top())) {
-          // Skip projections, since some of the multi nodes aren't CFG (e.g., LoadStore and SCMemProj).
-          if (n->is_Proj()) {
-            n = n->in(0);
-          }
-          if (!n->is_CFG()) {
-            n = n->in(0);
-          }
-          assert(n->is_CFG(), "should be CFG now");
-          int depth = 0;
-          while(n != ctl) {
-            n = IfNode::up_one_dom(n);
-            depth++;
-            // limit search depth
-            if (depth >= 100 || n == nullptr) {
-              replace = false;
-              break;
+      } else if (n->outcnt() != 0 && n != improved) {
+        if (n->is_Phi()) {
+          Node* region = n->in(0);
+          Node* prev = stack.node_at(stack.size() - 2);
+          for (uint j = 1; j < region->req(); ++j) {
+            if (n->in(j) == prev) {
+              Node* in = region->in(j);
+              if (in != nullptr && !in->is_top()) {
+                if (is_dominator(ctl, in)) {
+                  valid_control.set(in->_idx);
+                  collect_nodes_to_clone(stack, to_fix);
+                }
+              }
             }
           }
+        } else if (n->is_CFG()) {
+          if (is_dominator(ctl, n)) {
+            collect_nodes_to_clone(stack, to_fix);
+          }
+        } else if (n->in(0) != nullptr && n->in(0)->is_CFG()) {
+          Node* c = n->in(0);
+          if (is_dominator(ctl, c)) {
+            collect_nodes_to_clone(stack, to_fix);
+          }
         } else {
-          for (DUIterator k = n->outs(); n->has_out(k); k++) {
-            enqueue_use(n, n->out(k), work);
+          uint idx = stack.index();
+          if (idx < n->outcnt()) {
+            stack.set_index(idx + 1);
+            stack.push(n->raw_out(idx), 0);
           }
         }
       }
-      if (replace) {
-        bool is_in_table = C->initial_gvn()->hash_delete(use);
-        int replaced = use->replace_edge(initial, improved);
-        if (is_in_table) {
-          C->initial_gvn()->hash_find_insert(use);
+      if (stack.size() == current_size) {
+        for (;;) {
+          stack.pop();
+          if (stack.is_empty()) {
+            break;
+          }
+          n = stack.node();
+          uint idx = stack.index();
+          if (idx < n->outcnt()) {
+            stack.set_index(idx + 1);
+            stack.push(n->raw_out(idx), 0);
+            break;
+          }
         }
-        C->record_for_igvn(use);
-
-        assert(replaced > 0, "inconsistent");
-        --j;
       }
     }
   }
+  if (to_fix.size() > 0) {
+    uint hash_table_size = _replaced_nodes->length();
+    for (uint i = 0; i < to_fix.size(); ++i) {
+      Node* n = to_fix.at(i);
+      if (n->is_CFG() || n->in(0) != nullptr) { // End of a chain is not cloned
+        continue;
+      }
+      hash_table_size++;
+    }
+    // Map from current node to cloned/replaced node
+    ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> clones(hash_table_size, hash_table_size);
+    // Record mapping from initial to improved nodes
+    for (int i = 0; i < _replaced_nodes->length(); i++) {
+      ReplacedNode replaced = _replaced_nodes->at(i);
+      Node* initial = replaced.initial();
+      Node* improved = replaced.improved();
+      clones.put(initial, improved);
+      // If initial needs to be cloned but is also improved then there's no need to clone it.
+      if (to_fix.member(initial)) {
+        to_fix.remove(initial);
+      }
+    }
+
+    // Clone nodes and record mapping from current to cloned nodes
+    for (uint i = 0; i < to_fix.size(); ++i) {
+      Node* n = to_fix.at(i);
+      if (n->is_CFG() || n->in(0) != nullptr) { // End of a chain
+        continue;
+      }
+      Node* clone = n->clone();
+      bool added = clones.put(n, clone);
+      assert(added, "clone node must be added to mapping");
+      C->initial_gvn()->set_type_bottom(clone);
+      to_fix.map(i, clone); // Update list of nodes with cloned node
+    }
+
+    // Fix edges in cloned nodes and use at the end of the chain
+    for (uint i = 0; i < to_fix.size(); ++i) {
+      Node* n = to_fix.at(i);
+      bool is_in_table = C->initial_gvn()->hash_delete(n);
+      uint updates = 0;
+      for (uint j = 0; j < n->req(); ++j) {
+        Node* in = n->in(j);
+        if (in == nullptr || (n->is_Phi() && n->in(0)->in(j) == nullptr)) {
+          continue;
+        }
+        if (n->is_Phi() && !valid_control.test(n->in(0)->in(j)->_idx)) {
+          continue;
+        }
+        Node** clone_ptr = clones.get(in);
+        if (clone_ptr != nullptr) {
+          Node* clone = *clone_ptr;
+          n->set_req(j, clone);
+          updates++;
+        }
+      }
+      assert(updates > 0, "");
+      C->record_for_igvn(n);
+      if (is_in_table) {
+        C->initial_gvn()->hash_find_insert(n);
+      }
+    }
+  }
+}
+
+bool ReplacedNodes::is_dominator(const Node* ctl, Node* n) const {
+  assert(n->is_CFG(), "should be CFG now");
+  int depth = 0;
+  while (n != ctl) {
+    n = IfNode::up_one_dom(n);
+    depth++;
+    // limit search depth
+    if (depth >= 100 || n == nullptr) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void ReplacedNodes::dump(outputStream *st) const {
@@ -222,5 +309,12 @@ void ReplacedNodes::merge_with(const ReplacedNodes& other) {
   }
   if (shift > 0) {
     _replaced_nodes->trunc_to(len - shift);
+  }
+}
+
+void ReplacedNodes::collect_nodes_to_clone(const Node_Stack& stack, Unique_Node_List& to_fix) {
+  for (uint i = stack.size() - 1; i >= 1; i--) {
+    Node* n = stack.node_at(i);
+    to_fix.push(n);
   }
 }

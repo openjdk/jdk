@@ -125,7 +125,7 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
 // full module graph
 static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
   {"jdk/internal/loader/ArchivedClassLoaders",    "archivedClassLoaders"},
-  {"jdk/internal/module/ArchivedBootLayer",       "archivedBootLayer"},
+  {ARCHIVED_BOOT_LAYER_CLASS,                     ARCHIVED_BOOT_LAYER_FIELD},
   {"java/lang/Module$ArchivedData",               "archivedData"},
   {nullptr, nullptr},
 };
@@ -964,7 +964,14 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
 
   // Initialize from archived data. Currently this is done only
   // during VM initialization time. No lock is needed.
-  if (record != nullptr) {
+  if (record == nullptr) {
+    if (log_is_enabled(Info, cds, heap)) {
+      ResourceMark rm(THREAD);
+      log_info(cds, heap)("subgraph %s is not recorded",
+                          k->external_name());
+    }
+    return nullptr;
+  } else {
     if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm(THREAD);
@@ -1749,6 +1756,28 @@ void HeapShared::print_stats() {
                       ", avg %8.1f bytes)",
                       _total_obj_count, _total_obj_size * HeapWordSize,
                       avg_size(_total_obj_size, _total_obj_count));
+}
+
+bool HeapShared::is_archived_boot_layer_available(JavaThread* current) {
+  TempNewSymbol klass_name = SymbolTable::new_symbol(ARCHIVED_BOOT_LAYER_CLASS);
+  InstanceKlass* k = SystemDictionary::find_instance_klass(current, klass_name, Handle(), Handle());
+  if (k == nullptr) {
+    return false;
+  } else {
+    TempNewSymbol field_name = SymbolTable::new_symbol(ARCHIVED_BOOT_LAYER_FIELD);
+    TempNewSymbol field_signature = SymbolTable::new_symbol("Ljdk/internal/module/ArchivedBootLayer;");
+    fieldDescriptor fd;
+    if (k->find_field(field_name, field_signature, true, &fd) != nullptr) {
+      oop m = k->java_mirror();
+      oop f = m->obj_field(fd.offset());
+      if (CompressedOops::is_null(f)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
