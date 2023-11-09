@@ -2319,6 +2319,26 @@ public final class DateTimeFormatter {
                 return null;
             }
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+
+            if (obj instanceof ClassicFormat other) {
+                return this.formatter.equals(other.formatter)
+                        // null is a valid value for parseType
+                        && Objects.equals(this.parseType, other.parseType);
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(formatter, parseType);
+        }
     }
 
 }
