@@ -44,7 +44,7 @@
 
 /*
 
- This code collects malloc/realloc/free os requests (-XX:RecordNMTEntries=XXX) and has 2 purposes:
+ This code collects malloc/realloc/free os requests (-XX:RecordMemoryAllocations=XXX) and has 2 purposes:
 
  #1 Print all the entries captured in the log (-XX:+PrintRecordedNMTEntries),
       which later can be "played back" to allow measuring the performance speed utilizing the exact same memory
@@ -810,7 +810,7 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   fprintf(stderr, "MemTracker::overhead_per_malloc(): %zu\n\n", MemTracker::overhead_per_malloc());
   calculate_good_sizes(entries, count);
 
-  if (PrintRecordedNMTEntries) {
+  if (PrintRecordedMemoryAllocations) {
     print_records(entries, count);
   }
 
@@ -868,7 +868,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
   static pthread_mutex_t _mutex = PTHREAD_MUTEX_INITIALIZER;
   static Entry* _entries = nullptr;
   volatile static size_t count = 0;
-  volatile static bool done = (RecordNMTEntries==0);
+  volatile static bool done = (RecordMemoryAllocations==0);
 
   Entry* _entry = nullptr;
   if (!done) {
@@ -879,15 +879,15 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
 #endif
     {
       if (_entries == nullptr) {
-        _entries = (Entry*)calloc(RecordNMTEntries, sizeof(Entry));
+        _entries = (Entry*)calloc(RecordMemoryAllocations, sizeof(Entry));
         assert(_entries != nullptr, "_entries != nullptr");
       }
       if (!done) {
-        bool triggered_by_limit = (count >= (size_t)(RecordNMTEntries));
+        bool triggered_by_limit = (count >= (size_t)(RecordMemoryAllocations));
         bool triggered_by_request = ((requested == 0) && (ptr == nullptr));
         if (triggered_by_limit) {
           fprintf(stderr, "\n\n");
-          fprintf(stderr, "REASON: reached RecordNMTEntries limit: %ld/%ld\n\n", count, RecordNMTEntries);
+          fprintf(stderr, "REASON: reached RecordMemoryAllocations limit: %ld/%ld\n\n", count, RecordMemoryAllocations);
         } else if (triggered_by_request) {
           fprintf(stderr, "\n\n");
           fprintf(stderr, "REASON: triggered by exit\n\n");

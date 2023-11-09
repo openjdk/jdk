@@ -360,7 +360,7 @@ class Thread: public ThreadShadow {
     assert(Thread::current() == this, "set_native_thread_name can only be called on the current thread");
     os::set_native_thread_name(name);
 #ifdef ASSERT
-    if (RecordNMTEntries > 0) {
+    if (RecordMemoryAllocations > 0) {
       NMT_MemoryLogRecorder::remember_thread_name(name);
     }
 #endif
