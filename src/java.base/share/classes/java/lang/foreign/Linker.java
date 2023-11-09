@@ -920,17 +920,22 @@ public sealed interface Linker permits AbstractLinker {
          * Using this linker option when linking non-critical functions is likely to have
          * adverse effects, such as loss of performance or JVM crashes.
          * <p>
-         * Critical functions can optionally allow access to the Java heap. This allows clients to pass heap
-         * memory segments as addresses, where normally only off-heap memory segments would be allowed. The memory region
-         * inside the Java heap is exposed through a temporary native address that is valid for the duration of the
-         * function call. Use of this mechanism is therefore only recommend when a function needs to do
-         * short-lived access to Java heap memory, and copying the relevant data to an off-heap memory segment would be
-         * prohibitive in terms of performance.
+         * Critical functions can optionally allow access to the Java heap. This allows
+         * clients to pass heap memory segments as addresses, where normally only off-heap
+         * memory segments would be allowed. The memory region inside the Java heap is
+         * exposed through a temporary native address that is valid for the duration of
+         * the function call. Use of this mechanism is therefore only recommended when a
+         * function needs to do short-lived access to Java heap memory, and copying the
+         * relevant data to an off-heap memory segment would be prohibitive in terms of
+         * performance.
          *
-         * @param allowHeapAccess whether the linked function should allow access to the Java heap.
+         * @param allowHeapAccess whether the linked function should allow access to the
+         *                        Java heap.
          */
         static Option critical(boolean allowHeapAccess) {
-            return allowHeapAccess ? LinkerOptions.Critical.ALLOW_HEAP : LinkerOptions.Critical.DONT_ALLOW_HEAP;
+            return allowHeapAccess
+                ? LinkerOptions.Critical.ALLOW_HEAP
+                : LinkerOptions.Critical.DONT_ALLOW_HEAP;
         }
     }
 }
