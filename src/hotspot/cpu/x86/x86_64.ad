@@ -1831,6 +1831,7 @@ encode %{
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
+      address mark = __ pc();
       int call_offset = __ offset();
       __ call(AddressLiteral(CAST_FROM_FN_PTR(address, $meth$$method), rspec));
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
