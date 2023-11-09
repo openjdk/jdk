@@ -100,8 +100,8 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      *}
      *
      * @param layout the target layout.
-     * @return an address layout with same characteristics as this layout, but with the provided target layout.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     * @return an address layout with the same characteristics as this layout, but with the provided target layout.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled
      * @see #targetLayout()
      */
     @CallerSensitive
@@ -114,7 +114,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      *
      * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
      *
-     * @return an address layout with same characteristics as this layout, but with no target layout.
+     * @return an address layout with the same characteristics as this layout, but with no target layout.
      * @see #targetLayout()
      */
     AddressLayout withoutTargetLayout();

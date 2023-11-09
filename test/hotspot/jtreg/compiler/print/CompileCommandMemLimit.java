@@ -24,7 +24,7 @@
 /*
  * @test id=c1_crash
  * @requires vm.compiler1.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes compilation to crash
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes C1 to crash
  * @library /test/lib
  * @run driver compiler.print.CompileCommandMemLimit crash false
  */
@@ -32,7 +32,7 @@
 /*
  * @test id=c2_crash
  * @requires vm.compiler2.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes compilation to crash
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,crash causes C2 to crash
  * @library /test/lib
  * @run driver compiler.print.CompileCommandMemLimit crash true
  */
@@ -40,7 +40,7 @@
 /*
  * @test id=c1_stop
  * @requires vm.compiler1.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes compilation to stop
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes C1 to stop
  * @library /test/lib
  * @run driver compiler.print.CompileCommandMemLimit stop false
  */
@@ -48,7 +48,7 @@
 /*
  * @test id=c2_stop
  * @requires vm.compiler2.enabled
- * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes compilation to stop
+ * @summary Checks that -XX:CompileCommand=MemLimit,...,stop causes C2 to stop
  * @library /test/lib
  * @run driver compiler.print.CompileCommandMemLimit stop true
  */
@@ -87,10 +87,17 @@ public class CompileCommandMemLimit {
         List<String> options = new ArrayList<String>();
         options.add("-Xcomp");
         options.add("-XX:-Inline");
+        options.add("-Xmx100m");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::*");
         // We pass a very small size to guarantee the crash
         options.add("-XX:CompileCommand=MemStat," + getTestMethod(include) + ",print");
-        options.add("-XX:CompileCommand=MemLimit," + getTestMethod(include) + ",4k" + (test_crash ? "~crash" : ""));
+        if (test_crash) {
+            options.add("-XX:CompileCommand=MemLimit," + getTestMethod(include) + ",4k~crash");
+            options.add("-XX:-CreateCoredumpOnCrash");
+        } else {
+            options.add("-XX:CompileCommand=MemLimit," + getTestMethod(include) + ",4k");
+        }
+
         if (c2) {
             options.add("-XX:-TieredCompilation");
         } else {
