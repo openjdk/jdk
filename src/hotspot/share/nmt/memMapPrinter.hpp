@@ -30,6 +30,8 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#ifdef LINUX
+
 class outputStream;
 class CachedNMTInformation;
 
@@ -61,10 +63,13 @@ public:
 
 class MemMapPrinter : public AllStatic {
   static void pd_print_header(outputStream* st);
+  static void print_header(outputStream* st);
   static void pd_iterate_all_mappings(MappingPrintClosure& closure);
 public:
   static void mark_page_malloced(const void* p, MEMFLAGS f);
   static void print_all_mappings(outputStream* st, bool human_readable);
 };
+
+#endif // LINUX
 
 #endif // SHARE_SERVICES_MEMMAPPRINTER_HPP

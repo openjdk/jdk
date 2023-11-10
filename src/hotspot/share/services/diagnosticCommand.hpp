@@ -978,6 +978,8 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+#ifdef LINUX
+
 class SystemMapDCmd : public DCmdWithParser {
   DCmdArgument<bool> _human_readable;
 public:
@@ -985,7 +987,7 @@ public:
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
-    return "Prints an annotated process memory map of the VM process.";
+    return "Prints an annotated process memory map of the VM process (linux only).";
   }
   static const char* impact() { return "Low"; }
   static const JavaPermission permission() {
@@ -1004,7 +1006,7 @@ public:
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
-    return "Dumps an annotated process memory map to an output file.";
+    return "Dumps an annotated process memory map to an output file (linux only).";
   }
   static const char* impact() { return "Low"; }
   static const JavaPermission permission() {
@@ -1014,5 +1016,7 @@ public:
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
+
+#endif // LINUX
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

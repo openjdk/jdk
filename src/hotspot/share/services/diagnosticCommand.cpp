@@ -69,6 +69,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
+#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
 #include "trimCHeapDCmd.hpp"
 #endif
@@ -1156,6 +1157,8 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
+#ifdef LINUX
+
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
   _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
@@ -1186,10 +1189,12 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
-    const char* absname = os::realpath(name, tmp, sizeof(tmp));
+    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
     name = absname != nullptr ? absname : name;
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing.", name);
   }
 }
+
+#endif // LINUX

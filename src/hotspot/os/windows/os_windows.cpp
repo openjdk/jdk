@@ -6134,21 +6134,3 @@ void os::print_user_info(outputStream* st) {
 void os::print_active_locale(outputStream* st) {
   // not implemented yet
 }
-
-char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
-  const DWORD fattr = GetFileAttributes(filename);
-  if (fattr == 0xffffffff) {
-    return nullptr;
-  }
-  const DWORD len = GetFullPathName(filename, (DWORD) outbuflen, outbuf, nullptr);
-  if (len > 0) {
-    if (len >= outbuflen) {
-      errno = ENAMETOOLONG;
-      return nullptr;
-    }
-    return outbuf;
-  }
-  return nullptr;
-}
-
-

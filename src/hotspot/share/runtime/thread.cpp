@@ -471,7 +471,6 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     if (!is_Java_thread() || !JavaThread::cast(this)->is_vthread_mounted()) {
       osthread()->print_on(st);
     }
-    st->print("stack=[" PTR_FORMAT ", " PTR_FORMAT ")", p2i(stack_end()), p2i(stack_base()));
   }
   ThreadsSMRSupport::print_info_on(this, st);
   st->print(" ");

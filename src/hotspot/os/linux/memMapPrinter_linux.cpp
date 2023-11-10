@@ -62,15 +62,6 @@ public:
 };
 
 void MemMapPrinter::pd_print_header(outputStream* st) {
-  st->print(
-#ifdef _LP64
-  //   0x0000000000000000 - 0x0000000000000000
-      "from                 to                 "
-#else
-  //   0x00000000 - 0x00000000
-      "from         to         "
-#endif
-  );
   st->print_cr("size          prot offset  What");
 }
 

@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 
+#ifdef LINUX
+
 #include "logging/logAsyncWriter.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
@@ -267,6 +269,20 @@ void MappingPrintClosure::do_it(const MappingPrintInformation* info) {
   _out->cr();
 }
 
+void MemMapPrinter::print_header(outputStream* st) {
+  st->print(
+#ifdef _LP64
+  //   0x0000000000000000 - 0x0000000000000000
+      "from                 to                 "
+#else
+  //   0x00000000 - 0x00000000
+      "from         to         "
+#endif
+  );
+  // Print platform-specific columns
+  pd_print_header(st);
+}
+
 void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   // First collect all NMT information
   CachedNMTInformation nmt_info;
@@ -289,3 +305,5 @@ void MemMapPrinter::print_all_mappings(outputStream* st, bool human_readable) {
   st->print_cr("Total: " UINTX_FORMAT " mappings with a total vsize of %zu (" PROPERFMT ")",
                closure.total_count(), closure.total_vsize(), PROPERFMTARGS(closure.total_vsize()));
 }
+
+#endif // LINUX
