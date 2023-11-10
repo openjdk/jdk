@@ -1135,10 +1135,6 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   return false;
 }
 
-size_t ObjectSynchronizer::in_use_list_count() {
-  return _in_use_list.count();
-}
-
 size_t ObjectSynchronizer::in_use_list_ceiling() {
   return _in_use_list_ceiling;
 }

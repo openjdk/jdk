@@ -147,7 +147,6 @@ class ObjectSynchronizer : AllStatic {
                                 const char* cnt_name, size_t cnt, LogStream* ls,
                                 elapsedTimer* timer_p);
   static size_t deflate_monitor_list(Thread* current, LogStream* ls, elapsedTimer* timer_p);
-  static size_t in_use_list_count();
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();

@@ -388,10 +388,12 @@ void VM_ThreadDump::doit() {
     // If there are many object monitors in the system then the above iteration
     // can start to take time. Be friendly to following thread dumps by telling
     // the MonitorDeflationThread to deflate monitors.
-    size_t monitors_count = ObjectSynchronizer::in_use_list_count();
-    if (monitors_count > AsyncMonitorDeflationForThreadDumpLimit) {
-      ObjectSynchronizer::request_deflate_idle_monitors();
-    }
+    //
+    // This is trying to be somewhat backwards compatible with the previous
+    // implementation, which performed monitor deflation right here. We might
+    // want to reconsider the need to trigger monitor deflation from the thread
+    // dumping and instead maybe tweak the deflation heuristics.
+    ObjectSynchronizer::request_deflate_idle_monitors();
   }
 
   if (_num_threads == 0) {
