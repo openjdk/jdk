@@ -97,9 +97,10 @@ public class JTableScrollPrintTest {
             model.addColumn("Column 3");
             model.addColumn("Column 4");
 
-            for (int row = 1; row <= 5; row++)
-                model.addRow(new Object[] {
-                        "R"+row+" C1", "R"+row+" C2", "R"+row+" C3", "R"+row+" C4" });
+            for (int row = 1; row <= 5; row++) {
+                model.addRow(new Object[]{
+                        "R" + row + " C1", "R" + row + " C2", "R" + row + " C3", "R" + row + " C4"});
+            }
 
             JTable table = new JTable(model);
 
