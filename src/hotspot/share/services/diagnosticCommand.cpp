@@ -135,9 +135,9 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+#endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
-#endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
