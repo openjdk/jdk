@@ -420,7 +420,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       return final_card;
     }
 
-    // continue the search...
+    // Continue the search at the end of the current object...
     i_card = final_card + 1;
   }
 
