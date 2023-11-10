@@ -46,12 +46,11 @@ template <bool TEMP>
 class SymbolHandleBase : public StackObj {
   static Symbol* volatile _cleanup_delay_queue[];
   static volatile uint _cleanup_delay_index;
-  static volatile bool _cleanup_delay_enabled;
 
   Symbol* _temp;
 
 public:
-  static const uint CLEANUP_DELAY_MAX_ENTRIES = 128;
+  static constexpr uint CLEANUP_DELAY_MAX_ENTRIES = 128;
 
   SymbolHandleBase() : _temp(nullptr) { }
 
@@ -95,9 +94,9 @@ public:
   // Temp symbols for the same string can often be created in quick succession,
   // and this queue allows them to be reused instead of churning.
   void add_to_cleanup_delay_queue(Symbol* sym) {
-    if (!_cleanup_delay_enabled) return;
     sym->increment_refcount();
-    uint i = Atomic::add(&_cleanup_delay_index, 1u) % CLEANUP_DELAY_MAX_ENTRIES;
+    STATIC_ASSERT(is_power_of_2(CLEANUP_DELAY_MAX_ENTRIES)); // allow modulo shortcut
+    uint i = Atomic::add(&_cleanup_delay_index, 1u) & (CLEANUP_DELAY_MAX_ENTRIES - 1);
     Symbol* old = Atomic::xchg(&_cleanup_delay_queue[i], sym);
     if (old != nullptr) {
         old->decrement_refcount();
@@ -114,7 +113,6 @@ public:
   }
 
   static void drain_cleanup_delay_queue() {
-    if (!_cleanup_delay_enabled) return;
     for (uint i = 0; i < CLEANUP_DELAY_MAX_ENTRIES; i++) {
       Symbol* sym = Atomic::xchg(&_cleanup_delay_queue[i], (Symbol*) nullptr);
       if (sym != nullptr) {
@@ -122,20 +120,12 @@ public:
       }
     }
   }
-
-  // Useful for testing.
-  static void set_cleanup_delay_enabled(bool enabled) {
-    if (_cleanup_delay_enabled && !enabled) drain_cleanup_delay_queue();
-    _cleanup_delay_enabled = enabled;
-  }
 };
 
 template<bool TEMP>
 Symbol* volatile SymbolHandleBase<TEMP>::_cleanup_delay_queue[CLEANUP_DELAY_MAX_ENTRIES] = {};
 template<bool TEMP>
 volatile uint SymbolHandleBase<TEMP>::_cleanup_delay_index = 0;
-template<bool TEMP>
-volatile bool SymbolHandleBase<TEMP>::_cleanup_delay_enabled = true;
 
 // TempNewSymbol is a temporary holder for a newly created symbol
 using TempNewSymbol = SymbolHandleBase<true>;

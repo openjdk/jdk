@@ -27,18 +27,24 @@
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
+// Helper to avoid interference from the cleanup delay queue by draining it 
+// immediately after creation.
+TempNewSymbol tmp(Symbol* sym) {
+  TempNewSymbol t = sym;
+  TempNewSymbol::drain_cleanup_delay_queue();
+  return t;
+}
+
 TEST_VM(SymbolTable, temp_new_symbol) {
   // Assert messages assume these symbols are unique, and the refcounts start at
   // one, but code does not rely on this.
   JavaThread* THREAD = JavaThread::current();
   // the thread should be in vm to use locks
   ThreadInVMfromNative ThreadInVMfromNative(THREAD);
-  // Disable the temp symbol cleanup delay queue because it increases refcounts.
-  TempNewSymbol::set_cleanup_delay_enabled(false);
 
   Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
-  TempNewSymbol ss = abc;
+  TempNewSymbol ss = tmp(abc);
   ASSERT_EQ(ss->refcount(), abccount) << "only one abc";
   ASSERT_EQ(ss->refcount(), abc->refcount()) << "should match TempNewSymbol";
 
@@ -47,8 +53,8 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   int efgcount = efg->refcount();
   int hijcount = hij->refcount();
 
-  TempNewSymbol s1 = efg;
-  TempNewSymbol s2 = hij;
+  TempNewSymbol s1 = tmp(efg);
+  TempNewSymbol s2 = tmp(hij);
   ASSERT_EQ(s1->refcount(), efgcount) << "one efg";
   ASSERT_EQ(s2->refcount(), hijcount) << "one hij";
 
@@ -67,13 +73,13 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   TempNewSymbol s3;
   Symbol* klm = SymbolTable::new_symbol("klm");
   int klmcount = klm->refcount();
-  s3 = klm; // assignment
+  s3 = tmp(klm); // assignment
   ASSERT_EQ(s3->refcount(), klmcount) << "only one klm now";
 
   Symbol* xyz = SymbolTable::new_symbol("xyz");
   int xyzcount = xyz->refcount();
   { // inner scope
-    TempNewSymbol s_inner = xyz;
+    TempNewSymbol s_inner = tmp(xyz);
   }
   ASSERT_EQ(xyz->refcount(), xyzcount - 1)
           << "Should have been decremented by dtor in inner scope";
@@ -90,9 +96,6 @@ TEST_VM(SymbolTable, temp_new_symbol) {
     bigsym->decrement_refcount();
   }
   ASSERT_EQ(bigsym->refcount(), PERM_REFCOUNT) << "should be sticky";
-
-  // Reset for other tests
-  TempNewSymbol::set_cleanup_delay_enabled(true);
 }
 
 // TODO: Make two threads one decrementing the refcount and the other trying to increment.
@@ -167,4 +170,27 @@ TEST_VM(SymbolTable, test_cleanup_delay) {
 
   // The first symbol should have been removed from the queue and decremented
   ASSERT_EQ(s1->refcount(), 1) << "TempNewSymbol off queue refcount is 1";
+}
+
+TEST_VM(SymbolTable, test_cleanup_delay_drain) {
+  // Fill up the queue
+  constexpr int symbol_name_length = 30;
+  char symbol_name[symbol_name_length];
+  TempNewSymbol symbols[TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES] = {};
+  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+    os::snprintf(symbol_name, symbol_name_length, "temp-%d", i);
+    TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
+    symbols[i] = s;
+  }
+
+  // While in the queue refcounts are incremented
+  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+    ASSERT_EQ(symbols[i]->refcount(), 2) << "TempNewSymbol refcount in queue is 2";
+  }
+
+  // Draining the queue should decrement the refcounts
+  TempNewSymbol::drain_cleanup_delay_queue();
+  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+    ASSERT_EQ(symbols[i]->refcount(), 1) << "TempNewSymbol refcount after drain is 1";
+  }
 }
