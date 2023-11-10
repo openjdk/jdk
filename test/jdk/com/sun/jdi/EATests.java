@@ -1752,7 +1752,7 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
 
 /////////////////////////////////////////////////////////////////////////////
 
-// The debugger reads and publishes an object with eliminated locking to a static variable.
+// The debugger reads and publishes an object with eliminated locking to an instance field.
 // A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
 // Without eager relocking the accesses are unsynchronized which can be observed.
 class EARelockingSimpleWithAccessInOtherThread extends EATestCaseBaseDebugger {
