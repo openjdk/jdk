@@ -155,7 +155,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     phi->set_req( i, x );
 
-    if (the_clone == nullptr) continue;
+    if (the_clone == nullptr) {
+      continue;
+    }
 
     if (the_clone != x) {
       _igvn.remove_dead_node(the_clone);
