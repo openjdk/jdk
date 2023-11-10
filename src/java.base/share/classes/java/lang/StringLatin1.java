@@ -193,60 +193,6 @@ final class StringLatin1 {
         buf[charPos + 1] = (byte)(pair >> 8);
     }
 
-    static String scale2(long value) {
-        long valueAbs = Math.abs(value);
-        long highInt = valueAbs / 100;
-        byte[] buf = new byte[Long.stringSize(highInt) + (value < 0 ? 4 : 3)];
-        int p = buf.length - 2;
-        writeDigitPair(buf, p, (int) (valueAbs % 100));
-        buf[--p] = '.';
-        getChars(highInt, p, buf);
-        if (value < 0) {
-            buf[0] = '-';
-        }
-        if (String.COMPACT_STRINGS) {
-            return new String(buf, LATIN1);
-        }
-        return new String(inflate(buf, 0, buf.length), UTF16);
-    }
-
-    static String scale(int value, int scale) {
-        int valueAbs = Math.abs(value);
-        int coeffLen = 1;
-        int power = 10;
-        for (int p = 10; p <= valueAbs && coeffLen < 10; p *= 10, coeffLen++) {
-            if (coeffLen == scale) {
-                power = p;
-            }
-        }
-
-        int fillZeros = scale - coeffLen; // Insert decimal point
-        byte[] buf;
-        if (fillZeros < 0) {              // Point goes inside intVal
-            buf = new byte[coeffLen + (value < 0 ? 2 : 1)];
-            int p = getChars(power + valueAbs % power, buf.length, buf);
-            buf[p] = '.';
-            getChars(valueAbs / power, p, buf);
-        } else {
-            // We must insert zeros between point and intVal
-            buf = new byte[coeffLen + fillZeros + (value < 0 ? 3 : 2)];
-            int p = getChars(valueAbs, buf.length, buf);
-            for (int i = 0; i < fillZeros; i++) {
-                buf[--p] = '0';
-            }
-            buf[p - 1] = '.';
-            buf[p - 2] = '0';
-        }
-        if (value < 0) {
-            buf[0] = '-';
-        }
-
-        if (String.COMPACT_STRINGS) {
-            return new String(buf, LATIN1);
-        }
-        return new String(inflate(buf, 0, buf.length), UTF16);
-    }
-
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         inflate(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }

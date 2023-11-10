@@ -31,6 +31,7 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import java.lang.invoke.*;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -39,8 +40,7 @@ import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.Objects;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -311,7 +311,6 @@ import jdk.internal.access.SharedSecrets;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
@@ -3482,7 +3481,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return unscaledString();
         // currency fast path
         if (scale == 2 && intCompact != INFLATED)
-            return JLA.scale2(intCompact);
+            return ConcatHelper.scale2(intCompact);
 
         int signum = signum();
         if (this.scale < 0) { // No decimal point
@@ -3510,12 +3509,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return buf.repeat('0', trailingZeros)
                     .toString();
         }
-
-        if (intCompact != INFLATED
-                && intCompact >= Integer.MIN_VALUE
-                && intCompact <= Integer.MAX_VALUE
-                && scale < 512)
-            return JLA.scale((int) intCompact, scale);
 
         return getValueString(signum, unscaledAbsString(), scale);
     }
@@ -4171,6 +4164,52 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
+    private static final class ConcatHelper {
+        static final MethodHandle NEGATIVE_ZERO_CHAR_CHAR;
+        static final MethodHandle LONG_DOT_CHAR_CHAR;
+        static final MethodHandle INT_DOT_CHAR_CHAR;
+        static {
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                NEGATIVE_ZERO_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
+                        "neg_zero_scale2",
+                        MethodType.methodType(String.class, char.class, char.class),
+                        "-0.\1\1").dynamicInvoker();
+                LONG_DOT_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
+                        "scale2",
+                        MethodType.methodType(String.class, long.class, char.class, char.class),
+                        "\1.\1\1").dynamicInvoker();
+                INT_DOT_CHAR_CHAR = StringConcatFactory.makeConcatWithConstants(
+                        lookup,
+                        "scale2",
+                        MethodType.methodType(String.class, int.class, char.class, char.class),
+                        "\1.\1\1").dynamicInvoker();
+            } catch (Exception e) {
+                throw new Error("Bootstrap error", e);
+            }
+        }
+
+        static String scale2(long intCompact) {
+            long highInt = intCompact / 100;
+            short pair = DecimalDigits.digitPair((int)(Math.abs(intCompact) % 100));
+            char c0 = (char)(pair & 0xff);
+            char c1 = (char)(pair >> 8);
+            try {
+                if (highInt == 0 && intCompact < 0)
+                    return (String) NEGATIVE_ZERO_CHAR_CHAR.invokeExact(c0, c1);
+
+                if (highInt >= Integer.MIN_VALUE && highInt <= Integer.MAX_VALUE)
+                    return (String) INT_DOT_CHAR_CHAR.invokeExact((int) highInt, c0, c1);
+
+                return (String) LONG_DOT_CHAR_CHAR.invokeExact(highInt, c0, c1);
+            } catch (Throwable e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
     /**
      * Lay out this {@code BigDecimal} into a {@code char[]} array.
      * The Java 1.2 equivalent to this was called {@code getValueString}.
@@ -4185,14 +4224,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long intCompact = this.intCompact;
         if (scale == 0)                      // zero scale is trivial
             return unscaledString();
-        if (intCompact != INFLATED) {
-            // currency fast path
-            if (scale == 2)
-                return JLA.scale2(intCompact);
-
-            if (scale > 0 && scale <= 6 && intCompact >= Integer.MIN_VALUE && intCompact <= Integer.MAX_VALUE)
-                return JLA.scale((int) intCompact, scale);
-        }
+        // currency fast path
+        if (scale == 2 && intCompact != INFLATED)
+            return ConcatHelper.scale2(intCompact);
 
         // Get the significand as an absolute value
         String coeff = unscaledAbsString();

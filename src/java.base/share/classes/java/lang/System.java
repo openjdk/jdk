@@ -2503,14 +2503,6 @@ public final class System {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
             }
 
-            public String scale(int i, int scale) {
-                return StringLatin1.scale(i, scale);
-            }
-
-            public String scale2(long i) {
-                return StringLatin1.scale2(i);
-            }
-
             public InputStream initialSystemIn() {
                 return initialIn;
             }
