@@ -480,7 +480,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
     CardValue* const dirty_l = find_first_dirty_card(i_card, end_card);
 
     if (dirty_l == end_card) {
-      // no dirty cards
+      // No dirty cards to iterate.
       break;
     }
 
