@@ -73,7 +73,7 @@ public class CSSAttributeEqualityBug {
 
             "border-width: medium",
 
-	    "background-image: none",
+            "background-image: none",
             "background-image: url(image.png)",
     };
 
