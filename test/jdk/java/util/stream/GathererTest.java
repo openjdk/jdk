@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.*;
 import java.util.stream.Gatherer;
+import static java.util.stream.DefaultMethodStreams.delegateTo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,17 +38,43 @@ import static org.junit.jupiter.api.Assumptions.*;
  * @test
  * @summary Testing the Gatherer contract
  * @enablePreview
+ * @library /lib/testlibrary/bootlib
+ * @build java.base/java.util.stream.DefaultMethodStreams
  * @run junit GathererTest
  */
 
 public class GathererTest {
 
-    final static IntStream streamSizes() {
-        return IntStream.of(0, 1, 10, 33, 99, 9999);
+    record Config(int streamSize, boolean parallel, boolean defaultImpl) {
+
+        Stream<Integer> countTo(int n) {
+            return Stream.iterate(1, i -> i + 1).limit(n);
+        }
+
+        Stream<Integer> stream() {
+            return wrapStream(countTo(streamSize));
+        }
+
+        <R> Stream<R> wrapStream(Stream<R> stream) {
+            stream = parallel ? stream.parallel() : stream.sequential();
+            stream = defaultImpl ? delegateTo(stream) : stream;
+            return stream;
+        }
+
+        List<Integer> list() {
+            return stream().toList();
+        }
     }
 
-    final static Stream<Integer> countTo(int to) {
-        return Stream.iterate(1, i -> i + 1).limit(to);
+    final static Stream<Config> configurations() {
+        return Stream.of(0,1,10,33,99,9999)
+                .flatMap(size ->
+                        Stream.of(false, true)
+                                .flatMap(parallel ->
+                                        Stream.of(false, true).map( defaultImpl ->
+                                                new Config(size, parallel,
+                                                        defaultImpl)) )
+                );
     }
 
     final class TestException extends RuntimeException {
@@ -61,6 +88,22 @@ public class GathererTest {
         int integrate;
         int combine;
         int finish;
+
+        void copyFrom(InvocationTracker other) {
+            initialize = other.initialize;
+            integrate = other.integrate;
+            combine = other.combine;
+            finish = other.finish;
+        }
+
+        void combine(InvocationTracker other) {
+            if (other != this) {
+                initialize += other.initialize;
+                integrate += other.integrate;
+                combine += other.combine + 1; // track this merge
+                finish += other.finish;
+            }
+        }
     }
 
     final Gatherer<Integer,Void,Integer> addOne = Gatherer.of(
@@ -72,71 +115,83 @@ public class GathererTest {
     );
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testInvocationSemanticsGreedy(int streamSize) {
-        var t = new InvocationTracker();
+    @MethodSource("configurations")
+    public void testInvocationSemanticsGreedy(Config config) {
+        var result = new InvocationTracker();
         var g = Gatherer.<Integer, InvocationTracker, Integer>of(
                 () -> {
+                    var t = new InvocationTracker();
                     t.initialize++;
                     return t;
                 },
-                Gatherer.Integrator.<InvocationTracker,Integer,Integer>ofGreedy((state, e, d) -> {
-                    assertSame(t, state);
+                Gatherer.Integrator.<InvocationTracker,Integer,Integer>ofGreedy((t, e, d) -> {
                     t.integrate++;
                     return d.push(e);
                 }),
                 (t1, t2) -> {
-                    if (t1 != t2) t2.combine++;
-                    t1.combine++;
+                    t1.combine(t2);
                     return t1;
                 },
-                (state, d) -> {
-                    assertSame(t, state);
+                (t, d) -> {
                     t.finish++;
+                    result.copyFrom(t);
                 });
-        var res = countTo(streamSize).gather(g).toList();
-        assertEquals(countTo(streamSize).toList(), res);
-        assertEquals(1, t.initialize);
-        assertEquals(streamSize, t.integrate);
-        assertEquals(0, t.combine);
-        assertEquals(1, t.finish);
+        var res = config.stream().gather(g).toList();
+        assertEquals(config.countTo(config.streamSize).toList(), res);
+        if (config.parallel) {
+            assertTrue(result.initialize > 0);
+            assertEquals(config.streamSize, result.integrate);
+            assertTrue(config.streamSize < 2 || result.combine > 0);
+            assertEquals(1, result.finish);
+        } else {
+            assertEquals(1, result.initialize);
+            assertEquals(config.streamSize, result.integrate);
+            assertEquals(0, result.combine);
+            assertEquals(1, result.finish);
+        }
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testInvocationSemanticsShortCircuit(int streamSize) {
-        final int CONSUME_AT_MOST = 5;
-        var t = new InvocationTracker();
+    @MethodSource("configurations")
+    public void testInvocationSemanticsShortCircuit(Config config) {
+        final int CONSUME_UNTIL = Math.min(config.streamSize, 5);
+        var result = new InvocationTracker();
         var g = Gatherer.<Integer, InvocationTracker, Integer>of(
                 () -> {
+                    var t = new InvocationTracker();
                     t.initialize++;
                     return t;
                 },
-                (state, e, d) -> {
-                    assertSame(t, state);
-                    t.integrate++;
-                    return d.push(e) && t.integrate < CONSUME_AT_MOST;
+                (t, e, d) -> {
+                    ++t.integrate;
+                    return e <= CONSUME_UNTIL && d.push(e) && e != CONSUME_UNTIL;
                 },
                 (t1, t2) -> {
-                    if (t1 != t2) t2.combine++;
-                    t1.combine++;
+                    t1.combine(t2);
                     return t1;
                 },
-                (state, d) -> {
-                    assertSame(t, state);
+                (t, d) -> {
                     t.finish++;
+                    result.copyFrom(t);
                 });
-        var res = countTo(streamSize).gather(g).toList();
-        assertEquals(countTo(Math.min(streamSize, CONSUME_AT_MOST)).toList(), res);
-        assertEquals(t.initialize, 1);
-        assertEquals(t.integrate, Math.min(streamSize, CONSUME_AT_MOST));
-        assertEquals(t.combine, 0);
-        assertEquals(t.finish, 1);
+        var res = config.stream().gather(g).toList();
+        assertEquals(config.countTo(CONSUME_UNTIL).toList(), res);
+        if (config.parallel) {
+            assertTrue(result.initialize > 0);
+            assertEquals(CONSUME_UNTIL, result.integrate);
+            assertTrue(result.combine >= 0); // We can't guarantee split sizes
+            assertEquals(1, result.finish);
+        } else {
+            assertEquals(1, result.initialize);
+            assertEquals(CONSUME_UNTIL, result.integrate);
+            assertEquals(0, result.combine);
+            assertEquals(1, result.finish);
+        }
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testEmissionDuringFinisher(int streamSize) {
+    @MethodSource("configurations")
+    public void testEmissionDuringFinisher(Config config) {
         var g = Gatherer.<Integer, InvocationTracker, InvocationTracker>of(
                 () -> {
                     var t = new InvocationTracker();
@@ -148,30 +203,36 @@ public class GathererTest {
                     return true;
                 },
                 (t1, t2) -> {
-                    t1.combine++;
+                    t1.combine(t2);
                     return t1;
                 },
                 (t, d) -> {
                     t.finish++;
                     d.push(t);
                 });
-        var resultList = countTo(streamSize).gather(g).collect(Collectors.toList());
+        var resultList = config.stream().gather(g).collect(Collectors.toList());
         assertEquals(resultList.size(), 1);
 
         var t = resultList.get(0);
 
-        assertEquals(t.initialize, 1);
-        assertEquals(t.integrate, streamSize);
-        assertEquals(t.combine, 0);
-        assertEquals(t.finish, 1);
+        if (config.parallel) {
+            assertTrue(t.initialize > 0);
+            assertEquals(config.streamSize, t.integrate);
+            assertTrue(config.streamSize < 2 || t.combine > 0);
+            assertEquals(1, t.finish);
+        } else {
+            assertEquals(1, t.initialize);
+            assertEquals(config.streamSize, t.integrate);
+            assertEquals(0, t.combine);
+            assertEquals(1, t.finish);
+        }
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testInvocationSemanticsShortCircuitParallel(int streamSize) {
-        // short-circuit half-way into the sequence
-        final Predicate<Integer> takeWhile = j -> j < (streamSize / 2);
-
+    @MethodSource("configurations")
+    public void testInvocationSemanticsShortCircuitDuringCollect(Config config) {
+        final int CONSUME_UNTIL = Math.min(config.streamSize, 5);
+        var result = new InvocationTracker();
         var g = Gatherer.<Integer, InvocationTracker, Integer>of(
                 () -> {
                     var t = new InvocationTracker();
@@ -180,131 +241,114 @@ public class GathererTest {
                 },
                 (t, e, d) -> {
                     t.integrate++;
-                    return takeWhile.test(e) && d.push(e);
+                    return e <= CONSUME_UNTIL && d.push(e) && e != CONSUME_UNTIL;
                 },
                 (t1, t2) -> {
-                    t1.initialize += t2.initialize;
-                    t1.integrate += t2.integrate;
-                    t1.combine += t2.combine + 1; // include this combination
-                    t1.finish += t2.finish;
+                    t1.combine(t2);
                     return t1;
                 },
                 (t, d) -> {
-                    assertTrue(t.initialize > 0);
-                    assertTrue(t.integrate <= streamSize);
-                    assertEquals(t.combine + 1,t.initialize);
-                    assertEquals(++t.finish, 1);
-                });
-
-        var res = countTo(streamSize).parallel().gather(g).toList();
-        assertEquals(countTo(streamSize).takeWhile(takeWhile).toList(), res);
-    }
-
-    @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testInvocationSemanticsShortCircuitDuringCollect(int streamSize) {
-        final int CONSUME_AT_MOST = 5;
-        var t = new InvocationTracker();
-        var g = Gatherer.<Integer, InvocationTracker, Integer>of(
-                () -> {
-                    t.initialize++;
-                    return t;
-                },
-                (state, e, d) -> {
-                    assertSame(t, state);
-                    t.integrate++;
-                    return d.push(e) && t.integrate < CONSUME_AT_MOST;
-                },
-                (t1, t2) -> {
-                    if (t1 != t2) t2.combine++;
-                    t1.combine++;
-                    return t1;
-                },
-                (state, d) -> {
-                    assertSame(t, state);
                     t.finish++;
+                    result.copyFrom(t);
                 });
-        var res = countTo(streamSize).gather(g).collect(Collectors.toList());
-        assertEquals(countTo(Math.min(streamSize, CONSUME_AT_MOST)).toList(), res);
-        assertEquals(t.initialize, 1);
-        assertEquals(t.integrate, Math.min(streamSize, CONSUME_AT_MOST));
-        assertEquals(t.combine, 0);
-        assertEquals(t.finish, 1);
+        var res = config.stream().gather(g).collect(Collectors.toList());
+        assertEquals(config.countTo(CONSUME_UNTIL).toList(), res);
+        if (config.parallel) {
+            assertTrue(result.initialize > 0);
+            assertEquals(CONSUME_UNTIL, result.integrate);
+            assertTrue(result.combine >= 0); // We can't guarantee split sizes
+            assertEquals(result.finish, 1);
+        } else {
+            assertEquals(result.initialize, 1);
+            assertEquals(CONSUME_UNTIL, result.integrate);
+            assertEquals(result.combine, 0);
+            assertEquals(result.finish, 1);
+        }
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testCompositionOfStatelessGatherers(int streamSize) {
-        var range = countTo(streamSize).toList();
+    @MethodSource("configurations")
+    public void testCompositionOfStatelessGatherers(Config config) {
+        var range = config.stream().toList();
         var gRes = range.stream().gather(addOne.andThen(timesTwo)).toList();
         var rRes = range.stream().map(j -> j + 1).map(j -> j * 2).toList();
-        assertEquals(gRes.size(), streamSize);
-        assertEquals(rRes.size(), streamSize);
+        assertEquals(config.streamSize, gRes.size());
+        assertEquals(config.streamSize, rRes.size());
         assertEquals(gRes, rRes);
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testCompositionOfStatefulGatherers(int streamSize) {
+    @MethodSource("configurations")
+    public void testCompositionOfStatefulGatherers(Config config) {
         var t1 = new InvocationTracker();
         var g1 = Gatherer.<Integer, InvocationTracker, Integer>of(
                 () -> {
-                    t1.initialize++;
-                    return t1;
+                    var t = new InvocationTracker();
+                    t.initialize++;
+                    return t;
                 },
-                (state, e, d) -> {
-                    assertSame(t1, state);
-                    t1.integrate++;
+                (t, e, d) -> {
+                    t.integrate++;
                     return d.push(e);
                 },
                 (l, r) -> {
-                    if (l != r) r.combine++;
-                    l.combine++;
+                    l.combine(r);
                     return l;
                 },
-                (state, d) -> {
-                    assertSame(t1, state);
-                    t1.finish++;
+                (t, d) -> {
+                    t.finish++;
+                    t1.copyFrom(t);
                 });
 
         var t2 = new InvocationTracker();
         var g2 = Gatherer.<Integer, InvocationTracker, Integer>of(
                 () -> {
-                    t2.initialize++;
-                    return t2;
+                    var t = new InvocationTracker();
+                    t.initialize++;
+                    return t;
                 },
-                (state, e, d) -> {
-                    assertSame(t2, state);
-                    t2.integrate++;
+                (t, e, d) -> {
+                    t.integrate++;
                     return d.push(e);
                 },
                 (l, r) -> {
-                    if (l != r) r.combine++;
-                    l.combine++;
+                    l.combine(r);
                     return l;
                 },
-                (state, d) -> {
-                    assertSame(t2, state);
-                    t2.finish++;
+                (t, d) -> {
+                    t.finish++;
+                    t2.copyFrom(t);
                 });
 
-        var res = countTo(streamSize).gather(g1.andThen(g2)).toList();
-        assertEquals(countTo(streamSize).toList(), res);
+        var res = config.stream().gather(g1.andThen(g2)).toList();
+        assertEquals(config.stream().toList(), res);
 
-        assertEquals(t1.initialize, 1);
-        assertEquals(t1.integrate, streamSize);
-        assertEquals(t1.combine, 0);
-        assertEquals(t1.finish, 1);
+        if (config.parallel) {
+            assertTrue(t1.initialize > 0);
+            assertEquals(config.streamSize, t1.integrate);
+            assertTrue(config.streamSize < 2 || t1.combine > 0);
+            assertEquals(1, t1.finish);
 
-        assertEquals(t2.initialize, 1);
-        assertEquals(t2.integrate, streamSize);
-        assertEquals(t2.combine, 0);
-        assertEquals(t2.finish, 1);
+            assertTrue(t2.initialize > 0);
+            assertEquals(config.streamSize, t2.integrate);
+            assertTrue(config.streamSize < 2 || t2.combine > 0);
+            assertEquals(1, t2.finish);
+        } else {
+            assertEquals(1, t1.initialize);
+            assertEquals(config.streamSize, t1.integrate);
+            assertEquals(0, t1.combine);
+            assertEquals(1, t1.finish);
+
+            assertEquals(1, t2.initialize);
+            assertEquals(config.streamSize, t2.integrate);
+            assertEquals(0, t2.combine);
+            assertEquals(1, t2.finish);
+        }
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testMassivelyComposedGatherers(int streamSize) {
+    @MethodSource("configurations")
+    public void testMassivelyComposedGatherers(Config config) {
         final int ITERATIONS = 1000; // Total number of compositions is 1 + (iterations*2)
         Gatherer<Integer,?,Integer> g = addOne;
         for(int i = 0;i < ITERATIONS;++i) {
@@ -313,13 +357,13 @@ public class GathererTest {
 
         g = g.andThen(timesTwo);
 
-        var ref = countTo(streamSize).map(n -> n + 1);
-        for(int c = 0;c < ITERATIONS;++c) {
+        var ref = config.stream().map(n -> n + 1);
+        for(int c = 0; c < ITERATIONS; ++c) {
             ref = ref.map(n -> n * 2).map(n -> n + 1);
         }
         ref = ref.map(n -> n * 2);
 
-        var gatherered = countTo(streamSize).gather(g).toList();
+        var gatherered = config.stream().gather(g).toList();
         var reference = ref.toList();
         assertEquals(gatherered, reference);
     }
@@ -337,30 +381,30 @@ public class GathererTest {
     }
 
     @ParameterizedTest
-    @MethodSource("streamSizes")
-    public void testCompositionSymmetry(int streamSize) {
-            var range = countTo(streamSize).toList();
-            var consecutiveResult = range.stream().gather(addOne).gather(timesTwo).toList();
-            var interspersedResult = range.stream().gather(addOne).map(id -> id).gather(timesTwo).toList();
-            var composedResult = range.stream().gather(addOne.andThen(timesTwo)).toList();
+    @MethodSource("configurations")
+    public void testCompositionSymmetry(Config config) {
+            var consecutiveResult = config.stream().gather(addOne).gather(timesTwo).toList();
+            var interspersedResult = config.stream().gather(addOne).map(id -> id).gather(timesTwo).toList();
+            var composedResult = config.stream().gather(addOne.andThen(timesTwo)).toList();
 
-            var reference = range.stream().map(j -> j + 1).map(j -> j * 2).toList();
+            var reference = config.stream().map(j -> j + 1).map(j -> j * 2).toList();
 
-            assertEquals(consecutiveResult.size(), streamSize);
-            assertEquals(interspersedResult.size(), streamSize);
-            assertEquals(composedResult.size(), streamSize);
-            assertEquals(reference.size(), streamSize);
+            assertEquals(config.streamSize, consecutiveResult.size());
+            assertEquals(config.streamSize, interspersedResult.size());
+            assertEquals(config.streamSize, composedResult.size());
+            assertEquals(config.streamSize, reference.size());
 
             assertEquals(consecutiveResult, reference);
             assertEquals(interspersedResult, reference);
             assertEquals(composedResult, reference);
     }
 
-    @Test
-    public void testExceptionInInitializer() {
+    @ParameterizedTest
+    @MethodSource("configurations")
+    public void testExceptionInInitializer(Config config) {
         final var expectedMessage = "testExceptionInInitializer()";
         assertThrowsTestException(() ->
-            Stream.of(1).gather(
+            config.stream().gather(
                     Gatherer.<Integer,Integer,Integer>of(
                             () -> { throw new TestException(expectedMessage); },
                             (i, e, d) -> true,
@@ -370,11 +414,14 @@ public class GathererTest {
             ).toList(), expectedMessage);
     }
 
-    @Test
-    public void testExceptionInIntegrator() {
+    @ParameterizedTest
+    @MethodSource("configurations")
+    public void testExceptionInIntegrator(Config config) {
+        if (config.streamSize < 1) return; // No exceptions expected
+
         final var expectedMessage = "testExceptionInIntegrator()";
         assertThrowsTestException(() ->
-            Stream.of(1).gather(
+            config.stream().gather(
                     Gatherer.<Integer,Integer,Integer>of(
                             () -> 1,
                             (i, e, d) -> { throw new TestException(expectedMessage); },
@@ -385,11 +432,14 @@ public class GathererTest {
         , expectedMessage);
     }
 
-    @Test
-    public void testExceptionInCombiner() {
+    @ParameterizedTest
+    @MethodSource("configurations")
+    public void testExceptionInCombiner(Config config) {
+        if (config.streamSize < 2 || !config.parallel) return; // No exceptions expected
+
         final var expectedMessage = "testExceptionInCombiner()";
         assertThrowsTestException(() ->
-            Stream.of(1,2).parallel().gather(
+            config.stream().gather(
                     Gatherer.<Integer,Integer,Integer>of(
                             () -> 1,
                             (i, e, d) -> true,
@@ -400,11 +450,12 @@ public class GathererTest {
         , expectedMessage);
     }
 
-    @Test
-    public void testExceptionInFinisher() {
+    @ParameterizedTest
+    @MethodSource("configurations")
+    public void testExceptionInFinisher(Config config) {
         final var expectedMessage = "testExceptionInFinisher()";
         assertThrowsTestException(() ->
-            Stream.of(1).gather(
+            config.stream().gather(
                     Gatherer.<Integer,Integer,Integer>of(
                             () -> 1,
                             (i, e, d) -> true,

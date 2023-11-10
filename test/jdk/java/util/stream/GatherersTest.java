@@ -49,12 +49,12 @@ public class GatherersTest {
 
     record Config(int streamSize, boolean parallel) {
         Stream<Integer> stream() {
-            var stream = Stream.iterate(1, i -> i + 1).limit(streamSize);
-            return parallel ? stream.parallel() : stream.sequential();
+            return wrapStream(Stream.iterate(1, i -> i + 1).limit(streamSize));
         }
 
-        List<Integer> list() {
-            return stream().toList();
+        <R> Stream<R> wrapStream(Stream<R> stream) {
+            stream = parallel ? stream.parallel() : stream.sequential();
+            return stream;
         }
     }
 
@@ -62,7 +62,8 @@ public class GatherersTest {
         return Stream.of(0,1,10,33,99,9999)
                      .flatMap(size ->
                              Stream.of(false, true)
-                                   .map(parallel -> new Config(size, parallel))
+                                   .map(parallel ->
+                                               new Config(size, parallel))
                      );
     }
 
@@ -88,7 +89,7 @@ public class GatherersTest {
                         .gather(Gatherers.windowFixed(streamSize))
                         .toList();
                 assertEquals(1, result.size());
-                assertEquals(result.get(0), config.list());
+                assertEquals(config.stream().toList(), result.get(0));
             }
 
             //Test nulls as elements
@@ -144,7 +145,7 @@ public class GatherersTest {
                                          .gather(Gatherers.windowSliding(streamSize + 1))
                                          .toList();
                 assertEquals(1, result.size());
-                assertEquals(config.list(), result.get(0));
+                assertEquals(config.stream().toList(), result.get(0));
             }
 
             //Test nulls as elements
@@ -154,7 +155,7 @@ public class GatherersTest {
                                 Arrays.asList(null, null),
                                 Arrays.asList(null, null)
                         ),
-                        Stream.of(null, null, null)
+                        config.wrapStream(Stream.of(null, null, null))
                             .gather(Gatherers.windowSliding(2))
                             .toList());
             }
