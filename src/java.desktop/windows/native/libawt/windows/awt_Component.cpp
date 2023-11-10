@@ -24,6 +24,8 @@
  */
 
 #include <cmath>
+#include <functional>
+#include <memory>
 
 #include "awt.h"
 
@@ -6356,36 +6358,28 @@ ret:
     return result;
 }
 
-void AwtComponent::_SetParent(void * param)
-{
+void AwtComponent::_SetParent(void * param) {
     if (AwtToolkit::IsMainThread()) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        SetParentStruct *data = (SetParentStruct*) param;
-        jobject self = data->component;
-        jobject parent = data->parentComp;
+        JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        std::unique_ptr<SetParentStruct> data(static_cast<SetParentStruct*>(param));
+        std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> self(data->component, [&env] (jobject self) -> void { env->DeleteGlobalRef(self); });
+        std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> parent(data->parentComp, [&env] (jobject parent) -> void { env->DeleteGlobalRef(parent); });
 
-        AwtComponent *awtComponent = NULL;
-        AwtComponent *awtParent = NULL;
-
+        AwtComponent *awtComponent = nullptr;
+        AwtComponent *awtParent = nullptr;
         PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        awtComponent = (AwtComponent *)pData;
-        JNI_CHECK_PEER_GOTO(parent, ret);
-        awtParent = (AwtComponent *)pData;
+        JNI_CHECK_PEER_RETURN(self.get());
+        awtComponent = (AwtComponent *) pData;
+        JNI_CHECK_PEER_RETURN(parent.get());
+        awtParent = (AwtComponent *) pData;
 
-        HWND selfWnd;
-        HWND parentWnd;
-        selfWnd = awtComponent->GetHWnd();
-        parentWnd = awtParent->GetHWnd();
+        HWND selfWnd = awtComponent->GetHWnd();
+        HWND parentWnd = awtParent->GetHWnd();
         if (::IsWindow(selfWnd) && ::IsWindow(parentWnd)) {
             // Shouldn't trigger native focus change
             // (only the proxy may be the native focus owner).
             ::SetParent(selfWnd, parentWnd);
         }
-ret:
-        env->DeleteGlobalRef(self);
-        env->DeleteGlobalRef(parent);
-        delete data;
     } else {
         AwtToolkit::GetInstance().InvokeFunction(AwtComponent::_SetParent, param);
     }
@@ -6537,26 +6531,20 @@ AwtComponent_GetHWnd(JNIEnv *env, jlong pData)
     return p->GetHWnd();
 }
 
-static void _GetInsets(void* param)
-{
+static void _GetInsets(void* param) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    GetInsetsStruct *gis = (GetInsetsStruct *)param;
-    jobject self = gis->window;
+    std::unique_ptr<GetInsetsStruct> gis(static_cast<GetInsetsStruct *>(param));
+    std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> self(gis->window, [&env] (jobject self) -> void { env->DeleteGlobalRef(self); });
 
     gis->insets->left = gis->insets->top =
         gis->insets->right = gis->insets->bottom = 0;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtComponent *component;
-    component = (AwtComponent *) pData;
+    JNI_CHECK_PEER_RETURN(self.get());
+    AwtComponent *component = (AwtComponent *) pData;
 
     component->GetInsets(gis->insets);
-
-  ret:
-    env->DeleteGlobalRef(self);
-    delete gis;
 }
 
 /**
