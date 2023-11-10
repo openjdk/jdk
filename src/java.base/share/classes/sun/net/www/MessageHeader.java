@@ -554,7 +554,7 @@ class MessageHeader {
     }
 
     public synchronized String toString() {
-        String result = super.toString() + nkeys + " pairs: ";
+        String result = super.toString() + " " + nkeys + " pairs: ";
         for (int i = 0; i < keys.length && i < nkeys; i++) {
             result += "{"+keys[i]+": "+values[i]+"}";
         }
