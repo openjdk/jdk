@@ -99,7 +99,7 @@ public:
     uint i = Atomic::add(&_cleanup_delay_index, 1u) & (CLEANUP_DELAY_MAX_ENTRIES - 1);
     Symbol* old = Atomic::xchg(&_cleanup_delay_queue[i], sym);
     if (old != nullptr) {
-        old->decrement_refcount();
+      old->decrement_refcount();
     }
   }
 
@@ -116,7 +116,7 @@ public:
     for (uint i = 0; i < CLEANUP_DELAY_MAX_ENTRIES; i++) {
       Symbol* sym = Atomic::xchg(&_cleanup_delay_queue[i], (Symbol*) nullptr);
       if (sym != nullptr) {
-          sym->decrement_refcount();
+        sym->decrement_refcount();
       }
     }
   }

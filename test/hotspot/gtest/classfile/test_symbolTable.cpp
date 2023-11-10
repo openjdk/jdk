@@ -29,7 +29,7 @@
 
 // Helper to avoid interference from the cleanup delay queue by draining it
 // immediately after creation.
-TempNewSymbol tmp(Symbol* sym) {
+TempNewSymbol stable_temp_symbol(Symbol* sym) {
   TempNewSymbol t = sym;
   TempNewSymbol::drain_cleanup_delay_queue();
   return t;
@@ -44,7 +44,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
 
   Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
-  TempNewSymbol ss = tmp(abc);
+  TempNewSymbol ss = stable_temp_symbol(abc);
   ASSERT_EQ(ss->refcount(), abccount) << "only one abc";
   ASSERT_EQ(ss->refcount(), abc->refcount()) << "should match TempNewSymbol";
 
@@ -53,8 +53,8 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   int efgcount = efg->refcount();
   int hijcount = hij->refcount();
 
-  TempNewSymbol s1 = tmp(efg);
-  TempNewSymbol s2 = tmp(hij);
+  TempNewSymbol s1 = stable_temp_symbol(efg);
+  TempNewSymbol s2 = stable_temp_symbol(hij);
   ASSERT_EQ(s1->refcount(), efgcount) << "one efg";
   ASSERT_EQ(s2->refcount(), hijcount) << "one hij";
 
@@ -73,13 +73,13 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   TempNewSymbol s3;
   Symbol* klm = SymbolTable::new_symbol("klm");
   int klmcount = klm->refcount();
-  s3 = tmp(klm); // assignment
+  s3 = stable_temp_symbol(klm); // assignment
   ASSERT_EQ(s3->refcount(), klmcount) << "only one klm now";
 
   Symbol* xyz = SymbolTable::new_symbol("xyz");
   int xyzcount = xyz->refcount();
   { // inner scope
-    TempNewSymbol s_inner = tmp(xyz);
+    TempNewSymbol s_inner = stable_temp_symbol(xyz);
   }
   ASSERT_EQ(xyz->refcount(), xyzcount - 1)
           << "Should have been decremented by dtor in inner scope";
