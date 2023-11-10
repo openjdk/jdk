@@ -106,7 +106,7 @@ public:
   constexpr AbstractRegSet() : _bitset(0) { }
 
   constexpr AbstractRegSet(RegImpl r1)
-    : _bitset(size_t(r1->is_valid()) << r1->encoding()) { }
+    : _bitset(r1->is_valid() ? size_t(1) << r1->encoding() : 0) { }
 
   constexpr AbstractRegSet operator+(const AbstractRegSet aSet) const {
     AbstractRegSet result(_bitset | aSet._bitset);
