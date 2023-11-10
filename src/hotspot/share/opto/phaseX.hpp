@@ -615,14 +615,14 @@ class PhaseCCP : public PhaseIterGVN {
 
   void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
   void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
-  void push_more_uses(Unique_Node_List& worklist, Node* parent, Node* use) const;
+  void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;
   void push_phis(Unique_Node_List& worklist, const Node* use) const;
   static void push_catch(Unique_Node_List& worklist, const Node* use);
   void push_cmpu(Unique_Node_List& worklist, const Node* use) const;
   static void push_counted_loop_phi(Unique_Node_List& worklist, Node* parent, const Node* use);
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
-  void push_and(Unique_Node_List& worklist, const Node* parent, Node* use) const;
+  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
 

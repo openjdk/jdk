@@ -1133,13 +1133,13 @@ public:
   // reaching a boundary node, defined by is_boundary. Note: the function
   // definition appears after the complete type definition of Unique_Node_List.
   template <typename Callback, typename Check>
-  void visit_uses(Callback callback, Check is_boundary);
+  void visit_uses(Callback callback, Check is_boundary) const;
 
   // Visit all non-cast uses of the node, bypassing ConstraintCasts. Pattern:
   // this (-> ConstraintCast)* -> non_cast. In other words: find all non_cast
   // nodes such that non_cast->uncast() == this.
   template <typename Callback>
-  void visit_uncasted_uses(Callback callback) {
+  void visit_uncasted_uses(Callback callback) const {
      visit_uses(callback, [](Node* n){ return !n->is_ConstraintCast(); });
   }
 
@@ -1729,7 +1729,7 @@ public:
 
 // Definition must appear after complete type definition of Unique_Node_List
 template <typename Callback, typename Check>
-void Node::visit_uses(Callback callback, Check is_boundary) {
+void Node::visit_uses(Callback callback, Check is_boundary) const {
   ResourceMark rm;
   // Unique_Node_List guarantees no duplicates in the worklist. Note that we
   // never pop anything from the worklist, since that could result in applying

@@ -1875,7 +1875,7 @@ void PhaseCCP::push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) cons
 
 // For some nodes, we need to propagate the type change to grandchildren or even further down.
 // Add them back to the worklist.
-void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, Node* use) const {
+void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const {
   push_phis(worklist, use);
   push_catch(worklist, use);
   push_cmpu(worklist, use);
@@ -1974,7 +1974,7 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
 // AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
 // Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
 // Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
-void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, Node* use) const {
+void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
   uint use_op = use->Opcode();
   if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
       && use->in(2) == parent) { // is shift value (right-hand side of LShift)
