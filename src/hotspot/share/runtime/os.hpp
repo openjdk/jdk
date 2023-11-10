@@ -973,12 +973,6 @@ class os: AllStatic {
   static const char* line_separator();
   static const char* path_separator();
 
-  // Resolve a file name specifying an existing file to its absolute path.
-  // On success it fills the absolute path into outbuf and returns outbuf.
-  // If outbuf is too small, it leaves outbuf unchanged, sets errno to ENAMETOOLONG, and returns nullptr.
-  // On error it leaves outbuf unchanged and returns nullptr.
-  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
-
   // Information about the protection of the page at address '0' on this os.
   inline static bool zero_page_read_protected();
 

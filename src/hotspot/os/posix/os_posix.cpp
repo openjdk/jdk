@@ -965,10 +965,6 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
 
 }
 
-char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
-  return os::Posix::realpath(filename, outbuf, outbuflen);
-}
-
 int os::stat(const char *path, struct stat *sbuf) {
   return ::stat(path, sbuf);
 }
