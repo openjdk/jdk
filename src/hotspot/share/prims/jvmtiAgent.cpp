@@ -41,7 +41,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/defaultStream.hpp"
-
+#define AIX_EXTENSION ".a"
 static inline const char* copy_string(const char* str) {
   return str != nullptr ? os::strdup(str, mtServiceability) : nullptr;
 }
@@ -321,6 +321,16 @@ static void* load_agent_from_absolute_path(JvmtiAgent* agent, bool vm_exit_on_er
   AIX_ONLY(if (library != nullptr) save_library_signature(agent, agent->name());)
   return library;
 }
+static void mapAlternateName(char* buffer,const char *extension)
+{
+     unsigned long end=strlen(buffer);
+     while(end>0 && buffer[end]!='.')
+     {   
+         end--;
+     }
+     buffer[end]='\0';
+     strcat(buffer,extension);
+}
 
 // Agents with relative paths are loaded from the standard dll directory.
 static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_error) {
@@ -335,11 +345,22 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
   }
   if (library == nullptr && os::dll_build_name(&buffer[0], sizeof buffer, name)) {
     // Try the library path directory.
+
     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
     if (library != nullptr) {
       AIX_ONLY(save_library_signature(agent, &buffer[0]);)
       return library;
-    }
+   }
+   AIX_ONLY( 
+   if (library == nullptr){
+     mapAlternateName(buffer,AIX_EXTENSION);
+     library=os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
+     if(library!=nullptr){
+       save_library_signature(agent, &buffer[0]);
+       return library;
+   }
+   }
+   )
     if (vm_exit_on_error) {
       vm_exit(agent, " on the library path, with error: ", missing_module_error_msg);
     }
