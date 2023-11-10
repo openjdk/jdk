@@ -42,13 +42,13 @@ public class ConcurrentDeflation {
     public static Object[] monitors = new Object[1000];
 
     public static void main(String[] args) throws Exception {
-        Thread thread_dumper  = new Thread(() -> dumpThreads());
-        thread_dumper.start();
-        Thread monitor_creator  = new Thread(() -> createMonitors());
-        monitor_creator.start();
+        Thread threadDumper  = new Thread(() -> dumpThreads());
+        threadDumper.start();
+        Thread monitorCreator  = new Thread(() -> createMonitors());
+        monitorCreator.start();
 
-        thread_dumper.join();
-        monitor_creator.join();
+        threadDumper.join();
+        monitorCreator.join();
     }
 
     static private void dumpThreads() {
