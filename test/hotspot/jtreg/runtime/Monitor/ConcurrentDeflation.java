@@ -67,7 +67,6 @@ public class ConcurrentDeflation {
     }
 
     static private void createMonitors() {
-        monitors = new Object[1000];
         int monitorCount = 0;
 
         int index = 0;
