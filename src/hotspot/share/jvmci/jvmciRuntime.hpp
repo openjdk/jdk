@@ -220,6 +220,13 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // or Truffle compilation threads.
   bool _for_compile_broker;
 
+  // Number of CompileBroker compilations performed by this runtime.
+  int _num_compile_broker_compilations;
+
+  // Max number of CompileBroker compilations performed by a runtime
+  // before it should destroy its JavaVM.
+  static int _max_compile_broker_compilations_per_javavm;
+
   JVMCIObject create_jvmci_primitive_type(BasicType type, JVMCI_TRAPS);
 
   // Implementation methods for loading and constant pool access.
@@ -267,6 +274,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Releases all the non-null entries in _oop_handles and then clears
   // the list. Returns the number released handles.
   int release_and_clear_oop_handles();
+
+  // Increment the CompilerBroker compilations counter.
+  // Returns true iff the counter reached the max allowed and was reset.
+  bool inc_compile_broker_compilations();
 
  public:
   JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker);

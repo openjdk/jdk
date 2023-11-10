@@ -57,9 +57,16 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/parseInteger.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
+
+#define UNINITIALIZED_MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM 0
+#define MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM_IN_XCOMP 10
+#define UNLIMITED_MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM -1
+
+int JVMCIRuntime::_max_compile_broker_compilations_per_javavm = UNINITIALIZED_MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM;
 
 // Simple helper to see if the caller of a runtime stub which
 // entered the VM has been deoptimized
@@ -1047,8 +1054,24 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _metadata_handles(new MetadataHandles()),
   _oop_handles(100, mtJVMCI),
   _num_attached_threads(0),
-  _for_compile_broker(for_compile_broker)
+  _for_compile_broker(for_compile_broker),
+  _num_compile_broker_compilations(0)
 {
+  if (_max_compile_broker_compilations_per_javavm == 0) {
+    const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.maxCompilesPerIsolate");
+    if (val != nullptr) {
+      if (!parse_integer(val, &_max_compile_broker_compilations_per_javavm)) {
+        JVMCI_event_1("Invalid integer value for test.jvmci.maxCompilesPerIsolate: %s", val);
+      }
+    } else if (!UseInterpreter) {
+      // Unload a libjvmci JavaVM periodically in -Xcomp
+      // to avoid a libjvmci JavaVM keeping a class alive too long.
+      _max_compile_broker_compilations_per_javavm = MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM_IN_XCOMP;
+    } else {
+      _max_compile_broker_compilations_per_javavm = UNLIMITED_MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM;
+    }
+  }
+
   if (id == -1) {
     _lock = JVMCIRuntime_lock;
   } else {
@@ -2273,8 +2296,22 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
   return result;
 }
 
+bool JVMCIRuntime::inc_compile_broker_compilations() {
+  _num_compile_broker_compilations++;
+  if (_max_compile_broker_compilations_per_javavm != UNLIMITED_MAX_COMPILATIONS_PER_LIBJVMCI_JAVAVM) {
+    if (_num_compile_broker_compilations == _max_compile_broker_compilations_per_javavm) {
+      // Reset
+      _num_compile_broker_compilations = 0;
+      return true;
+    }
+  }
+  return false;
+}
+
 void JVMCIRuntime::post_compile(JavaThread* thread) {
-  if (UseJVMCINativeLibrary && JVMCI::one_shared_library_javavm_per_compilation()) {
+  if (UseJVMCINativeLibrary &&
+      (JVMCI::one_shared_library_javavm_per_compilation() ||
+       inc_compile_broker_compilations())) {
     if (thread->libjvmci_runtime() != nullptr) {
       detach_thread(thread, "single use JavaVM");
     } else {
