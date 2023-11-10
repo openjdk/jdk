@@ -410,7 +410,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     // final obj in dirty-chunk crosses card-boundary
     oop obj = cast_to_oop(obj_start_addr);
     if (obj->is_objArray()) {
-      // precised-marked
+      // ObjArrays are always precisely-marked so we are not allowed to jump to the end of the current object.
       return i_card;
     }
 
