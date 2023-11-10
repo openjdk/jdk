@@ -399,7 +399,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       continue;
     }
 
-    // a potential candidate
+    // A potential candidate.
     HeapWord* addr = ct->addr_for(i_card);
     HeapWord* obj_start_addr = object_start(addr);
 
