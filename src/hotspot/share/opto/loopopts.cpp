@@ -164,6 +164,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
+      // this edge case can only happend for Load nodes
       wins = 0;
       break;
     }
