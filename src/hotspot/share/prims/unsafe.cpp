@@ -70,12 +70,17 @@
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
     + ((julong)max_jint * sizeof(double)) )
 
-
+// Note that scoped accesses (cf. scopedMemoryAccess.cpp) can install
+// an async handshake on the entry to an Unsafe method. When that happens,
+// it is expected that we are not allowed to touch the underlying memory
+// that might have gotten unmapped. Therefore, we check at the entry
+// to unsafe functions, if we have such async exception conditions,
+// and return immediately if that is the case.
 #define UNSAFE_ENTRY(result_type, header) \
-  JVM_ENTRY(static result_type, header)
+  JVM_ENTRY(static result_type, header) if (JavaThread::current()->has_async_exception_condition()) {return (result_type)0;}
 
 #define UNSAFE_LEAF(result_type, header) \
-  JVM_LEAF(static result_type, header)
+  JVM_LEAF(static result_type, header) if (JavaThread::current()->has_async_exception_condition()) {return (result_type)0;}
 
 #define UNSAFE_END JVM_END
 
