@@ -926,7 +926,19 @@ public final class LauncherHelper {
             }
         }
 
-        if (!Modifier.isStatic(mainMethod.getModifiers())) {
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean isPublic = Modifier.isPublic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+
+        if (!PreviewFeatures.isEnabled()) {
+            if (!isStatic || !isPublic || noArgs) {
+                  abort(null, "java.launcher.cls.error2", mainClass.getName(),
+                       JAVAFX_APPLICATION_CLASS_NAME);
+            }
+        }
+
+        if (!isStatic) {
             String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);
