@@ -340,7 +340,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * it should not be used outside this class.
      */
     protected Type typeNoMetadata() {
-        return metadata.isEmpty() ? this : baseType();
+        return metadata.isEmpty() ? this : stripMetadata();
     }
 
     /**
@@ -429,62 +429,33 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         private static final TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
-                return super.visitClassType((ClassType)t.typeNoMetadata(), aVoid);
+                return super.visitClassType((ClassType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitArrayType(ArrayType t, Void aVoid) {
-                return super.visitArrayType((ArrayType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitTypeVar(TypeVar t, Void aVoid) {
-                return super.visitTypeVar((TypeVar)t.typeNoMetadata(), aVoid);
+                return super.visitArrayType((ArrayType) dropMetadata(t), aVoid);
             }
 
             @Override
             public Type visitWildcardType(WildcardType wt, Void aVoid) {
-                return super.visitWildcardType((WildcardType)wt.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitMethodType(MethodType t, Void aVoid) {
-                return super.visitMethodType((MethodType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitPackageType(PackageType t, Void aVoid) {
-                return super.visitPackageType((PackageType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitModuleType(ModuleType t, Void aVoid) {
-                return super.visitModuleType((ModuleType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitCapturedType(CapturedType t, Void aVoid) {
-                return super.visitCapturedType((CapturedType)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitForAll(ForAll t, Void aVoid) {
-                return super.visitForAll((ForAll)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitUndetVar(UndetVar t, Void aVoid) {
-                return super.visitUndetVar((UndetVar)t.typeNoMetadata(), aVoid);
-            }
-
-            @Override
-            public Type visitErrorType(ErrorType t, Void aVoid) {
-                return super.visitErrorType((ErrorType)t.typeNoMetadata(), aVoid);
+                return super.visitWildcardType((WildcardType) dropMetadata(wt), aVoid);
             }
 
             @Override
             public Type visitType(Type t, Void aVoid) {
-                return super.visitType(t.typeNoMetadata(), aVoid);
+                return dropMetadata(t);
+            }
+
+            private static Type dropMetadata(Type t) {
+                if (t.getMetadata().isEmpty()) {
+                    return t;
+                }
+                Type baseType = t.baseType();
+                if (baseType.getMetadata().isEmpty()) {
+                    return baseType;
+                }
+                return baseType.cloneWithMetadata(List.nil());
             }
         };
 
@@ -2486,7 +2457,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * type itself) of the operation implemented by this visitor; use
      * Void if a second argument is not needed.
      */
-    public interface Visitor<R,S> {  // Primitive types omitted?
+    public interface Visitor<R,S> {
         R visitClassType(ClassType t, S s);
         R visitWildcardType(WildcardType t, S s);
         R visitArrayType(ArrayType t, S s);
