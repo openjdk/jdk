@@ -1091,12 +1091,17 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
-      SuperWord sw(phase);
-      sw.transform_loop(this, false);
+      VLoopPreconditionChecker vl_precondition_checker;
+      if (vl_precondition_checker.check_preconditions(this, true)) {
+        // TODO goal: remove SuperWord, and call unrol_analysis statically
+        SuperWord sw(phase);
+        sw.transform_loop(this, false);
 
-      // If the loop is slp canonical analyze it
-      if (sw.early_return() == false) {
-        sw.unrolling_analysis(_local_loop_unroll_factor);
+        // If the loop is slp canonical analyze it
+        // TODO what is this -> same as if preconditions pass!
+        if (sw.early_return() == false) {
+          sw.unrolling_analysis(_local_loop_unroll_factor);
+        }
       }
     }
 

@@ -259,4 +259,65 @@ class VectorElementSizeStats {
   }
 };
 
+
+class VLoopPreconditionChecker : public StackObj {
+private:
+  IdealLoopTree* _lpt = nullptr;
+
+  // Important nodes
+  CountedLoopNode* _cl = nullptr;
+  PhiNode* _iv = nullptr;
+
+  bool _allow_cfg = false;
+
+protected:
+  static constexpr char const* SUCCESS                    = "success";
+  static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
+  static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
+  static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
+  static constexpr char const* FAILURE_VALID_COUNTED_LOOP = "must be valid counted loop (int)";
+  static constexpr char const* FAILURE_CONTROL_FLOW       = "control flow in loop not allowed";
+  static constexpr char const* FAILURE_BACKEDGE           = "nodes on backedge not allowed";
+  static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
+
+public:
+  VLoopPreconditionChecker() {};
+  NONCOPYABLE(VLoopPreconditionChecker);
+
+  bool is_allow_cfg() { return _allow_cfg; }
+
+  // Check if the loop passes some basic preconditions for vectorization.
+  // Overwrite previous data.Return indicates if analysis succeeded.
+  bool check_preconditions(IdealLoopTree* lpt, bool allow_cfg);
+protected:
+  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
+    _lpt = lpt;
+    _cl  = nullptr;
+    _iv  = nullptr;
+    _allow_cfg = allow_cfg;
+  }
+protected:
+  const char* check_preconditions_helper();
+};
+
+class VLoopAnalyzer : public VLoopPreconditionChecker {
+private:
+
+public:
+  VLoopAnalyzer() {};
+  NONCOPYABLE(VLoopAnalyzer);
+
+  // Analyze the loop in preparation for vectorization.
+  // Overwrite previous data.Return indicates if analysis succeeded.
+  bool analyze(IdealLoopTree* lpt,
+               bool allow_cfg);
+private:
+  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
+    VLoopPreconditionChecker::reset(lpt, allow_cfg);
+    // TODO
+  }
+  const char* analyze_helper();
+};
+
+
 #endif // SHARE_OPTO_VECTORIZATION_HPP

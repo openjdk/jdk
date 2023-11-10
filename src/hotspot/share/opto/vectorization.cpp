@@ -686,4 +686,105 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
   }
 }
 
+bool VLoopPreconditionChecker::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
+  reset(lpt, allow_cfg);
+
+  tty->print_cr("VLoopPreconditionChecker::analyze");
+  lpt->dump_head();
+
+  const char* return_state = check_preconditions_helper();
+  assert(return_state != nullptr, "must have return state");
+  if (return_state == VLoopPreconditionChecker::SUCCESS) {
+    return true; // success
+  }
+  tty->print_cr("VLoopPreconditionChecker::check_precondition: failed: %s", return_state);
+  return false; // failure
+}
+
+const char* VLoopPreconditionChecker::check_preconditions_helper() {
+
+  // Only accept vector width that is power of 2
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return VLoopPreconditionChecker::FAILURE_VECTOR_WIDTH;
+  }
+
+  // Only accept valid counted loops (int)
+  if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+    return VLoopPreconditionChecker::FAILURE_VALID_COUNTED_LOOP;
+  }
+  _cl = _lpt->_head->as_CountedLoop();
+  _iv = _cl->phi()->as_Phi();
+
+  if (_cl->is_vectorized_loop()) {
+    return VLoopPreconditionChecker::FAILURE_ALREADY_VECTORIZED;
+  }
+
+  if (_cl->is_unroll_only()) {
+    return VLoopPreconditionChecker::FAILURE_UNROLL_ONLY;
+  }
+
+  // TODO mark_reductions
+  // TODO skip any loop that has not been assigned max unroll by analysis
+
+  // Check for control flow in the body
+  Node* cl_exit = _cl->loopexit();
+  bool has_cfg = cl_exit->in(0) != _cl;
+  if (has_cfg && !is_allow_cfg()) {
+#ifndef PRODUCT
+    // TODO change trace flag
+    if (TraceSuperWord) {
+      tty->print_cr("VLoopPreconditionChecker::check_preconditions: fails because of control flow.");
+      tty->print("cl_exit %d", cl_exit->_idx); cl_exit->dump();
+      tty->print("cl_exit->in(0) %d", cl_exit->in(0)->_idx); cl_exit->in(0)->dump();
+      tty->print("lpt->_head %d", _cl->_idx); _cl->dump();
+      _lpt->dump_head();
+    }
+#endif
+    return VLoopPreconditionChecker::FAILURE_CONTROL_FLOW;
+  }
+
+  // Make sure the are no extra control users of the loop backedge
+  if (_cl->back_control()->outcnt() != 1) {
+    return VLoopPreconditionChecker::FAILURE_BACKEDGE;
+  }
+
+  // To align vector memory accesses in the main-loop, we will have to adjust
+  // the pre-loop limit.
+  if (_cl->is_main_loop()) {
+    CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
+    if (pre_end == nullptr) {
+      return VLoopPreconditionChecker::FAILURE_PRE_LOOP_LIMIT;
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return VLoopPreconditionChecker::FAILURE_PRE_LOOP_LIMIT;
+    }
+    // TODO refactor caching
+    _cl->set_pre_loop_end(pre_end);
+  }
+
+  // TODO continue here
+
+  return VLoopPreconditionChecker::SUCCESS;
+}
+
+bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
+  bool success = check_preconditions(lpt, allow_cfg);
+  if (!success) { return false; }
+
+  const char* return_state = analyze_helper();
+  assert(return_state != nullptr, "must have return state");
+  if (return_state == VLoopAnalyzer::SUCCESS) {
+    return true; // success
+  }
+  tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
+  return false; // failure
+}
+
+const char* VLoopAnalyzer::analyze_helper() {
+  return VLoopAnalyzer::SUCCESS;
+}
+
+
 #endif
