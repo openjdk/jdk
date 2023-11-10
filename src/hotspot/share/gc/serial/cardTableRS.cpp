@@ -372,7 +372,7 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   while (i_card + sizeof(Word) <= end_card) {
     Word* i_word = reinterpret_cast<Word*>(i_card);
     if (*i_word != clean_word) {
-      // Found sth in this word; fall back to byte-comparison
+      // Found a clean card in this word; fall back to per-CardValue comparison.
       break;
     }
     i_card += sizeof(Word);
