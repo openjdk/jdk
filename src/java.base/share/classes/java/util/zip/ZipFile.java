@@ -95,15 +95,20 @@ import static java.util.zip.ZipUtils.*;
  * last modified time and file key. If a ZIP file is modified while being read with this class,
  * it can result in unpredictable behavior or crashes.
  *
- * Furthermore, while the <a href="https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT">PKWARE ZIP File Format Specification</a>
- * has no restrictions on ZIP entries with duplicate names, the {@link ZipOutputStream} class doesn't allow creation of
- * ZIP archives with duplicate entry names. Therefore, when parsing archives containing duplicate names, unexpected behavior
- * may occur such as metadata from the later entry or content from the first entry
- * being returned due to internal caching.
+ * Furthermore, while the
+ * <a href="https://support.pkware.com/pkzip/appnote">ZIP specification</a>
+ * has no restrictions on ZIP entries with duplicate names,
+ * the {@link ZipOutputStream} class doesn't allow creation of ZIP archives
+ * with duplicate entry names. Therefore, when parsing archives containing
+ * duplicate names, unexpected behavior may occur such as metadata from the
+ * later entry or content from the first entry being returned due to internal
+ * caching.
  *
- * Additionally, for compatibility with earlier versions of the JDK, files and directories with the same name (such as "foobar" and "foobar/")
- * are considered duplicates, which can result in unexpected behavior such as wrong metadata or content being returned
- * when parsing archives containing duplicate names.
+ * Additionally, for compatibility with earlier versions of the JDK, files and
+ * directories with the same name (such as "foobar" and "foobar/")
+ * are considered duplicates, which can result in unexpected behavior such as
+ * wrong metadata or content being returned when parsing archives containing
+ * duplicate names.
  *
  * @author      David Connelly
  * @since 1.1

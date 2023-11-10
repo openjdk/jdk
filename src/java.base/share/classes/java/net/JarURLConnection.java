@@ -124,9 +124,10 @@ import sun.net.www.ParseUtil;
  * </ul>
  *
  * @apiNote
- * JAR files retrieved by this class might get cached for performance reasons which can result
- * in unexpected behavior if the JAR files are modified while being read using this class.
- * If such behavior is undesirable, please use the {@link URLConnection#setUseCaches(boolean)} method to disable caching.
+ * JAR files retrieved by this class might get cached for performance reasons
+ * which can result in unexpected behavior if the JAR files are modified while
+ * being read using this class. If such behavior is undesirable, please use
+ * the {@link URLConnection#setUseCaches(boolean)} method to disable caching.
  *
  * @see java.net.URL
  * @see java.net.URLConnection
