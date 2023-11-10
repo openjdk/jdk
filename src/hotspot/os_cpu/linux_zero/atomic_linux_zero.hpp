@@ -134,15 +134,17 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
 
 // Atomically copy 64 bits of data
 inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  int64_t tmp = __atomic_load_n((int64_t*)src, __ATOMIC_RELAXED);
-  __atomic_store_n((int64_t*)dst, tmp, __ATOMIC_RELAXED);
+  int64_t tmp;
+  __atomic_load((int64_t*)src, &tmp, __ATOMIC_RELAXED);
+  __atomic_store((int64_t*)dst, &tmp, __ATOMIC_RELAXED);
 }
 
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
-  int64_t dest = __atomic_load_n(src, __ATOMIC_RELAXED);
+  int64_t dest;
+  __atomic_load((int64_t*)src, &dest, __ATOMIC_RELAXED);
   return PrimitiveConversions::cast<T>(dest);
 }
 
@@ -151,7 +153,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
-  __atomic_store_n(dest, store_value, __ATOMIC_RELAXED);
+  __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }
 
 #endif // OS_CPU_LINUX_ZERO_ATOMIC_LINUX_ZERO_HPP
