@@ -304,8 +304,12 @@ public:
   bool is_allow_cfg()     const { return _allow_cfg; }
 
   bool in_loopbody(Node* n) const {
-    // TODO refactor to allow cfg!
-    return n != nullptr && n->outcnt() > 0 && _phase->ctrl_or_self(n) == _cl;
+    // TODO refactor to allow cfg - is this new version ok?
+    //return n != nullptr && n->outcnt() > 0 && _phase->ctrl_or_self(n) == _cl;
+    if (n == nullptr || n->outcnt() == 0) { return false; }
+    Node* ctrl = _phase->ctrl_or_self(n);
+    assert((ctrl == _cl) == (_phase->get_loop(ctrl) == _lpt), "WIP");
+    return _phase->get_loop(ctrl) == _lpt;
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
