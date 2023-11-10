@@ -1096,7 +1096,7 @@ public class TreeMap<K,V>
      * there's no reason to create more than one.
      */
     private transient EntrySet entrySet;
-        private transient NavigableMap<K,V> descendingMap;
+    private transient NavigableMap<K,V> descendingMap;
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
