@@ -36,6 +36,8 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.time.chrono.*;
+import java.time.temporal.ChronoField;
 import java.util.*;
 
 import static java.util.Calendar.*;
@@ -476,5 +478,18 @@ public class BasicDateTime extends Basic {
                     .toString();
             test(locale, specifier, minusSign + str, LocalDate.of(-year, month, dayOfMonth));
         }
+
+        // ja-JP-u-ca-japanese
+        ChronoLocalDate jpDate = Chronology
+                .ofLocale(Locale.forLanguageTag("ja-JP-u-ca-japanese"))
+                .dateNow();
+        test(Locale.JAPANESE,
+                "%tF",
+                String.format(
+                        "%04d-%02d-%02d",
+                        jpDate.get(ChronoField.YEAR_OF_ERA),
+                        jpDate.get(ChronoField.MONTH_OF_YEAR),
+                        jpDate.get(ChronoField.DAY_OF_MONTH)),
+                now);
     }
 }
