@@ -27,7 +27,7 @@
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
-// Helper to avoid interference from the cleanup delay queue by draining it 
+// Helper to avoid interference from the cleanup delay queue by draining it
 // immediately after creation.
 TempNewSymbol tmp(Symbol* sym) {
   TempNewSymbol t = sym;
