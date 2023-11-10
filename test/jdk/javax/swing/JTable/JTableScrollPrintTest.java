@@ -97,7 +97,7 @@ public class JTableScrollPrintTest {
             model.addColumn("Column 3");
             model.addColumn("Column 4");
 
-            for (int row=1;row<=5;row++)
+            for (int row = 1; row <= 5; row++)
                 model.addRow(new Object[] {
                         "R"+row+" C1", "R"+row+" C2", "R"+row+" C3", "R"+row+" C4" });
 
@@ -165,13 +165,15 @@ public class JTableScrollPrintTest {
                 double xscale = imageableX/panelX;
                 double yscale = imageableY/panelY;
                 double optimalScale;
-                if (xscale < yscale)
+                if (xscale < yscale) {
                     optimalScale = xscale;
-                else
+                } else {
                     optimalScale = yscale;
+                }
 
-                if (optimalScale > 1)
+                if (optimalScale > 1) {
                     optimalScale = 1;
+                }
 
                 g2d.scale(optimalScale, optimalScale);
                 c.paint(g2d);
