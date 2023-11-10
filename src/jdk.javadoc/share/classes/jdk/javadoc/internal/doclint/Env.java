@@ -77,12 +77,6 @@ public class Env {
         PROTECTED,
         PUBLIC;
 
-        static boolean accepts(String opt) {
-            for (AccessKind g: values())
-                if (opt.equals(StringUtils.toLowerCase(g.name()))) return true;
-            return false;
-        }
-
         static AccessKind of(Set<Modifier> mods) {
             if (mods.contains(Modifier.PUBLIC))
                 return AccessKind.PUBLIC;

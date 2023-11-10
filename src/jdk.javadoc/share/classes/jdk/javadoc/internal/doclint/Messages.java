@@ -195,7 +195,13 @@ public class Messages {
             int sep = opt.indexOf("/");
             String grp = opt.substring(begin, (sep != -1) ? sep : opt.length());
             return ((begin == 0 && grp.equals("all")) || Group.accepts(grp))
-                    && ((sep == -1) || AccessKind.accepts(opt.substring(sep + 1)));
+                    && ((sep == -1) || accepts(opt.substring(sep + 1)));
+        }
+
+        static boolean accepts(String opt) {
+            for (AccessKind g: AccessKind.values())
+                if (opt.equals(StringUtils.toLowerCase(g.name()))) return true;
+            return false;
         }
 
         Options(Stats stats) {
