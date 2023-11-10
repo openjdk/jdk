@@ -381,6 +381,17 @@ public class TestSegments {
         assertEquals(counter.get(), 2);
     }
 
+    @Test
+    void testThrowInCleanup() {
+        AtomicInteger counter = new AtomicInteger();
+        try (Arena arena = Arena.ofConfined()){
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> { throw new AssertionError(); });
+            MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> { throw new AssertionError(); });
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } // no exception should occur here!
+        assertEquals(counter.get(), 1);
+    }
+
     @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {

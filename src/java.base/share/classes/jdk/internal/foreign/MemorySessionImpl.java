@@ -277,7 +277,11 @@ public abstract sealed class MemorySessionImpl
                 return new ResourceCleanup() {
                     @Override
                     public void cleanup() {
-                        cleanupAction.run();
+                        try {
+                            cleanupAction.run();
+                        } catch (Throwable ex) {
+                            // swallow
+                        }
                     }
                 };
             }
