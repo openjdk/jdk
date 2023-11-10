@@ -25,7 +25,6 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.javac.file.Locations;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
@@ -861,16 +860,18 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
-                if (className.indexOf('.') > 0) try {
+                if (className.indexOf('.') > 0) {
                     //search for classes with a named package in the JDK modules specifed by --system option first
-                    for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
-                        for (Location systemModule: locations) {
-                            fo = fileManager.getJavaFileForInput(systemModule, className, JavaFileObject.Kind.CLASS);
-                            if (fo != null) return fo;
+                    try {
+                        for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
+                            for (Location systemModule: locations) {
+                                fo = fileManager.getJavaFileForInput(systemModule, className, JavaFileObject.Kind.CLASS);
+                                if (fo != null) return fo;
+                            }
                         }
+                    } catch (UnsupportedOperationException e) {
+                        //skip when listLocationsForModules is not supported
                     }
-                } catch (UnsupportedOperationException e) {
-                    //skip when listLocationsForModules is not supported
                 }
                 fo = fileManager.getJavaFileForInput(StandardLocation.PLATFORM_CLASS_PATH, className, JavaFileObject.Kind.CLASS);
                 if (fo == null)
