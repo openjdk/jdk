@@ -26,6 +26,7 @@
  * @bug 8308762
  * @library /test/lib
  * @summary Test that redefinition of class containing Throwable refs does not leak constant pool
+ * @requires os.family == "aix"
  * @requires vm.jvmti
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
@@ -33,6 +34,21 @@
  *          java.compiler
  * @run main RedefineClassHelper
  * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=23m -XX:MaxMetaspaceSize=23m RedefineLeakThrowable
+ */
+
+/*
+ * @test
+ * @bug 8308762
+ * @library /test/lib
+ * @summary Test that redefinition of class containing Throwable refs does not leak constant pool
+ * @requires os.family != "aix"
+ * @requires vm.jvmti
+ * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
+ * @modules java.instrument
+ *          java.compiler
+ * @run main RedefineClassHelper
+ * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=17m -XX:MaxMetaspaceSize=17m RedefineLeakThrowable
  */
 
 class Tester {
