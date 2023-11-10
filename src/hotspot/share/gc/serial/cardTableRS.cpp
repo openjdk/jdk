@@ -506,7 +506,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       HeapWord* const obj_end_addr = obj_addr + obj->size();
 
       if (is_obj_array) {
-        // precise-marked
+        // ObjArrays are always precise-marked.
         scan_obj_with_limit(obj, cl, addr_l, addr_r);
       } else {
         scan_obj_with_limit(obj, cl, addr_l, obj_end_addr);
