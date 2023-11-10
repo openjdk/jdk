@@ -22,47 +22,50 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.event;
 
-package jdk.jfr.internal.instrument;
-
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.jfr.events.EventConfigurations;
-import jdk.jfr.events.ErrorThrownEvent;
-import jdk.jfr.events.ExceptionThrownEvent;
-import jdk.jfr.internal.event.EventConfiguration;
-
+/**
+ * Helper class for exception events.
+ */
 public final class ThrowableTracer {
 
     private static final AtomicLong numThrowables = new AtomicLong();
 
-    public static void traceError(Error e, String message) {
-        if (e instanceof OutOfMemoryError) {
+    public static void enable() throws NoSuchFieldException, IllegalAccessException {
+        Field field = Throwable.class.getDeclaredField("jfrTracing");
+        field.setAccessible(true);
+        field.setBoolean(null, true);
+    }
+
+    public static void traceError(Class<?> clazz, String message) {
+        if (OutOfMemoryError.class.isAssignableFrom(clazz)) {
             return;
         }
-        long timestamp = EventConfiguration.timestamp();
 
-        EventConfiguration eventConfiguration1 = EventConfigurations.ERROR_THROWN;
-        if (eventConfiguration1.isEnabled()) {
-            ErrorThrownEvent.commit(timestamp, message, e.getClass());
+        if (ErrorThrownEvent.enabled()) {
+            long timestamp = ErrorThrownEvent.timestamp();
+            ErrorThrownEvent.commit(timestamp, message, clazz);
         }
-        EventConfiguration eventConfiguration2 = EventConfigurations.EXCEPTION_THROWN;
-        if (eventConfiguration2.isEnabled()) {
-            ExceptionThrownEvent.commit(timestamp, message, e.getClass());
-        }
-        numThrowables.incrementAndGet();
-    }
-
-    public static void traceThrowable(Throwable t, String message) {
-        EventConfiguration eventConfiguration = EventConfigurations.EXCEPTION_THROWN;
-        if (eventConfiguration.isEnabled()) {
-            long timestamp = EventConfiguration.timestamp();
-            ExceptionThrownEvent.commit(timestamp, message, t.getClass());
+        if (ExceptionThrownEvent.enabled()) {
+            long timestamp = ExceptionThrownEvent.timestamp();
+            ExceptionThrownEvent.commit(timestamp, message, clazz);
         }
         numThrowables.incrementAndGet();
     }
 
-    public static long numThrowables() {
-        return numThrowables.get();
+    public static void traceThrowable(Class<?> clazz, String message) {
+        if (ExceptionThrownEvent.enabled()) {
+            long timestamp = ExceptionThrownEvent.timestamp();
+            ExceptionThrownEvent.commit(timestamp, message, clazz);
+        }
+        numThrowables.incrementAndGet();
+    }
+
+    public static void emitStatistics() {
+        long timestamp = ExceptionStatisticsEvent.timestamp();
+        ExceptionStatisticsEvent.commit(timestamp, numThrowables.get());
     }
 }
