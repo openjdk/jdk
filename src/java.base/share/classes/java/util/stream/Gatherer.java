@@ -260,6 +260,8 @@ public interface Gatherer<T, A, R> {
      * Returns an initializer which is the default initializer of a Gatherer.
      * The returned initializer identifies that the owner Gatherer is stateless.
      *
+     * @implSpec This method always returns the same instance.
+     *
      * @see Gatherer#initializer()
      * @return the instance of the default initializer
      * @param <A> the type of the state of the returned initializer
@@ -272,6 +274,8 @@ public interface Gatherer<T, A, R> {
      * Returns a combiner which is the default combiner of a Gatherer.
      * The returned combiner identifies that the owning Gatherer must only
      * be evaluated sequentially.
+     *
+     * @implSpec This method always returns the same instance.
      *
      * @see Gatherer#finisher()
      * @return the instance of the default combiner
@@ -286,6 +290,8 @@ public interface Gatherer<T, A, R> {
      * a {@code Gatherer}.
      * The returned finisher identifies that the owning Gatherer performs
      * no additional actions at the end of input.
+     *
+     * @implSpec This method always returns the same instance.
      *
      * @see Gatherer#finisher()
      * @return the instance of the default finisher
@@ -506,9 +512,9 @@ public interface Gatherer<T, A, R> {
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     interface Integrator<A, T, R> {
-        /** Integrate is the method which given:
-         * the current state, the next element, and a downstream object;
-         * performs the main logic -- potentially inspecting and/or updating
+        /**
+         * Performs an action given: the current state, the next element, and
+         * a downstream object; potentially inspecting and/or updating
          * the state, optionally sending any number of elements downstream
          * -- and then returns whether more elements are to be consumed or not.
          *

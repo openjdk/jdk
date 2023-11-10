@@ -51,10 +51,373 @@ import java.util.stream.Gatherer.Downstream;
 */
 @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public final class Gatherers {
-    private Gatherers() { }
+    private Gatherers() { } // This class is not intended to be instantiated
+
+    // Public built-in Gatherers and factory methods for them
+
+    /**
+     * Returns a Gatherer that gathers elements into windows
+     * -- encounter-ordered groups of elements -- of a fixed size.
+     * If the stream is empty then no window will be produced.
+     * The last window may contain fewer elements than the supplied window size.
+     *
+     * <p>Example:
+     * {@snippet lang = java:
+     * // will contain: [[1, 2, 3], [4, 5, 6], [7, 8]]
+     * List<List<Integer>> windows =
+     *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowFixed(3)).toList();
+     * }
+     *
+     * @apiNote For efficiency reasons, windows may be allocated contiguously
+     *          and eagerly. This means that choosing large window sizes for
+     *          small streams may use excessive memory for the duration of
+     *          evaluation of this operation.
+     *
+     * @param windowSize the size of the windows
+     * @param <TR> the type of elements the returned gatherer consumes
+     *             and the contents of the windows it produces
+     * @return a new gatherer which groups elements into fixed-size windows
+     * @throws IllegalArgumentException when windowSize is less than 1
+     */
+    public static <TR> Gatherer<TR, ?, List<TR>> windowFixed(int windowSize) {
+        if (windowSize < 1)
+            throw new IllegalArgumentException("'windowSize' must be greater than zero");
+
+        class FixedWindow {
+            Object[] window;
+            int at;
+
+            FixedWindow() {
+                at = 0;
+                window = new Object[windowSize];
+            }
+
+            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
+                window[at++] = element;
+                if (at < windowSize) {
+                    return true;
+                } else {
+                    final var oldWindow = window;
+                    window = new Object[windowSize];
+                    at = 0;
+                    return downstream.push(
+                            SharedSecrets.getJavaUtilCollectionAccess()
+                                    .listFromTrustedArrayNullsAllowed(oldWindow)
+                    );
+                }
+            }
+
+            void finish(Downstream<? super List<TR>> downstream) {
+                if(at > 0 && !downstream.isRejecting()) {
+                    var lastWindow = new Object[at];
+                    System.arraycopy(window, 0, lastWindow, 0, at);
+                    window = null;
+                    at = 0;
+                    downstream.push(
+                            SharedSecrets.getJavaUtilCollectionAccess()
+                                    .listFromTrustedArrayNullsAllowed(lastWindow)
+                    );
+                }
+            }
+        }
+        return Gatherer.<TR, FixedWindow, List<TR>>ofSequential(
+                // Initializer
+                FixedWindow::new,
+
+                // Integrator
+                Integrator.<FixedWindow, TR, List<TR>>ofGreedy(FixedWindow::integrate),
+
+                // Finisher
+                FixedWindow::finish
+        );
+    }
+
+    /**
+     * Returns a Gatherer that gathers elements into windows --
+     * encounter-ordered groups of elements -- of a given size, where each
+     * subsequent window includes all elements of the previous window except
+     * for the least recent, and adds the next element in the stream.
+     * If the stream is empty then no window will be produced. If the size of
+     * the stream is smaller than the window size then only one window will
+     * be produced, containing all elements in the stream.
+     *
+     * <p>Example:
+     * {@snippet lang = java:
+     * // will contain: [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
+     * List<List<Integer>> windows2 =
+     *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowSliding(2)).toList();
+     *
+     * // will contain: [[1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7], [3, 4, 5, 6, 7, 8]]
+     * List<List<Integer>> windows6 =
+     *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowSliding(6)).toList();
+     * }
+     *
+     * @apiNote For efficiency reasons, windows may be allocated contiguously
+     *          and eagerly. This means that choosing large window sizes for
+     *          small streams may use excessive memory for the duration of
+     *          evaluation of this operation.
+     *
+     * @param windowSize the size of the windows
+     * @param <TR> the type of elements the returned gatherer consumes
+     *             and the contents of the windows it produces
+     * @return a new gatherer which groups elements into sliding windows
+     * @throws IllegalArgumentException when windowSize is less than 1
+     */
+    public static <TR> Gatherer<TR, ?, List<TR>> windowSliding(int windowSize) {
+        if (windowSize < 1)
+            throw new IllegalArgumentException("'windowSize' must be greater than zero");
+
+        class SlidingWindow {
+            Object[] window;
+            int at;
+            boolean firstWindow;
+
+            SlidingWindow() {
+                firstWindow = true;
+                at = 0;
+                window = new Object[windowSize];
+            }
+
+            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
+                window[at++] = element;
+                if (at < windowSize) {
+                    return true;
+                } else {
+                    final var oldWindow = window;
+                    final var newWindow = new Object[windowSize];
+                    System.arraycopy(oldWindow,1, newWindow, 0, windowSize - 1);
+                    window = newWindow;
+                    at -= 1;
+                    firstWindow = false;
+                    return downstream.push(
+                            SharedSecrets.getJavaUtilCollectionAccess()
+                                    .listFromTrustedArrayNullsAllowed(oldWindow)
+                    );
+                }
+            }
+
+            void finish(Downstream<? super List<TR>> downstream) {
+                if(firstWindow && at > 0 && !downstream.isRejecting()) {
+                    var lastWindow = new Object[at];
+                    System.arraycopy(window, 0, lastWindow, 0, at);
+                    window = null;
+                    at = 0;
+                    downstream.push(
+                            SharedSecrets.getJavaUtilCollectionAccess()
+                                    .listFromTrustedArrayNullsAllowed(lastWindow)
+                    );
+                }
+            }
+        }
+        return Gatherer.<TR, SlidingWindow, List<TR>>ofSequential(
+                // Initializer
+                SlidingWindow::new,
+
+                // Integrator
+                Integrator.<SlidingWindow, TR, List<TR>>ofGreedy(SlidingWindow::integrate),
+
+                // Finisher
+                SlidingWindow::finish
+        );
+    }
+
+    /**
+     * Returns a Gatherer that performs an ordered, <i>reduction-like</i>,
+     * transformation for scenarios where no combiner-function can be
+     * implemented, or for reductions which are intrinsically
+     * order-dependent.
+     *
+     * @implSpec If no exceptions are thrown during processing, then this
+     * operation only ever produces a single element.
+     *
+     * <p>Example:
+     * {@snippet lang = java:
+     * // will contain: Optional[123456789]
+     * Optional<String> numberString =
+     *     Stream.of(1,2,3,4,5,6,7,8,9)
+     *           .gather(
+     *               Gatherers.fold(() -> "", (string, number) -> string + number)
+     *            )
+     *           .findFirst();
+     * }
+     *
+     * @see java.util.stream.Stream#reduce(Object, BinaryOperator)
+     *
+     * @param initial the identity value for the fold operation
+     * @param folder the folding function
+     * @param <T> the type of elements the returned gatherer consumes
+     * @param <R> the type of elements the returned gatherer produces
+     * @return a new Gatherer
+     * @throws NullPointerException if any of the parameters are null
+     */
+    public static <T, R> Gatherer<T, ?, R> fold(
+            Supplier<R> initial,
+            BiFunction<? super R, ? super T, ? extends R> folder) {
+        Objects.requireNonNull(initial, "'initial' must not be null");
+        Objects.requireNonNull(folder, "'folder' must not be null");
+
+        class State {
+            R value = initial.get();
+            State() {}
+        }
+
+        return Gatherer.ofSequential(
+                State::new,
+                Integrator.ofGreedy((state, element, downstream) -> {
+                    state.value = folder.apply(state.value, element);
+                    return true;
+                }),
+                (state, downstream) -> downstream.push(state.value)
+        );
+    }
+
+    /**
+     * Returns a Gatherer that performs a Prefix Scan -- an incremental
+     * accumulation -- using the provided functions.  Starting with an
+     * initial value obtained from the {@code Supplier}, each subsequent
+     * value is obtained by applying the {@code BiFunction} to the current
+     * value and the next input element, after which the resulting value is
+     * produced downstream.
+     *
+     * <p>Example:
+     * {@snippet lang = java:
+     * // will contain: [1, 12, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789]
+     * List<String> numberStrings =
+     *     Stream.of(1,2,3,4,5,6,7,8,9)
+     *           .gather(
+     *               Gatherers.scan(() -> "", (string, number) -> string + number)
+     *            )
+     *           .toList();
+     * }
+     *
+     * @param initial the supplier of the initial value for the scanner
+     * @param scanner the function to apply for each element
+     * @param <T> the type of element which this gatherer consumes
+     * @param <R> the type of element which this gatherer produces
+     * @return a new Gatherer which performs a prefix scan
+     * @throws NullPointerException if any of the parameters are null
+     */
+    public static <T, R> Gatherer<T, ?, R> scan(
+            Supplier<R> initial,
+            BiFunction<? super R, ? super T, ? extends R> scanner) {
+        Objects.requireNonNull(initial, "'initial' must not be null");
+        Objects.requireNonNull(scanner, "'scanner' must not be null");
+
+        class State {
+            R current = initial.get();
+            boolean integrate(T element, Downstream<? super R> downstream) {
+                return downstream.push(current = scanner.apply(current, element));
+            }
+        }
+
+        return Gatherer.ofSequential(State::new,
+                Integrator.<State,T, R>ofGreedy(State::integrate));
+    }
+
+    /**
+     * An operation which executes operations concurrently
+     * with a fixed window of max concurrency, using
+     * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">virtual threads</a>.
+     * This operation preserves the ordering of the stream.
+     *
+     * <p>In progress tasks will be attempted to be cancelled,
+     * on a best-effort basis, in situations where the downstream no longer
+     * wants to receive any more elements.
+     *
+     * <p>If the mapper throws an exception during evaluation of this Gatherer,
+     * and the result of that invocation is to be produced to the downstream,
+     * then that exception will instead be rethrown as a {@link RuntimeException}.
+     *
+     * @param maxConcurrency the maximum concurrency desired
+     * @param mapper a function to be executed concurrently
+     * @param <T> the type of input
+     * @param <R> the type of output
+     * @return a new Gatherer
+     * @throws IllegalArgumentException if maxConcurrency is less than 1
+     * @throws NullPointerException if mapper is null
+     */
+    public static <T, R> Gatherer<T,?,R> mapConcurrent(
+            final int maxConcurrency,
+            final Function<? super T, ? extends R> mapper) {
+        if (maxConcurrency <= 0)
+            throw new IllegalArgumentException(
+                    "'maxConcurrency' needs to be greater than 0");
+
+        Objects.requireNonNull(mapper, "'mapper' must not be null");
+
+        class State {
+            final ArrayDeque<Future<R>> window = new ArrayDeque<>(maxConcurrency);
+            final Semaphore windowLock = new Semaphore(maxConcurrency);
+
+            final boolean integrate(T element,
+                                    Downstream<? super R> downstream) {
+                if (!downstream.isRejecting())
+                    createTaskFor(element);
+                return flush(0, downstream);
+            }
+
+            final void createTaskFor(T element) {
+                windowLock.acquireUninterruptibly();
+
+                var task = new FutureTask<R>(() -> {
+                    try {
+                        return mapper.apply(element);
+                    } finally {
+                        windowLock.release();
+                    }
+                });
+
+                var wasAddedToWindow = window.add(task);
+                assert wasAddedToWindow;
+
+                Thread.startVirtualThread(task);
+            }
+
+            final boolean flush(long atLeastN,
+                                Downstream<? super R> downstream) {
+                boolean proceed = !downstream.isRejecting();
+                try {
+                    Future<R> current;
+                    while(proceed
+                            && (current = window.peek()) != null
+                                && (current.isDone() || atLeastN > 0)) {
+                        proceed &= downstream.push(current.get());
+                        atLeastN -= 1;
+
+                        var correctRemoval = window.pop() == current;
+                        assert correctRemoval;
+                    }
+                } catch (Exception e) {
+                    proceed = false; // Ensure cleanup
+                    throw (e instanceof RuntimeException re)
+                            ? re
+                            : new RuntimeException(e);
+                } finally {
+                    // Clean up
+                    if (!proceed) {
+                        Future<R> next;
+                        while((next = window.pollFirst()) != null) {
+                            next.cancel(true);
+                        }
+                    }
+                }
+
+                return proceed;
+            }
+        }
+
+        return Gatherer.ofSequential(
+                State::new,
+                Integrator.<State, T, R>ofGreedy(State::integrate),
+                (state, downstream) -> state.flush(Long.MAX_VALUE, downstream)
+        );
+    }
+
+    // Implementation details
 
     /*
-     * This enum is used to provide the default functions for the factory methods
+     * This enum is used to provide the default functions for the
+     * factory methods
      * and for the default methods for when implementing the Gatherer interface.
      *
      * This serves the following purposes:
@@ -318,340 +681,5 @@ public final class Gatherers {
                 );
             }
         }
-    }
-
-    // Public built-in Gatherers and factory methods for them
-
-    /**
-     * Gathers elements into fixed-size windows. The last window may contain
-     * fewer elements than the supplied window size.
-     *
-     * <p>Example:
-     * {@snippet lang = java:
-     * // will contain: [[1, 2, 3], [4, 5, 6], [7, 8]]
-     * List<List<Integer>> windows =
-     *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowFixed(3)).toList();
-     * }
-     *
-     * @apiNote For efficiency reasons, windows may be allocated contiguously
-     *          and eagerly. This means that choosing large window sizes for
-     *          small streams may use excessive memory for the duration of
-     *          evaluation of this operation.
-     *
-     * @param windowSize the size of the windows
-     * @param <TR> the type of elements the returned gatherer consumes
-     *             and the contents of the windows it produces
-     * @return a new gatherer which groups elements into fixed-size windows
-     * @throws IllegalArgumentException when windowSize is less than 1
-     */
-    public static <TR> Gatherer<TR, ?, List<TR>> windowFixed(int windowSize) {
-        if (windowSize < 1)
-            throw new IllegalArgumentException("'windowSize' must be greater than zero");
-
-        class FixedWindow {
-            Object[] window;
-            int at;
-
-            FixedWindow() {
-                at = 0;
-                window = new Object[windowSize];
-            }
-
-            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
-                window[at++] = element;
-                if (at < windowSize) {
-                    return true;
-                } else {
-                    final var oldWindow = window;
-                    window = new Object[windowSize];
-                    at = 0;
-                    return downstream.push(
-                        SharedSecrets.getJavaUtilCollectionAccess()
-                                     .listFromTrustedArrayNullsAllowed(oldWindow)
-                    );
-                }
-            }
-
-            void finish(Downstream<? super List<TR>> downstream) {
-                if(at > 0 && !downstream.isRejecting()) {
-                    var lastWindow = new Object[at];
-                    System.arraycopy(window, 0, lastWindow, 0, at);
-                    window = null;
-                    at = 0;
-                    downstream.push(
-                            SharedSecrets.getJavaUtilCollectionAccess()
-                                    .listFromTrustedArrayNullsAllowed(lastWindow)
-                    );
-                }
-            }
-        }
-        return Gatherer.<TR, FixedWindow, List<TR>>ofSequential(
-                // Initializer
-                FixedWindow::new,
-
-                // Integrator
-                Integrator.<FixedWindow, TR, List<TR>>ofGreedy(FixedWindow::integrate),
-
-                // Finisher
-                FixedWindow::finish
-        );
-    }
-
-    /**
-     * Gathers elements into sliding windows, sliding out the most previous
-     * element and sliding in the next element for each subsequent window.
-     * If the stream is empty then no window will be produced. If the size of
-     * the stream is smaller than the window size then only one window will
-     * be emitted, containing all elements.
-     *
-     * <p>Example:
-     * {@snippet lang = java:
-     * // will contain: [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]]
-     * List<List<Integer>> windows =
-     *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowSliding(2)).toList();
-     * }
-     *
-     * @apiNote For efficiency reasons, windows may be allocated contiguously
-     *          and eagerly. This means that choosing large window sizes for
-     *          small streams may use excessive memory for the duration of
-     *          evaluation of this operation.
-     *
-     * @param windowSize the size of the windows
-     * @param <TR> the type of elements the returned gatherer consumes
-     *             and the contents of the windows it produces
-     * @return a new gatherer which groups elements into sliding windows
-     * @throws IllegalArgumentException when windowSize is less than 1
-     */
-    public static <TR> Gatherer<TR, ?, List<TR>> windowSliding(int windowSize) {
-        if (windowSize < 1)
-            throw new IllegalArgumentException("'windowSize' must be greater than zero");
-
-        class SlidingWindow {
-            Object[] window;
-            int at;
-            boolean firstWindow;
-
-            SlidingWindow() {
-                firstWindow = true;
-                at = 0;
-                window = new Object[windowSize];
-            }
-
-            boolean integrate(TR element, Downstream<? super List<TR>> downstream) {
-                window[at++] = element;
-                if (at < windowSize) {
-                    return true;
-                } else {
-                    final var oldWindow = window;
-                    final var newWindow = new Object[windowSize];
-                    System.arraycopy(oldWindow,1, newWindow, 0, windowSize - 1);
-                    window = newWindow;
-                    at -= 1;
-                    firstWindow = false;
-                    return downstream.push(
-                        SharedSecrets.getJavaUtilCollectionAccess()
-                                     .listFromTrustedArrayNullsAllowed(oldWindow)
-                    );
-                }
-            }
-
-            void finish(Downstream<? super List<TR>> downstream) {
-                if(firstWindow && at > 0 && !downstream.isRejecting()) {
-                    var lastWindow = new Object[at];
-                    System.arraycopy(window, 0, lastWindow, 0, at);
-                    window = null;
-                    at = 0;
-                    downstream.push(
-                        SharedSecrets.getJavaUtilCollectionAccess()
-                                     .listFromTrustedArrayNullsAllowed(lastWindow)
-                    );
-                }
-            }
-        }
-        return Gatherer.<TR, SlidingWindow, List<TR>>ofSequential(
-                // Initializer
-                SlidingWindow::new,
-
-                // Integrator
-                Integrator.<SlidingWindow, TR, List<TR>>ofGreedy(SlidingWindow::integrate),
-
-                // Finisher
-                SlidingWindow::finish
-        );
-    }
-
-    /**
-     * An operation which performs an ordered, <i>reduction-like</i>,
-     * transformation for scenarios where no combiner-function can be
-     * implemented, or for reductions which are intrinsically
-     * order-dependent.
-     *
-     * <p>This operation always emits a single resulting element.
-     *
-     * <p>Example:
-     * {@snippet lang = java:
-     * // will contain: Optional[123456789]
-     * Optional<String> numberString =
-     *     Stream.of(1,2,3,4,5,6,7,8,9)
-     *           .gather(
-     *               Gatherers.fold(() -> "", (string, number) -> string + number)
-     *            )
-     *           .findFirst();
-     * }
-     *
-     * @see java.util.stream.Stream#reduce(Object, BinaryOperator)
-     *
-     * @param initial the identity value for the fold operation
-     * @param folder the folding function
-     * @param <T> the type of elements the returned gatherer consumes
-     * @param <R> the type of elements the returned gatherer produces
-     * @return a new Gatherer
-     * @throws NullPointerException if any of the parameters are null
-     */
-    public static <T, R> Gatherer<T, ?, R> fold(
-            Supplier<R> initial,
-            BiFunction<? super R, ? super T, ? extends R> folder) {
-        Objects.requireNonNull(initial, "'initial' must not be null");
-        Objects.requireNonNull(folder, "'folder' must not be null");
-
-        class State {
-            R value = initial.get();
-            State() {}
-        }
-
-        return Gatherer.ofSequential(
-                State::new,
-                Integrator.ofGreedy((state, element, downstream) -> {
-                    state.value = folder.apply(state.value, element);
-                    return true;
-                }),
-                (state, downstream) -> downstream.push(state.value)
-        );
-    }
-
-    /**
-     * Performs a prefix scan -- an incremental accumulation, using the
-     * provided functions.
-     *
-     * @param initial the supplier of the initial value for the scanner
-     * @param scanner the function to apply for each element
-     * @param <T> the type of element which this gatherer consumes
-     * @param <R> the type of element which this gatherer produces
-     * @return a new Gatherer which performs a prefix scan
-     * @throws NullPointerException if any of the parameters are null
-     */
-    public static <T, R> Gatherer<T, ?, R> scan(
-            Supplier<R> initial,
-            BiFunction<? super R, ? super T, ? extends R> scanner) {
-        Objects.requireNonNull(initial, "'initial' must not be null");
-        Objects.requireNonNull(scanner, "'scanner' must not be null");
-
-        class State {
-            R current = initial.get();
-            boolean integrate(T element, Downstream<? super R> downstream) {
-                return downstream.push(current = scanner.apply(current, element));
-            }
-        }
-
-        return Gatherer.ofSequential(State::new,
-                                     Integrator.<State,T, R>ofGreedy(State::integrate));
-    }
-
-    /**
-     * An operation which executes operations concurrently
-     * with a fixed window of max concurrency, using VirtualThreads.
-     * This operation preserves the ordering of the stream.
-     *
-     * <p>In progress tasks will be attempted to be cancelled,
-     * on a best-effort basis, in situations where the downstream no longer
-     * wants to receive any more elements.
-     *
-     * <p>If the mapper throws an exception during evaluation of this Gatherer,
-     * and the result of that invocation is to be produced to the downstream,
-     * then that exception will instead be rethrown as a {@link RuntimeException}.
-     *
-     * @param maxConcurrency the maximum concurrency desired
-     * @param mapper a function to be executed concurrently
-     * @param <T> the type of input
-     * @param <R> the type of output
-     * @return a new Gatherer
-     * @throws IllegalArgumentException if maxConcurrency is less than 1
-     * @throws NullPointerException if mapper is null
-     */
-    public static <T, R> Gatherer<T,?,R> mapConcurrent(
-            final int maxConcurrency,
-            final Function<? super T, ? extends R> mapper) {
-        if (maxConcurrency <= 0)
-            throw new IllegalArgumentException(
-                    "'maxConcurrency' needs to be greater than 0");
-
-        Objects.requireNonNull(mapper, "'mapper' must not be null");
-
-        class State {
-            final ArrayDeque<Future<R>> window = new ArrayDeque<>(maxConcurrency);
-            final Semaphore windowLock = new Semaphore(maxConcurrency);
-
-            final boolean integrate(T element,
-                                    Downstream<? super R> downstream) {
-                if (!downstream.isRejecting())
-                    createTaskFor(element);
-                return flush(0, downstream);
-            }
-
-            final void createTaskFor(T element) {
-                windowLock.acquireUninterruptibly();
-
-                var task = new FutureTask<R>(() -> {
-                    try {
-                        return mapper.apply(element);
-                    } finally {
-                        windowLock.release();
-                    }
-                });
-
-                var wasAddedToWindow = window.add(task);
-                assert wasAddedToWindow;
-
-                Thread.startVirtualThread(task);
-            }
-
-            final boolean flush(long atLeastN,
-                                Downstream<? super R> downstream) {
-                boolean proceed = !downstream.isRejecting();
-                try {
-                    Future<R> current;
-                    while(proceed
-                          && (current = window.peek()) != null
-                          && (current.isDone() || atLeastN > 0)) {
-                        proceed &= downstream.push(current.get());
-                        atLeastN -= 1;
-
-                        var correctRemoval = window.pop() == current;
-                        assert correctRemoval;
-                    }
-                } catch (Exception e) {
-                    proceed = false; // Ensure cleanup
-                    throw (e instanceof RuntimeException re)
-                            ? re
-                            : new RuntimeException(e);
-                } finally {
-                    // Clean up
-                    if (!proceed) {
-                        Future<R> next;
-                        while((next = window.pollFirst()) != null) {
-                            next.cancel(true);
-                        }
-                    }
-                }
-
-                return proceed;
-            }
-        }
-
-        return Gatherer.ofSequential(
-                    State::new,
-                    Integrator.<State, T, R>ofGreedy(State::integrate),
-                    (state, downstream) -> state.flush(Long.MAX_VALUE, downstream)
-        );
     }
 }

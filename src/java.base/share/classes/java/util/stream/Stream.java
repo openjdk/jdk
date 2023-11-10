@@ -1088,11 +1088,9 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * as per {@link #isParallel()}) but the wrapped spliterator may choose to
      * not support splitting.  When the returned stream is closed, the close
      * handlers for both the returned and this stream are invoked.
-     *
-     * @implNote Implementations of this interface should provide their own
+     * Implementations of this interface should provide their own
      * implementation of this method.
      *
-     * @see Gatherer
      * @see Gatherers
      * @param <R> The element type of the new stream
      * @param gatherer a gatherer
