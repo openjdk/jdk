@@ -155,13 +155,16 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     phi->set_req( i, x );
 
-    if (the_clone == nullptr) continue;
+    if (the_clone == nullptr) {
+      continue;
+    }
 
     if (the_clone != x) {
       _igvn.remove_dead_node(the_clone);
     } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
+      // this edge case can only happend for Load nodes
       wins = 0;
       break;
     }
