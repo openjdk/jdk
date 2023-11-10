@@ -87,14 +87,11 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
   const char* msg()               const { return _msg; }
-  void        set_msg(const char* msg)  { _msg = msg; }
 public:
   static const char* check_can_parse(ciMethod* callee);
 
@@ -114,6 +111,7 @@ public:
   // The call_method is an optimized virtual method candidate otherwise.
   bool ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, bool& should_delay);
 
+  void        set_msg(const char* msg)  { _msg = msg; }
   void set_late_inline() {
     _late_inline = true;
   }
@@ -133,6 +131,9 @@ public:
   uint        count_inlines()     const { return _count_inlines; };
 #endif
   GrowableArray<InlineTree*> subtrees() { return _subtrees; }
+
+  void        print_inlining(ciMethod* callee_method, int caller_bci,
+                             ciMethod* caller_method, bool success) const;
 
   void print_value_on(outputStream* st) const PRODUCT_RETURN;
 

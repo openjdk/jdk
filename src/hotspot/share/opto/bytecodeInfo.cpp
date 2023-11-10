@@ -581,14 +581,12 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
   // Do some initial checks.
   if (!pass_initial_checks(caller_method, caller_bci, callee_method)) {
     set_msg("failed initial checks");
-    print_inlining(callee_method, caller_bci, caller_method, false /* !success */);
     return false;
   }
 
   // Do some parse checks.
   set_msg(check_can_parse(callee_method));
   if (msg() != nullptr) {
-    print_inlining(callee_method, caller_bci, caller_method, false /* !success */);
     return false;
   }
 
@@ -600,7 +598,6 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
     if (msg() == nullptr) {
       set_msg("inline (hot)");
     }
-    print_inlining(callee_method, caller_bci, caller_method, true /* success */);
     InlineTree* callee_tree = build_inline_tree_for_callee(callee_method, jvms, caller_bci);
     if (should_delay) {
       // Record late inlining decision in order to dump it for compiler replay
@@ -612,7 +609,6 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
     if (msg() == nullptr) {
       set_msg("too cold to inline");
     }
-    print_inlining(callee_method, caller_bci, caller_method, false /* !success */ );
     return false;
   }
 }
