@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,10 +319,30 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     }
 
     /**
+     * Start an external process where the user's snippets can be run.
      *
+     * @since 22
      */
     public interface JdiStarter {
+        /**
+         * Start the external process based on the given parameters. The external
+         * process should connect to the given {@code port} to communicate with the
+         * driving instance of JShell.
+         *
+         * @param env the execution context
+         * @param parameters additional execution parameters
+         * @param port the port to which the remote process should connect
+         * @return a description of the started external process
+         * @throws RuntimeException if the process cannot be started
+         * @throws Error if the process cannot be started
+         */
         public TargetDescription start(ExecutionEnv env, Map<String, String> parameters, int port);
+
+        /**
+         * The description of a started external process.
+         * @param vm the JDI's {@code VirtualMachine}
+         * @param process the external {@code Process}
+         */
         public record TargetDescription(VirtualMachine vm, Process process) {}
     }
 }
