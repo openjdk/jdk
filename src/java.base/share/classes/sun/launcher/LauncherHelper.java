@@ -709,7 +709,8 @@ public final class LauncherHelper {
     /**
      * This method:
      * 1. Loads the main class from the module or class path
-     * 2. If the main class extends FX Application then call on FXHelper to
+     * 2. Checks for a valid main method.
+     * 3. If the main class extends FX Application then call on FXHelper to
      * perform the launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
@@ -752,6 +753,7 @@ public final class LauncherHelper {
             mainClass = FXHelper.class;
         }
 
+        validateMainMethod(mainClass);
         return mainClass;
     }
 
@@ -888,26 +890,8 @@ public final class LauncherHelper {
         return false;
     }
 
-    /*
-     * main type flags
-     */
-    private static final int MAIN_WITHOUT_ARGS = 1;
-    private static final int MAIN_NONSTATIC = 2;
-
-    /*
-     * Return whether the main method is non-static and/or has no arguments
-     * so that launcher invokes the method correctly.
-     */
-    public static int getMainType(Method mainMethod) {
-        int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
-        return (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
-    }
-
-    // Check the existence and signature of main and abort if incorrect
-    // Return main method.
-    public static Method validateMainMethod(Class<?> mainClass) {
+    // Check the existence and signature of main and abort if incorrect.
+    private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
         try {
             mainMethod = MainMethodFinder.findMainMethod(mainClass);
@@ -936,27 +920,23 @@ public final class LauncherHelper {
                   abort(null, "java.launcher.cls.error2", mainClass.getName(),
                        JAVAFX_APPLICATION_CLASS_NAME);
             }
+            return;
         }
 
         if (!isStatic) {
             String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);
-                mainMethod = null;
             }
             try {
                 Constructor<?> constructor = mainClass.getDeclaredConstructor();
                 if (Modifier.isPrivate(constructor.getModifiers())) {
                     abort(null, "java.launcher.cls.error6", className);
-                    mainMethod = null;
                 }
             } catch (Throwable ex) {
                 abort(null, "java.launcher.cls.error6", className);
-                mainMethod = null;
             }
         }
-
-        return mainMethod;
     }
 
     private static final String encprop = "sun.jnu.encoding";

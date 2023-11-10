@@ -33,14 +33,10 @@ public class MainMethodFinder {
      * {@return true if the method meets the requirements of a main method}
      *
      * @param method    method to test
-     * @param argCount  number of expected arguments (0 or 1)
      */
-    private static boolean isMainMethod(Method method, int argCount) {
+    private static boolean isMainMethod(Method method) {
         return !Modifier.isPrivate(method.getModifiers()) &&
-                method.getParameterCount() == argCount &&
-                (argCount == 0 || method.getParameterTypes()[0] == String[].class) &&
-                method.getReturnType() == void.class &&
-                "main".equals(method.getName());
+                method.getReturnType() == void.class;
     }
 
     /**
@@ -52,12 +48,28 @@ public class MainMethodFinder {
      * @return main method meeting requirements
      */
     private static Method findMainMethod(Class<?> mainClass, boolean noArgs) {
-        int argCount = noArgs ? 0 : 1;
-        for ( ; mainClass != null && mainClass != Object.class; mainClass = mainClass.getSuperclass()) {
-            for (Method method : mainClass.getDeclaredMethods()) {
-                if (isMainMethod(method, argCount)) {
-                    return method;
+        try {
+            Method mainMethod = noArgs ? mainClass.getMethod("main")
+                                       : mainClass.getMethod("main", String[].class);
+
+            if (isMainMethod(mainMethod)) {
+                return mainMethod;
+            }
+        } catch (Exception ex) {
+            // pass through
+        }
+
+        for ( ;
+              mainClass != null && mainClass != Object.class;
+              mainClass = mainClass.getSuperclass()) {
+            try {
+                Method mainMethod = noArgs ? mainClass.getDeclaredMethod("main")
+                                           : mainClass.getDeclaredMethod("main", String[].class);
+                if (isMainMethod(mainMethod)) {
+                    return mainMethod;
                 }
+            } catch (Exception ex) {
+                // pass through
             }
         }
 

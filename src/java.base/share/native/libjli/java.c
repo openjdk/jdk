@@ -387,6 +387,69 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
+#define CHECK_EXCEPTION_FAIL() \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+
+#define CHECK_EXCEPTION_NULL_FAIL(mainObject) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            (*env)->ExceptionClear(env); \
+            return 0; \
+        } else if (mainObject == NULL) { \
+            return 0; \
+        } \
+    } while (JNI_FALSE)
+
+int
+invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                  "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    return 1;
+}
+
+
+int
+invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "([Ljava/lang/String;)V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
+    return 1;
+ }
+
+int
+invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                       "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID);
+    return 1;
+}
+
+int
+invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
+    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+    CHECK_EXCEPTION_FAIL();
+    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
+    CHECK_EXCEPTION_NULL_FAIL(mainObject);
+    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                 "()V");
+    CHECK_EXCEPTION_FAIL();
+    (*env)->CallVoidMethod(env, mainObject, mainID);
+    return 1;
+}
 
 int
 JavaMain(void* _args)
@@ -404,12 +467,6 @@ JavaMain(void* _args)
     jclass appClass = NULL; // actual application class being launched
     jobjectArray mainArgs;
     jclass helperClass;
-    jmethodID validateMainMethod;
-    jobject mainMethod;
-    jmethodID mainID;
-    int mainType;
-    jmethodID constructor;
-    jobject mainObject;
     int ret = 0;
     jlong start = 0, end = 0;
 
@@ -526,43 +583,9 @@ JavaMain(void* _args)
     appClass = GetApplicationClass(env);
     CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
-    /*  Get launcher helper class. */
-    helperClass = GetLauncherHelperClass(env);
-    CHECK_EXCEPTION_NULL_LEAVE(helperClass);
-
-    /*  Validate and fetch main method from application class. */
-    validateMainMethod = (*env)->GetStaticMethodID(env, helperClass,
-                                         "validateMainMethod",
-                                         "(Ljava/lang/Class;)Ljava/lang/reflect/Method;");
-    CHECK_EXCEPTION_NULL_LEAVE(validateMainMethod);
-    mainMethod = (*env)->CallStaticObjectMethod(env, helperClass, validateMainMethod, mainClass);
-    CHECK_EXCEPTION_NULL_LEAVE(mainMethod);
-
-    /*
-     * validateMainMethod ensures that the main method's signature is correct,
-     * therefore further checking is not required.
-     */
-#define MAIN_WITHOUT_ARGS 1
-#define MAIN_NONSTATIC 2
-
-    /*
-     * getMainType determines whether the main method is static and whether it has a
-     * String[] argument.
-     */
-    jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
-                                                      "getMainType",
-                                                      "(Ljava/lang/reflect/Method;)I");
-    CHECK_EXCEPTION_NULL_LEAVE(getMainType);
-    mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType, mainMethod);
-    CHECK_EXCEPTION_LEAVE(ret);
-
     /* Build platform specific argument array */
-    if ((mainType & MAIN_WITHOUT_ARGS) == 0) {
-        mainArgs = CreateApplicationArgs(env, argv, argc);
-        CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
-    } else {
-        mainArgs = NULL;
-    }
+    mainArgs = CreateApplicationArgs(env, argv, argc);
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     if (dryRun) {
         ret = 0;
@@ -583,45 +606,12 @@ JavaMain(void* _args)
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
-
-
-    switch (mainType) {
-    case 0: {
-        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                           "([Ljava/lang/String;)V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-        break;
-        }
-    case MAIN_WITHOUT_ARGS: {
-        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                           "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-        break;
-        }
-    case MAIN_NONSTATIC: {
-        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(constructor);
-        mainObject = (*env)->NewObject(env, mainClass, constructor);
-        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-        mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                     "([Ljava/lang/String;)V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-        break;
-        }
-    case MAIN_NONSTATIC | MAIN_WITHOUT_ARGS: {
-        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(constructor);
-        mainObject = (*env)->NewObject(env, mainClass, constructor);
-        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
-        mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                     "()V");
-        CHECK_EXCEPTION_NULL_LEAVE(mainID);
-        (*env)->CallVoidMethod(env, mainObject, mainID);
-        break;
-        }
+    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeStaticMainWithoutArgs(env, mainClass) &&
+        !invokeInstanceMainWithoutArgs(env, mainClass)) {
+        ret = 1;
+        LEAVE();
     }
 
     /*
