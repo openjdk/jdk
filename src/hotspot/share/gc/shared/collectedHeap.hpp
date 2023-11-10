@@ -165,7 +165,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
-public:
+
   static size_t filler_array_min_size();
 
 protected:

@@ -37,9 +37,7 @@ G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_pinned(mtGC),
   _regions_alloc_failed(mtGC),
   _evac_failed_regions(nullptr),
-  _num_regions_evac_failed(0),
-  _num_regions_pinned(0),
-  _num_regions_alloc_failed(0) { }
+  _num_regions_evac_failed(0) { }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
   assert(_evac_failed_regions == nullptr, "not cleaned up");
@@ -47,8 +45,6 @@ G1EvacFailureRegions::~G1EvacFailureRegions() {
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
   Atomic::store(&_num_regions_evac_failed, 0u);
-  Atomic::store(&_num_regions_pinned, 0u);
-  Atomic::store(&_num_regions_alloc_failed, 0u);
   _regions_evac_failed.resize(max_regions);
   _regions_pinned.resize(max_regions);
   _regions_alloc_failed.resize(max_regions);

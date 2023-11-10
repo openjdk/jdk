@@ -54,10 +54,6 @@ class G1EvacFailureRegions {
   uint* _evac_failed_regions;
   // Number of regions evacuation failed in the current collection.
   volatile uint _num_regions_evac_failed;
-  // Number of regions evacuation failed due to pinning.
-  volatile uint _num_regions_pinned;
-  // Number of regions evacuation failed due to allocation failure.
-  volatile uint _num_regions_alloc_failed;
 
 public:
   G1EvacFailureRegions();
@@ -82,8 +78,6 @@ public:
   G1AbstractSubTask* create_prepare_regions_task();
 
   inline uint num_regions_evac_failed() const;
-  inline uint num_regions_pinned() const;
-  inline uint num_regions_alloc_failed() const;
 
   inline bool has_regions_evac_failed() const;
   inline bool has_regions_evac_pinned() const;
@@ -92,7 +86,7 @@ public:
   // Record that the garbage collection encountered an evacuation failure in the
   // given region. Returns whether this has been the first occurrence of an evacuation
   // failure in that region.
-  inline bool record(uint region_idx, bool cause_pinned);
+  inline bool record(uint worker_id, uint region_idx, bool cause_pinned);
 };
 
 #endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP

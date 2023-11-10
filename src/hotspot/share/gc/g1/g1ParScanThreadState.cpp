@@ -461,6 +461,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Klass* klass = old->klass();
   const size_t word_sz = old->size_given_klass(klass);
 
+  // JNI only allows pinning of typeArrays, so we only need to keep those in place.
   if (region_attr.is_pinned() && klass->is_typeArray_klass()) {
     return handle_evacuation_failure_par(old, old_mark, word_sz, true /* cause_pinned */);
   }
@@ -636,7 +637,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (_evac_failure_regions->record(r->hrm_index(), cause_pinned)) {
+    if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
       _g1h->hr_printer()->evac_failure(r);
     }
 

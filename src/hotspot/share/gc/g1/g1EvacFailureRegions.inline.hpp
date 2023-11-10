@@ -27,18 +27,11 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "runtime/atomic.hpp"
 
 uint G1EvacFailureRegions::num_regions_evac_failed() const {
   return Atomic::load(&_num_regions_evac_failed);
-}
-
-uint G1EvacFailureRegions::num_regions_pinned() const {
-  return Atomic::load(&_num_regions_pinned);
-}
-
-uint G1EvacFailureRegions::num_regions_alloc_failed() const {
-    return Atomic::load(&_num_regions_alloc_failed);
 }
 
 bool G1EvacFailureRegions::has_regions_evac_failed() const {
@@ -46,16 +39,22 @@ bool G1EvacFailureRegions::has_regions_evac_failed() const {
 }
 
 bool G1EvacFailureRegions::has_regions_evac_pinned() const {
-  return num_regions_pinned() > 0;
+  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+  size_t count = p->sum_thread_work_items(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
+                                          G1GCPhaseTimes::RestoreEvacFailureRegionsPinnedNum);
+  return count != 0;
 }
 
 bool G1EvacFailureRegions::has_regions_alloc_failed() const {
-  return num_regions_alloc_failed() > 0;
+  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+  size_t count = p->sum_thread_work_items(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
+                                          G1GCPhaseTimes::RestoreEvacFailureRegionsAllocFailedNum);
+  return count != 0;
 }
 
-bool G1EvacFailureRegions::record(uint region_idx, bool cause_pinned) {
+bool G1EvacFailureRegions::record(uint worker_id, uint region_idx, bool cause_pinned) {
   bool success = _regions_evac_failed.par_set_bit(region_idx,
-                                                        memory_order_relaxed);
+                                                  memory_order_relaxed);
   if (success) {
     size_t offset = Atomic::fetch_then_add(&_num_regions_evac_failed, 1u);
     _evac_failed_regions[offset] = region_idx;
@@ -67,11 +66,19 @@ bool G1EvacFailureRegions::record(uint region_idx, bool cause_pinned) {
 
   if (cause_pinned) {
     if (_regions_pinned.par_set_bit(region_idx, memory_order_relaxed)) {
-      Atomic::inc(&_num_regions_pinned, memory_order_relaxed);
+      G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+      p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
+                                        worker_id,
+                                        1,
+                                        G1GCPhaseTimes::RestoreEvacFailureRegionsPinnedNum);
     }
   } else {
     if (_regions_alloc_failed.par_set_bit(region_idx, memory_order_relaxed)) {
-      Atomic::inc(&_num_regions_alloc_failed, memory_order_relaxed);
+      G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+      p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
+                                        worker_id,
+                                        1,
+                                        G1GCPhaseTimes::RestoreEvacFailureRegionsAllocFailedNum);
     }
   }
   return success;

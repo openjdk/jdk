@@ -913,16 +913,6 @@ public:
     // Report per-region type timings.
     cl.report_timing();
 
-    G1GCPhaseTimes* p = _g1h->phase_times();
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
-                                      worker_id,
-                                      _evac_failure_regions->num_regions_pinned(),
-                                      G1GCPhaseTimes::RestoreEvacFailureRegionsPinnedNum);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreEvacuationFailedRegions,
-                                      worker_id,
-                                      _evac_failure_regions->num_regions_alloc_failed(),
-                                      G1GCPhaseTimes::RestoreEvacFailureRegionsAllocFailedNum);
-
     Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }
 };
