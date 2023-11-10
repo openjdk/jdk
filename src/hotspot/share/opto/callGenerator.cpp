@@ -989,8 +989,9 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   bool input_not_const;
   CallGenerator* cg = CallGenerator::for_method_handle_inline(jvms, caller, callee, allow_inline, input_not_const);
   Compile* C = Compile::current();
+  bool should_delay = AlwaysIncrementalInline || (StressIncrementalInlining && (C->random() % 2) == 0);
   if (cg != nullptr) {
-    if (AlwaysIncrementalInline) {
+    if (should_delay) {
       return CallGenerator::for_late_inline(callee, cg);
     } else {
       return cg;
@@ -1001,7 +1002,7 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   int call_site_count = caller->scale_count(profile.count());
 
   if (IncrementalInlineMH && call_site_count > 0 &&
-      (input_not_const || !C->inlining_incrementally() || C->over_inlining_cutoff())) {
+      (should_delay || input_not_const || !C->inlining_incrementally() || C->over_inlining_cutoff())) {
     return CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
   } else {
     // Out-of-line call.
