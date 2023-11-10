@@ -518,16 +518,6 @@ bool ObjectMonitor::deflate_monitor() {
     return false;
   }
 
-  if (ObjectSynchronizer::is_final_audit() && owner_is_DEFLATER_MARKER()) {
-    // The final audit can see an already deflated ObjectMonitor on the
-    // in-use list because MonitorList::unlink_deflated() might have
-    // blocked for the final safepoint before unlinking all the deflated
-    // monitors.
-    assert(contentions() < 0, "must be negative: contentions=%d", contentions());
-    // Already returned 'true' when it was originally deflated.
-    return false;
-  }
-
   const oop obj = object_peek();
 
   if (obj == nullptr) {
