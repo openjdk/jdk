@@ -64,15 +64,17 @@ import static java.util.zip.ZipUtils.*;
  *      }
  *    }
  * @apiNote
- * The LOC header contains metadata about the Zip file entry. {@code ZipInputStream}
- * does not read the Central directory (CEN) header for the entry and therefore
- * will not have access to its metadata such as the external file attributes. Additionally,
- * {@code ZipInputStream} might read entries that are not in the Central directory or contain
- * information that is different than in the Central directory (CEN) header for the same entry.
- * This class might also fail to properly parse ZIP archives that have prepended data.
+ * The LOC header contains metadata about the Zip file entry.
+ * {@code ZipInputStream} does not read the Central directory (CEN) header for
+ * the entry and therefore will not have access to its metadata such as the
+ * external file attributes. Additionally, {@code ZipInputStream} might read
+ * entries that are not in the Central directory or contain information that is
+ * different than in the Central directory (CEN) header for the same entry.
+ * This class might also fail to properly parse ZIP archives that have
+ * prepended data.
  *
- * Whenever possible, {@linkplain ZipFile} should be used for parsing ZIP archives
- * since it correctly reads data from the central directory.
+ * Whenever possible, {@linkplain ZipFile} should be used for parsing ZIP
+ * archives since it correctly reads data from the central directory.
  *
  * @author      David Connelly
  * @since 1.1

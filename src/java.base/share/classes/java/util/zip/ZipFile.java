@@ -91,9 +91,10 @@ import static java.util.zip.ZipUtils.*;
  * {@code finalize} method.
  *
  * @implNote
- * This class uses a cache for ZIP entry metadata (but not content) keyed off pathname,
- * last modified time and file key. If a ZIP file is modified while being read with this class,
- * it can result in unpredictable behavior or crashes.
+ * This class uses a cache for ZIP entry metadata (but not content) keyed off
+ * pathname, last modified time and file key. If a ZIP file is modified while
+ * being read with this class, it can result in unpredictable behavior or
+ * crashes.
  *
  * Furthermore, while the
  * <a href="https://support.pkware.com/pkzip/appnote">ZIP specification</a>

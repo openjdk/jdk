@@ -133,8 +133,9 @@ import java.util.zip.ZipFile;
  * </ul>
  * </div>
  *
- * This class uses a cache for ZIP entry metadata, and doesn't handle duplicate entries,
- * which can result in unpredictable behavior or crashes (@see java.util.zip.ZipFile).
+ * This class uses a cache for ZIP entry metadata, and doesn't handle duplicate
+ * entries, which can result in unpredictable behavior or crashes
+ * (@see java.util.zip.ZipFile).
  *
  * @author  David Connelly
  * @see     Manifest
