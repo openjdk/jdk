@@ -84,7 +84,8 @@ public class JdiExecutionControlProvider implements ExecutionControlProvider {
                 int timeout = Integer.parseUnsignedInt(
                     parameters.get(PARAM_TIMEOUT));
                 String host = parameters.get(PARAM_HOST_NAME);
-                String sIsLaunch = parameters.get(PARAM_LAUNCH).toLowerCase(Locale.ROOT);
+                String sIsLaunch = parameters.getOrDefault(PARAM_LAUNCH, "false")
+                                             .toLowerCase(Locale.ROOT);
                 boolean isLaunch = sIsLaunch.length() > 0
                     && ("true".startsWith(sIsLaunch) || "yes".startsWith(sIsLaunch));
 
