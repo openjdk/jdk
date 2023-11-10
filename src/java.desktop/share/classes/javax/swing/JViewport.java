@@ -48,8 +48,6 @@ import java.util.Collections;
 
 import sun.awt.AWTAccessor;
 import sun.swing.SwingUtilities2;
-import java.awt.PrintGraphics;
-import java.awt.print.PrinterGraphics;
 
 /**
  * The "viewport" or "porthole" through which you see the underlying
