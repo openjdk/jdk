@@ -515,7 +515,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
 
   int avx3threshold = VM_Version::avx3_threshold();
   bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
-  const int large_threshold = 3 * 1048576; // bytes
+  const int large_threshold = 2621440; // 2.5 MB
   Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
   Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
   Label L_copy_large, L_finish;
@@ -731,18 +731,18 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
 
 void StubGenerator::arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
                                          Register temp3, Register temp4, Register count,
-                                         XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, 
+                                         XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                                          XMMRegister xmm4, int shift) {
 
   // Type(shift)           byte(0), short(1), int(2),   long(3)
   int loop_size[]        = { 256,     128,       64,      32};
   int threshold[]        = { 4096,    2048,     1024,    512};
 
-  Label L_main_loop_large; 
-  Label L_tail_large; 
-  Label L_exit_large; 
+  Label L_main_loop_large;
+  Label L_tail_large;
+  Label L_exit_large;
   Label L_entry_large;
-  Label L_main_pre_loop_large; 
+  Label L_main_pre_loop_large;
   Label L_pre_main_post_large;
 
   __ BIND(L_entry_large);
@@ -1161,8 +1161,8 @@ void StubGenerator::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegi
   __ jmp(L_exit);
 }
 
-void StubGenerator::copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, 
-                                XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, 
+void StubGenerator::copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1,
+                                XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                                 bool conjoint, int shift, int offset) {
     Address::ScaleFactor scale = (Address::ScaleFactor)(shift);
     __ prefetcht0(Address(src, index, scale, offset + 0x200));

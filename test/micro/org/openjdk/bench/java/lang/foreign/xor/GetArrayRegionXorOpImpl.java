@@ -6,7 +6,7 @@ public class GetArrayRegionXorOpImpl implements XorOp {
         System.loadLibrary("jnitest");
     }
 
-    public GetArrayRegionXorOpImpl(int len) {
+    public GetArrayRegionXorOpImpl() {
     }
 
     // Uses {Get|Set}ByteArrayRegion to access the byte arrays

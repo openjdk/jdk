@@ -196,9 +196,9 @@ class StubGenerator: public StubCodeGenerator {
                                              Register count, int shift, Register temp,
                                              bool use64byteVector, Label& L_entry, Label& L_exit);
 
-  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2, 
+  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
                             Register temp3, Register temp4, Register count,
-                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, 
+                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                             XMMRegister xmm4, int shift);
 
   void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
@@ -209,7 +209,7 @@ class StubGenerator: public StubCodeGenerator {
                   bool use64byteVector = false);
 
   void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
-                                XMMRegister xmm3, XMMRegister xmm4, bool conjoint, int shift, 
+                                XMMRegister xmm3, XMMRegister xmm4, bool conjoint, int shift,
                                  int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,

@@ -20,13 +20,13 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
+@Fork(value = 1, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 
 public class XorTest {
 
     XorOp impl = null;
     int count;
-    int alen = 1048576 * 100;
+    int alen;
     int off;
     int len;
     byte[] src, dst;
@@ -52,23 +52,6 @@ public class XorTest {
 
     @Setup
     public void setup() throws Throwable {
-        switch (arrayKind) {
-            case CRITICAL:
-                impl = new GetArrayCriticalXorOpImpl();
-                break;
-            case ELEMENTS:
-                impl = new GetArrayElementsXorOpImpl();
-                break;
-            case REGION:
-                impl = new GetArrayRegionXorOpImpl(alen);
-                break;
-            case FOREIGN:
-                impl = new GetArrayForeignXorOpImpl(alen);
-                break;
-            default:
-                throw new UnsupportedOperationException(arrayKind.toString());
-        }
-
         switch (sizeKind) {
             case SMALL:
                 count = 1000;
@@ -90,6 +73,23 @@ public class XorTest {
                 break;
             default:
                 throw new UnsupportedOperationException(sizeKind.toString());
+        }
+
+        switch (arrayKind) {
+            case CRITICAL:
+                impl = new GetArrayCriticalXorOpImpl();
+                break;
+            case ELEMENTS:
+                impl = new GetArrayElementsXorOpImpl();
+                break;
+            case REGION:
+                impl = new GetArrayRegionXorOpImpl();
+                break;
+            case FOREIGN:
+                impl = new GetArrayForeignXorOpImpl(alen);
+                break;
+            default:
+                throw new UnsupportedOperationException(arrayKind.toString());
         }
 
         src = new byte[alen];
