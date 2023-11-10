@@ -1546,7 +1546,10 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
     GCTraceTime(Debug, gc, phases) t("ClassLoaderData", gc_timer);
     assert_locked_or_safepoint(ClassLoaderDataGraph_lock);  // caller locks.
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
+    ClassLoaderDataGraph::_unload_ticks = 0;
+    InstanceKlass::_depunload_ticks = 0;
     unloading_occurred = ClassLoaderDataGraph::do_unloading();
+    log_debug(gc)("Unloading took %1.2f, depunload took %1.2f percent %1.2f", TimeHelper::counter_to_millis(ClassLoaderDataGraph::_unload_ticks), TimeHelper::counter_to_millis(InstanceKlass::_depunload_ticks), percent_of(InstanceKlass::_depunload_ticks, ClassLoaderDataGraph::_unload_ticks));
     if (unloading_occurred) {
       ConditionalMutexLocker ml2(Module_lock, is_concurrent);
       JFR_ONLY(Jfr::on_unloading_classes();)

@@ -178,9 +178,53 @@ nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBuck
 //
 // Invalidate all dependencies in the context
 void DependencyContext::remove_all_dependents() {
+//if (!UseNewCode) {
+  if (!claim_cleanup()) {
+    // For some reasons this fails... :(
+    guarantee(false, "huh?");
+    // Somebody else is cleaning up this dependency context.
+    return;
+  }
+
+  // Assume that the release action is not "expunge", i.e. delete immediately but
+  // move into purge list.
+  guarantee(Atomic::load(&_cleaning_epoch) != 0, "must be");
+
+  nmethodBucket* first = Atomic::load_acquire(_dependency_context_addr);
+  if (first == nullptr) {
+    return;
+  }
+
+  nmethodBucket* cur = first;
+  nmethodBucket* last = cur;
+  jlong count = 0;
+  for (; cur != nullptr; cur = cur->next()) {
+    assert(cur->get_nmethod()->is_unloading(), "must be");
+    last = cur;
+    count++;
+  }
+
+  // Add the whole list to the purge list at once.
+  nmethodBucket* old_purge_list_head = Atomic::load(&_purge_list);
+  for (;;) {
+    last->set_purge_list_next(old_purge_list_head);
+    nmethodBucket* next_purge_list_head = Atomic::cmpxchg(&_purge_list, old_purge_list_head, first);
+    if (old_purge_list_head == next_purge_list_head) {
+      break;
+    }
+    old_purge_list_head = next_purge_list_head;
+  }
+
+  if (UsePerfData) {
+    _perf_total_buckets_stale_count->inc(count);
+    _perf_total_buckets_stale_acc_count->inc(count);
+  }
+/*
+} else {
   nmethodBucket* b = dependencies_not_unloading();
-  set_dependencies(nullptr);
   assert(b == nullptr, "All dependents should be unloading");
+}*/
+  set_dependencies(nullptr);
 }
 
 void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope) {

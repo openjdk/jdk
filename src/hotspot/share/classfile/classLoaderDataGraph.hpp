@@ -61,6 +61,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* add_to_graph(Handle class_loader, bool has_class_mirror_holder);
 
  public:
+     static jlong _unload_ticks;
   static ClassLoaderData* find_or_create(Handle class_loader);
   static ClassLoaderData* add(Handle class_loader, bool has_class_mirror_holder);
   static void clean_module_and_package_info();
