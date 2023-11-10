@@ -3492,48 +3492,62 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int trailingZeros = checkScaleNonZero((-(long)scale));
             StringBuilder buf;
             if (intCompact != INFLATED) {
-                buf = new StringBuilder(20 + trailingZeros)
+                int initSize = 20 + trailingZeros;
+                if (initSize < 0) {
+                    throw new OutOfMemoryError("too large to fit in a String");
+                }
+                buf = new StringBuilder(initSize)
                         .append(intCompact);
             } else {
                 String str = intVal.toString();
-                buf = new StringBuilder(str.length() + trailingZeros)
+                int initSize = str.length() + trailingZeros;
+                if (initSize < 0) {
+                    throw new OutOfMemoryError("too large to fit in a String");
+                }
+                buf = new StringBuilder(initSize)
                         .append(str);
             }
             return buf.repeat('0', trailingZeros)
                     .toString();
         }
 
-        if (intCompact != INFLATED && intCompact >= Integer.MIN_VALUE && intCompact <= Integer.MAX_VALUE)
+        if (intCompact != INFLATED
+                && intCompact >= Integer.MIN_VALUE
+                && intCompact <= Integer.MAX_VALUE
+                && scale < 512)
             return JLA.scale((int) intCompact, scale);
 
-        return layoutCharsPlain(signum, unscaledAbsString(), scale);
+        return getValueString(signum, unscaledAbsString(), scale);
     }
 
     /**
      * Returns a string representation without an exponent field.
      *
      * @param signum the signum of {@code BigDecimal}.
-     * @param coeff the significand as an absolute value
+     * @param intString the significand as an absolute value
      * @param scale the scale of this {@code BigDecimal}.
      */
-    private static String layoutCharsPlain(int signum, String coeff, int scale) {
-        int coeffLen = coeff.length();
-        int insertionPoint = coeffLen - scale; // Insert decimal point
-        if (insertionPoint == 0)               // Point goes right before intVal
-            return (signum < 0 ? "-0." : "0.").concat(coeff);
-
+    private static String getValueString(int signum, String intString, int scale) {
+        /* Insert decimal point */
         StringBuilder buf;
-        if (insertionPoint > 0) {              // Point goes inside intVal
+        int insertionPoint = intString.length() - scale;
+        if (insertionPoint == 0) { /* Point goes just before intVal */
+            return (signum < 0 ? "-0." : "0.").concat(intString);
+        } else if (insertionPoint > 0) { /* Point goes inside intVal */
             buf = new StringBuilder();
             if (signum < 0)
                 buf.append('-');
-            buf.append(coeff)
+            buf.append(intString)
                .insert(insertionPoint + (signum < 0 ? 1 : 0), '.');
-        } else {                               // We must insert zeros between point and intVal
-            buf = new StringBuilder(3 - insertionPoint + coeffLen)
+        } else { /* We must insert zeros between point and intVal */
+            int len = (signum < 0 ? 3 : 2) + scale;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
+            }
+            buf = new StringBuilder(len)
                     .append(signum < 0 ? "-0." : "0.")
                     .repeat('0', -insertionPoint)
-                    .append(coeff);
+                    .append(intString);
         }
         return buf.toString();
     }
@@ -4190,7 +4204,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         int coeffLen = coeff.length();
         long adjusted = -(long)scale + (coeffLen -1);
         if ((scale >= 0) && (adjusted >= -6)) { // plain number
-            return layoutCharsPlain(signum(), coeff, scale);
+            return getValueString(signum(), coeff, scale);
         }
         // E-notation is needed
         return layoutCharsE(sci, coeff, coeffLen, adjusted);
