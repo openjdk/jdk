@@ -455,7 +455,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
   struct {
     HeapWord* start_addr;
     HeapWord* end_addr;
-  } cached_obj {nullptr, mr.start()};
+  } cached_obj { nullptr, mr.start() };
 
   auto object_start = [&] (const HeapWord* const addr) {
     if (addr < cached_obj.end_addr) {
