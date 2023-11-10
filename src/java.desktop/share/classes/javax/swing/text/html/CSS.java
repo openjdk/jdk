@@ -2965,6 +2965,17 @@ public class CSS implements Serializable {
             }
             return image;
         }
+
+        @Override
+        public int hashCode() {
+            return (this.svalue != null) ? this.svalue.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BackgroundImage img
+                   && Objects.equals(this.svalue, img.svalue);
+        }
     }
 
     /**

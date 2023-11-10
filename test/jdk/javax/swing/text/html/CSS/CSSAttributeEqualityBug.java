@@ -72,6 +72,9 @@ public class CSSAttributeEqualityBug {
             "background-position: 1em 2em",
 
             "border-width: medium",
+
+	    "background-image: none",
+            "background-image: url(image.png)",
     };
 
     /**
@@ -86,6 +89,7 @@ public class CSSAttributeEqualityBug {
             {"margin-top: 42px", "margin-top: 22px"},
             {"margin-top: 42px", "margin-top: 42pt"},
             {"margin-top: 100%", "margin-top: 50%"},
+            {"background-image: none", "background-image: url(image.png)"},
     };
 
     private static final String[][] EQUALS_WITH_SPACE = {
