@@ -1173,7 +1173,7 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
   _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-f", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
   _dcmdparser.add_dcmd_option(&_human_readable);
   _dcmdparser.add_dcmd_option(&_filename);
 }
