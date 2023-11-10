@@ -72,6 +72,7 @@
 #include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
 #include "trimCHeapDCmd.hpp"
+#include <errno.h>
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -1193,7 +1194,7 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     name = absname != nullptr ? absname : name;
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
-    output()->print_cr("Failed to open \"%s\" for writing.", name);
+    output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
   }
 }
 
