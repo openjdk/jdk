@@ -398,36 +398,36 @@ public final class ProcessTools {
 
         boolean expectSecondArg = false;
         boolean isTestThreadFactoryAdded = false;
-        for (String cmd : commandArgs) {
+        for (String arg : commandArgs) {
             if (isTestThreadFactoryAdded) {
-                args.add(cmd);
+                args.add(arg);
                 continue;
             }
 
             if (expectSecondArg) {
                 expectSecondArg = false;
-                args.add(cmd);
+                args.add(arg);
                 continue;
             }
-            if (unsupportedArgs.contains(cmd)) {
+            if (unsupportedArgs.contains(arg)) {
                 return commandArgs;
             }
-            if (doubleWordArgs.contains(cmd)) {
+            if (doubleWordArgs.contains(arg)) {
                 expectSecondArg = true;
-                args.add(cmd);
+                args.add(arg);
                 continue;
             }
             if (expectSecondArg) {
                 continue;
             }
             // command-line or name command-line file
-            if (cmd.startsWith("-") || cmd.startsWith("@")) {
-                args.add(cmd);
+            if (arg.startsWith("-") || arg.startsWith("@")) {
+                args.add(arg);
                 continue;
             }
 
             // if command is like 'java source.java' then return
-            if (cmd.endsWith(".java")) {
+            if (arg.endsWith(".java")) {
                 return commandArgs;
             }
             // Some tests might check property to understand
@@ -436,7 +436,7 @@ public final class ProcessTools {
             args.add("jdk.test.lib.process.ProcessTools");
             args.add(testThreadFactoryName);
             isTestThreadFactoryAdded = true;
-            args.add(cmd);
+            args.add(arg);
         }
         return args.toArray(String[]::new);
     }
