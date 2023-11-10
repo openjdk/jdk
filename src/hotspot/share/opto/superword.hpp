@@ -265,7 +265,8 @@ class SuperWord : public ResourceObj {
 
   bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
-  void unrolling_analysis(int &local_loop_unroll_factor);
+  static void unrolling_analysis(VLoopPreconditionChecker &vlpc,
+                                 int &local_loop_unroll_factor);
 
   // Accessors for VPointer
   PhaseIdealLoop* phase() const    { return _phase; }

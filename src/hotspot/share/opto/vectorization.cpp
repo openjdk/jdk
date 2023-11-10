@@ -689,7 +689,7 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
 bool VLoopPreconditionChecker::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   reset(lpt, allow_cfg);
 
-  tty->print_cr("VLoopPreconditionChecker::analyze");
+  tty->print_cr("VLoopPreconditionChecker::check_precondition");
   lpt->dump_head();
 
   const char* return_state = check_preconditions_helper();
@@ -697,6 +697,7 @@ bool VLoopPreconditionChecker::check_preconditions(IdealLoopTree* lpt, bool allo
   if (return_state == VLoopPreconditionChecker::SUCCESS) {
     return true; // success
   }
+
   tty->print_cr("VLoopPreconditionChecker::check_precondition: failed: %s", return_state);
   return false; // failure
 }
@@ -728,15 +729,15 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
   // TODO skip any loop that has not been assigned max unroll by analysis
 
   // Check for control flow in the body
-  Node* cl_exit = _cl->loopexit();
-  bool has_cfg = cl_exit->in(0) != _cl;
+  _cl_exit = _cl->loopexit();
+  bool has_cfg = _cl_exit->in(0) != _cl;
   if (has_cfg && !is_allow_cfg()) {
 #ifndef PRODUCT
     // TODO change trace flag
     if (TraceSuperWord) {
       tty->print_cr("VLoopPreconditionChecker::check_preconditions: fails because of control flow.");
-      tty->print("cl_exit %d", cl_exit->_idx); cl_exit->dump();
-      tty->print("cl_exit->in(0) %d", cl_exit->in(0)->_idx); cl_exit->in(0)->dump();
+      tty->print("cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
       tty->print("lpt->_head %d", _cl->_idx); _cl->dump();
       _lpt->dump_head();
     }
@@ -772,6 +773,9 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
 bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   bool success = check_preconditions(lpt, allow_cfg);
   if (!success) { return false; }
+
+  tty->print_cr("VLoopAnalyzer::analyze");
+  lpt->dump_head();
 
   const char* return_state = analyze_helper();
   assert(return_state != nullptr, "must have return state");

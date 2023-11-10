@@ -169,16 +169,20 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 }
 
 //------------------------------early unrolling analysis------------------------------
-void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
+void SuperWord::unrolling_analysis(VLoopPreconditionChecker &vlpc,
+                                   int &local_loop_unroll_factor) {
+  IdealLoopTree* lpt    = vlpc.lpt();
+  CountedLoopNode* cl   = vlpc.cl();
+  Node* cl_exit         = vlpc.cl_exit();
+  PhaseIdealLoop* phase = vlpc.phase();
+
   bool is_slp = true;
-  size_t ignored_size = lpt()->_body.size();
+  size_t ignored_size = lpt->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
   Node_Stack nstack((int)ignored_size);
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  Node *cl_exit = cl->loopexit_or_null();
 
   // First clear the entries
-  for (uint i = 0; i < lpt()->_body.size(); i++) {
+  for (uint i = 0; i < lpt->_body.size(); i++) {
     ignored_loop_nodes[i] = -1;
   }
 
@@ -186,10 +190,11 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
-  for (uint i = 0; i < lpt()->_body.size(); i++) {
-    Node* n = lpt()->_body.at(i);
+  for (uint i = 0; i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
     if (n == cl->incr() ||
-      is_marked_reduction(n) ||
+      // TODO is this ok to remove it?
+      //is_marked_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||
@@ -203,7 +208,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     if (n->is_If()) {
       IfNode *iff = n->as_If();
       if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
-        if (lpt()->is_loop_exit(iff)) {
+        if (lpt->is_loop_exit(iff)) {
           ignored_loop_nodes[i] = n->_idx;
           continue;
         }
@@ -247,10 +252,10 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     if (n->is_Mem()) {
       MemNode* current = n->as_Mem();
       Node* adr = n->in(MemNode::Address);
-      Node* n_ctrl = _phase->get_ctrl(adr);
+      Node* n_ctrl = phase->get_ctrl(adr);
 
       // save a queue of post process nodes
-      if (n_ctrl != nullptr && lpt()->is_member(_phase->get_loop(n_ctrl))) {
+      if (n_ctrl != nullptr && lpt->is_member(phase->get_loop(n_ctrl))) {
         // Process the memory expression
         int stack_idx = 0;
         bool have_side_effects = true;
@@ -258,15 +263,15 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
           nstack.push(adr, stack_idx++);
         } else {
           // Mark the components of the memory operation in nstack
-          VPointer p1(current, phase(), lpt(), &nstack, true);
+          VPointer p1(current, phase, lpt, &nstack, true);
           have_side_effects = p1.node_stack()->is_nonempty();
         }
 
         // Process the pointer stack
         while (have_side_effects) {
           Node* pointer_node = nstack.node();
-          for (uint j = 0; j < lpt()->_body.size(); j++) {
-            Node* cur_node = lpt()->_body.at(j);
+          for (uint j = 0; j < lpt->_body.size(); j++) {
+            Node* cur_node = lpt->_body.at(j);
             if (cur_node == pointer_node) {
               ignored_loop_nodes[j] = cur_node->_idx;
               break;
@@ -283,11 +288,11 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
     bool flag_small_bt = false;
-    for (uint i = 0; i < lpt()->_body.size(); i++) {
+    for (uint i = 0; i < lpt->_body.size(); i++) {
       if (ignored_loop_nodes[i] != -1) continue;
 
       BasicType bt;
-      Node* n = lpt()->_body.at(i);
+      Node* n = lpt->_body.at(i);
       if (n->is_Mem()) {
         bt = n->as_Mem()->memory_type();
       } else {
@@ -325,11 +330,14 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
             for (uint j = start; j < end; j++) {
               Node* in = n->in(j);
               // Don't propagate through a memory
-              if (!in->is_Mem() && in_bb(in) && in->bottom_type()->basic_type() == T_INT) {
+              if (!in->is_Mem() &&
+                  vlpc.in_loopbody(in) &&
+                  in->bottom_type()->basic_type() == T_INT) {
                 bool same_type = true;
                 for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
                   Node *use = in->fast_out(k);
-                  if (!in_bb(use) && use->bottom_type()->basic_type() != bt) {
+                  if (!vlpc.in_loopbody(use) &&
+                      use->bottom_type()->basic_type() != bt) {
                     same_type = false;
                     break;
                   }

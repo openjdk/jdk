@@ -263,9 +263,10 @@ class VectorElementSizeStats {
 class VLoopPreconditionChecker : public StackObj {
 private:
   IdealLoopTree* _lpt = nullptr;
+  PhaseIdealLoop* _phase = nullptr;
 
-  // Important nodes
   CountedLoopNode* _cl = nullptr;
+  Node* _cl_exit = nullptr;
   PhiNode* _iv = nullptr;
 
   bool _allow_cfg = false;
@@ -284,18 +285,33 @@ public:
   VLoopPreconditionChecker() {};
   NONCOPYABLE(VLoopPreconditionChecker);
 
-  bool is_allow_cfg() { return _allow_cfg; }
+protected:
+  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
+    _lpt       = lpt;
+    _phase     = lpt->_phase;
+    _cl        = nullptr;
+    _cl_exit   = nullptr;
+    _iv        = nullptr;
+    _allow_cfg = allow_cfg;
+  }
+
+public:
+  IdealLoopTree* lpt()    const { assert(_lpt     != nullptr, ""); return _lpt; };
+  PhaseIdealLoop* phase() const { assert(_phase   != nullptr, ""); return _phase; }
+  CountedLoopNode* cl()   const { assert(_cl      != nullptr, ""); return _cl; };
+  Node* cl_exit()         const { assert(_cl_exit != nullptr, ""); return _cl_exit; };
+  PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
+  bool is_allow_cfg()     const { return _allow_cfg; }
+
+  bool in_loopbody(Node* n) const {
+    // TODO refactor to allow cfg!
+    return n != nullptr && n->outcnt() > 0 && _phase->ctrl_or_self(n) == _cl;
+  }
 
   // Check if the loop passes some basic preconditions for vectorization.
   // Overwrite previous data.Return indicates if analysis succeeded.
   bool check_preconditions(IdealLoopTree* lpt, bool allow_cfg);
-protected:
-  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
-    _lpt = lpt;
-    _cl  = nullptr;
-    _iv  = nullptr;
-    _allow_cfg = allow_cfg;
-  }
+
 protected:
   const char* check_preconditions_helper();
 };
