@@ -29,6 +29,7 @@
 #include "gc/serial/serialHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/iterator.inline.hpp"
+#include "utilities/align.hpp"
 
 void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
                                                 OopIterateClosure* cl) {
@@ -349,16 +350,12 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
                                                          CardValue* const end_card) {
   using Word = uintptr_t;
 
-  auto is_word_aligned = [] (const void* const p) {
-      return is_aligned(p, sizeof(Word));
-  };
-
   static_assert(clean_card_val() == (CardValue)-1, "inv");
   constexpr Word clean_word = (Word)-1;
 
   CardValue* i_card = start_card;
 
-  while (!is_word_aligned(i_card)) {
+  while (!is_aligned(i_card, sizeof(Word))) {
     if (i_card >= end_card) {
       return end_card;
     }
@@ -378,7 +375,7 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
     i_card += sizeof(Word);
   }
 
-  // Byte comparison
+  // Per-CardValue comparison.
   for (/* empty */; i_card < end_card; ++i_card) {
     if (is_dirty(i_card)) {
       return i_card;
@@ -388,6 +385,11 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   return end_card;
 }
 
+// Because non-objArray objs can be imprecisely-marked (only obj-start card is
+// dirty instead of the part containing old-to-young pointers), if the
+// obj-start of a non-objArray is dirty, all cards that obj resides are
+// considered as dirty, since that obj will be iterated (scanned for
+// old-to-young pointers) as a whole.
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
@@ -407,14 +409,15 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       return i_card;
     }
 
-    // final obj in dirty-chunk crosses card-boundary
+    // Final obj in dirty-chunk crosses card-boundary.
     oop obj = cast_to_oop(obj_start_addr);
     if (obj->is_objArray()) {
-      // ObjArrays are always precisely-marked so we are not allowed to jump to the end of the current object.
+      // ObjArrays are always precisely-marked so we are not allowed to jump to
+      // the end of the current object.
       return i_card;
     }
 
-    // final card occupied by this obj
+    // Final card occupied by this obj.
     CardValue* final_card = ct->byte_for(obj_start_addr + obj->size() - 1);
     if (is_clean(final_card)) {
       return final_card;
@@ -473,6 +476,9 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
   CardValue* const start_card = ct->byte_for(mr.start());
   CardValue* const end_card = ct->byte_for(mr.last()) + 1;
 
+  // if mr.end() is not card-aligned, that final card should not be cleared
+  // because it can be annotated dirty due to old-to-young pointers in
+  // newly-promoted objs on that card.
   CardValue* const clear_limit_card = is_card_aligned(mr.end()) ? end_card - 1
                                                                 : end_card - 2;
 
