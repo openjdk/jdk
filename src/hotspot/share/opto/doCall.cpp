@@ -209,13 +209,18 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           } else if (should_delay_string_inlining(callee, jvms)) {
             return CallGenerator::for_string_late_inline(callee, cg);
           } else if (should_delay_boxing_inlining(callee, jvms)) {
-            return CallGenerator::for_boxing_late_inline(callee, cg);
+            cg = CallGenerator::for_boxing_late_inline(callee, cg);
+            ilt->set_msg("late inline (boxing method)");
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
           } else {
             return cg;
           }
+          ilt->print_inlining(callee, jvms->bci(), jvms->method(), true);
+          return cg;
         }
+      } else {
+        ilt->print_inlining(callee, jvms->bci(), jvms->method(), false);
       }
     }
 
