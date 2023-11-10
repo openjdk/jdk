@@ -207,8 +207,8 @@ compiler.err.two.class.loaders.2
 compiler.err.unmatched.quote
 compiler.err.unsupported.release.version
 compiler.warn.profile.target.conflict
-compiler.warn.source.target.conflict
-compiler.warn.target.default.source.conflict
+compiler.err.source.target.conflict
+compiler.err.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
 compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing
