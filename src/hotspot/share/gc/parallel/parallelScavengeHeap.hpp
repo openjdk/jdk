@@ -39,7 +39,6 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
-#include "runtime/cpuTimeCounters.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
@@ -92,7 +91,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
 
-  CPUTimeCounters* _cpu_time_counters;
   WorkerThreads _workers;
 
   void initialize_serviceability() override;
@@ -121,7 +119,6 @@ class ParallelScavengeHeap : public CollectedHeap {
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr),
-    _cpu_time_counters(new CPUTimeCounters()),
     _workers("GC Thread", ParallelGCThreads) { }
 
   // For use by VM operations

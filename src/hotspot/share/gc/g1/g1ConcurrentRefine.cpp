@@ -35,6 +35,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
@@ -162,8 +163,7 @@ void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   // reading CPU time of a terminated worker thread.
   assert_current_thread_is_primary_refinement_thread();
   assert(UsePerfData && os::is_thread_cpu_time_supported(), "Must be enabled");
-  CPUTimeCounters* counters = G1CollectedHeap::heap()->cpu_time_counters();
-  ThreadTotalCPUTimeClosure tttc(counters, CPUTimeGroups::gc_conc_refine);
+  ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_conc_refine);
   worker_threads_do(&tttc);
 }
 

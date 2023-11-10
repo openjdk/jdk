@@ -62,10 +62,11 @@ bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
   ShouldNotReachHere();
 }
 
-CPUTimeCounters::CPUTimeCounters() :
-    _cpu_time_counters{nullptr},
-    _total_cpu_time_diff(0) {
+CPUTimeCounters*         CPUTimeCounters::_instance          = nullptr;
 
+CPUTimeCounters::CPUTimeCounters() :
+    _cpu_time_counters(),
+    _total_cpu_time_diff(0) {
   create_counter(SUN_THREADS, CPUTimeGroups::total);
 }
 
@@ -106,9 +107,11 @@ PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
 }
 
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
+    assert(_counter != nullptr, "ASDF");
     jlong net_cpu_time = _total - _counter->get_value();
     _counter->inc(net_cpu_time);
     if (_update_gc_counters) {
+      assert(_gc_counters != nullptr, "asdf");
       _gc_counters->inc_total_cpu_time(net_cpu_time);
     }
 }

@@ -68,6 +68,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -2086,8 +2087,7 @@ void G1ConcurrentMark::update_concurrent_mark_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  CPUTimeCounters* counters = _g1h->cpu_time_counters();
-  ThreadTotalCPUTimeClosure tttc(counters, CPUTimeGroups::gc_conc_mark);
+  ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_conc_mark);
   tttc.do_thread(cm_thread());
   threads_do(&tttc);
 }

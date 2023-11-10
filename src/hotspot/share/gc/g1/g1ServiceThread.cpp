@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "logging/log.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
@@ -132,8 +133,7 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
   task->execute();
 
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    CPUTimeCounters* counters = G1CollectedHeap::heap()->cpu_time_counters();
-    ThreadTotalCPUTimeClosure tttc(counters, CPUTimeGroups::gc_service);
+    ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_service);
     tttc.do_thread(task->_service_thread);
   }
 

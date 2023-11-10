@@ -252,9 +252,6 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
-  // Counters to keep track of CPU time spent by various sources.
-  CPUTimeCounters* _cpu_time_counters;
-
   uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
   uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
@@ -564,10 +561,6 @@ public:
   G1MonitoringSupport* monitoring_support() {
     assert(_monitoring_support != nullptr, "should have been initialized");
     return _monitoring_support;
-  }
-
-  CPUTimeCounters* cpu_time_counters() {
-    return _cpu_time_counters;
   }
 
   void resize_heap_if_necessary();

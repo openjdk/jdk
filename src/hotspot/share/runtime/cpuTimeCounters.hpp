@@ -47,8 +47,12 @@ public:
 
 class CPUTimeCounters: public CHeapObj<mtGC> {
 private:
-  // Perf counter to track total CPU time across all threads. Defined here in
-  // order to be reused for all collectors.
+  // We want CPUTimeCounters to be a singleton instance accessed by the vm thread.
+  CPUTimeCounters();
+  static CPUTimeCounters* _instance;
+
+  // An array of PerfCounters which correspond to the various counters we want 
+  // to track. Indexed by the enum value `CPUTimeType`.
   PerfCounter* _cpu_time_counters[CPUTimeGroups::COUNT];
 
   // A long which atomically tracks how much CPU time has been spent doing GC
@@ -56,10 +60,22 @@ private:
   // It is incremented using Atomic::add() to prevent race conditions, and
   // is added to the `total` CPUTimeGroup at the end of GC.
   volatile jlong _total_cpu_time_diff;
+
   void create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name);
 
 public:
-  CPUTimeCounters();
+  static CPUTimeCounters* get_instance() {
+    return _instance;
+  }
+
+  static void initialize() {
+    assert(get_instance() == nullptr, "we can only allocate one CPUTimeCounters object");
+    _instance = new CPUTimeCounters();
+  }
+
+  // Prevent copy of singleton object.
+  CPUTimeCounters(const CPUTimeCounters& copy) = delete;
+  void operator=(const CPUTimeCounters& copy) = delete;
 
   ~CPUTimeCounters();
 
@@ -82,7 +98,7 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
 
  public:
   ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _total(0), _counter(counter), _gc_counters(nullptr), _update_gc_counters(false) {}
+      _total(0), _counter(counter), _gc_counters(CPUTimeCounters::get_instance()), _update_gc_counters(false) {}
 
   ThreadTotalCPUTimeClosure(CPUTimeCounters* counters, CPUTimeGroups::CPUTimeType name) :
       _total(0), _counter(counters->get_counter(name)), _gc_counters(counters),
