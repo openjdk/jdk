@@ -36,11 +36,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JViewport;
-import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
-
-import java.awt.event.WindowEvent;
 
 /*
  * @test
@@ -177,21 +174,9 @@ public class JTableScrollPrintTest {
                     optimalScale = 1;
 
                 g2d.scale(optimalScale, optimalScale);
-                disableDoubleBuffering(c);
                 c.paint(g2d);
-                enableDoubleBuffering(c);
                 return(PAGE_EXISTS);
             }
-        }
-
-        public void disableDoubleBuffering(Component c) {
-            RepaintManager currentManager = RepaintManager.currentManager(c);
-            currentManager.setDoubleBufferingEnabled(false);
-        }
-
-        public void enableDoubleBuffering(Component c) {
-            RepaintManager currentManager = RepaintManager.currentManager(c);
-            currentManager.setDoubleBufferingEnabled(true);
         }
     }
 }

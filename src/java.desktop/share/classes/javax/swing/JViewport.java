@@ -48,7 +48,8 @@ import java.util.Collections;
 
 import sun.awt.AWTAccessor;
 import sun.swing.SwingUtilities2;
-import sun.java2d.SunGraphics2D;
+import java.awt.PrintGraphics;
+import java.awt.print.PrinterGraphics;
 
 /**
  * The "viewport" or "porthole" through which you see the underlying
@@ -604,14 +605,14 @@ public class JViewport extends JComponent implements Accessible
 
 
     private Graphics getBackingStoreGraphics(Graphics g) {
-        if (g instanceof SunGraphics2D) {
+        if (g instanceof PrinterGraphics || g instanceof PrintGraphics) {
+            return g;
+        } else {
             Graphics bsg = backingStoreImage.getGraphics();
             bsg.setColor(g.getColor());
             bsg.setFont(g.getFont());
             bsg.setClip(g.getClipBounds());
             return bsg;
-        } else {
-            return g;
         }
     }
 
