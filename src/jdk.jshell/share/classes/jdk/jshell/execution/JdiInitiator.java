@@ -161,7 +161,7 @@ public class JdiInitiator {
                 addr = listener.startListening(connectorArgs);
                 debug("Listening at address: " + addr);
             } catch (Throwable t) {
-                throw new IllegalStateException(t);
+                throw reportLaunchFail(t, "listen");
             }
 
             runListenProcess(addr, port, remoteVMOptions, process -> {
