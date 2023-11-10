@@ -417,14 +417,14 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       return i_card;
     }
 
-    // Final card occupied by this obj.
-    CardValue* final_card = ct->byte_for(obj_start_addr + obj->size() - 1);
-    if (is_clean(final_card)) {
-      return final_card;
+    // Card occupied by next obj.
+    CardValue* next_obj_card = ct->byte_for(obj_start_addr + obj->size());
+    if (is_clean(next_obj_card)) {
+      return next_obj_card;
     }
 
-    // Continue the search at the end of the current object...
-    i_card = final_card + 1;
+    // Continue the search after this known-dirty card...
+    i_card = next_obj_card + 1;
   }
 
   return end_card;
