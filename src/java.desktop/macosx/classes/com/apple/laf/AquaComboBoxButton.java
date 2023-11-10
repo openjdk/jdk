@@ -268,11 +268,10 @@ class AquaComboBoxButton extends JButton {
         @Override
         public String getAccessibleName() {
             String name = super.getAccessibleName();
-            if (name == null || name.isEmpty()) {
-                if (!comboBox.isEditable() && comboBox.getSelectedItem() != null) {
+            if ((name == null || name.isEmpty())
+                && (!comboBox.isEditable() && comboBox.getSelectedItem() != null)) {
                     Component c = getRendererComponent();
                     name = c.getAccessibleContext().getAccessibleName();
-                }
             }
             return name;
         }
