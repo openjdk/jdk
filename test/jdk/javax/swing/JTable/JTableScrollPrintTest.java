@@ -45,8 +45,14 @@ import javax.swing.table.DefaultTableModel;
  * @bug 8210807
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary Test to check if JTable can be printed when it is
- * added JScrollPane.
+ * @summary Test to check if JTable can be printed when JScrollPane added to it.
+ *
+ *
+ *
+ *
+ *
+ *
+ *   
  * @run main/manual JTableScrollPrintTest
  */
 
@@ -65,7 +71,7 @@ public class JTableScrollPrintTest {
         passFailJFrame.awaitAndCheck();
     }
 
-    public static void initialize() throws Exception{
+    public static void initialize() throws Exception {
         final String INSTRUCTIONS = """
                 Instructions to Test:
                 1. Print table onto Paper/PDF, using the Print Dialog.
@@ -119,6 +125,7 @@ public class JTableScrollPrintTest {
 
     static class PrintUtilities implements Printable {
         private Component componentToBePrinted;
+
         public void printComponent(Component c, String jobname) {
             new PrintUtilities(c).print(jobname);
         }
@@ -160,8 +167,8 @@ public class JTableScrollPrintTest {
 
                 double panelX= c.getWidth();
                 double panelY= c.getHeight();
-                float imageableX = (float) pageFormat.getImageableWidth()-1;
-                float imageableY = (float) pageFormat.getImageableHeight()-1;
+                float imageableX = (float) pageFormat.getImageableWidth() - 1;
+                float imageableY = (float) pageFormat.getImageableHeight() - 1;
 
                 double xscale = imageableX/panelX;
                 double yscale = imageableY/panelY;
