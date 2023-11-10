@@ -34,7 +34,6 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.nio.ByteBuffer;
@@ -50,13 +49,16 @@ import javax.net.ssl.TrustManagerFactory;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 5, time = 5)
 @Measurement(iterations = 5, time = 5)
 @Fork(value = 3)
 public class SSLHandshake {
 
-    private SSLContext sslc;
+    // one global server context
+    private static SSLContext sslServerCtx;
+    // per-thread client contexts
+    private SSLContext sslClientCtx;
 
     private SSLEngine clientEngine;
     private ByteBuffer clientOut = ByteBuffer.allocate(5);
@@ -88,9 +90,14 @@ public class SSLHandshake {
                 TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
+        // server context will be set by every thread; last one wins
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        sslc = sslCtx;
+        sslServerCtx = sslCtx;
+
+        sslCtx = SSLContext.getInstance(tlsVersion);
+        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslClientCtx = sslCtx;
     }
 
     private HandshakeStatus checkResult(SSLEngine engine, SSLEngineResult result) {
@@ -173,13 +180,13 @@ public class SSLHandshake {
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.
          */
-        serverEngine = sslc.createSSLEngine();
+        serverEngine = sslServerCtx.createSSLEngine();
         serverEngine.setUseClientMode(false);
 
         /*
          * Similar to above, but using client mode instead.
          */
-        clientEngine = sslc.createSSLEngine("client", 80);
+        clientEngine = sslClientCtx.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
     }
 }
