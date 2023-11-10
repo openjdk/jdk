@@ -139,7 +139,7 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void sourceAndTargetMismatch(Path base) throws Exception {
-        doTest(base, String.format("error: specified target release %s is too old for the specified source release %s", Source.DEFAULT.name, Source.DEFAULT.name),
+        doTest(base, String.format("error: specified target release %s is too old for the specified source release %s", Source.MIN.name, Source.DEFAULT.name),
                 String.format("-source %s -target %s", Source.DEFAULT.name, Source.MIN.name));
     }
 
