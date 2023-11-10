@@ -36,6 +36,10 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.time.chrono.*;
 import java.time.temporal.ChronoField;
 import java.util.*;
@@ -462,11 +466,18 @@ public class BasicDateTime extends Basic {
         test("%tF", "0012-10-03", LocalDate.of(12, 10, 3));
         test("%tF", "0123-10-03", LocalDate.of(123, 10, 3));
         test("%tF", "+12345-10-03", LocalDate.of(12345, 10, 3));
+        test("%tF", "+12345-10-03", LocalDateTime.of(12345, 10, 3, 0, 0, 0));
+        test("%tF", "+12345-10-03", OffsetDateTime.of(LocalDateTime.of(12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+        test("%tF", "+12345-10-03", ZonedDateTime.of(LocalDateTime.of(12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
         test("%tF", "-0001-10-03", LocalDate.of(-1, 10, 3));
         test("%tF", "-0012-10-03", LocalDate.of(-12, 10, 3));
         test("%tF", "-0123-10-03", LocalDate.of(-123, 10, 3));
         test("%tF", "-1234-10-03", LocalDate.of(-1234, 10, 3));
         test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+        test("%tF", "-12345-10-03", LocalDate.of(-12345, 10, 3));
+        test("%tF", "-12345-10-03", LocalDateTime.of(-12345, 10, 3, 0, 0, 0));
+        test("%tF", "-12345-10-03", OffsetDateTime.of(LocalDateTime.of(-12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
+        test("%tF", "-12345-10-03", ZonedDateTime.of(LocalDateTime.of(-12345, 10, 3, 0, 0, 0), ZoneOffset.UTC));
 
         // check minusSign
         int year = 2023, month = 1, dayOfMonth = 13;
@@ -490,6 +501,6 @@ public class BasicDateTime extends Basic {
                         jpDate.get(ChronoField.YEAR_OF_ERA),
                         jpDate.get(ChronoField.MONTH_OF_YEAR),
                         jpDate.get(ChronoField.DAY_OF_MONTH)),
-                now);
+                jpDate);
     }
 }
