@@ -701,6 +701,7 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHasht
       ? _thread->carrier_last_java_vframe(&reg_map)
       : _thread->last_java_vframe(&reg_map);
     int count = 0;
+    ResourceMark rm;
     for (vframe* f = start_vf; f; f = f->sender() ) {
       if (maxDepth >= 0 && count == maxDepth) {
         // Skip frames if more than maxDepth
