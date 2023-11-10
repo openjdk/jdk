@@ -1458,6 +1458,105 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   BLOCK_COMMENT("} string_equals");
 }
 
+void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
+                                        Register result, Register tmp1, Register tmp2,
+                                        Register tmp3, Register tmp4, Register tmp5,
+                                        Register tmp6,
+                                        BasicType eltype)
+{
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+  const int elsize = arrays_hashcode_elsize(eltype);
+
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
+  default:        BLOCK_COMMENT("arrays_hashcode {");                break;
+  }
+
+  const int stride = 4;
+  const Register pow31_3_4 = tmp6;
+  const Register pow31_1_2 = tmp5;
+  const Register chunk     = tmp4;
+
+  Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
+
+  // result has already been zeroed earlier.
+
+  beqz(cnt, DONE);
+
+  ld(pow31_1_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31() + 2 * sizeof(jint))); // [31^^1][31^^2]
+
+  andi(chunk, cnt, ~(stride-1));
+  beqz(chunk, TAIL);
+  andi(cnt, cnt, stride-1);
+
+#define DO_ELEMENT_LOAD(reg, idx) \
+  switch (eltype) { \
+  case T_BOOLEAN: lb(reg, Address(ary, idx * elsize)); break; \
+  case T_CHAR:   lhu(reg, Address(ary, idx * elsize)); break; \
+  case T_BYTE:    lb(reg, Address(ary, idx * elsize)); break; \
+  case T_SHORT:   lh(reg, Address(ary, idx * elsize)); break; \
+  case T_INT:     lw(reg, Address(ary, idx * elsize)); break; \
+  default:                                             break; \
+  } \
+
+  ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31() + 0 * sizeof(jint))); // [31^^3:31^^4]
+
+  bind(WIDE_LOOP);
+  DO_ELEMENT_LOAD(tmp1, 0)
+  DO_ELEMENT_LOAD(tmp3, 1)
+  mulw(result, result, pow31_3_4); // 31^^4 * h
+  srli(tmp2, pow31_3_4, 32);
+  mulw(tmp1, tmp1, tmp2);          // 31^^3 * ary[i+0]
+  addw(result, result, tmp1);
+  mulw(tmp3, tmp3, pow31_1_2);     // 31^^2 * ary[i+1]
+  addw(result, result, tmp3);
+  DO_ELEMENT_LOAD(tmp1, 2)
+  DO_ELEMENT_LOAD(tmp3, 3)
+  srli(tmp2, pow31_1_2, 32);
+  mulw(tmp1, tmp1, tmp2);          // 31^^1 * ary[i+2]
+  addw(result, result, tmp1);
+  addw(result, result, tmp3);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
+                                   //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
+  subw(chunk, chunk, stride);
+  addi(ary, ary, elsize * stride);
+  bnez(chunk, WIDE_LOOP);
+
+  bind(TAIL);
+  beqz(cnt, DONE);
+
+  bind(TAIL_LOOP);
+  DO_ELEMENT_LOAD(tmp1, 0)
+  slli(tmp2, result, 5);
+  subw(result, tmp2, result);
+  addw(result, result, tmp1); // result = result + ary[i]
+  subw(cnt, cnt, 1);
+  add(ary, ary, elsize);
+  bnez(cnt, TAIL_LOOP);
+
+#undef DO_ELEMENT_LOAD
+
+  bind(DONE);
+  BLOCK_COMMENT("} // arrays_hashcode");
+}
+
+int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
+  switch (eltype) {
+  case T_BOOLEAN: return sizeof(jboolean);
+  case T_BYTE:    return sizeof(jbyte);
+  case T_SHORT:   return sizeof(jshort);
+  case T_CHAR:    return sizeof(jchar);
+  case T_INT:     return sizeof(jint);
+  default:
+    ShouldNotReachHere();
+    return -1;
+  }
+}
+
 typedef void (Assembler::*conditional_branch_insn)(Register op1, Register op2, Label& label, bool is_far);
 typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1, FloatRegister op2, Label& label,
                                                               bool is_far, bool is_unordered);
