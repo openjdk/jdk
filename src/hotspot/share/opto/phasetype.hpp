@@ -92,6 +92,8 @@ static const char* phase_names[] = {
 #undef array_of_labels
 };
 
+typedef bool phase_mask[PHASE_NUM_TYPES];
+
 class CompilerPhaseTypeHelper {
   public:
   static const char* to_name(CompilerPhaseType cpt) {
@@ -162,7 +164,7 @@ class PhaseNameValidator {
   char* _bad;
 
  public:
-  PhaseNameValidator(ccstrlist option, bool (&mask)[PHASE_NUM_TYPES]) : _valid(true), _set(false), _bad(nullptr) {
+  PhaseNameValidator(ccstrlist option, phase_mask& mask) : _valid(true), _set(false), _bad(nullptr) {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
@@ -173,11 +175,9 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        /* mask = ~(UINT64_C(0)); */
         memset(mask, true, sizeof(mask));
         _set = true;
       } else {
-        /* assert(cpt < 64, "out of bounds"); */
         mask[cpt] = true;
         _set = true;
       }

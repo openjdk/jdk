@@ -434,7 +434,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       // Parse ccstr and create mask
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        bool (&mask)[PHASE_NUM_TYPES] = set.cloned()->_ideal_phase_name_mask;
+        phase_mask& mask = set.cloned()->_ideal_phase_name_mask;
         PhaseNameValidator validator(option, mask);
         if (validator.is_valid()) {
           assert(validator.is_set(), "Must be set");
@@ -620,7 +620,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 #undef copy_string_members_definition
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
-  memcpy(set->_ideal_phase_name_mask, src->_ideal_phase_name_mask, sizeof(src->_ideal_phase_name_mask));
+  memcpy(set->_ideal_phase_name_mask, src->_ideal_phase_name_mask, sizeof(set->_ideal_phase_name_mask));
   return set;
 }
 

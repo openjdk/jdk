@@ -336,7 +336,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
-          bool (&mask)[PHASE_NUM_TYPES] = set->ideal_phase_mask();
+          phase_mask& mask = set->ideal_phase_mask();
           PhaseNameValidator validator(s, mask);
 
           valid = validator.is_valid();
