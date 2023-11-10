@@ -21,6 +21,16 @@
  * questions.
  */
 
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
 /*
  * @test
  * @bug 8283214
@@ -31,16 +41,6 @@
  *          screen magnifier a11y tool
  * @run main/manual TestJComboBoxScreenMagnifier
  */
-
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.lang.reflect.InvocationTargetException;
-
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
 public class TestJComboBoxScreenMagnifier {
     private static JFrame frame;
