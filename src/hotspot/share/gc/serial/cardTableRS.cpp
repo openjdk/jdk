@@ -387,8 +387,8 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
 
 // Because non-objArray objs can be imprecisely-marked (only obj-start card is
 // dirty instead of the part containing old-to-young pointers), if the
-// obj-start of a non-objArray is dirty, all cards that obj resides are
-// considered as dirty, since that obj will be iterated (scanned for
+// obj-start of a non-objArray is dirty, all cards that obj completely resides
+// on are considered as dirty, since that obj will be iterated (scanned for
 // old-to-young pointers) as a whole.
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
