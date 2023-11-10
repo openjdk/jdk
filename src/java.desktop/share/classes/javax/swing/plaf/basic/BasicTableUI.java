@@ -2099,21 +2099,14 @@ public class BasicTableUI extends TableUI
             for(int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
                 cellRect.x = getXPosition(cMax);
-                aColumn = cm.getColumn(cMax);
-                if (aColumn != draggedColumn) {
-                    columnWidth = aColumn.getWidth();
-                    cellRect.width = columnWidth - columnMargin;
-                    paintCell(g, cellRect, row, cMax);
-                }
-                for(int column = cMax-1; column >= cMin; column--) {
+                for(int column = cMax; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
-                    cellRect.x += columnWidth;
                     if (aColumn != draggedColumn) {
                         paintCell(g, cellRect, row, column);
                     }
-
+                    cellRect.x += columnWidth;
                 }
             }
         }
