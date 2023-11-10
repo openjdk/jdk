@@ -95,11 +95,11 @@ template <class RegImpl>
 class AbstractRegSet {
   size_t _bitset;
 
+  constexpr AbstractRegSet(size_t bitset) : _bitset(bitset) { }
+
   static constexpr size_t max_size() {
     return sizeof _bitset * CHAR_BIT;
   }
-
-  constexpr AbstractRegSet(size_t bitset) : _bitset(bitset) { }
 
 public:
 
