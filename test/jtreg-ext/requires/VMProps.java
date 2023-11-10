@@ -610,7 +610,7 @@ public class VMProps implements Callable<Map<String, String>> {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder("which", Container.ENGINE_COMMAND);
         Map<String, String> logFileNames =
-            redirectOutputToLogFile("checkDockerSupport(): which <container-engine>",
+            redirectOutputToLogFile("checkDockerSupport(): which " + Container.ENGINE_COMMAND,
                                                       pb, "which-container");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);

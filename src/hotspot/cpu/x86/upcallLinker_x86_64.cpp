@@ -165,7 +165,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 2048;
+static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16;
 
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
@@ -272,6 +272,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
+  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -288,9 +289,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
-  __ movptr(rscratch1, (intptr_t)receiver);
-  __ resolve_jobject(rscratch1, r15_thread, rscratch2);
-  __ movptr(j_rarg0, rscratch1);
+  __ get_vm_result(j_rarg0, r15_thread);
   __ block_comment("} receiver ");
 
   __ mov_metadata(rbx, entry);
@@ -361,26 +360,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ block_comment("{ exception handler");
-
-  intptr_t exception_handler_offset = __ pc() - start;
-
-  // TODO: this is always the same, can we bypass and call handle_uncaught_exception directly?
-
-  // native caller has no idea how to handle exceptions
-  // we just crash here. Up to callee to catch exceptions.
-  __ verify_oop(rax);
-  __ vzeroupper();
-  __ mov(c_rarg0, rax);
-  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows (not really needed)
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
-  __ should_not_reach_here();
-
-  __ block_comment("} exception handler");
-
   _masm->flush();
-
 
 #ifndef PRODUCT
   stringStream ss;
@@ -395,7 +375,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   UpcallStub* blob
     = UpcallStub::create(name,
                          &buffer,
-                         exception_handler_offset,
                          receiver,
                          in_ByteSize(frame_data_offset));
 

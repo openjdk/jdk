@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@
 
 #include <java_awt_Toolkit.h>
 #include <java_awt_FontMetrics.h>
-#include <java_awt_Color.h>
 #include <java_awt_Event.h>
 #include <java_awt_event_KeyEvent.h>
 #include <java_awt_Insets.h>
