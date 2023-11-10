@@ -44,11 +44,18 @@ import java.util.regex.Pattern;
  * @run testng SystemDumpMapTest
  */
 public class SystemDumpMapTest {
-    public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("System.dump_map");
+
+    private void run_test(CommandExecutor executor, boolean useDefaultFileName) {
+
+        String filenameOption = useDefaultFileName ? "" : "-F=test-map.txt";
+
+        OutputAnalyzer output = executor.execute("System.dump_map " + filenameOption);
         output.reportDiagnosticSummary();
 
-        String filename = output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_\\d+\\.txt)\".*", 1);
+        String filename = useDefaultFileName ?
+            output.firstMatch("Memory map dumped to \"(\\S*vm_memory_map_\\d+\\.txt)\".*", 1) :
+            output.firstMatch("Memory map dumped to \"(\\S*test-map.txt)\".*", 1);
+
         if (filename == null) {
             throw new RuntimeException("Did not find dump file in output.\n");
         }
@@ -89,6 +96,12 @@ public class SystemDumpMapTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+    }
+
+    public void run(CommandExecutor executor) {
+        run_test(executor, false);
+        run_test(executor, true);
     }
 
     @Test
