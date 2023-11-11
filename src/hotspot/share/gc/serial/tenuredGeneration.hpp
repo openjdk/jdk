@@ -70,8 +70,6 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Accessing spaces
-  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -84,6 +82,8 @@ class TenuredGeneration: public Generation {
   void compute_new_size_inner();
  public:
   virtual void compute_new_size();
+
+  TenuredSpace* space() const { return _the_space; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);

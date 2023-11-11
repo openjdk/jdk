@@ -99,10 +99,6 @@
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
-  nonstatic_field(ContiguousSpace,            _compaction_top,                               HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,            _first_dead,                                   HeapWord*)                             \
-  nonstatic_field(ContiguousSpace,            _end_of_live,                                  HeapWord*)                             \
-                                                                                                                                     \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
