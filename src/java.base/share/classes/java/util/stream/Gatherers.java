@@ -29,6 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
@@ -68,6 +69,11 @@ public final class Gatherers {
      *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowFixed(3)).toList();
      * }
      *
+     * @implSpec Each window produced is an unmodifiable List; calls to any
+     * mutator method will always cause {@code UnsupportedOperationException}
+     * to be thrown. There are no guarantees on the implementation type or
+     * serializability of the produced Lists.
+     *
      * @apiNote For efficiency reasons, windows may be allocated contiguously
      *          and eagerly. This means that choosing large window sizes for
      *          small streams may use excessive memory for the duration of
@@ -77,7 +83,7 @@ public final class Gatherers {
      * @param <TR> the type of elements the returned gatherer consumes
      *             and the contents of the windows it produces
      * @return a new gatherer which groups elements into fixed-size windows
-     * @throws IllegalArgumentException when windowSize is less than 1
+     * @throws IllegalArgumentException when {@code windowSize} is less than 1
      */
     public static <TR> Gatherer<TR, ?, List<TR>> windowFixed(int windowSize) {
         if (windowSize < 1)
@@ -101,8 +107,8 @@ public final class Gatherers {
                     window = new Object[windowSize];
                     at = 0;
                     return downstream.push(
-                            SharedSecrets.getJavaUtilCollectionAccess()
-                                    .listFromTrustedArrayNullsAllowed(oldWindow)
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(oldWindow)
                     );
                 }
             }
@@ -114,8 +120,8 @@ public final class Gatherers {
                     window = null;
                     at = 0;
                     downstream.push(
-                            SharedSecrets.getJavaUtilCollectionAccess()
-                                    .listFromTrustedArrayNullsAllowed(lastWindow)
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(lastWindow)
                     );
                 }
             }
@@ -151,6 +157,11 @@ public final class Gatherers {
      * List<List<Integer>> windows6 =
      *     Stream.of(1,2,3,4,5,6,7,8).gather(Gatherers.windowSliding(6)).toList();
      * }
+     *
+     * @implSpec Each window produced is an unmodifiable List; calls to any
+     * mutator method will always cause {@code UnsupportedOperationException}
+     * to be thrown. There are no guarantees on the implementation type or
+     * serializability of the produced Lists.
      *
      * @apiNote For efficiency reasons, windows may be allocated contiguously
      *          and eagerly. This means that choosing large window sizes for
@@ -190,8 +201,8 @@ public final class Gatherers {
                     at -= 1;
                     firstWindow = false;
                     return downstream.push(
-                            SharedSecrets.getJavaUtilCollectionAccess()
-                                    .listFromTrustedArrayNullsAllowed(oldWindow)
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(oldWindow)
                     );
                 }
             }
@@ -203,8 +214,8 @@ public final class Gatherers {
                     window = null;
                     at = 0;
                     downstream.push(
-                            SharedSecrets.getJavaUtilCollectionAccess()
-                                    .listFromTrustedArrayNullsAllowed(lastWindow)
+                        SharedSecrets.getJavaUtilCollectionAccess()
+                                     .listFromTrustedArrayNullsAllowed(lastWindow)
                     );
                 }
             }
@@ -232,7 +243,7 @@ public final class Gatherers {
      *
      * <p>Example:
      * {@snippet lang = java:
-     * // will contain: Optional[123456789]
+     * // will contain: Optional["123456789"]
      * Optional<String> numberString =
      *     Stream.of(1,2,3,4,5,6,7,8,9)
      *           .gather(
@@ -248,7 +259,7 @@ public final class Gatherers {
      * @param <T> the type of elements the returned gatherer consumes
      * @param <R> the type of elements the returned gatherer produces
      * @return a new Gatherer
-     * @throws NullPointerException if any of the parameters are null
+     * @throws NullPointerException if any of the parameters are {@code null}
      */
     public static <T, R> Gatherer<T, ?, R> fold(
             Supplier<R> initial,
@@ -281,7 +292,7 @@ public final class Gatherers {
      *
      * <p>Example:
      * {@snippet lang = java:
-     * // will contain: [1, 12, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789]
+     * // will contain: ["1", "12", "123", "1234", "12345", "123456", "1234567", "12345678", "123456789"]
      * List<String> numberStrings =
      *     Stream.of(1,2,3,4,5,6,7,8,9)
      *           .gather(
@@ -295,7 +306,7 @@ public final class Gatherers {
      * @param <T> the type of element which this gatherer consumes
      * @param <R> the type of element which this gatherer produces
      * @return a new Gatherer which performs a prefix scan
-     * @throws NullPointerException if any of the parameters are null
+     * @throws NullPointerException if any of the parameters are {@code null}
      */
     public static <T, R> Gatherer<T, ?, R> scan(
             Supplier<R> initial,
@@ -316,7 +327,7 @@ public final class Gatherers {
 
     /**
      * An operation which executes operations concurrently
-     * with a fixed window of max concurrency, using
+     * with a configured level of max concurrency, using
      * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">virtual threads</a>.
      * This operation preserves the ordering of the stream.
      *
@@ -333,15 +344,15 @@ public final class Gatherers {
      * @param <T> the type of input
      * @param <R> the type of output
      * @return a new Gatherer
-     * @throws IllegalArgumentException if maxConcurrency is less than 1
-     * @throws NullPointerException if mapper is null
+     * @throws IllegalArgumentException if {@code maxConcurrency} is less than 1
+     * @throws NullPointerException if {@code mapper} is {@code null}
      */
     public static <T, R> Gatherer<T,?,R> mapConcurrent(
             final int maxConcurrency,
             final Function<? super T, ? extends R> mapper) {
-        if (maxConcurrency <= 0)
+        if (maxConcurrency < 1)
             throw new IllegalArgumentException(
-                    "'maxConcurrency' needs to be greater than 0");
+                    "'maxConcurrency' must be greater than 0");
 
         Objects.requireNonNull(mapper, "'mapper' must not be null");
 

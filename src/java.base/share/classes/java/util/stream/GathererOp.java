@@ -82,6 +82,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
      * NodeBuilders together.
      */
     final static class NodeBuilder<X> implements Consumer<X> {
+        private final static int LINEAR_APPEND_MAX = 8; // TODO revisit
         final static class Builder<X> extends SpinedBuffer<X> implements Node<X> {
             Builder() {
             }
@@ -110,7 +111,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             if (!that.isEmpty()) {
                 final var tb = that.build();
                 if (rightMost != null && tb instanceof NodeBuilder.Builder<X>
-                && tb.count() < 8) // TODO revisit cutoff point
+                && tb.count() < LINEAR_APPEND_MAX)
                     tb.forEach(this); // Avoid conc for small nodes
                 else
                     leftMost = Nodes.conc(StreamShape.REFERENCE, this.build(), tb);
@@ -176,6 +177,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         }
 
         private boolean cancellationRequested(boolean knownProceed) {
+            // Highly performance sensitive
             return !(knownProceed && (!sink.cancellationRequested() || (proceed = false)));
         }
 
@@ -208,7 +210,6 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         return integrator instanceof Integrator.Greedy<?, ?, ?>
                 ? GREEDY_FLAGS : SHORT_CIRCUIT_FLAGS;
     }
-
 
     private final static int DEFAULT_FLAGS =
             StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT |
@@ -255,11 +256,10 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @Override
     boolean opIsStateful() {
         // TODO
-        /* Currently GathererOp is always stateful,
-         * but it would be possible to return `false` if:
-         * - the Gatherer's initializer is Gatherer.defaultInitiatizer(),
-         * - the Gatherer's combiner is NOT Gatherer.defaultCombiner()
-         * - the Gatherer's finisher is Gatherer.defaultFinisher()
+        /* Currently GathererOp is always stateful, but what could be tried is:
+         * return gatherer.initializer() != Gatherer.defaultInitializer()
+         *     || gatherer.combiner() == Gatherer.defaultCombiner()
+         *     || gatherer.finisher() != Gatherer.defaultFinisher();
          */
         return true;
     }
@@ -278,13 +278,13 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                                    Spliterator<I> spliterator,
                                    IntFunction<R[]> unused2) {
         return this.<NodeBuilder<R>, Node<R>>evaluate(
-                upstream().wrapSpliterator(spliterator),
-                true,
-                gatherer,
-                NodeBuilder::new,
-                NodeBuilder::accept,
-                NodeBuilder::join,
-                NodeBuilder::build
+            upstream().wrapSpliterator(spliterator),
+            true,
+            gatherer,
+            NodeBuilder::new,
+            NodeBuilder::accept,
+            NodeBuilder::join,
+            NodeBuilder::build
         );
     }
 
@@ -313,16 +313,17 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     public <CR, CA> CR collect(Collector<? super R, CA, CR> c) {
         linkOrConsume(); // Important for structural integrity
         final var parallel = isParallel();
+        final var u = upstream();
         return evaluate(
-                upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
-                parallel,
-                gatherer,
-                c.supplier(),
-                c.accumulator(),
-                parallel ? c.combiner() : null,
-                c.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
-                        ? null
-                        : c.finisher()
+            u.wrapSpliterator(u.sourceSpliterator(0)),
+            parallel,
+            gatherer,
+            c.supplier(),
+            c.accumulator(),
+            parallel ? c.combiner() : null,
+            c.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH)
+                    ? null
+                    : c.finisher()
         );
     }
 
@@ -332,17 +333,18 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                            BiConsumer<RR, RR> combiner) {
         linkOrConsume(); // Important for structural integrity
         final var parallel = isParallel();
+        final var u = upstream();
         return evaluate(
-                upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
-                parallel,
-                gatherer,
-                supplier,
-                accumulator,
-                parallel ? (l, r) -> {
-                    combiner.accept(l, r);
-                    return l;
-                } : null,
-                null
+            u.wrapSpliterator(u.sourceSpliterator(0)),
+            parallel,
+            gatherer,
+            supplier,
+            accumulator,
+            parallel ? (l, r) -> {
+                combiner.accept(l, r);
+                return l;
+            } : null,
+            null
         );
     }
 

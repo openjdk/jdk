@@ -103,6 +103,16 @@ public class GatherersTest {
                             .gather(Gatherers.windowFixed(2))
                             .toList());
             }
+
+            // Test unmodifiability of windows
+            {
+                var window = config.stream()
+                                   .gather(Gatherers.windowFixed(1))
+                                   .findFirst()
+                                   .get();
+                assertThrows(UnsupportedOperationException.class,
+                        () -> window.add(2));
+            }
         }
 
 
@@ -158,6 +168,16 @@ public class GatherersTest {
                         config.wrapStream(Stream.of(null, null, null))
                             .gather(Gatherers.windowSliding(2))
                             .toList());
+            }
+
+            // Test unmodifiability of windows
+            {
+                var window = config.stream()
+                        .gather(Gatherers.windowSliding(1))
+                        .findFirst()
+                        .get();
+                assertThrows(UnsupportedOperationException.class,
+                        () -> window.add(2));
             }
         }
 

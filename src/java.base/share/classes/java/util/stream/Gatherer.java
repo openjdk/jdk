@@ -42,7 +42,8 @@ import java.util.function.Supplier;
  * <p>Gatherer operations can be performed either sequentially,
  * or be parallelized -- if a combiner function is supplied.
  *
- * <p>Examples of gathering operations include, but is not limited to:
+ * <p>There are many examples of gathering operations, including but not
+ * limited to:
  * grouping elements into batches (windowing functions);
  * de-duplicating consecutively similar elements; incremental accumulation
  * functions (prefix scan); incremental reordering functions, etc.  The class
@@ -112,10 +113,10 @@ import java.util.function.Supplier;
  *
  * Gatherer<Object, ?, String> toString = map(i -> i.toString());
  *
- * Gatherer<Integer, ?, String> incrementThenToString = plusOne.andThen(intToString);
+ * Gatherer<Integer, ?, String> incrementThenToString = increment.andThen(intToString);
  * }
  *
- * As an example, in order to create a gatherer to implement a sequential
+ * <p>As an example, in order to create a gatherer to implement a sequential
  * Prefix Scan as a Gatherer, it could be done the following way:
  *
  * {@snippet lang = java:
@@ -135,6 +136,18 @@ import java.util.function.Supplier;
  *          })
  *     );
  * }
+ * }
+ *
+ * <p>Example of usage:
+ *
+ * {@snippet lang = java:
+ * // will contain: ["1", "12", "123", "1234", "12345", "123456", "1234567", "12345678", "123456789"]
+ * List<String> numberStrings =
+ *     Stream.of(1,2,3,4,5,6,7,8,9)
+ *           .gather(
+ *               scan(() -> "", (string, number) -> string + number)
+ *            )
+ *           .toList();
  * }
  *
  * @implSpec Libraries that implement transformation based on {@code Gatherer},
@@ -247,7 +260,7 @@ public interface Gatherer<T, A, R> {
      *
      * @param that the other gatherer
      * @param <RR> The type of output of that Gatherer
-     * @throws NullPointerException if the argument is null
+     * @throws NullPointerException if the argument is {@code null}
      * @return returns a composed Gatherer which connects the output of this
      *         Gatherer as input that Gatherer
      */
@@ -309,7 +322,7 @@ public interface Gatherer<T, A, R> {
      * @param integrator the integrator function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if the argument is null
+     * @throws NullPointerException if the argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, R> Gatherer<T, Void, R> ofSequential(
@@ -330,7 +343,7 @@ public interface Gatherer<T, A, R> {
      * @param finisher the finisher function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, R> Gatherer<T, Void, R> ofSequential(
@@ -353,7 +366,7 @@ public interface Gatherer<T, A, R> {
      * @param <T> the type of input elements for the new gatherer
      * @param <A> the type of initializer for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, A, R> Gatherer<T, A, R> ofSequential(
@@ -377,7 +390,7 @@ public interface Gatherer<T, A, R> {
      * @param <T> the type of input elements for the new gatherer
      * @param <A> the type of initializer for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, A, R> Gatherer<T, A, R> ofSequential(
@@ -399,7 +412,7 @@ public interface Gatherer<T, A, R> {
      * @param integrator the integrator function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, R> Gatherer<T, Void, R> of(Integrator<Void, T, R> integrator) {
@@ -419,7 +432,7 @@ public interface Gatherer<T, A, R> {
      * @param finisher the finisher function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, R> Gatherer<T, Void, R> of(
@@ -445,7 +458,7 @@ public interface Gatherer<T, A, R> {
      * @param <T> the type of input elements for the new gatherer
      * @param <A> the type of initializer for the new gatherer
      * @param <R> the type of results for the new gatherer
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
      */
     static <T, A, R> Gatherer<T, A, R> of(
@@ -472,13 +485,14 @@ public interface Gatherer<T, A, R> {
     interface Downstream<T> {
 
         /**
-         * Pushes, if possible, the provided element to the next stage in the
-         * pipeline.
+         * Pushes, if possible, the provided element downstream -- to the next
+         * stage in the pipeline.
          *
-         * <p>If this method returns {@code false} then the next stage does
-         * not accept any more elements.
+         * @implSpec If this method returns {@code false} then no further
+         * elements will be accepted and subsequent invocations of this method
+         * will return {@code false}.
          *
-         * @param element the element to send
+         * @param element the element to push downstream
          * @return {@code true} if more elements can be sent,
          *         and {@code false} if not.
          */
@@ -488,10 +502,10 @@ public interface Gatherer<T, A, R> {
          * Allows for checking whether the next stage is known to not want
          * any more elements sent to it.
          *
-         * @apiNote This is best-effort only, once this returns true it should
-         *          never return false again for the same instance.
+         * @apiNote This is best-effort only, once this returns {@code true} it
+         * should never return {@code false} again for the same instance.
          *
-         * <p>By default this method returns {@code false}.
+         * @implSpec By default this method returns {@code false}.
          *
          * @return {@code true} if this Downstream is known not to want any
          *         more elements sent to it, {@code false} if otherwise
@@ -520,8 +534,7 @@ public interface Gatherer<T, A, R> {
          *
          * @param state The state to integrate into
          * @param element The element to integrate
-         * @param downstream The downstream object of this integration,
-         *                   returns false if doesn't want any more elements
+         * @param downstream The downstream object of this integration
          * @return {@code true} if subsequent integration is desired,
          *         {@code false} if not
          */
