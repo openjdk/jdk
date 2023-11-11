@@ -29,7 +29,6 @@
 #include "gc/g1/g1ConcurrentRefineThreadsNeeded.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -72,9 +71,6 @@ public:
 
   void worker_threads_do(ThreadClosure* tc);
   void stop();
-
-  // Update the perf data counter for concurrent refine.
-  void update_threads_cpu_time();
 };
 
 // Controls concurrent refinement.
@@ -222,9 +218,6 @@ public:
 
   // Maximum number of refinement threads.
   static uint max_num_threads();
-
-  // Update the perf data counter for concurrent refine.
-  void update_concurrent_refine_threads_cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINE_HPP

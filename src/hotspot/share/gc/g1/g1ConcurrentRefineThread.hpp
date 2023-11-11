@@ -71,9 +71,15 @@ protected:
   // precondition: this is the current thread.
   virtual void do_refinement_step() = 0;
 
-  // Attempt to update concurrent refine threads stats.
-  // Only overridden in G1PrimaryConcurrentRefineThread.
-  virtual void maybe_update_threads_cpu_time() {};
+  // Update concurrent refine threads stats.
+  // If we are in Primary thread, we additionally update CPU time tracking.
+  virtual void track_usage() {
+    if (os::supports_vtime()) {
+      _vtime_accum = (os::elapsedVTime() - _vtime_start);
+    } else {
+      _vtime_accum = 0.0;
+    }
+  };
 
   // Helper for do_refinement_step implementations.  Try to perform some
   // refinement work, limited by stop_at.  Returns true if any refinement work

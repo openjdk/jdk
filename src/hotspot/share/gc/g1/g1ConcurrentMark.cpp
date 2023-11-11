@@ -2081,17 +2081,6 @@ void G1ConcurrentMark::print_on_error(outputStream* st) const {
   _mark_bitmap.print_on_error(st, " Bits: ");
 }
 
-void G1ConcurrentMark::update_concurrent_mark_threads_cpu_time() {
-  assert(Thread::current() == cm_thread(),
-         "Must be called from _cmThread to avoid races");
-  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
-    return;
-  }
-  ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_conc_mark);
-  tttc.do_thread(cm_thread());
-  threads_do(&tttc);
-}
-
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
   ReferenceProcessor* result = g1h->ref_processor_cm();
   assert(result != nullptr, "CM reference processor should not be null");

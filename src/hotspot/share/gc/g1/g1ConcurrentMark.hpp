@@ -449,9 +449,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Update the perf data counter for concurrent mark.
-  void update_concurrent_mark_threads_cpu_time();
-
   // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
   void clear_bitmap(WorkerThreads* workers, bool may_yield);

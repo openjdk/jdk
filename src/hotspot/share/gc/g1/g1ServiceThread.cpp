@@ -132,10 +132,7 @@ void G1ServiceThread::run_task(G1ServiceTask* task) {
 
   task->execute();
 
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_service);
-    tttc.do_thread(task->_service_thread);
-  }
+  update_thread_cpu_time(task);
 
   log_debug(gc, task)("G1 Service Thread (%s) (run: %1.3fms) (cpu: %1.3fms)",
                       task->name(),
@@ -156,6 +153,13 @@ void G1ServiceThread::run_service() {
 void G1ServiceThread::stop_service() {
   MonitorLocker ml(&_monitor, Mutex::_no_safepoint_check_flag);
   ml.notify();
+}
+
+void G1ServiceThread::update_thread_cpu_time(G1ServiceTask* task) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_service);
+    tttc.do_thread(task->_service_thread);
+  }
 }
 
 G1ServiceTask::G1ServiceTask(const char* name) :

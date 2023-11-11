@@ -38,7 +38,6 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include <math.h>
@@ -152,19 +151,6 @@ void G1ConcurrentRefineThreadControl::stop() {
       _threads[i]->stop();
     }
   }
-}
-
-void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
-  // The primary thread (_threads[0]) updates the counter for all worker
-  // threads, because:
-  // the primary thread is always woken up first from being blocked on a monitor
-  // when there is refinement work to do;
-  // the primary thread is started last and stopped first, so it will not risk
-  // reading CPU time of a terminated worker thread.
-  assert_current_thread_is_primary_refinement_thread();
-  assert(UsePerfData && os::is_thread_cpu_time_supported(), "Must be enabled");
-  ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_conc_refine);
-  worker_threads_do(&tttc);
 }
 
 uint64_t G1ConcurrentRefine::adjust_threads_period_ms() const {
@@ -472,8 +458,4 @@ bool G1ConcurrentRefine::try_refinement_step(uint worker_id,
                                              G1ConcurrentRefineStats* stats) {
   uint adjusted_id = worker_id + worker_id_offset();
   return _dcqs.refine_completed_buffer_concurrently(adjusted_id, stop_at, stats);
-}
-
-void G1ConcurrentRefine::update_concurrent_refine_threads_cpu_time() {
-  _thread_control.update_threads_cpu_time();
 }
