@@ -466,7 +466,6 @@ JavaMain(void* _args)
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
     jobjectArray mainArgs;
-    jclass helperClass;
     int ret = 0;
     jlong start = 0, end = 0;
 

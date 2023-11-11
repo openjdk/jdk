@@ -49,16 +49,18 @@ public class MainMethodFinder {
      */
     private static Method findMainMethod(Class<?> mainClass, boolean noArgs) {
         try {
+            // Search public methods
             Method mainMethod = noArgs ? mainClass.getMethod("main")
                                        : mainClass.getMethod("main", String[].class);
 
             if (isMainMethod(mainMethod)) {
                 return mainMethod;
             }
-        } catch (Exception ex) {
+        } catch (NoSuchMethodException ex) {
             // pass through
         }
 
+        // Search all methods
         for ( ;
               mainClass != null && mainClass != Object.class;
               mainClass = mainClass.getSuperclass()) {
@@ -68,7 +70,7 @@ public class MainMethodFinder {
                 if (isMainMethod(mainMethod)) {
                     return mainMethod;
                 }
-            } catch (Exception ex) {
+            } catch (NoSuchMethodException ex) {
                 // pass through
             }
         }
