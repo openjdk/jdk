@@ -194,7 +194,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
   set_common_app_classpath_prefix_size((unsigned int)common_app_classpath_prefix_size);
-  set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  set_magic(CDSConfig::is_dumping_dynamic_archive() ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
   if (!info->is_static() && base_archive_name_size != 0) {
@@ -235,7 +235,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
 
-  if (!DynamicDumpSharedSpaces) {
+  if (!CDSConfig::is_dumping_dynamic_archive()) {
     set_shared_path_table(info->_shared_path_table);
   }
 }
@@ -932,7 +932,7 @@ bool FileMapInfo::validate_shared_path_table() {
 
   // Load the shared path table info from the archive header
   _shared_path_table = header()->shared_path_table();
-  if (DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive()) {
     // Only support dynamic dumping with the usage of the default CDS archive
     // or a simple base archive.
     // If the base layer archive contains additional path component besides
@@ -942,13 +942,13 @@ bool FileMapInfo::validate_shared_path_table() {
     // to include the application path and stored in the top layer archive.
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
     if (header()->app_class_paths_start_index() > 1) {
-      DynamicDumpSharedSpaces = false;
+      CDSConfig::disable_dumping_dynamic_archive();
       log_warning(cds)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
       if (!check_module_paths()) {
-        DynamicDumpSharedSpaces = false;
+        CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
       }
@@ -1523,7 +1523,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(HeapShared::can_write(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
-    assert(!DynamicDumpSharedSpaces, "must be");
+    assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
     requested_base = (char*)ArchiveHeapWriter::requested_address();
     if (UseCompressedOops) {
       mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
@@ -2272,7 +2272,7 @@ bool FileMapInfo::initialize() {
     } else {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
-        DynamicDumpSharedSpaces = true;
+        CDSConfig::enable_dumping_dynamic_archive();
         ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
       }
       return false;
