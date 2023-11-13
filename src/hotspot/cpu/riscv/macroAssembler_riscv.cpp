@@ -4258,7 +4258,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src,
   // if +/-inf, +/-normal numbers
   li(tmp, 0x3f000000);
   fmv_w_x(ftmp, tmp);
-  fadd_s(ftmp, src, ftmp);
+  fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_w_s(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
@@ -4281,7 +4281,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src,
   // if +/-inf, +/-normal numbers
   li(tmp, 0x3fe0000000000000);
   fmv_d_x(ftmp, tmp);
-  fadd_d(ftmp, src, ftmp);
+  fadd_d(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
