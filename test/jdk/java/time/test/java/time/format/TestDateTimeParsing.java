@@ -244,7 +244,7 @@ public class TestDateTimeParsing {
         }
     }
 
-    // Checks ::toFormat().parseObject(text, pos) do not throw IOOBE
+    // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
     @Test
     public void test_toFormat_2arg_null_return_on_DateTimeException() {
         var f = new DateTimeFormatterBuilder()
@@ -261,7 +261,7 @@ public class TestDateTimeParsing {
         assertNull(f.parseObject("17-30", new ParsePosition(0)));
     }
 
-    // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
+    // Checks ::toFormat().parseObject(text, pos) do not throw IOOBE
     @Test
     public void test_toFormat_2arg_null_return_on_IOOBE() {
         var date = "2023-11-13";
