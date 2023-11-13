@@ -293,7 +293,6 @@ void VM_Version::c2_initialize() {
   }
 
   if (!UseRVV) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
   } else {
