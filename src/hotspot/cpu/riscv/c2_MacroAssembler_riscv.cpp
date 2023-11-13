@@ -1484,11 +1484,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
 
-  // result has already been zeroed earlier.
+  // result has already been zeroed earlier
 
   beqz(cnt, DONE);
 
-  ld(pow31_1_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31() + 2 * sizeof(jint))); // [31^^1][31^^2]
+  ld(pow31_1_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                                + 2 * sizeof(jint))); // [31^^1][31^^2]
 
   andi(chunk, cnt, ~(stride-1));
   beqz(chunk, TAIL);
@@ -1504,7 +1505,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   default:                                             break; \
   } \
 
-  ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31() + 0 * sizeof(jint))); // [31^^3:31^^4]
+  ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                                + 0 * sizeof(jint))); // [31^^3:31^^4]
 
   bind(WIDE_LOOP);
   DO_ELEMENT_LOAD(tmp1, 0)
