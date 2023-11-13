@@ -25,24 +25,37 @@
 
 package java.security;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.security.jca.GetInstance;
+import sun.security.jca.ProviderList;
+import sun.security.jca.Providers;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
-
-import sun.security.jca.*;
 
 /**
  * <p>This class centralizes all security properties and common security

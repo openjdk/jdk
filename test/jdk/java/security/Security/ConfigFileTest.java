@@ -425,6 +425,7 @@ sealed class PropsFile permits ExtraPropsFile {
         for (Include include : includes) {
             include.propsFile.assertApplied(oa);
             oa.shouldContain("processing include: '" + include.value + "'");
+            oa.shouldContain("finished processing " + include.propsFile.path);
         }
     }
 
@@ -509,7 +510,7 @@ final class FilesManager implements Closeable {
         fileNamesInUse = new HashSet<>();
         httpServer = HttpServer.create(
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
-        httpServer.createContext("/", this::handeRequest);
+        httpServer.createContext("/", this::handleRequest);
         InetSocketAddress address = httpServer.getAddress();
         httpServer.start();
         serverUri = new URI("http", null, address.getHostString(),
@@ -540,7 +541,7 @@ final class FilesManager implements Closeable {
         Files.move(MASTER_FILE, MASTER_FILE_TEMPLATE);
     }
 
-    private void handeRequest(HttpExchange x) throws IOException {
+    private void handleRequest(HttpExchange x) throws IOException {
         String rawPath = x.getRequestURI().getRawPath();
         Path f = ROOT_DIR.resolve(x.getRequestURI().getPath().substring(1));
         int statusCode;
@@ -748,21 +749,54 @@ final class Executor {
 
     void assertSuccess() throws Exception {
         execute(true);
-        PropsFile lastFile = null;
+
+        // Ensure every file was processed by checking a unique property used as
+        // a flag. Each file defines <fileName>=applied.
+        //
+        // For example:
+        //
+        //   file0
+        //   ---------------
+        //   file0=applied
+        //   include file1
+        //
+        //   file1
+        //   ---------------
+        //   file1=applied
+        //
+        // The assertion would be file0 == applied AND file1 == applied.
+        //
         if (extraPropsFile != null) {
             extraPropsFile.assertApplied(oa);
-            lastFile = extraPropsFile.getLastFile();
         }
         if (expectedOverrideAll) {
+            // When overriding with an extra file, check that neither
+            // the master file nor its includes are visible.
             oa.shouldContain(OVERRIDING_LOG_MSG);
             masterPropsFile.assertWasOverwritten(oa);
         } else {
             oa.shouldNotContain(OVERRIDING_LOG_MSG);
             masterPropsFile.assertApplied(oa);
         }
-        if (lastFile == null) {
-            lastFile = masterPropsFile.getLastFile();
-        }
+
+        // Ensure the last included file overwrote a fixed property. Each file
+        // defines last-file=<fileName>.
+        //
+        // For example:
+        //
+        //   file0
+        //   ---------------
+        //   last-file=file0
+        //   include file1
+        //
+        //   file1
+        //   ---------------
+        //   last-file=file1
+        //
+        // The assertion would be last-file == file1.
+        //
+        PropsFile lastFile = (extraPropsFile == null ?
+                masterPropsFile : extraPropsFile).getLastFile();
         oa.shouldContain(FilesManager.LAST_FILE_PROP_NAME + "=" +
                 lastFile.fileName);
         oa.stdoutShouldContain(FilesManager.LAST_FILE_PROP_NAME + ": " +
