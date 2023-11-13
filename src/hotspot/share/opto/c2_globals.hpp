@@ -341,9 +341,6 @@
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
-  product(bool, DoReserveCopyInSuperWord, true,                             \
-          "Create reserve copy of graph in SuperWord.")                     \
-                                                                            \
   notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
                                                                             \
@@ -471,7 +468,10 @@
           "Try to simplify allocation merges before Scalar Replacement")    \
                                                                             \
   notproduct(bool, TraceReduceAllocationMerges, false,                      \
-          "Trace decision for simplifying allocation merges.")              \
+             "Trace decision for simplifying allocation merges.")           \
+                                                                            \
+  develop(bool, VerifyReduceAllocationMerges, true,                         \
+          "Verify reduce allocation merges in escape analysis")             \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
@@ -774,6 +774,12 @@
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
+                                                                            \
+  product(intx, TypeProfileSubTypeCheckCommonThreshold, 50,                 \
+          "Use profile data at type check if profiled types account for"    \
+          "more than this threshold")                                       \
+          range(0, 100)                                                     \
+                                                                            \
 
 // end of C2_FLAGS
 

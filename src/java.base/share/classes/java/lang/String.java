@@ -28,6 +28,8 @@ package java.lang;
 import java.io.ObjectStreamField;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Native;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
@@ -1836,6 +1838,21 @@ public final class String
         return encode(Charset.defaultCharset(), coder(), value);
     }
 
+    boolean bytesCompatible(Charset charset) {
+        if (isLatin1()) {
+            if (charset == ISO_8859_1.INSTANCE) {
+                return true; // ok, same encoding
+            } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
+                return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
+            }
+        }
+        return false;
+    }
+
+    void copyToSegmentRaw(MemorySegment segment, long offset) {
+        MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
+    }
+
     /**
      * Compares this string to the specified object.  The result is {@code
      * true} if and only if the argument is not {@code null} and is a {@code
@@ -2155,6 +2172,10 @@ public final class String
              (toffset > (long)length() - len) ||
              (ooffset > (long)other.length() - len)) {
             return false;
+        }
+        // Any strings match if len <= 0
+        if (len <= 0) {
+           return true;
         }
         byte[] tv = value;
         byte[] ov = other.value;
@@ -3418,9 +3439,9 @@ public final class String
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table></blockquote>

@@ -744,6 +744,10 @@ public class AquaFileChooserUI extends FileChooserUI {
         public void mouseClicked(final MouseEvent e) {
             if (e.getClickCount() != 2) return;
 
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
+
             final int index = list.locationToIndex(e.getPoint());
             if (index < 0) return;
 
@@ -1259,7 +1263,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     //
-    // DataModel for DirectoryComboxbox
+    // DataModel for DirectoryCombobox
     //
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(final JFileChooser fc) {
         return new DirectoryComboBoxModel();
@@ -1368,7 +1372,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     //
-    // DataModel for Types Comboxbox
+    // DataModel for Types Combobox
     //
     protected FilterComboBoxModel createFilterComboBoxModel() {
         return new FilterComboBoxModel();
@@ -1412,9 +1416,9 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // NOTE: we shouldn't have to do this, since JFileChooser adds
             // the filter to the choosable filters list when the filter
-            // is set. Lets be paranoid just in case someone overrides
+            // is set. Let's be paranoid just in case someone overrides
             // setFileFilter in JFileChooser.
             FileFilter currentFilter = getFileChooser().getFileFilter();
             boolean found = false;
@@ -1500,6 +1504,9 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         // Instead of dragging, it selects which one to sort by
         public void setDraggedColumn(final TableColumn aColumn) {
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
             if (aColumn != null) {
                 final int colIndex = aColumn.getModelIndex();
                 if (colIndex != fSortColumn) {
@@ -1839,6 +1846,10 @@ public class AquaFileChooserUI extends FileChooserUI {
 
             // The autoscroller can generate drag events outside the Table's range.
             if ((column == -1) || (row == -1)) { return; }
+
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
 
             final File clickedFile = (File)(fFileList.getValueAt(row, 0));
 

@@ -81,7 +81,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here (sorted alphabetically)
@@ -769,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -803,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -1116,11 +1118,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(filename);
-#endif
-
   // RTLD_LAZY has currently the same behavior as RTLD_NOW
   // The dl is loaded immediately with all its dependants.
   int dflags = RTLD_LAZY;
@@ -1131,19 +1128,14 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     dflags |= RTLD_MEMBER;
   }
 
-  void * result= ::dlopen(filename, dflags);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = ::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
-
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
-
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1157,12 +1149,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
 }
@@ -1911,7 +1898,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -3043,3 +3030,32 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path[0] == '/' ||
+      (path[0] == '.' && (path[1] == '/' ||
+                          (path[1] == '.' && path[2] == '/')))) {
+    return stat64x(path, stat);
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr || *env == 0)
+    return -1;
+
+  int ret = -1;
+  size_t libpathlen = strlen(env);
+  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
+  char *saveptr, *token;
+  strcpy(libpath, env);
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    sprintf(combined, "%s/%s", token, path);
+    if (0 == (ret = stat64x(combined, stat)))
+      break;
+  }
+
+  FREE_C_HEAP_ARRAY(char*, combined);
+  FREE_C_HEAP_ARRAY(char*, libpath);
+  return ret;
+}

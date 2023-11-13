@@ -83,6 +83,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -117,8 +118,7 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
   if (cm->is_marked_for_deoptimization()) {
@@ -139,8 +139,8 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 }
 
 void DeoptimizationScope::dependent(CompiledMethod* cm) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
   if (_required_gen < cm->_deoptimization_generation) {
@@ -170,8 +170,8 @@ void DeoptimizationScope::deoptimize_marked() {
   bool wait = false;
   while (true) {
     {
-      MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
       // First we check if we or someone else already deopted the gen we want.
       if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
         DEBUG_ONLY(_deopted = true;)
@@ -198,8 +198,8 @@ void DeoptimizationScope::deoptimize_marked() {
       Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
       DEBUG_ONLY(_deopted = true;)
       {
-        MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                       Mutex::_no_safepoint_check_flag);
+        ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
         // Make sure that committed doesn't go backwards.
         // Should only happen if we did a deopt during a safepoint above.
         if (DeoptimizationScope::_committed_deopt_gen < comitting) {
@@ -1637,9 +1637,19 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             }
           }
         }
-        BasicLock* lock = mon_info->lock();
-        ObjectSynchronizer::enter(obj, lock, deoptee_thread);
-        assert(mon_info->owner()->is_locked(), "object must be locked now");
+        if (LockingMode == LM_LIGHTWEIGHT && exec_mode == Unpack_none) {
+          // We have lost information about the correct state of the lock stack.
+          // Inflate the locks instead. Enter then inflate to avoid races with
+          // deflation.
+          ObjectSynchronizer::enter(obj, nullptr, deoptee_thread);
+          assert(mon_info->owner()->is_locked(), "object must be locked now");
+          ObjectMonitor* mon = ObjectSynchronizer::inflate(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
+          assert(mon->owner() == deoptee_thread, "must be");
+        } else {
+          BasicLock* lock = mon_info->lock();
+          ObjectSynchronizer::enter(obj, lock, deoptee_thread);
+          assert(mon_info->owner()->is_locked(), "object must be locked now");
+        }
       }
     }
   }

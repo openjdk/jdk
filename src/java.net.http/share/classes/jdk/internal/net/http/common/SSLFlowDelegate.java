@@ -971,10 +971,12 @@ public class SSLFlowDelegate {
 
     boolean stopped;
 
-    private synchronized void normalStop() {
-        if (stopped)
-            return;
-        stopped = true;
+    private void normalStop() {
+        synchronized (this) {
+            if (stopped)
+                return;
+            stopped = true;
+        }
         reader.stop();
         writer.stop();
         // make sure the alpnCF is completed.

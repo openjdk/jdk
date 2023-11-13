@@ -687,7 +687,7 @@
   product(uint, GCDrainStackTargetSize, 64,                                 \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, (UINT_MAX - 1) / 2)                                      \
+          range(0, 8 * 1024)                                                \
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \

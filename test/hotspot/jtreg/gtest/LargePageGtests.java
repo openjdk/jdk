@@ -55,13 +55,3 @@
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:LargePageSizeInBytes=1G
  */
-
-/* @test id=use-large-pages-sysV
- * @summary Run metaspace-related gtests for reclaim policy none (with verifications)
- * @requires os.family == "linux"
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=os* -XX:-PrintWarnings -XX:+UseLargePages -XX:+UseSHM
- */

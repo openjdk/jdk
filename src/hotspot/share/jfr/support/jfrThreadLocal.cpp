@@ -395,11 +395,14 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
     return t->jfr_thread_local()->_thread_id_alias;
   }
   JfrThreadLocal* const tl = t->jfr_thread_local();
-  if (!t->is_Java_thread() || !Atomic::load_acquire(&tl->_vthread)) {
+  if (!t->is_Java_thread()) {
+    return jvm_thread_id(t, tl);
+  }
+  const JavaThread* jt = JavaThread::cast(t);
+  if (!is_vthread(jt)) {
     return jvm_thread_id(t, tl);
   }
   // virtual thread
-  const JavaThread* jt = JavaThread::cast(t);
   const traceid tid = vthread_id(jt);
   assert(tid != 0, "invariant");
   if (!tl->is_vthread_excluded()) {
@@ -456,7 +459,7 @@ traceid JfrThreadLocal::jvm_thread_id(const Thread* t) {
 
 bool JfrThreadLocal::is_vthread(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  return Atomic::load_acquire(&jt->jfr_thread_local()->_vthread);
+  return Atomic::load_acquire(&jt->jfr_thread_local()->_vthread) && jt->last_continuation() != nullptr;
 }
 
 inline bool is_virtual(const JavaThread* jt, oop thread) {

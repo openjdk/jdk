@@ -1224,23 +1224,34 @@ class ZipFileSystem extends FileSystem {
         close();
     }
 
-    // Reads len bytes of data from the specified offset into buf.
-    // Returns the total number of bytes read.
-    // Each/every byte read from here (except the cen, which is mapped).
-    final long readFullyAt(byte[] buf, int off, long len, long pos)
-        throws IOException
-    {
+    /**
+     * Reads len bytes of data at the given file position into the given byte array
+     * starting at the given array offset. The method blocks until len bytes have been
+     * read, end of stream is detected, or an exception is thrown. Returns the total
+     * number of bytes read.
+     */
+    final long readNBytesAt(byte[] buf, int off, long len, long pos) throws IOException {
         ByteBuffer bb = ByteBuffer.wrap(buf);
         bb.position(off);
         bb.limit((int)(off + len));
-        return readFullyAt(bb, pos);
+
+        long totalRead = 0;
+        while (totalRead < len) {
+            int n = readAt(bb, pos);
+            if (n < 0) {
+                break;
+            }
+            pos += n;
+            totalRead +=n;
+        }
+        return totalRead;
     }
 
-    private long readFullyAt(ByteBuffer bb, long pos) throws IOException {
-        if (ch instanceof FileChannel fch) {
-            return fch.read(bb, pos);
+    private int readAt(ByteBuffer bb, long pos) throws IOException {
+        if (ch instanceof FileChannel fc) {
+            return fc.read(bb, pos);
         } else {
-            synchronized(ch) {
+            synchronized (ch) {
                 return ch.position(pos).read(bb);
             }
         }
@@ -1264,7 +1275,7 @@ class ZipFileSystem extends FileSystem {
                 Arrays.fill(buf, 0, off, (byte)0);
             }
             int len = buf.length - off;
-            if (readFullyAt(buf, off, len, pos + off) != len)
+            if (readNBytesAt(buf, off, len, pos + off) != len)
                 throw new ZipException("zip END header not found");
 
             // Now scan the block backwards for END header signature
@@ -1286,14 +1297,14 @@ class ZipFileSystem extends FileSystem {
                     // try if there is zip64 end;
                     byte[] loc64 = new byte[ZIP64_LOCHDR];
                     if (end.endpos < ZIP64_LOCHDR ||
-                        readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
+                        readNBytesAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
                         != loc64.length ||
                         !locator64SigAt(loc64, 0)) {
                         return end;
                     }
                     long end64pos = ZIP64_LOCOFF(loc64);
                     byte[] end64buf = new byte[ZIP64_ENDHDR];
-                    if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
+                    if (readNBytesAt(end64buf, 0, end64buf.length, end64pos)
                         != end64buf.length ||
                         !end64SigAt(end64buf, 0)) {
                         return end;
@@ -1557,7 +1568,7 @@ class ZipFileSystem extends FileSystem {
 
         // read in the CEN and END
         byte[] cen = new byte[(int)(end.cenlen + ENDHDR)];
-        if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
+        if (readNBytesAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
             throw new ZipException("read CEN tables failed");
         }
         // Iterate through the entries in the central directory
@@ -1572,6 +1583,10 @@ class ZipFileSystem extends FileSystem {
             int elen   = CENEXT(cen, pos);
             int clen   = CENCOM(cen, pos);
             int flag   = CENFLG(cen, pos);
+            long csize = CENSIZ(cen, pos);
+            long size  = CENLEN(cen, pos);
+            long locoff = CENOFF(cen, pos);
+            int diskNo = CENDSK(cen, pos);
             if ((flag & 1) != 0) {
                 throw new ZipException("invalid CEN header (encrypted entry)");
             }
@@ -1580,6 +1595,13 @@ class ZipFileSystem extends FileSystem {
             }
             if (pos + CENHDR + nlen > limit) {
                 throw new ZipException("invalid CEN header (bad header size)");
+            }
+            if (elen > 0) {
+                checkExtraFields(cen, pos, size, csize, locoff, diskNo,
+                        pos + CENHDR + nlen, elen);
+            } else if (elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL ||
+                    locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
+                throw new ZipException("Invalid CEN header (invalid zip64 extra len size)");
             }
             IndexNode inode = new IndexNode(cen, pos, nlen);
             if (inode.pathHasDotOrDotDot()) {
@@ -1602,6 +1624,165 @@ class ZipFileSystem extends FileSystem {
         return cen;
     }
 
+    /**
+     * Validate the Zip64 Extra block fields
+     * @param cen CEN array
+     * @param cenPos starting offset in the CEN for the Extra field
+     * @param size CEN size value
+     * @param csize CEN csize value
+     * @param locoff CEN LOC offset value
+     * @param diskNo CEN Disk number value
+     * @param startingOffset Extra Field starting offset within the CEN
+     * @param extraFieldLen Length of this Extra field
+     * @throws ZipException  If an error occurs validating the Zip64 Extra
+     * block
+     */
+    private void checkExtraFields( byte[] cen, int cenPos, long size, long csize,
+                                   long locoff, int diskNo, int startingOffset,
+                                   int extraFieldLen) throws ZipException {
+        // Extra field Length cannot exceed 65,535 bytes per the PKWare
+        // APP.note 4.4.11
+        if (extraFieldLen > 0xFFFF) {
+            zerror("invalid extra field length");
+        }
+        // CEN Offset where this Extra field ends
+        int extraEndOffset = startingOffset + extraFieldLen;
+        if (extraEndOffset > cen.length - ENDHDR) {
+            zerror("Invalid CEN header (extra data field size too long)");
+        }
+        int currentOffset = startingOffset;
+        // Walk through each Extra Header. Each Extra Header Must consist of:
+        //       Header ID - 2 bytes
+        //       Data Size - 2 bytes:
+        while (currentOffset + Integer.BYTES <= extraEndOffset) {
+            int tag = SH(cen, currentOffset);
+            currentOffset += Short.BYTES;
+
+            int tagBlockSize = SH(cen, currentOffset);
+            currentOffset += Short.BYTES;
+            int tagBlockEndingOffset = currentOffset + tagBlockSize;
+
+            //  The ending offset for this tag block should not go past the
+            //  offset for the end of the extra field
+            if (tagBlockEndingOffset > extraEndOffset) {
+                zerror(String.format(
+                        "Invalid CEN header (invalid extra data field size for " +
+                                "tag: 0x%04x at %d)",
+                        tag, cenPos));
+            }
+
+            if (tag == EXTID_ZIP64) {
+                checkZip64ExtraFieldValues(cen, currentOffset, tagBlockSize,
+                        csize, size, locoff, diskNo);
+            }
+            currentOffset += tagBlockSize;
+        }
+    }
+
+    /**
+     * Validate the Zip64 Extended Information Extra Field (0x0001) block
+     * size; that the uncompressed size, compressed size field and LOC
+     * offset fields are not negative. Also make sure the field exists if
+     * the CEN header field is set to 0xFFFFFFFF.
+     * Note:  As we do not use the Starting disk number field,
+     * we will not validate its value
+     * @param cen CEN array
+     * @param off the starting offset for the Zip64 field value
+     * @param blockSize the size of the Zip64 Extended Extra Field
+     * @param csize CEN header compressed size value
+     * @param size CEN header uncompressed size value
+     * @param locoff CEN header LOC offset
+     * @param diskNo CEN header Disk Number
+     * @throws ZipException if an error occurs
+     */
+    private void checkZip64ExtraFieldValues(byte[] cen, int off, int blockSize, long csize,
+                                            long size, long locoff, int diskNo)
+            throws ZipException {
+        // if ZIP64_EXTID blocksize == 0, which may occur with some older
+        // versions of Apache Ant and Commons Compress, validate csize and size
+        // to make sure neither field == ZIP64_MAGICVAL
+        if (blockSize == 0) {
+            if (csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
+                    locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32) {
+                zerror("Invalid CEN header (invalid zip64 extra data field size)");
+            }
+            // Only validate the ZIP64_EXTID data if the block size > 0
+            return;
+        }
+        // Validate the Zip64 Extended Information Extra Field (0x0001)
+        // length.
+        if (!isZip64ExtBlockSizeValid(blockSize, csize, size, locoff, diskNo)) {
+            zerror("Invalid CEN header (invalid zip64 extra data field size)");
+        }
+        // Check the uncompressed size is not negative
+        if (size == ZIP64_MINVAL) {
+            if (blockSize >= Long.BYTES) {
+                if (LL(cen, off) < 0) {
+                    zerror("Invalid zip64 extra block size value");
+                }
+                off += Long.BYTES;
+                blockSize -= Long.BYTES;
+            } else {
+                zerror("Invalid Zip64 extra block, missing size");
+            }
+        }
+        // Check the compressed size is not negative
+        if (csize == ZIP64_MINVAL) {
+            if (blockSize >= Long.BYTES) {
+                if (LL(cen, off) < 0) {
+                    zerror("Invalid zip64 extra block compressed size value");
+                }
+                off += Long.BYTES;
+                blockSize -= Long.BYTES;
+            } else {
+                zerror("Invalid Zip64 extra block, missing compressed size");
+            }
+        }
+        // Check the LOC offset is not negative
+        if (locoff == ZIP64_MINVAL) {
+            if (blockSize >= Long.BYTES) {
+                if (LL(cen, off) < 0) {
+                    zerror("Invalid zip64 extra block LOC OFFSET value");
+                }
+                // Note: We do not need to adjust the following fields as
+                // this is the last field we are leveraging
+                // off += Long.BYTES;
+                // blockSize -= Long.BYTES;
+            } else {
+                zerror("Invalid Zip64 extra block, missing LOC offset value");
+            }
+        }
+    }
+
+    /**
+     * Validate the size and contents of a Zip64 extended information field
+     * The order of the Zip64 fields is fixed, but the fields MUST
+     * only appear if the corresponding LOC or CEN field is set to 0xFFFF:
+     * or 0xFFFFFFFF:
+     * Uncompressed Size - 8 bytes
+     * Compressed Size   - 8 bytes
+     * LOC Header offset - 8 bytes
+     * Disk Start Number - 4 bytes
+     * See PKWare APP.Note Section 4.5.3 for more details
+     *
+     * @param blockSize the Zip64 Extended Information Extra Field size
+     * @param csize CEN header compressed size value
+     * @param size CEN header uncompressed size value
+     * @param locoff CEN header LOC offset
+     * @param diskNo CEN header Disk Number
+     * @return true if the extra block size is valid; false otherwise
+     */
+    private static boolean isZip64ExtBlockSizeValid(int blockSize, long csize,
+                                                    long size, long locoff,
+                                                    int diskNo) {
+        int expectedBlockSize =
+                (csize == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (size == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (locoff == ZIP64_MINVAL ? Long.BYTES : 0) +
+                        (diskNo == ZIP64_MINVAL32 ? Integer.BYTES : 0);
+        return expectedBlockSize == blockSize;
+    }
+
     private  final void checkUTF8(byte[] a) throws ZipException {
         try {
             int end = a.length;
@@ -1621,6 +1802,10 @@ class ZipFileSystem extends FileSystem {
         }
     }
 
+    private static void zerror(String msg) throws ZipException {
+        throw new ZipException(msg);
+    }
+
     private final void checkEncoding( byte[] a) throws ZipException {
         try {
             zc.toString(a);
@@ -1628,7 +1813,6 @@ class ZipFileSystem extends FileSystem {
             throw new ZipException("invalid CEN header (bad entry name)");
         }
     }
-
 
     private void ensureOpen() {
         if (!isOpen)
@@ -1706,7 +1890,7 @@ class ZipFileSystem extends FileSystem {
         // 'name' field of the loc. if this byte is '/', which means the original
         // entry has an absolute path in original zip/jar file, the e.writeLOC()
         // is used to output the loc, in which the leading "/" will be removed
-        if (readFullyAt(buf, 0, LOCHDR + 1 , locoff) != LOCHDR + 1)
+        if (readNBytesAt(buf, 0, LOCHDR + 1 , locoff) != LOCHDR + 1)
             throw new ZipException("loc: reading failed");
 
         if (updateHeader || LOCNAM(buf) > 0 && buf[LOCHDR] == '/') {
@@ -1723,7 +1907,7 @@ class ZipFileSystem extends FileSystem {
         }
         int n;
         while (size > 0 &&
-            (n = (int)readFullyAt(buf, 0, buf.length, locoff)) != -1)
+            (n = (int)readNBytesAt(buf, 0, buf.length, locoff)) != -1)
         {
             if (size < n)
                 n = (int)size;
@@ -2338,7 +2522,7 @@ class ZipFileSystem extends FileSystem {
             ByteBuffer bb = ByteBuffer.wrap(b);
             bb.position(off);
             bb.limit(off + len);
-            long n = readFullyAt(bb, pos);
+            long n = readAt(bb, pos);
             if (n > 0) {
                 pos += n;
                 rem -= n;
@@ -2383,7 +2567,7 @@ class ZipFileSystem extends FileSystem {
             if (pos <= 0) {
                 pos = -pos + locpos;
                 byte[] buf = new byte[LOCHDR];
-                if (readFullyAt(buf, 0, buf.length, pos) != LOCHDR) {
+                if (readNBytesAt(buf, 0, buf.length, pos) != LOCHDR) {
                     throw new ZipException("invalid loc " + pos + " for entry reading");
                 }
                 pos += LOCHDR + LOCNAM(buf) + LOCEXT(buf);
@@ -2809,9 +2993,9 @@ class ZipFileSystem extends FileSystem {
             int nlen    = CENNAM(cen, pos);
             int elen    = CENEXT(cen, pos);
             int clen    = CENCOM(cen, pos);
+            int diskNo  = CENDSK(cen, pos);
             /*
             versionMade = CENVEM(cen, pos);
-            disk        = CENDSK(cen, pos);
             attrs       = CENATT(cen, pos);
             attrsEx     = CENATX(cen, pos);
             */
@@ -2829,6 +3013,9 @@ class ZipFileSystem extends FileSystem {
                 extra = Arrays.copyOfRange(cen, pos, pos + elen);
                 pos += elen;
                 readExtra(zipfs);
+            } else if (elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL
+                    || locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
+                throw new ZipException("Invalid CEN header (invalid zip64 extra len size)");
             }
             if (clen > 0) {
                 comment = Arrays.copyOfRange(cen, pos, pos + clen);
@@ -3078,7 +3265,7 @@ class ZipFileSystem extends FileSystem {
             int off = 0;
             int newOff = 0;
             boolean hasZip64LocOffset = false;
-            while (off + 4 < elen) {
+            while (off + 4 <= elen) {
                 // extra spec: HeaderID+DataSize+Data
                 int pos = off;
                 int tag = SH(extra, pos);
@@ -3091,20 +3278,7 @@ class ZipFileSystem extends FileSystem {
                             tag, sz));
                 }
                 switch (tag) {
-                case EXTID_ZIP64 :
-                    // if ZIP64_EXTID blocksize == 0, which may occur with some older
-                    // versions of Apache Ant and Commons Compress, validate csize
-                    // size, and locoff to make sure the fields != ZIP64_MAGICVAL
-                    if (sz == 0) {
-                        if (csize == ZIP64_MINVAL || size == ZIP64_MINVAL || locoff == ZIP64_MINVAL) {
-                            throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
-                        }
-                        break;
-                    }
-                    // Check to see if we have a valid block size
-                    if (!isZip64ExtBlockSizeValid(sz)) {
-                        throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
-                    }
+                case EXTID_ZIP64:
                     if (size == ZIP64_MINVAL) {
                         if (pos + 8 > elen)  // invalid zip64 extra
                             break;           // fields, just skip
@@ -3158,8 +3332,8 @@ class ZipFileSystem extends FileSystem {
                          break;
                     }
                     // If the LOC offset is 0xFFFFFFFF, then we need to read the
-                    // LOC offset from the EXTID_ZIP64 extra data. Therefore
-                    // wait until all of the CEN extra data fields have been processed
+                    // LOC offset from the EXTID_ZIP64 extra data. Therefore,
+                    // wait until all the CEN extra data fields have been processed
                     // prior to reading the LOC extra data field in order to obtain
                     // the Info-ZIP Extended Timestamp.
                     if (locoff != ZIP64_MINVAL) {
@@ -3188,43 +3362,13 @@ class ZipFileSystem extends FileSystem {
         }
 
         /**
-         * Validate the size and contents of a Zip64 extended information field
-         * The order of the Zip64 fields is fixed, but the fields MUST
-         * only appear if the corresponding LOC or CEN field is set to 0xFFFF:
-         * or 0xFFFFFFFF:
-         * Uncompressed Size - 8 bytes
-         * Compressed Size   - 8 bytes
-         * LOC Header offset - 8 bytes
-         * Disk Start Number - 4 bytes
-         * See PKWare APP.Note Section 4.5.3 for more details
-         *
-         * @param blockSize the Zip64 Extended Information Extra Field size
-         * @return true if the extra block size is valid; false otherwise
-         */
-        private static boolean isZip64ExtBlockSizeValid(int blockSize) {
-            /*
-             * As the fields must appear in order, the block size indicates which
-             * fields to expect:
-             *  8 - uncompressed size
-             * 16 - uncompressed size, compressed size
-             * 24 - uncompressed size, compressed sise, LOC Header offset
-             * 28 - uncompressed size, compressed sise, LOC Header offset,
-             * and Disk start number
-             */
-            return switch(blockSize) {
-                case 8, 16, 24, 28 -> true;
-                default -> false;
-            };
-        }
-
-        /**
          * Read the LOC extra field to obtain the Info-ZIP Extended Timestamp fields
          * @param zipfs The Zip FS to use
          * @throws IOException If an error occurs
          */
         private void readLocEXTT(ZipFileSystem zipfs) throws IOException {
             byte[] buf = new byte[LOCHDR];
-            if (zipfs.readFullyAt(buf, 0, buf.length , locoff)
+            if (zipfs.readNBytesAt(buf, 0, buf.length , locoff)
                 != buf.length)
                 throw new ZipException("loc: reading failed");
             if (!locSigAt(buf, 0))
@@ -3235,7 +3379,7 @@ class ZipFileSystem extends FileSystem {
                 return;
             int locNlen = LOCNAM(buf);
             buf = new byte[locElen];
-            if (zipfs.readFullyAt(buf, 0, buf.length , locoff + LOCHDR + locNlen)
+            if (zipfs.readNBytesAt(buf, 0, buf.length , locoff + LOCHDR + locNlen)
                 != buf.length)
                 throw new ZipException("loc extra: reading failed");
             int locPos = 0;

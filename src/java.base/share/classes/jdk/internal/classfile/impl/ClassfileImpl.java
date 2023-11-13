@@ -43,7 +43,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 public record ClassfileImpl(StackMapsOption stackMapsOption,
                             DebugElementsOption debugElementsOption,
                             LineNumbersOption lineNumbersOption,
-                            UnknownAttributesOption unknownAttributesOption,
+                            AttributesProcessingOption attributesProcessingOption,
                             ConstantPoolSharingOption constantPoolSharingOption,
                             ShortJumpsOption shortJumpsOption,
                             DeadCodeOption deadCodeOption,
@@ -55,7 +55,7 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
             StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
             DebugElementsOption.PASS_DEBUG,
             LineNumbersOption.PASS_LINE_NUMBERS,
-            UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES,
+            AttributesProcessingOption.PASS_ALL_ATTRIBUTES,
             ConstantPoolSharingOption.SHARED_POOL,
             ShortJumpsOption.FIX_SHORT_JUMPS,
             DeadCodeOption.PATCH_DEAD_CODE,
@@ -74,7 +74,7 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
         var smo = stackMapsOption;
         var deo = debugElementsOption;
         var lno = lineNumbersOption;
-        var uao = unknownAttributesOption;
+        var apo = attributesProcessingOption;
         var cpso = constantPoolSharingOption;
         var sjo = shortJumpsOption;
         var dco = deadCodeOption;
@@ -86,7 +86,7 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                 case StackMapsOption oo -> smo = oo;
                 case DebugElementsOption oo -> deo = oo;
                 case LineNumbersOption oo -> lno = oo;
-                case UnknownAttributesOption oo -> uao = oo;
+                case AttributesProcessingOption oo -> apo = oo;
                 case ConstantPoolSharingOption oo -> cpso = oo;
                 case ShortJumpsOption oo -> sjo = oo;
                 case DeadCodeOption oo -> dco = oo;
@@ -95,7 +95,7 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                 case AttributeMapperOption oo -> amo = oo;
             }
         }
-        return new ClassfileImpl(smo, deo, lno, uao, cpso, sjo, dco, dlo, chro, amo);
+        return new ClassfileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);
     }
 
     @Override

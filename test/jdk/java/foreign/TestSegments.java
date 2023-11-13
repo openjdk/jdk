@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -84,7 +83,7 @@ public class TestSegments {
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(1000, 1);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
@@ -95,7 +94,7 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(10, 1);
             //init
@@ -225,6 +224,21 @@ public class TestSegments {
         assertTrue(segment.isAccessibleBy(new Thread()) != isConfined);
     }
 
+    @Test(dataProvider = "segmentFactories")
+    public void testToString(Supplier<MemorySegment> segmentSupplier) {
+        var segment = segmentSupplier.get();
+        String s = segment.toString();
+        assertTrue(s.startsWith("MemorySegment{"));
+        assertTrue(s.contains("address: 0x"));
+        assertTrue(s.contains("byteSize: "));
+        if (segment.heapBase().isPresent()) {
+            assertTrue(s.contains("heapBase: ["));
+        } else {
+            assertFalse(s.contains("heapBase: "));
+        }
+        assertFalse(s.contains("Optional"));
+    }
+
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
@@ -233,7 +247,7 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new double[] { 1d, 2d, 3d, 4d} ),
                 () -> MemorySegment.ofArray(new float[] { 1.0f, 2.0f, 3.0f, 4.0f }),
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
-                () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
+                () -> MemorySegment.ofArray(new long[] { 1L, 2L, 3L, 4L } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
                 () -> Arena.ofAuto().allocate(4L, 1),
                 () -> Arena.ofAuto().allocate(4L, 8),
@@ -248,7 +262,7 @@ public class TestSegments {
 
     @Test(dataProvider = "segmentFactories")
     public void testFill(Supplier<MemorySegment> segmentSupplier) {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
             MemorySegment segment = segmentSupplier.get();

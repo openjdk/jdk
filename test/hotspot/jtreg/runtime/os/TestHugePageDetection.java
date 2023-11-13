@@ -26,6 +26,7 @@
  * @test
  * @summary Test that the JVM detects the OS hugepage/THP settings correctly.
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -47,7 +48,7 @@ public class TestHugePageDetection {
         finalargs.addAll(Arrays.asList(defaultArgs));
         finalargs.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 new String[] {"-Xlog:pagesize", "-Xmx64M", "-version"});
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

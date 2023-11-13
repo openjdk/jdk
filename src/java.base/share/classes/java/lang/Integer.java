@@ -38,6 +38,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
 
+import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -414,33 +415,6 @@ public final class Integer extends Number
         } while (charPos > 0);
     }
 
-    static final byte[] DigitTens = {
-        '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-        '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-        '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-        '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-        '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-        '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-        '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-        '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-        '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-        '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        } ;
-
-    static final byte[] DigitOnes = {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        } ;
-
-
     /**
      * Returns a {@code String} object representing the
      * specified integer. The argument is converted to signed decimal
@@ -456,7 +430,7 @@ public final class Integer extends Number
         int size = stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            getChars(i, size, buf);
+            StringLatin1.getChars(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
@@ -481,53 +455,6 @@ public final class Integer extends Number
      */
     public static String toUnsignedString(int i) {
         return Long.toString(toUnsignedLong(i));
-    }
-
-    /**
-     * Places characters representing the integer i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
-     * integer.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(int i, int index, byte[] buf) {
-        int q, r;
-        int charPos = index;
-
-        boolean negative = i < 0;
-        if (!negative) {
-            i = -i;
-        }
-
-        // Generate two digits per iteration
-        while (i <= -100) {
-            q = i / 100;
-            r = (q * 100) - i;
-            i = q;
-            buf[--charPos] = DigitOnes[r];
-            buf[--charPos] = DigitTens[r];
-        }
-
-        // We know there are at most two digits left at this point.
-        buf[--charPos] = DigitOnes[-i];
-        if (i < -9) {
-            buf[--charPos] = DigitTens[-i];
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
     }
 
     /**
@@ -612,8 +539,7 @@ public final class Integer extends Number
      *             does not contain a parsable {@code int}.
      */
     public static int parseInt(String s, int radix)
-                throws NumberFormatException
-    {
+                throws NumberFormatException {
         /*
          * WARNING: This method may be invoked early during VM initialization
          * before IntegerCache is initialized. Care must be taken to not use
@@ -625,52 +551,41 @@ public final class Integer extends Number
         }
 
         if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException("radix " + radix +
-                                            " less than Character.MIN_RADIX");
+            throw new NumberFormatException(String.format(
+                "radix %s less than Character.MIN_RADIX", radix));
         }
 
         if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException("radix " + radix +
-                                            " greater than Character.MAX_RADIX");
+            throw new NumberFormatException(String.format(
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
-        boolean negative = false;
-        int i = 0, len = s.length();
-        int limit = -Integer.MAX_VALUE;
-
-        if (len > 0) {
-            char firstChar = s.charAt(0);
-            if (firstChar < '0') { // Possible leading "+" or "-"
-                if (firstChar == '-') {
-                    negative = true;
-                    limit = Integer.MIN_VALUE;
-                } else if (firstChar != '+') {
-                    throw NumberFormatException.forInputString(s, radix);
-                }
-
-                if (len == 1) { // Cannot have lone "+" or "-"
-                    throw NumberFormatException.forInputString(s, radix);
-                }
-                i++;
-            }
+        int len = s.length();
+        if (len == 0) {
+            throw NumberFormatException.forInputString("", radix);
+        }
+        int digit = ~0xFF;
+        int i = 0;
+        char firstChar = s.charAt(i++);
+        if (firstChar != '-' && firstChar != '+') {
+            digit = digit(firstChar, radix);
+        }
+        if (digit >= 0 || digit == ~0xFF && len > 1) {
+            int limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
             int multmin = limit / radix;
-            int result = 0;
-            while (i < len) {
-                // Accumulating negatively avoids surprises near MAX_VALUE
-                int digit = Character.digit(s.charAt(i++), radix);
-                if (digit < 0 || result < multmin) {
-                    throw NumberFormatException.forInputString(s, radix);
-                }
-                result *= radix;
-                if (result < limit + digit) {
-                    throw NumberFormatException.forInputString(s, radix);
-                }
-                result -= digit;
+            int result = -(digit & 0xFF);
+            boolean inRange = true;
+            /* Accumulating negatively avoids surprises near MAX_VALUE */
+            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
+                    && (inRange = result > multmin
+                        || result == multmin && digit <= radix * multmin - limit)) {
+                result = radix * result - digit;
             }
-            return negative ? result : -result;
-        } else {
-            throw NumberFormatException.forInputString(s, radix);
+            if (inRange && i == len && digit >= 0) {
+                return firstChar != '-' ? -result : result;
+            }
         }
+        throw NumberFormatException.forInputString(s, radix);
     }
 
     /**
@@ -706,55 +621,47 @@ public final class Integer extends Number
         Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
         if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException("radix " + radix +
-                                            " less than Character.MIN_RADIX");
+            throw new NumberFormatException(String.format(
+                "radix %s less than Character.MIN_RADIX", radix));
         }
+
         if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException("radix " + radix +
-                                            " greater than Character.MAX_RADIX");
+            throw new NumberFormatException(String.format(
+                "radix %s greater than Character.MAX_RADIX", radix));
         }
 
-        boolean negative = false;
-        int i = beginIndex;
-        int limit = -Integer.MAX_VALUE;
-
-        if (i < endIndex) {
-            char firstChar = s.charAt(i);
-            if (firstChar < '0') { // Possible leading "+" or "-"
-                if (firstChar == '-') {
-                    negative = true;
-                    limit = Integer.MIN_VALUE;
-                } else if (firstChar != '+') {
-                    throw NumberFormatException.forCharSequence(s, beginIndex,
-                            endIndex, i);
-                }
-                i++;
-                if (i == endIndex) { // Cannot have lone "+" or "-"
-                    throw NumberFormatException.forCharSequence(s, beginIndex,
-                            endIndex, i);
-                }
-            }
-            int multmin = limit / radix;
-            int result = 0;
-            while (i < endIndex) {
-                // Accumulating negatively avoids surprises near MAX_VALUE
-                int digit = Character.digit(s.charAt(i), radix);
-                if (digit < 0 || result < multmin) {
-                    throw NumberFormatException.forCharSequence(s, beginIndex,
-                            endIndex, i);
-                }
-                result *= radix;
-                if (result < limit + digit) {
-                    throw NumberFormatException.forCharSequence(s, beginIndex,
-                            endIndex, i);
-                }
-                i++;
-                result -= digit;
-            }
-            return negative ? result : -result;
-        } else {
+        /*
+         * While s can be concurrently modified, it is ensured that each
+         * of its characters is read at most once, from lower to higher indices.
+         * This is obtained by reading them using the pattern s.charAt(i++),
+         * and by not updating i anywhere else.
+         */
+        if (beginIndex == endIndex) {
             throw NumberFormatException.forInputString("", radix);
         }
+        int digit = ~0xFF;
+        int i = beginIndex;
+        char firstChar = s.charAt(i++);
+        if (firstChar != '-' && firstChar != '+') {
+            digit = digit(firstChar, radix);
+        }
+        if (digit >= 0 || digit == ~0xFF && endIndex - beginIndex > 1) {
+            int limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
+            int multmin = limit / radix;
+            int result = -(digit & 0xFF);
+            boolean inRange = true;
+            /* Accumulating negatively avoids surprises near MAX_VALUE */
+            while (i < endIndex && (digit = digit(s.charAt(i++), radix)) >= 0
+                    && (inRange = result > multmin
+                        || result == multmin && digit <= radix * multmin - limit)) {
+                result = radix * result - digit;
+            }
+            if (inRange && i == endIndex && digit >= 0) {
+                return firstChar != '-' ? -result : result;
+            }
+        }
+        throw NumberFormatException.forCharSequence(s, beginIndex,
+            endIndex, i - (digit < -1 ? 0 : 1));
     }
 
     /**
@@ -775,7 +682,7 @@ public final class Integer extends Number
      *               parsable integer.
      */
     public static int parseInt(String s) throws NumberFormatException {
-        return parseInt(s,10);
+        return parseInt(s, 10);
     }
 
     /**
@@ -827,31 +734,48 @@ public final class Integer extends Number
             throw new NumberFormatException("Cannot parse null string");
         }
 
+        if (radix < Character.MIN_RADIX) {
+            throw new NumberFormatException(String.format(
+                "radix %s less than Character.MIN_RADIX", radix));
+        }
+
+        if (radix > Character.MAX_RADIX) {
+            throw new NumberFormatException(String.format(
+                "radix %s greater than Character.MAX_RADIX", radix));
+        }
+
         int len = s.length();
-        if (len > 0) {
-            char firstChar = s.charAt(0);
-            if (firstChar == '-') {
-                throw new
-                    NumberFormatException(String.format("Illegal leading minus sign " +
-                                                       "on unsigned string %s.", s));
-            } else {
-                if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
-                    (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
-                    return parseInt(s, radix);
-                } else {
-                    long ell = Long.parseLong(s, radix);
-                    if ((ell & 0xffff_ffff_0000_0000L) == 0) {
-                        return (int) ell;
-                    } else {
-                        throw new
-                            NumberFormatException(String.format("String value %s exceeds " +
-                                                                "range of unsigned int.", s));
-                    }
-                }
-            }
-        } else {
+        if (len == 0) {
             throw NumberFormatException.forInputString(s, radix);
         }
+        int i = 0;
+        char firstChar = s.charAt(i++);
+        if (firstChar == '-') {
+            throw new NumberFormatException(String.format(
+                "Illegal leading minus sign on unsigned string %s.", s));
+        }
+        int digit = ~0xFF;
+        if (firstChar != '+') {
+            digit = digit(firstChar, radix);
+        }
+        if (digit >= 0 || digit == ~0xFF && len > 1) {
+            int multmax = divideUnsigned(-1, radix);  // -1 is max unsigned int
+            int result = digit & 0xFF;
+            boolean inRange = true;
+            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
+                    && (inRange = compareUnsigned(result, multmax) < 0
+                        || result == multmax && digit < -radix * multmax)) {
+                result = radix * result + digit;
+            }
+            if (inRange && i == len && digit >= 0) {
+                return result;
+            }
+        }
+        if (digit < 0) {
+            throw NumberFormatException.forInputString(s, radix);
+        }
+        throw new NumberFormatException(String.format(
+            "String value %s exceeds range of unsigned int.", s));
     }
 
     /**
@@ -886,32 +810,54 @@ public final class Integer extends Number
         Objects.requireNonNull(s);
         Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        int start = beginIndex, len = endIndex - beginIndex;
-
-        if (len > 0) {
-            char firstChar = s.charAt(start);
-            if (firstChar == '-') {
-                throw new
-                    NumberFormatException(String.format("Illegal leading minus sign " +
-                                                       "on unsigned string %s.", s));
-            } else {
-                if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
-                        (radix == 10 && len <= 9)) { // Integer.MAX_VALUE in base 10 is 10 digits
-                    return parseInt(s, start, start + len, radix);
-                } else {
-                    long ell = Long.parseLong(s, start, start + len, radix);
-                    if ((ell & 0xffff_ffff_0000_0000L) == 0) {
-                        return (int) ell;
-                    } else {
-                        throw new
-                            NumberFormatException(String.format("String value %s exceeds " +
-                                                                "range of unsigned int.", s));
-                    }
-                }
-            }
-        } else {
-            throw new NumberFormatException("");
+        if (radix < Character.MIN_RADIX) {
+            throw new NumberFormatException(String.format(
+                "radix %s less than Character.MIN_RADIX", radix));
         }
+
+        if (radix > Character.MAX_RADIX) {
+            throw new NumberFormatException(String.format(
+                "radix %s greater than Character.MAX_RADIX", radix));
+        }
+
+        /*
+         * While s can be concurrently modified, it is ensured that each
+         * of its characters is read at most once, from lower to higher indices.
+         * This is obtained by reading them using the pattern s.charAt(i++),
+         * and by not updating i anywhere else.
+         */
+        if (beginIndex == endIndex) {
+            throw NumberFormatException.forInputString("", radix);
+        }
+        int i = beginIndex;
+        char firstChar = s.charAt(i++);
+        if (firstChar == '-') {
+            throw new NumberFormatException(
+                "Illegal leading minus sign on unsigned string " + s + ".");
+        }
+        int digit = ~0xFF;
+        if (firstChar != '+') {
+            digit = digit(firstChar, radix);
+        }
+        if (digit >= 0 || digit == ~0xFF && endIndex - beginIndex > 1) {
+            int multmax = divideUnsigned(-1, radix);  // -1 is max unsigned int
+            int result = digit & 0xFF;
+            boolean inRange = true;
+            while (i < endIndex && (digit = digit(s.charAt(i++), radix)) >= 0
+                    && (inRange = compareUnsigned(result, multmax) < 0
+                        || result == multmax && digit < -radix * multmax)) {
+                result = radix * result + digit;
+            }
+            if (inRange && i == endIndex && digit >= 0) {
+                return result;
+            }
+        }
+        if (digit < 0) {
+            throw NumberFormatException.forCharSequence(s, beginIndex,
+                endIndex, i - (digit < -1 ? 0 : 1));
+        }
+        throw new NumberFormatException(String.format(
+            "String value %s exceeds range of unsigned int.", s));
     }
 
     /**

@@ -131,7 +131,7 @@ public interface ConstantPool {
 
     /**
      * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}
-     * or {@code CONSTANT_InvokeDynamic_info} pool entry .
+     * or {@code CONSTANT_InvokeDynamic_info} pool entry.
      *
      * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info}
      *       Structures
@@ -165,6 +165,29 @@ public interface ConstantPool {
         /**
          * Gets the static arguments with which the bootstrap method will be invoked.
          *
+         * The {@linkplain JavaConstant#getJavaKind kind} of each argument will be
+         * {@link JavaKind#Object} or {@link JavaKind#Int}. The latter represents an
+         * unresolved {@code CONSTANT_Dynamic_info} entry. To resolve this entry, the
+         * corresponding bootstrap method has to be called first:
+         *
+         * <pre>
+         * List<JavaConstant> args = bmi.getStaticArguments();
+         * List<JavaConstant> resolvedArgs = new ArrayList<>(args.size());
+         * for (JavaConstant c : args) {
+         *     JavaConstant r = c;
+         *     if (c.getJavaKind() == JavaKind.Int) {
+         *         // If needed, access corresponding BootstrapMethodInvocation using
+         *         // cp.lookupBootstrapMethodInvocation(pc.asInt(), -1)
+         *         r = cp.lookupConstant(c.asInt(), true);
+         *     } else {
+         *         assert c.getJavaKind() == JavaKind.Object;
+         *     }
+         *     resolvedArgs.append(r);
+         * }
+         * </pre>
+         *
+         * The other types of entries are already resolved an can be used directly.
+         *
          * @jvms 5.4.3.6
          */
         List<JavaConstant> getStaticArguments();
@@ -182,8 +205,6 @@ public interface ConstantPool {
      *            {@code index} was not decoded from a bytecode stream
      * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
      *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
-     * @throws IllegalArgumentException if the bootstrap method invocation makes use of
-     *             {@code java.lang.invoke.BootstrapCallInfo}
      * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
      */
     default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
