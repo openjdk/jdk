@@ -558,29 +558,23 @@ public abstract sealed class AbstractMemorySegmentImpl
         } else {
             bufferScope = MemorySessionImpl.createHeap(bufferRef(bb));
         }
+        long off = bbAddress + ((long)pos << scaleFactor);
+        long len = (long)size << scaleFactor;
         if (base != null) {
             return switch (base) {
-                case byte[] __ ->
-                        new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case short[] __ ->
-                        new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case char[] __ ->
-                        new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case int[] __ ->
-                        new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case float[] __ ->
-                        new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case long[] __ ->
-                        new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case double[] __ ->
-                        new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                default -> throw new AssertionError("Cannot get here");
+                case byte[]   _ -> new HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
+                case short[]  _ -> new HeapMemorySegmentImpl.OfShort(off, base, len, readOnly, bufferScope);
+                case char[]   _ -> new HeapMemorySegmentImpl.OfChar(off, base, len, readOnly, bufferScope);
+                case int[]    _ -> new HeapMemorySegmentImpl.OfInt(off, base, len, readOnly, bufferScope);
+                case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(off, base, len, readOnly, bufferScope);
+                case long[]   _ -> new HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
+                case double[] _ -> new HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
+                default         -> throw new AssertionError("Cannot get here");
             };
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferScope);
+            return new NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
         } else {
-            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferScope);
+            return new MappedMemorySegmentImpl(off, unmapper, len, readOnly, bufferScope);
         }
     }
 
@@ -721,13 +715,10 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     private static int getScaleFactor(Buffer buffer) {
         return switch (buffer) {
-            case ByteBuffer   __ -> 0;
-            case CharBuffer   __ -> 1;
-            case ShortBuffer  __ -> 1;
-            case IntBuffer    __ -> 2;
-            case FloatBuffer  __ -> 2;
-            case LongBuffer   __ -> 3;
-            case DoubleBuffer __ -> 3;
+            case ByteBuffer   _                 -> 0;
+            case CharBuffer   _, ShortBuffer  _ -> 1;
+            case IntBuffer    _, FloatBuffer  _ -> 2;
+            case LongBuffer   _, DoubleBuffer _ -> 3;
         };
     }
 
