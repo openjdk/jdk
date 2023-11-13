@@ -4643,14 +4643,14 @@ void PhaseIdealLoop::build_and_optimize() {
   // Auto-Vectorize the main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     VLoopAnalyzer vloop_analyzer;
-    SuperWord sw(this, vloop_analyzer);
+    SuperWord sw(vloop_analyzer);
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       CountedLoopNode* cl = lpt->_head->isa_CountedLoop();
       if (lpt->is_counted() && cl->is_main_loop()) {
         bool success = vloop_analyzer.analyze(lpt, false);
         if (success) {
-          success = sw.transform_loop(lpt, true);
+          success = sw.transform_loop();
         }
         if (!success) {
           // Vectorization failed. From now on only unroll the loop.

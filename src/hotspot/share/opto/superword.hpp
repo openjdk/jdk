@@ -230,7 +230,6 @@ class OrderedPair {
 class SuperWord : public ResourceObj {
  friend class VPointer;
  private:
-  PhaseIdealLoop* _phase;
   const VLoopAnalyzer  &_vla;
   Arena*          _arena;
   PhaseIterGVN   &_igvn;
@@ -261,16 +260,15 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
-  SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vla);
+  SuperWord(const VLoopAnalyzer &vla);
 
-  bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
+  bool transform_loop();
 
   static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
 
-  PhaseIdealLoop* phase() const    { return _phase; }
-
   const VLoopAnalyzer& vla() const      { return _vla; }
   IdealLoopTree* lpt() const            { return vla().lpt(); }
+  PhaseIdealLoop* phase() const         { return vla().phase(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_loopbody(const Node* n) const { return vla().in_loopbody(n); }

@@ -43,19 +43,18 @@
 //=============================================================================
 
 //------------------------------SuperWord---------------------------
-SuperWord::SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vla) :
-  _phase(phase),
+SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _vla(vla),
-  _arena(phase->C->comp_arena()),
-  _igvn(phase->_igvn),
+  _arena(phase()->C->comp_arena()),
+  _igvn(phase()->_igvn),
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
-  _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
+  _bb_idx(arena(), (int)(1.10 * phase()->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, nullptr),                          // nodes in current block
   _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
-  _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
+  _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
@@ -66,33 +65,27 @@ SuperWord::SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vla) :
   _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _loop_reductions(arena()),                                // reduction nodes in the current loop
   _race_possible(false),                                    // cases where SDMU is true
-  _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
+  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
 {
 #ifndef PRODUCT
   _vector_loop_debug = 0;
-  if (_phase->C->method() != nullptr) {
-    _vector_loop_debug = phase->C->directive()->VectorizeDebugOption;
+  if (phase()->C->method() != nullptr) {
+    _vector_loop_debug = phase()->C->directive()->VectorizeDebugOption;
   }
 
 #endif
 }
 
 //------------------------------transform_loop---------------------------
-bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
-  assert(do_optimization, "TODO remove this parameter!");
-
-  assert(_phase->C->do_superword(), "SuperWord option should be enabled");
+bool SuperWord::transform_loop() {
+  assert(phase()->C->do_superword(), "SuperWord option should be enabled");
 
   init(); // initialize data structures
 
-  bool success = true;
-  if (do_optimization) {
-    assert(_packset.length() == 0, "packset must be empty");
-    success = SLP_extract();
-  }
-  return success;
+  assert(_packset.length() == 0, "packset must be empty");
+  return SLP_extract();
 }
 
 //------------------------------early unrolling analysis------------------------------
@@ -1864,7 +1857,7 @@ bool SuperWord::profitable(Node_List* p) {
             // outside of the loop if it is the last element of the pack (e.g. SafePoint).
             if (vla().reductions().is_marked_reduction(def) &&
                 ((use->is_Phi() && use->in(0) == cl()) ||
-                 (!lpt()->is_member(_phase->get_loop(_phase->ctrl_or_self(use))) && i == p->size()-1))) {
+                 (!lpt()->is_member(phase()->get_loop(phase()->ctrl_or_self(use))) && i == p->size()-1))) {
               continue;
             }
             if (!is_vector_use(use, k)) {
@@ -2233,7 +2226,7 @@ void SuperWord::schedule() {
 // Reorder the memory graph for all slices in parallel. We walk over the schedule once,
 // and track the current memory state of each slice.
 void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
-  int max_slices = _phase->C->num_alias_types();
+  int max_slices = phase()->C->num_alias_types();
   // When iterating over the memops_schedule, we keep track of the current memory state,
   // which is the Phi or a store in the loop.
   GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
@@ -2245,7 +2238,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   for (int i = 0; i < _mem_slice_head.length(); i++) {
     Node* phi  = _mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");
-    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     current_state_in_slice.at_put(alias_idx, phi);
 
     // If we have a memory phi, we have a last store in the loop, find it over backedge.
@@ -2258,7 +2251,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   for (uint i = 0; i < memops_schedule.size(); i++) {
     MemNode* n = memops_schedule.at(i)->as_Mem();
     assert(n->is_Load() || n->is_Store(), "only loads or stores");
-    int alias_idx = _phase->C->get_alias_index(n->adr_type());
+    int alias_idx = phase()->C->get_alias_index(n->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     if (current_state == nullptr) {
       // If there are only loads in a slice, we never update the memory
@@ -2280,7 +2273,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   Node_List uses_after_loop;
   for (int i = 0; i < _mem_slice_head.length(); i++) {
     Node* phi  = _mem_slice_head.at(i);
-    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     assert(current_state != nullptr, "slice is mapped");
     assert(current_state != phi, "did some work in between");
@@ -2321,7 +2314,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
 bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
-  Compile* C = _phase->C;
+  Compile* C = phase()->C;
   if (_packset.length() == 0) {
     return false;
   }
@@ -2504,7 +2497,7 @@ bool SuperWord::output() {
         const TypeVect* vt = TypeVect::make(bt, vlen);
         VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
         _igvn.register_new_node_with_optimizer(mask);
-        _phase->set_ctrl(mask, _phase->get_ctrl(p->at(0)));
+        phase()->set_ctrl(mask, phase()->get_ctrl(p->at(0)));
         _igvn._worklist.push(mask);
 
         // VectorBlend
@@ -2579,7 +2572,7 @@ bool SuperWord::output() {
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         _igvn.register_new_node_with_optimizer(longval);
-        _phase->set_ctrl(longval, _phase->get_ctrl(first));
+        phase()->set_ctrl(longval, phase()->get_ctrl(first));
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2610,7 +2603,7 @@ bool SuperWord::output() {
 
       _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
-      _phase->set_ctrl(vn, _phase->get_ctrl(first));
+      phase()->set_ctrl(vn, phase()->get_ctrl(first));
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         _igvn.replace_node(pm, vn);
@@ -2676,7 +2669,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     Node* vn = new PopulateIndexNode(iv(), _igvn.intcon(1), vt);
     VectorNode::trace_new_vector(vn, "SuperWord");
     _igvn.register_new_node_with_optimizer(vn);
-    _phase->set_ctrl(vn, _phase->get_ctrl(opd));
+    phase()->set_ctrl(vn, phase()->get_ctrl(opd));
     return vn;
   }
 
@@ -2705,7 +2698,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
           _igvn.register_new_node_with_optimizer(cnt);
           cnt = new AndINode(opd, cnt);
           _igvn.register_new_node_with_optimizer(cnt);
-          _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+          phase()->set_ctrl(cnt, phase()->get_ctrl(opd));
         }
         if (!opd->bottom_type()->isa_int()) {
           assert(false, "int type only");
@@ -2715,7 +2708,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       // Move shift count into vector register.
       cnt = VectorNode::shift_count(p0->Opcode(), cnt, vlen, velt_basic_type(p0));
       _igvn.register_new_node_with_optimizer(cnt);
-      _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
+      phase()->set_ctrl(cnt, phase()->get_ctrl(opd));
       return cnt;
     }
     if (opd->is_StoreVector()) {
@@ -2734,7 +2727,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
          p0_t = TypeLong::LONG;
          conv = new ConvI2LNode(opd);
          _igvn.register_new_node_with_optimizer(conv);
-         _phase->set_ctrl(conv, _phase->get_ctrl(opd));
+         phase()->set_ctrl(conv, phase()->get_ctrl(opd));
        }
        vn = VectorNode::scalar2vector(conv, vlen, p0_t);
     } else {
@@ -2743,7 +2736,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     }
 
     _igvn.register_new_node_with_optimizer(vn);
-    _phase->set_ctrl(vn, _phase->get_ctrl(opd));
+    phase()->set_ctrl(vn, phase()->get_ctrl(opd));
     VectorNode::trace_new_vector(vn, "SuperWord");
     return vn;
   }
@@ -2773,7 +2766,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     }
   }
   _igvn.register_new_node_with_optimizer(pk);
-  _phase->set_ctrl(pk, _phase->get_ctrl(opd));
+  phase()->set_ctrl(pk, phase()->get_ctrl(opd));
   VectorNode::trace_new_vector(pk, "SuperWord");
   return pk;
 }
@@ -2819,7 +2812,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     ConINode* def_pos_con = _igvn.intcon(def_pos)->as_ConI();
     Node* ex = ExtractNode::make(def, def_pos_con, velt_basic_type(def));
     _igvn.register_new_node_with_optimizer(ex);
-    _phase->set_ctrl(ex, _phase->get_ctrl(def));
+    phase()->set_ctrl(ex, phase()->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);
     _igvn._worklist.push(def);
 
@@ -3330,7 +3323,7 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
 }
 
 bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
-  return _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type());
+  return phase()->C->get_alias_index(mem_ref->adr_type()) == phase()->C->get_alias_index(best_align_to_mem_ref->adr_type());
 }
 
 //------------------------------in_packset---------------------------
@@ -3495,10 +3488,10 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     }
     Node* aref = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
+    phase()->set_ctrl(aref, pre_ctrl);
     e =  new AddINode(e, aref);
     _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    phase()->set_ctrl(e, pre_ctrl);
   }
   if (vw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
     // incorporate base e +/- base && Mask >>> log2(elt)
@@ -3514,10 +3507,10 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
     Node* bref     = new URShiftINode(masked_xbase, log2_elt);
     _igvn.register_new_node_with_optimizer(bref);
-    _phase->set_ctrl(bref, pre_ctrl);
+    phase()->set_ctrl(bref, pre_ctrl);
     e = new AddINode(e, bref);
     _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    phase()->set_ctrl(e, pre_ctrl);
   }
 
   // compute e +/- lim0
@@ -3527,20 +3520,20 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     e = new AddINode(e, lim0);
   }
   _igvn.register_new_node_with_optimizer(e);
-  _phase->set_ctrl(e, pre_ctrl);
+  phase()->set_ctrl(e, pre_ctrl);
 
   if (stride * scale > 0) {
     // compute V - (e +/- lim0)
     Node* va  = _igvn.intcon(v_align);
     e = new SubINode(va, e);
     _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    phase()->set_ctrl(e, pre_ctrl);
   }
   // compute N = (exp) % V
   Node* va_msk = _igvn.intcon(v_align - 1);
   Node* N = new AndINode(e, va_msk);
   _igvn.register_new_node_with_optimizer(N);
-  _phase->set_ctrl(N, pre_ctrl);
+  phase()->set_ctrl(N, pre_ctrl);
 
   //   substitute back into (1), so that new limit
   //     lim = lim0 + N
@@ -3551,12 +3544,12 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
     lim = new AddINode(lim0, N);
   }
   _igvn.register_new_node_with_optimizer(lim);
-  _phase->set_ctrl(lim, pre_ctrl);
+  phase()->set_ctrl(lim, pre_ctrl);
   Node* constrained =
     (stride > 0) ? (Node*) new MinINode(lim, orig_limit)
                  : (Node*) new MaxINode(lim, orig_limit);
   _igvn.register_new_node_with_optimizer(constrained);
-  _phase->set_ctrl(constrained, pre_ctrl);
+  phase()->set_ctrl(constrained, pre_ctrl);
   _igvn.replace_input_of(pre_opaq, 1, constrained);
 }
 
