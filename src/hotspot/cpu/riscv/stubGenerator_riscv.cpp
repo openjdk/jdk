@@ -4567,9 +4567,9 @@ static const int64_t bits3 = right_n_bits(3);
       // U_2:U_1:U_0: += (U_2 >> 2) * 5
       poly1305_reduce(U_2, U_1, U_0, t1, t2);
 
-      __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
-      __ addi(input_start, input_start, 2 * wordSize);
-      __ mv(t1, checked_cast<u1>(BLOCK_LENGTH));
+      __ sub(length, length, BLOCK_LENGTH);
+      __ addi(input_start, input_start, BLOCK_LENGTH);
+      __ mv(t1, BLOCK_LENGTH);
       __ bge(length, t1, LOOP);
     }
 
