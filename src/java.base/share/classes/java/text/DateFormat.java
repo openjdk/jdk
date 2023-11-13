@@ -117,7 +117,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * different options to these factory methods to control the length of the
  * result; from {@link #SHORT} to {@link #MEDIUM} to {@link #LONG} to {@link #FULL}. The exact result depends
  * on the locale, but generally:
- * <ul><li>{@link #SHORT} is completely numeric, such as {@code 12.13.52} or {@code 3:30pm}
+ * <ul><li>{@link #SHORT} is the shortest and mainly numeric, such as {@code 12.13.52} or {@code 3:30pm}
  * <li>{@link #MEDIUM} is longer, such as {@code Jan 12, 1952}
  * <li>{@link #LONG} is longer, such as {@code January 12, 1952} or {@code 3:30:32pm}
  * <li>{@link #FULL} is pretty completely specified, such as
