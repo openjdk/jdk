@@ -322,12 +322,12 @@ void CodeCache::initialize_heaps() {
     }
   }
 
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = min_size;
-  non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size    = align_down(profiled_size, alignment);
-  non_profiled_size = align_down(non_profiled_size, alignment);
+  // Note: if large page support is enabled, min_size is at least the
+  // large page size.  This ensures that the code cache is covered by large
+  // pages.
+  non_nmethod_size = align_up(non_nmethod_size, min_size);
+  profiled_size    = align_down(profiled_size, min_size);
+  non_profiled_size = align_down(non_profiled_size, min_size);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
