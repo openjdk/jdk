@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -150,7 +149,7 @@ public class StringRacyConstructor {
     public void racyCodePoint(String orig) {
         String iffyString = racyStringConstructionCodepoints(orig);
         // The contents are indeterminate due to the race
-        assertTrue(validCoder(iffyString), "invalid coder in non-determinstic string"
+        assertTrue(validCoder(iffyString), "invalid coder in non-deterministic string"
                 + ", orig:" + inspectString(orig)
                 + ", iffyString: " + inspectString(iffyString));
     }
@@ -162,7 +161,7 @@ public class StringRacyConstructor {
         // The contents are indeterminate due to the race
         if (!orig.equals(iffyString))
             System.err.println("orig: " + orig + ", iffy: " + iffyString + Arrays.toString(iffyString.codePoints().toArray()));
-        assertTrue(validCoder(iffyString), "invalid coder in non-determinstic string"
+        assertTrue(validCoder(iffyString), "invalid coder in non-deterministic string"
                 + ", orig:" + inspectString(orig)
                 + ", iffyString: " + inspectString(iffyString));
     }
@@ -264,7 +263,7 @@ public class StringRacyConstructor {
         char[] chars = original.toCharArray();
 
         // In another thread, flip the first character back
-        // and forth between being encodable as latin-1 or not
+        // and forth between being latin-1 or not
         Thread thread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 chars[0] ^= 256;
@@ -280,7 +279,7 @@ public class StringRacyConstructor {
             String s = new String(chars);
             if ((s.charAt(0) < 256 && !original.equals(s)) || i > 1_000_000) {
                 thread.interrupt();
-                try  {
+                try {
                     thread.join();
                 } catch (InterruptedException ie) {
                     // ignore interrupt
@@ -310,7 +309,7 @@ public class StringRacyConstructor {
         }
 
         // In another thread, flip the first character back
-        // and forth between being encodable as latin-1 or not
+        // and forth between being latin-1 or not
         Thread thread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 codePoints[0] ^= 256;
@@ -326,7 +325,7 @@ public class StringRacyConstructor {
             String s = new String(codePoints, 0, len);
             if ((s.charAt(0) < 256 && !original.equals(s)) || i > 1_000_000) {
                 thread.interrupt();
-                try  {
+                try {
                     thread.join();
                 } catch (InterruptedException ie) {
                     // ignore interrupt
@@ -357,7 +356,7 @@ public class StringRacyConstructor {
         }
 
         // In another thread, flip the first character back
-        // and forth between being encodable as latin-1 or as a surrogate pair.
+        // and forth between being latin-1 or as a surrogate pair.
         Thread thread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 codePoints[0] ^= 0x10000;
@@ -373,7 +372,7 @@ public class StringRacyConstructor {
             String s = new String(codePoints, 0, len);
             if ((s.length() != original.length()) || i > 1_000_000) {
                 thread.interrupt();
-                try  {
+                try {
                     thread.join();
                 } catch (InterruptedException ie) {
                     // ignore interrupt
@@ -389,7 +388,7 @@ public class StringRacyConstructor {
     // A CharSequence that returns characters from a string and throws IllegalArgumentException
     // when the character requested is 0xFFFD (the replacement character)
     // The string contents determine when the exception is thrown.
-    class ThrowingCharSequence implements CharSequence {
+    static class ThrowingCharSequence implements CharSequence {
         private final String aString;
 
         ThrowingCharSequence(String aString) {
