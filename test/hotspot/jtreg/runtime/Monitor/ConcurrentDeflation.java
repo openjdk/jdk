@@ -43,9 +43,9 @@ public class ConcurrentDeflation {
     public static int monitorCount;
 
     public static void main(String[] args) throws Exception {
-        Thread threadDumper  = new Thread(() -> dumpThreads());
+        Thread threadDumper = new Thread(() -> dumpThreads());
         threadDumper.start();
-        Thread monitorCreator  = new Thread(() -> createMonitors());
+        Thread monitorCreator = new Thread(() -> createMonitors());
         monitorCreator.start();
 
         threadDumper.join();
@@ -68,8 +68,6 @@ public class ConcurrentDeflation {
     }
 
     static private void createMonitors() {
-        int monitorCount = 0;
-
         int index = 0;
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < TOTAL_RUN_TIME) {
