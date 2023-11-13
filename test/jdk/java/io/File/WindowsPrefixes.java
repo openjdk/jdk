@@ -47,6 +47,7 @@ public class WindowsPrefixes {
         return Stream.of(Arguments.of(""),
                          Arguments.of("C:\\"),
                          Arguments.of("C:"),
+                         Arguments.of("\\foo"),
                          Arguments.of("foo"),
                          Arguments.of("foo\\bar"),
                          Arguments.of("C:\\foo"),
@@ -54,7 +55,6 @@ public class WindowsPrefixes {
                          Arguments.of("C:\\foo\\bar"));
     }
 
-    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getAbsolutePath(String path) throws IOException {
@@ -63,7 +63,6 @@ public class WindowsPrefixes {
         assertEquals(file.getAbsolutePath(), that.getAbsolutePath());
     }
 
-    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getCanonicalPath(String path) throws IOException {
@@ -72,7 +71,6 @@ public class WindowsPrefixes {
         assertEquals(file.getCanonicalPath(), that.getCanonicalPath());
     }
 
-    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getName(String path) throws IOException {
@@ -81,7 +79,6 @@ public class WindowsPrefixes {
         assertEquals(file.getName(), that.getName());
     }
 
-    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void getParent(String path) throws IOException {
@@ -90,7 +87,6 @@ public class WindowsPrefixes {
         assertEquals(file.getParent(), that.getParent());
     }
 
-    @EnabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("paths")
     public void isAbsolute(String path) throws IOException {

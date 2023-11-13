@@ -72,8 +72,8 @@ public class GetAbsolutePath {
     @ParameterizedTest
     @MethodSource("windowsSource")
     public void windows(String path, String absolute) throws IOException {
-        assertEquals(absolute.toLowerCase(),
-                     new File(path).getAbsolutePath().toLowerCase());
+        File file = new File(path);
+        assertEquals(0, absolute.compareToIgnoreCase(file.getAbsolutePath()));
     }
 
     @EnabledOnOs(OS.WINDOWS)
