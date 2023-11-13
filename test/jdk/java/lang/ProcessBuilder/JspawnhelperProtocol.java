@@ -27,6 +27,7 @@
  * @bug 8307990
  * @requires (os.family == "linux") | (os.family == "aix")
  * @requires vm.debug
+ * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm/timeout=300 JspawnhelperProtocol
  */
