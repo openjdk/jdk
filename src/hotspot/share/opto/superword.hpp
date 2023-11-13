@@ -229,7 +229,6 @@ class OrderedPair {
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  friend class VPointer;
- friend class CMoveKit;
  private:
   PhaseIdealLoop* _phase;
   const VLoopAnalyzer  &_vla;
@@ -273,9 +272,6 @@ class SuperWord : public ResourceObj {
   IdealLoopTree* lpt() const       { return _lpt; }
   PhiNode* iv() const              { return _iv; }
 
-
-  bool early_return() const        { return _early_return; }
-
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
   bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
@@ -296,7 +292,6 @@ class SuperWord : public ResourceObj {
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
-  bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied

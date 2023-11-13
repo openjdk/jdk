@@ -70,7 +70,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vla) :
   _bb(nullptr),                                             // basic block
   _iv(nullptr),                                             // induction var
   _race_possible(false),                                    // cases where SDMU is true
-  _early_return(true),                                      // analysis evaluations routine
   _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
@@ -3646,7 +3645,6 @@ void SuperWord::init() {
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;
-  _early_return = false;
   _num_work_vecs = 0;
   _num_reductions = 0;
 }
