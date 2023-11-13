@@ -4417,6 +4417,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef COMPILER2
 
 static const int64_t bits2 = right_n_bits(2);
+static const int64_t bits3 = right_n_bits(3);
 
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
@@ -4575,12 +4576,6 @@ static const int64_t bits2 = right_n_bits(2);
     // Further reduce modulo 2^130 - 5
     poly1305_reduce(U_2, U_1, U_0, t1, t2);
 
-    Label no_final_reduce;
-    __ srli(t1, U_2, 2);
-    __ beqz(t1, no_final_reduce);
-    poly1305_reduce(U_2, U_1, U_0, t1, t2);
-    __ bind(no_final_reduce);
-
     // Unpack the sum into five 26-bit limbs and write to memory.
     // First 26 bits is the first limb
     __ slli(t1, U_0, 38); // Take lowest 26 bits
@@ -4604,9 +4599,9 @@ static const int64_t bits2 = right_n_bits(2);
     __ srli(t1, t1, 38); // Clear all other bits from t1
     __ sd(t1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
 
-    // Storing 41-64 bits of U_1 and first two bits from U_2 in one register
+    // Storing 41-64 bits of U_1 and first three bits from U_2 in one register
     __ srli(t1, U_1, 40);
-    __ andi(t2, U_2, bits2); // Clear all bits in U_2 except for first 2
+    __ andi(t2, U_2, bits3);
     __ slli(t2, t2, 24);
     __ add(t1, t1, t2);
     __ sd(t1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
