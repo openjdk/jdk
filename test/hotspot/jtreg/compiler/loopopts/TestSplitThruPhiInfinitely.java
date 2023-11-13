@@ -25,21 +25,23 @@
  * @test
  * @bug 8287284
  * @summary The phi of cnt is split from the inner to the outer loop,
-            and then from outer loop to the inner loop again.
-            This ended in a endless optimization cycle.
- *
- * @run main/othervm -Xbatch -XX:-PartialPeelLoop -XX:CompileCommand=compileonly,compiler.c2.loopopts.TestSplitThruPhiInfinitely::run* compiler.c2.loopopts.TestSplitThruPhiInfinitely
-
-
-
+ *          and then from outer loop to the inner loop again.
+ *          This ended in a endless optimization cycle.
+ * @library /test/lib /
+ * @run driver compiler.c2.loopopts.TestSplitThruPhiInfinitely
  */
+
 package compiler.c2.loopopts;
+
+import compiler.lib.ir_framework.*;
 
 public class TestSplitThruPhiInfinitely {
 
     public static int cnt = 1;
 
-    public static void run() {
+    @Test
+    @IR(counts = {IRNode.PHI, " <= 10"})
+    public static void test() {
         int j = 0;
         do {
             j = cnt;
@@ -50,8 +52,6 @@ public class TestSplitThruPhiInfinitely {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10; i++ ) {
-            run();
-        }
+        TestFramework.runWithFlags("-XX:-PartialPeelLoop");
     }
 }
