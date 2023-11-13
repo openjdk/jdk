@@ -266,6 +266,7 @@ class VectorElementSizeStats {
 class VLoop : public StackObj {
 protected:
   PhaseIdealLoop* _phase = nullptr;
+  Arena* _arena = nullptr;
   IdealLoopTree* _lpt = nullptr;
   CountedLoopNode* _cl = nullptr;
   Node* _cl_exit = nullptr;
@@ -282,7 +283,8 @@ protected:
   static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
 
 public:
-  VLoop(PhaseIdealLoop* phase) : _phase(phase) {};
+  VLoop(PhaseIdealLoop* phase) : _phase(phase),
+                                 _arena(phase->C->comp_arena()) {}
   NONCOPYABLE(VLoop);
 
 protected:
@@ -296,6 +298,7 @@ protected:
   }
 
 public:
+  Arena* arena()          const { return _arena; }
   IdealLoopTree* lpt()    const { assert(_lpt     != nullptr, ""); return _lpt; };
   PhaseIdealLoop* phase() const { assert(_phase   != nullptr, ""); return _phase; }
   CountedLoopNode* cl()   const { assert(_cl      != nullptr, ""); return _cl; };
@@ -330,7 +333,8 @@ private:
   VectorSet _loop_reductions;
 
 public:
-  VLoopReductions(VLoop* vloop) : _vloop(vloop) {};
+  VLoopReductions(VLoop* vloop) : _vloop(vloop),
+                                  _loop_reductions(_vloop->arena()){};
   NONCOPYABLE(VLoopReductions);
   void reset() {
     _loop_reductions.clear();
@@ -401,7 +405,8 @@ protected:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
 
 public:
-  VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase), _reductions(this) {};
+  VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase),
+                                         _reductions(this) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.

@@ -63,7 +63,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
   _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
-  _loop_reductions(arena()),                                // reduction nodes in the current loop
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -1817,9 +1816,6 @@ bool SuperWord::profitable(Node_List* p) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // Unmark reduction if no parent pack or if not enough work
-      // to cover reduction expansion overhead
-      _loop_reductions.remove(p0->_idx);
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
