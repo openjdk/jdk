@@ -4480,7 +4480,7 @@ static const int64_t bits3 = right_n_bits(3);
   }
 
   // Poly1305, RFC 7539
-  // Intrinsified version of com.sun.crypto.provider.Poly1305.processMultipleBlocks
+  // void com.sun.crypto.provider.Poly1305.processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
 
   // Arguments:
   //    c_rarg0:   input_start -- where the input is stored
