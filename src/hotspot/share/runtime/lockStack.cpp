@@ -79,7 +79,7 @@ void LockStack::verify(const char* msg) const {
       assert(_base[i] != nullptr, "no zapped before top");
       if (VM_Version::supports_recursive_lightweight_locking()) {
         oop o = _base[i];
-        for (;i < top - 1; i++) {
+        for (; i < top - 1; i++) {
           // Consecutive entries may be the same
           if (_base[i + 1] != o) {
             break;
