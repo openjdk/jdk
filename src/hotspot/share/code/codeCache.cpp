@@ -233,6 +233,7 @@ void CodeCache::initialize_heaps() {
   }
   // Calculate default CodeHeap sizes if not set by user
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
+    // Leave room for the other two parts of the code cache
     const size_t max_non_nmethod_size = cache_size - 2 * min_size;
     // Check if we have enough space for the non-nmethod code heap
     if (max_non_nmethod_size >= non_nmethod_size) {
