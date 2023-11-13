@@ -964,8 +964,12 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
     const Register top = box;
 
-    // Prefetch the mark.
+    // Load the mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+    // Check for monitor (0b10).
+    testptr(mark, markWord::monitor_value);
+    jcc(Assembler::notZero, inflated);
 
     // Load top.
     movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
@@ -977,10 +981,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // Check if recursive.
     cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
     jccb(Assembler::equal, push);
-
-    // Check for monitor (0b10).
-    testptr(mark, markWord::monitor_value);
-    jcc(Assembler::notZero, inflated);
 
     // Try to lock. Transition lock bits 0b01 => 0b00
     movptr(rax_reg, mark);
