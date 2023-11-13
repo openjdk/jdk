@@ -139,7 +139,6 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-     static jlong _depunload_ticks;
   static const KlassKind Kind = InstanceKlassKind;
 
  protected:

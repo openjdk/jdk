@@ -1857,7 +1857,6 @@ static int linear_search(const Array<Method*>* methods,
 }
 #endif
 
-jlong InstanceKlass::_depunload_ticks = 0;
 bool InstanceKlass::_disable_method_binary_search = false;
 
 NOINLINE int linear_search(const Array<Method*>* methods, const Symbol* name) {
@@ -2826,9 +2825,7 @@ static void clear_all_breakpoints(Method* m) {
 
 void InstanceKlass::unload_class(InstanceKlass* ik) {
   // Release dependencies.
-  jlong start = os::elapsed_counter();
   ik->dependencies().remove_all_dependents();
-  _depunload_ticks += os::elapsed_counter() - start;
 
   // notify the debugger
   if (JvmtiExport::should_post_class_unload()) {

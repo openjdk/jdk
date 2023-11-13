@@ -50,8 +50,6 @@
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
 
-jlong ClassLoaderDataGraph::_unload_ticks = 0;
-
 void ClassLoaderDataGraph::clear_claimed_marks() {
   // The claimed marks of the CLDs in the ClassLoaderDataGraph are cleared
   // outside a safepoint and without locking the ClassLoaderDataGraph_lock.
@@ -427,9 +425,8 @@ bool ClassLoaderDataGraph::do_unloading() {
     } else {
       // Found dead CLD.
       loaders_removed++;
-      jlong start = os::elapsed_counter();
       data->unload();
-      _unload_ticks += os::elapsed_counter() - start;
+
       // Move dead CLD to unloading list.
       if (prev != nullptr) {
         prev->unlink_next();
@@ -444,7 +441,6 @@ bool ClassLoaderDataGraph::do_unloading() {
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
-  log_debug(gc)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
   return loaders_removed != 0;
 }
