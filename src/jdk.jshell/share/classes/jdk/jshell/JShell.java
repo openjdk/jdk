@@ -134,7 +134,7 @@ public class JShell implements AutoCloseable {
                 String loopback = InetAddress.getLoopbackAddress().getHostAddress();
                 String spec = b.executionControlSpec == null
                         ? "failover:0(jdi:hostname(" + loopback + ")),"
-                          + "1(jdi:launch(true)), 2(jdi), 3(local)"
+                          + "1(jdi:launch(true)), 2(jdi)"
                         : b.executionControlSpec;
                 executionControl = ExecutionControl.generate(new ExecutionEnvImpl(), spec);
             }
