@@ -111,8 +111,7 @@ void DependencyContext::add_dependent_nmethod(nmethod* nm) {
 }
 
 void DependencyContext::release(nmethodBucket* b) {
-  bool expunge = Atomic::load(&_cleaning_epoch) == 0;
-  if (expunge) {
+  if (delete_on_release()) {
     assert_locked_or_safepoint(CodeCache_lock);
     delete b;
     if (UsePerfData) {
@@ -178,17 +177,9 @@ nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBuck
 //
 // Invalidate all dependencies in the context
 void DependencyContext::remove_all_dependents() {
-//if (!UseNewCode) {
-  if (!claim_cleanup()) {
-    // For some reasons this fails... :(
-    guarantee(false, "huh?");
-    // Somebody else is cleaning up this dependency context.
-    return;
-  }
-
-  // Assume that the release action is not "expunge", i.e. delete immediately but
-  // move into purge list.
-  guarantee(Atomic::load(&_cleaning_epoch) != 0, "must be");
+  // Assume that the dependency is not deleted immediately but moved into the
+  // purge list when calling this.
+  assert(!delete_on_release(), "should not delete on release");
 
   nmethodBucket* first = Atomic::load_acquire(_dependency_context_addr);
   if (first == nullptr) {
@@ -219,11 +210,7 @@ void DependencyContext::remove_all_dependents() {
     _perf_total_buckets_stale_count->inc(count);
     _perf_total_buckets_stale_acc_count->inc(count);
   }
-/*
-} else {
-  nmethodBucket* b = dependencies_not_unloading();
-  assert(b == nullptr, "All dependents should be unloading");
-}*/
+
   set_dependencies(nullptr);
 }
 
@@ -276,6 +263,10 @@ bool DependencyContext::claim_cleanup() {
     return false;
   }
   return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
+}
+
+bool DependencyContext::delete_on_release() const {
+  return Atomic::load(&_cleaning_epoch) == 0;
 }
 
 // Retrieve the first nmethodBucket that has a dependent that does not correspond to
