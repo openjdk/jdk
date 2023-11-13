@@ -104,12 +104,12 @@ private:
       // Compute the new size.
       int new_size;
       for (new_size = static_stack_size; all_the_stacks.at(new_size).ref_count > 0; new_size++);
-      iter.for_each([&](TrackedRange& rng) {
-        const int remap_idx = remap.at(rng.stack_idx);
+      for (auto thing = iter.begin(); thing != iter.end(); iter++) {
+        const int remap_idx = remap.at(*thing);
         if (remap_idx > 0) {
-          rng.stack_idx = remap_idx;
+          *thing = remap_idx;
         }
-      });
+      }
       unused_indices.clear_and_deallocate();
       all_the_stacks.trunc_to(new_size);
       all_the_stacks.shrink_to_fit();
