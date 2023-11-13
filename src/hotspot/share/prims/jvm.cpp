@@ -3586,12 +3586,6 @@ JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjec
   return res;
 JVM_END
 
-// Atomic ///////////////////////////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jboolean, JVM_SupportsCX8())
-  return VM_Version::supports_cx8();
-JVM_END
-
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");

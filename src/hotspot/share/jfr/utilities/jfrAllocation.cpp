@@ -36,7 +36,6 @@
 
 #ifdef ASSERT
 static jlong atomic_add_jlong(jlong value, jlong volatile* const dest) {
-  assert(VM_Version::supports_cx8(), "unsupported");
   jlong compare_value;
   jlong exchange_value;
   do {
