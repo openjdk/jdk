@@ -1699,7 +1699,7 @@ void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mas
   // reset the dst data(in bytes) to zero.
   vmv_v_i(v8, 0);
   // load the mask data(in bits).
-  vsetivli(x0, 1, sew, lmul);
+  vsetivli(x0, 1, sew, Assembler::m1);
   vmv_s_x(v0, mask);
   // compress the src data(in bytes) to dst(in bytes).
   vsetvli(x0, t0, Assembler::e8, lmul);
