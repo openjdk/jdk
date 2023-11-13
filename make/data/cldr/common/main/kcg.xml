@@ -16,7 +16,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</languages>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="unconfirmed">[a {a\u0331} b {ch} {chy} d e f g {gb} {gh} {ghw} {ghy} i {i\u0331} j {jhy} k {kh} {kp} l m n {ng} {ny} o p r s {sh} {shy} t {ts} u v w y z]</exemplarCharacters>
+		<exemplarCharacters draft="unconfirmed">[a{a̱} b {ch} {chy} d e f g {gb} {gh} {ghw} {ghy} i{i̱} j {jhy} k {kh} {kp} l m n {ng} {ny} o p r s {sh} {shy} t {ts} u v w y z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -32,13 +32,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">G y MMMM d</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">G y MMM d</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -124,13 +122,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">y MMMM d</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">y MMM d</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -144,25 +140,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
