@@ -110,22 +110,25 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 };
 
-// Compare virtual memory region's base address
-int compare_virtual_memory_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2) {
-  return r1.compare(r2);
-}
-
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
  private:
-  SortedLinkedList<ReservedMemoryRegion, compare_virtual_memory_base>
-                _virtual_memory_regions;
-  size_t        _count;
-
+  typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
+                         AllocFailStrategy::RETURN_NULL> EntryList;
+  EntryList _virtual_memory_regions;
+  size_t    _count;
+  DEBUG_ONLY(address _last_base;)
  public:
-  VirtualMemoryAllocationWalker() : _count(0) { }
+  VirtualMemoryAllocationWalker() :
+    _count(0)
+#ifdef ASSERT
+    , _last_base(nullptr)
+#endif
+  {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
+    assert(rgn->base() >= _last_base, "region unordered?");
+    DEBUG_ONLY(_last_base = rgn->base());
     if (rgn->size() > 0) {
       if (_virtual_memory_regions.add(*rgn) != nullptr) {
         _count ++;

@@ -1658,25 +1658,20 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
 // otherwise return +/- 1.0 using sign of input.
 // one - gives us a floating-point 1.0 (got from matching rule)
 // bool is_double - specifies single or double precision operations will be used.
-void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
-  Register tmp1 = t0;
-
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_double) {
   Label done;
 
-  is_double ? fclass_d(tmp1, src)
-            : fclass_s(tmp1, src);
-
-  is_double ? fmv_d(dst, src)
-            : fmv_s(dst, src);
+  is_double ? fclass_d(t0, dst)
+            : fclass_s(t0, dst);
 
   // check if input is -0, +0, signaling NaN or quiet NaN
-  andi(tmp1, tmp1, fclass_mask::zero | fclass_mask::nan);
+  andi(t0, t0, fclass_mask::zero | fclass_mask::nan);
 
-  bnez(tmp1, done);
+  bnez(t0, done);
 
   // use floating-point 1.0 with a sign of input
-  is_double ? fsgnj_d(dst, one, src)
-            : fsgnj_s(dst, one, src);
+  is_double ? fsgnj_d(dst, one, dst)
+            : fsgnj_s(dst, one, dst);
 
   bind(done);
 }

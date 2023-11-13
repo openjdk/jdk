@@ -86,6 +86,9 @@ public:
   double surv_rate_pred(G1Predictions const& predictor, uint age) const {
     assert(is_valid_age(age), "must be");
 
+    // _stats_arrays_length might not be in sync with _num_added_regions in Cleanup pause.
+    age = MIN2(age, _stats_arrays_length - 1);
+
     return predictor.predict_in_unit_interval(_surv_rate_predictors[age]);
   }
 
