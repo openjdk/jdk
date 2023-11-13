@@ -527,7 +527,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       // Fast-locking does not use the 'lock' argument.
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.is_full()) {
-        // The emitted code always goes into the runtime incase the lock stack
+        // The emitted code always goes into the runtime in case the lock stack
         // is full. We unconditionally make room on the lock stack by inflating
         // the least recently locked object on the lock stack.
         ObjectMonitor* monitor = inflate(current, lock_stack.bottom(), inflate_cause_vm_internal);

@@ -44,7 +44,7 @@ const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_ba
 
 LockStack::LockStack(JavaThread* jt) :
   _top(lock_stack_base_offset), _base() {
-  // Make sure the layout of the object is compatable with the emitted codes assumptions.
+  // Make sure the layout of the object is compatible with the emitted code's assumptions.
   STATIC_ASSERT(sizeof(_bad_oop_sentinel) == oopSize);
   STATIC_ASSERT(sizeof(_base[0]) == oopSize);
   STATIC_ASSERT(std::is_standard_layout<LockStack>::value);
