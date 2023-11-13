@@ -1135,7 +1135,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // those nodes, and have not found another node from the pack, we know
 // that all nodes in the pack are independent.
 Node* SuperWord::find_dependence(Node_List* p) {
-  if (vla().reductions().is_marked_reduction(p->at(0))) {
+  if (is_marked_reduction(p->at(0))) {
     return nullptr; // ignore reductions
   }
   ResourceMark rm;
@@ -1193,8 +1193,8 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   int d1 = depth(s1);
   int d2 = depth(s2);
   if (d2 > d1) {
-    if (vla().reductions().is_marked_reduction(s1) &&
-        vla().reductions().is_marked_reduction(s2)) {
+    if (is_marked_reduction(s1) &&
+        is_marked_reduction(s2)) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
         Node* t1 = s1->fast_out(i);
@@ -1402,7 +1402,7 @@ void SuperWord::order_def_uses(Node_List* p) {
   if (s1->is_Store()) return;
 
   // reductions are always managed beforehand
-  if (vla().reductions().is_marked_reduction(s1)) return;
+  if (is_marked_reduction(s1)) return;
 
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
@@ -1438,18 +1438,18 @@ void SuperWord::order_def_uses(Node_List* p) {
 bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   // check reductions to see if they are marshalled to represent the reduction
   // operator in a specified opnd
-  if (vla().reductions().is_marked_reduction(u1) &&
-      vla().reductions().is_marked_reduction(u2)) {
+  if (is_marked_reduction(u1) &&
+      is_marked_reduction(u2)) {
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     Node* first = u1->in(2);
     if (first->is_Phi() ||
-        vla().reductions().is_marked_reduction(first)) {
+        is_marked_reduction(first)) {
       u1->swap_edges(1, 2);
     }
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     first = u2->in(2);
     if (first->is_Phi() ||
-        vla().reductions().is_marked_reduction(first)) {
+        is_marked_reduction(first)) {
       u2->swap_edges(1, 2);
     }
     return true;
@@ -1690,7 +1690,7 @@ void SuperWord::filter_packs() {
       remove_pack_at(i);
     }
     Node *n = pk->at(0);
-    if (vla().reductions().is_marked_reduction(n)) {
+    if (is_marked_reduction(n)) {
       _num_reductions++;
     } else {
       _num_work_vecs++;
@@ -1734,7 +1734,7 @@ bool SuperWord::implemented(Node_List* p) {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     uint size = p->size();
-    if (vla().reductions().is_marked_reduction(p0)) {
+    if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
       if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
@@ -1820,7 +1820,7 @@ bool SuperWord::profitable(Node_List* p) {
     }
   }
   // Check if reductions are connected
-  if (vla().reductions().is_marked_reduction(p0)) {
+  if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
@@ -1855,7 +1855,7 @@ bool SuperWord::profitable(Node_List* p) {
           if (def == n) {
             // Reductions should only have a Phi use at the loop head or a non-phi use
             // outside of the loop if it is the last element of the pack (e.g. SafePoint).
-            if (vla().reductions().is_marked_reduction(def) &&
+            if (is_marked_reduction(def) &&
                 ((use->is_Phi() && use->in(0) == cl()) ||
                  (!lpt()->is_member(phase()->get_loop(phase()->ctrl_or_self(use))) && i == p->size()-1))) {
               continue;
@@ -2064,7 +2064,7 @@ public:
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
           if (pred_pid == pid &&
-              _slp->vla().reductions().is_marked_reduction(n)) {
+              _slp->is_marked_reduction(n)) {
             continue; // reduction -> self-cycle is not a cyclic dependency
           }
           // Only add edges once, and only for mapped nodes (in block)
@@ -2505,7 +2505,7 @@ bool SuperWord::output() {
       } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = nullptr;
-        bool node_isa_reduction = vla().reductions().is_marked_reduction(n);
+        bool node_isa_reduction = is_marked_reduction(n);
         if (node_isa_reduction) {
           // the input to the first reduction operation is retained
           in1 = first->in(1);
@@ -2803,7 +2803,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _n_idx_list.pop();
     Node* def = use->in(idx);
 
-    if (vla().reductions().is_marked_reduction(def)) continue;
+    if (is_marked_reduction(def)) continue;
 
     // Insert extract operation
     _igvn.hash_delete(def);
@@ -2826,7 +2826,7 @@ void SuperWord::insert_extracts(Node_List* p) {
 bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node_List* u_pk = my_pack(use);
   if (u_pk == nullptr) return false;
-  if (vla().reductions().is_marked_reduction(use)) return true;
+  if (is_marked_reduction(use)) return true;
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == nullptr) {
@@ -2987,7 +2987,7 @@ bool SuperWord::construct_bb() {
         if (in_loopbody(use) && !visited_test(use) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
-          if (vla().reductions().is_marked_reduction(use)) {
+          if (is_marked_reduction(use)) {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
