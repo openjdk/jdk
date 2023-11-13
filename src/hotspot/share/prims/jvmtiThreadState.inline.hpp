@@ -78,10 +78,6 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
 
   NoSafepointVerifier nsv;  // oop is safe to use.
 
-  if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
-    thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
-  }
-
   // In a case of unmounted virtual thread the thread can be null.
   JvmtiThreadState *state = thread == nullptr ? nullptr : thread->jvmti_thread_state();
 
@@ -89,7 +85,15 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
     // Don't add a JvmtiThreadState to a thread that is exiting.
     return nullptr;
   }
-  if (state == nullptr || state->get_thread_oop() != thread_oop) {
+
+  if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
+    thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
+  }
+  // The state->get_thread_oop() may be null if the state is created during
+  // the allocation of the thread oop when a native thread is attaching. Make
+  // sure we don't create a new state for the JavaThread.
+  if (state == nullptr || (state->get_thread_oop() != nullptr &&
+                           state->get_thread_oop() != thread_oop)) {
     // Check if java_lang_Thread already has a link to the JvmtiThreadState.
     if (thread_oop != nullptr) {  // thread_oop can be null during early VMStart.
       state = java_lang_Thread::jvmti_thread_state(thread_oop);
@@ -98,6 +102,7 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
+  assert(state != nullptr, "sanity check");
   return state;
 }
 
