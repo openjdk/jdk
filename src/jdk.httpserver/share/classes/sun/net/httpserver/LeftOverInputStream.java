@@ -133,20 +133,11 @@ abstract class LeftOverInputStream extends FilterInputStream {
      * (still bytes to be read)
      */
     public boolean drain (long l) throws IOException {
-        byte[] db = new byte [MAX_SKIP_BUFFER_SIZE];
         while (l > 0) {
-            if (server.isFinishing()) {
-                break;
-            }
-            int bufSize = Math.clamp(l, 0, MAX_SKIP_BUFFER_SIZE);
-            long len = readImpl (db, 0, bufSize);
-            if (len == -1) {
-                eof = true;
-                return true;
-            } else {
-                l = l - len;
-            }
+            long skip = skip(l);
+            if (skip <= 0) break; // might return 0 if isFinishing or EOF
+            l -= skip;
         }
-        return false;
+        return eof;
     }
 }
