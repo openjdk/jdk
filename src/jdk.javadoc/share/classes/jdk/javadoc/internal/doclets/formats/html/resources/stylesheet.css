@@ -647,24 +647,13 @@ div.block {
 }
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
 .module-label-in-package, .module-label-in-type, .package-label-in-type,
-.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label {
+.package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label, .restricted-label {
     font-weight:bold;
 }
-.deprecation-comment, .help-footnote, .preview-comment {
+.deprecation-comment, .help-footnote, .preview-comment, .restricted-comment {
     font-style:italic;
 }
-.deprecation-block {
-    font-size:1em;
-    font-family:var(--block-font-family);
-    border-style:solid;
-    border-width:thin;
-    border-radius:10px;
-    padding:10px;
-    margin-bottom:10px;
-    margin-right:10px;
-    display:inline-block;
-}
-.preview-block {
+.deprecation-block, .preview-block, .restricted-block {
     font-size:1em;
     font-family:var(--block-font-family);
     border-style:solid;

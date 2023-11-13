@@ -113,6 +113,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummaryContent) {
         addPreviewSummary(member, tdSummaryContent);
+        addRestrictedSummary(member, tdSummaryContent);
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {

@@ -32,7 +32,6 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
@@ -57,7 +56,7 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
  * the CONVERT_ADDRESS operator 'unboxes' a MemoryAddress to a long, but 'boxes' a long to a MemoryAddress.
  *
  * Here are some examples of binding recipes derived from C declarations, and according to the Windows ABI (recipes are
- * ABI-specific). Note that each argument has it's own recipe, which is indicated by '[number]:' (though, the only
+ * ABI-specific). Note that each argument has its own recipe, which is indicated by '[number]:' (though, the only
  * example that has multiple arguments is the one using varargs).
  *
  * --------------------

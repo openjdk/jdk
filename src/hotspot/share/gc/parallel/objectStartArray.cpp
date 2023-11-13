@@ -26,9 +26,9 @@
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 
 uint ObjectStartArray::_card_shift = 0;

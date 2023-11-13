@@ -702,8 +702,6 @@ private:
   double                      _elapsed_time_ms;
   // Termination time of this task
   double                      _termination_time_ms;
-  // When this task got into the termination protocol
-  double                      _termination_start_time_ms;
 
   TruncatedSeq                _marking_step_diff_ms;
 

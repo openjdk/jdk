@@ -929,7 +929,7 @@ public final class ZoneInfoFile {
         }
 
         static final boolean isLeapYear(int year) {
-            return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+            return CalendarUtils.isGregorianLeapYear(year);
         }
 
         static final int lengthOfMonth(int year, int month) {
