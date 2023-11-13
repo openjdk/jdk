@@ -2881,7 +2881,7 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
 // CompressBits of Long & Integer
 
 instruct compressBitsI(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask, vRegMask_V0 v0,
-                       vReg_V4 v4, vReg_V4 v5, vReg_V8 v8, vReg_V4 v9) %{
+                       vReg_V4 v4, vReg_V5 v5, vReg_V8 v8, vReg_V9 v9) %{
   predicate(UseRVV);
   match(Set dst (CompressBits src mask));
   effect(TEMP v0, TEMP v4, TEMP v5, TEMP v8, TEMP v9);
@@ -2907,8 +2907,8 @@ instruct compressBitsI(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask, vRegMask_
 %}
 
 instruct compressBitsL(iRegLNoSp dst, iRegL src, iRegL mask, vRegMask_V0 v0,
-                       vReg_V4 v4, vReg_V4 v5, vReg_V4 v6, vReg_V4 v7,
-                       vReg_V8 v8, vReg_V4 v9, vReg_V4 v10, vReg_V4 v11) %{
+                       vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                       vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11) %{
   predicate(UseRVV);
   match(Set dst (CompressBits src mask));
   effect(TEMP v0, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
