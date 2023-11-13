@@ -254,7 +254,7 @@ public final class FallbackLinker extends AbstractLinker {
             case ValueLayout.OfFloat   fl -> argSeg.set(fl, 0, (Float) arg);
             case ValueLayout.OfDouble  dl -> argSeg.set(dl, 0, (Double) arg);
             case AddressLayout         al -> argSeg.set(al, 0, (MemorySegment) arg);
-            case GroupLayout           __ ->
+            case GroupLayout            _ ->
                     MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
             case null, default -> {
                 assert layout == null;
