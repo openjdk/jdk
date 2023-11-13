@@ -265,13 +265,11 @@ class VectorElementSizeStats {
 
 class VLoop : public StackObj {
 protected:
-  IdealLoopTree* _lpt = nullptr;
   PhaseIdealLoop* _phase = nullptr;
-
+  IdealLoopTree* _lpt = nullptr;
   CountedLoopNode* _cl = nullptr;
   Node* _cl_exit = nullptr;
   PhiNode* _iv = nullptr;
-
   bool _allow_cfg = false;
 
   static constexpr char const* SUCCESS                    = "success";
@@ -284,13 +282,13 @@ protected:
   static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
 
 public:
-  VLoop() {};
+  VLoop(PhaseIdealLoop* phase) : _phase(phase) {};
   NONCOPYABLE(VLoop);
 
 protected:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
+    assert(_phase == lpt->_phase, "must be the same phase");
     _lpt       = lpt;
-    _phase     = lpt->_phase;
     _cl        = nullptr;
     _cl_exit   = nullptr;
     _iv        = nullptr;
@@ -403,7 +401,7 @@ protected:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
 
 public:
-  VLoopAnalyzer() : _reductions(this) {};
+  VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase), _reductions(this) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
