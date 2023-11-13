@@ -1076,7 +1076,7 @@ public abstract class AllocationMerges {
     int testMergesAndMixedEscape(boolean cond, int x, int y) {
         Load p1 = new Load(x, y);
         Load p2 = new Load(x, y);
-        int val  = 0;
+        int val = 0;
 
         if (cond) {
             p1 = new Load(x+1, y+1);
