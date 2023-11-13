@@ -120,7 +120,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     // Write the thread to the owner field so the runtime knows the owner.
     __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), _thread);
 
-    // succsesor null check.
+    // successor null check.
     __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
     __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
 
