@@ -88,6 +88,13 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
+ifeq ($(DEBUG_LEVEL), fastdebug)
+  ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
+    # False positive warnings for atomic_linux_aarch64.hpp on GCC >= 13
+    DISABLED_WARNINGS_gcc += stringop-overflow
+  endif
+endif
+
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
