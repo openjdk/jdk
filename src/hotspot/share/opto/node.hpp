@@ -1731,25 +1731,23 @@ public:
 template <typename Callback, typename Check>
 void Node::visit_uses(Callback callback, Check is_boundary) const {
   ResourceMark rm;
-  // Unique_Node_List guarantees no duplicates in the worklist. Note that we
-  // never pop anything from the worklist, since that could result in applying
-  // the callback for a use more than once (if it is at some point readded to
-  // the worklist).
-  Unique_Node_List worklist;
+  VectorSet visited;
+  Node_List worklist;
+
   // The initial worklist consists of the direct uses
-  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++)
     worklist.push(fast_out(k));
-  }
-  for (uint j = 0; j < worklist.size(); ++j) {
-    Node* use = worklist.at(j);
-    if (is_boundary(use)) {
-      // Apply callback on boundary nodes
-      callback(use);
-    }
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Skip already visited nodes
+    if (visited.test_set(use->_idx)) continue;
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) callback(use);
     else {
-      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++)
         worklist.push(use->fast_out(k));
-      }
     }
   }
 }
