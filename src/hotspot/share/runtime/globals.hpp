@@ -835,10 +835,12 @@ const int ObjectAlignmentInBytes = 8;
           "JVM aborts, producing an error log and core/mini dump, on the "  \
           "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
-  product(intx, WaitUserThreadAtExitTimeout, 300,                           \
-          "Maximum delay in milliseconds at exit waiting for user threads " \
-          "in native")                                                      \
-          range(0, max_intx)                                                \
+  product(intx, UserThreadWaitAttemptsAtExit, 30,                           \
+          "Number of attempts waiting for user threads in native during "   \
+          "JVM exit. Each wait attempt is 10-millisecond. The max allowed " \
+          "wait attempts for user threads in native is 1000, which is "     \
+          "10 seconds.")                                                    \
+          range(0, 1000)                                                    \
                                                                             \
   /* tracing */                                                             \
                                                                             \

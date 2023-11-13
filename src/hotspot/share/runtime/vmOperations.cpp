@@ -392,8 +392,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   // better to terminate VM when current thread is the only active thread, so
   // wait for user threads too. Numbers are in 10 milliseconds.
   int wait_time_per_attempt = 10;                 // in milliseconds
-  int max_wait_attempts_user_thread =
-                  WaitUserThreadAtExitTimeout / wait_time_per_attempt;
+  int max_wait_attempts_user_thread = UserThreadWaitAttemptsAtExit;
   int max_wait_attempts_compiler_thread = 1000; // at least 10 seconds
 
   int attempts = 0;
