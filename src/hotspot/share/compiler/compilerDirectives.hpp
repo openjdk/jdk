@@ -129,7 +129,7 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
-  ResourceBitMap _ideal_phase_name_mask;
+  CHeapBitMap _ideal_phase_name_mask;
 
 public:
   DirectiveSet(CompilerDirectives* directive);

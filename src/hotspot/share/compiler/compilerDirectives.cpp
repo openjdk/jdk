@@ -297,7 +297,7 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d), _ideal_phase_name_mask(PHASE_NUM_TYPES) {
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d), _ideal_phase_name_mask(PHASE_NUM_TYPES, mtCompiler) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
@@ -433,7 +433,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       // Parse ccstr and create mask
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        ResourceBitMap mask(PHASE_NUM_TYPES);
+        CHeapBitMap mask(PHASE_NUM_TYPES, mtCompiler);
         PhaseNameValidator validator(option, mask);
         if (validator.is_valid()) {
           assert(validator.is_set(), "Must be set");
