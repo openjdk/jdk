@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 3, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(3)
 @State(Scope.Benchmark)
 public class PointerBench {
 
@@ -60,7 +60,7 @@ public class PointerBench {
     MemorySegment pointSegment = pointPointer.segment();
 
     public static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
 
     @Setup
     public void setup() {

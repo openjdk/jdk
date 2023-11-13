@@ -229,7 +229,7 @@ public final class SealedGraph implements Taglet {
                 var forwardNavigator = nodePackage.getQualifiedName().toString()
                         .replace(".", "/");
 
-                return backNavigator + forwardNavigator + "/" + node.getSimpleName() + ".html";
+                return backNavigator + forwardNavigator + "/" + packagelessCanonicalName(node) + ".html";
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
@@ -314,6 +314,15 @@ public final class SealedGraph implements Taglet {
                 case ANONYMOUS, LOCAL -> Optional.empty();
                 case MEMBER -> packageName((TypeElement) element.getEnclosingElement());
             };
+        }
+
+        private static String packagelessCanonicalName(TypeElement element) {
+            String result = element.getSimpleName().toString();
+            while (element.getNestingKind() == NestingKind.MEMBER) {
+                element = (TypeElement) element.getEnclosingElement();
+                result = element.getSimpleName().toString() + '.' + result;
+            }
+            return result;
         }
     }
 }

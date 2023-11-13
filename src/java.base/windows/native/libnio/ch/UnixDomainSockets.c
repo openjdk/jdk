@@ -118,6 +118,9 @@ Java_sun_nio_ch_UnixDomainSockets_init(JNIEnv *env, jclass cl)
     if (result == SOCKET_ERROR) {
         if (GetLastError() == WSAENOBUFS) {
             infoPtr = (LPWSAPROTOCOL_INFOW)malloc(len);
+            if (infoPtr == NULL) {
+                return JNI_FALSE;
+            }
             result = WSAEnumProtocolsW(0, infoPtr, &len);
             if (result == SOCKET_ERROR) {
                 free(infoPtr);

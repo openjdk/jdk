@@ -178,10 +178,10 @@ public class RecursiveTaskTest extends JSR166TestCase {
 
     void checkCompletedAbnormally(RecursiveTask<?> a, Throwable t) {
         assertTrue(a.isDone());
-        assertFalse(a.isCancelled());
         assertFalse(a.isCompletedNormally());
         assertTrue(a.isCompletedAbnormally());
-        assertSame(t.getClass(), a.getException().getClass());
+        if (!a.isCancelled())
+            assertSame(t.getClass(), a.getException().getClass());
         assertNull(a.getRawResult());
         assertFalse(a.cancel(false));
         assertFalse(a.cancel(true));
@@ -240,11 +240,15 @@ public class RecursiveTaskTest extends JSR166TestCase {
         FailingFibTask(int n) { number = n; }
         public Integer compute() {
             int n = number;
-            if (n <= 1)
-                throw new FJException();
-            FailingFibTask f1 = new FailingFibTask(n - 1);
-            f1.fork();
-            return new FibTask(n - 2).compute() + f1.join();
+            if (n > 1) {
+                try {
+                    FailingFibTask f1 = new FailingFibTask(n - 1);
+                    f1.fork();
+                    return new FibTask(n - 2).compute() + f1.join();
+                } catch (CancellationException fallthrough) {
+                }
+            }
+            throw new FJException();
         }
     }
 

@@ -111,7 +111,7 @@ public:
       _p = _fallback_buffer;
       _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
     }
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 
@@ -123,7 +123,7 @@ public:
     }
     _p = _fallback_buffer;
     _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));
-    _p[0] = '\0';
+    _p[0] = 0;
     imprint_sentinel();
   }
 

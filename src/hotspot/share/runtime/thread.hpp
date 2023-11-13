@@ -43,6 +43,7 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
+class CompilerThread;
 class HandleArea;
 class HandleMark;
 class ICRefillVerifier;
@@ -323,6 +324,12 @@ class Thread: public ThreadShadow {
   virtual bool is_JfrSampler_thread() const          { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
+
+  // Convenience cast functions
+  CompilerThread* as_Compiler_thread() const {
+    assert(is_Compiler_thread(), "Must be compiler thread");
+    return (CompilerThread*)this;
+  }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
