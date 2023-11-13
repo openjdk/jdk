@@ -4526,7 +4526,7 @@ static const int64_t bits3 = right_n_bits(3);
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
 
-    __ mv(t1, checked_cast<u1>(BLOCK_LENGTH));
+    __ mv(t1, BLOCK_LENGTH);
     __ blt(length, t1, DONE); {
       __ bind(LOOP);
 
