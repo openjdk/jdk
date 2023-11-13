@@ -1131,7 +1131,7 @@ public:
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
   // reaching a boundary node, defined by is_boundary. Note: the function
-  // definition appears after the complete type definition of Unique_Node_List.
+  // definition appears after the complete type definition of Node_List.
   template <typename Callback, typename Check>
   void visit_uses(Callback callback, Check is_boundary) const;
 
