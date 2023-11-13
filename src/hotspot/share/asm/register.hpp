@@ -97,8 +97,8 @@ class AbstractRegSet {
 
   constexpr AbstractRegSet(size_t bitset) : _bitset(bitset) { }
 
-  static constexpr size_t max_size() {
-    return sizeof _bitset * CHAR_BIT;
+  static constexpr int max_size() {
+    return (int)(sizeof _bitset * CHAR_BIT);
   }
 
 public:
@@ -267,7 +267,7 @@ inline constexpr bool different_registers(AbstractRegSet<R> allocated_regs, R fi
 
 template<typename R, typename... Rx>
 inline constexpr bool different_registers(R first_register, Rx... more_registers) {
-  return different_registers(AbstractRegSet<R>(), first_register, more_registers...);
+  return different_registers(AbstractRegSet<R>(first_register), more_registers...);
 }
 
 template<typename R, typename... Rx>
