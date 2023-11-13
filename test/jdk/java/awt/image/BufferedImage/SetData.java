@@ -21,15 +21,18 @@
  * questions.
  */
 
+import java.awt.Point;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferFloat;
 import java.awt.image.DataBufferInt;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.util.Arrays;
 
 /**
@@ -39,9 +42,12 @@ import java.util.Arrays;
 public final class SetData {
     private static final int WIDTH = 3, HEIGHT = 2;
 
+    private static final int TRANSLATE_X = -2, TRANSLATE_Y = -3;
+
     public static void main(final String[] args) {
         testWithIntegers();
         testWithFloats();
+        testTranslatedSource();
     }
 
     private static void testWithIntegers() {
@@ -80,5 +86,29 @@ public final class SetData {
         wr = Raster.createWritableRaster(sm, buffer, null);
         im.setData(wr);
         return im.getRaster().getDataBuffer();
+    }
+
+    private static void testTranslatedSource() {
+        var source = WritableRaster.createBandedRaster(
+                DataBuffer.TYPE_BYTE,
+                WIDTH  - TRANSLATE_X + 2,
+                HEIGHT - TRANSLATE_Y + 1, 1,
+                new Point(TRANSLATE_X, TRANSLATE_Y));
+
+        for (int y=0; y<HEIGHT; y++) {
+            for (int x=0; x<WIDTH; x++) {
+                source.setSample(x, y, 0, (y+1)*10 + (x+1));
+            }
+        }
+        var expected = new byte[] {
+            11, 12, 13,
+            21, 22, 23
+        };
+        var im = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_BYTE_GRAY);
+        im.setData(source);
+        var actual = ((DataBufferByte) im.getRaster().getDataBuffer()).getData();
+        if (!Arrays.equals(expected, actual)) {
+            throw new AssertionError("Pixel values are not equal.");
+        }
     }
 }
