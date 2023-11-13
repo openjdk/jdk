@@ -175,6 +175,8 @@ class os::Linux {
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
 
+  static void madvise_transparent_huge_pages(void* addr, size_t bytes);
+
   // Stack repair handling
 
   // none present

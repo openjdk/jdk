@@ -2178,6 +2178,8 @@ void os::Linux::print_system_memory_info(outputStream* st) {
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
                       "/sys/kernel/mm/transparent_hugepage/enabled", st);
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/shmem_enabled",
+                      "/sys/kernel/mm/transparent_hugepage/shmem_enabled", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter)",
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
@@ -2874,11 +2876,15 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   }
 }
 
+void os::Linux::madvise_transparent_huge_pages(void* addr, size_t bytes) {
+  // We don't check the return value: madvise(MADV_HUGEPAGE) may not
+  // be supported or the memory may already be backed by huge pages.
+  ::madvise(addr, bytes, MADV_HUGEPAGE);
+}
+
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  if (UseTransparentHugePages && alignment_hint > vm_page_size()) {
-    // We don't check the return value: madvise(MADV_HUGEPAGE) may not
-    // be supported or the memory may already be backed by huge pages.
-    ::madvise(addr, bytes, MADV_HUGEPAGE);
+  if (HugePages::should_madvise_anonymous_thps() && alignment_hint > vm_page_size()) {
+    Linux::madvise_transparent_huge_pages(addr, bytes);
   }
 }
 
@@ -3696,10 +3702,24 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-void warn_no_large_pages_configured() {
+static void warn_no_large_pages_configured() {
   if (!FLAG_IS_DEFAULT(UseLargePages)) {
     log_warning(pagesize)("UseLargePages disabled, no large pages configured and available on the system.");
   }
+}
+
+static void warn_thp_not_configured() {
+  if (FLAG_IS_DEFAULT(UseTransparentHugePages)) {
+    // Don't warn if user didn't set the flag
+    return;
+  }
+
+  if (UseZGC && HugePages::thp_requested() && HugePages::supports_shmem_thp()) {
+    // ZGC uses shared memory THPs; don't warn if those are configured
+    return;
+  }
+
+  log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
 }
 
 struct LargePageInitializationLoggerMark {
@@ -3713,16 +3733,24 @@ struct LargePageInitializationLoggerMark {
         os::page_sizes().print_on(&ls);
         ls.print_cr(". Default large page size: " EXACTFMT ".", EXACTFMTARGS(os::large_page_size()));
       } else {
-        ls.print("Large page support disabled.");
+        ls.print("Large page support %sdisabled.", uses_zgc_shmem_thp() ? "partially " : "");
       }
     }
+  }
+
+  static bool uses_zgc_shmem_thp() {
+    return UseZGC &&
+        // If user requested THP
+        ((HugePages::thp_requested() && HugePages::supports_shmem_thp()) ||
+        // If OS forced THP
+         HugePages::forced_shmem_thp());
   }
 };
 
 void os::large_page_init() {
   LargePageInitializationLoggerMark logger;
 
-  // Query OS information first.
+  // Query OS information first and store flag values before changing their values.
   HugePages::initialize();
 
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
@@ -3755,15 +3783,14 @@ void os::large_page_init() {
 
   // 2) check if the OS supports THPs resp. static hugepages.
   if (UseTransparentHugePages && !HugePages::supports_thp()) {
-    if (!FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-      log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
-    }
+    warn_thp_not_configured();
     UseLargePages = UseTransparentHugePages = false;
     return;
   }
+
   if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
     warn_no_large_pages_configured();
-    UseLargePages = UseTransparentHugePages = false;
+    UseLargePages = false;
     return;
   }
 
@@ -3771,7 +3798,7 @@ void os::large_page_init() {
     // In THP mode:
     // - os::large_page_size() is the *THP page size*
     // - os::pagesizes() has two members, the THP page size and the system page size
-    assert(HugePages::supports_thp() && HugePages::thp_pagesize() > 0, "Missing OS info");
+    assert(HugePages::thp_pagesize() > 0, "Missing OS info");
     _large_page_size = HugePages::thp_pagesize();
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
@@ -3796,12 +3823,12 @@ void os::large_page_init() {
     // doesn't match an available page size set _large_page_size to default_large_page_size
     // and use it as the maximum.
    if (FLAG_IS_DEFAULT(LargePageSizeInBytes) ||
-        LargePageSizeInBytes == 0 ||
-        LargePageSizeInBytes == default_large_page_size) {
-      large_page_size = default_large_page_size;
-      log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
-                         byte_size_in_exact_unit(large_page_size),
-                         exact_unit_for_byte_size(large_page_size));
+       LargePageSizeInBytes == 0 ||
+       LargePageSizeInBytes == default_large_page_size) {
+     large_page_size = default_large_page_size;
+     log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+                        byte_size_in_exact_unit(large_page_size),
+                        exact_unit_for_byte_size(large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
         large_page_size = LargePageSizeInBytes;
@@ -3826,7 +3853,6 @@ void os::large_page_init() {
     if (!hugetlbfs_sanity_check(large_page_size)) {
       warn_no_large_pages_configured();
       UseLargePages = false;
-      UseTransparentHugePages = false;
       return;
     }
 
@@ -3857,7 +3883,8 @@ static bool commit_memory_special(size_t bytes,
                                       size_t page_size,
                                       char* req_addr,
                                       bool exec) {
-  assert(UseLargePages && !UseTransparentHugePages, "Should only get here for static hugepage mode (+UseLargePages)");
+  assert(UseLargePages, "Should only get here for huge pages");
+  assert(!UseTransparentHugePages, "Should only get here for static hugepage mode");
   assert(is_aligned(bytes, page_size), "Unaligned size");
   assert(is_aligned(req_addr, page_size), "Unaligned address");
   assert(req_addr != nullptr, "Must have a requested address for special mappings");
