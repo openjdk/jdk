@@ -33,12 +33,13 @@
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
   _mixed_gcs(0),
-  _abbreviated_cycles(0),
+  _abbreviated_gcs(0),
   _success_old_gcs(0),
   _interrupted_old_gcs(0),
   _success_degenerated_gcs(0),
   _success_full_gcs(0),
   _consecutive_young_gcs(0),
+  _consecutive_degenerated_gcs(0),
   _alloc_failure_degenerated(0),
   _alloc_failure_degenerated_upgrade_to_full(0),
   _alloc_failure_full(0),
@@ -82,10 +83,12 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC
 
 void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
   ShenandoahHeap::heap()->record_upgrade_to_full();
+  _consecutive_degenerated_gcs = 0;
   _alloc_failure_degenerated_upgrade_to_full++;
 }
 
 void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young) {
+  _consecutive_degenerated_gcs = 0;
   if (is_young) {
     _consecutive_young_gcs++;
   } else {
@@ -99,7 +102,7 @@ void ShenandoahCollectorPolicy::record_mixed_cycle() {
 }
 
 void ShenandoahCollectorPolicy::record_abbreviated_cycle() {
-  _abbreviated_cycles++;
+  _abbreviated_gcs++;
 }
 
 void ShenandoahCollectorPolicy::record_success_old() {
@@ -112,7 +115,10 @@ void ShenandoahCollectorPolicy::record_interrupted_old() {
   _interrupted_old_gcs++;
 }
 
-void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young) {
+void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young, bool is_upgraded_to_full) {
+  if (!is_upgraded_to_full) {
+    _consecutive_degenerated_gcs++;
+  }
   if (is_young) {
     _consecutive_young_gcs++;
   } else {
@@ -122,6 +128,7 @@ void ShenandoahCollectorPolicy::record_success_degenerated(bool is_young) {
 }
 
 void ShenandoahCollectorPolicy::record_success_full() {
+  _consecutive_degenerated_gcs = 0;
   _consecutive_young_gcs = 0;
   _success_full_gcs++;
 }
@@ -141,7 +148,6 @@ void ShenandoahCollectorPolicy::record_shutdown() {
 bool ShenandoahCollectorPolicy::is_at_shutdown() {
   return _in_shutdown.is_set();
 }
-
 
 void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("Under allocation pressure, concurrent cycles may cancel, and either continue cycle");
@@ -172,7 +178,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("  " SIZE_FORMAT_W(5) " upgraded to Full GC",          _alloc_failure_degenerated_upgrade_to_full);
   out->cr();
 
-  out->print_cr(SIZE_FORMAT_W(5) " Abbreviated GCs",                   _abbreviated_cycles);
+  out->print_cr(SIZE_FORMAT_W(5) " Abbreviated GCs",                   _abbreviated_gcs);
   out->cr();
 
   out->print_cr(SIZE_FORMAT_W(5) " Full GCs",                          _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full);

@@ -97,9 +97,6 @@ protected:
   // have negligible cost unless proven otherwise.
   RegionData* _region_data;
 
-  uint _degenerated_cycles_in_a_row;
-  uint _successful_cycles_in_a_row;
-
   size_t _guaranteed_gc_interval;
 
   double _cycle_start;

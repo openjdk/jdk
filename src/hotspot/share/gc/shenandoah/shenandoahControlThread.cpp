@@ -817,7 +817,7 @@ bool ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   }
 
   _degen_generation->heuristics()->record_success_degenerated();
-  heap->shenandoah_policy()->record_success_degenerated(_degen_generation->is_young());
+  heap->shenandoah_policy()->record_success_degenerated(_degen_generation->is_young(), gc.upgraded_to_full());
   return !gc.upgraded_to_full();
 }
 
