@@ -1688,7 +1688,7 @@ void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mas
   long len = is_long ? 64 : 32;
 
   // load the src data(in bits) to be compressed.
-  vsetivli(x0, 1, sew, lmul);
+  vsetivli(x0, 1, sew, Assembler::m1);
   vmv_s_x(v0, src);
   // reset the src data(in bytes) to zero.
   mv(t0, len);
@@ -1700,14 +1700,14 @@ void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mas
   vmv_v_i(v8, 0);
   // load the mask data(in bits).
   vsetivli(x0, 1, sew, lmul);
-  vmv_v_x(v0, mask);
+  vmv_s_x(v0, mask);
   // compress the src data(in bytes) to dst(in bytes).
   vsetvli(x0, t0, Assembler::e8, lmul);
   vcompress_vm(v8, v4, v0);
   // convert the dst data from bytes to bits.
   vmseq_vi(v0, v8, 1);
   // store result back.
-  vsetivli(x0, 1, sew, lmul);
+  vsetivli(x0, 1, sew, Assembler::m1);
   vmv_x_s(dst, v0);
 }
 
