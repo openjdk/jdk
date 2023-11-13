@@ -112,6 +112,9 @@ abstract class LeftOverInputStream extends FilterInputStream {
         int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
         byte[] skipBuffer = new byte[size];
         while (remaining > 0) {
+            if (server.isFinishing()) {
+                break;
+            }
             nr = readImpl(skipBuffer, 0, (int)Math.min(size, remaining));
             if (nr < 0) {
                 eof = true;
