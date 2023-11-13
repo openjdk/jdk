@@ -687,43 +687,43 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
   }
 }
 
-bool VLoopPreconditionChecker::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
+bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   reset(lpt, allow_cfg);
 
-  tty->print_cr("VLoopPreconditionChecker::check_precondition");
+  tty->print_cr("VLoop::check_precondition");
   lpt->dump_head();
 
   const char* return_state = check_preconditions_helper();
   assert(return_state != nullptr, "must have return state");
-  if (return_state == VLoopPreconditionChecker::SUCCESS) {
+  if (return_state == VLoop::SUCCESS) {
     return true; // success
   }
 
-  tty->print_cr("VLoopPreconditionChecker::check_precondition: failed: %s", return_state);
+  tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
   return false; // failure
 }
 
-const char* VLoopPreconditionChecker::check_preconditions_helper() {
+const char* VLoop::check_preconditions_helper() {
 
   // Only accept vector width that is power of 2
   int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
   if (vector_width < 2 || !is_power_of_2(vector_width)) {
-    return VLoopPreconditionChecker::FAILURE_VECTOR_WIDTH;
+    return VLoop::FAILURE_VECTOR_WIDTH;
   }
 
   // Only accept valid counted loops (int)
   if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
-    return VLoopPreconditionChecker::FAILURE_VALID_COUNTED_LOOP;
+    return VLoop::FAILURE_VALID_COUNTED_LOOP;
   }
   _cl = _lpt->_head->as_CountedLoop();
   _iv = _cl->phi()->as_Phi();
 
   if (_cl->is_vectorized_loop()) {
-    return VLoopPreconditionChecker::FAILURE_ALREADY_VECTORIZED;
+    return VLoop::FAILURE_ALREADY_VECTORIZED;
   }
 
   if (_cl->is_unroll_only()) {
-    return VLoopPreconditionChecker::FAILURE_UNROLL_ONLY;
+    return VLoop::FAILURE_UNROLL_ONLY;
   }
 
   // Check for control flow in the body
@@ -733,19 +733,19 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
 #ifndef PRODUCT
     // TODO change trace flag
     if (TraceSuperWord) {
-      tty->print_cr("VLoopPreconditionChecker::check_preconditions: fails because of control flow.");
+      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
       tty->print("cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
       tty->print("cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
       tty->print("lpt->_head %d", _cl->_idx); _cl->dump();
       _lpt->dump_head();
     }
 #endif
-    return VLoopPreconditionChecker::FAILURE_CONTROL_FLOW;
+    return VLoop::FAILURE_CONTROL_FLOW;
   }
 
   // Make sure the are no extra control users of the loop backedge
   if (_cl->back_control()->outcnt() != 1) {
-    return VLoopPreconditionChecker::FAILURE_BACKEDGE;
+    return VLoop::FAILURE_BACKEDGE;
   }
 
   // To align vector memory accesses in the main-loop, we will have to adjust
@@ -753,17 +753,17 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
   if (_cl->is_main_loop()) {
     CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
     if (pre_end == nullptr) {
-      return VLoopPreconditionChecker::FAILURE_PRE_LOOP_LIMIT;
+      return VLoop::FAILURE_PRE_LOOP_LIMIT;
     }
     Node* pre_opaq1 = pre_end->limit();
     if (pre_opaq1->Opcode() != Op_Opaque1) {
-      return VLoopPreconditionChecker::FAILURE_PRE_LOOP_LIMIT;
+      return VLoop::FAILURE_PRE_LOOP_LIMIT;
     }
     // TODO refactor caching
     _cl->set_pre_loop_end(pre_end);
   }
 
-  return VLoopPreconditionChecker::SUCCESS;
+  return VLoop::SUCCESS;
 }
 
 bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
@@ -791,7 +791,7 @@ const char* VLoopAnalyzer::analyze_helper() {
   }
 
   if (SuperWordReductions) {
-    mark_reductions();
+    _reductions.mark_reductions();
   }
 
   // TODO Move stuff from SLP_extract
@@ -799,7 +799,7 @@ const char* VLoopAnalyzer::analyze_helper() {
   return VLoopAnalyzer::SUCCESS;
 }
 
-bool VLoopAnalyzer::is_reduction(const Node* n) {
+bool VLoopReductions::is_reduction(const Node* n) {
   if (!is_reduction_operator(n)) {
     return false;
   }
@@ -813,12 +813,12 @@ bool VLoopAnalyzer::is_reduction(const Node* n) {
   return false;
 }
 
-bool VLoopAnalyzer::is_reduction_operator(const Node* n) {
+bool VLoopReductions::is_reduction_operator(const Node* n) {
   int opc = n->Opcode();
   return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
 }
 
-bool VLoopAnalyzer::in_reduction_cycle(const Node* n, uint input) {
+bool VLoopReductions::in_reduction_cycle(const Node* n, uint input) {
   // First find input reduction path to phi node.
   auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
   PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
@@ -835,7 +835,7 @@ bool VLoopAnalyzer::in_reduction_cycle(const Node* n, uint input) {
   return path_from_phi.first != nullptr;
 }
 
-Node* VLoopAnalyzer::original_input(const Node* n, uint i) {
+Node* VLoopReductions::original_input(const Node* n, uint i) {
   if (n->has_swapped_edges()) {
     assert(n->is_Add() || n->is_Mul(), "n should be commutative");
     if (i == 1) {
@@ -847,20 +847,23 @@ Node* VLoopAnalyzer::original_input(const Node* n, uint i) {
   return n->in(i);
 }
 
-void VLoopAnalyzer::mark_reductions() {
+void VLoopReductions::mark_reductions() {
   assert(_loop_reductions.is_empty(), "must have been reset");
+  IdealLoopTree*  lpt = _vloop->lpt();
+  CountedLoopNode* cl = _vloop->cl();
+  PhiNode*         iv = _vloop->iv();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles in the basic block.
-  for (DUIterator_Fast imax, i = cl()->fast_outs(imax); i < imax; i++) {
-    const Node* phi = cl()->fast_out(i);
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    const Node* phi = cl->fast_out(i);
     if (!phi->is_Phi()) {
       continue;
     }
     if (phi->outcnt() == 0) {
       continue;
     }
-    if (phi == iv()) {
+    if (phi == iv) {
       continue;
     }
     // The phi's loop-back is considered the first node in the reduction cycle.
@@ -884,9 +887,9 @@ void VLoopAnalyzer::mark_reductions() {
       // to the phi node following edge index 'input'.
       PathEnd path =
         find_in_path(
-          first, input, lpt()->_body.size(),
+          first, input, lpt->_body.size(),
           [&](const Node* n) { return n->Opcode() == first->Opcode() &&
-                                      in_loopbody(n); },
+                                      _vloop->in_loopbody(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -905,7 +908,7 @@ void VLoopAnalyzer::mark_reductions() {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!in_loopbody(u)) {
+        if (!_vloop->in_loopbody(u)) {
           continue;
         }
         if (u == succ) {

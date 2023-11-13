@@ -29,6 +29,8 @@
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 
+class VLoopAnalyzer;
+
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
@@ -261,7 +263,7 @@ class VectorElementSizeStats {
 };
 
 
-class VLoopPreconditionChecker : public StackObj {
+class VLoop : public StackObj {
 protected:
   IdealLoopTree* _lpt = nullptr;
   PhaseIdealLoop* _phase = nullptr;
@@ -282,8 +284,8 @@ protected:
   static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
 
 public:
-  VLoopPreconditionChecker() {};
-  NONCOPYABLE(VLoopPreconditionChecker);
+  VLoop() {};
+  NONCOPYABLE(VLoop);
 
 protected:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
@@ -322,39 +324,21 @@ protected:
   const char* check_preconditions_helper();
 };
 
-
-
-
-class VLoopAnalyzer : public VLoopPreconditionChecker {
-protected:
-
-  // Reduction nodes in the current loop
-  VectorSet _loop_reductions;
-
-  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
-
-public:
-  VLoopAnalyzer() {};
-  NONCOPYABLE(VLoopAnalyzer);
-
-  // Analyze the loop in preparation for vectorization.
-  // Overwrite previous data.Return indicates if analysis succeeded.
-  bool analyze(IdealLoopTree* lpt,
-               bool allow_cfg);
+class VLoopReductions : public StackObj {
 private:
-  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
-    VLoopPreconditionChecker::reset(lpt, allow_cfg);
-    _loop_reductions.clear();
-    // TODO
-  }
-  const char* analyze_helper();
-
-  // ------------------------------------------------------------
-  // -------------------- Reduction Analysis --------------------
-  // ------------------------------------------------------------
-
   typedef const Pair<const Node*, int> PathEnd;
 
+  VLoop* _vloop;
+  VectorSet _loop_reductions;
+
+public:
+  VLoopReductions(VLoop* vloop) : _vloop(vloop) {};
+  NONCOPYABLE(VLoopReductions);
+  void reset() {
+    _loop_reductions.clear();
+  }
+
+private:
   // Search for a path P = (n_1, n_2, ..., n_k) such that:
   // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
   // - path(n) for all n in P,
@@ -387,9 +371,9 @@ private:
 
 public:
   // Whether n is a reduction operator and part of a reduction cycle.
-  // This function can be used for individual queries outside the SLP analysis,
+  // This function can be used for individual queries outside auto-vectorization,
   // e.g. to inform matching in target-specific code. Otherwise, the
-  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
+  // almost-equivalent but faster mark_reductions() is preferable.
   static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
@@ -403,15 +387,41 @@ private:
   static bool in_reduction_cycle(const Node* n, uint input);
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative operation.
+public:
   static Node* original_input(const Node* n, uint i);
   // Find and mark reductions in a loop. Running mark_reductions() is similar to
-  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
+  // querying is_reduction(n) for every node in the loop, but stricter in
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
-
-
 };
 
+class VLoopAnalyzer : public VLoop {
+protected:
+
+  // Submodules that analyze different aspects of the loop
+  VLoopReductions _reductions;
+
+  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
+
+public:
+  VLoopAnalyzer() : _reductions(this) {};
+  NONCOPYABLE(VLoopAnalyzer);
+
+  // Analyze the loop in preparation for vectorization.
+  // Overwrite previous data.Return indicates if analysis succeeded.
+  bool analyze(IdealLoopTree* lpt,
+               bool allow_cfg);
+
+  // Read-only accessors for submodules
+  const VLoopReductions& reductions() { return _reductions; }
+
+private:
+  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
+    VLoop::reset(lpt, allow_cfg);
+    _reductions.reset();
+  }
+  const char* analyze_helper();
+};
 
 #endif // SHARE_OPTO_VECTORIZATION_HPP

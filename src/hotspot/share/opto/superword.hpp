@@ -265,8 +265,7 @@ class SuperWord : public ResourceObj {
 
   bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
-  static void unrolling_analysis(VLoopPreconditionChecker &vlpc,
-                                 int &local_loop_unroll_factor);
+  static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
 
   // Accessors for VPointer
   PhaseIdealLoop* phase() const    { return _phase; }
@@ -415,11 +414,6 @@ class SuperWord : public ResourceObj {
   }
 
 public:
-  // Whether n is a reduction operator and part of a reduction cycle.
-  // This function can be used for individual queries outside the SLP analysis,
-  // e.g. to inform matching in target-specific code. Otherwise, the
-  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
-  static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
   // Whether the current loop has any reduction node.

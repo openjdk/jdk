@@ -172,12 +172,12 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 }
 
 //------------------------------early unrolling analysis------------------------------
-void SuperWord::unrolling_analysis(VLoopPreconditionChecker &vlpc,
+void SuperWord::unrolling_analysis(VLoop &vloop,
                                    int &local_loop_unroll_factor) {
-  IdealLoopTree* lpt    = vlpc.lpt();
-  CountedLoopNode* cl   = vlpc.cl();
-  Node* cl_exit         = vlpc.cl_exit();
-  PhaseIdealLoop* phase = vlpc.phase();
+  IdealLoopTree* lpt    = vloop.lpt();
+  CountedLoopNode* cl   = vloop.cl();
+  Node* cl_exit         = vloop.cl_exit();
+  PhaseIdealLoop* phase = vloop.phase();
 
   bool is_slp = true;
   size_t ignored_size = lpt->_body.size();
@@ -334,12 +334,12 @@ void SuperWord::unrolling_analysis(VLoopPreconditionChecker &vlpc,
               Node* in = n->in(j);
               // Don't propagate through a memory
               if (!in->is_Mem() &&
-                  vlpc.in_loopbody(in) &&
+                  vloop.in_loopbody(in) &&
                   in->bottom_type()->basic_type() == T_INT) {
                 bool same_type = true;
                 for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
                   Node *use = in->fast_out(k);
-                  if (!vlpc.in_loopbody(use) &&
+                  if (!vloop.in_loopbody(use) &&
                       use->bottom_type()->basic_type() != bt) {
                     same_type = false;
                     break;
@@ -368,20 +368,6 @@ void SuperWord::unrolling_analysis(VLoopPreconditionChecker &vlpc,
       cl->set_slp_max_unroll(local_loop_unroll_factor);
     }
   }
-}
-
-bool SuperWord::is_reduction(const Node* n) {
-  if (!is_reduction_operator(n)) {
-    return false;
-  }
-  // Test whether there is a reduction cycle via every edge index
-  // (typically indices 1 and 2).
-  for (uint input = 1; input < n->req(); input++) {
-    if (in_reduction_cycle(n, input)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool SuperWord::is_reduction_operator(const Node* n) {
