@@ -2009,10 +2009,6 @@ JNIEnv* AwtToolkit::m_env;
 DWORD AwtToolkit::m_threadId;
 
 void AwtToolkit::SetEnv(JNIEnv *env) {
-    if (m_env != NULL) {
-        abort();// TODO delete block
-        return;
-    }
     m_threadId = GetCurrentThreadId();
     m_env = env;
 }
