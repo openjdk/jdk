@@ -765,10 +765,6 @@ inline bool ShenandoahHeap::is_aging_cycle() const {
   return _is_aging_cycle.is_set();
 }
 
-inline bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
-  return _prepare_for_old_mark;
-}
-
 inline size_t ShenandoahHeap::set_promoted_reserve(size_t new_val) {
   size_t orig = _promoted_reserve;
   _promoted_reserve = new_val;

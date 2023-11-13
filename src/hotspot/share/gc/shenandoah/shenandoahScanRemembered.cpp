@@ -106,7 +106,9 @@ ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQu
                                                            ShenandoahReferenceProcessor* rp,
                                                            ShenandoahRegionChunkIterator* work_list, bool is_concurrent) :
   WorkerTask("Scan Remembered Set"),
-  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {}
+  _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _work_list(work_list), _is_concurrent(is_concurrent) {
+  log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(ShenandoahHeap::heap()->is_old_bitmap_stable()));
+}
 
 void ShenandoahScanRememberedTask::work(uint worker_id) {
   if (_is_concurrent) {

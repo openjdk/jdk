@@ -175,7 +175,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
   if (heap->mode()->is_generational()) {
-    heap->mmu_tracker()->record_full(heap->global_generation(), GCId::current());
+    heap->mmu_tracker()->record_full(GCId::current());
     heap->log_heap_status("At end of Full GC");
 
     // Since we allow temporary violation of these constraints during Full GC, we want to enforce that the assertions are

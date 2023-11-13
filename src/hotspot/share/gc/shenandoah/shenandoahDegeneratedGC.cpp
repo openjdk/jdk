@@ -58,8 +58,7 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
     bool is_bootstrap_gc = heap->old_generation()->state() == ShenandoahOldGeneration::BOOTSTRAPPING;
-    heap->mmu_tracker()->record_degenerated(_generation, GCId::current(), is_bootstrap_gc,
-                                            !heap->collection_set()->has_old_regions());
+    heap->mmu_tracker()->record_degenerated(GCId::current(), is_bootstrap_gc);
     const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
     heap->log_heap_status(msg);
   }
@@ -106,9 +105,9 @@ void ShenandoahDegenGC::op_degenerated() {
       // If we are in a global cycle, the old generation should not be marking. It is, however,
       // allowed to be holding regions for evacuation or coalescing.
       ShenandoahOldGeneration::State state = old_generation->state();
-      assert(state == ShenandoahOldGeneration::IDLE
-             || state == ShenandoahOldGeneration::WAITING_FOR_EVAC
-             || state == ShenandoahOldGeneration::WAITING_FOR_FILL,
+      assert(state == ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP
+             || state == ShenandoahOldGeneration::EVACUATING
+             || state == ShenandoahOldGeneration::FILLING,
              "Old generation cannot be in state: %s", old_generation->state_name());
     }
   }

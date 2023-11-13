@@ -829,8 +829,8 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
     if (enabled) {
       char actual = _heap->gc_state();
 
-      bool is_marking = (actual & ShenandoahHeap::MARKING)? 1: 0;
-      bool is_marking_young_or_old = (actual & (ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING))? 1: 0;
+      bool is_marking = (actual & ShenandoahHeap::MARKING);
+      bool is_marking_young_or_old = (actual & (ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING));
       assert(is_marking == is_marking_young_or_old, "MARKING iff (YOUNG_MARKING or OLD_MARKING), gc_state is: %x", actual);
 
       // Old generation marking is allowed in all states.

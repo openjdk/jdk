@@ -206,9 +206,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // Any triggers that occurred during mixed evacuations may no longer be valid.  They can retrigger if appropriate.
     clear_triggers();
     if (has_coalesce_and_fill_candidates()) {
-      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_FILL);
+      _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
     } else {
-      _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
     }
   } else if (included_old_regions == 0) {
     // We have candidates, but none were included for evacuation - are they all pinned?
@@ -218,7 +218,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // (pinned) regions parseable.
     if (all_candidates_are_pinned()) {
       log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
-      _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_FILL);
+      _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
     } else {
       log_info(gc)("No regions selected for mixed collection. "
                    "Old evacuation budget: " BYTES_FORMAT ", Remaining evacuation budget: " BYTES_FORMAT
@@ -467,11 +467,11 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
                byte_size_in_proper_unit(immediate_garbage),   proper_unit_for_byte_size(immediate_garbage), immediate_regions);
 
   if (unprocessed_old_collection_candidates() > 0) {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_EVAC);
+    _old_generation->transition_to(ShenandoahOldGeneration::EVACUATING);
   } else if (has_coalesce_and_fill_candidates()) {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_FILL);
+    _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
   } else {
-    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
   }
 }
 

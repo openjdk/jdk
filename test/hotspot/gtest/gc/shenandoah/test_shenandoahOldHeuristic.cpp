@@ -358,6 +358,6 @@ TEST_VM_F(ShenandoahOldHeuristicTest, all_candidates_are_pinned) {
   // can run. This is meant to defend against "bad" JNI code that permanently
   // leaves an old region in the pinned state.
   EXPECT_EQ(_collection_set->count(), 0UL);
-  EXPECT_EQ(old_generation_state(), ShenandoahOldGeneration::WAITING_FOR_FILL);
+  EXPECT_EQ(old_generation_state(), ShenandoahOldGeneration::FILLING);
 }
 #undef SKIP_IF_NOT_SHENANDOAH

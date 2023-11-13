@@ -250,6 +250,7 @@ void ShenandoahControlThread::run_service() {
         cause = GCCause::_shenandoah_concurrent_gc;
         generation = OLD;
         set_gc_mode(servicing_old);
+        heap->set_unload_classes(false);
       }
     }
 
@@ -515,23 +516,11 @@ void ShenandoahControlThread::service_concurrent_old_cycle(ShenandoahHeap* heap,
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
   switch (original_state) {
-    case ShenandoahOldGeneration::WAITING_FOR_FILL:
-    case ShenandoahOldGeneration::IDLE: {
-      assert(!heap->is_concurrent_old_mark_in_progress(), "Old already in progress");
-      assert(old_generation->task_queues()->is_empty(), "Old mark queues should be empty");
-    }
     case ShenandoahOldGeneration::FILLING: {
-      _allow_old_preemption.set();
       ShenandoahGCSession session(cause, old_generation);
-      old_generation->prepare_gc();
+      _allow_old_preemption.set();
+      old_generation->entry_coalesce_and_fill();
       _allow_old_preemption.unset();
-
-      if (heap->is_prepare_for_old_mark_in_progress()) {
-        // Coalescing threads detected the cancellation request and aborted. Stay
-        // in this state so control thread may resume the coalescing work.
-        assert(old_generation->state() == ShenandoahOldGeneration::FILLING, "Prepare for mark should be in progress");
-        assert(heap->cancelled_gc(), "Preparation for GC is not complete, expected cancellation");
-      }
 
       // Before bootstrapping begins, we must acknowledge any cancellation request.
       // If the gc has not been cancelled, this does nothing. If it has been cancelled,
@@ -544,10 +533,12 @@ void ShenandoahControlThread::service_concurrent_old_cycle(ShenandoahHeap* heap,
         return;
       }
 
-      // Coalescing threads completed and nothing was cancelled. it is safe to transition
-      // to the bootstrapping state now.
-      old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
+      // Coalescing threads completed and nothing was cancelled. it is safe to transition from this state.
+      old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+      return;
     }
+    case ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP:
+      old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
     case ShenandoahOldGeneration::BOOTSTRAPPING: {
       // Configure the young generation's concurrent mark to put objects in
       // old regions into the concurrent mark queues associated with the old
@@ -583,13 +574,11 @@ void ShenandoahControlThread::service_concurrent_old_cycle(ShenandoahHeap* heap,
       if (marking_complete) {
         assert(old_generation->state() != ShenandoahOldGeneration::MARKING, "Should not still be marking");
         if (original_state == ShenandoahOldGeneration::MARKING) {
-          heap->mmu_tracker()->record_old_marking_increment(old_generation, GCId::current(), true,
-                                                            heap->collection_set()->has_old_regions());
+          heap->mmu_tracker()->record_old_marking_increment(true);
           heap->log_heap_status("At end of Concurrent Old Marking finishing increment");
         }
       } else if (original_state == ShenandoahOldGeneration::MARKING) {
-        heap->mmu_tracker()->record_old_marking_increment(old_generation, GCId::current(), false,
-                                                          heap->collection_set()->has_old_regions());
+        heap->mmu_tracker()->record_old_marking_increment(false);
         heap->log_heap_status("At end of Concurrent Old Marking increment");
       }
       break;
@@ -725,11 +714,11 @@ void ShenandoahControlThread::service_concurrent_cycle(ShenandoahHeap* heap,
                                       "At end of Concurrent Young GC";
         if (heap->collection_set()->has_old_regions()) {
           bool mixed_is_done = (heap->old_heuristics()->unprocessed_old_collection_candidates() == 0);
-          mmu_tracker->record_mixed(generation, get_gc_id(), mixed_is_done);
+          mmu_tracker->record_mixed(get_gc_id());
         } else if (do_old_gc_bootstrap) {
-          mmu_tracker->record_bootstrap(generation, get_gc_id(), heap->collection_set()->has_old_regions());
+          mmu_tracker->record_bootstrap(get_gc_id());
         } else {
-          mmu_tracker->record_young(generation, get_gc_id());
+          mmu_tracker->record_young(get_gc_id());
         }
       }
     } else {
@@ -740,7 +729,7 @@ void ShenandoahControlThread::service_concurrent_cycle(ShenandoahHeap* heap,
       } else {
         // We only record GC results if GC was successful
         msg = "At end of Concurrent Global GC";
-        mmu_tracker->record_global(generation, get_gc_id());
+        mmu_tracker->record_global(get_gc_id());
       }
     }
   } else {

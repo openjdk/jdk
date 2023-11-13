@@ -382,17 +382,30 @@ void ShenandoahConcurrentGC::entry_final_roots() {
 
 void ShenandoahConcurrentGC::entry_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent reset";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
-  EventMark em("%s", msg);
-
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
-                              "concurrent reset");
-
   heap->try_inject_alloc_failure();
-  op_reset();
+
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  {
+    static const char* msg = "Concurrent reset";
+    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
+    EventMark em("%s", msg);
+
+    ShenandoahWorkerScope scope(heap->workers(),
+                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                                msg);
+    op_reset();
+  }
+
+  if (_do_old_gc_bootstrap) {
+    static const char* msg = "Concurrent reset (OLD)";
+    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_old);
+    ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                                msg);
+    EventMark em("%s", msg);
+
+    heap->old_generation()->prepare_gc();
+  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {

@@ -36,7 +36,6 @@ private:
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
   ShenandoahOldHeuristics* _old_heuristics;
 
-  bool entry_coalesce_and_fill();
   bool coalesce_and_fill();
 
 public:
@@ -57,6 +56,7 @@ public:
   void set_concurrent_mark_in_progress(bool in_progress) override;
   bool is_concurrent_mark_in_progress() override;
 
+  bool entry_coalesce_and_fill();
   virtual void prepare_gc() override;
   void prepare_regions_and_collection_set(bool concurrent) override;
   virtual void record_success_concurrent(bool abbreviated) override;
@@ -84,7 +84,7 @@ public:
 
 public:
   enum State {
-    IDLE, FILLING, BOOTSTRAPPING, MARKING, WAITING_FOR_EVAC, WAITING_FOR_FILL
+    FILLING, WAITING_FOR_BOOTSTRAP, BOOTSTRAPPING, MARKING, EVACUATING
   };
 
 private:
@@ -92,10 +92,10 @@ private:
 
   static const size_t FRACTIONAL_DENOMINATOR = 64536;
 
-  // During initialization of the JVM, we search for the correct old-gen size by initally performing old-gen
+  // During initialization of the JVM, we search for the correct old-gen size by initially performing old-gen
   // collection when old-gen usage is 50% more (INITIAL_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
   // estimate (3.125% of heap).  The next old-gen trigger occurs when old-gen grows 25% larger than its live
-  // memory at the end of the first old-gen collection.  Then we trigger again when old-gen growns 12.5%
+  // memory at the end of the first old-gen collection.  Then we trigger again when old-gen grows 12.5%
   // more than its live memory at the end of the previous old-gen collection.  Thereafter, we trigger each time
   // old-gen grows more than 12.5% following the end of its previous old-gen collection.
   static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;        //  50.0%
@@ -132,7 +132,7 @@ public:
   size_t usage_trigger_threshold() const;
 
   bool can_start_gc() {
-    return _state == IDLE || _state == WAITING_FOR_FILL;
+    return _state == WAITING_FOR_BOOTSTRAP;
   }
 
   static const char* state_name(State state);

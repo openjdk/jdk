@@ -606,7 +606,7 @@
           "With generational mode, increment the age of objects and"        \
           "regions each time this many young-gen GC cycles are completed.") \
                                                                             \
-  notproduct(bool, ShenandoahEnableCardStats, trueInDebug,                  \
+  notproduct(bool, ShenandoahEnableCardStats, false,                        \
           "Enable statistics collection related to clean & dirty cards")    \
                                                                             \
   notproduct(int, ShenandoahCardStatsLogInterval, 50,                       \

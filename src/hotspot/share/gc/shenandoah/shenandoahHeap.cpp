@@ -584,7 +584,6 @@ void ShenandoahHeap::initialize_heuristics_generations() {
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
   _gc_generation(nullptr),
-  _prepare_for_old_mark(false),
   _initial_size(0),
   _promotion_potential(0),
   _committed(0),
@@ -741,7 +740,7 @@ ShenandoahYoungHeuristics* ShenandoahHeap::young_heuristics() {
 }
 
 bool ShenandoahHeap::doing_mixed_evacuations() {
-  return _old_generation->state() == ShenandoahOldGeneration::WAITING_FOR_EVAC;
+  return _old_generation->state() == ShenandoahOldGeneration::EVACUATING;
 }
 
 bool ShenandoahHeap::is_old_bitmap_stable() const {
@@ -1165,7 +1164,7 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
 void ShenandoahHeap::cancel_old_gc() {
   shenandoah_assert_safepoint();
   assert(_old_generation != nullptr, "Should only have mixed collections in generation mode.");
-  if (_old_generation->state() == ShenandoahOldGeneration::IDLE) {
+  if (_old_generation->state() == ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP) {
     assert(!old_generation()->is_concurrent_mark_in_progress(), "Cannot be marking in IDLE");
     assert(!old_heuristics()->has_coalesce_and_fill_candidates(), "Cannot have coalesce and fill candidates in IDLE");
     assert(!old_heuristics()->unprocessed_old_collection_candidates(), "Cannot have mixed collection candidates in IDLE");
@@ -1174,14 +1173,12 @@ void ShenandoahHeap::cancel_old_gc() {
     log_info(gc)("Terminating old gc cycle.");
     // Stop marking
     old_generation()->cancel_marking();
-    // Stop coalescing undead objects
-    set_prepare_for_old_mark_in_progress(false);
     // Stop tracking old regions
     old_heuristics()->abandon_collection_candidates();
     // Remove old generation access to young generation mark queues
     young_generation()->set_old_gen_task_queues(nullptr);
     // Transition to IDLE now.
-    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
+    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
   }
 }
 
@@ -2465,10 +2462,8 @@ void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
   manage_satb_barrier(in_progress);
 }
 
-void ShenandoahHeap::set_prepare_for_old_mark_in_progress(bool in_progress) {
-  // Unlike other set-gc-state functions, this may happen outside safepoint.
-  // Is only set and queried by control thread, so no coherence issues.
-  _prepare_for_old_mark = in_progress;
+bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
+  return old_generation()->state() == ShenandoahOldGeneration::FILLING;
 }
 
 void ShenandoahHeap::set_aging_cycle(bool in_progress) {
@@ -2803,6 +2798,7 @@ public:
     _regions(regions),
     _work_chunks(work_chunks)
   {
+    log_info(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(_heap->is_old_bitmap_stable()));
   }
 
   void work(uint worker_id) {
