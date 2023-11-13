@@ -6083,7 +6083,7 @@ class StubGenerator: public StubCodeGenerator {
       // respective start address. We need to advance it to next octet
       __ andr(tmp2, result, wordSize/str2_chr_size - 1); // symbols analyzed
       __ lsr(cnt1, cnt2, BitsPerByte * wordSize / 2);
-      __ bfi(result, zr, 0, 2 - str2_chr_shift);
+      __ bfm(result, zr, 0, 2 - str2_chr_shift);
       __ sub(str2, str2, tmp2, __ LSL, str2_chr_shift); // restore str2
       __ movw(cnt2, cnt2);
       __ b(L_LOOP_PROCEED);
