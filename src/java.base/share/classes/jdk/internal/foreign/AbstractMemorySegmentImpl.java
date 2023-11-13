@@ -567,9 +567,9 @@ public abstract sealed class AbstractMemorySegmentImpl
                 case char[]   _ -> new HeapMemorySegmentImpl.OfChar(off, base, len, readOnly, bufferScope);
                 case int[]    _ -> new HeapMemorySegmentImpl.OfInt(off, base, len, readOnly, bufferScope);
                 case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(off, base, len, readOnly, bufferScope);
-                case long[]   _ ->  new HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
+                case long[]   _ -> new HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
                 case double[] _ -> new HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
-                default -> throw new AssertionError("Cannot get here");
+                default         -> throw new AssertionError("Cannot get here");
             };
         } else if (unmapper == null) {
             return new NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
