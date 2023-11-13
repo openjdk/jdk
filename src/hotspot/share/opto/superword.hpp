@@ -232,7 +232,7 @@ class SuperWord : public ResourceObj {
  friend class CMoveKit;
  private:
   PhaseIdealLoop* _phase;
-  const VLoopAnalyzer  &_vloop_analyzer;
+  const VLoopAnalyzer  &_vla;
   Arena*          _arena;
   PhaseIterGVN   &_igvn;
 
@@ -262,18 +262,17 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
-  SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vloop_analyzer);
+  SuperWord(PhaseIdealLoop* phase, const VLoopAnalyzer &vla);
 
   bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
   static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
 
-  // Accessors for VPointer
   PhaseIdealLoop* phase() const    { return _phase; }
+  const VLoopAnalyzer& vla() const { return _vla; }
   IdealLoopTree* lpt() const       { return _lpt; }
   PhiNode* iv() const              { return _iv; }
 
-  const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
 
   bool early_return() const        { return _early_return; }
 
