@@ -78,16 +78,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
 #endif
 }
 
-//------------------------------transform_loop---------------------------
-bool SuperWord::transform_loop() {
-  assert(phase()->C->do_superword(), "SuperWord option should be enabled");
-
-  init(); // initialize data structures
-
-  assert(_packset.length() == 0, "packset must be empty");
-  return SLP_extract();
-}
-
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(VLoop &vloop,
                                    int &local_loop_unroll_factor) {
@@ -322,6 +312,9 @@ void SuperWord::unrolling_analysis(VLoop &vloop,
 //    extraction of scalar values from vectors.
 //
 bool SuperWord::SLP_extract() {
+  assert(phase()->C->do_superword(), "SuperWord option should be enabled");
+  init(); // initialize data structures
+  assert(_packset.length() == 0, "packset must be empty");
 
 #ifndef PRODUCT
   if (_do_vector_loop && TraceSuperWord) {

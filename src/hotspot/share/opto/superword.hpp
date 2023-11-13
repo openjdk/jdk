@@ -262,8 +262,6 @@ class SuperWord : public ResourceObj {
  public:
   SuperWord(const VLoopAnalyzer &vla);
 
-  bool transform_loop();
-
   static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
 
   const VLoopAnalyzer& vla() const      { return _vla; }
@@ -272,7 +270,7 @@ class SuperWord : public ResourceObj {
   CountedLoopNode* cl() const           { return vla().cl(); }
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_loopbody(const Node* n) const { return vla().in_loopbody(n); }
-  bool is_marked_reduction(const Node* n) const { return vla().reductions().in_loopbody(n); }
+  bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -368,8 +366,10 @@ class SuperWord : public ResourceObj {
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
+ public:
   // Extract the superword level parallelism
   bool SLP_extract();
+ private:
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
   // Tracing support

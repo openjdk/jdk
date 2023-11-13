@@ -4650,7 +4650,7 @@ void PhaseIdealLoop::build_and_optimize() {
       if (lpt->is_counted() && cl->is_main_loop()) {
         bool success = vloop_analyzer.analyze(lpt, false);
         if (success) {
-          success = sw.transform_loop();
+          success = sw.SLP_extract();
         }
         if (!success) {
           // Vectorization failed. From now on only unroll the loop.
