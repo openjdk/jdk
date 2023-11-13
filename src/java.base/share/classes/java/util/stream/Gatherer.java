@@ -54,8 +54,7 @@ import java.util.function.Supplier;
  * <p>A {@code Gatherer} is specified by four functions that work together to
  * process input elements, optionally using intermediate state, and optionally
  * perform a final action at the end of input.  They are: <ul>
- *     <li>creating a new, potentially mutable, state ({@link #initializer()}
- *     )</li>
+ *     <li>creating a new, potentially mutable, state ({@link #initializer()})</li>
  *     <li>integrating a new input element ({@link #integrator()})</li>
  *     <li>combining two states into one ({@link #combiner()})</li>
  *     <li>performing an optional final action ({@link #finisher()})</li>
@@ -113,7 +112,7 @@ import java.util.function.Supplier;
  *
  * Gatherer<Object, ?, String> toString = map(i -> i.toString());
  *
- * Gatherer<Integer, ?, String> incrementThenToString = increment.andThen(intToString);
+ * Gatherer<Integer, ?, String> incrementThenToString = increment.andThen(toString);
  * }
  *
  * <p>As an example, in order to create a gatherer to implement a sequential
@@ -574,9 +573,9 @@ public interface Gatherer<T, A, R> {
          * Greedy Integrators consume all their input, and may only relay that
          * the downstream does not want more elements.
          *
-         * <p>This is used to clarify that no short-circuiting will be
-         * initiated by this Integrator, and that information can then be
-         * used to optimize evaluation.
+         * @implSpec This interface is used to communicate that no
+         * short-circuiting will be <i>initiated</i> by this Integrator, and that
+         * information can then be used to optimize evaluation.
          *
          * @param <A> the type of elements this greedy integrator receives
          * @param <T> the type of initializer this greedy integrator consumes
