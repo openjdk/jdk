@@ -251,11 +251,10 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
     AC_MSG_RESULT([no, using BOOT_JDK])
   fi
 
-  JTREG_JAVA="$JTREG_JDK/bin/java"
-  UTIL_FIXUP_PATH(JTREG_JAVA)
-  JTREG_JAVA="$FIXPATH $JTREG_JAVA"
-  AC_SUBST([JTREG_JAVA])
-
+  UTIL_FIXUP_PATH(JTREG_JDK)
+  AC_SUBST([JTREG_JDK])
+  # For use in the configure script
+  JTREG_JAVA="$FIXPATH $JTREG_JDK/bin/java"
 
   # Verify jtreg version
   if test "x$JT_HOME" != x; then

@@ -143,8 +143,11 @@ public:
   }
 
   void clear() {
-    _table.unsafe_reset();
-    Atomic::store(&_num_entries, (size_t)0);
+    // Remove all entries.
+    auto always_true = [] (nmethod** value) {
+                         return true;
+                       };
+    clean(always_true);
   }
 
   void iterate_at_safepoint(CodeBlobClosure* blk) {

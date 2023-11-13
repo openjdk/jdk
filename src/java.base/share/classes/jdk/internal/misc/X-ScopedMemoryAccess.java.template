@@ -329,10 +329,6 @@ public class ScopedMemoryAccess {
                          AbstractMemorySegmentImpl msp, long offset,
                          S s,
                          VectorSupport.LoadOperation<AbstractMemorySegmentImpl, V, S> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             return loadFromMemorySegmentScopedInternal(
@@ -374,10 +370,6 @@ public class ScopedMemoryAccess {
     V loadFromMemorySegmentMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
                                   int length, AbstractMemorySegmentImpl msp, long offset, M m, S s, int offsetInRange,
                                   VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             return loadFromMemorySegmentMaskedScopedInternal(
@@ -420,10 +412,6 @@ public class ScopedMemoryAccess {
                                 V v,
                                 AbstractMemorySegmentImpl msp, long offset,
                                 VectorSupport.StoreVectorOperation<AbstractMemorySegmentImpl, V> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             storeIntoMemorySegmentScopedInternal(
@@ -466,10 +454,6 @@ public class ScopedMemoryAccess {
                                       int length, V v, M m,
                                       AbstractMemorySegmentImpl msp, long offset,
                                       VectorSupport.StoreVectorMaskedOperation<AbstractMemorySegmentImpl, V, M> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             storeIntoMemorySegmentMaskedScopedInternal(

@@ -177,7 +177,7 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 
 // JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
 NOINLINE frame os::current_frame() {
@@ -191,15 +191,6 @@ NOINLINE frame os::current_frame() {
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }
-}
-
-ATTRIBUTE_PRINTF(6, 7)
-static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...) {
-  va_list va;
-  va_start(va, detail_fmt);
-  VMError::report_and_die(thread, context, filename, lineno, message, detail_fmt, va);
-  va_end(va);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -288,7 +279,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&

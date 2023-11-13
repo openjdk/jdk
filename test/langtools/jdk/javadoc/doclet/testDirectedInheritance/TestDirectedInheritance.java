@@ -277,6 +277,7 @@ public class TestDirectedInheritance extends JavadocTester {
         var m = """
                 <section class="detail" id="m()">
                 <h3>m</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">\
                 public</span>&nbsp;<span class="return-type">void</span>\
                 &nbsp;<span class="element-name">m</span>()</div>
@@ -336,6 +337,7 @@ public class TestDirectedInheritance extends JavadocTester {
         var m = """
                 <section class="detail" id="m()">
                 <h3>m</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">\
                 public</span>&nbsp;<span class="return-type">void</span>\
                 &nbsp;<span class="element-name">m</span>()</div>

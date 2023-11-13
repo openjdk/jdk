@@ -112,6 +112,9 @@ public class DocPaths {
     /** The name of the default jQuery UI javascript file. */
     public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
 
+    /** The name of the default jQuery file for legal notices. */
+    public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
+
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
 
@@ -147,6 +150,9 @@ public class DocPaths {
 
     /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
+
+    /** The name of the file for restricted methods. */
+    public static final DocPath RESTRICTED_LIST = DocPath.create("restricted-list.html");
 
     /** The name of the directory for the resource files. */
     public static final DocPath RESOURCE_FILES = DocPath.create("resource-files");

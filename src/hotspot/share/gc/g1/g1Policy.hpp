@@ -251,14 +251,6 @@ private:
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
-  // Check whether a given young length (young_length) fits into the
-  // given target pause time and whether the prediction for the amount
-  // of objects to be copied for the given length will fit into the
-  // given free space (expressed by base_free_regions).  It is used by
-  // calculate_young_list_target_length().
-  bool predict_will_fit(uint young_length, double base_time_ms,
-                        uint base_free_regions, double target_pause_time_ms) const;
-
 public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
