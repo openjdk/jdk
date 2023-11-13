@@ -152,7 +152,7 @@ private:
         : stack(stack), ref_count(ref_count) {}
     };
     GrowableArrayCHeap<RefCountedNCS, mtNMT> all_the_stacks;
-    int unused_stacks = 0;
+    GrowableArrayCHeap<int, mtNMT> unused_indices;
   public:
     static constexpr const int static_stack_size = 1024;
 
@@ -176,15 +176,18 @@ private:
         pre_existing.ref_count++;
         return idx;
       }
-      // There was a collision, just push it
+      // There was a collision, check for empty index
+      if (unused_indices.length() > 0) {
+        int reused_idx = unused_indices.pop();
+        all_the_stacks.at(reused_idx) = RefCountedNCS{stack, 1};
+        return reused_idx;
+      }
+      // Just push it
       all_the_stacks.push(RefCountedNCS{stack, 1});
       return len;
     }
 
     const NativeCallStack& get(int idx) {
-      if (!VirtualMemoryView::_is_detailed_mode) {
-        return all_the_stacks.at(0).stack;
-      }
       return all_the_stacks.at(idx).stack;
     }
 
@@ -193,6 +196,7 @@ private:
         all_the_stacks.at(idx).ref_count++;
       }
     }
+
     void decrement(int idx) {
       if (idx < static_stack_size) {
         return;
@@ -203,25 +207,53 @@ private:
       }
       rncs.ref_count--;
       if (rncs.ref_count == 0) {
-        unused_stacks++;
+        unused_indices.push(idx);
       }
 
-      // If we have a lot of unused stacks then we should clean up.
-      if (unused_stacks > 512) {
-        compact();
+      if ((double)unused_indices.length() / (double)all_the_stacks.length() > 0.3) {
+        struct {
+          void for_each(void* f) {
+          }
+        } iterator;
+        compact(iterator);
       }
     }
-    NativeCallStackStorage(int capacity = static_stack_size) : all_the_stacks{capacity} {
+    NativeCallStackStorage(int capacity = static_stack_size) : all_the_stacks{capacity}, unused_indices() {
     }
 
   private:
     // Compact the stack storage by reassigning the indices stored in the reserved and committed memory regions.
-    void compact() {
+    template<typename MemoryRegionIterator>
+    void compact(MemoryRegionIterator iter) {
       ResourceMark rm;
       // remap[i] = x => stack index i+static_stack_size needs to be remapped to index x
       // side-condition: x > 0
       GrowableArray<int> remap{all_the_stacks.length() - static_stack_size};
-      // TODO: Actually implement this, thanks!
+      int start = static_stack_size;
+      int end = all_the_stacks.length();
+      while (end > start) {
+        if (all_the_stacks.at(start).ref_count > 0) {
+          start++;
+          continue;
+        }
+        if (all_the_stacks.at(end).ref_count == 0) {
+          end--;
+          continue;
+        }
+        remap.at_put_grow(end, start, 0);
+      }
+      // Compute the new size.
+      int new_size;
+      for (new_size = static_stack_size; all_the_stacks.at(new_size).ref_count > 0; new_size++);
+      iter.for_each([&](TrackedRange& rng) {
+        const int remap_idx = remap.at(rng.stack_idx);
+        if (remap_idx > 0) {
+          rng.stack_idx = remap_idx;
+        }
+      });
+      unused_indices.clear_and_deallocate();
+      all_the_stacks.trunc_to(new_size);
+      all_the_stacks.shrink_to_fit();
     }
   };
 
