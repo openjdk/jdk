@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_VIRTUALMEMORYVIEW_HPP
-#define SHARE_SERVICES_VIRTUALMEMORYVIEW_HPP
+#ifndef SHARE_NMT_VIRTUALMEMORYVIEW_HPP
+#define SHARE_NMT_VIRTUALMEMORYVIEW_HPP
 
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -31,8 +31,8 @@
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
 #include "memory/resourceArea.hpp"
-#include "services/allocationSite.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/allocationSite.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -282,4 +282,4 @@ public:
   static void record_committed_memory();
 };
 
-#endif // SHARE_SERVICES_VIRTUALMEMORYVIEW_HPP
+#endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP

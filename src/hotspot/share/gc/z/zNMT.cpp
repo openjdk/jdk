@@ -28,7 +28,7 @@
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
-#include "services/virtualMemoryView.hpp"
+#include "nmt/virtualMemoryView.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 VirtualMemoryView::PhysicalMemorySpace ZNMT::_space{};
