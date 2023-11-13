@@ -351,12 +351,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new NumberFormatException("Zero length BigInteger");
         }
         Objects.checkFromIndexSize(off, len, val.length);
+        if (len == 0) {
+            mag = ZERO.mag;
+            signum = ZERO.signum;
+            return;
+        }
 
-        if (val[off] < 0) {
-            mag = makePositive(val, off, len);
+        int b = val[off];
+        if (b < 0) {
+            mag = makePositive(b, val, off, len);
             signum = -1;
         } else {
-            mag = stripLeadingZeroBytes(val, off, len);
+            mag = stripLeadingZeroBytes(b, val, off, len);
             signum = (mag.length == 0 ? 0 : 1);
         }
         if (mag.length >= MAX_MAG_LENGTH) {
@@ -4604,77 +4610,167 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return keep == 0 ? val : java.util.Arrays.copyOfRange(val, keep, vlen);
     }
 
-    /**
-     * Returns a copy of the input array stripped of any leading zero bytes.
-     */
-    private static int[] stripLeadingZeroBytes(byte[] a, int off, int len) {
-        int indexBound = off + len;
-        int keep;
-
-        // Find first nonzero byte
-        for (keep = off; keep < indexBound && a[keep] == 0; keep++)
-            ;
-
-        // Allocate new array and copy relevant part of input array
-        int intLength = ((indexBound - keep) + 3) >>> 2;
-        int[] result = new int[intLength];
-        int b = indexBound - 1;
-        for (int i = intLength-1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
-            int bytesRemaining = b - keep + 1;
-            int bytesToTransfer = Math.min(3, bytesRemaining);
-            for (int j=8; j <= (bytesToTransfer << 3); j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
-        }
-        return result;
+    private static int[] stripLeadingZeroBytes(byte[] a, int from, int len) {
+        return stripLeadingZeroBytes(Integer.MIN_VALUE, a, from, len);
     }
 
-    /**
+    /*
+     * Returns a copy of the input array stripped of any leading zero bytes.
+     * The returned array is either empty, or its 0-th element is non-zero,
+     * meeting the "minimal" requirement for field mag (see comment on mag).
+     *
+     * The range [from, from + len) must be well-formed w.r.t. array a.
+     *
+     * b < -128 means that a[from] has not yet been read.
+     * Otherwise, b must be a[from], have been read only once before invoking
+     * this method, and len > 0 must hold.
+     */
+    private static int[] stripLeadingZeroBytes(int b, byte[] a, int from, int len) {
+        /*
+         * Except for the first byte, each read access to the input array a
+         * is of the form a[from++].
+         * The index from is never otherwise altered, except right below,
+         * and only increases in steps of 1, always up to index to.
+         * Hence, each byte in the array is read exactly once, from lower to
+         * higher indices (from most to least significant byte).
+         */
+        if (len == 0) {
+            return ZERO.mag;
+        }
+        int to = from + len;
+        if (b < -128) {
+            b = a[from];
+        }
+        /* Either way, a[from] has now been read exactly once, skip to next. */
+        ++from;
+        /*
+         * Set up the shortest int[] for the sequence of the bytes
+         *      b, a[from+1], ..., a[to-1]    (len > 0)
+         * Shortest means first skipping leading zeros.
+         */
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
+        if (b == 0) {
+            /* Here, from == to as well. All bytes are zeros. */
+            return ZERO.mag;
+        }
+        /*
+         * Allocate just enough ints to hold (to - from + 1) bytes, that is
+         *      ((to - from + 1) + 3) / 4 = (to - from) / 4 + 1
+         */
+        int[] res = new int[((to - from) >> 2) + 1];
+        /*
+         * A "digit" is a group of 4 adjacent bytes aligned w.r.t. index to.
+         * (Implied 0 bytes are prepended as needed.)
+         * b is the most significant byte not 0.
+         * Digit d0 spans the range of indices that includes current (from - 1).
+         */
+        int d0 = b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d0 = d0 << 8 | a[from++] & 0xFF;
+        }
+        res[0] = d0;
+        /*
+         * Prepare the remaining digits.
+         * (to - from) is a multiple of 4, so prepare an int for every 4 bytes.
+         * This is a candidate for Unsafe.copy[Swap]Memory().
+         */
+        int i = 1;
+        while (from < to) {
+            res[i++] = a[from++] << 24 | (a[from++] & 0xFF) << 16
+                    | (a[from++] & 0xFF) << 8 | (a[from++] & 0xFF);
+        }
+        return res;
+    }
+
+    /*
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero bytes) unsigned whose value is -a.
+     *
+     * len > 0 must hold.
+     * The range [from, from + len) must be well-formed w.r.t. array a.
+     * b is assumed to be the result of reading a[from] and to meet b < 0.
      */
-    private static int[] makePositive(byte[] a, int off, int len) {
-        int keep, k;
-        int indexBound = off + len;
-
-        // Find first non-sign (0xff) byte of input
-        for (keep=off; keep < indexBound && a[keep] == -1; keep++)
-            ;
-
-
-        /* Allocate output array.  If all non-sign bytes are 0x00, we must
-         * allocate space for one extra output byte. */
-        for (k=keep; k < indexBound && a[k] == 0; k++)
-            ;
-
-        int extraByte = (k == indexBound) ? 1 : 0;
-        int intLength = ((indexBound - keep + extraByte) + 3) >>> 2;
-        int result[] = new int[intLength];
-
-        /* Copy one's complement of input into output, leaving extra
-         * byte (if it exists) == 0x00 */
-        int b = indexBound - 1;
-        for (int i = intLength-1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
-            int numBytesToTransfer = Math.min(3, b-keep+1);
-            if (numBytesToTransfer < 0)
-                numBytesToTransfer = 0;
-            for (int j=8; j <= 8*numBytesToTransfer; j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
-
-            // Mask indicates which bits must be complemented
-            int mask = -1 >>> (8*(3-numBytesToTransfer));
-            result[i] = ~result[i] & mask;
+    private static int[] makePositive(int b, byte[] a, int from, int len) {
+        /*
+         * By assumption, b == a[from] < 0 and len > 0.
+         *
+         * First collect the bytes into the resulting array res.
+         * Then convert res to two's complement.
+         *
+         * Except for b == a[from], each read access to the input array a
+         * is of the form a[from++].
+         * The index from is never otherwise altered, except right below,
+         * and only increases in steps of 1, always up to index to.
+         * Hence, each byte in the array is read exactly once, from lower to
+         * higher indices (from most to least significant byte).
+         */
+        int to = from + len;
+        /* b == a[from] has been read exactly once, skip to next index. */
+        ++from;
+        /* Skip leading -1 bytes. */
+        for (; b == -1 && from < to; b = a[from++])
+            ;  //empty body
+        /*
+         * A "digit" is a group of 4 adjacent bytes aligned w.r.t. index to.
+         * b is the most significant byte not -1, or -1 only if from == to.
+         * Digit d0 spans the range of indices that includes current (from - 1).
+         * (Implied -1 bytes are prepended to array a as needed.)
+         * It usually corresponds to res[0], except for the special case below.
+         */
+        int d0 = -1 << 8 | b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d0 = d0 << 8 | (b = a[from++]) & 0xFF;
         }
-
-        // Add one to one's complement to generate two's complement
-        for (int i=result.length-1; i >= 0; i--) {
-            result[i] = (int)((result[i] & LONG_MASK) + 1);
-            if (result[i] != 0)
-                break;
+        int f = from;  // keeps the current from for sizing purposes later
+        /* Skip zeros adjacent to d0, if at all. */
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
+        /*
+         * b is the most significant non-zero byte at or after (f - 1),
+         * or 0 only if from == to.
+         * Digit d spans the range of indices that includes (f - 1).
+         */
+        int d = b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d = d << 8 | a[from++] & 0xFF;
         }
-
-        return result;
+        /*
+         * If the situation here is like this:
+         * index:                      f                        to == from
+         *      ..., -1,-1,  0,0,0,0,  0,0,0,0,  ...,  0,0,0,0
+         * digit:               d0                        d
+         * then, as shown, the number of zeros is a positive multiple of 4.
+         * The array res needs a minimal length of (1 + 1 + (to - f) / 4)
+         * to accommodate the two's complement, including a leading 1.
+         * In any other case, there is at least one byte that is non-zero.
+         * The array for the two's complement has length (0 + 1 + (to - f) / 4).
+         * c is 1, resp., 0 for the two situations.
+         */
+        int c = (to - from | d0 | d) == 0 ? 1 : 0;
+        int[] res = new int[c + 1 + ((to - f) >> 2)];
+        res[0] = c == 0 ? d0 : -1;
+        int i = res.length - ((to - from) >> 2);
+        if (i > 1) {
+            res[i - 1] = d;
+        }
+        /*
+         * Prepare the remaining digits.
+         * (to - from) is a multiple of 4, so prepare an int for every 4 bytes.
+         * This is a candidate for Unsafe.copy[Swap]Memory().
+         */
+        while (from < to) {
+            res[i++] = a[from++] << 24 | (a[from++] & 0xFF) << 16
+                    | (a[from++] & 0xFF) << 8 | (a[from++] & 0xFF);
+        }
+        /* Convert to two's complement. Here, i == res.length */
+        while (--i >= 0 && res[i] == 0)
+            ;  // empty body
+        res[i] = -res[i];
+        while (--i >= 0) {
+            res[i] = ~res[i];
+        }
+        return res;
     }
 
     /**
