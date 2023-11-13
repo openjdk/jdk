@@ -31,7 +31,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "opto/phasetype.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/tribool.hpp"
 
@@ -129,7 +129,7 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
-  phase_mask _ideal_phase_name_mask;
+  ResourceBitMap _ideal_phase_name_mask;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -198,7 +198,7 @@ void set_##name(void* value) {                                      \
   compilerdirectives_c1_string_flags(set_string_function_definition)
 #undef set_string_function_definition
 
-  phase_mask& ideal_phase_mask() { return _ideal_phase_name_mask; };
+  BitMap& ideal_phase_mask() { return _ideal_phase_name_mask; };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }

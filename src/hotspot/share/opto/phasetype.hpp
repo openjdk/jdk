@@ -25,6 +25,8 @@
 #ifndef SHARE_OPTO_PHASETYPE_HPP
 #define SHARE_OPTO_PHASETYPE_HPP
 
+#include "utilities/bitMap.inline.hpp"
+
 #define COMPILER_PHASES(flags) \
   flags(BEFORE_STRINGOPTS,            "Before StringOpts") \
   flags(AFTER_STRINGOPTS,             "After StringOpts") \
@@ -91,8 +93,6 @@ static const char* phase_names[] = {
        COMPILER_PHASES(array_of_labels)
 #undef array_of_labels
 };
-
-typedef bool phase_mask[PHASE_NUM_TYPES];
 
 class CompilerPhaseTypeHelper {
   public:
@@ -164,7 +164,7 @@ class PhaseNameValidator {
   char* _bad;
 
  public:
-  PhaseNameValidator(ccstrlist option, phase_mask& mask) : _valid(true), _set(false), _bad(nullptr) {
+  PhaseNameValidator(ccstrlist option, BitMap& mask) : _valid(true), _set(false), _bad(nullptr) {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
@@ -175,10 +175,11 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        memset(mask, true, sizeof(mask));
+        mask.set_range(0,PHASE_NUM_TYPES);
         _set = true;
       } else {
-        mask[cpt] = true;
+        assert(cpt < PHASE_NUM_TYPES, "out of bounds");
+        mask.set_bit(cpt);
         _set = true;
       }
     }

@@ -297,8 +297,7 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
-  memset(_ideal_phase_name_mask, false, sizeof(_ideal_phase_name_mask));
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d), _ideal_phase_name_mask(PHASE_NUM_TYPES) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
@@ -434,10 +433,11 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       // Parse ccstr and create mask
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        phase_mask& mask = set.cloned()->_ideal_phase_name_mask;
+        ResourceBitMap mask(PHASE_NUM_TYPES);
         PhaseNameValidator validator(option, mask);
         if (validator.is_valid()) {
           assert(validator.is_set(), "Must be set");
+          set.cloned()->_ideal_phase_name_mask.set_from(mask);
         }
       }
     }
@@ -620,7 +620,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 #undef copy_string_members_definition
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
-  memcpy(set->_ideal_phase_name_mask, src->_ideal_phase_name_mask, sizeof(set->_ideal_phase_name_mask));
+  set->_ideal_phase_name_mask.set_from(src->_ideal_phase_name_mask);
   return set;
 }
 
