@@ -26,6 +26,9 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Compilation.hpp"
+#endif
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDirectives.hpp"
@@ -34,23 +37,24 @@
 #include "compiler/compilerThread.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "oops/symbol.hpp"
 #ifdef COMPILER2
 #include "opto/node.hpp" // compile.hpp is not self-contained
 #include "opto/compile.hpp"
 #endif
-#include "services/nmtCommon.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"
 
-
 ArenaStatCounter::ArenaStatCounter() :
   _current(0), _start(0), _peak(0),
   _na(0), _ra(0),
+  _limit(0), _hit_limit(false),
   _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0)
 {}
 
@@ -58,8 +62,15 @@ size_t ArenaStatCounter::peak_since_start() const {
   return _peak > _start ? _peak - _start : 0;
 }
 
-void ArenaStatCounter::start() {
+void ArenaStatCounter::start(size_t limit) {
   _peak = _start = _current;
+  _limit = limit;
+  _hit_limit = false;
+}
+
+void ArenaStatCounter::end(){
+  _limit = 0;
+  _hit_limit = false;
 }
 
 void ArenaStatCounter::update_c2_node_count() {
@@ -104,6 +115,10 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
     _ra_at_peak = _ra;
     update_c2_node_count();
     rc = true;
+    // Did we hit the memory limit?
+    if (!_hit_limit && _limit > 0 && peak_since_start() > _limit) {
+      _hit_limit = true;
+    }
   }
   return rc;
 }
@@ -125,7 +140,8 @@ class FullMethodName {
 
 public:
 
-  FullMethodName(Symbol* k, Symbol* m, Symbol* s) : _k(k), _m(m), _s(s) {}
+  FullMethodName(const Method* m) :
+    _k(m->klass_name()), _m(m->name()), _s(m->signature()) {};
   FullMethodName(const FullMethodName& o) : _k(o._k), _m(o._m), _s(o._s) {}
 
   void make_permanent() {
@@ -173,13 +189,15 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   size_t _na_at_peak;
   size_t _ra_at_peak;
   unsigned _live_nodes_at_peak;
+  const char* _result;
 
 public:
 
   MemStatEntry(FullMethodName method)
     : _method(method), _comptype(compiler_c1),
       _time(0), _num_recomp(0), _thread(nullptr),
-      _total(0), _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0) {
+      _total(0), _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0),
+      _result(nullptr) {
   }
 
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
@@ -192,6 +210,8 @@ public:
   void set_ra_at_peak(size_t n) { _ra_at_peak = n; }
   void set_live_nodes_at_peak(unsigned n) { _live_nodes_at_peak = n; }
 
+  void set_result(const char* s) { _result = s; }
+
   size_t total() const { return _total; }
 
   static void print_legend(outputStream* st) {
@@ -199,7 +219,8 @@ public:
     st->print_cr("  total  : memory allocated via arenas while compiling");
     st->print_cr("  NA     : ...how much in node arenas (if c2)");
     st->print_cr("  RA     : ...how much in resource areas");
-    st->print_cr("  #nodes : ...how many nodes (if c2)");
+    st->print_cr("  result : Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
+    st->print_cr("  #nodes : ...how many nodes (c2 only)");
     st->print_cr("  time   : time of last compilation (sec)");
     st->print_cr("  type   : compiler type");
     st->print_cr("  #rc    : how often recompiled");
@@ -207,7 +228,7 @@ public:
   }
 
   static void print_header(outputStream* st) {
-    st->print_cr("total     NA        RA        #nodes  time    type  #rc thread              method");
+    st->print_cr("total     NA        RA        result  #nodes  time    type  #rc thread              method");
   }
 
   void print_on(outputStream* st, bool human_readable) const {
@@ -236,6 +257,10 @@ public:
       st->print("%zu ", _ra_at_peak);
     }
     col += 10; st->fill_to(col);
+
+    // result?
+    st->print("%s ", _result ? _result : "");
+    col += 8; st->fill_to(col);
 
     // Number of Nodes when memory peaked
     st->print("%u ", _live_nodes_at_peak);
@@ -281,7 +306,7 @@ public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
            size_t total, size_t na_at_peak, size_t ra_at_peak,
-           unsigned live_nodes_at_peak) {
+           unsigned live_nodes_at_peak, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
 
     MemStatEntry** pe = get(fmn);
@@ -302,6 +327,7 @@ public:
     e->set_na_at_peak(na_at_peak);
     e->set_ra_at_peak(ra_at_peak);
     e->set_live_nodes_at_peak(live_nodes_at_peak);
+    e->set_result(result);
   }
 
   // Returns a C-heap-allocated SortMe array containing all entries from the table,
@@ -341,20 +367,21 @@ void CompilationMemoryStatistic::initialize() {
   log_info(compilation, alloc)("Compilation memory statistic enabled");
 }
 
-void CompilationMemoryStatistic::on_start_compilation() {
+void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* directive) {
   assert(enabled(), "Not enabled?");
-  Thread::current()->as_Compiler_thread()->arena_stat()->start();
+  const size_t limit = directive->mem_limit();
+  Thread::current()->as_Compiler_thread()->arena_stat()->start(limit);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
   assert(enabled(), "Not enabled?");
   ResourceMark rm;
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  const ArenaStatCounter* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   const CompilerType ct = th->task()->compiler()->type();
 
   const Method* const m = th->task()->method();
-  FullMethodName fmn(m->klass_name(), m->name(), m->signature());
+  FullMethodName fmn(m);
   fmn.make_permanent();
 
   const DirectiveSet* directive = th->task()->directive();
@@ -368,6 +395,20 @@ void CompilationMemoryStatistic::on_end_compilation() {
     arena_stat->print_on(tty);
     tty->cr();
   }
+
+  // Store result
+  // For this to work, we must call on_end_compilation() at a point where
+  // Compile|Compilation already handed over the failure string to ciEnv,
+  // but ciEnv must still be alive.
+  const char* result = "ok"; // ok
+  const ciEnv* const env = th->env();
+  if (env) {
+    const char* const failure_reason = env->failure_reason();
+    if (failure_reason != nullptr) {
+      result = (failure_reason == failure_reason_memlimit()) ? "oom" : "err";
+    }
+  }
+
   {
     MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
     assert(_the_table != nullptr, "not initialized");
@@ -376,14 +417,105 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->peak_since_start(), // total
                     arena_stat->na_at_peak(),
                     arena_stat->ra_at_peak(),
-                    arena_stat->live_nodes_at_peak());
+                    arena_stat->live_nodes_at_peak(),
+                    result);
+  }
+
+  arena_stat->end(); // reset things
+}
+
+static void inform_compilation_about_oom(CompilerType ct) {
+  // Inform C1 or C2 that an OOM happened. They will take delayed action
+  // and abort the compilation in progress. Note that this is not instantaneous,
+  // since the compiler has to actively bailout, which may take a while, during
+  // which memory usage may rise further.
+  //
+  // The mechanism differs slightly between C1 and C2:
+  // - With C1, we directly set the bailout string, which will cause C1 to
+  //   bailout at the typical BAILOUT places.
+  // - With C2, the corresponding mechanism would be the failure string; but
+  //   bailout paths in C2 are not complete and therefore it is dangerous to
+  //   set the failure string at - for C2 - seemingly random places. Instead,
+  //   upon OOM C2 sets the failure string next time it checks the node limit.
+  if (ciEnv::current() != nullptr) {
+    void* compiler_data = ciEnv::current()->compiler_data();
+#ifdef COMPILER1
+    if (ct == compiler_c1) {
+      Compilation* C = static_cast<Compilation*>(compiler_data);
+      if (C != nullptr) {
+        C->bailout(CompilationMemoryStatistic::failure_reason_memlimit());
+        C->set_oom();
+      }
+    }
+#endif
+#ifdef COMPILER2
+    if (ct == compiler_c2) {
+      Compile* C = static_cast<Compile*>(compiler_data);
+      if (C != nullptr) {
+        C->set_oom();
+      }
+    }
+#endif // COMPILER2
   }
 }
 
 void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* arena) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  th->arena_stat()->account(diff, (int)arena->get_tag());
+
+  ArenaStatCounter* const arena_stat = th->arena_stat();
+  bool hit_limit_before = arena_stat->hit_limit();
+
+  if (arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
+
+    // Limit handling
+    if (arena_stat->hit_limit()) {
+
+      char name[1024] = "";
+      bool print = false;
+      bool crash = false;
+      CompilerType ct = compiler_none;
+
+      // get some more info
+      const CompileTask* task = th->task();
+      if (task != nullptr) {
+        ct = task->compiler()->type();
+        const DirectiveSet* directive = task->directive();
+        print = directive->should_print_memstat();
+        crash = directive->should_crash_at_mem_limit();
+        const Method* m = th->task()->method();
+        if (m != nullptr) {
+          FullMethodName(m).as_C_string(name, sizeof(name));
+        }
+      }
+
+      char message[1024] = "";
+
+      // build up message if we need it later
+      if (print || crash) {
+        stringStream ss(message, sizeof(message));
+        if (ct != compiler_none && name[0] != '\0') {
+          ss.print("%s %s: ", compilertype2name(ct), name);
+        }
+        ss.print("Hit MemLimit %s (limit: %zu now: %zu)",
+                 (hit_limit_before ? "again" : ""),
+                 arena_stat->limit(), arena_stat->peak_since_start());
+      }
+
+      // log if needed
+      if (print) {
+        tty->print_raw(message);
+        tty->cr();
+      }
+
+      // Crash out if needed
+      if (crash) {
+        report_fatal(OOM_HOTSPOT_ARENA, __FILE__, __LINE__, "%s", message);
+      } else {
+        inform_compilation_about_oom(ct);
+      }
+    }
+  }
 }
 
 static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
@@ -438,10 +570,15 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   FREE_C_HEAP_ARRAY(Entry, filtered);
 }
 
+const char* CompilationMemoryStatistic::failure_reason_memlimit() {
+  static const char* const s = "hit memory limit while compiling";
+  return s;
+}
+
 CompilationMemoryStatisticMark::CompilationMemoryStatisticMark(const DirectiveSet* directive)
   : _active(directive->should_collect_memstat()) {
   if (_active) {
-    CompilationMemoryStatistic::on_start_compilation();
+    CompilationMemoryStatistic::on_start_compilation(directive);
   }
 }
 CompilationMemoryStatisticMark::~CompilationMemoryStatisticMark() {

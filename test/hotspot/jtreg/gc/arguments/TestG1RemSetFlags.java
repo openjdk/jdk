@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.arguments;
 
 /*
  * @test TestG1RemSetFlags
- * @requires vm.gc.G1
+ * @requires vm.gc.G1 & vm.opt.UnlockExperimentalVMOptions == null & vm.opt.G1RemSetHowlNumBuckets == null & vm.opt.G1RemSetHowlMaxNumBuckets == null
  * @summary Verify that the remembered set flags are updated as expected
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
@@ -48,7 +48,7 @@ public class TestG1RemSetFlags {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(flagList);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flagList);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(exitValue);
   }
