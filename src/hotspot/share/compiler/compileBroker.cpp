@@ -278,7 +278,7 @@ bool CompileBroker::can_remove(CompilerThread *ct, bool do_it) {
   if (ct->idle_time_millis() < (c1 ? 500 : 100)) return false;
 
 #if INCLUDE_JVMCI
-  if (compiler->is_jvmci()) {
+  if (compiler->is_jvmci() && !UseJVMCINativeLibrary) {
     // Handles for JVMCI thread objects may get released concurrently.
     if (do_it) {
       assert(CompileThread_lock->owner() == ct, "must be holding lock");
@@ -297,7 +297,7 @@ bool CompileBroker::can_remove(CompilerThread *ct, bool do_it) {
       assert_locked_or_safepoint(CompileThread_lock); // Update must be consistent.
       compiler->set_num_compiler_threads(compiler_count - 1);
 #if INCLUDE_JVMCI
-      if (compiler->is_jvmci()) {
+      if (compiler->is_jvmci() && !UseJVMCINativeLibrary) {
         // Old j.l.Thread object can die when no longer referenced elsewhere.
         JNIHandles::destroy_global(compiler2_object(compiler_count - 1));
         _compiler2_objects[compiler_count - 1] = nullptr;
@@ -946,12 +946,13 @@ void CompileBroker::init_compiler_threads() {
     jobject thread_handle = nullptr;
     // Create all j.l.Thread objects for C1 and C2 threads here, but only one
     // for JVMCI compiler which can create further ones on demand.
-    JVMCI_ONLY(if (!UseJVMCICompiler || !UseDynamicNumberOfCompilerThreads || i == 0) {)
-    // Create a name for our thread.
-    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
-    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-    thread_handle = JNIHandles::make_global(thread_oop);
-    JVMCI_ONLY(})
+    bool create = !UseDynamicNumberOfCompilerThreads || i == 0;
+    if (create JVMCI_ONLY(|| !UseJVMCICompiler || UseJVMCINativeLibrary)) {
+      // Create a name for our thread.
+      os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+      Handle thread_oop = create_thread_oop(name_buffer, CHECK);
+      thread_handle = JNIHandles::make_global(thread_oop);
+    }
     _compiler2_objects[i] = thread_handle;
     _compiler2_logs[i] = nullptr;
 
@@ -1029,13 +1030,15 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
     for (int i = old_c2_count; i < new_c2_count; i++) {
 #if INCLUDE_JVMCI
-      if (UseJVMCICompiler) {
-        // Native compiler threads as used in C1/C2 can reuse the j.l.Thread
-        // objects as their existence is completely hidden from the rest of
-        // the VM (and those compiler threads can't call Java code to do the
-        // creation anyway). For JVMCI we have to create new j.l.Thread objects
-        // as they are visible and we can see unexpected thread lifecycle
-        // transitions if we bind them to new JavaThreads.
+      if (UseJVMCICompiler && !UseJVMCINativeLibrary) {
+        // Native compiler threads as used in C1/C2 can reuse the j.l.Thread objects as their
+        // existence is completely hidden from the rest of the VM (and those compiler threads can't
+        // call Java code to do the creation anyway).
+        //
+        // For pure Java JVMCI we have to create new j.l.Thread objects as they are visible and we
+        // can see unexpected thread lifecycle transitions if we bind them to new JavaThreads.  For
+        // native library JVMCI it's preferred to use the C1/C2 strategy as this avoids unnecessary
+        // coupling with Java.
         if (!THREAD->can_call_java()) break;
         char name_buffer[256];
         os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
@@ -1063,6 +1066,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         _compiler2_objects[i] = thread_handle;
       }
 #endif
+      assert(compiler2_object(i) != nullptr, "Thread oop must exist");
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == nullptr) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
