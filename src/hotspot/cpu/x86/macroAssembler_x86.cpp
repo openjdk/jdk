@@ -9813,12 +9813,14 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
   Label push;
   const Register top = tmp;
 
+  // Load top.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
   // Check if the lock-stack is full.
-  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset());
+  cmpl(top, LockStack::end_offset());
   jcc(Assembler::greaterEqual, slow);
 
   // Check for recursion.
-  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
   cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
   jcc(Assembler::equal, push);
 

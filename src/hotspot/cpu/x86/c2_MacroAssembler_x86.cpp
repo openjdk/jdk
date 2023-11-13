@@ -967,12 +967,14 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // Prefetch the mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
+    // Load top.
+    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
     // Check if lock-stack is full.
-    cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
+    cmpl(top, LockStack::end_offset() - 1);
     jcc(Assembler::greater, slow_path);
 
     // Check if recursive.
-    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
     cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
     jccb(Assembler::equal, push);
 
