@@ -268,9 +268,12 @@ class SuperWord : public ResourceObj {
   static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
 
   PhaseIdealLoop* phase() const    { return _phase; }
-  const VLoopAnalyzer& vla() const { return _vla; }
-  IdealLoopTree* lpt() const       { return _lpt; }
-  PhiNode* iv() const              { return _iv; }
+
+  const VLoopAnalyzer& vla() const      { return _vla; }
+  IdealLoopTree* lpt() const            { return vla().lpt(); }
+  CountedLoopNode* cl() const           { return vla().cl(); }
+  PhiNode* iv() const                   { return vla().iv(); }
+  bool in_loopbody(const Node* n) const { return vla().in_loopbody(n); }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -286,11 +289,7 @@ class SuperWord : public ResourceObj {
   const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  IdealLoopTree* _lpt;             // Current loop tree node
-  CountedLoopNode* _lp;            // Current CountedLoopNode
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
-  Node*          _bb;              // Current basic block
-  PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
@@ -302,15 +301,7 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return _arena; }
 
-  Node* bb()                       { return _bb; }
-  void set_bb(Node* bb)            { _bb = bb; }
-  void set_lpt(IdealLoopTree* lpt) { _lpt = lpt; }
-  CountedLoopNode* lp() const      { return _lp; }
-  void set_lp(CountedLoopNode* lp) {
-    _lp = lp;
-    _iv = lp->as_CountedLoop()->phi()->as_Phi();
-  }
-  int iv_stride() const            { return lp()->stride_con(); }
+  int iv_stride() const            { return cl()->stride_con(); }
 
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
@@ -323,8 +314,6 @@ class SuperWord : public ResourceObj {
   int get_vw_bytes_special(MemNode* s);
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
-
-  const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
 
   // block accessors
  public:
