@@ -65,7 +65,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * formatters based on the default or a given locale and a number of formatting
  * styles. The formatting styles include {@link #FULL}, {@link #LONG}, {@link #MEDIUM}, and {@link #SHORT}.
  * For any of the factory methods with the parameter <i>style</i>, an {@code
- * IllegalArgumentException} will be thrown if <i>style</i> is not equal to one
+ * IllegalArgumentException} will be thrown if <i>style</i> is not equal to any
  * of the defined formatting styles. More detail and examples of using these styles are provided in the method
  * descriptions.
  *
