@@ -376,9 +376,7 @@ public:
   // almost-equivalent but faster mark_reductions() is preferable.
   static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
-  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
-  // Whether the current loop has any reduction node.
-  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
+  bool is_marked_reduction(Node* n) const { return _loop_reductions.test(n->_idx); }
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
@@ -414,7 +412,7 @@ public:
                bool allow_cfg);
 
   // Read-only accessors for submodules
-  const VLoopReductions& reductions() { return _reductions; }
+  const VLoopReductions& reductions() const { return _reductions; }
 
 private:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
