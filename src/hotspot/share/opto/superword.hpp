@@ -333,8 +333,10 @@ class SuperWord : public ResourceObj {
 
   // block accessors
  public:
-  bool in_bb(const Node* n) const  { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
-  int  bb_idx(const Node* n) const { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
+  int bb_idx(const Node* n) const {
+    assert(vla().in_loopbody(n), "must be");
+    return _bb_idx.at(n->_idx);
+  }
  private:
   void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
@@ -370,7 +372,9 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(Node* n) {
+    return !vla().in_loopbody(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack;
+  }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
