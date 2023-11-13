@@ -32,9 +32,12 @@ import java.lang.foreign.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Arena.CleanupException;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
@@ -384,12 +387,41 @@ public class TestSegments {
     @Test
     void testThrowInCleanup() {
         AtomicInteger counter = new AtomicInteger();
-        try (Arena arena = Arena.ofConfined()){
-            MemorySegment.ofAddress(42).reinterpret(arena, seg -> { throw new AssertionError(); });
-            MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> { throw new AssertionError(); });
+        CleanupException thrown = null;
+        Set<String> expected = new HashSet<>();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw new AssertionError(msg);
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw new AssertionError(msg);
+                });
+            }
             MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
-        } // no exception should occur here!
+        } catch (CleanupException ex) {
+            thrown = ex;
+        }
+        assertNotNull(thrown);
         assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 19);
+        Throwable[] errors = new AssertionError[20];
+        assertTrue(thrown.getCause() instanceof AssertionError);
+        errors[0] = thrown.getCause();
+        for (int i = 0 ; i < 19 ; i++) {
+            assertTrue(thrown.getSuppressed()[i] instanceof AssertionError);
+            errors[i + 1] = thrown.getSuppressed()[i];
+        }
+        for (Throwable t : errors) {
+            assertTrue(expected.remove(t.getMessage()));
+        }
+        assertTrue(expected.isEmpty());
     }
 
     @DataProvider(name = "badSizeAndAlignments")
