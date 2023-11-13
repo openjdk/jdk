@@ -266,8 +266,9 @@ void VM_Version::initialize() {
   c2_initialize();
 #endif // COMPILER2
 
-  // NOTE: Make sure codes dependent on UseRVV are put at the behind of c2_initialize(),
-  //       as there are extra checks inside it which could disable UseRVV in some situations.
+  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
 
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
