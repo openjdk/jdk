@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.util.Locale.US;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 import java.text.ParsePosition;
 import java.time.DateTimeException;
@@ -245,7 +246,7 @@ public class TestDateTimeParsing {
 
     // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
     @Test
-    public void test_toFormat_2arg_null_on_error() {
+    public void test_toFormat_2arg_null_return_on_DateTimeException() {
         var f = new DateTimeFormatterBuilder()
             .appendValue(HOUR_OF_DAY, 2, 2, SignStyle.NOT_NEGATIVE)
             .optionalStart()
@@ -257,6 +258,15 @@ public class TestDateTimeParsing {
             .optionalEnd()
             .toFormatter(Locale.ROOT)
             .toFormat();
-        assertEquals(f.parseObject("17-30", new ParsePosition(0)), null);
+        assertNull(f.parseObject("17-30", new ParsePosition(0)));
+    }
+
+    // Checks ::toFormat().parseObject(text, pos) do not throw DateTimeException
+    @Test
+    public void test_toFormat_2arg_null_return_on_IOOBE() {
+        var date = "2023-11-13";
+        assertNull(DateTimeFormatter.ISO_LOCAL_DATE
+                .toFormat()
+                .parseObject(date, new ParsePosition(date.length() + 1)));
     }
 }
