@@ -323,7 +323,7 @@ void CodeCache::initialize_heaps() {
   }
 
   // Note: if large page support is enabled, min_size is at least the
-  // large page size.  This ensures that the code cache is covered by large
+  // large page size. This ensures that the code cache is covered by large
   // pages.
   non_nmethod_size = align_up(non_nmethod_size, min_size);
   profiled_size    = align_down(profiled_size, min_size);
