@@ -655,7 +655,11 @@ public abstract class DatagramChannel
      * @return  The {@code SocketAddress} that the socket is bound to, or the
      *          {@code SocketAddress} representing the loopback address if
      *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound
+     *          channel's socket is not bound. If {@link #connect(SocketAddress)
+     *          connect} was called, and the socket was bound to the wildcard
+     *          address, then the address returned may be the local address
+     *          selected as source address for outgoing datagrams sent on the
+     *          channel while it is connected.
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
