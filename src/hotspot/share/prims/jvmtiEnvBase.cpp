@@ -214,6 +214,7 @@ JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
 
   // all callbacks initially null
   memset(&_event_callbacks,0,sizeof(jvmtiEventCallbacks));
+  memset(&_ext_event_callbacks, 0, sizeof(jvmtiExtEventCallbacks));
 
   // all capabilities initially off
   memset(&_current_capabilities, 0, sizeof(_current_capabilities));
