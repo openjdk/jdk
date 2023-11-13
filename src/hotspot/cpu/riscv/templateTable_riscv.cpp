@@ -2310,23 +2310,21 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   resolve_cache_and_index_for_method(f1_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
 
-  // invokehandle uses an index into the resolved references array
-  __ ld(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
-  __ load_unsigned_short(ref_index, Address(cache, in_bytes(ResolvedMethodEntry::resolved_references_index_offset())));
-
   // maybe push appendix to arguments (just before return address)
   Label L_no_push;
   __ test_bit(t0, flags, ResolvedMethodEntry::has_appendix_shift);
   __ beqz(t0, L_no_push);
+  // invokehandle uses an index into the resolved references array
+  __ load_unsigned_short(ref_index, Address(cache, in_bytes(ResolvedMethodEntry::resolved_references_index_offset())));
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
-  __ push_reg(method);
-  __ mv(method, ref_index);
-  __ load_resolved_reference_at_index(ref_index, method);
-  __ pop_reg(method);
-  __ push_reg(ref_index);  // push appendix (MethodType, CallSite, etc.)
+  Register appendix = method;
+  __ load_resolved_reference_at_index(appendix, ref_index);
+  __ push_reg(appendix); // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
+
+  __ ld(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
 }
 
 void TemplateTable::load_resolved_method_entry_interface(Register cache,
