@@ -30,16 +30,16 @@
 
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
-  static bool _is_dumping_static_archive;
+  static bool _is_dumping_dynamic_archive;
 #endif
 
 public:
   // Basic CDS features
   static bool      is_dumping_archive()                      { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
   static bool      is_dumping_static_archive()               NOT_CDS_RETURN_(false);
-  static bool      is_dumping_dynamic_archive()              { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
-  static void  enable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_static_archive = true); }
-  static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_static_archive = false); }
+  static bool      is_dumping_dynamic_archive()              { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
+  static void  enable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = true); }
+  static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);

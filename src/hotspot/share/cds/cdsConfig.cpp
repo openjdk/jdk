@@ -26,7 +26,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 
-bool CDSConfig::_is_dumping_static_archive = false;
+bool CDSConfig::_is_dumping_dynamic_archive = false;
 
 bool CDSConfig::is_dumping_static_archive() {
   return DumpSharedSpaces;
