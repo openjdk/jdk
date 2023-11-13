@@ -438,6 +438,7 @@ private:
   // that it assumes counted loops and requires that reduction nodes are not
   // used within the loop except by their reduction cycle predecessors.
   void mark_reductions();
+
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.

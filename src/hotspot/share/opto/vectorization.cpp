@@ -30,6 +30,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
+#include "opto/vectornode.hpp"
 
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
@@ -725,9 +726,6 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
     return VLoopPreconditionChecker::FAILURE_UNROLL_ONLY;
   }
 
-  // TODO mark_reductions
-  // TODO skip any loop that has not been assigned max unroll by analysis
-
   // Check for control flow in the body
   _cl_exit = _cl->loopexit();
   bool has_cfg = _cl_exit->in(0) != _cl;
@@ -765,8 +763,6 @@ const char* VLoopPreconditionChecker::check_preconditions_helper() {
     _cl->set_pre_loop_end(pre_end);
   }
 
-  // TODO continue here
-
   return VLoopPreconditionChecker::SUCCESS;
 }
 
@@ -787,8 +783,156 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
 }
 
 const char* VLoopAnalyzer::analyze_helper() {
+  // skip any loop that has not been assigned max unroll by analysis
+  if (SuperWordLoopUnrollAnalysis && _cl->slp_max_unroll() == 0) {
+    // TODO: why does this happen? Maybe follow up RFE.
+    //       Eventually this has to go anyway though.
+    return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
+  }
+
+  if (SuperWordReductions) {
+    mark_reductions();
+  }
+
+  // TODO Move stuff from SLP_extract
+
   return VLoopAnalyzer::SUCCESS;
 }
+
+bool VLoopAnalyzer::is_reduction(const Node* n) {
+  if (!is_reduction_operator(n)) {
+    return false;
+  }
+  // Test whether there is a reduction cycle via every edge index
+  // (typically indices 1 and 2).
+  for (uint input = 1; input < n->req(); input++) {
+    if (in_reduction_cycle(n, input)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool VLoopAnalyzer::is_reduction_operator(const Node* n) {
+  int opc = n->Opcode();
+  return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
+}
+
+bool VLoopAnalyzer::in_reduction_cycle(const Node* n, uint input) {
+  // First find input reduction path to phi node.
+  auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
+  PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
+                                     [&](const Node* m) { return m->is_Phi(); });
+  const Node* phi = path_to_phi.first;
+  if (phi == nullptr) {
+    return false;
+  }
+  // If there is an input reduction path from the phi's loop-back to n, then n
+  // is part of a reduction cycle.
+  const Node* first = phi->in(LoopNode::LoopBackControl);
+  PathEnd path_from_phi = find_in_path(first, input, LoopMaxUnroll, has_my_opcode,
+                                       [&](const Node* m) { return m == n; });
+  return path_from_phi.first != nullptr;
+}
+
+Node* VLoopAnalyzer::original_input(const Node* n, uint i) {
+  if (n->has_swapped_edges()) {
+    assert(n->is_Add() || n->is_Mul(), "n should be commutative");
+    if (i == 1) {
+      return n->in(2);
+    } else if (i == 2) {
+      return n->in(1);
+    }
+  }
+  return n->in(i);
+}
+
+void VLoopAnalyzer::mark_reductions() {
+  assert(_loop_reductions.is_empty(), "must have been reset");
+
+  // Iterate through all phi nodes associated to the loop and search for
+  // reduction cycles in the basic block.
+  for (DUIterator_Fast imax, i = cl()->fast_outs(imax); i < imax; i++) {
+    const Node* phi = cl()->fast_out(i);
+    if (!phi->is_Phi()) {
+      continue;
+    }
+    if (phi->outcnt() == 0) {
+      continue;
+    }
+    if (phi == iv()) {
+      continue;
+    }
+    // The phi's loop-back is considered the first node in the reduction cycle.
+    const Node* first = phi->in(LoopNode::LoopBackControl);
+    if (first == nullptr) {
+      continue;
+    }
+    // Test that the node fits the standard pattern for a reduction operator.
+    if (!is_reduction_operator(first)) {
+      continue;
+    }
+    // Test that 'first' is the beginning of a reduction cycle ending in 'phi'.
+    // To contain the number of searched paths, assume that all nodes in a
+    // reduction cycle are connected via the same edge index, modulo swapped
+    // inputs. This assumption is realistic because reduction cycles usually
+    // consist of nodes cloned by loop unrolling.
+    int reduction_input = -1;
+    int path_nodes = -1;
+    for (uint input = 1; input < first->req(); input++) {
+      // Test whether there is a reduction path in the basic block from 'first'
+      // to the phi node following edge index 'input'.
+      PathEnd path =
+        find_in_path(
+          first, input, lpt()->_body.size(),
+          [&](const Node* n) { return n->Opcode() == first->Opcode() &&
+                                      in_loopbody(n); },
+          [&](const Node* n) { return n == phi; });
+      if (path.first != nullptr) {
+        reduction_input = input;
+        path_nodes = path.second;
+        break;
+      }
+    }
+    if (reduction_input == -1) {
+      continue;
+    }
+    // Test that reduction nodes do not have any users in the loop besides their
+    // reduction cycle successors.
+    const Node* current = first;
+    const Node* succ = phi; // current's successor in the reduction cycle.
+    bool used_in_loop = false;
+    for (int i = 0; i < path_nodes; i++) {
+      for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
+        Node* u = current->fast_out(j);
+        if (!in_loopbody(u)) {
+          continue;
+        }
+        if (u == succ) {
+          continue;
+        }
+        used_in_loop = true;
+        break;
+      }
+      if (used_in_loop) {
+        break;
+      }
+      succ = current;
+      current = original_input(current, reduction_input);
+    }
+    if (used_in_loop) {
+      continue;
+    }
+    // Reduction cycle found. Mark all nodes in the found path as reductions.
+    current = first;
+    for (int i = 0; i < path_nodes; i++) {
+      _loop_reductions.set(current->_idx);
+      current = original_input(current, reduction_input);
+    }
+  }
+}
+
+
 
 
 #endif

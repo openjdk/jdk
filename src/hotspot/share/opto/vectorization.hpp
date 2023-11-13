@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
+#include "utilities/pair.hpp"
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 
@@ -261,7 +262,7 @@ class VectorElementSizeStats {
 
 
 class VLoopPreconditionChecker : public StackObj {
-private:
+protected:
   IdealLoopTree* _lpt = nullptr;
   PhaseIdealLoop* _phase = nullptr;
 
@@ -271,7 +272,6 @@ private:
 
   bool _allow_cfg = false;
 
-protected:
   static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
@@ -303,13 +303,15 @@ public:
   PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
   bool is_allow_cfg()     const { return _allow_cfg; }
 
-  bool in_loopbody(Node* n) const {
-    // TODO refactor to allow cfg - is this new version ok?
-    //return n != nullptr && n->outcnt() > 0 && _phase->ctrl_or_self(n) == _cl;
-    if (n == nullptr || n->outcnt() == 0) { return false; }
-    Node* ctrl = _phase->ctrl_or_self(n);
-    assert((ctrl == _cl) == (_phase->get_loop(ctrl) == _lpt), "WIP");
-    return _phase->get_loop(ctrl) == _lpt;
+  bool in_loopbody(const Node* n) const {
+    // TODO refactor to allow cfg. See counter example with
+    // nodes on backedge but backedge has no additional outputs
+    const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
+    return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
+    // if (n == nullptr || n->outcnt() == 0) { return false; }
+    // const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
+    // assert((ctrl == _cl) == (_phase->get_loop((Node*)ctrl) == _lpt), "WIP");
+    // return _phase->get_loop((Node*)ctrl) == _lpt;
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -320,8 +322,16 @@ protected:
   const char* check_preconditions_helper();
 };
 
+
+
+
 class VLoopAnalyzer : public VLoopPreconditionChecker {
-private:
+protected:
+
+  // Reduction nodes in the current loop
+  VectorSet _loop_reductions;
+
+  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
 
 public:
   VLoopAnalyzer() {};
@@ -334,9 +344,73 @@ public:
 private:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
     VLoopPreconditionChecker::reset(lpt, allow_cfg);
+    _loop_reductions.clear();
     // TODO
   }
   const char* analyze_helper();
+
+  // ------------------------------------------------------------
+  // -------------------- Reduction Analysis --------------------
+  // ------------------------------------------------------------
+
+  typedef const Pair<const Node*, int> PathEnd;
+
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node* n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
+    }
+    return no_path;
+  }
+
+public:
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside the SLP analysis,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
+  // Whether the current loop has any reduction node.
+  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
+
+
 };
 
 

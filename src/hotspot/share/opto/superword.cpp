@@ -112,6 +112,9 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
     if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) {
+      if (TraceSuperWordLoopUnrollAnalysis) {
+        tty->print_cr("slp transform: max unroll not yet set");
+      }
       return false;
     }
   }
@@ -359,6 +362,9 @@ void SuperWord::unrolling_analysis(VLoopPreconditionChecker &vlpc,
     }
     cl->mark_was_slp();
     if (cl->is_main_loop()) {
+      if (TraceSuperWordLoopUnrollAnalysis) {
+        tty->print_cr("slp analysis: set max unroll to %d", local_loop_unroll_factor);
+      }
       cl->set_slp_max_unroll(local_loop_unroll_factor);
     }
   }
@@ -2828,7 +2834,7 @@ bool SuperWord::output() {
     if (cl->has_passed_slp()) {
       uint slp_max_unroll_factor = cl->slp_max_unroll();
       if (slp_max_unroll_factor == max_vlen) {
-        if (TraceSuperWordLoopUnrollAnalysis) {
+       if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
         }
         // For atomic unrolled loops which are vector mapped, instigate more unrolling
