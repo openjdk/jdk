@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -515,7 +516,7 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
     if (MetaspaceShared::is_shared_static(bottom)) {
       // The bottom class is in the static archive so it's clearly not excluded.
-      assert(DynamicDumpSharedSpaces, "sanity");
+      assert(CDSConfig::is_dumping_dynamic_archive(), "sanity");
       return false;
     } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
@@ -743,7 +744,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (DynamicDumpSharedSpaces) {
+      if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
         ik->assign_class_loader_type();
       }
@@ -816,7 +817,7 @@ uintx ArchiveBuilder::buffer_to_offset(address p) const {
 
 uintx ArchiveBuilder::any_to_offset(address p) const {
   if (is_in_mapped_static_archive(p)) {
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     return p - _mapped_static_archive_bottom;
   }
   if (!is_in_buffer_space(p)) {
@@ -924,7 +925,7 @@ void ArchiveBuilder::relocate_to_requested() {
     RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     _requested_dynamic_archive_top = _requested_dynamic_archive_bottom + my_archive_size;
     RelocateBufferToRequested<false> patcher(this);
     patcher.doit();
