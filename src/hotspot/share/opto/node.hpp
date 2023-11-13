@@ -1135,14 +1135,6 @@ public:
   template <typename Callback, typename Check>
   void visit_uses(Callback callback, Check is_boundary) const;
 
-  // Visit all non-cast uses of the node, bypassing ConstraintCasts. Pattern:
-  // this (-> ConstraintCast)* -> non_cast. In other words: find all non_cast
-  // nodes such that non_cast->uncast() == this.
-  template <typename Callback>
-  void visit_uncasted_uses(Callback callback) const {
-     visit_uses(callback, [](Node* n){ return !n->is_ConstraintCast(); });
-  }
-
 //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
@@ -1643,6 +1635,32 @@ public:
   void dump_simple() const;
 };
 
+// Definition must appear after complete type definition of Node_List
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) const {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++)
+    worklist.push(fast_out(k));
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Skip already visited nodes
+    if (visited.test_set(use->_idx)) continue;
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) callback(use);
+    else {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++)
+        worklist.push(use->fast_out(k));
+    }
+  }
+}
+
+
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
   friend class VMStructs;
@@ -1726,31 +1744,6 @@ public:
   void print_set() const { _in_worklist.print(); }
 #endif
 };
-
-// Definition must appear after complete type definition of Unique_Node_List
-template <typename Callback, typename Check>
-void Node::visit_uses(Callback callback, Check is_boundary) const {
-  ResourceMark rm;
-  VectorSet visited;
-  Node_List worklist;
-
-  // The initial worklist consists of the direct uses
-  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++)
-    worklist.push(fast_out(k));
-
-  while (worklist.size() > 0) {
-    Node* use = worklist.pop();
-    // Skip already visited nodes
-    if (visited.test_set(use->_idx)) continue;
-    // Apply callback on boundary nodes
-    if (is_boundary(use)) callback(use);
-    else {
-      // Not a boundary node, continue search
-      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++)
-        worklist.push(use->fast_out(k));
-    }
-  }
-}
 
 // Unique_Mixed_Node_List
 // unique: nodes are added only once
