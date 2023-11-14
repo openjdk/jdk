@@ -528,7 +528,8 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
 }
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
-                                       Array<Method*>* methods) {
+                                       Array<Method*>* methods,
+                                       bool with_method_holders) {
   if (methods != nullptr && methods != Universe::the_empty_method_array() &&
       !methods->is_shared()) {
     for (int i = 0; i < methods->length(); i++) {
@@ -537,6 +538,10 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
       // Only want to delete methods that are not executing for RedefineClasses.
       // The previous version will point to them so they're not totally dangling
       assert (!method->on_stack(), "shouldn't be called with methods on stack");
+      // Do the pointer maintenance before releasing the metadata, but not for incomplete methods
+      if (with_method_holders) {
+        method->clear_jmethod_id();
+      }
       MetadataFactory::free_metadata(loader_data, method);
     }
     MetadataFactory::free_array<Method*>(loader_data, methods);

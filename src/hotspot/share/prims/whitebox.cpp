@@ -2627,6 +2627,10 @@ WB_ENTRY(void, WB_PreTouchMemory(JNIEnv* env, jobject wb, jlong addr, jlong size
   }
 WB_END
 
+WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
+  ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2913,6 +2917,7 @@ static JNINativeMethod methods[] = {
   {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
+  {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
 };
 
 
