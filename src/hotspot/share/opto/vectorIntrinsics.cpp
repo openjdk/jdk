@@ -74,8 +74,7 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
   // has_scalar_args flag is true only for non-constant scalar shift count,
   // since in this case shift needs to be broadcasted.
   if (!Matcher::match_rule_supported_vector(opc, num_elem, elem_bt) ||
-       (has_scalar_args &&
-         !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+       (has_scalar_args && !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed))) {
     is_supported = false;
   }
 
@@ -625,7 +624,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
       !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
       !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
-      !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
+      !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
 
@@ -869,7 +868,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   bool is_mask = is_vector_mask(vbox_klass);
   int  bcast_mode = mode->get_con();
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_mask ? VecMaskUseAll : VecMaskNotUsed);
-  int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : VectorNode::replicate_opcode(elem_bt);
+  int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
     if (C->print_intrinsics()) {
@@ -2100,7 +2099,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
     if(!is_masked_op ||
        (!arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed) ||
         !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)     ||
-        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+        !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed))) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=2 op=shuffle/rearrange vlen=%d etype=%s ismask=no",
                       num_elem, type2name(elem_bt));
@@ -3107,7 +3106,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
   bool supports_mask_gen = arch_supports_vector(Op_VectorMaskGen, num_elem, elem_bt, VecMaskUseStore);
   if (!supports_mask_gen) {
     if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
-        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed) ||
         !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUseStore)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));

@@ -217,6 +217,21 @@ public class TestLayouts {
     }
 
     @Test
+    public void testSequenceLayoutWithZeroLength() {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout.toString(), "[0:i4]");
+
+        SequenceLayout nested = MemoryLayout.sequenceLayout(0, layout);
+        assertEquals(nested.toString(), "[0:[0:i4]]");
+
+        SequenceLayout layout2 = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout, layout2);
+
+        SequenceLayout nested2 = MemoryLayout.sequenceLayout(0, layout2);
+        assertEquals(nested, nested2);
+    }
+
+    @Test
     public void testStructOverflow() {
         assertThrows(IllegalArgumentException.class, // negative
                 () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
