@@ -448,6 +448,36 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             }
         };
 
+    public Type stripAnnotations() {
+        return accept(stripAnnotations, null);
+    }
+    //where
+        private static final TypeMapping<Void> stripAnnotations = new StructuralTypeMapping<>() {
+            @Override
+            public Type visitClassType(ClassType t, Void aVoid) {
+                return super.visitClassType((ClassType) stripAnnotations(t), aVoid);
+            }
+
+            @Override
+            public Type visitArrayType(ArrayType t, Void aVoid) {
+                return super.visitArrayType((ArrayType) stripAnnotations(t), aVoid);
+            }
+
+            @Override
+            public Type visitWildcardType(WildcardType wt, Void aVoid) {
+                return super.visitWildcardType((WildcardType) stripAnnotations(wt), aVoid);
+            }
+
+            @Override
+            public Type visitType(Type t, Void aVoid) {
+                return stripAnnotations(t);
+            }
+
+            private static Type stripAnnotations(Type t) {
+                return t.getMetadata(Annotations.class) != null ? t.dropMetadata(Annotations.class) : t;
+            }
+        };
+
     public Type preannotatedType() {
         return addMetadata(new Annotations());
     }

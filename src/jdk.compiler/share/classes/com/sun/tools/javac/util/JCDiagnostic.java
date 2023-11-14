@@ -309,13 +309,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             DiagnosticInfo normalize(DiagnosticInfo diagnosticInfo) {
                 //replace all nested FragmentKey with full-blown JCDiagnostic objects
                 return DiagnosticInfo.of(diagnosticInfo.type, diagnosticInfo.prefix, diagnosticInfo.code,
-                        Stream.of(diagnosticInfo.args).map(o ->
-                                switch (o) {
-                                    case Fragment frag -> fragment(frag);
-                                    case Type type -> type.stripMetadata();
-                                    case null -> null;
-                                    default -> o;
-                                }).toArray());
+                        Stream.of(diagnosticInfo.args).map(o -> {
+                            return (o instanceof Fragment frag) ?
+                                    fragment(frag) : o;
+                        }).toArray());
             }
 
         /**
@@ -609,6 +606,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             super(DiagnosticType.FRAGMENT, prefix, key, args);
         }
     }
+
+    /** A diagnostic argument that is a type, which will be printed with type annotations. */
+    public record AnnotatedType(Type type) {}
 
     /**
      * Create a diagnostic object.
