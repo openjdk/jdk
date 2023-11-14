@@ -51,8 +51,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _bb_idx(arena(), (int)(1.10 * phase()->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, nullptr),                          // nodes in current block
   _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
-  _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
-  _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
@@ -853,10 +851,13 @@ void SuperWord::dependence_graph() {
     }
   }
 
+  const GrowableArray<PhiNode*> &mem_slice_head = _vla.memory_slices().heads();
+  const GrowableArray<MemNode*> &mem_slice_tail = _vla.memory_slices().tails();
+
   // For each memory slice, create the dependences
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* n      = _mem_slice_head.at(i);
-    Node* n_tail = _mem_slice_tail.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* n      = mem_slice_head.at(i);
+    Node* n_tail = mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
     mem_slice_preds(n_tail, n, _nlist);
@@ -2223,9 +2224,11 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   // loop we may have a different last store, and we need to adjust the uses accordingly.
   GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
 
+  const GrowableArray<PhiNode*> &mem_slice_head = _vla.memory_slices().heads();
+
   // (1) Set up the initial memory state from Phi. And find the old last store.
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* phi  = mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     current_state_in_slice.at_put(alias_idx, phi);
@@ -2260,8 +2263,8 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   //     in the Phi. Further, we replace uses of the old last store
   //     with uses of the new last store (current_state).
   Node_List uses_after_loop;
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* phi  = mem_slice_head.at(i);
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     assert(current_state != nullptr, "slice is mapped");
@@ -2895,8 +2898,6 @@ bool SuperWord::construct_bb() {
   assert(_stk.length() == 0,            "stk is empty");
   assert(_block.length() == 0,          "block is empty");
   assert(_data_entry.length() == 0,     "data_entry is empty");
-  assert(_mem_slice_head.length() == 0, "mem_slice_head is empty");
-  assert(_mem_slice_tail.length() == 0, "mem_slice_tail is empty");
 
   // Find non-control nodes with no inputs from within block,
   // create a temporary map from node _idx to bb_idx for use
@@ -2927,22 +2928,6 @@ bool SuperWord::construct_bb() {
           assert(n != entry, "can't be entry");
           _data_entry.push(n);
         }
-      }
-    }
-  }
-
-  // Find memory slices (head and tail)
-  for (DUIterator_Fast imax, i = cl()->fast_outs(imax); i < imax; i++) {
-    Node *n = cl()->fast_out(i);
-    if (in_loopbody(n) && n->is_memory_phi()) {
-      Node* n_tail  = n->in(LoopNode::LoopBackControl);
-      if (n_tail != n->in(LoopNode::EntryControl)) {
-        if (!n_tail->is_Mem()) {
-          assert(n_tail->is_Mem(), "unexpected node for memory slice: %s", n_tail->Name());
-          return false; // Bailout
-        }
-        _mem_slice_head.push(n);
-        _mem_slice_tail.push(n_tail);
       }
     }
   }
@@ -3020,15 +3005,10 @@ bool SuperWord::construct_bb() {
       tty->print("%3d ", m);
       _data_entry.at(m)->dump();
     }
-    tty->print_cr("\nmemory slices: %s", _mem_slice_head.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _mem_slice_head.length(); m++) {
-      tty->print("%3d ", m); _mem_slice_head.at(m)->dump();
-      tty->print("    ");    _mem_slice_tail.at(m)->dump();
-    }
   }
 #endif
   assert(rpo_idx == -1 && bb_ct == _block.length(), "all block members found");
-  return (_mem_slice_head.length() > 0) || (reduction_uses > 0) || (_data_entry.length() > 0);
+  return true;
 }
 
 //------------------------------initialize_bb---------------------------
@@ -3549,8 +3529,6 @@ void SuperWord::init() {
   _disjoint_ptrs.clear();
   _block.clear();
   _data_entry.clear();
-  _mem_slice_head.clear();
-  _mem_slice_tail.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;

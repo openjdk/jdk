@@ -401,25 +401,25 @@ class VLoopMemorySlices : public StackObj {
 private:
   VLoop* _vloop;
 
-  GrowableArray<PhiNode*> _mem_slice_head;
-  GrowableArray<MemNode*> _mem_slice_tail;
+  GrowableArray<PhiNode*> _heads;
+  GrowableArray<MemNode*> _tails;
 
 public:
   VLoopMemorySlices(VLoop* vloop) :
     _vloop(vloop),
-    _mem_slice_head(_vloop->arena(), 8,  0, nullptr),
-    _mem_slice_tail(_vloop->arena(), 8,  0, nullptr) {};
+    _heads(_vloop->arena(), 8,  0, nullptr),
+    _tails(_vloop->arena(), 8,  0, nullptr) {};
 
   NONCOPYABLE(VLoopMemorySlices);
 
   void reset() {
-    _mem_slice_head.clear();
-    _mem_slice_tail.clear();
+    _heads.clear();
+    _tails.clear();
   }
 
   void analyze();
-  const GrowableArray<PhiNode*> &mem_slice_head() { return _mem_slice_head; }
-  const GrowableArray<MemNode*> &mem_slice_tail() { return _mem_slice_tail; }
+  const GrowableArray<PhiNode*> &heads() const { return _heads; }
+  const GrowableArray<MemNode*> &tails() const { return _tails; }
   DEBUG_ONLY(void print() const;)
 };
 

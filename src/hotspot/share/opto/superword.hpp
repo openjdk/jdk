@@ -242,8 +242,6 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<Node*> _block;           // Nodes in current block
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
-  GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
-  GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to

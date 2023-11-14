@@ -800,7 +800,7 @@ const char* VLoopAnalyzer::analyze_helper() {
   // If there is no reduction and no store, then we give up, because
   // vectorization is not possible anyway (given current limitations).
   if (!_reductions.is_marked_reduction_loop() &&
-      _memory_slices.mem_slice_head().is_empty()) {
+      _memory_slices.heads().is_empty()) {
     return VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE;
   }
 
@@ -951,8 +951,8 @@ void VLoopReductions::mark_reductions() {
 }
 
 void VLoopMemorySlices::analyze() {
-  assert(_mem_slice_head.is_empty(), "must have been reset");
-  assert(_mem_slice_tail.is_empty(), "must have been reset");
+  assert(_heads.is_empty(), "must have been reset");
+  assert(_tails.is_empty(), "must have been reset");
 
   CountedLoopNode* cl = _vloop->cl();
 
@@ -963,8 +963,8 @@ void VLoopMemorySlices::analyze() {
         phi->is_memory_phi()) {
       Node* phi_tail  = phi->in(LoopNode::LoopBackControl);
       if (phi_tail != phi->in(LoopNode::EntryControl)) {
-        _mem_slice_head.push(phi);
-        _mem_slice_tail.push(phi_tail->as_Mem());
+        _heads.push(phi);
+        _tails.push(phi_tail->as_Mem());
       }
     }
   }
@@ -979,10 +979,10 @@ void VLoopMemorySlices::analyze() {
 #ifndef PRODUCT
 void VLoopMemorySlices::print() const {
   tty->print_cr("\nVLoopMemorySlices::print: %s",
-                _mem_slice_head.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _mem_slice_head.length(); m++) {
-      tty->print("%6d ", m);  _mem_slice_head.at(m)->dump();
-      tty->print("       ");  _mem_slice_tail.at(m)->dump();
+                _heads.length() > 0 ? "" : "NONE");
+    for (int m = 0; m < _heads.length(); m++) {
+      tty->print("%6d ", m);  _heads.at(m)->dump();
+      tty->print("       ");  _tails.at(m)->dump();
     }
 }
 #endif
