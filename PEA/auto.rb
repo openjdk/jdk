@@ -12,6 +12,7 @@ if $0 == __FILE__
   end
   puts jvm_options
 
+  failed = []
   Dir.glob("run*.sh").each do |t|
     print "[#{t}]"
 
@@ -23,11 +24,18 @@ if $0 == __FILE__
       if ret or $?.exitstatus == 3 then
         puts "\tpassed."
       elsif  PROBLEM_LIST.include? t then
-        puts "\ta known issue."
+        puts "\tis a known issue."
       else
         puts "\tfailed!"
-        exit(1)
+        failed.push("[#{t}]")
       end
     end
   end
+
+  if failed.length() > 0
+    puts "failed #{failed.length} tests:"
+    failed.each { |test| puts "\t#{test}" }
+    exit(1)
+  end
+  puts "passed all tests!"
 end

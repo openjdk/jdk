@@ -42,7 +42,7 @@ run-ctw-no-inline: set_jdk ${CTW_DIST}
 	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" JAVA_HOME=${JAVA_HOME} ./ctw.sh modules:java.base
 
 bootstrap-version: set_jdk
-	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:-PrintCompilation -version
+	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -version
 
 hotspot-tier1:
 	cd ..; make test TEST="hotspot:tier1" ${JTREG_COMMON}
