@@ -106,9 +106,10 @@ public:
       compact(nullptr);
     }
   }
-  NativeCallStackStorage(int capacity = static_stack_size)
+  NativeCallStackStorage(int capacity, bool is_detailed_mode)
     : stacks{capacity},
-    unused_indices(static_cast<int>(capacity*0.3)) {
+    unused_indices(static_cast<int>(capacity*0.3)+1),
+    is_detailed_mode(is_detailed_mode){
   }
 
 private:
