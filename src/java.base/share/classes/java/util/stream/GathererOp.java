@@ -81,9 +81,9 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
      * avoid excessive indirections (unbalanced Concat-trees) when joining many
      * NodeBuilders together.
      */
-    final static class NodeBuilder<X> implements Consumer<X> {
-        private final static int LINEAR_APPEND_MAX = 8; // TODO revisit
-        final static class Builder<X> extends SpinedBuffer<X> implements Node<X> {
+    static final class NodeBuilder<X> implements Consumer<X> {
+        private static final int LINEAR_APPEND_MAX = 8; // TODO revisit
+        static final class Builder<X> extends SpinedBuffer<X> implements Node<X> {
             Builder() {
             }
         }
@@ -136,7 +136,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         }
     }
 
-    final static class GatherSink<T, A, R> implements Sink<T>, Gatherer.Downstream<R> {
+    static final class GatherSink<T, A, R> implements Sink<T>, Gatherer.Downstream<R> {
         private final Sink<R> sink;
         private final Gatherer<T, A, R> gatherer;
         private final Integrator<A, T, R> integrator; // Optimization: reuse
@@ -211,14 +211,14 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                 ? GREEDY_FLAGS : SHORT_CIRCUIT_FLAGS;
     }
 
-    private final static int DEFAULT_FLAGS =
+    private static final int DEFAULT_FLAGS =
             StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT |
                     StreamOpFlag.NOT_SIZED;
 
-    private final static int SHORT_CIRCUIT_FLAGS =
+    private static final int SHORT_CIRCUIT_FLAGS =
             DEFAULT_FLAGS | StreamOpFlag.IS_SHORT_CIRCUIT;
 
-    private final static int GREEDY_FLAGS =
+    private static final int GREEDY_FLAGS =
             DEFAULT_FLAGS;
 
     final Gatherer<T, A, R> gatherer;

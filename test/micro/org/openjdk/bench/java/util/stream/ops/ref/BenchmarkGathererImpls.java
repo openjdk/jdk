@@ -88,14 +88,14 @@ public final class BenchmarkGathererImpls {
             };
 
             @Override public boolean integrate(Void state, T element, Gatherer.Downstream<? super R> downstream) {
-                try(Stream<? extends R> s = mapper.apply(element)) {
+                try (Stream<? extends R> s = mapper.apply(element)) {
                     if (s != null) {
                         s.sequential().spliterator().forEachRemaining(e -> {
                             if (!downstream.push(e)) throw SHORT_CIRCUIT;
                         });
                     }
                     return true;
-                } catch(RuntimeException e) {
+                } catch (RuntimeException e) {
                     if (e == SHORT_CIRCUIT)
                         return false;
 

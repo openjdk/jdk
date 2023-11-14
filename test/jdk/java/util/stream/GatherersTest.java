@@ -245,7 +245,7 @@ public class GatherersTest {
         }
 
         // Test cancellation after exception during processing
-        if(config.streamSize > 2) { // We need streams of a minimum size to test this
+        if (config.streamSize > 2) { // We need streams of a minimum size to test this
             final var firstLatch = new CountDownLatch(1);
             final var secondLatch = new CountDownLatch(1);
             final var cancellationLatch = new CountDownLatch(config.streamSize - 2); // all but two will get cancelled
@@ -254,7 +254,7 @@ public class GatherersTest {
                 config.stream()
                       .gather(
                             Gatherers.mapConcurrent(config.streamSize(), i -> {
-                                switch(i) {
+                                switch (i) {
                                     case 1 -> {
                                         try {
                                             firstLatch.await(); // the first waits for the last element to start
@@ -282,8 +282,8 @@ public class GatherersTest {
                       )
                       .toList();
                 fail("This should not be reached");
-            } catch(Throwable e) {
-                while(e.getCause() != null)
+            } catch (Throwable e) {
+                while (e.getCause() != null)
                     e = e.getCause();
                 assertSame(TestException.class, e.getClass());
                 assertEquals("expected", e.getMessage());
@@ -295,7 +295,7 @@ public class GatherersTest {
         }
 
         // Test cancellation during short-circuiting
-        if(config.streamSize > 2) {
+        if (config.streamSize > 2) {
             final var firstLatch = new CountDownLatch(1);
             final var secondLatch = new CountDownLatch(1);
             final var cancellationLatch = new CountDownLatch(config.streamSize - 2); // all but two will get cancelled
@@ -304,7 +304,7 @@ public class GatherersTest {
                 config.stream()
                       .gather(
                             Gatherers.mapConcurrent(config.streamSize(), i -> {
-                                switch(i) {
+                                switch (i) {
                                     case 1 -> {
                                         try {
                                             firstLatch.await(); // the first waits for the last element to start

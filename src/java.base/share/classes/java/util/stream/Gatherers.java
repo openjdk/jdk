@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
@@ -44,7 +43,7 @@ import java.util.stream.Gatherer.Integrator;
 import java.util.stream.Gatherer.Downstream;
 
 /**
- * Implementations of {@link Gatherer} that implement various useful intermediate
+ * Implementations of {@link Gatherer} that provide useful intermediate
  * operations, such as windowing functions, folding functions,
  * transforming elements concurrently, etc.
  *
@@ -114,7 +113,7 @@ public final class Gatherers {
             }
 
             void finish(Downstream<? super List<TR>> downstream) {
-                if(at > 0 && !downstream.isRejecting()) {
+                if (at > 0 && !downstream.isRejecting()) {
                     var lastWindow = new Object[at];
                     System.arraycopy(window, 0, lastWindow, 0, at);
                     window = null;
@@ -208,7 +207,7 @@ public final class Gatherers {
             }
 
             void finish(Downstream<? super List<TR>> downstream) {
-                if(firstWindow && at > 0 && !downstream.isRejecting()) {
+                if (firstWindow && at > 0 && !downstream.isRejecting()) {
                     var lastWindow = new Object[at];
                     System.arraycopy(window, 0, lastWindow, 0, at);
                     window = null;
@@ -389,7 +388,7 @@ public final class Gatherers {
                 boolean proceed = !downstream.isRejecting();
                 try {
                     Future<R> current;
-                    while(proceed
+                    while (proceed
                             && (current = window.peek()) != null
                                 && (current.isDone() || atLeastN > 0)) {
                         proceed &= downstream.push(current.get());
@@ -407,7 +406,7 @@ public final class Gatherers {
                     // Clean up
                     if (!proceed) {
                         Future<R> next;
-                        while((next = window.pollFirst()) != null) {
+                        while ((next = window.pollFirst()) != null) {
                             next.cancel(true);
                         }
                     }
@@ -492,7 +491,7 @@ public final class Gatherers {
         }
     }
 
-    final static class Composite<T, A, R, AA, RR> implements Gatherer<T, Object, RR> {
+    static final class Composite<T, A, R, AA, RR> implements Gatherer<T, Object, RR> {
         private final Gatherer<T, A, ? extends R> left;
         private final Gatherer<? super R, AA, ? extends RR> right;
         // FIXME change `impl` to a computed constant when available

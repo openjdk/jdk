@@ -163,9 +163,9 @@ import java.util.function.Supplier;
  *     <li>The first argument passed to the integration function, both
  *     arguments passed to the combiner function, and the argument passed to the
  *     finisher function must be the result of a previous invocation of the
- *     initializer, integrator, or combiner functions.</li>
+ *     initializer or combiner functions.</li>
  *     <li>The implementation should not do anything with the result of any of
- *     the initializer, integrator, or combiner functions other than to
+ *     the initializer or combiner functions other than to
  *     pass them again to the integrator, combiner, or finisher functions.</li>
  *     <li>Once a state object is passed to the combiner or finisher function,
  *     it is never passed to the integrator function again.</li>
