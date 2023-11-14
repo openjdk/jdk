@@ -1651,8 +1651,9 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
   while (worklist.size() > 0) {
     Node* use = worklist.pop();
     // Apply callback on boundary nodes
-    if (is_boundary(use)) { callback(use); }
-    else {
+    if (is_boundary(use)) {
+      callback(use);
+    } else {
       // Not a boundary node, continue search
       for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
         Node* out = use->fast_out(k);
