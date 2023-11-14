@@ -62,7 +62,7 @@ bool CDSConfig::is_loading_full_module_graph() {
     return true;
   }
 
-  if (!_loading_full_module_graph_disabled && 
+  if (!_loading_full_module_graph_disabled &&
       UseSharedSpaces &&
       ArchiveHeapLoader::can_use() &&
       MetaspaceShared::use_optimized_module_handling()) {
