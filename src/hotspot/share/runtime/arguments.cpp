@@ -3063,9 +3063,9 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   if (ArchiveClassesAtExit == nullptr && !RecordDynamicDumpInfo) {
-    DynamicDumpSharedSpaces = false;
+    CDSConfig::disable_dumping_dynamic_archive();
   } else {
-    DynamicDumpSharedSpaces = true;
+    CDSConfig::enable_dumping_dynamic_archive();
   }
 
   if (AutoCreateSharedArchive) {
@@ -3086,7 +3086,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     UseSharedSpaces = false;
   }
 
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_archive()) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
@@ -3493,7 +3493,7 @@ void Arguments::init_shared_archive_paths() {
           // If +AutoCreateSharedArchive and the specified shared archive does not exist,
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            DynamicDumpSharedSpaces = true;
+            CDSConfig::enable_dumping_dynamic_archive();
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
             SharedArchivePath = get_default_shared_archive_path();
             SharedArchiveFile = nullptr;

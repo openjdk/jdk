@@ -18,6 +18,7 @@ be ;	modern ;	Belarusian
 bg ;	modern ;	Bulgarian
 bgc ;	basic ;	Haryanvi
 bho ;	basic ;	Bhojpuri
+blo ;	moderate ;	Anii
 bn ;	modern ;	Bangla
 br ;	moderate ;	Breton
 brx ;	basic ;	Bodo
@@ -25,16 +26,18 @@ bs ;	modern ;	Bosnian
 bs_Cyrl ;	basic ;	Bosnian (Cyrillic)
 ca ;	modern ;	Catalan
 ceb ;	moderate ;	Cebuano
-chr ;	moderate ;	Cherokee
+chr ;	modern ;	Cherokee
 cs ;	modern ;	Czech
+csw ;	basic ;	Swampy Cree
 cv ;	moderate ;	Chuvash
 cy ;	modern ;	Welsh
 da ;	modern ;	Danish
 de ;	modern ;	German
 doi ;	basic ;	Dogri
-dsb ;	moderate ;	Lower Sorbian
+dsb ;	modern ;	Lower Sorbian
 el ;	modern ;	Greek
 en ;	modern ;	English
+eo ;	basic ;	Esperanto
 es ;	modern ;	Spanish
 et ;	modern ;	Estonian
 eu ;	modern ;	Basque
@@ -44,6 +47,7 @@ fi ;	modern ;	Finnish
 fil ;	modern ;	Filipino
 fo ;	moderate ;	Faroese
 fr ;	modern ;	French
+fy ;	basic ;	Western Frisian
 ga ;	modern ;	Irish
 gd ;	modern ;	Scottish Gaelic
 gl ;	modern ;	Galician
@@ -53,11 +57,12 @@ he ;	modern ;	Hebrew
 hi ;	modern ;	Hindi
 hi_Latn ;	modern ;	Hindi [Latin]
 hr ;	modern ;	Croatian
-hsb ;	moderate ;	Upper Sorbian
+hsb ;	modern ;	Upper Sorbian
 hu ;	modern ;	Hungarian
 hy ;	modern ;	Armenian
-ia ;	basic ;	Interlingua
+ia ;	moderate ;	Interlingua
 id ;	modern ;	Indonesian
+ie ;	basic ;	Interlingue
 ig ;	modern ;	Igbo
 is ;	modern ;	Icelandic
 it ;	modern ;	Italian
@@ -73,27 +78,40 @@ ko ;	modern ;	Korean
 kok ;	modern ;	Konkani
 ks ;	basic ;	Kashmiri
 ks_Deva ;	basic ;	Kashmiri (Devanagari)
+ku ;	moderate ;	Kurdish
+kxv ;	basic ;	Kuvi
+kxv_Deva ;	basic ;	Kuvi (Devanagari)
+kxv_Orya ;	basic ;	Kuvi (Odia)
+kxv_Telu ;	basic ;	Kuvi (Telugu)
 ky ;	modern ;	Kyrgyz
+lb ;	basic ;	Luxembourgish
+lij ;	basic ;	Ligurian
+lmo ;	basic ;	Lombard
 lo ;	modern ;	Lao
 lt ;	modern ;	Lithuanian
 lv ;	modern ;	Latvian
 mai ;	basic ;	Maithili
-mi ;	basic ;	Māori
+mi ;	moderate ;	Māori
 mk ;	modern ;	Macedonian
 ml ;	modern ;	Malayalam
 mn ;	modern ;	Mongolian
 mni ;	basic ;	Manipuri
 mr ;	modern ;	Marathi
 ms ;	modern ;	Malay
+mt ;	basic ;	Maltese
 my ;	modern ;	Burmese
+nds ;	basic ;	Low German
 ne ;	modern ;	Nepali
 nl ;	modern ;	Dutch
 nn ;	modern ;	Norwegian Nynorsk
 no ;	modern ;	Norwegian
+nqo ;	basic ;	N’Ko
+oc ;	basic ;	Occitan
 or ;	modern ;	Odia
 pa ;	modern ;	Punjabi
-pcm ;	modern ;	Nigerian Pidgin
+pcm ;	moderate ;	Nigerian Pidgin
 pl ;	modern ;	Polish
+prg ;	basic ;	Prussian
 ps ;	modern ;	Pashto
 pt ;	modern ;	Portuguese
 qu ;	moderate ;	Quechua
@@ -102,6 +120,7 @@ rm ;	basic ;	Romansh
 ro ;	modern ;	Romanian
 ru ;	modern ;	Russian
 sa ;	basic ;	Sanskrit
+sah ;	basic ;	Yakut
 sat ;	basic ;	Santali
 sc ;	moderate ;	Sardinian
 sd ;	modern ;	Sindhi
@@ -116,6 +135,8 @@ sr_Latn ;	modern ;	Serbian (Latin)
 su ;	basic ;	Sundanese
 sv ;	modern ;	Swedish
 sw ;	modern ;	Swahili
+syr ;	basic ;	Syriac
+szl ;	basic ;	Silesian
 ta ;	modern ;	Tamil
 te ;	modern ;	Telugu
 tg ;	basic ;	Tajik
@@ -123,19 +144,25 @@ th ;	modern ;	Thai
 ti ;	basic ;	Tigrinya
 tk ;	modern ;	Turkmen
 to ;	basic ;	Tongan
+tok ;	basic ;	Toki Pona
 tr ;	modern ;	Turkish
 tt ;	basic ;	Tatar
+ug ;	basic ;	Uyghur
 uk ;	modern ;	Ukrainian
 ur ;	modern ;	Urdu
 uz ;	modern ;	Uzbek
 uz_Cyrl ;	basic ;	Uzbek (Cyrillic)
+vec ;	moderate ;	Venetian
 vi ;	modern ;	Vietnamese
+vmw ;	basic ;	Makhuwa
 wo ;	basic ;	Wolof
 xh ;	moderate ;	Xhosa
+xnr ;	basic ;	Kangri
 yo ;	modern ;	Yoruba
 yrl ;	basic ;	Nheengatu
 yue ;	modern ;	Cantonese
 yue_Hans ;	modern ;	Cantonese (Simplified)
+za ;	basic ;	Zhuang
 zh ;	modern ;	Chinese
 zh_Hant ;	modern ;	Traditional Chinese
 zu ;	modern ;	Zulu
