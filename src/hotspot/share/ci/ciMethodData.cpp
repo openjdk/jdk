@@ -464,7 +464,7 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
 }
 
 ciBitData ciMethodData::ex_handler_bci_to_data(int bci) {
-  assert(ProfileExceptionHandlers, "not profiling");
+  assert(PruneDeadExceptionHandlers, "not profiling");
   assert(_data != nullptr, "must be initialized");
   for (DataLayout* data = ex_handler_data_base(); data < ex_handler_data_limit(); data = next_extra_data_layout(data)) {
     assert(data != nullptr, "out of bounds?");

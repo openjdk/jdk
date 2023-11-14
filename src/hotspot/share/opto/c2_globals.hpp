@@ -777,7 +777,7 @@
           "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
-  product(bool, PruneDeadExceptionHandlers, true,                           \
+  product(bool, PruneDeadExceptionHandlers, true, DIAGNOSTIC,               \
           "Prune exception handlers that are never entered")                \
                                                                             \
   develop(bool, StressPrunedExceptionHandlers, false,                       \

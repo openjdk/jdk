@@ -1532,7 +1532,7 @@ void Parse::do_one_block() {
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
 
-  if (ProfileExceptionHandlers && PruneDeadExceptionHandlers && block()->is_handler()) {
+  if (PruneDeadExceptionHandlers && block()->is_handler()) {
     ciMethodData* methodData = method()->method_data();
     if (methodData->is_mature()) {
       ciBitData data = methodData->ex_handler_bci_to_data(block()->start());
