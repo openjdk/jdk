@@ -24,7 +24,7 @@
 /**
 * @test
 * @summary Test intrinsic for divideUnsigned() and remainderUnsigned() methods for Integer
-* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
+* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64" | os.arch=="aarch64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestIntegerUnsignedDivMod
 */
