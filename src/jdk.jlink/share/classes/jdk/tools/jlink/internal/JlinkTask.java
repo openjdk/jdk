@@ -545,7 +545,7 @@ public class JlinkTask {
 
         // Print info message when a run-image link is being performed
         if (log != null && !config.useModulePath()) {
-            log.println("'jmods' folder not present, performing a run-image based link.");
+            log.println("'jmods' folder not present, performing a run-time image based link.");
         }
 
         if (verbose && log != null) {
@@ -553,7 +553,7 @@ public class JlinkTask {
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
               .forEach(rm -> log.format("%s %s%s%n",
-                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (run-image)"));
+                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (run-time image)"));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()

@@ -64,7 +64,7 @@ public class MultiHopTest extends AbstractJmodLessTest {
         if (handler.analyzer().getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to multi-hop (hop 2)");
         }
-        handler.analyzer().stdoutShouldContain("Recursive links based on the current run-image are not allowed.");
+        handler.analyzer().stdoutShouldContain("Recursive links based on the current run-time image are not allowed.");
     }
 
     private Path createJDKJlinkJmodLess(Helper helper, String name) throws Exception {
