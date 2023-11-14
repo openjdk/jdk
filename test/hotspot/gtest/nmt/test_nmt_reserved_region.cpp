@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "unittest.hpp"
 
 // Tests the assignment operator of ReservedMemoryRegion
