@@ -75,9 +75,16 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * Looks for possible 'this' escapes and generates corresponding warnings.
  *
  * <p>
- * A 'this' escape is when a constructor invokes a method that could be overridden in a
- * subclass, in which case the method will execute before the subclass constructor has
- * finished initializing the instance.
+ * A 'this' escape occurs in the following scenario:
+ * <ul>
+ *  <li>There is some class {@code A} and some subclass {@code B} that extends it
+ *  <li>{@code A} defines an instance method {@code m()} which is overridden in {@code B}
+ *  <li>Some constructor {@code B()} invokes some superclass constructor {@code A()}
+ *  <li>At some point during the execution of {@code A()}, method {@code m()} is invoked and the
+ *      reciever for the instance method is the new instance being constructed by {@code B()}
+ * </ul>
+ * This represents a problem because the method {@code B.m()} will execute before the constructor
+ * {@code B()} has performed any of its own initialization.
  *
  * <p>
  * This class attempts to identify possible 'this' escapes while also striking a balance
@@ -86,32 +93,41 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * If it passes to code outside of the current module, we declare a possible leak.
  *
  * <p>
- * As we analyze constructors and the methods they invoke, we track the various object references
- * that might reference the 'this' instance we are watching (i.e., the one under construction).
- * Such object references are represented by {@link Ref}'s, of which there are these sub-types:
+ * As we analyze constructors and the methods they invoke, we track the various object references that
+ * might reference the 'this' instance we are watching (i.e., the one under construction). Such object
+ * references are represented by the {@link Ref} class hierarchy, which models the various ways in which,
+ * at any point during the execution of a constructor or some other method or constructor that it invokes,
+ * there can live references to the object under construction lying around. In a nutshell, the analyzer
+ * keeps track of these references and watches what happens to them as the code executes so it can catch
+ * them in the act of trying to "escape".
+ *
+ * <p>
+ * The {@link Ref} sub-types are:
  * <ul>
- *  <li>{@link ThisRef} - The current 'this' instance of the method being analyzed
- *  <li>{@link ExprRef} - The current expression being evaluated, i.e.,what's on top of the Java stack
+ *  <li>{@link ThisRef} - The current 'this' instance of the (instance) method being analyzed
+ *  <li>{@link ExprRef} - The current expression being evaluated, i.e., what's on top of the Java stack
  *  <li>{@link VarRef} - Local variables and method parameters currently in scope
- *  <li>{@link YieldRef} - The current switch expression's yield value
- *  <li>{@link ReturnRef} - The current method's return value
+ *  <li>{@link YieldRef} - The current switch expression's yield value(s)
+ *  <li>{@link ReturnRef} - The current method's return value(s)
  * </ul>
  *
  * <p>
  * Currently we don't attempt to explicitly track references stored in fields (for future study).
  *
  * <p>
- * We also track the {@link Type} of each {@link Ref}, and whether it references 'this' directly
- * or indirectly; see {@link Indirection}.
+ * For each object reference represented by a {@link Ref}, we track up to three distinct ways in which
+ * it might refer to the new 'this' instance: the reference can be direct, indirect, or via an associated
+ * enclosing instance (see {@link Indirection}).
  *
  * <p>
  * A few notes on this implementation:
  * <ul>
- *  <li>We "execute" constructors and track where the 'this' reference goes as the constructor executes.
- *  <li>We use a simplified "flooding" flow analysis where the union of every possible code branch is taken.
- *  <li>Loops are repeated until the set of references stabilizes; the maximum number of iterations
- *      is proportional to the number of variables in scope.
- *  <li>A "leak" is defined as the possible passing of a subclassed 'this' reference to code defined
+ *  <li>We "execute" constructors and track how the {@link Ref}'s evolve as the constructor executes.
+ *  <li>We use a simplified "flooding" flow analysis where every possible code branch is taken and
+ *      we take the union of the resulting {@link Ref}'s that are generated.
+ *  <li>Loops are repeated until the set of {@link Ref}'s stabilizes; the maximum number of iterations
+ *      possible is proportional to the number of variables in scope.
+ *  <li>An "escape" is defined as the possible passing of a subclassed 'this' reference to code defined
  *      outside of the current module.
  *  <ul>
  *      <li>In other words, we don't try to protect the current module's code from itself.
