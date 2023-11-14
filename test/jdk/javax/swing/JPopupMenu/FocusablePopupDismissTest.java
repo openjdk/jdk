@@ -70,7 +70,7 @@ public class FocusablePopupDismissTest {
                 .title("FocusablePopupDismissTest")
                 .instructions(INSTRUCTIONS)
                 .rows(20)
-                .columns(40)
+                .columns(45)
                 .testUI(FocusablePopupDismissTest::createTestUI)
                 .build()
                 .awaitAndCheck();
