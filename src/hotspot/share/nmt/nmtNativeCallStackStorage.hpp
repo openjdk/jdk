@@ -103,7 +103,7 @@ public:
     }
 
     if ((double)unused_indices.length() / (double)stacks.length() > 0.3) {
-      compact(nullptr);
+      compact();
     }
   }
   NativeCallStackStorage(int capacity, bool is_detailed_mode)
