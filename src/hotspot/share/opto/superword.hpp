@@ -238,10 +238,6 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<Node_List*> _packset;    // Packs for the current block
 
-  GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
-
-  GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
@@ -310,15 +306,6 @@ class SuperWord : public ResourceObj {
   int get_vw_bytes_special(MemNode* s);
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
-
-  // block accessors
- public:
-  int bb_idx(const Node* n) const {
-    assert(vla().in_loopbody(n), "must be");
-    return _bb_idx.at(n->_idx);
-  }
- private:
-  void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
   // visited set accessors
   void visited_clear()           { _visited.clear(); }

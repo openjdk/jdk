@@ -48,9 +48,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _arena(phase()->C->comp_arena()),
   _igvn(phase()->_igvn),
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
-  _bb_idx(arena(), (int)(1.10 * phase()->C->unique()), 0, 0), // node idx to index in bb
-  _block(arena(), 8,  0, nullptr),                          // nodes in current block
-  _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
@@ -2893,121 +2890,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 //------------------------------construct_bb---------------------------
 // Construct reverse postorder list of block members
 bool SuperWord::construct_bb() {
-  Node* entry = cl();
-
-  assert(_stk.length() == 0,            "stk is empty");
-  assert(_block.length() == 0,          "block is empty");
-  assert(_data_entry.length() == 0,     "data_entry is empty");
-
-  // Find non-control nodes with no inputs from within block,
-  // create a temporary map from node _idx to bb_idx for use
-  // by the visited and post_visited sets,
-  // and count number of nodes in block.
-  int bb_ct = 0;
-  for (uint i = 0; i < lpt()->_body.size(); i++) {
-    Node *n = lpt()->_body.at(i);
-    set_bb_idx(n, i); // Create a temporary map
-    if (in_loopbody(n)) {
-      if (n->is_LoadStore() || n->is_MergeMem() ||
-          (n->is_Proj() && !n->as_Proj()->is_CFG())) {
-        // Bailout if the loop has LoadStore, MergeMem or data Proj
-        // nodes. Superword optimization does not work with them.
-        return false;
-      }
-      bb_ct++;
-      if (!n->is_CFG()) {
-        bool found = false;
-        for (uint j = 0; j < n->req(); j++) {
-          Node* def = n->in(j);
-          if (def && in_loopbody(def)) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          assert(n != entry, "can't be entry");
-          _data_entry.push(n);
-        }
-      }
-    }
-  }
-
-  // Create an RPO list of nodes in block
-
-  visited_clear();
-  post_visited_clear();
-
-  // Push all non-control nodes with no inputs from within block, then control entry
-  for (int j = 0; j < _data_entry.length(); j++) {
-    Node* n = _data_entry.at(j);
-    visited_set(n);
-    _stk.push(n);
-  }
-  visited_set(entry);
-  _stk.push(entry);
-
-  // Do a depth first walk over out edges
-  int rpo_idx = bb_ct - 1;
-  int size;
-  int reduction_uses = 0;
-  while ((size = _stk.length()) > 0) {
-    Node* n = _stk.top(); // Leave node on stack
-    if (!visited_test_set(n)) {
-      // forward arc in graph
-    } else if (!post_visited_test(n)) {
-      // cross or back arc
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node *use = n->fast_out(i);
-        if (in_loopbody(use) && !visited_test(use) &&
-            // Don't go around backedge
-            (!use->is_Phi() || n == entry)) {
-          if (is_marked_reduction(use)) {
-            // First see if we can map the reduction on the given system we are on, then
-            // make a data entry operation for each reduction we see.
-            BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
-              reduction_uses++;
-            }
-          }
-          _stk.push(use);
-        }
-      }
-      if (_stk.length() == size) {
-        // There were no additional uses, post visit node now
-        _stk.pop(); // Remove node from stack
-        assert(rpo_idx >= 0, "");
-        _block.at_put_grow(rpo_idx, n);
-        rpo_idx--;
-        post_visited_set(n);
-        assert(rpo_idx >= 0 || _stk.is_empty(), "");
-      }
-    } else {
-      _stk.pop(); // Remove post-visited node from stack
-    }
-  }//while
-
-  int ii_current = -1;
-  unsigned int load_idx = (unsigned int)-1;
-  // Create real map of block indices for nodes
-  for (int j = 0; j < _block.length(); j++) {
-    Node* n = _block.at(j);
-    set_bb_idx(n, j);
-  }//for
-
-  // Ensure extra info is allocated.
   initialize_bb();
-
-#ifndef PRODUCT
-  if (TraceSuperWord) {
-    print_bb();
-    tty->print_cr("\ndata entry nodes: %s", _data_entry.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _data_entry.length(); m++) {
-      tty->print("%3d ", m);
-      _data_entry.at(m)->dump();
-    }
-  }
-#endif
-  assert(rpo_idx == -1 && bb_ct == _block.length(), "all block members found");
   return true;
 }
 
@@ -3507,8 +3390,6 @@ void SuperWord::init() {
   _dg.init();
   _packset.clear();
   _disjoint_ptrs.clear();
-  _block.clear();
-  _data_entry.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;
