@@ -26,16 +26,10 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 
-bool CDSConfig::is_dumping_archive() {
-  return is_dumping_static_archive() || is_dumping_dynamic_archive();
-}
+bool CDSConfig::_is_dumping_dynamic_archive = false;
 
 bool CDSConfig::is_dumping_static_archive() {
   return DumpSharedSpaces;
-}
-
-bool CDSConfig::is_dumping_dynamic_archive() {
-  return DynamicDumpSharedSpaces;
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
