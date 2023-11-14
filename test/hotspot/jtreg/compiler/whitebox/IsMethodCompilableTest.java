@@ -37,7 +37,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=2400 -XX:-TieredCompilation -Xmixed
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay
+ *      -XX:PerMethodRecompilationCutoff=3
  *      -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *      compiler.whitebox.IsMethodCompilableTest
  */

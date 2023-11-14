@@ -51,7 +51,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -63,7 +63,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -75,7 +75,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=true
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -87,7 +87,7 @@
  *                   -XX:CompileCommand=dontinline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame2
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::recurse
  *                   -XX:CompileCommand=inline,compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest::testFrame3
- *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:+DoEscapeAnalysis
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.materializeFirst=false
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest

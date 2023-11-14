@@ -36,7 +36,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
- *                   -XX:-BackgroundCompilation -XX:-UseCounterDecay
+ *                   -XX:-BackgroundCompilation
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+EagerJVMCI
  *                   compiler.whitebox.ForceNMethodSweepTest
  */

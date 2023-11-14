@@ -33,7 +33,7 @@
  *        compiler.tiered.LevelTransitionTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
  *                   -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*

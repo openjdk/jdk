@@ -32,7 +32,7 @@
  *        compiler.tiered.ConstantGettersTransitionsTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
+ *      -XX:+WhiteBoxAPI -XX:+TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.tiered.ConstantGettersTransitionsTest$ConstantGettersTestCase$TrivialMethods::*
  *      compiler.tiered.ConstantGettersTransitionsTest
  */

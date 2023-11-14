@@ -1226,10 +1226,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(intx, CounterHalfLifeTime,    30,                                 \
           "Half-life time of invocation counters (in seconds)")             \
                                                                             \
-  develop(intx, CounterDecayMinIntervalLength,   500,                       \
-          "The minimum interval (in milliseconds) between invocation of "   \
-          "CounterDecay")                                                   \
-                                                                            \
   product(bool, AlwaysCompileLoopMethods, false,                            \
           "When using recompilation, never interpret methods "              \
           "containing loops")                                               \
