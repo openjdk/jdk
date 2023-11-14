@@ -26,9 +26,9 @@
 #ifndef CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
 #define CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
 
-// Unconditionally supports 8-byte cmpxchg either with
-// compiler intrinsics or with library/kernel helpers.
+#ifdef _LP64
 #define SUPPORTS_NATIVE_CX8
+#endif
 
 #define SUPPORT_MONITOR_COUNT
 
