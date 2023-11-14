@@ -1655,8 +1655,10 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
     if (is_boundary(use)) { callback(use); }
     else {
       // Not a boundary node, continue search
-      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++)
-        worklist.push(use->fast_out(k));
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        Node* out = use->fast_out(k);
+        if (!visited.test(out->_idx)) { worklist.push(out); }
+      }
     }
   }
 }
