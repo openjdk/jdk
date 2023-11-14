@@ -248,10 +248,8 @@ class SuperWord : public ResourceObj {
 
   // Scratch pads
   VectorSet    _visited;       // Visited set
-  VectorSet    _post_visited;  // Post-visited set
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
-  GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
   SuperWord(const VLoopAnalyzer &vla);
@@ -281,7 +279,6 @@ class SuperWord : public ResourceObj {
   const GrowableArray<Node_List*>& packset() const { return _packset; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
-  VectorSet      _loop_reductions; // Reduction nodes in the current loop
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
@@ -312,9 +309,6 @@ class SuperWord : public ResourceObj {
   void visited_set(Node* n)      { return _visited.set(body_idx(n)); }
   int visited_test(Node* n)      { return _visited.test(body_idx(n)); }
   int visited_test_set(Node* n)  { return _visited.test_set(body_idx(n)); }
-  void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(body_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(body_idx(n)); }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -469,7 +463,6 @@ class SuperWord : public ResourceObj {
   // print methods
   void print_packset();
   void print_pack(Node_List* p);
-  void print_bb();
   void print_stmt(Node* s);
 
   void packset_sort(int n);

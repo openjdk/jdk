@@ -54,10 +54,8 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
   _visited(arena()),                                        // visited node set
-  _post_visited(arena()),                                   // post visited node set
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
-  _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -3418,20 +3416,6 @@ void SuperWord::print_pack(Node_List* p) {
   for (uint i = 0; i < p->size(); i++) {
     print_stmt(p->at(i));
   }
-}
-
-//------------------------------print_bb---------------------------
-void SuperWord::print_bb() {
-#ifndef PRODUCT
-  tty->print_cr("\nBlock");
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
-    tty->print("%d ", i);
-    if (n) {
-      n->dump();
-    }
-  }
-#endif
 }
 
 //------------------------------print_stmt---------------------------
