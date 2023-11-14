@@ -282,7 +282,42 @@ class Copy : AllStatic {
   // longs, words, or ints, store to those units atomically.
   // The largest atomic transfer unit is 8 bytes, or the largest power
   // of two which divides both to and size, whichever is smaller.
-  static void fill_to_memory_atomic(void* to, size_t size, jubyte value = 0);
+  inline static void fill_to_memory_atomic(void* to, size_t size, jubyte value = 0) {
+      address dst = (address) to;
+      uintptr_t bits = (uintptr_t) to | (uintptr_t) size;
+      if (bits % sizeof(jlong) == 0) {
+          jlong fill = (julong)( (jubyte)value ); // zero-extend
+          if (fill != 0) {
+              fill += fill << 8;
+              fill += fill << 16;
+              fill += fill << 32;
+          }
+          //Copy::fill_to_jlongs_atomic((jlong*) dst, size / sizeof(jlong));
+          for (uintptr_t off = 0; off < size; off += sizeof(jlong)) {
+              *(jlong*)(dst + off) = fill;
+          }
+      } else if (bits % sizeof(jint) == 0) {
+          jint fill = (juint)( (jubyte)value ); // zero-extend
+          if (fill != 0) {
+              fill += fill << 8;
+              fill += fill << 16;
+          }
+          //Copy::fill_to_jints_atomic((jint*) dst, size / sizeof(jint));
+          for (uintptr_t off = 0; off < size; off += sizeof(jint)) {
+              *(jint*)(dst + off) = fill;
+          }
+      } else if (bits % sizeof(jshort) == 0) {
+          jshort fill = (jushort)( (jubyte)value ); // zero-extend
+          fill += (jshort)(fill << 8);
+          //Copy::fill_to_jshorts_atomic((jshort*) dst, size / sizeof(jshort));
+          for (uintptr_t off = 0; off < size; off += sizeof(jshort)) {
+              *(jshort*)(dst + off) = fill;
+          }
+      } else {
+          // Not aligned, so no need to be atomic.
+          fill_to_bytes(dst, size, value);
+      }
+  }
 
   // Zero-fill methods
 
