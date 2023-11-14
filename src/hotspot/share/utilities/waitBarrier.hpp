@@ -31,8 +31,12 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/waitBarrier_generic.hpp"
 
-// FIXME: Replaced for testing on all platforms, revert before integration
+#if defined(LINUX)
+#include "waitBarrier_linux.hpp"
+typedef LinuxWaitBarrier WaitBarrierDefault;
+#else
 typedef GenericWaitBarrier WaitBarrierDefault;
+#endif
 
 // Platform independent WaitBarrier API.
 // An armed WaitBarrier prevents threads from advancing until the threads are
