@@ -24,10 +24,11 @@
 /*
  * @test
  * @bug 6680988
+ * @key headful
  * @summary verify that various shortcuts and accelerators work
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main AcceleratorTest
+ * @run main/manual AcceleratorTest
  */
 
 import java.awt.BorderLayout;
