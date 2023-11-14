@@ -31,8 +31,8 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryView.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryView.hpp"
 
 class ZNMT : public AllStatic {
 private:
