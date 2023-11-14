@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * An intermediate operation that transforms a stream of input elements into a
  * stream of output elements, optionally applying a final action when the end of
  * the upstream is reached. The transformation may be stateless or stateful,
- * and a Gatherer may buffer arbitrarily much input before producing any output.
+ * and may buffer input before producing any output.
  *
  * <p>Gatherer operations can be performed either sequentially,
  * or be parallelized -- if a combiner function is supplied.
@@ -60,7 +60,7 @@ import java.util.function.Supplier;
  *     <li>performing an optional final action ({@link #finisher()})</li>
  * </ul>
  *
- * <p>Each invocation to {@link #initializer()}, {@link #integrator()},
+ * <p>Each invocation of {@link #initializer()}, {@link #integrator()},
  * {@link #combiner()}, and {@link #finisher()} must return a semantically
  * identical result.
  *
@@ -115,8 +115,8 @@ import java.util.function.Supplier;
  * Gatherer<Integer, ?, String> incrementThenToString = increment.andThen(toString);
  * }
  *
- * <p>As an example, in order to create a gatherer to implement a sequential
- * Prefix Scan as a Gatherer, it could be done the following way:
+ * <p>As an example, a Gatherer implementing a sequential Prefix Scan 
+ * could be done the following way:
  *
  * {@snippet lang = java:
  * public static <T, R> Gatherer<T, ?, R> scan(
@@ -149,7 +149,7 @@ import java.util.function.Supplier;
  *           .toList();
  * }
  *
- * @implSpec Libraries that implement transformation based on {@code Gatherer},
+ * @implSpec Libraries that implement transformations based on {@code Gatherer},
  * such as {@link Stream#gather(Gatherer)}, must adhere to the following
  * constraints:
  * <ul>
@@ -182,7 +182,7 @@ import java.util.function.Supplier;
  *     the integrator until it returns {@code false}, and then joining each
  *     partitions state using the combiner, and then invoking the finisher on
  *     the joined state. Outputs and state later in the input sequence will
- *     be discarded if processing an earlier segment short-circuits.</li>
+ *     be discarded if processing an earlier partition short-circuits.</li>
  *     <li>Gatherers whose finisher is {@link #defaultFinisher()} are considered
  *     to not have an end-of-stream hook and invoking their finisher is
  *     optional.</li>
@@ -498,7 +498,7 @@ public interface Gatherer<T, A, R> {
         boolean push(T element);
 
         /**
-         * Allows for checking whether the next stage is known to not want
+         * Checks whether the next stage is known to not want
          * any more elements sent to it.
          *
          * @apiNote This is best-effort only, once this returns {@code true} it

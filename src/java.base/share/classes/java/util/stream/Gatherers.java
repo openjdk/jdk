@@ -326,7 +326,7 @@ public final class Gatherers {
     }
 
     /**
-     * An operation which executes operations concurrently
+     * An operation which executes a function concurrently
      * with a configured level of max concurrency, using
      * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">virtual threads</a>.
      * This operation preserves the ordering of the stream.
@@ -335,9 +335,9 @@ public final class Gatherers {
      * on a best-effort basis, in situations where the downstream no longer
      * wants to receive any more elements.
      *
-     * <p>If the mapper throws an exception during evaluation of this Gatherer,
-     * and the result of that invocation is to be produced to the downstream,
-     * then that exception will instead be rethrown as a {@link RuntimeException}.
+     * <p>If a result of the function is to be pushed downstream but instead the function completed
+     * exceptionally then the corresponding exception will instead be rethrown by this method as an 
+     * instance of {@link RuntimeException}. After which any remaining tasks are canceled. 
      *
      * @param maxConcurrency the maximum concurrency desired
      * @param mapper a function to be executed concurrently
