@@ -187,8 +187,8 @@ public class Connect {
         }
 
         public void run() {
+            ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
             while (true) {
-                ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
                 try {
                     // Listen for a message
                     log.println("Responder waiting to receive");
