@@ -26,9 +26,9 @@
  * bug 8319764
  * @summary C2 compilation asserts during incremental inlining because Phi input is out of bounds
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestLateInlineReplacedNodesExceptionPath::notInlined
- *                   -XX:+StressIGVN -XX:StressSeed=1246687813 TestLateInlineReplacedNodesExceptionPath
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=1246687813 TestLateInlineReplacedNodesExceptionPath
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestLateInlineReplacedNodesExceptionPath::notInlined
- *                   -XX:+StressIGVN TestLateInlineReplacedNodesExceptionPath
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN TestLateInlineReplacedNodesExceptionPath
  */
 
 import java.lang.invoke.MethodHandle;
