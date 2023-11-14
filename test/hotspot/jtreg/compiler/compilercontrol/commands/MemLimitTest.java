@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8318671
+ * @bug 8319301
  * @summary Tests various ways to call memlimit
  * @library /test/lib /
  *
