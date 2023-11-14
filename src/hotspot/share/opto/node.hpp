@@ -1644,20 +1644,19 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
 
   // The initial worklist consists of the direct uses
   for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
-    worklist.push(fast_out(k));
+    Node* out = fast_out(k);
+    if (!visited.test_set(out->_idx)) { worklist.push(out); }
   }
 
   while (worklist.size() > 0) {
     Node* use = worklist.pop();
-    // Skip already visited nodes
-    if (visited.test_set(use->_idx)) { continue; }
     // Apply callback on boundary nodes
     if (is_boundary(use)) { callback(use); }
     else {
       // Not a boundary node, continue search
       for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
         Node* out = use->fast_out(k);
-        if (!visited.test(out->_idx)) { worklist.push(out); }
+        if (!visited.test_set(out->_idx)) { worklist.push(out); }
       }
     }
   }
