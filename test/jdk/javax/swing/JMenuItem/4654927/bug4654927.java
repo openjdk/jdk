@@ -68,15 +68,18 @@ public class bug4654927 {
             robot.delay(1000);
 
             // test mouse press
-            Point point = Util.getCenterPoint(menu);
-            robot.mouseMove(point.x, point.y);
+            Point menuLocation = Util.getCenterPoint(menu);
+            System.out.println("Menu Location " + menuLocation);
+            robot.mouseMove(menuLocation.x, menuLocation.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
             robot.delay(250);
 
-            point = Util.getCenterPoint(menuItem);
-            robot.mouseMove(point.x, point.y);
+            System.out.println("MenuItem LocationOnScreen " + menuItem.getLocationOnScreen());
+            Point itemLocation = Util.getCenterPoint(menuItem);
+            System.out.println("MenuItem Location " + itemLocation);
+            robot.mouseMove(itemLocation.x, itemLocation.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
@@ -86,40 +89,18 @@ public class bug4654927 {
                 throw new RuntimeException("Popup is unexpectedly closed");
             }
 
-            // test mouse drag
-            point = Util.getCenterPoint(menu);
-            robot.mouseMove(point.x, point.y);
-            robot.delay(250);
-            Point menuLocation = Util.invokeOnEDT(new Callable<Point>() {
-
-                @Override
-                public Point call() throws Exception {
-                    System.out.println("Menu Location: " + menu.getLocationOnScreen());
-                    return menu.getLocationOnScreen();
-                }
-            });
-
-            Point itemLocation = Util.invokeOnEDT(new Callable<Point>() {
-
-                @Override
-                public Point call() throws Exception {
-                    System.out.println("MenuItem Location: " + menuItem.getLocationOnScreen());
-                    return menuItem.getLocationOnScreen();
-                }
-            });
-
-            int x0 = menuLocation.x + 10;
-            int y0 = menuLocation.y + 10;
-            int x1 = itemLocation.x + 10;
-            int y1 = itemLocation.y + 10;
-
             // close menu
+            robot.mouseMove(menuLocation.x, menuLocation.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(250);
 
+            // test mouse drag
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            Util.glide(robot, x0, y0, x1, y1);
+            robot.delay(250);
+            Util.glide(robot, menuLocation.x, menuLocation.y,
+                              itemLocation.x, itemLocation.y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
@@ -165,3 +146,4 @@ public class bug4654927 {
         frame.setVisible(true);
     }
 }
+
