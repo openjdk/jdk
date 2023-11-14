@@ -30,9 +30,9 @@
 
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
-  static bool     _is_dumping_dynamic_archive;
-  static bool _enable_dumping_full_module_graph;
-  static bool _enable_loading_full_module_graph;
+  static bool _is_dumping_dynamic_archive;
+  static bool _dumping_full_module_graph_disabled;
+  static bool _loading_full_module_graph_disabled;
 #endif
 
 public:
