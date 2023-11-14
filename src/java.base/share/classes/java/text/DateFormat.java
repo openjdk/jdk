@@ -123,6 +123,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <li>{@link #FULL} is the longest, such as
  * {@code Tuesday, April 12, 1952 AD or 3:30:42pm PST}.
  * </ul>
+ * For those fields with text, typically abbreviated text form is used with {@link #MEDIUM} option,
+ * and full text form is used with {@link #LONG} and {@link #FULL} options.
  *
  * <p>You can also set the time zone on the format if you wish.
  * If you want even more control over the format or parsing,
