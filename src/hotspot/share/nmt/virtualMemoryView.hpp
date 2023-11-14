@@ -32,7 +32,7 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/allocationSite.hpp"
-#include "nmt/nativeCallStackStorage.hpp"
+#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
