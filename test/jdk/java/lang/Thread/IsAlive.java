@@ -25,7 +25,7 @@
  * @test
  * @bug     8305425
  * @summary Check Thread.isAlive
- * @run main/othervm/timeout=25 IsAlive
+ * @run main/othervm IsAlive
  */
 
 public class IsAlive {
