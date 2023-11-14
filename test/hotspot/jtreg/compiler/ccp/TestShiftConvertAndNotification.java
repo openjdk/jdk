@@ -45,20 +45,20 @@
 package compiler.ccp;
 
 public class TestShiftConvertAndNotification {
-  static long instanceCount;
-  static void test() {
-    int i, i1 = 7;
-    for (i = 7; i < 45; i++) {
-      instanceCount = i;
-      instanceCount &= i1 * i << i * Math.max(instanceCount, instanceCount);
-      switch (i % 2) {
-      case 8:
-        i1 = 0;
-      }
+    static long instanceCount;
+    static void test() {
+        int i, i1 = 7;
+        for (i = 7; i < 45; i++) {
+            instanceCount = i;
+            instanceCount &= i1 * i << i * Math.max(instanceCount, instanceCount);
+            switch (i % 2) {
+                case 8:
+                    i1 = 0;
+            }
+        }
     }
-  }
-  public static void main(String[] strArr) {
-      for (int i = 0; i < 20_000; i++)
-        test();
-  }
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 20_000; i++)
+            test();
+    }
 }
