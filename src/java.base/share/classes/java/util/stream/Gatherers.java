@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Semaphore;
@@ -330,13 +331,14 @@ public final class Gatherers {
      * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">virtual threads</a>.
      * This operation preserves the ordering of the stream.
      *
-     * <p>In progress tasks will be attempted to be cancelled,
+     * @apiNote In progress tasks will be attempted to be cancelled,
      * on a best-effort basis, in situations where the downstream no longer
      * wants to receive any more elements.
      *
-     * <p>If a result of the function is to be pushed downstream but instead the function completed
-     * exceptionally then the corresponding exception will instead be rethrown by this method as an 
-     * instance of {@link RuntimeException}. After which any remaining tasks are canceled. 
+     * @implSpec If a result of the function is to be pushed downstream but
+     * instead the function completed exceptionally then the corresponding
+     * exception will instead be rethrown by this method as an instance of
+     * {@link RuntimeException}, after which any remaining tasks are canceled.
      *
      * @param maxConcurrency the maximum concurrency desired
      * @param mapper a function to be executed concurrently
@@ -386,6 +388,7 @@ public final class Gatherers {
             final boolean flush(long atLeastN,
                                 Downstream<? super R> downstream) {
                 boolean proceed = !downstream.isRejecting();
+                boolean interrupted = false;
                 try {
                     Future<R> current;
                     while (proceed
@@ -397,11 +400,15 @@ public final class Gatherers {
                         var correctRemoval = window.pop() == current;
                         assert correctRemoval;
                     }
-                } catch (Exception e) {
+                } catch(InterruptedException ie) {
+                    proceed = false;
+                    interrupted = true;
+                } catch (ExecutionException e) {
                     proceed = false; // Ensure cleanup
-                    throw (e instanceof RuntimeException re)
-                            ? re
-                            : new RuntimeException(e);
+                    final var cause = e.getCause();
+                    throw (cause instanceof RuntimeException re)
+                              ? re
+                              : new RuntimeException(cause == null ? e : cause);
                 } finally {
                     // Clean up
                     if (!proceed) {
@@ -411,6 +418,9 @@ public final class Gatherers {
                         }
                     }
                 }
+
+                if (interrupted)
+                    Thread.currentThread().interrupt();
 
                 return proceed;
             }

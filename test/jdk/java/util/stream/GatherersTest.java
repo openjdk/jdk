@@ -282,11 +282,9 @@ public class GatherersTest {
                       )
                       .toList();
                 fail("This should not be reached");
-            } catch (Throwable e) {
-                while (e.getCause() != null)
-                    e = e.getCause();
-                assertSame(TestException.class, e.getClass());
-                assertEquals("expected", e.getMessage());
+            } catch (RuntimeException re) {
+                assertSame(TestException.class, re.getClass());
+                assertEquals("expected", re.getMessage());
                 cancellationLatch.await();
                 return;
             }
