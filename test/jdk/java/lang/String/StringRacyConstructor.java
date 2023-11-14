@@ -31,6 +31,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8311906
  * @modules java.base/java.lang:open
  * @summary check String's racy constructors
- * @run junit/othervm test.java.lang.String.StringRacyConstructor
+ * @run junit/othervm -XX:+CompactStrings test.java.lang.String.StringRacyConstructor
+ * @run junit/othervm -XX:-CompactStrings test.java.lang.String.StringRacyConstructor
  */
 
 public class StringRacyConstructor {
@@ -62,6 +64,20 @@ public class StringRacyConstructor {
             throw new ExceptionInInitializerError(ex);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /* {@return true iff CompactStrings are enabled}
+     */
+    public static boolean isCompactStrings() {
+        try {
+            Field compactStringField = String.class.getDeclaredField("COMPACT_STRINGS");
+            compactStringField.setAccessible(true);
+            return compactStringField.getBoolean(null);
+        } catch (NoSuchFieldException ex) {
+            throw new ExceptionInInitializerError(ex);
+        } catch (IllegalAccessException iae) {
+            throw new AssertionError(iae);
         }
     }
 
@@ -121,6 +137,7 @@ public class StringRacyConstructor {
     }
 
     @Test
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void checkStringRange() {
         char[] chars = {'a', 'b', 'c', 0xff21, 0xff22, 0xff23};
         String orig = new String(chars);
@@ -137,6 +154,7 @@ public class StringRacyConstructor {
 
     @ParameterizedTest
     @MethodSource("strings")
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void racyString(String orig) {
         String racyString = racyStringConstruction(orig);
         // The contents are indeterminate due to the race
@@ -146,6 +164,7 @@ public class StringRacyConstructor {
 
     @ParameterizedTest
     @MethodSource("strings")
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void racyCodePoint(String orig) {
         String iffyString = racyStringConstructionCodepoints(orig);
         // The contents are indeterminate due to the race
@@ -156,6 +175,7 @@ public class StringRacyConstructor {
 
     @ParameterizedTest
     @MethodSource("strings")
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void racyCodePointSurrogates(String orig) {
         String iffyString = racyStringConstructionCodepointsSurrogates(orig);
         // The contents are indeterminate due to the race
@@ -214,6 +234,7 @@ public class StringRacyConstructor {
 
     // Check that a concatenated "hello" has a valid coder
     @Test
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void checkConcatAndIntern() {
         var helloWorld = "hello world";
         String helloToo = racyStringConstruction("hell".concat("o"));
@@ -228,6 +249,7 @@ public class StringRacyConstructor {
 
     // Check that an empty string with racy construction has a valid coder
     @Test
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     public void racyEmptyString() {
         var space = racyStringConstruction(" ");
         var trimmed = space.trim();
@@ -238,6 +260,7 @@ public class StringRacyConstructor {
     // Check that an exception in a user implemented CharSequence doesn't result in
     // an invalid coder when appended to a StringBuilder
     @Test
+    @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
     void charSequenceException() {
         ThrowingCharSequence bs = new ThrowingCharSequence("A\u2030\uFFFD");
         var sb = new StringBuilder();
