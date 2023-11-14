@@ -1,0 +1,2 @@
+files.list.TestResolvedJavaMethod_timeout
+test/hotspot/jtreg/compiler/jvmci/jdk.vm.ci.runtime.test/src/jdk/vm/ci/runtime/test/TestResolvedJavaMethod.java
