@@ -202,7 +202,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
     bool unloading_occurred;
     {
-      CodeCache::UnloadingScope scope(&is_alive);
+      CodeCache::UnlinkingScope scope(&is_alive);
 
       // Unload classes and purge the SystemDictionary.
       unloading_occurred = SystemDictionary::do_unloading(gc_timer());

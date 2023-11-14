@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestInitialEnvironmentVariable {
     private final static String EVENT_NAME = EventNames.InitialEnvironmentVariable;
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(Test.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(Test.class.getName());
         setEnv(pb.environment());
         (new OutputAnalyzer(pb.start())).shouldHaveExitValue(0);
     }

@@ -361,6 +361,7 @@ void Matcher::match( ) {
   C->set_cached_top_node(n);
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
+    if (C->failing()) return;
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
       assert(false, "instruction match failed");
