@@ -28,7 +28,7 @@ import java.lang.reflect.Field;
 
 public class Utils {
 
-    static final Unsafe unsafe;
+    public static final Unsafe unsafe;
 
     //setup unsafe
     static {
