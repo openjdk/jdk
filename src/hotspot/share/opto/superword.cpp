@@ -371,8 +371,8 @@ bool SuperWord::SLP_extract() {
 void SuperWord::find_adjacent_refs() {
   // Get list of memory operations
   Node_List memops;
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     if (n->is_Mem() &&
         !n->is_LoadStore() &&
         in_loopbody(n) &&
@@ -844,8 +844,8 @@ void SuperWord::dependence_graph() {
   assert(cl->is_main_loop(), "SLP should only work on main loops");
 
   // First, assign a dependence node to each memory node
-  for (int i = 0; i < _block.length(); i++ ) {
-    Node *n = _block.at(i);
+  for (int i = 0; i < body().length(); i++ ) {
+    Node *n = body().at(i);
     if (n->is_Mem() || n->is_memory_phi()) {
       _dg.make_node(n);
     }
@@ -1927,8 +1927,8 @@ void SuperWord::verify_packs() {
   }
 
   // Check that no other node has my_pack set.
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     if (!processed.member(n)) {
       assert(my_pack(n) == nullptr, "should not have pack if not in packset");
     }
@@ -1956,7 +1956,7 @@ void SuperWord::verify_packs() {
 class PacksetGraph {
 private:
   // pid: packset graph node id.
-  GrowableArray<int> _pid;                 // bb_idx(n) -> pid
+  GrowableArray<int> _pid;                 // body_idx(n) -> pid
   GrowableArray<Node*> _pid_to_node;       // one node per pid, find rest via my_pack
   GrowableArray<GrowableArray<int>> _out;  // out-edges
   GrowableArray<int> _incnt;               // number of (implicit) in-edges
@@ -1974,7 +1974,7 @@ public:
     if (!_slp->in_loopbody(n)) {
       return 0;
     }
-    int idx = _slp->bb_idx(n);
+    int idx = _slp->body_idx(n);
     if (idx >= _pid.length()) {
       return 0;
     } else {
@@ -1989,7 +1989,7 @@ public:
   void set_pid(Node* n, int pid) {
     assert(n != nullptr && pid > 0, "sane inputs");
     assert(_slp->in_loopbody(n), "must be");
-    int idx = _slp->bb_idx(n);
+    int idx = _slp->body_idx(n);
     _pid.at_put_grow(idx, pid);
     _pid_to_node.at_put_grow(pid - 1, n, nullptr);
   }
@@ -2012,7 +2012,7 @@ public:
   // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
   void build() {
     const GrowableArray<Node_List*> &packset = _slp->packset();
-    const GrowableArray<Node*> &block = _slp->block();
+    const GrowableArray<Node*> &block = _slp->body();
     const DepGraph &dg = _slp->dg();
     // Map nodes in packsets
     for (int i = 0; i < packset.length(); i++) {
@@ -2137,7 +2137,7 @@ public:
   // print_nodes = true: print all C2 nodes beloning to PacksetGrahp node.
   // print_zero_incnt = false: do not print nodes that have no in-edges (any more).
   void print(bool print_nodes, bool print_zero_incnt) {
-    const GrowableArray<Node*> &block = _slp->block();
+    const GrowableArray<Node*> &block = _slp->body();
     tty->print_cr("PacksetGraph");
     for (int pid = 1; pid <= _max_pid; pid++) {
       if (incnt(pid) == 0 && !print_zero_incnt) {
@@ -2330,8 +2330,8 @@ bool SuperWord::output() {
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
 
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     Node_List* p = my_pack(n);
     if (p != nullptr && n == p->at(p->size()-1)) {
       // After schedule_reorder_memops, we know that the memops have the same order in the pack
@@ -2593,7 +2593,7 @@ bool SuperWord::output() {
         return false; // bailout
       }
 
-      _block.at_put(i, vn);
+      //// _body.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
       phase()->set_ctrl(vn, phase()->get_ctrl(first));
       for (uint j = 0; j < p->size(); j++) {
@@ -2610,7 +2610,7 @@ bool SuperWord::output() {
       }
       VectorNode::trace_new_vector(vn, "SuperWord");
     }
-  }//for (int i = 0; i < _block.length(); i++)
+  }//for (int i = 0; i < body().length(); i++)
 
   if (max_vlen_in_bytes > C->max_vector_size()) {
     C->set_max_vector_size(max_vlen_in_bytes);
@@ -2808,7 +2808,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn.replace_input_of(use, idx, ex);
     _igvn._worklist.push(def);
 
-    bb_insert_after(ex, bb_idx(def));
+    assert(false, "TODO is this dead code?");
     set_velt_type(ex, velt_type(def));
   }
 }
@@ -3014,28 +3014,8 @@ bool SuperWord::construct_bb() {
 //------------------------------initialize_bb---------------------------
 // Initialize per node info
 void SuperWord::initialize_bb() {
-  Node* last = _block.at(_block.length() - 1);
-  grow_node_info(bb_idx(last));
-}
-
-//------------------------------bb_insert_after---------------------------
-// Insert n into block after pos
-void SuperWord::bb_insert_after(Node* n, int pos) {
-  int n_pos = pos + 1;
-  // Make room
-  for (int i = _block.length() - 1; i >= n_pos; i--) {
-    _block.at_put_grow(i+1, _block.at(i));
-  }
-  for (int j = _node_info.length() - 1; j >= n_pos; j--) {
-    _node_info.at_put_grow(j+1, _node_info.at(j));
-  }
-  // Set value
-  _block.at_put_grow(n_pos, n);
-  _node_info.at_put_grow(n_pos, SWNodeInfo::initial);
-  // Adjust map from node->_idx to _block index
-  for (int i = n_pos; i < _block.length(); i++) {
-    set_bb_idx(_block.at(i), i);
-  }
+  Node* last = body().at(body().length() - 1);
+  grow_node_info(body_idx(last));
 }
 
 //------------------------------compute_max_depth---------------------------
@@ -3046,8 +3026,8 @@ void SuperWord::compute_max_depth() {
   bool again;
   do {
     again = false;
-    for (int i = 0; i < _block.length(); i++) {
-      Node* n = _block.at(i);
+    for (int i = 0; i < body().length(); i++) {
+      Node* n = body().at(i);
       if (!n->is_Phi()) {
         int d_orig = depth(n);
         int d_in   = 0;
@@ -3133,15 +3113,15 @@ void SuperWord::compute_vector_element_type() {
   }
 
   // Initial type
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     set_velt_type(n, container_type(n));
   }
 
   // Propagate integer narrowed type backwards through operations
   // that don't depend on higher order bits
-  for (int i = _block.length() - 1; i >= 0; i--) {
-    Node* n = _block.at(i);
+  for (int i = body().length() - 1; i >= 0; i--) {
+    Node* n = body().at(i);
     // Only integer types need be examined
     const Type* vtn = velt_type(n);
     if (vtn->basic_type() == T_INT) {
@@ -3193,8 +3173,8 @@ void SuperWord::compute_vector_element_type() {
       }
     }
   }
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     Node* nn = n;
     if (nn->is_Bool() && nn->in(0) == nullptr) {
       nn = nn->in(1);
@@ -3213,8 +3193,8 @@ void SuperWord::compute_vector_element_type() {
   }
 #ifndef PRODUCT
   if (TraceSuperWord && Verbose) {
-    for (int i = 0; i < _block.length(); i++) {
-      Node* n = _block.at(i);
+    for (int i = 0; i < body().length(); i++) {
+      Node* n = body().at(i);
       velt_type(n)->dump();
       tty->print("\t");
       n->dump();
@@ -3563,8 +3543,8 @@ void SuperWord::print_pack(Node_List* p) {
 void SuperWord::print_bb() {
 #ifndef PRODUCT
   tty->print_cr("\nBlock");
-  for (int i = 0; i < _block.length(); i++) {
-    Node* n = _block.at(i);
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
     tty->print("%d ", i);
     if (n) {
       n->dump();

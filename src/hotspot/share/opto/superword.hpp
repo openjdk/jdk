@@ -269,6 +269,8 @@ class SuperWord : public ResourceObj {
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_loopbody(const Node* n) const { return vla().in_loopbody(n); }
   bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
+  const GrowableArray<Node*>& body() const { return vla().body().body(); }
+  int body_idx(const Node* n) const     { return vla().body().body_idx(n); }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -281,7 +283,6 @@ class SuperWord : public ResourceObj {
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const GrowableArray<Node*>&      block()   const { return _block; }
   const DepGraph&                  dg()      const { return _dg; }
  private:
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
@@ -321,12 +322,12 @@ class SuperWord : public ResourceObj {
 
   // visited set accessors
   void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(bb_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(bb_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(bb_idx(n)); }
+  void visited_set(Node* n)      { return _visited.set(body_idx(n)); }
+  int visited_test(Node* n)      { return _visited.test(body_idx(n)); }
+  int visited_test_set(Node* n)  { return _visited.test_set(body_idx(n)); }
   void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(bb_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(bb_idx(n)); }
+  void post_visited_set(Node* n) { return _post_visited.set(body_idx(n)); }
+  int post_visited_test(Node* n) { return _post_visited.test(body_idx(n)); }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -335,27 +336,27 @@ class SuperWord : public ResourceObj {
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
   // memory alignment for a node
-  int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
-  void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
+  int alignment(Node* n)                     { return _node_info.adr_at(body_idx(n))->_alignment; }
+  void set_alignment(Node* n, int a)         { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n)                         { return _node_info.adr_at(bb_idx(n))->_depth; }
-  void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
+  int depth(Node* n)                         { return _node_info.adr_at(body_idx(n))->_depth; }
+  void set_depth(Node* n, int d)             { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
-  const Type* velt_type(Node* n)             { return _node_info.adr_at(bb_idx(n))->_velt_type; }
+  const Type* velt_type(Node* n)             { return _node_info.adr_at(body_idx(n))->_velt_type; }
   BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
-  void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
+  void set_velt_type(Node* n, const Type* t) { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
   bool same_velt_type(Node* n1, Node* n2);
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
  public:
   Node_List* my_pack(Node* n) {
-    return !vla().in_loopbody(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack;
+    return !vla().in_loopbody(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
   }
  private:
-  void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
+  void set_my_pack(Node* n, Node_List* p)     { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
@@ -454,8 +455,6 @@ class SuperWord : public ResourceObj {
   bool construct_bb();
   // Initialize per node info
   void initialize_bb();
-  // Insert n into block after pos
-  void bb_insert_after(Node* n, int pos);
   // Compute max depth for expressions from beginning of block
   void compute_max_depth();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.

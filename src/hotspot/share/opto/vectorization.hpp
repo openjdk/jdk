@@ -454,6 +454,8 @@ public:
     return _body_idx.at(n->_idx);
   }
 
+  const GrowableArray<Node*>& body() const { return _body; }
+
 private:
   void set_body_idx(Node* n, int i) {
     assert(_vloop->in_loopbody(n), "must be in loop_body");
