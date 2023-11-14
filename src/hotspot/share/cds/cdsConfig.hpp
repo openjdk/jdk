@@ -30,7 +30,9 @@
 
 class CDSConfig : public AllStatic {
 #if INCLUDE_CDS
-  static bool _is_dumping_dynamic_archive;
+  static bool     _is_dumping_dynamic_archive;
+  static bool _enable_dumping_full_module_graph;
+  static bool _enable_loading_full_module_graph;
 #endif
 
 public:
@@ -43,6 +45,11 @@ public:
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void disable_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool      is_dumping_full_module_graph()            NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void disable_loading_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool      is_loading_full_module_graph()            NOT_CDS_JAVA_HEAP_RETURN_(false);
+
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP
