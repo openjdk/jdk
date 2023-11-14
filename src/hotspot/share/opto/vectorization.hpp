@@ -396,17 +396,84 @@ public:
   void mark_reductions();
 };
 
+class VLoopMemorySlices : public StackObj {
+private:
+  VLoop* _vloop;
+
+  GrowableArray<PhiNode*> _mem_slice_head;
+  GrowableArray<MemNode*> _mem_slice_tail;
+
+public:
+  VLoopMemorySlices(VLoop* vloop) :
+    _vloop(vloop),
+    _mem_slice_head(_vloop->arena(), 8,  0, nullptr),
+    _mem_slice_tail(_vloop->arena(), 8,  0, nullptr) {};
+
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void reset() {
+    _mem_slice_head.clear();
+    _mem_slice_tail.clear();
+  }
+
+  void analyze();
+  const GrowableArray<PhiNode*> &mem_slice_head() { return _mem_slice_head; }
+  const GrowableArray<MemNode*> &mem_slice_tail() { return _mem_slice_tail; }
+  DEBUG_ONLY(void print() const;)
+};
+
+
+class VLoopBody : public StackObj {
+private:
+  VLoop* _vloop;
+
+  GrowableArray<Node*> _body;
+  GrowableArray<int> _body_idx;
+
+  static constexpr char const* FAILURE_NODE_NOT_ALLOWED  = "encontered unhandled node";
+
+public:
+  VLoopBody(VLoop* vloop) :
+    _vloop(vloop),
+    _body(_vloop->arena(), 8, 0, nullptr),
+    _body_idx(_vloop->arena(), (int)(1.10 * _vloop->phase()->C->unique()), 0, 0) {}
+
+  NONCOPYABLE(VLoopBody);
+
+  void reset() {
+    _body.clear();
+    _body_idx.clear();
+  }
+
+  const char* construct();
+  DEBUG_ONLY(void print() const;)
+
+  int body_idx(const Node* n) const {
+    assert(_vloop->in_loopbody(n), "must be in loop_body");
+    return _body_idx.at(n->_idx);
+  }
+
+private:
+  void set_body_idx(Node* n, int i) {
+    assert(_vloop->in_loopbody(n), "must be in loop_body");
+    _body_idx.at_put_grow(n->_idx, i);
+  }
+};
+
 class VLoopAnalyzer : public VLoop {
 protected:
+  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
 
   // Submodules that analyze different aspects of the loop
-  VLoopReductions _reductions;
-
-  static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
+  VLoopReductions   _reductions;
+  VLoopMemorySlices _memory_slices;
+  VLoopBody         _body;
 
 public:
   VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase),
-                                         _reductions(this) {};
+                                         _reductions(this),
+                                         _memory_slices(this),
+                                         _body(this) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
@@ -415,12 +482,16 @@ public:
                bool allow_cfg);
 
   // Read-only accessors for submodules
-  const VLoopReductions& reductions() const { return _reductions; }
+  const VLoopReductions& reductions() const      { return _reductions; }
+  const VLoopMemorySlices& memory_slices() const { return _memory_slices; }
+  const VLoopBody& body() const                  { return _body; }
 
 private:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
     VLoop::reset(lpt, allow_cfg);
     _reductions.reset();
+    _memory_slices.reset();
+    _body.reset();
   }
   const char* analyze_helper();
 };

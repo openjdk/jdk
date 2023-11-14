@@ -794,6 +794,15 @@ const char* VLoopAnalyzer::analyze_helper() {
     _reductions.mark_reductions();
   }
 
+  _memory_slices.analyze();
+
+  // TODO: only continue if we have memory slices or reductions!
+
+  const char* body_failure = _body.construct();
+  if (body_failure != nullptr) {
+    return body_failure;
+  }
+
   // TODO Move stuff from SLP_extract
 
   return VLoopAnalyzer::SUCCESS;
@@ -935,6 +944,161 @@ void VLoopReductions::mark_reductions() {
   }
 }
 
+void VLoopMemorySlices::analyze() {
+  assert(_mem_slice_head.is_empty(), "must have been reset");
+  assert(_mem_slice_tail.is_empty(), "must have been reset");
+
+  CountedLoopNode* cl = _vloop->cl();
+
+  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
+    PhiNode* phi = cl->fast_out(i)->isa_Phi();
+    if (phi != nullptr &&
+        _vloop->in_loopbody(phi) &&
+        phi->is_memory_phi()) {
+      Node* phi_tail  = phi->in(LoopNode::LoopBackControl);
+      if (phi_tail != phi->in(LoopNode::EntryControl)) {
+        _mem_slice_head.push(phi);
+        _mem_slice_tail.push(phi_tail->as_Mem());
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    print();
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void VLoopMemorySlices::print() const {
+  tty->print_cr("\nVLoopMemorySlices::print: %s",
+                _mem_slice_head.length() > 0 ? "" : "NONE");
+    for (int m = 0; m < _mem_slice_head.length(); m++) {
+      tty->print("%6d ", m);  _mem_slice_head.at(m)->dump();
+      tty->print("       ");  _mem_slice_tail.at(m)->dump();
+    }
+}
+#endif
+
+const char* VLoopBody::construct() {
+  assert(_body.is_empty(),     "must have been reset");
+  assert(_body_idx.is_empty(), "must have been reset");
+
+  IdealLoopTree*  lpt = _vloop->lpt();
+  CountedLoopNode* cl = _vloop->cl();
+
+  // First pass over loop body:
+  //  (1) Check that there are no unwanted nodes (LoadStore, MergeMem, data Proj).
+  //  (2) Count number of nodes, and create a temporary map (_idx -> body_idx).
+  //  (3) Verify that all non-ctrl nodes have an input inside the loop.
+  int body_count = 0;
+  for (uint i = 0; i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
+    if (!_vloop->in_loopbody(n)) { continue; }
+
+    // Create a temporary map
+    set_body_idx(n, i);
+    body_count++;
+
+    if (n->is_LoadStore() ||
+        n->is_MergeMem() ||
+        (n->is_Proj() && !n->as_Proj()->is_CFG())) {
+      // Bailout if the loop has LoadStore, MergeMem or data Proj
+      // nodes. Superword optimization does not work with them.
+#ifndef PRODUCT
+      // TODO change trace flag
+      if (TraceSuperWord) {
+        tty->print_cr("VLoopBody::construct: fails because of unhandled node:");
+        n->dump();
+      }
+#endif
+      return VLoopBody::FAILURE_NODE_NOT_ALLOWED;
+    }
+#ifndef PRODUCT
+    if (!n->is_CFG()) {
+      bool found = false;
+      for (uint j = 0; j < n->req(); j++) {
+        Node* def = n->in(j);
+        if (def != nullptr && _vloop->in_loopbody(def)) {
+          found = true;
+          break;
+        }
+      }
+      assert(found, "every non-cfg node must have an input that is also inside the loop");
+#endif
+    }
+  }
+
+  // Create reverse-post-order list of nodes in body
+  ResourceMark rm;
+  GrowableArray<Node*> stack;
+  VectorSet visited;
+  VectorSet post_visited;
+
+  visited.set(body_idx(cl));
+  stack.push(cl);
+
+  // Do a depth first walk over out edges
+  int rpo_idx = body_count - 1;
+  while (!stack.is_empty()) {
+    Node* n = stack.top(); // Leave node on stack
+    if (!visited.test_set(body_idx(n))) {
+      // forward arc in graph
+    } else if (!post_visited.test(body_idx(n))) {
+      // cross or back arc
+      int old_size = stack.length();
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (_vloop->in_loopbody(use) &&
+            !visited.test(body_idx(use)) &&
+            // Don't go around backedge
+            (!use->is_Phi() || n == cl)) {
+          stack.push(use);
+        }
+      }
+      if (stack.length() == old_size) {
+        // There were no additional uses, post visit node now
+        stack.pop(); // Remove node from stack
+        assert(rpo_idx >= 0, "must still have idx to pass out");
+        _body.at_put_grow(rpo_idx, n);
+        rpo_idx--;
+        post_visited.set(body_idx(n));
+        assert(rpo_idx >= 0 || stack.is_empty(), "still have idx left or are finished");
+      }
+    } else {
+      stack.pop(); // Remove post-visited node from stack
+    }
+  }
+
+  // Create real map of block indices for nodes
+  for (int j = 0; j < _body.length(); j++) {
+    Node* n = _body.at(j);
+    set_body_idx(n, j);
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    print();
+  }
+#endif
+
+  assert(rpo_idx == -1 && body_count == _body.length(), "all block members found");
+  return nullptr; // success
+}
+
+#ifndef PRODUCT
+void VLoopBody::print() const {
+  tty->print_cr("\nVLoopBody::print:");
+  for (int i = 0; i < _body.length(); i++) {
+    Node* n = _body.at(i);
+    tty->print("%d ", i);
+    if (n != nullptr) {
+      n->dump();
+    }
+  }
+}
+#endif
 
 
 
