@@ -119,7 +119,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * on the locale, but generally:
  * <ul><li>{@link #SHORT} is the shortest and mainly numeric, such as {@code 12.13.52} or {@code 3:30pm}
  * <li>{@link #MEDIUM} is longer, such as {@code Jan 12, 1952}
- * <li>{@link #LONG} is longer, such as {@code January 12, 1952} or {@code 3:30:32pm}
+ * <li>{@link #LONG} is even longer, such as {@code January 12, 1952} or {@code 3:30:32pm}
  * <li>{@link #FULL} is the longest, such as
  * {@code Tuesday, April 12, 1952 AD or 3:30:42pm PST}.
  * </ul>
