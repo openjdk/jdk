@@ -322,10 +322,7 @@ bool SuperWord::SLP_extract() {
 
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  // Ready the block
-  if (!construct_bb()) {
-    return false; // Exit if no interesting nodes or complex graph.
-  }
+  initialize_bb();
 
   // build _dg, _disjoint_ptrs
   dependence_graph();
@@ -2882,13 +2879,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     if (ui->in(u_idx) != di || alignment(ui) != alignment(di))
       return false;
   }
-  return true;
-}
-
-//------------------------------construct_bb---------------------------
-// Construct reverse postorder list of block members
-bool SuperWord::construct_bb() {
-  initialize_bb();
   return true;
 }
 

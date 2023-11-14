@@ -432,8 +432,6 @@ class SuperWord : public ResourceObj {
   void insert_extracts(Node_List* p);
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
-  // Construct reverse postorder list of block members
-  bool construct_bb();
   // Initialize per node info
   void initialize_bb();
   // Compute max depth for expressions from beginning of block
