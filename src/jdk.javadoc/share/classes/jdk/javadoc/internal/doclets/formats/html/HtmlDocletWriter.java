@@ -1393,7 +1393,20 @@ public abstract class HtmlDocletWriter {
     }
 
     private class MarkdownHandler {
-        private static final char PLACEHOLDER = '\uFFFC'; // Unicode Object Replacement Character
+        /**
+         * Placeholder for non-HTML nodes that are phrasing content.
+         * The character (\uFFFC) is the Unicode Object Replacement Character, {@code U+FFFC}.
+         */
+        private static final char PLACEHOLDER_CHAR = '\uFFFC';
+        /**
+         * Placeholder for non-HTML nodes that are not phrasing content.
+         * The placeholder is an HTML block, according to CommonMark 4.6 rule 2,
+         * and so will not be wrapped into with {@code <p>...</p>} tags.
+         * @see <a href="https://spec.commonmark.org/0.30/#html-blocks">HTML blocks</a>
+         */
+        private static final String PLACEHOLDER_BLOCK = "<!--\uFFFC-->";
+        private static final Pattern PLACEHOLDERS = Pattern.compile(PLACEHOLDER_CHAR + "|" + PLACEHOLDER_BLOCK);
+
         private final StringBuilder markdownInput = new StringBuilder() ;
         private final ArrayList<Content> fffcObjects = new ArrayList<>();
 
@@ -1424,10 +1437,10 @@ public abstract class HtmlDocletWriter {
                 // handle the (unlikely) case of FFFC characters existing in the code
                 int start = 0;
                 int pos;
-                while ((pos = code.indexOf(PLACEHOLDER, start)) != -1) {
+                while ((pos = code.indexOf(PLACEHOLDER_CHAR, start)) != -1) {
                     markdownInput.append(code.substring(start, pos));
-                    markdownInput.append(PLACEHOLDER);
-                    fffcObjects.add(Text.of(String.valueOf(PLACEHOLDER)));
+                    markdownInput.append(PLACEHOLDER_CHAR);
+                    fffcObjects.add(Text.of(String.valueOf(PLACEHOLDER_CHAR)));
                     start = pos + 1;
                 }
                 markdownInput.append(code.substring(start));
@@ -1436,7 +1449,14 @@ public abstract class HtmlDocletWriter {
                 Content embeddedContent = new ContentBuilder();
                 allDone = visitor.visit(tree, embeddedContent);
                 fffcObjects.add(embeddedContent);
-                markdownInput.append(PLACEHOLDER);
+                if (embeddedContent.isPhrasingContent()) {
+                    markdownInput.append(PLACEHOLDER_CHAR);
+                } else {
+                    if (!markdownInput.isEmpty() && markdownInput.charAt(markdownInput.length() - 1) != '\n') {
+                        markdownInput.append('\n');
+                    }
+                    markdownInput.append(PLACEHOLDER_BLOCK);
+                }
             }
             return allDone;
         }
@@ -1444,14 +1464,14 @@ public abstract class HtmlDocletWriter {
         void addContent(Content result) {
             Node document = parser.parse(markdownInput.toString());
             String markdownOutput = unwrap(renderer.render(document));
-
+            Matcher m = PLACEHOLDERS.matcher(markdownOutput);
             int start = 0;
             int pos;
             int fffcObjectIndex = 0;
-            while ((pos = markdownOutput.indexOf(PLACEHOLDER, start)) != -1) {
-                result.add(RawHtml.markdown(markdownOutput.substring(start, pos)));
+            while (m.find()) {
+                result.add(RawHtml.markdown(markdownOutput.substring(start, m.start())));
                 result.add(fffcObjects.get(fffcObjectIndex++));
-                start = pos + 1;
+                start = m.end();
             }
             if (start < markdownOutput.length()) {
                 result.add(RawHtml.of(markdownOutput.substring(start)));

@@ -999,6 +999,11 @@ public class HtmlTree extends Content {
         return (!hasContent() && !hasAttrs());
     }
 
+    @Override
+    public boolean isPhrasingContent() {
+        return tagName.phrasingContent;
+    }
+
     /**
      * Returns true if the HTML tree has content.
      *

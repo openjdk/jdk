@@ -107,6 +107,11 @@ public class ContentBuilder extends Content {
         return n;
     }
 
+    @Override
+    public boolean isPhrasingContent() {
+        return contents.stream().allMatch(Content::isPhrasingContent);
+    }
+
     private void ensureMutableContents() {
         if (contents.isEmpty())
             contents = new ArrayList<>();

@@ -67,6 +67,11 @@ public class Text extends Content {
     }
 
     @Override
+    public boolean isPhrasingContent() {
+        return true;
+    }
+
+    @Override
     public int charCount() {
         return charCount(string);
     }
