@@ -1526,6 +1526,7 @@ void C2_MacroAssembler::vinsert(BasicType typ, XMMRegister dst, XMMRegister src,
 #ifdef _LP64
 void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register mask, Register midx, Register rtmp, int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
     Label* larr[] = { &case0, &case1, &case2, &case3 };
@@ -1554,6 +1555,7 @@ void C2_MacroAssembler::vgather8b_masked(BasicType elem_bt, XMMRegister dst, Reg
 
 void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                                  Register offset, Register mask, Register midx, Register rtmp, int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     Label case0, case1, case2, case3;
     Label* larr[] = { &case0, &case1, &case2, &case3 };
@@ -1584,6 +1586,7 @@ void C2_MacroAssembler::vgather8b_masked_offset(BasicType elem_bt, XMMRegister d
 #endif // _LP64
 
 void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
       movl(rtmp, Address(idx_base, i*4));
@@ -1600,6 +1603,7 @@ void C2_MacroAssembler::vgather8b(BasicType elem_bt, XMMRegister dst, Register b
 
 void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                           Register offset, Register rtmp, int vlen_enc) {
+  vpxor(dst, dst, dst, vlen_enc);
   if (elem_bt == T_SHORT) {
     for (int i = 0; i < 4; i++) {
       movl(rtmp, Address(idx_base, i*4));
@@ -1616,6 +1620,25 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Reg
   }
 }
 
+/*
+ * Gather loop first packs 4 short / 8 byte values from gather indices
+ * into quadword lane and then permutes quadword lane into appropriate
+ * location in destination vector. Following pseudo code describes the
+ * algorithm in detail:-
+ *
+ * DST_VEC = ZERO_VEC
+ * PERM_INDEX = {0, 1, 2, 3, 4, 5, 6, 7, 8..}
+ * TWO_VEC = {2, 2, 2, 2, 2, 2, 2, 2..}
+ * FOREACH_ITER:
+ *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
+ *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
+ *     TEMP_PERM_VEC = TEMP_PERM_VEC - TWO_VEC
+ *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
+ *
+ * With each iteration permute index 0,1 holding assembled quadword
+ * gets right shifted by two lane position.
+ *
+ */
 void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base,
                                         Register offset, Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                         Register rtmp, Register midx, Register length, int vector_len, int vlen_enc) {
@@ -1629,7 +1652,6 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,  Reg
   vpslld(xtmp2, xtmp2, 1, vlen_enc);
   load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT);
   bind(GATHER8_LOOP);
-    vpxor(xtmp3, xtmp3, xtmp3, vlen_enc);
     if (offset == noreg) {
       if (mask == noreg) {
         vgather8b(elem_ty, xtmp3, base, idx_base, rtmp, vlen_enc);
