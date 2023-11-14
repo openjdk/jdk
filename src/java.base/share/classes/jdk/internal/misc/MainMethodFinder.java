@@ -32,11 +32,57 @@ public class MainMethodFinder {
     /**
      * {@return true if the method meets the requirements of a main method}
      *
-     * @param method    method to test
+     * @param method  method to test
      */
     private static boolean isMainMethod(Method method) {
-        return !Modifier.isPrivate(method.getModifiers()) &&
-                method.getReturnType() == void.class;
+        int mods = method.getModifiers();
+        return !Modifier.isPrivate(mods) &&
+               !Modifier.isAbstract(mods) &&
+               method.getReturnType() == void.class;
+    }
+
+    /**
+     * {@return a public main method accessable from the specified class}
+     *
+     * @param mainClass    Main class to start search from.
+     * @param noArgs       true if no argument otherwise expects one String[] argument
+     */
+    private static Method getPublicMain(Class<?> mainClass, boolean noArgs) {
+        try {
+            // Search public methods
+            Method mainMethod = noArgs ? mainClass.getMethod("main")
+                                       : mainClass.getMethod("main", String[].class);
+
+            if (isMainMethod(mainMethod)) {
+                return mainMethod;
+            }
+        } catch (NoSuchMethodException ex) {
+            // fall through
+        }
+
+        return null;
+    }
+
+    /**
+     * {@return a non-private main method declared in the specified class}
+     *
+     * @param mainClass    Main class to start search from.
+     * @param noArgs       true if no argument otherwise expects one String[] argument
+     */
+    private static Method getNonPrivateMain(Class<?> mainClass, boolean noArgs) {
+        try {
+            // Search public methods
+            Method mainMethod = noArgs ? mainClass.getDeclaredMethod("main")
+                                       : mainClass.getDeclaredMethod("main", String[].class);
+
+            if (isMainMethod(mainMethod)) {
+                return mainMethod;
+            }
+        } catch (NoSuchMethodException ex) {
+            // fall through
+        }
+
+        return null;
     }
 
     /**
@@ -48,30 +94,28 @@ public class MainMethodFinder {
      * @return main method meeting requirements
      */
     private static Method findMainMethod(Class<?> mainClass, boolean noArgs) {
-        try {
-            // Search public methods
-            Method mainMethod = noArgs ? mainClass.getMethod("main")
-                                       : mainClass.getMethod("main", String[].class);
+        Method mainMethod = getPublicMain(mainClass, noArgs);
 
-            if (isMainMethod(mainMethod)) {
-                return mainMethod;
-            }
-        } catch (NoSuchMethodException ex) {
-            // pass through
+        if (mainMethod != null) {
+            return mainMethod;
         }
 
-        // Search all methods
+        // Search up hierarchy
         for ( ;
-              mainClass != null && mainClass != Object.class;
-              mainClass = mainClass.getSuperclass()) {
-            try {
-                Method mainMethod = noArgs ? mainClass.getDeclaredMethod("main")
-                                           : mainClass.getDeclaredMethod("main", String[].class);
-                if (isMainMethod(mainMethod)) {
+             mainClass != null && mainClass != Object.class;
+             mainClass = mainClass.getSuperclass()) {
+            mainMethod = getNonPrivateMain(mainClass, noArgs);
+
+            if (mainMethod != null) {
+                return mainMethod;
+            }
+
+            for (Class<?> interf : mainClass.getInterfaces()) {
+                mainMethod = getNonPrivateMain(mainClass, noArgs);
+
+                if (mainMethod != null) {
                     return mainMethod;
                 }
-            } catch (NoSuchMethodException ex) {
-                // pass through
             }
         }
 
