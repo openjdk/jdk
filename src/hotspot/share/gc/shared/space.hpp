@@ -194,9 +194,6 @@ class Space: public CHeapObj<mtGC> {
   virtual void print_on(outputStream* st) const;
   void print_short() const;
   void print_short_on(outputStream* st) const;
-
-  // Debugging
-  virtual void verify() const = 0;
 };
 
 // A structure to represent a point at which objects are being copied
@@ -396,7 +393,7 @@ private:
   void print_on(outputStream* st) const override;
 
   // Debugging
-  void verify() const override;
+  void verify() const;
 };
 
 #if INCLUDE_SERIALGC
@@ -426,9 +423,6 @@ class TenuredSpace: public ContiguousSpace {
   void update_for_block(HeapWord* start, HeapWord* end) override;
 
   void print_on(outputStream* st) const override;
-
-  // Debugging
-  void verify() const override;
 };
 #endif //INCLUDE_SERIALGC
 
