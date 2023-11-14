@@ -155,6 +155,7 @@ jobs:
           --with-conf-name=linux-${{ matrix.target-cpu }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --enable-debug
           --disable-precompiled-headers
