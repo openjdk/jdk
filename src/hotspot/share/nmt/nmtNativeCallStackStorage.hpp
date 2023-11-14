@@ -48,7 +48,6 @@ class NativeCallStackStorage : public CHeapObj<mtNMT> {
   };
   GrowableArrayCHeap<RefCountedNCS, mtNMT> stacks;
   GrowableArrayCHeap<int, mtNMT> unused_indices;
-  IndexIterator reverse_iterator;
   bool is_detailed_mode;
 
 public:
@@ -137,6 +136,7 @@ private:
     for (new_size = static_stack_size; stacks.at(new_size).ref_count > 0; new_size++)
       ;
 
+    IndexIterator reverse_iterator;
     reverse_iterator.for_each([&](int* idx) {
       const int remap_idx = remap.at(*idx);
       if (remap_idx > 0) {
