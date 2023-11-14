@@ -21,33 +21,12 @@
  * questions.
  */
 
-#include <errno.h>
+package java.math;
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+public class Accessor {
 
-EXPORT void empty() {}
+    public static int[] mag(BigInteger bi) {
+        return bi.mag;
+    }
 
-EXPORT int identity(int value) {
-    return value;
-}
-
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
-
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
-
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
 }
