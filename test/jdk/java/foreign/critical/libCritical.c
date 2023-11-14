@@ -51,3 +51,51 @@ EXPORT struct Big with_return_buffer() {
 EXPORT void do_upcall(void(*f)(void)) {
     f();
 }
+
+// copy bytes into heap array
+EXPORT void test_allow_heap_void(unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
+    }
+}
+
+EXPORT int test_allow_heap_int(int a0, unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
+    }
+    return a0;
+}
+
+struct L2 {
+    long long x;
+    long long y;
+};
+
+EXPORT struct L2 test_allow_heap_return_buffer(struct L2 a0, unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
+    }
+    return a0;
+}
+
+struct L3 {
+    long long x;
+    long long y;
+    long long z;
+};
+
+EXPORT struct L3 test_allow_heap_imr(struct L3 a0, unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
+    }
+    return a0;
+}
+
+// copy bytes into heap array
+EXPORT void test_allow_heap_void_stack(long long a0, long long a1, long long a2, long long a3, long long a4, long long a5,
+                                       long long a6, long long a7, char c0, short s0, int i0,
+                                       unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
+    }
+}
