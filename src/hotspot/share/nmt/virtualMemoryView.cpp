@@ -37,7 +37,7 @@ uint32_t VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
 GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::OffsetRegionStorage, mtNMT>* VirtualMemoryView::_reserved_regions = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::RegionStorage, mtNMT>* VirtualMemoryView::_committed_regions = nullptr;
-VirtualMemoryView::NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
+NativeCallStackStorage<VirtualMemoryView::IndexIterator>* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 
 void VirtualMemoryView::report(outputStream* output, size_t scale) {
