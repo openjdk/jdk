@@ -29,22 +29,26 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-// Singleton class used by VirtualMemoryView.
+// IndexIterator iterates over each object that contains
+// a stack index. This let's the stack index to be movable
+// and therefore the hashtable to be compressible.
+template <typename IndexIterator>
 class NativeCallStackStorage : public CHeapObj<mtNMT> {
   struct RefCountedNCS {
     NativeCallStack stack;
-    int ref_count;
+    int64_t ref_count;
     RefCountedNCS()
       : stack(),
         ref_count(0) {
     }
-    RefCountedNCS(NativeCallStack stack, int ref_count)
+    RefCountedNCS(NativeCallStack stack, int64_t ref_count)
       : stack(stack),
         ref_count(ref_count) {
     }
   };
-  GrowableArrayCHeap<RefCountedNCS, mtNMT> all_the_stacks;
+  GrowableArrayCHeap<RefCountedNCS, mtNMT> stacks;
   GrowableArrayCHeap<int, mtNMT> unused_indices;
+  IndexIterator reverse_iterator;
   bool is_detailed_mode;
 
 public:
@@ -52,19 +56,19 @@ public:
 
   int push(const NativeCallStack& stack) {
     if (!is_detailed_mode) {
-      all_the_stacks.at_put_grow(0, RefCountedNCS{});
+      stacks.at_put_grow(0, RefCountedNCS{});
       return 0;
     }
-    int len = all_the_stacks.length();
+    int len = stacks.length();
     int idx = stack.calculate_hash() % static_stack_size;
     if (len < idx) {
-      all_the_stacks.at_put_grow(idx, RefCountedNCS{stack, 1});
+      stacks.at_put_grow(idx, RefCountedNCS{stack, 1});
       return idx;
     }
     // Exists and already there? No need for double storage
-    RefCountedNCS& pre_existing = all_the_stacks.at(idx);
+    RefCountedNCS& pre_existing = stacks.at(idx);
     if (pre_existing.stack.is_empty()) {
-      all_the_stacks.at_put(idx, RefCountedNCS{stack, 1});
+      stacks.at_put(idx, RefCountedNCS{stack, 1});
       return idx;
     } else if (pre_existing.stack.equals(stack)) {
       pre_existing.ref_count++;
@@ -73,29 +77,24 @@ public:
     // There was a collision, check for empty index
     if (unused_indices.length() > 0) {
       int reused_idx = unused_indices.pop();
-      all_the_stacks.at(reused_idx) = RefCountedNCS{stack, 1};
+      stacks.at(reused_idx) = RefCountedNCS{stack, 1};
       return reused_idx;
     }
     // Just push it
-    all_the_stacks.push(RefCountedNCS{stack, 1});
+    stacks.push(RefCountedNCS{stack, 1});
     return len;
   }
 
   const NativeCallStack& get(int idx) {
-    return all_the_stacks.at(idx).stack;
+    return stacks.at(idx).stack;
   }
 
   void increment(int idx) {
-    if (idx >= static_stack_size) {
-      all_the_stacks.at(idx).ref_count++;
-    }
+    stacks.at(idx).ref_count++;
   }
 
   void decrement(int idx) {
-    if (idx < static_stack_size) {
-      return;
-    }
-    RefCountedNCS& rncs = all_the_stacks.at(idx);
+    RefCountedNCS& rncs = stacks.at(idx);
     if (rncs.ref_count == 0) {
       return;
     }
@@ -104,35 +103,30 @@ public:
       unused_indices.push(idx);
     }
 
-    if ((double)unused_indices.length() / (double)all_the_stacks.length() > 0.3) {
-      struct {
-        void for_each(void* f) {
-        }
-      } iterator;
-      compact(iterator);
+    if ((double)unused_indices.length() / (double)stacks.length() > 0.3) {
+      compact(nullptr);
     }
   }
   NativeCallStackStorage(int capacity = static_stack_size)
-    : all_the_stacks{capacity},
-      unused_indices() {
+    : stacks{capacity},
+    unused_indices(static_cast<int>(capacity*0.3)) {
   }
 
 private:
   // Compact the stack storage by reassigning the indices stored in the reserved and committed memory regions.
-  template<typename MemoryRegionIterator>
-  void compact(MemoryRegionIterator iter) {
+  void compact() {
     ResourceMark rm;
     // remap[i] = x => stack index i+static_stack_size needs to be remapped to index x
     // side-condition: x > 0
-    GrowableArray<int> remap{all_the_stacks.length() - static_stack_size};
+    GrowableArray<int> remap{stacks.length() - static_stack_size};
     int start = static_stack_size;
-    int end = all_the_stacks.length();
+    int end = stacks.length();
     while (end > start) {
-      if (all_the_stacks.at(start).ref_count > 0) {
+      if (stacks.at(start).ref_count > 0) {
         start++;
         continue;
       }
-      if (all_the_stacks.at(end).ref_count == 0) {
+      if (stacks.at(end).ref_count == 0) {
         end--;
         continue;
       }
@@ -140,17 +134,18 @@ private:
     }
     // Compute the new size.
     int new_size;
-    for (new_size = static_stack_size; all_the_stacks.at(new_size).ref_count > 0; new_size++)
+    for (new_size = static_stack_size; stacks.at(new_size).ref_count > 0; new_size++)
       ;
-    for (auto thing = iter.begin(); thing != iter.end(); iter++) {
-      const int remap_idx = remap.at(*thing);
+
+    reverse_iterator.for_each([&](int* idx) {
+      const int remap_idx = remap.at(*idx);
       if (remap_idx > 0) {
-        *thing = remap_idx;
+        *idx = remap_idx;
       }
-    }
+    });
     unused_indices.clear_and_deallocate();
-    all_the_stacks.trunc_to(new_size);
-    all_the_stacks.shrink_to_fit();
+    stacks.trunc_to(new_size);
+    stacks.shrink_to_fit();
   }
 };
 

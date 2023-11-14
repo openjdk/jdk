@@ -143,8 +143,25 @@ private:
   static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
+  struct IndexIterator {
+    template<typename Func>
+    void for_each(Func f) {
+      for (int i = 0; i < _reserved_regions->length(); i++) {
+        OffsetRegionStorage& outer = _reserved_regions->at(i);
+        for (int j = 0; j < outer.length(); j++) {
+          f(&outer.at(i).stack_idx);
+        }
+      }
+      for (int i = 0; i < _committed_regions->length(); i++) {
+        RegionStorage& outer = _committed_regions->at(i);
+        for (int j = 0; j < outer.length(); j++) {
+          f(&outer.at(i).stack_idx);
+        }
+      }
+    }
+  };
 
-  static NativeCallStackStorage* _stack_storage;
+  static NativeCallStackStorage<IndexIterator>* _stack_storage;
   static bool _is_detailed_mode;
 public:
   static void initialize(bool is_detailed_mode);
@@ -163,6 +180,7 @@ public:
 
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
+
   // Record reserved and committed memory for
   // snapshotting in summary mode.
   static void record_reserved_memory();
