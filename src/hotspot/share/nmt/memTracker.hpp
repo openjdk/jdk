@@ -28,6 +28,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
+#include "nmt/virtualMemoryView.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
