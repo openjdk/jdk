@@ -475,10 +475,18 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Specialization of format. This method really calls
-     * {@code format(double, StringBuffer, FieldPosition)}
-     * thus the range of longs that are supported is only equal to
+     * {@link #format(double, StringBuffer, FieldPosition)}.
+     * Thus, the range of longs that are supported is only equal to
      * the range that can be stored by double. This will never be
      * a practical limitation.
+     *
+     * @param number number to be formatted and substituted.
+     * @param toAppendTo where text is appended.
+     * @param status ignore no useful status is returned.
+     * @throws    ArrayIndexOutOfBoundsException if either the {@code limits}
+     *            or {@code formats} of this ChoiceFormat are empty
+     * @throws    NullPointerException if {@code toAppendTo}
+     *            is {@code null}
      */
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
@@ -488,9 +496,12 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Returns pattern with formatted double.
+     *
      * @param number number to be formatted and substituted.
      * @param toAppendTo where text is appended.
      * @param status ignore no useful status is returned.
+     * @throws    ArrayIndexOutOfBoundsException if either the {@code limits}
+     *            or {@code formats} of this ChoiceFormat are empty
      * @throws    NullPointerException if {@code toAppendTo}
      *            is {@code null}
      */

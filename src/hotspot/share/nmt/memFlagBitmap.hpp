@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,10 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.experimental.bytecode;
+#ifndef SHARE_NMT_MEMFLAGBITMAP_HPP
+#define SHARE_NMT_MEMFLAGBITMAP_HPP
 
-public interface Type {
-    TypeTag getTag();
-}
+#include "memory/allocation.hpp" // for mt_number_of_types
+#include "utilities/globalDefinitions.hpp"
+
+class MemFlagBitmap {
+  uint32_t _v;
+  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_types);
+
+public:
+  MemFlagBitmap(uint32_t v = 0) : _v(v) {}
+  MemFlagBitmap(const MemFlagBitmap& o) : _v(o._v) {}
+
+  uint32_t raw_value() const { return _v; }
+
+  void set_flag(MEMFLAGS f) {
+    const int bitno = (int)f;
+    _v |= nth_bit(bitno);
+  }
+
+  bool has_flag(MEMFLAGS f) const {
+    const int bitno = (int)f;
+    return _v & nth_bit(bitno);
+  }
+
+  bool has_any() const { return _v > 0; }
+};
+
+#endif // SHARE_NMT_NMTUSAGE_HPP

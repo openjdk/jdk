@@ -30,29 +30,37 @@ import java.nio.ByteOrder;
 import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
- * A layout that models values of basic data types. Examples of values modelled by a value layout are
- * <em>integral</em> values (either signed or unsigned), <em>floating-point</em> values and
- * <em>address</em> values.
+ * A layout that models values of basic data types. Examples of values modeled by
+ * a value layout are <em>integral</em> values (either signed or unsigned),
+ * <em>floating-point</em> values and <em>address</em> values.
  * <p>
  * Each value layout has a size, an alignment (both expressed in bytes),
- * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type that should be used when
- * {@linkplain MemorySegment#get(OfInt, long) accessing} a region of memory using the value layout.
+ * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type
+ * that should be used when {@linkplain MemorySegment#get(OfInt, long) accessing} a
+ * region of memory using the value layout.
  * <p>
- * This class defines useful value layout constants for Java primitive types and addresses.
- * @apiNote Some characteristics of the Java layout constants are platform-dependent. For instance, the byte order of
- * these constants is set to the {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy to work
- * with other APIs, such as arrays and {@link java.nio.ByteBuffer}. Moreover, the alignment constraint of
- * {@link ValueLayout#JAVA_LONG} and {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms, but only to
- * 4 bytes on 32-bit platforms.
+
+ * This class defines useful value layout constants for Java primitive types and
+ * addresses.
  *
- * @implSpec implementing classes and subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * @apiNote Some characteristics of the Java layout constants are platform-dependent.
+ *          For instance, the byte order of these constants is set to the
+ *          {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy
+ *          to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
+ *          Moreover, the alignment constraint of {@link ValueLayout#JAVA_LONG} and
+ *          {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms,
+ *          but only to 4 bytes on 32-bit platforms.
+ *
+ * @implSpec implementing classes and subclasses are immutable, thread-safe and
+ * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
  * @sealedGraph
  * @since 22
  */
-public sealed interface ValueLayout extends MemoryLayout permits
-        ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar, ValueLayout.OfShort, ValueLayout.OfInt,
-        ValueLayout.OfFloat, ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
+public sealed interface ValueLayout extends MemoryLayout
+        permits ValueLayout.OfBoolean, ValueLayout.OfByte, ValueLayout.OfChar,
+        ValueLayout.OfShort, ValueLayout.OfInt,  ValueLayout.OfFloat,
+        ValueLayout.OfLong, ValueLayout.OfDouble, AddressLayout {
 
     /**
      * {@return the value's byte order}
@@ -62,7 +70,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
     /**
      * {@return a value layout with the same characteristics as this layout, but with the given byte order}
      *
-     * @param order the desired byte order.
+     * @param order the desired byte order
      */
     ValueLayout withOrder(ByteOrder order);
 
@@ -92,21 +100,26 @@ public sealed interface ValueLayout extends MemoryLayout permits
     ValueLayout withByteAlignment(long byteAlignment);
 
     /**
-     * {@return a var handle which can be used to access values described by this value layout, in a given memory segment.}
+     * {@return a var handle which can be used to access values described by this value
+     *          layout, in a given memory segment}
      * <p>
-     * The returned var handle's {@linkplain VarHandle#varType() var type} is the {@linkplain ValueLayout#carrier() carrier type} of
-     * this value layout, and the list of coordinate types is {@code (MemorySegment, long)}, where the memory segment coordinate
-     * corresponds to the memory segment to be accessed, and the {@code long} coordinate corresponds to the byte offset
-     * into the accessed memory segment at which the access occurs.
+     * The returned var handle's {@linkplain VarHandle#varType() var type} is the
+     * {@linkplain ValueLayout#carrier() carrier type} of this value layout, and the
+     * list of coordinate types is {@code (MemorySegment, long)}, where the
+     * memory segment coordinate corresponds to the memory segment to be accessed, and
+     * the {@code long} coordinate corresponds to the byte offset into the accessed
+     * memory segment at which the access occurs.
      * <p>
-     * The returned var handle checks that accesses are aligned according to this value layout's
-     * {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
+     * The returned var handle checks that accesses are aligned according to
+     * this value layout's {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
      *
-     * @apiNote This method is similar, but more efficient, than calling {@code MemoryLayout#varHandle(PathElement...)}
-     * with an empty path element array, as it avoids the creation of the var args array.
+     * @apiNote This method is similar, but more efficient than calling
+     *          {@code MemoryLayout#varHandle(PathElement...)} with an empty path
+     *          element array, as it avoids the creation of the var args array.
      *
-     * @apiNote The returned var handle features certain <a href="MemoryLayout.html#access-mode-restrictions">access mode
-     * restrictions</a> common to all memory access var handles derived from memory layouts.
+     * @apiNote The returned var handle features certain
+     *          <a href="MemoryLayout.html#access-mode-restrictions">access mode restrictions</a>
+     *          common to all memory access var handles derived from memory layouts.
      *
      * @see MemoryLayout#varHandle(PathElement...)
      */
@@ -398,8 +411,9 @@ public sealed interface ValueLayout extends MemoryLayout permits
     }
 
     /**
-     * An address layout constant whose size is the same as that of a machine address ({@code size_t}),
-     * byte alignment set to {@code sizeof(size_t)}, byte order set to {@link ByteOrder#nativeOrder()}.
+     * An address layout constant whose size is the same as that of a
+     * machine address ({@code size_t}), byte alignment set to {@code sizeof(size_t)},
+     * byte order set to {@link ByteOrder#nativeOrder()}.
      */
     AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
 
@@ -454,14 +468,15 @@ public sealed interface ValueLayout extends MemoryLayout permits
     OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * An unaligned address layout constant whose size is the same as that of a machine address ({@code size_t}),
-     * and byte order set to {@link ByteOrder#nativeOrder()}.
+     * An unaligned address layout constant whose size is the same as that of a
+     * machine address ({@code size_t}), and byte order set to
+     * {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
      * ADDRESS.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     AddressLayout ADDRESS_UNALIGNED = ADDRESS.withByteAlignment(1);
 
@@ -472,8 +487,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_CHAR.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withByteAlignment(1);
 
@@ -484,8 +499,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_SHORT.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withByteAlignment(1);
 
@@ -496,8 +511,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_INT.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfInt JAVA_INT_UNALIGNED = JAVA_INT.withByteAlignment(1);
 
@@ -508,8 +523,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_LONG.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withByteAlignment(1);
 
@@ -520,8 +535,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_FLOAT.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withByteAlignment(1);
 
@@ -532,8 +547,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * {@snippet lang=java :
      * JAVA_DOUBLE.withByteAlignment(1);
      * }
-     * @apiNote Care should be taken when using unaligned value layouts as they may induce
-     *          performance and portability issues.
+     * @apiNote Care should be taken when using unaligned value layouts as they may
+     *          induce performance and portability issues.
      */
     OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withByteAlignment(1);
 

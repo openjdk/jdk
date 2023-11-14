@@ -1684,9 +1684,8 @@ instruct vreduce_minD_masked(fRegD dst, fRegD src1, vReg src2, vRegMask_V0 v0, v
 // vector replicate
 
 instruct replicate(vReg dst, iRegIorL2I src) %{
-  match(Set dst (ReplicateB src));
-  match(Set dst (ReplicateS src));
-  match(Set dst (ReplicateI src));
+  predicate(Matcher::is_non_long_integral_vector(n));
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicate $dst, $src" %}
   ins_encode %{
@@ -1698,7 +1697,8 @@ instruct replicate(vReg dst, iRegIorL2I src) %{
 %}
 
 instruct replicateL(vReg dst, iRegL src) %{
-  match(Set dst (ReplicateL src));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateL $dst, $src" %}
   ins_encode %{
@@ -1709,9 +1709,8 @@ instruct replicateL(vReg dst, iRegL src) %{
 %}
 
 instruct replicate_imm5(vReg dst, immI5 con) %{
-  match(Set dst (ReplicateB con));
-  match(Set dst (ReplicateS con));
-  match(Set dst (ReplicateI con));
+  predicate(Matcher::is_non_long_integral_vector(n));
+  match(Set dst (Replicate con));
   ins_cost(VEC_COST);
   format %{ "replicate_imm5 $dst, $con" %}
   ins_encode %{
@@ -1723,7 +1722,8 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
 %}
 
 instruct replicateL_imm5(vReg dst, immL5 con) %{
-  match(Set dst (ReplicateL con));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate con));
   ins_cost(VEC_COST);
   format %{ "replicateL_imm5 $dst, $con" %}
   ins_encode %{
@@ -1734,7 +1734,8 @@ instruct replicateL_imm5(vReg dst, immL5 con) %{
 %}
 
 instruct replicateF(vReg dst, fRegF src) %{
-  match(Set dst (ReplicateF src));
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateF $dst, $src" %}
   ins_encode %{
@@ -1745,7 +1746,8 @@ instruct replicateF(vReg dst, fRegF src) %{
 %}
 
 instruct replicateD(vReg dst, fRegD src) %{
-  match(Set dst (ReplicateD src));
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateD $dst, $src" %}
   ins_encode %{
