@@ -836,10 +836,10 @@ const int ObjectAlignmentInBytes = 8;
           "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
   product(intx, UserThreadWaitAttemptsAtExit, 30,                           \
-          "Number of attempts waiting for user threads in native during "   \
-          "JVM exit. Each wait attempt is 10-millisecond. The max allowed " \
-          "wait attempts for user threads in native is 1000, which is "     \
-          "10 seconds.")                                                    \
+          "The number of times to wait for user threads to stop executing " \
+          "native code during JVM exit. Each wait lasts 10 milliseconds. "  \
+          "The maximum number of waits is 1000, to wait at most 10 "        \
+          "seconds.")                                                       \
           range(0, 1000)                                                    \
                                                                             \
   /* tracing */                                                             \
