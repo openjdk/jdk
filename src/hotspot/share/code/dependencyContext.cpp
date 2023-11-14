@@ -265,7 +265,7 @@ bool DependencyContext::claim_cleanup() {
   return Atomic::cmpxchg(_last_cleanup_addr, last_cleanup, cleaning_epoch) == last_cleanup;
 }
 
-bool DependencyContext::delete_on_release() const {
+bool DependencyContext::delete_on_release() {
   return Atomic::load(&_cleaning_epoch) == 0;
 }
 
