@@ -522,6 +522,7 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  */
 CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
   assert_locked_or_safepoint(CodeCache_lock);
+  assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
   if (size <= 0) {
     return nullptr;
   }
