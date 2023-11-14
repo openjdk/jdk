@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4313882 7183800
+ * @run main/othervm Connect
  * @summary Test DatagramChannel's send and receive methods
  */
 
@@ -30,18 +31,29 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 public class Connect {
 
-    static PrintStream log = System.err;
+    static final PrintStream log = System.err;
+    static final String NOW = Instant.now().toString();
+    static final String MESSAGE = "Hello " + NOW;
+    static final String OTHER = "Hey " + NOW;
+    static final String RESPONSE = "Hi " + NOW;
+    static final int MAX = Math.max(256, MESSAGE.getBytes(US_ASCII).length + 16);
 
     public static void main(String[] args) throws Exception {
+        assert MAX > MESSAGE.getBytes(US_ASCII).length;
+        assert MAX > OTHER.getBytes(US_ASCII).length;
+        assert MAX > RESPONSE.getBytes(US_ASCII).length;
         test();
     }
 
@@ -99,36 +111,56 @@ public class Connect {
 
         public void run() {
             try {
-                ByteBuffer bb = ByteBuffer.allocateDirect(256);
-                bb.put("hello".getBytes());
+                byte[] bytes = MESSAGE.getBytes(US_ASCII);
+                ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
+                bb.put(bytes);
                 bb.flip();
-                log.println("Initiator connecting to " + connectSocketAddress);
+                log.println("Initiator connecting to: " + connectSocketAddress);
                 dc.connect(connectSocketAddress);
+                log.println("Initiator bound to: " + dc.getLocalAddress());
 
                 // Send a message
-                log.println("Initiator attempting to write to Responder at " + connectSocketAddress.toString());
+                log.println("Initiator attempting to write to Responder at " + connectSocketAddress);
                 dc.write(bb);
 
                 // Try to send to some other address
                 try {
                     int port = dc.socket().getLocalPort();
                     InetAddress loopback = InetAddress.getLoopbackAddress();
-                    InetSocketAddress otherAddress = new InetSocketAddress(loopback, (port == 3333 ? 3332 : 3333));
-                    log.println("Testing if Initiator throws AlreadyConnectedException" + otherAddress.toString());
-                    dc.send(bb, otherAddress);
+                    try (DatagramChannel other = DatagramChannel.open()) {
+                        InetSocketAddress otherAddress = new InetSocketAddress(loopback, 0);
+                        other.bind(otherAddress);
+                        log.println("Testing if Initiator throws AlreadyConnectedException");
+
+                        log.printf("Initiator sending \"%s\" to other address %s%n", OTHER, other.getLocalAddress());
+                        dc.send(ByteBuffer.wrap(OTHER.getBytes(US_ASCII)),
+                                other.getLocalAddress());
+                    }
                     throw new RuntimeException("Initiator allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
                     // Correct behavior
+                    log.println("Initiator got expected " + ace);
                 }
 
-                // Read a reply
-                bb.flip();
-                log.println("Initiator waiting to read");
-                dc.read(bb);
-                bb.flip();
-                CharBuffer cb = StandardCharsets.US_ASCII.
-                        newDecoder().decode(bb);
-                log.println("Initiator received from Responder at " + connectSocketAddress + ": " + cb);
+                // wait for response
+                while (true) {
+                    // zero out buffer
+                    bb.clear();
+                    bb.put(new byte[bb.remaining()]);
+                    bb.flip();
+
+                    // Read a reply
+                    log.println("Initiator waiting to read");
+                    dc.read(bb);
+                    bb.flip();
+                    CharBuffer cb = US_ASCII.newDecoder().decode(bb);
+                    log.println("Initiator received from Responder at " + connectSocketAddress + ": " + cb);
+                    if (!RESPONSE.equals(cb.toString())) {
+                        log.println("Initiator received unexpected message: continue waiting");
+                        continue;
+                    }
+                    break;
+                }
             } catch (Exception ex) {
                 log.println("Initiator threw exception: " + ex);
                 throw new RuntimeException(ex);
@@ -156,26 +188,37 @@ public class Connect {
         }
 
         public void run() {
-            try {
-                // Listen for a message
-                ByteBuffer bb = ByteBuffer.allocateDirect(100);
-                log.println("Responder waiting to receive");
-                SocketAddress sa = dc.receive(bb);
-                bb.flip();
-                CharBuffer cb = StandardCharsets.US_ASCII.
-                        newDecoder().decode(bb);
-                log.println("Responder received from Initiator at" + sa +  ": " + cb);
+            while (true) {
+                ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
+                try {
+                    // Listen for a message
+                    log.println("Responder waiting to receive");
+                    SocketAddress sa = dc.receive(bb);
+                    bb.flip();
+                    CharBuffer cb = US_ASCII.
+                            newDecoder().decode(bb);
+                    log.println("Responder received from Initiator at " + sa + ": " + cb);
+                    if (!MESSAGE.equals(cb.toString())) {
+                        log.println("Responder received unexpected message: continue waiting");
+                        bb.clear();
+                        continue;
+                    }
 
-                // Reply to sender
-                dc.connect(sa);
-                bb.flip();
-                log.println("Responder attempting to write: " + dc.getRemoteAddress().toString());
-                dc.write(bb);
-            } catch (Exception ex) {
-                log.println("Responder threw exception: " + ex);
-                throw new RuntimeException(ex);
-            } finally {
-                log.println("Responder finished");
+                    // Reply to sender
+                    dc.connect(sa);
+                    bb.clear();
+                    bb.put(RESPONSE.getBytes(US_ASCII));
+                    bb.flip();
+                    log.println("Responder attempting to write: " + dc.getRemoteAddress().toString());
+                    dc.write(bb);
+                    bb.flip();
+                    break;
+                } catch (Exception ex) {
+                    log.println("Responder threw exception: " + ex);
+                    throw new RuntimeException(ex);
+                } finally {
+                    log.println("Responder finished");
+                }
             }
         }
 
