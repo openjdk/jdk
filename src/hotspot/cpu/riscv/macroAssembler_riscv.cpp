@@ -4269,7 +4269,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src,
 
   // dst = 0
   // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(tmp, tmp, 0b1100111100);
+  andi(tmp, tmp, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
   bnez(tmp, done);
 
   // dst = (src + 0.5f) rounded down towards negative infinity
@@ -4292,7 +4292,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src,
 
   // dst = 0
   // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(tmp, tmp, 0b1100111100);
+  andi(tmp, tmp, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
   bnez(tmp, done);
 
   // dst = (src + 0.5) rounded down towards negative infinity
