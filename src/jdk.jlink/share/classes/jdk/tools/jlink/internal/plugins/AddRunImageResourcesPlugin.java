@@ -62,7 +62,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
     // packages listed in the module descriptors. Making it package-less ensures
     // it works for any module, regardless of packages present. This resource
     // is being used in RunImageArchive class
-    private static final String RESPATH = "/%s/runimage_resources";
+    private static final String RESPATH = "/%s/jdk_internal_runimage";
 
     // Type file format:
     // '<type>|{0,1}|<sha-sum>|<file-path>'
@@ -139,7 +139,8 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
             moduleResources.add(String.format(TYPE_FILE_FORMAT, type, isSymlink, sha512, resPathWithoutMod));
         } else if (entry.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE &&
                 String.format(RESPATH, entry.moduleName()).equals(entry.path())) {
-            // Filter /<module>/jmod_resources file which we create later
+            // Filter internal runtime image based link resource file which we
+            // create later
             return null;
         }
         return entry;

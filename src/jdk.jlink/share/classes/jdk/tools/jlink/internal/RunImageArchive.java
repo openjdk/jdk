@@ -53,7 +53,7 @@ public class RunImageArchive implements Archive {
     // File marker in lib/modules file for java.base indicating it got created
     // with a run-image-type link.
     private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runimage.stamp";
-    private static final String OTHER_RESOURCES_FILE = "runimage_resources";
+    private static final String OTHER_RESOURCES_FILE = "jdk_internal_runimage";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
@@ -153,7 +153,8 @@ public class RunImageArchive implements Archive {
     }
 
     private void addNonClassResources() throws IOException {
-        Optional<InputStream> runImageResources = ref.open().open(OTHER_RESOURCES_FILE);
+        String otherResourceFile = String.format(OTHER_RESOURCES_FILE, module);
+        Optional<InputStream> runImageResources = ref.open().open(otherResourceFile);
         // Not all modules will have other resources like bin, lib, legal etc.
         // files. In that case the file won't exist in the modules image.
         if (runImageResources.isPresent()) {
