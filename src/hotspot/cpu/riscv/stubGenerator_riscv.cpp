@@ -4471,11 +4471,17 @@ static const int64_t bits3 = right_n_bits(3);
   void poly1305_reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
     assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
 
+    // First, U_2:U_1:U_0 += (U_2 >> 2)
     __ srli(tmp1, U_2, 2);
-    __ shadd(tmp1, tmp1, tmp1, tmp2, 2);
-    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 (= (U_2 >> 2) * 5) to U_0 with carry output to tmp2
-    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
     __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ add(U_2, U_2, tmp2);
+
+    // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
+    __ slli(tmp1, tmp1, 2);
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
     __ add(U_2, U_2, tmp2);
   }
 
