@@ -59,22 +59,13 @@ public class TestWBDeflateIdleMonitors {
 
     public static class InflateMonitorsTest {
         static WhiteBox wb = WhiteBox.getWhiteBox();
-        static long LockingMode = wb.getIntVMFlag("LockingMode");
-        static long LM_LIGHTWEIGHT = 2;
         public static Object obj;
 
         public static void main(String args[]) throws Exception {
             obj = new Object();
             synchronized (obj) {
-                if (LockingMode != LM_LIGHTWEIGHT) {
-                    // HotSpot implementation detail: asking for the hash code
-                    // when the object is locked causes monitor inflation.
-                    if (obj.hashCode() == 0xBAD) System.out.println("!");
-                } else {
-                    // Lightweight locking mode does not inflate for hash codes
-                    // wait on the lock instead to causes monitor inflation.
-                    obj.wait(1);
-                }
+                // The current implementation of notify-wait requires inflation.
+                obj.wait(1);
                 Asserts.assertEQ(wb.isMonitorInflated(obj), true,
                                  "Monitor should be inflated.");
             }
