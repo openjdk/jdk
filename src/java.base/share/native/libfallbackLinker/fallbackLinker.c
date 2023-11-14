@@ -28,6 +28,7 @@
 #include <ffi.h>
 
 #include <errno.h>
+#include <malloc.h>
 #include <stdint.h>
 #include <wchar.h>
 #ifdef _WIN64
@@ -109,8 +110,38 @@ static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
 }
 
 JNIEXPORT void JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue, jlong avalues, jlong jcaptured_state, jint captured_state_mask) {
+Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue,
+                                                              jlong avalues, jlong jcaptured_state, jint captured_state_mask,
+                                                              jarray heapBases, jint numArgs) {
+  void** carrays;
+  if (heapBases != NULL) {
+    void** aptrs = jlong_to_ptr(avalues);
+    carrays = malloc(sizeof(void*) * numArgs);
+    for (int i = 0; i < numArgs; i++) {
+      jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
+      if (hb != NULL) {
+        // *(aptrs[i]) is the offset into the segment (from MS::address)
+        // we add the base address of the array to it here
+        jboolean isCopy;
+        jbyte* arrayPtr = (*env)->GetPrimitiveArrayCritical(env, hb, &isCopy);
+        carrays[i] = arrayPtr;
+        int offset = *((int*)aptrs[i]);
+        *((void**)aptrs[i]) = arrayPtr + offset;
+      }
+    }
+  }
+
   ffi_call(jlong_to_ptr(cif), jlong_to_ptr(fn), jlong_to_ptr(rvalue), jlong_to_ptr(avalues));
+
+  if (heapBases != NULL) {
+    for (int i = 0; i < numArgs; i++) {
+      jarray hb = (jarray) (*env)->GetObjectArrayElement(env, heapBases, i);
+      if (hb != NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, hb, carrays[i], JNI_COMMIT);
+      }
+    }
+    free(carrays);
+  }
 
   if (captured_state_mask != 0) {
     int32_t* captured_state = jlong_to_ptr(jcaptured_state);
