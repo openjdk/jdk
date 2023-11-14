@@ -3139,6 +3139,15 @@ bool JvmtiSampledObjectAllocEventCollector::object_alloc_is_safe_to_sample() {
     return false;
   }
 
+  // If the current thread is attaching from native and its thread oop is being
+  // allocated, things are not ready for allocation sampling.
+  if (thread->is_Java_thread()) {
+    JavaThread* jt = JavaThread::cast(thread);
+    if (jt->is_attaching_via_jni() && jt->threadObj() == nullptr) {
+      return false;
+    }
+  }
+
   if (MultiArray_lock->owner() == thread) {
     return false;
   }
