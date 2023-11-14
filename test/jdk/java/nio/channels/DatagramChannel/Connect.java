@@ -130,10 +130,11 @@ public class Connect {
                         InetSocketAddress otherAddress = new InetSocketAddress(loopback, 0);
                         other.bind(otherAddress);
                         log.println("Testing if Initiator throws AlreadyConnectedException");
-
-                        log.printf("Initiator sending \"%s\" to other address %s%n", OTHER, other.getLocalAddress());
-                        dc.send(ByteBuffer.wrap(OTHER.getBytes(US_ASCII)),
-                                other.getLocalAddress());
+                        otherAddress = (InetSocketAddress) other.getLocalAddress();
+                        assert port != otherAddress.getPort();
+                        assert !connectSocketAddress.equals(otherAddress);
+                        log.printf("Initiator sending \"%s\" to other address %s%n", OTHER, otherAddress);
+                        dc.send(ByteBuffer.wrap(OTHER.getBytes(US_ASCII)), otherAddress);
                     }
                     throw new RuntimeException("Initiator allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
