@@ -24,8 +24,8 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/virtualMemoryView.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/virtualMemoryView.hpp"
 #include "nmtMemoryViewFixture.hpp"
 
 #include "unittest.hpp"

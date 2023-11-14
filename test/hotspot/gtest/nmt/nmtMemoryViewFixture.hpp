@@ -22,7 +22,7 @@
  */
 
 #include "utilities/globalDefinitions.hpp"
-#include "services/virtualMemoryView.hpp"
+#include "nmt/virtualMemoryView.hpp"
 #include "unittest.hpp"
 
 using VMV = VirtualMemoryView;
