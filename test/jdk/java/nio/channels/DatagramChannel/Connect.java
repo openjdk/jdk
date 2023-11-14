@@ -31,7 +31,6 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -209,7 +208,7 @@ public class Connect {
                     bb.clear();
                     bb.put(RESPONSE.getBytes(US_ASCII));
                     bb.flip();
-                    log.println("Responder attempting to write: " + dc.getRemoteAddress().toString());
+                    log.println("Responder attempting to write: " + dc.getRemoteAddress());
                     dc.write(bb);
                     bb.flip();
                     break;
