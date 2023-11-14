@@ -38,9 +38,9 @@ import java.util.Objects;
 
 public class TestLongRangeChecks {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseCountedLoopSafepoints", "-XX:LoopUnrollLimit=0");
-        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1", "-XX:LoopUnrollLimit=0");
-        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000", "-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:-UseCountedLoopSafepoints", "-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1", "-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000", "-XX:LoopUnrollLimit=0");
     }
 
 
