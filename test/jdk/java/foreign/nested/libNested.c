@@ -26,8 +26,8 @@
 #else
 #define EXPORT
 #endif
-#ifdef _AIX 
-#pragma align (natural) 
+#ifdef _AIX
+#pragma align (natural)
 #endif
 
 struct S1{ double f0; long long f1; double f2; int f3; };
