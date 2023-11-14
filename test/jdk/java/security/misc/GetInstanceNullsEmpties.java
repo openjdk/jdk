@@ -27,6 +27,9 @@ import javax.crypto.*;
 import javax.net.ssl.*;
 import javax.security.auth.login.*;
 import java.lang.reflect.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.IntegerParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 
 /*
@@ -523,9 +526,10 @@ public class GetInstanceNullsEmpties {
 
     private static void testMessageDigest() throws Exception {
         Class clazz = MessageDigest.class;
+        AlgorithmParameterSpec ips = new IntegerParameterSpec(256);
         Method m;
 
-        checkNewMethods(clazz, 3);
+        checkNewMethods(clazz, 6);
 
         m = getInstance(clazz, STRING);
         run(m, NullPointerException.class, (Object) null);
@@ -541,6 +545,24 @@ public class GetInstanceNullsEmpties {
         run(m, NullPointerException.class, null, SUN);
         run(m, NoSuchAlgorithmException.class, "", SUN);
         run(m, IllegalArgumentException.class, "FOO", null);
+
+        m = getInstance(clazz, STRING, AlgorithmParameterSpec.class);
+        run(m, NullPointerException.class, (Object) null, ips);
+        run(m, NoSuchAlgorithmException.class, "", ips);
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null);
+
+        m = getInstance(clazz, STRING, AlgorithmParameterSpec.class, STRING);
+        run(m, NullPointerException.class, null, ips, "SUN");
+        run(m, NoSuchAlgorithmException.class, "", ips, "SUN");
+        run(m, IllegalArgumentException.class, "FOO", ips, null);
+        run(m, IllegalArgumentException.class, "FOO", ips, "");
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null, "SUN");
+
+        m = getInstance(clazz, STRING, AlgorithmParameterSpec.class, PROVIDER);
+        run(m, NullPointerException.class, null, ips, SUN);
+        run(m, NoSuchAlgorithmException.class, "", ips, SUN);
+        run(m, IllegalArgumentException.class, "FOO", ips, null);
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null, SUN);
     }
 
     private static void testPolicy() throws Exception {

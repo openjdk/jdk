@@ -58,7 +58,11 @@ public class EdDSAParameters {
             for (byte[] curData : data) {
                 d.update(curData, 0, curData.length);
             }
-            return d.digest();
+            try {
+                return d.digest();
+            } finally {
+                d.reset();
+            }
         }
     }
 
