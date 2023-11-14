@@ -34,10 +34,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u0901 ः अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u0902]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[ँः अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी ु ू ृ ॅ े ै ो ौ ्]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ं]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} @ * / \\ \&amp; # ′ ″ ` |]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} @ * / \\ \&amp; # ′ ″ ` |]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -148,19 +148,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>deva</defaultNumberingSystem>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
 	</numbers>
 </ldml>
