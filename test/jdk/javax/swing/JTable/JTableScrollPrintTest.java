@@ -143,7 +143,7 @@ public class JTableScrollPrintTest {
             if (printJob.printDialog()) {
                 try {
                     printJob.print();
-                } catch(PrinterException pe) {
+                } catch (PrinterException pe) {
                     System.out.println("Error printing: " + pe);
                 }
             }
@@ -151,7 +151,7 @@ public class JTableScrollPrintTest {
 
         public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
             if (pageIndex > 0) {
-                return(NO_SUCH_PAGE);
+                return NO_SUCH_PAGE;
             } else {
                 Graphics2D g2d = (Graphics2D)g;
                 g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
@@ -178,7 +178,7 @@ public class JTableScrollPrintTest {
 
                 g2d.scale(optimalScale, optimalScale);
                 c.paint(g2d);
-                return(PAGE_EXISTS);
+                return PAGE_EXISTS;
             }
         }
     }
