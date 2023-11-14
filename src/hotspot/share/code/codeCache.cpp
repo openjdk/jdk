@@ -200,8 +200,9 @@ void CodeCache::initialize_heaps() {
   bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  size_t min_size           = os::vm_page_size();
-  size_t cache_size         = ReservedCodeCacheSize;
+  const size_t ps           = page_size(false, 8);
+  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
+  const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
   size_t non_profiled_size  = NonProfiledCodeHeapSize;
@@ -232,8 +233,10 @@ void CodeCache::initialize_heaps() {
   }
   // Calculate default CodeHeap sizes if not set by user
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
+    // Leave room for the other two parts of the code cache
+    const size_t max_non_nmethod_size = cache_size - 2 * min_size;
     // Check if we have enough space for the non-nmethod code heap
-    if (cache_size > non_nmethod_size) {
+    if (max_non_nmethod_size >= non_nmethod_size) {
       // Use the default value for non_nmethod_size and one half of the
       // remaining size for non-profiled and one half for profiled methods
       size_t remaining_size = cache_size - non_nmethod_size;
@@ -241,7 +244,7 @@ void CodeCache::initialize_heaps() {
       non_profiled_size = remaining_size - profiled_size;
     } else {
       // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = cache_size - 2 * min_size;
+      non_nmethod_size = max_non_nmethod_size;
       profiled_size = min_size;
       non_profiled_size = min_size;
     }
@@ -310,7 +313,6 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
-  const size_t ps = page_size(false, 8);
   // Print warning if using large pages but not able to use the size given
   if (UseLargePages) {
     const size_t lg_ps = page_size(false, 1);
@@ -321,12 +323,11 @@ void CodeCache::initialize_heaps() {
     }
   }
 
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(ps, os::vm_allocation_granularity());
-  non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size    = align_down(profiled_size, alignment);
-  non_profiled_size = align_down(non_profiled_size, alignment);
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod_size = align_up(non_nmethod_size, min_size);
+  profiled_size    = align_down(profiled_size, min_size);
+  non_profiled_size = align_down(non_profiled_size, min_size);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
