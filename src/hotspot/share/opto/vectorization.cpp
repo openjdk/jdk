@@ -796,7 +796,13 @@ const char* VLoopAnalyzer::analyze_helper() {
 
   _memory_slices.analyze();
 
-  // TODO: only continue if we have memory slices or reductions!
+  // If there is no memory slice detected, that means there is no store.
+  // If there is no reduction and no store, then we give up, because
+  // vectorization is not possible anyway (given current limitations).
+  if (!_reductions.is_marked_reduction_loop() &&
+      _memory_slices.mem_slice_head().is_empty()) {
+    return VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE;
+  }
 
   const char* body_failure = _body.construct();
   if (body_failure != nullptr) {

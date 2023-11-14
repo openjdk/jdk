@@ -379,6 +379,7 @@ public:
   static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
@@ -463,6 +464,7 @@ private:
 class VLoopAnalyzer : public VLoop {
 protected:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
   // Submodules that analyze different aspects of the loop
   VLoopReductions   _reductions;
