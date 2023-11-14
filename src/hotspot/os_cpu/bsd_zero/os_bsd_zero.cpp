@@ -315,7 +315,7 @@ extern "C" {
 // Implementations of atomic operations not supported by processors.
 //  -- http://gcc.gnu.org/onlinedocs/gcc-4.2.1/gcc/Atomic-Builtins.html
 
-#ifndef _LP64
+#if !defined(_LP64) && !defined(__sync_val_compare_and_swap_8)
 extern "C" {
   long long unsigned int __sync_val_compare_and_swap_8(
     volatile void *ptr,
@@ -325,7 +325,7 @@ extern "C" {
     return 0; // silence compiler warnings
   }
 };
-#endif // !_LP64
+#endif // !_LP64 && !__sync_val_compare_and_swap_8
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
