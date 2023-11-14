@@ -167,6 +167,16 @@ public interface Plugin {
     }
 
     /**
+     * Determine whether or not the plugin is hidden from
+     * {@code jlink --list-plugins} output.
+     *
+     * @return true if the plugin needs to be hidden from --list-plugins
+     */
+    public default boolean isHidden() {
+        return false;
+    }
+
+    /**
      * The plugin argument(s) description.
      * @return  The argument(s) description.
      */

@@ -28,23 +28,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.Collections;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
 import java.util.Comparator;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -55,7 +53,6 @@ import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
-import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
@@ -602,6 +599,7 @@ public final class TaskHelper {
                     getPlugins(pluginOptions.pluginsLayer);
 
             pluginList.stream()
+                    .filter((Plugin plugin) -> !plugin.isHidden())
                     .sorted(Comparator.comparing((Plugin plugin) -> plugin.getUsage().isEmpty(),
                                                  (Boolean res1, Boolean res2) -> Boolean.compare(res2,res1))
                                       .thenComparing(Plugin::getName)

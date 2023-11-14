@@ -85,6 +85,11 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
     }
 
     @Override
+    public boolean isHidden() {
+        return true; // Don't show in --list-plugins output
+    }
+
+    @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Platform targetPlatform = getTargetPlatform(in);
         in.transformAndCopy(e -> { ResourcePoolEntry retval = recordAndFilterEntry(e, targetPlatform);
