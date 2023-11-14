@@ -58,24 +58,16 @@ public class TestJTabbedPaneArrowDirection {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                        .title("JTabbedPane Arrow Direction Test Instructions")
-                        .instructions(INSTRUCTIONS)
-                        .testTimeOut(5)
-                        .rows(12)
-                        .columns(40)
-                        .screenCapture()
-                        .build();
-        try {
-            SwingUtilities.invokeAndWait(
-                    TestJTabbedPaneArrowDirection::createAndShowUI);
-            passFailJFrame.awaitAndCheck();
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
+                .title("JTabbedPane Arrow Direction Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .testTimeOut(5)
+                .rows(12)
+                .columns(40)
+                .screenCapture()
+                .build();
+        SwingUtilities.invokeAndWait(
+                TestJTabbedPaneArrowDirection::createAndShowUI);
+        passFailJFrame.awaitAndCheck();
     }
 
     private static void createAndShowUI() {
