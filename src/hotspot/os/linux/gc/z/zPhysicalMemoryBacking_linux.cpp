@@ -42,7 +42,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 
 #include <fcntl.h>
 #include <stdio.h>
