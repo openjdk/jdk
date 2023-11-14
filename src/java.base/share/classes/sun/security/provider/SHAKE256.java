@@ -24,10 +24,54 @@
  */
 package sun.security.provider;
 
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.IntegerParameterSpec;
+import java.security.spec.InvalidParameterSpecException;
+
 /*
  * The SHAKE256 extendable output function.
  */
 public final class SHAKE256 extends SHA3 {
+
+    public static class WithoutLen extends SHA3 {
+        public WithoutLen(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            super("SHAKE256-LEN", 64, (byte) 0x1F, 64);
+        }
+    }
+
+    public static class WithLen extends SHA3 {
+        public WithLen(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            super("SHAKE256-LEN", n(p), (byte) 0x1F, 64);
+        }
+
+        private static int n(AlgorithmParameterSpec p)
+                throws InvalidAlgorithmParameterException {
+            if (p instanceof IntegerParameterSpec is) {
+                int bitsLen = is.n();
+                if (bitsLen <= 0 || (bitsLen & 0x07) != 0) {
+                    throw new InvalidAlgorithmParameterException("Invalid length: " + bitsLen);
+                }
+                return bitsLen / 8;
+            } else {
+                throw new InvalidAlgorithmParameterException("Unknown spec: " + p);
+            }
+        }
+
+
+        @Override
+        protected AlgorithmParameters engineGetParameters() {
+            try {
+                AlgorithmParameters p = AlgorithmParameters.getInstance("SHAKE256-LEN");
+                p.init(new IntegerParameterSpec(engineGetDigestLength() * 8));
+                return p;
+            } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+                throw new ProviderException(e);
+            }
+        }
+    }
     public SHAKE256(int d) {
         super("SHAKE256", d, (byte) 0x1F, 64);
     }

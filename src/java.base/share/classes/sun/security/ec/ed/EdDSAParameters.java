@@ -25,14 +25,12 @@
 package sun.security.ec.ed;
 
 import sun.security.ec.ParametersMap;
-import sun.security.provider.SHAKE256;
 import sun.security.util.ObjectIdentifier;
 import sun.security.util.KnownOIDs;
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
 import sun.security.x509.AlgorithmId;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -47,16 +45,16 @@ public class EdDSAParameters {
 
     public interface DigesterFactory {
         // Default digest creator
-        Digester createDigester();
+        MessageDigest createDigester();
 
         // Override this method if multiple key lengths are needed
-        default Digester createDigester(int len) {
+        default MessageDigest createDigester(int len) {
             return createDigester();
         }
 
         // Return a digest over all the provided byte arrays
         default byte[] digest(byte[]... data) {
-            Digester d = createDigester();
+            MessageDigest d = createDigester();
             for (byte[] curData : data) {
                 d.update(curData, 0, curData.length);
             }
@@ -67,10 +65,9 @@ public class EdDSAParameters {
     // Hash for Ed25519
     private static class SHA512DigesterFactory implements DigesterFactory {
         @Override
-        public Digester createDigester() {
+        public MessageDigest createDigester() {
             try {
-                MessageDigest md = MessageDigest.getInstance("SHA-512");
-                return new MessageDigester(md);
+                return MessageDigest.getInstance("SHA-512");
             } catch (NoSuchAlgorithmException ex) {
                 throw new ProviderException(ex);
             }
@@ -81,68 +78,23 @@ public class EdDSAParameters {
     private static class SHAKE256DigesterFactory implements DigesterFactory {
         @Override
         // Most usage for Ed448 is 114bytes long
-        public Digester createDigester() {
-            return new SHAKE256Digester(114);
+        public MessageDigest createDigester() {
+            try {
+                return MessageDigest.getInstance("SHAKE256-LEN",
+                        new IntegerParameterSpec(114 * 8));
+            } catch (NoSuchAlgorithmException ex) {
+                throw new ProviderException(ex);
+            }
         }
 
         // Ed448 uses 64bytes long hash for the signature message
         @Override
-        public Digester createDigester(int len) {
-            return new SHAKE256Digester(len);
-        }
-    }
-
-    public interface Digester {
-        void update(byte data);
-        void update(byte[] data, int off, int len);
-        byte[] digest();
-    }
-
-    private static class MessageDigester implements Digester {
-        private final MessageDigest md;
-
-        private MessageDigester(MessageDigest md) {
-            this.md = md;
-        }
-
-        @Override
-        public void update(byte data) {
-            md.update(data);
-        }
-        @Override
-        public void update(byte[] data, int off, int len) {
-            md.update(data, off, len);
-        }
-        @Override
-        public byte[] digest() {
+        public MessageDigest createDigester(int len) {
             try {
-                return md.digest();
-            } finally {
-                md.reset();
-            }
-        }
-    }
-
-    private static class SHAKE256Digester implements Digester {
-        SHAKE256 md;
-
-        SHAKE256Digester(int len) {
-            md = new SHAKE256(len);
-        }
-        @Override
-        public void update(byte data) {
-            md.update(data);
-        }
-        @Override
-        public void update(byte[] data, int off, int len) {
-            md.update(data, off, len);
-        }
-        @Override
-        public byte[] digest() {
-            try {
-                return md.digest();
-            } finally {
-                md.reset();
+                return MessageDigest.getInstance("SHAKE256-LEN",
+                        new IntegerParameterSpec(len * 8));
+            } catch (NoSuchAlgorithmException ex) {
+                throw new ProviderException(ex);
             }
         }
     }
@@ -211,11 +163,11 @@ public class EdDSAParameters {
         return logCofactor;
     }
 
-    public Digester createDigester() {
+    public MessageDigest createDigester() {
         return digester.createDigester();
     }
 
-    public Digester createDigester(int len) {
+    public MessageDigest createDigester(int len) {
         return digester.createDigester(len);
     }
 

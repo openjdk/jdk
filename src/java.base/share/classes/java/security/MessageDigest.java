@@ -25,6 +25,7 @@
 
 package java.security;
 
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -308,6 +309,147 @@ public abstract class MessageDigest extends MessageDigestSpi {
     }
 
     /**
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm and is initialized with the specified parameters.
+     *
+     * <p> A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
+     *
+     * @param algorithm the name of the algorithm requested.
+     * See the MessageDigest section in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard algorithm names.
+     * @param params the initialization parameters (may be {@code null}).
+     * @param provider the provider.
+     *
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
+     *
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
+     *
+     * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
+     *         implementation for the specified algorithm and parameters
+     *         is not available from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
+     *
+     * @see Provider
+     * @since 22
+     */
+    public static MessageDigest getInstance(String algorithm,
+            AlgorithmParameterSpec params, Provider provider)
+            throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm, params, provider);
+        return Delegate.of((MessageDigestSpi)instance.impl,
+                algorithm, instance.provider);
+    }
+
+    /**
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm and is initialized with the specified parameters.
+     *
+     * <p> A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the specified provider
+     * is returned.  The specified provider must be registered
+     * in the security provider list.
+     *
+     * <p> Note that the list of registered providers may be retrieved via
+     * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @param algorithm the name of the algorithm requested.
+     * See the MessageDigest section in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard algorithm names.
+     * @param params the initialization parameters (may be {@code null}).
+     * @param provider the name of the provider.
+     *
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
+     *
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
+     *
+     * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
+     *         implementation for the specified algorithm and parameters
+     *         is not available from the specified provider
+     *
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
+     *
+     * @see Provider
+     * @since 22
+     */
+    public static MessageDigest getInstance(String algorithm,
+            AlgorithmParameterSpec params, String provider)
+            throws NoSuchAlgorithmException,
+                    NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm, params, provider);
+        return Delegate.of((MessageDigestSpi)instance.impl,
+                algorithm, instance.provider);
+    }
+
+    /**
+     * Returns a {@code MessageDigest} object that implements the specified
+     * digest algorithm and is initialized with the specified parameters.
+     *
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
+     * A new {@code MessageDigest} object encapsulating the
+     * {@code MessageDigestSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
+     *
+     * <p> Note that the list of registered providers may be retrieved via
+     * the {@link Security#getProviders() Security.getProviders()} method.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different from the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
+     *
+     * @param algorithm the name of the algorithm requested.
+     * See the MessageDigest section in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard algorithm names.
+     * @param params the initialization parameters (may be {@code null}).
+     *
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
+     *
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code MessageDigestSpi} implementation for the
+     *         specified algorithm and parameters
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
+     *
+     * @see Provider
+     * @since 22
+     */
+    public static MessageDigest getInstance(String algorithm,
+            AlgorithmParameterSpec params)
+            throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
+        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                MessageDigestSpi.class, algorithm, params);
+        return Delegate.of((MessageDigestSpi)instance.impl,
+                algorithm, instance.provider);
+    }
+
+    /**
      * Returns the provider of this message digest object.
      *
      * @return the provider of this message digest object
@@ -324,6 +466,29 @@ public abstract class MessageDigest extends MessageDigestSpi {
     public void update(byte input) {
         engineUpdate(input);
         state = IN_PROGRESS;
+    }
+
+    /**
+     * Returns the parameters used with this {@code MessageDigest} object.
+     *
+     * <p>The returned parameters may be the same that were used to instantiate
+     * this {@code MessageDigest} object, or may contain additional default
+     * parameter values used by the underlying message digest implementation.
+     * If the required parameters were not supplied and can be generated by
+     * the {@code MessageDigest} object, the generated parameters are returned;
+     * otherwise {@code null} is returned.
+     *
+     * <p>If the message digest implementation does not support returning
+     * the parameters as {@code AlgorithmParameters}, {@code null} is always
+     * returned.
+     *
+     * @return the parameters used with this {@code MessageDigest} object,
+     * or {@code null}.
+     *
+     * @since 22
+     */
+    public AlgorithmParameters getParameters() {
+        return engineGetParameters();
     }
 
     /**
@@ -684,6 +849,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
         @Override
         protected void engineReset() {
             digestSpi.engineReset();
+        }
+
+        @Override
+        protected AlgorithmParameters engineGetParameters() {
+            return digestSpi.engineGetParameters();
         }
     }
 }

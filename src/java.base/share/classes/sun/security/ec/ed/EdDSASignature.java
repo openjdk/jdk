@@ -28,17 +28,7 @@ package sun.security.ec.ed;
 import sun.security.ec.point.AffinePoint;
 
 import java.io.ByteArrayOutputStream;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.ProviderException;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.SignatureException;
-import java.security.SignatureSpi;
+import java.security.*;
 import java.security.interfaces.EdECPrivateKey;
 import java.security.interfaces.EdECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -55,9 +45,9 @@ public class EdDSASignature extends SignatureSpi {
     }
 
     private static class DigestAccumulator implements MessageAccumulator {
-        private final EdDSAParameters.Digester digester;
+        private final MessageDigest digester;
 
-        DigestAccumulator(EdDSAParameters.Digester digester) {
+        DigestAccumulator(MessageDigest digester) {
             this.digester = digester;
         }
 

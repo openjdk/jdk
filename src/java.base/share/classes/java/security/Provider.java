@@ -1583,15 +1583,13 @@ public abstract class Provider extends Properties {
         addEngine("KeyFactory",                         false, null);
         addEngine("KeyPairGenerator",                   false, null);
         addEngine("KeyStore",                           false, null);
-        addEngine("MessageDigest",                      false, null);
-        addEngine("SecureRandom",                       false,
-                "java.security.SecureRandomParameters");
+        addEngine("MessageDigest",                      false, "java.security.spec.AlgorithmParameterSpec");
+        addEngine("SecureRandom",                       false, "java.security.SecureRandomParameters");
         addEngine("Signature",                          true,  null);
         addEngine("CertificateFactory",                 false, null);
         addEngine("CertPathBuilder",                    false, null);
         addEngine("CertPathValidator",                  false, null);
-        addEngine("CertStore",                          false,
-                            "java.security.cert.CertStoreParameters");
+        addEngine("CertStore",                          false, "java.security.cert.CertStoreParameters");
         // JCE
         addEngine("Cipher",                             true,  null);
         addEngine("ExemptionMechanism",                 false, null);
@@ -1610,18 +1608,15 @@ public abstract class Provider extends Properties {
         addEngine("SaslClientFactory",                  false, null);
         addEngine("SaslServerFactory",                  false, null);
         // POLICY
-        addEngine("Policy",                             false,
-                            "java.security.Policy$Parameters");
+        addEngine("Policy",                             false, "java.security.Policy$Parameters");
         // CONFIGURATION
-        addEngine("Configuration",                      false,
-                            "javax.security.auth.login.Configuration$Parameters");
+        addEngine("Configuration",                      false, "javax.security.auth.login.Configuration$Parameters");
         // XML DSig
         addEngine("XMLSignatureFactory",                false, null);
         addEngine("KeyInfoFactory",                     false, null);
         addEngine("TransformService",                   false, null);
         // Smart Card I/O
-        addEngine("TerminalFactory",                    false,
-                            "java.lang.Object");
+        addEngine("TerminalFactory",                    false, "java.lang.Object");
     }
 
     // get the "standard" (mixed-case) engine name for arbitrary case engine name
