@@ -751,8 +751,7 @@ public class TestMarkdown extends JavadocTester {
                         ///
                         /// Lorem ipsum.
                         public void code_standalone() { }
-                        
-                        
+
                         /// First sentence.
                         ///
                         /// Before.
@@ -761,7 +760,7 @@ public class TestMarkdown extends JavadocTester {
                         ///
                         /// Lorem ipsum.
                         public void code_wrapped() { }
-                        
+
                         /// First sentence.
                         ///
                         /// {@snippet :
@@ -770,8 +769,7 @@ public class TestMarkdown extends JavadocTester {
                         ///
                         /// Lorem ipsum.
                         public void snippet_standalone() { }
-                        
-                        
+
                         /// First sentence.
                         ///
                         /// Before.
@@ -810,7 +808,7 @@ public class TestMarkdown extends JavadocTester {
                     <pre class="snippet"><code>   this is snippet_standalone
                     </code></pre>
                     </div>
-                                        
+
                     <p>Lorem ipsum.</p>
                     </div>""",
                 """
@@ -820,7 +818,7 @@ public class TestMarkdown extends JavadocTester {
                     <pre class="snippet"><code>   this is a snippet_wrapped
                     </code></pre>
                     </div>
-                                        
+
                     <p>After.</p>
                     <p>Lorem ipsum.</p>
                     </div>""");
@@ -847,7 +845,7 @@ public class TestMarkdown extends JavadocTester {
                         ///
                         /// Lorem ipsum.
                         public void phrasing_standalone() { }
-                        
+
                         /// First sentence.
                         ///
                         /// Before.
@@ -855,16 +853,15 @@ public class TestMarkdown extends JavadocTester {
                         /// After.
                         ///
                         /// Lorem ipsum.
-                        
                         public void phrasing_wrapped() { }
-                        
+
                         /// First sentence.
                         ///
                         /// {@div this is block_standalone}
                         ///
                         /// Lorem ipsum.
                         public void block_standalone() { }
-                        
+
                         /// First sentence.
                         ///
                         /// Before.
