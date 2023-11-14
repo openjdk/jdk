@@ -215,7 +215,7 @@ public class RunImageArchive implements Archive {
     static class RunImageFile {
         private static final String JAVA_HOME = System.getProperty("java.home");
         private static final Path BASE = Paths.get(JAVA_HOME);
-        private static final String MISMATCH_FORMAT = "%s has been modified. Please double check!%s%n";
+        private static final String MISMATCH_FORMAT = "%s has been modified.%s%n";
         final String resPath;
         final Archive.Entry.EntryType resType;
         final Archive archive;
