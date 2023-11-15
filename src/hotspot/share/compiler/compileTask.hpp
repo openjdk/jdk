@@ -180,7 +180,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
-  AbstractCompiler* compiler();
+  AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }

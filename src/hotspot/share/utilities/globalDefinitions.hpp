@@ -554,7 +554,6 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 //----------------------------------------------------------------------------------------------------
 // old CDS options
 extern bool DumpSharedSpaces;
-extern bool DynamicDumpSharedSpaces;
 extern bool RequireSharedSpaces;
 extern "C" {
 // Make sure UseSharedSpaces is accessible to the serviceability agent.
@@ -1334,5 +1333,9 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 // Converts any type T to a reference type.
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
+
+// Quickly test to make sure IEEE-754 subnormal numbers are correctly
+// handled.
+bool IEEE_subnormal_handling_OK();
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

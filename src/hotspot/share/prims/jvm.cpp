@@ -103,6 +103,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
+#include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -3413,8 +3414,7 @@ JVM_END
 // Library support ///////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(void*, JVM_LoadZipLibrary())
-  ClassLoader::load_zip_library_if_needed();
-  return ClassLoader::zip_library_handle();
+  return ZipLibrary::handle();
 JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
@@ -3726,7 +3726,7 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
-  return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
+  return ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3734,12 +3734,12 @@ JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled() || DynamicDumpSharedSpaces,  "Should be set and open or do dynamic dump");
+  assert(ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive(),  "Should be set and open or do dynamic dump");
   if (line != nullptr) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    if (DynamicDumpSharedSpaces) {
+    if (CDSConfig::is_dumping_dynamic_archive()) {
       // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
       LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));
