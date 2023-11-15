@@ -76,7 +76,6 @@ public class bug4654927 {
             robot.waitForIdle();
             robot.delay(250);
 
-            System.out.println("MenuItem LocationOnScreen " + menuItem.getLocationOnScreen());
             Point itemLocation = Util.getCenterPoint(menuItem);
             System.out.println("MenuItem Location " + itemLocation);
             robot.mouseMove(itemLocation.x, itemLocation.y);
