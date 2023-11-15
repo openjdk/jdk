@@ -590,6 +590,8 @@ class VLoopDependenceGraph : public StackObj {
 private:
   VLoop* _vloop;
 
+
+
   //GrowableArray<PhiNode*> _heads;
   //GrowableArray<MemNode*> _tails;
 
@@ -610,6 +612,9 @@ public:
   //const GrowableArray<PhiNode*> &heads() const { return _heads; }
   //const GrowableArray<MemNode*> &tails() const { return _tails; }
   DEBUG_ONLY(void print() const;)
+
+  class DependenceNode : public ArenaObj {
+  };
 };
 
 class VLoopAnalyzer : public VLoop {
