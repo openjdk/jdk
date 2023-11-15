@@ -56,7 +56,7 @@ public class FocusablePopupDismissTest {
             Click on the "Click me" button if the popup is not displayed
             on the screen.
 
-            While the popup is displayed, click on a some system window.
+            While the popup is displayed, click on some other window on the desktop.
             If the popup has disappeared, click Pass, otherwise click Fail.
             """;
 
