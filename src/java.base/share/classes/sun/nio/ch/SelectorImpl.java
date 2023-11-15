@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import jdk.internal.event.SelectionEvent;
+
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
@@ -127,7 +129,16 @@ public abstract class SelectorImpl
             inSelect = true;
             try {
                 synchronized (publicSelectedKeys) {
-                    return doSelect(action, timeout);
+                    if (!SelectionEvent.enabled()) {
+                        return doSelect(action, timeout);
+                    }
+                    long start = SelectionEvent.timestamp();
+                    int n = doSelect(action, timeout);
+                    long duration = SelectionEvent.timestamp() - start;
+                    if (SelectionEvent.shouldCommit(duration)) {
+                        SelectionEvent.commit(start, duration, n);
+                    }
+                    return n;
                 }
             } finally {
                 inSelect = false;
