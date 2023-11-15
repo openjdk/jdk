@@ -127,8 +127,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
-  product(ccstr, UseSleefLib, "", EXPERIMENTAL,                         \
-          "Sleef library to use for the vector math operations")        \
 
 // end of ARCH_FLAGS
 

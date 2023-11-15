@@ -546,6 +546,20 @@ Hotspot.
 Use `--with-libffi=<path>` if `configure` does not properly locate your libffi
 files.
 
+### libsleef
+
+libsleef, the [SIMD Library for Evaluating Elementary Functions](
+https://sleef.org/) is required when building libvmath.so on Linux+AArch64
+platforms.
+
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    libsleef-dev`.
+  * To install on an rpm-based Linux, try running `sudo yum install
+    sleef-devel`.
+
+Use `--with-libsleef=<path>` if `configure` does not properly locate your libsleef
+files.
+
 ## Build Tools Requirements
 
 ### Autoconf

@@ -42,11 +42,11 @@
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -8509,12 +8509,16 @@ class StubGenerator: public StubCodeGenerator {
     }
 
 #ifdef COMPILER2
-    // Get sleef stub routine addresses
+    // Get native vector math stub routine addresses
+    void* libvmath = nullptr;
     char ebuf[1024];
-    void* libsleef = os::dll_load(UseSleefLib, ebuf, sizeof ebuf);
-    if (libsleef != nullptr) {
-      // SLEEF method naming convention
-      //   All the methods are named as Sleef_<OP><T><N>_<U><suffix>
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "vmath")) {
+      libvmath = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
+    if (libvmath != nullptr) {
+      // Method naming convention
+      //   All the methods are named as <OP><T><N>_<U><suffix>
       //   Where:
       //     <OP>     is the operation name, e.g. sin
       //     <T>      is optional to indicate float/double
@@ -8524,31 +8528,27 @@ class StubGenerator: public StubCodeGenerator {
       //     <U>      is the precision level
       //              "u10/u05" represents 1.0/0.5 ULP error bounds
       //               We use "u10" for all operations by default
-      //               But for those functions do not have u10 support in SLEEF, we use "u05" instead
+      //               But for those functions do not have u10 support, we use "u05" instead
       //     <suffix> indicates neon/sve
       //              "sve/advsimd" for sve/neon implementations
-      //     e.g. Sleef_sinfx_u10sve is the method for computing vector float sin using SVE instructions
-      //          Sleef_cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
+      //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
+      //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
       //
-      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "vmath" JNI_LIB_SUFFIX, p2i(libvmath));
 
       // Math vector stubs implemented with SVE for scalable vector size.
       if (UseSVE > 0) {
         for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
           int vop = VectorSupport::VECTOR_OP_MATH_START + op;
-          // Skip "tanh", because there is performance regression
-          if (vop == VectorSupport::VECTOR_OP_TANH) {
-            continue;
-          }
 
-          // SLEEF does not support u10 level of "hypot" yet.
+          // The native library does not support u10 level of "hypot".
           const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
 
-          snprintf(ebuf, sizeof(ebuf), "Sleef_%sfx_%ssve", VectorSupport::mathname[op], ulf);
-          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+          snprintf(ebuf, sizeof(ebuf), "%sfx_%ssve", VectorSupport::mathname[op], ulf);
+          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvmath, ebuf);
 
-          snprintf(ebuf, sizeof(ebuf), "Sleef_%sdx_%ssve", VectorSupport::mathname[op], ulf);
-          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+          snprintf(ebuf, sizeof(ebuf), "%sdx_%ssve", VectorSupport::mathname[op], ulf);
+          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvmath, ebuf);
         }
       }
 
@@ -8556,24 +8556,20 @@ class StubGenerator: public StubCodeGenerator {
       for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
         int vop = VectorSupport::VECTOR_OP_MATH_START + op;
 
-        // SLEEF does not support u10 level of "hypot" yet.
+        // The native library does not support u10 level of "hypot".
         const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
 
-        snprintf(ebuf, sizeof(ebuf), "Sleef_%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsleef, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libvmath, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "Sleef_%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvmath, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "Sleef_%sd2_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "%sd2_%sadvsimd", VectorSupport::mathname[op], ulf);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvmath, ebuf);
       }
     } else {
-      if (FLAG_IS_DEFAULT(UseSleefLib)) {
-        log_info(library)("Sleef is disabled!");
-      } else {
-        warning("Fail to load sleef library: %s. Please check the path/name!", UseSleefLib);
-      }
+      log_info(library)("Failed to load native vector math library!");
     }
 #endif // COMPILER2
 
