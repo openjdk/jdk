@@ -329,12 +329,13 @@ class VLoopReductions : public StackObj {
 private:
   typedef const Pair<const Node*, int> PathEnd;
 
-  VLoop* _vloop;
+  const VLoop& _vloop;
   VectorSet _loop_reductions;
 
 public:
-  VLoopReductions(VLoop* vloop) : _vloop(vloop),
-                                  _loop_reductions(_vloop->arena()){};
+  VLoopReductions(const VLoop& vloop) :
+    _vloop(vloop),
+    _loop_reductions(_vloop.arena()){};
   NONCOPYABLE(VLoopReductions);
   void reset() {
     _loop_reductions.clear();
@@ -399,16 +400,16 @@ public:
 
 class VLoopMemorySlices : public StackObj {
 private:
-  VLoop* _vloop;
+  const VLoop& _vloop;
 
   GrowableArray<PhiNode*> _heads;
   GrowableArray<MemNode*> _tails;
 
 public:
-  VLoopMemorySlices(VLoop* vloop) :
+  VLoopMemorySlices(const VLoop& vloop) :
     _vloop(vloop),
-    _heads(_vloop->arena(), 8,  0, nullptr),
-    _tails(_vloop->arena(), 8,  0, nullptr) {};
+    _heads(_vloop.arena(), 8,  0, nullptr),
+    _tails(_vloop.arena(), 8,  0, nullptr) {};
 
   NONCOPYABLE(VLoopMemorySlices);
 
@@ -431,7 +432,7 @@ public:
 
 class VLoopBody : public StackObj {
 private:
-  VLoop* _vloop;
+  const VLoop& _vloop;
 
   GrowableArray<Node*> _body;
   GrowableArray<int> _body_idx;
@@ -439,10 +440,10 @@ private:
   static constexpr char const* FAILURE_NODE_NOT_ALLOWED  = "encontered unhandled node";
 
 public:
-  VLoopBody(VLoop* vloop) :
+  VLoopBody(const VLoop& vloop) :
     _vloop(vloop),
-    _body(_vloop->arena(), 8, 0, nullptr),
-    _body_idx(_vloop->arena(), (int)(1.10 * _vloop->phase()->C->unique()), 0, 0) {}
+    _body(_vloop.arena(), 8, 0, nullptr),
+    _body_idx(_vloop.arena(), (int)(1.10 * _vloop.phase()->C->unique()), 0, 0) {}
 
   NONCOPYABLE(VLoopBody);
 
@@ -455,7 +456,7 @@ public:
   DEBUG_ONLY(void print() const;)
 
   int body_idx(const Node* n) const {
-    assert(_vloop->in_loopbody(n), "must be in loop_body");
+    assert(_vloop.in_loopbody(n), "must be in loop_body");
     return _body_idx.at(n->_idx);
   }
 
@@ -463,7 +464,7 @@ public:
 
 private:
   void set_body_idx(Node* n, int i) {
-    assert(_vloop->in_loopbody(n), "must be in loop_body");
+    assert(_vloop.in_loopbody(n), "must be in loop_body");
     _body_idx.at_put_grow(n->_idx, i);
   }
 };
@@ -522,7 +523,7 @@ public:
   class DependenceEdge;
   class DependenceNode;
 private:
-  VLoop* _vloop;
+  const VLoop& _vloop;
   const VLoopMemorySlices& _memory_slices;
   const VLoopBody& _body;
 
@@ -531,13 +532,13 @@ private:
   DependenceNode* _sink;
 
 public:
-  VLoopDependenceGraph(VLoop* vloop,
+  VLoopDependenceGraph(const VLoop& vloop,
                        const VLoopMemorySlices& memory_slices,
                        const VLoopBody& body) :
     _vloop(vloop),
     _memory_slices(memory_slices),
     _body(body),
-    _map(vloop->arena(), 8,  0, nullptr),
+    _map(vloop.arena(), 8,  0, nullptr),
     _root(nullptr),
     _sink(nullptr) {}
 
@@ -545,8 +546,8 @@ public:
 
   void reset() {
     _map.clear();
-    _root = new (_vloop->arena()) DependenceNode(nullptr);
-    _sink = new (_vloop->arena()) DependenceNode(nullptr);
+    _root = new (_vloop.arena()) DependenceNode(nullptr);
+    _sink = new (_vloop.arena()) DependenceNode(nullptr);
   }
 
   void build();
@@ -660,11 +661,10 @@ protected:
 public:
   VLoopAnalyzer(PhaseIdealLoop* phase) :
     VLoop(phase),
-    // TODO pass this in by const reference!
-    _reductions(this),
-    _memory_slices(this),
-    _body(this),
-    _dependence_graph(this, _memory_slices, _body) {};
+    _reductions(*this),
+    _memory_slices(*this),
+    _body(*this),
+    _dependence_graph(*this, _memory_slices, _body) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.

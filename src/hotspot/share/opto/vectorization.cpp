@@ -884,9 +884,9 @@ Node* VLoopReductions::original_input(const Node* n, uint i) {
 
 void VLoopReductions::mark_reductions() {
   assert(_loop_reductions.is_empty(), "must have been reset");
-  IdealLoopTree*  lpt = _vloop->lpt();
-  CountedLoopNode* cl = _vloop->cl();
-  PhiNode*         iv = _vloop->iv();
+  IdealLoopTree*  lpt = _vloop.lpt();
+  CountedLoopNode* cl = _vloop.cl();
+  PhiNode*         iv = _vloop.iv();
 
   // Iterate through all phi nodes associated to the loop and search for
   // reduction cycles in the basic block.
@@ -924,7 +924,7 @@ void VLoopReductions::mark_reductions() {
         find_in_path(
           first, input, lpt->_body.size(),
           [&](const Node* n) { return n->Opcode() == first->Opcode() &&
-                                      _vloop->in_loopbody(n); },
+                                      _vloop.in_loopbody(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -943,7 +943,7 @@ void VLoopReductions::mark_reductions() {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!_vloop->in_loopbody(u)) {
+        if (!_vloop.in_loopbody(u)) {
           continue;
         }
         if (u == succ) {
@@ -974,12 +974,12 @@ void VLoopMemorySlices::analyze() {
   assert(_heads.is_empty(), "must have been reset");
   assert(_tails.is_empty(), "must have been reset");
 
-  CountedLoopNode* cl = _vloop->cl();
+  CountedLoopNode* cl = _vloop.cl();
 
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     PhiNode* phi = cl->fast_out(i)->isa_Phi();
     if (phi != nullptr &&
-        _vloop->in_loopbody(phi) &&
+        _vloop.in_loopbody(phi) &&
         phi->is_memory_phi()) {
       Node* phi_tail  = phi->in(LoopNode::LoopBackControl);
       if (phi_tail != phi->in(LoopNode::EntryControl)) {
@@ -1008,11 +1008,11 @@ void VLoopMemorySlices::get_slice(Node* head,
   while (true) {
     // TODO enable print here!
     // NOT_PRODUCT( if(is_trace_mem_slice()) tty->print_cr("VLoopMemorySlices::get_slice: n %d", n->_idx);)
-    assert(_vloop->in_loopbody(n), "must be in block");
+    assert(_vloop.in_loopbody(n), "must be in block");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
-        if (_vloop->in_loopbody(out)) {
+        if (_vloop.in_loopbody(out)) {
           slice.push(out);
           if (TraceSuperWord && Verbose) {
             tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", out->_idx);
@@ -1020,10 +1020,10 @@ void VLoopMemorySlices::get_slice(Node* head,
         }
       } else {
         // Expect other outputs to be the prev (with some exceptions)
-        if (out->is_MergeMem() && !_vloop->in_loopbody(out)) {
+        if (out->is_MergeMem() && !_vloop.in_loopbody(out)) {
           // Either unrolling is causing a memory edge not to disappear,
           // or need to run igvn.optimize() again before SLP
-        } else if (out->is_memory_phi() && !_vloop->in_loopbody(out)) {
+        } else if (out->is_memory_phi() && !_vloop.in_loopbody(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
@@ -1059,8 +1059,8 @@ const char* VLoopBody::construct() {
   assert(_body.is_empty(),     "must have been reset");
   assert(_body_idx.is_empty(), "must have been reset");
 
-  IdealLoopTree*  lpt = _vloop->lpt();
-  CountedLoopNode* cl = _vloop->cl();
+  IdealLoopTree*  lpt = _vloop.lpt();
+  CountedLoopNode* cl = _vloop.cl();
 
   // First pass over loop body:
   //  (1) Check that there are no unwanted nodes (LoadStore, MergeMem, data Proj).
@@ -1069,7 +1069,7 @@ const char* VLoopBody::construct() {
   int body_count = 0;
   for (uint i = 0; i < lpt->_body.size(); i++) {
     Node* n = lpt->_body.at(i);
-    if (!_vloop->in_loopbody(n)) { continue; }
+    if (!_vloop.in_loopbody(n)) { continue; }
 
     // Create a temporary map
     set_body_idx(n, i);
@@ -1094,7 +1094,7 @@ const char* VLoopBody::construct() {
       bool found = false;
       for (uint j = 0; j < n->req(); j++) {
         Node* def = n->in(j);
-        if (def != nullptr && _vloop->in_loopbody(def)) {
+        if (def != nullptr && _vloop.in_loopbody(def)) {
           found = true;
           break;
         }
@@ -1124,7 +1124,7 @@ const char* VLoopBody::construct() {
       int old_size = stack.length();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
-        if (_vloop->in_loopbody(use) &&
+        if (_vloop.in_loopbody(use) &&
             !visited.test(body_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == cl)) {
@@ -1175,7 +1175,7 @@ void VLoopBody::print() const {
 #endif
 
 void VLoopDependenceGraph::build() {
-  CountedLoopNode *cl = _vloop->cl();
+  CountedLoopNode *cl = _vloop.cl();
   // TODO remove, seems unnecessary
   assert(cl->is_main_loop(), "SLP should only work on main loops");
 
@@ -1225,14 +1225,14 @@ void VLoopDependenceGraph::build() {
       if (get_node(s1)->in_cnt() == 0) {
         make_edge(slice_head, get_node(s1));
       }
-      VPointer p1(s1->as_Mem(), _vloop->phase(), _vloop->lpt(), nullptr, false);
+      VPointer p1(s1->as_Mem(), _vloop.phase(), _vloop.lpt(), nullptr, false);
       bool sink_dependent = true;
       for (int k = j - 1; k >= 0; k--) {
         Node* s2 = slice_nodes.at(k);
         if (s1->is_Load() && s2->is_Load()) {
           continue;
         }
-        VPointer p2(s2->as_Mem(), _vloop->phase(), _vloop->lpt(), nullptr, false);
+        VPointer p2(s2->as_Mem(), _vloop.phase(), _vloop.lpt(), nullptr, false);
 
         int cmp = p1.cmp(p2);
         // TODO remove completely?
@@ -1277,7 +1277,7 @@ void VLoopDependenceGraph::print() const {
 
 VLoopDependenceGraph::DependenceNode*
 VLoopDependenceGraph::make_node(Node* node) {
-  DependenceNode* m = new (_vloop->arena()) DependenceNode(node);
+  DependenceNode* m = new (_vloop.arena()) DependenceNode(node);
   if (node != nullptr) {
     assert(_map.at_grow(node->_idx) == nullptr, "one init only");
     _map.at_put_grow(node->_idx, m);
@@ -1287,7 +1287,7 @@ VLoopDependenceGraph::make_node(Node* node) {
 
 VLoopDependenceGraph::DependenceEdge*
 VLoopDependenceGraph::make_edge(DependenceNode* dpred, DependenceNode* dsucc) {
-  DependenceEdge* e = new (_vloop->arena()) DependenceEdge(dpred,
+  DependenceEdge* e = new (_vloop.arena()) DependenceEdge(dpred,
                                                            dsucc,
                                                            dsucc->in_head(),
                                                            dpred->out_head());
