@@ -1632,8 +1632,8 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst, Reg
  * FOREACH_ITER:
  *     TMP_VEC_64 = PICK_SUB_WORDS_FROM_GATHER_INDICES
  *     TEMP_PERM_VEC = PERMUTE TMP_VEC_64 PERM_INDEX
- *     TEMP_PERM_VEC = TEMP_PERM_VEC - TWO_VEC
  *     DST_VEC = DST_VEC OR TEMP_PERM_VEC
+ *     PERM_INDEX = PERM_INDEX - TWO_VEC
  *
  * With each iteration permute index 0,1 holding assembled quadword
  * gets right shifted by two lane position.
