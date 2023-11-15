@@ -47,6 +47,7 @@ public final class CheckCleanerBound {
         // Wait to trigger the cleanup.
         for (int i = 0; i < 10 && weakHashMap.size() != 0; i++) {
             System.gc();
+            Thread.sleep(100);
         }
 
         // Check if the object has been collected.  The collection will not
