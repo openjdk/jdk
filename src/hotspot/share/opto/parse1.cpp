@@ -402,7 +402,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_fields = false;
   _alloc_with_final = nullptr;
   _entry_bci = InvocationEntryBci;
-  _tf = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -427,19 +426,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_monitors(true);
   }
 
-  _tf = TypeFunc::make(method());
   _iter.reset_to_method(method());
-  _flow = method()->get_flow_analysis();
-  if (_flow->failing()) {
-    assert(false, "type flow failed during parsing");
-    C->record_method_not_compilable(_flow->failure_reason());
-  }
-
-#ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
-#endif
   C->set_has_loops(C->has_loops() || method()->has_loops());
 
   if (_expected_uses <= 0) {
@@ -507,14 +494,24 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   // Do some special top-level things.
   if (depth() == 1 && C->is_osr_compilation()) {
+    _tf = C->tf();     // the OSR entry type is different
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
-    if (_flow->failing()) {
-      assert(false, "type flow analysis failed for OSR compilation");
-      C->record_method_not_compilable(_flow->failure_reason());
+  } else {
+    _tf = TypeFunc::make(method());
+    _entry_bci = InvocationEntryBci;
+    _flow = method()->get_flow_analysis();
+  }
+
+  if (_flow->failing()) {
+    assert(false, "type flow failed during parsing");
+    C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
-        tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        if (_entry_bci != InvocationEntryBci) {
+          tty->print("OSR @%d ", _entry_bci);
+        }
+        tty->print_cr("type flow bailout: %s", _flow->failure_reason());
         if (Verbose) {
           method()->print();
           method()->print_codes();
@@ -522,19 +519,19 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
         }
       }
 #endif
-    }
-    _tf = C->tf();     // the OSR entry type is different
   }
 
-#ifdef ASSERT
   if (depth() == 1) {
     assert(C->is_osr_compilation() == this->is_osr_parse(), "OSR in sync");
   } else {
     assert(!this->is_osr_parse(), "no recursive OSR");
   }
-#endif
 
 #ifndef PRODUCT
+  if (_flow->has_irreducible_entry()) {
+    C->set_parsed_irreducible_loop(true);
+  }
+
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
   if (CITime)
