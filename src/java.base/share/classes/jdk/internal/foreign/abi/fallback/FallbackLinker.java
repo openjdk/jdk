@@ -254,7 +254,7 @@ public final class FallbackLinker extends AbstractLinker {
                 acquireCallback.accept(addrArg);
                 argSeg.set(al, 0, addrArg);
             }
-            case GroupLayout           __ ->
+            case GroupLayout            _ ->
                     MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
             case null, default -> {
                 assert layout == null;

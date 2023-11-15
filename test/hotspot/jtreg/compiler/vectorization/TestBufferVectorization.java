@@ -244,7 +244,7 @@ public class TestBufferVectorization {
             return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
         }
 
-        out.shouldContain("ReplicateI");
+        out.shouldContain("Replicate");
         out.shouldContain("LoadVector");
         out.shouldContain("AddVI");
         out.shouldContain("StoreVector");
