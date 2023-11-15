@@ -49,8 +49,7 @@ import java.util.List;
  */
 public class TestSelectionEvents {
 
-    private static String EVENT_NAME = EventNames.Selection;
-    private static String COUNT_FIELD_NAME = "count";
+    private static String COUNT_FIELD = "count";
 
     public static void main(String[] args) throws Throwable {
         new TestSelectionEvents().test();
@@ -84,15 +83,13 @@ public class TestSelectionEvents {
                     // channel should be selected
                     n = sel.select();
                     Asserts.assertTrue(n == 1);
-
-
                 }
                 recording.stop();
 
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(events.size(), 2);
-                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD_NAME) == 0);
-                Asserts.assertTrue(events.get(1).getInt(COUNT_FIELD_NAME) == 1);
+                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 0);
+                Asserts.assertTrue(events.get(1).getInt(COUNT_FIELD) == 1);
             }
         }
     }
