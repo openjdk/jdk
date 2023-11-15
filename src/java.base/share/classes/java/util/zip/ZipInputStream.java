@@ -678,16 +678,18 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * only appear if the corresponding LOC field is set to 0xFFFFFFFF:
      * Uncompressed Size - 8 bytes
      * Compressed Size   - 8 bytes
+     *
+     * This entry in the Local header MUST include BOTH original
+     * and compressed file size fields.
+     *
      * See PKWare APP.Note Section 4.5.3 for more details
      *
      * @param blockSize the Zip64 Extended Information Extra Field size
-     * @return true if the extra block size is valid; false otherwise
+     * @return true if the extra block size is valid in a LOC header; false otherwise
      */
     private static boolean isZip64ExtBlockSizeValid(int blockSize) {
-        return switch (blockSize) {
-            case 8, 16 -> true;
-            default -> false;
-        };
+        // Uncompressed and compressed size fields are 8 bytes each
+        return blockSize == 16;
     }
 
     /*
