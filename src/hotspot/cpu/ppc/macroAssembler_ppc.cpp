@@ -2405,6 +2405,9 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     cmplwi(flag, top, LockStack::end_offset() - 1);
     bgt(flag, slow_path);
 
+    // The underflow check is elided. The recursive check will always fail
+    // when the lock stack is empty because of the _bad_oop_sentinel field.
+
     // Check if recursive.
     subi(t, top, oopSize);
     ldx(t, t, R16_thread);
@@ -2513,6 +2516,9 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     DEBUG_ONLY(li(t, 0);)
     DEBUG_ONLY(stdx(t, top, R16_thread);)
     stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+
+    // The underflow check is elided. The recursive check will always fail
+    // when the lock stack is empty because of the _bad_oop_sentinel field.
 
     // Check if recursive.
     subi(t, top, oopSize);
@@ -4271,6 +4277,9 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, La
   cmplwi(CCR0, top, LockStack::end_offset());
   bge(CCR0, slow);
 
+  // The underflow check is elided. The recursive check will always fail
+  // when the lock stack is empty because of the _bad_oop_sentinel field.
+
   // Check for recursion.
   subi(t, top, oopSize);
   ldx(t, t, R16_thread);
@@ -4333,6 +4342,9 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
   DEBUG_ONLY(li(t, 0);)
   DEBUG_ONLY(stdx(t, top, R16_thread);)
   stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+
+  // The underflow check is elided. The recursive check will always fail
+  // when the lock stack is empty because of the _bad_oop_sentinel field.
 
   // Check if recursive.
   subi(t, top, oopSize);
