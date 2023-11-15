@@ -530,7 +530,7 @@
           "likelihood. Following each mixed collection, abandon all "       \
           "remaining mixed collection candidate regions with likelihood "   \
           "ShenandoahCoalesceChance. Abandoning a mixed collection will "   \
-          "cause the old regions to be made parseable, rather than being "  \
+          "cause the old regions to be made parsable, rather than being "   \
           "evacuated.")                                                     \
           range(0, 100)                                                     \
                                                                             \

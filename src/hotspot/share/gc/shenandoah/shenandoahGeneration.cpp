@@ -571,7 +571,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
           if (remnant_size > ShenandoahHeap::min_fill_size()) {
             ShenandoahHeap::fill_with_object(original_top, remnant_size);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
-            // newly allocated objects will not be parseable when promote in place tries to register them.  Furthermore, any
+            // newly allocated objects will not be parsable when promote in place tries to register them.  Furthermore, any
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
             promote_in_place_pad += remnant_size * HeapWordSize;
@@ -733,7 +733,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       if (is_global()) {
         // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
         // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
-        // use the mark bitmap to make the old regions parseable by coalescing and filling any unmarked objects. Thus,
+        // use the mark bitmap to make the old regions parsable by coalescing and filling any unmarked objects. Thus,
         // we prepare for old collections by remembering which regions are old at this time. Note that any objects
         // promoted into old regions will be above TAMS, and so will be considered marked. However, free regions that
         // become old after this point will not be covered correctly by the mark bitmap, so we must be careful not to

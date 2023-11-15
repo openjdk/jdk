@@ -1880,7 +1880,7 @@ public:
     assert(plab != nullptr, "PLAB should be initialized for %s", thread->name());
 
     // There are two reasons to retire all plabs between old-gen evacuation passes.
-    //  1. We need to make the plab memory parseable by remembered-set scanning.
+    //  1. We need to make the plab memory parsable by remembered-set scanning.
     //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
     ShenandoahHeap::heap()->retire_plab(plab, thread);
     if (_resize && ShenandoahThreadLocalData::plab_size(thread) > 0) {

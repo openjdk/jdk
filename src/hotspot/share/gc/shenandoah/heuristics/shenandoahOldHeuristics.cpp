@@ -215,7 +215,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // or did we just not have enough room for any of them in this collection set?
     // We don't want a region with a stuck pin to prevent subsequent old collections, so
     // if they are all pinned we transition to a state that will allow us to make these uncollected
-    // (pinned) regions parseable.
+    // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
       log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
       _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
