@@ -1266,42 +1266,6 @@ void DepPreds::next() {
   }
 }
 
-// =========================== DepSuccs =========================
-// Iterator over successor edges in the dependence graph.
-
-//------------------------------DepSuccs---------------------------
-DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
-  _n = n;
-  _done = false;
-  if (_n->is_Load()) {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || _n->is_memory_phi()) {
-    _next_idx = 0;
-    _end_idx  = 0;
-    _dep_next = dg.dep(_n)->out_head();
-  } else {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = nullptr;
-  }
-  next();
-}
-
-//-------------------------------next---------------------------
-void DepSuccs::next() {
-  if (_dep_next != nullptr) {
-    _current  = _dep_next->succ()->node();
-    _dep_next = _dep_next->next_out();
-  } else if (_next_idx < _end_idx) {
-    _current  = _n->raw_out(_next_idx++);
-  } else {
-    _done = true;
-  }
-}
-
-
 void VLoopDependenceGraph::build() {
   CountedLoopNode *cl = _vloop->cl();
   // TODO remove, seems unnecessary
