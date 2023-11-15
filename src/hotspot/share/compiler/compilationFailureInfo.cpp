@@ -42,10 +42,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-static constexpr int skip_frames = 2;
-
 CompilationFailureInfo::CompilationFailureInfo(const char* failure_reason) :
-  _stack(skip_frames),
+  _stack(2),
   _failure_reason(os::strdup(failure_reason)),
   _elapsed_seconds(os::elapsedTime()),
   _compile_id(ciEnv::current()->task()->compile_id())
@@ -81,13 +79,19 @@ bool CompilationFailureInfo::print_pending_compilation_failure(outputStream* st)
   }
 
   const ciEnv* const env = ciEnv::current();
-  if (env == nullptr) return false;
+  if (env == nullptr) {
+    return false;
+  }
 
   const CompileTask* const task = env->task();
-  if (task == nullptr) return false;
+  if (task == nullptr) {
+    return false;
+  }
 
   const AbstractCompiler* const compiler = task->compiler();
-  if (compiler == nullptr) return false;
+  if (compiler == nullptr) {
+    return false;
+  }
 
 #ifdef COMPILER1
   if (compiler->type() == compiler_c1) {
