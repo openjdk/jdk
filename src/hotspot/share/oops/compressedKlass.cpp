@@ -52,9 +52,9 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
 
   _compression_info = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
 
-  assert(base() == _base, "compressionInfo encoding");
-  assert(shift() == _shift, "compressionInfo encoding");
-  assert(use_compressed_class_pointers() == true, "compressionInfo encoding");
+  assert(base() == _base, "compression_info encoding");
+  assert(shift() == _shift, "compression_info encoding");
+  assert(use_compressed_class_pointers() == true, "compression_info encoding");
 }
 
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
