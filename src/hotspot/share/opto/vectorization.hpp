@@ -491,8 +491,6 @@ class DepEdge : public ArenaObj {
   DepEdge* next_out() { return _next_out; }
   DepMem*  pred()     { return _pred; }
   DepMem*  succ()     { return _succ; }
-
-  void print();
 };
 
 //------------------------------DepMem---------------------------
@@ -668,9 +666,6 @@ public:
     DependenceEdge* next_out() { return _next_out; }
     DependenceNode* pred()     { return _pred; }
     DependenceNode* succ()     { return _succ; }
-
-    // TODO
-    //void print();
   };
 
   // A node in the dependence graph.  _in_head starts the threaded list of

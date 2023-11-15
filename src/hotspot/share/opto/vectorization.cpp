@@ -1231,15 +1231,6 @@ void DepMem::print() {
 #endif
 }
 
-// =========================== DepEdge =========================
-
-//------------------------------DepPreds---------------------------
-void DepEdge::print() {
-#ifndef PRODUCT
-  tty->print_cr("DepEdge: %d [ %d ]", _pred->node()->_idx, _succ->node()->_idx);
-#endif
-}
-
 // =========================== DepPreds =========================
 // Iterator over predecessor edges in the dependence graph.
 
