@@ -75,7 +75,7 @@ public class CenSizeTooLarge {
     // Entry names produced in this test are fixed-length
     public static final int NAME_LENGTH = 10;
 
-    // Use a shared LocalDataTime on all entries to save processing time
+    // Use a shared LocalDateTime on all entries to save processing time
     static final LocalDateTime TIME_LOCAL = LocalDateTime.now();
 
     // The size of one CEN header, including the name and the extra field
