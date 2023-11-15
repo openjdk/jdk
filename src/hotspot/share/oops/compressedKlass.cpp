@@ -34,7 +34,7 @@ int CompressedKlassPointers::_shift = 0;
 size_t CompressedKlassPointers::_range = 0;
 // Note: initialization value is unchanged for -UseCompressedClassPointers, so
 // the bit mirroring UseCompressedClassPointers is off and matches the switch.
-uint64_t CompressedKlassPointers::_compression_info;
+uint64_t CompressedKlassPointers::_compression_info = 0;
 
 #ifdef _LP64
 
