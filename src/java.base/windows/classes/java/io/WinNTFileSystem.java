@@ -41,6 +41,8 @@ import sun.security.action.GetPropertyAction;
  */
 final class WinNTFileSystem extends FileSystem {
 
+    private static final String LONG_PATH_PREFIX = "\\\\?\\";
+
     private final char slash;
     private final char altSlash;
     private final char semicolon;
@@ -58,6 +60,25 @@ final class WinNTFileSystem extends FileSystem {
         } else {
             ENABLE_ADS = true;
         }
+    }
+
+    // Strip a long path or UNC prefix and return the result.
+    // If there is no such prefix, return the parameter passed in.
+    private static String stripLongOrUNCPrefix(String path) {
+        // if a prefix is present, remove it
+        if (path.startsWith(LONG_PATH_PREFIX)) {
+            if (path.startsWith("UNC\\", 4)) {
+                path = "\\\\" + path.substring(8);
+            } else {
+                path = path.substring(4);
+                // if only "UNC" remains, a trailing "\\" was likely removed
+                if (path.equals("UNC")) {
+                    path = "\\\\";
+                }
+            }
+        }
+
+        return path;
     }
 
     WinNTFileSystem() {
@@ -98,6 +119,7 @@ final class WinNTFileSystem extends FileSystem {
        This way we iterate through the whole pathname string only once. */
     @Override
     public String normalize(String path) {
+        path = stripLongOrUNCPrefix(path);
         int n = path.length();
         char slash = this.slash;
         char altSlash = this.altSlash;
@@ -223,6 +245,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int prefixLength(String path) {
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         char slash = this.slash;
         int n = path.length();
         if (n == 0) return 0;
@@ -242,6 +266,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String resolve(String parent, String child) {
+        assert !child.startsWith(LONG_PATH_PREFIX);
+
         int pn = parent.length();
         if (pn == 0) return child;
         int cn = child.length();
@@ -320,6 +346,9 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean isAbsolute(File f) {
+        String path = f.getPath();
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         int pl = f.getPrefixLength();
         return (((pl == 2) && (f.getPath().charAt(0) == slash))
                 || (pl == 3));
@@ -358,6 +387,8 @@ final class WinNTFileSystem extends FileSystem {
     @Override
     public String resolve(File f) {
         String path = f.getPath();
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         int pl = f.getPrefixLength();
         if ((pl == 2) && (path.charAt(0) == slash))
             return path;                        /* UNC */
@@ -440,6 +471,8 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String canonicalize(String path) throws IOException {
+        assert !path.startsWith(LONG_PATH_PREFIX);
+
         // If path is a drive letter only then skip canonicalization
         int len = path.length();
         if ((len == 2) &&
