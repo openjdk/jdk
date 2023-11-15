@@ -827,6 +827,8 @@ const char* VLoopAnalyzer::analyze_helper() {
     return body_failure;
   }
 
+  _dependence_graph.build();
+
   // TODO Move stuff from SLP_extract
 
   return VLoopAnalyzer::SUCCESS;
@@ -1124,5 +1126,15 @@ void VLoopBody::print() const {
 }
 #endif
 
+void VLoopDependenceGraph::build() {
+  // TODO
+}
+
+#ifndef PRODUCT
+void VLoopDependenceGraph::print() const {
+  tty->print_cr("\nVLoopDependenceGraph::print:");
+  // TODO
+}
+#endif
 
 

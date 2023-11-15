@@ -463,21 +463,172 @@ private:
   }
 };
 
+// ========================= Dependence Graph =====================
+
+class DepMem;
+
+//------------------------------DepEdge---------------------------
+// An edge in the dependence graph.  The edges incident to a dependence
+// node are threaded through _next_in for incoming edges and _next_out
+// for outgoing edges.
+class DepEdge : public ArenaObj {
+ protected:
+  DepMem* _pred;
+  DepMem* _succ;
+  DepEdge* _next_in;   // list of in edges, null terminated
+  DepEdge* _next_out;  // list of out edges, null terminated
+
+ public:
+  DepEdge(DepMem* pred, DepMem* succ, DepEdge* next_in, DepEdge* next_out) :
+    _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
+
+  DepEdge* next_in()  { return _next_in; }
+  DepEdge* next_out() { return _next_out; }
+  DepMem*  pred()     { return _pred; }
+  DepMem*  succ()     { return _succ; }
+
+  void print();
+};
+
+//------------------------------DepMem---------------------------
+// A node in the dependence graph.  _in_head starts the threaded list of
+// incoming edges, and _out_head starts the list of outgoing edges.
+class DepMem : public ArenaObj {
+ protected:
+  Node*    _node;     // Corresponding ideal node
+  DepEdge* _in_head;  // Head of list of in edges, null terminated
+  DepEdge* _out_head; // Head of list of out edges, null terminated
+
+ public:
+  DepMem(Node* node) : _node(node), _in_head(nullptr), _out_head(nullptr) {}
+
+  Node*    node()                { return _node;     }
+  DepEdge* in_head()             { return _in_head;  }
+  DepEdge* out_head()            { return _out_head; }
+  void set_in_head(DepEdge* hd)  { _in_head = hd;    }
+  void set_out_head(DepEdge* hd) { _out_head = hd;   }
+
+  int in_cnt();  // Incoming edge count
+  int out_cnt(); // Outgoing edge count
+
+  void print();
+};
+
+//------------------------------DepGraph---------------------------
+class DepGraph {
+ protected:
+  Arena* _arena;
+  GrowableArray<DepMem*> _map;
+  DepMem* _root;
+  DepMem* _tail;
+
+ public:
+  DepGraph(Arena* a) : _arena(a), _map(a, 8,  0, nullptr) {
+    _root = new (_arena) DepMem(nullptr);
+    _tail = new (_arena) DepMem(nullptr);
+  }
+
+  DepMem* root() { return _root; }
+  DepMem* tail() { return _tail; }
+
+  // Return dependence node corresponding to an ideal node
+  DepMem* dep(Node* node) const { return _map.at(node->_idx); }
+
+  // Make a new dependence graph node for an ideal node.
+  DepMem* make_node(Node* node);
+
+  // Make a new dependence graph edge dprec->dsucc
+  DepEdge* make_edge(DepMem* dpred, DepMem* dsucc);
+
+  DepEdge* make_edge(Node* pred,   Node* succ)   { return make_edge(dep(pred), dep(succ)); }
+  DepEdge* make_edge(DepMem* pred, Node* succ)   { return make_edge(pred,      dep(succ)); }
+  DepEdge* make_edge(Node* pred,   DepMem* succ) { return make_edge(dep(pred), succ);      }
+
+  void init() { _map.clear(); } // initialize
+
+  void print(Node* n)   { dep(n)->print(); }
+  void print(DepMem* d) { d->print(); }
+};
+
+//------------------------------DepPreds---------------------------
+// Iterator over predecessors in the dependence graph and
+// non-memory-graph inputs of ideal nodes.
+class DepPreds : public StackObj {
+private:
+  Node*    _n;
+  int      _next_idx, _end_idx;
+  DepEdge* _dep_next;
+  Node*    _current;
+  bool     _done;
+
+public:
+  DepPreds(Node* n, const DepGraph& dg);
+  Node* current() { return _current; }
+  bool  done()    { return _done; }
+  void  next();
+};
+
+//------------------------------DepSuccs---------------------------
+// Iterator over successors in the dependence graph and
+// non-memory-graph outputs of ideal nodes.
+class DepSuccs : public StackObj {
+private:
+  Node*    _n;
+  int      _next_idx, _end_idx;
+  DepEdge* _dep_next;
+  Node*    _current;
+  bool     _done;
+
+public:
+  DepSuccs(Node* n, DepGraph& dg);
+  Node* current() { return _current; }
+  bool  done()    { return _done; }
+  void  next();
+};
+
+class VLoopDependenceGraph : public StackObj {
+private:
+  VLoop* _vloop;
+
+  //GrowableArray<PhiNode*> _heads;
+  //GrowableArray<MemNode*> _tails;
+
+public:
+  VLoopDependenceGraph(VLoop* vloop) :
+    _vloop(vloop) {}
+    //_heads(_vloop->arena(), 8,  0, nullptr),
+    //_tails(_vloop->arena(), 8,  0, nullptr) {};
+
+  NONCOPYABLE(VLoopDependenceGraph);
+
+  void reset() {
+    //_heads.clear();
+    //_tails.clear();
+  }
+
+  void build();
+  //const GrowableArray<PhiNode*> &heads() const { return _heads; }
+  //const GrowableArray<MemNode*> &tails() const { return _tails; }
+  DEBUG_ONLY(void print() const;)
+};
+
 class VLoopAnalyzer : public VLoop {
 protected:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
   // Submodules that analyze different aspects of the loop
-  VLoopReductions   _reductions;
-  VLoopMemorySlices _memory_slices;
-  VLoopBody         _body;
+  VLoopReductions      _reductions;
+  VLoopMemorySlices    _memory_slices;
+  VLoopBody            _body;
+  VLoopDependenceGraph _dependence_graph;
 
 public:
   VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase),
                                          _reductions(this),
                                          _memory_slices(this),
-                                         _body(this) {};
+                                         _body(this),
+                                         _dependence_graph(this) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
@@ -486,9 +637,10 @@ public:
                bool allow_cfg);
 
   // Read-only accessors for submodules
-  const VLoopReductions& reductions() const      { return _reductions; }
-  const VLoopMemorySlices& memory_slices() const { return _memory_slices; }
-  const VLoopBody& body() const                  { return _body; }
+  const VLoopReductions& reductions() const            { return _reductions; }
+  const VLoopMemorySlices& memory_slices() const       { return _memory_slices; }
+  const VLoopBody& body() const                        { return _body; }
+  const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
 
 private:
   virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
@@ -496,6 +648,7 @@ private:
     _reductions.reset();
     _memory_slices.reset();
     _body.reset();
+    _dependence_graph.reset();
   }
   const char* analyze_helper();
 };
