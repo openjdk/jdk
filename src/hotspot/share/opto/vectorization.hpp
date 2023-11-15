@@ -587,33 +587,108 @@ public:
 };
 
 class VLoopDependenceGraph : public StackObj {
+public:
+  class DependenceEdge;
+  class DependenceNode;
 private:
   VLoop* _vloop;
+  const VLoopMemorySlices& _memory_slices;
+  const VLoopBody& _body;
 
-
-
-  //GrowableArray<PhiNode*> _heads;
-  //GrowableArray<MemNode*> _tails;
+  GrowableArray<DependenceNode*> _map;
+  DependenceNode* _root;
+  DependenceNode* _tail;
 
 public:
-  VLoopDependenceGraph(VLoop* vloop) :
-    _vloop(vloop) {}
-    //_heads(_vloop->arena(), 8,  0, nullptr),
-    //_tails(_vloop->arena(), 8,  0, nullptr) {};
+  VLoopDependenceGraph(VLoop* vloop,
+                       const VLoopMemorySlices& memory_slices,
+                       const VLoopBody& body) :
+    _vloop(vloop),
+    _memory_slices(memory_slices),
+    _body(body),
+    _map(vloop->arena(), 8,  0, nullptr),
+    _root(new (vloop->arena()) DependenceNode(nullptr)),
+    _tail(new (vloop->arena()) DependenceNode(nullptr)) {}
 
   NONCOPYABLE(VLoopDependenceGraph);
 
   void reset() {
-    //_heads.clear();
-    //_tails.clear();
+    _map.clear();
   }
 
   void build();
-  //const GrowableArray<PhiNode*> &heads() const { return _heads; }
-  //const GrowableArray<MemNode*> &tails() const { return _tails; }
+
+  DependenceNode* root() { return _root; }
+  DependenceNode* tail() { return _tail; }
+
+  // Return dependence node corresponding to an ideal node
+  // TODO rename? assert that return is not null?
+  DependenceNode* dep(Node* node) const { return _map.at(node->_idx); }
+
+  // Make a new dependence graph node for an ideal node.
+  DependenceNode* make_node(Node* node);
+
+  // TODO more functionality!
+
   DEBUG_ONLY(void print() const;)
 
+  // An edge in the dependence graph.  The edges incident to a dependence
+  // node are threaded through _next_in for incoming edges and _next_out
+  // for outgoing edges.
+  class DependenceEdge : public ArenaObj {
+  protected:
+    DependenceNode* _pred;
+    DependenceNode* _succ;
+    DependenceEdge* _next_in;  // list of in edges, null terminated
+    DependenceEdge* _next_out; // list of out edges, null terminated
+
+  public:
+    DependenceEdge(DependenceNode* pred,
+                   DependenceNode* succ,
+                   DependenceEdge* next_in,
+                   DependenceEdge* next_out) :
+      _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
+
+    DependenceEdge* next_in()  { return _next_in; }
+    DependenceEdge* next_out() { return _next_out; }
+    DependenceNode* pred()     { return _pred; }
+    DependenceNode* succ()     { return _succ; }
+
+    // TODO
+    //void print();
+  };
+
+  // A node in the dependence graph.  _in_head starts the threaded list of
+  // incoming edges, and _out_head starts the list of outgoing edges.
   class DependenceNode : public ArenaObj {
+  protected:
+    Node*           _node;     // Corresponding ideal node
+    DependenceEdge* _in_head;  // Head of list of in edges, null terminated
+    DependenceEdge* _out_head; // Head of list of out edges, null terminated
+
+  public:
+    DependenceNode(Node* node) :
+      _node(node),
+      _in_head(nullptr),
+      _out_head(nullptr)
+    {
+      assert(node == nullptr ||
+             node->is_Mem() ||
+             node->is_memory_phi(),
+             "only memory graph nodes expected");
+    }
+
+    Node*           node()                { return _node;     }
+    DependenceEdge* in_head()             { return _in_head;  }
+    DependenceEdge* out_head()            { return _out_head; }
+    void set_in_head(DependenceEdge* hd)  { _in_head = hd;    }
+    void set_out_head(DependenceEdge* hd) { _out_head = hd;   }
+
+    // TODO
+    //int in_cnt();  // Incoming edge count
+    //int out_cnt(); // Outgoing edge count
+
+    //void print();
   };
 };
 
@@ -629,11 +704,13 @@ protected:
   VLoopDependenceGraph _dependence_graph;
 
 public:
-  VLoopAnalyzer(PhaseIdealLoop* phase) : VLoop(phase),
-                                         _reductions(this),
-                                         _memory_slices(this),
-                                         _body(this),
-                                         _dependence_graph(this) {};
+  VLoopAnalyzer(PhaseIdealLoop* phase) :
+    VLoop(phase),
+    // TODO pass this in by const reference!
+    _reductions(this),
+    _memory_slices(this),
+    _body(this),
+    _dependence_graph(this, _memory_slices, _body) {};
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.

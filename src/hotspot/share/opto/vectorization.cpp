@@ -1264,7 +1264,28 @@ void DepSuccs::next() {
 
 
 void VLoopDependenceGraph::build() {
+  CountedLoopNode *cl = _vloop->cl();
+  // TODO remove, seems unnecessary
+  assert(cl->is_main_loop(), "SLP should only work on main loops");
+
+  // First, assign a dependence node to each memory node
+  for (int i = 0; i < _body.body().length(); i++ ) {
+    Node* n = _body.body().at(i);
+    if (n->is_Mem() || n->is_memory_phi()) {
+      make_node(n);
+    }
+  }
+
+  const GrowableArray<PhiNode*> &mem_slice_head = _memory_slices.heads();
+  const GrowableArray<MemNode*> &mem_slice_tail = _memory_slices.tails();
+
   // TODO
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    print();
+  }
+#endif
 }
 
 #ifndef PRODUCT
@@ -1274,4 +1295,12 @@ void VLoopDependenceGraph::print() const {
 }
 #endif
 
+VLoopDependenceGraph::DependenceNode* VLoopDependenceGraph::make_node(Node* node) {
+  DependenceNode* m = new (_vloop->arena()) DependenceNode(node);
+  if (node != nullptr) {
+    assert(_map.at_grow(node->_idx) == nullptr, "one init only");
+    _map.at_put_grow(node->_idx, m);
+  }
+  return m;
+}
 
