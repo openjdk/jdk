@@ -36,6 +36,15 @@ import sun.security.jca.JCAUtil;
  * secure one-way hash functions that take arbitrary-sized data and output a
  * fixed-length hash value.
  *
+ * <p>If an implementation does not require parameters, it must contain
+ * a public constructor that takes no argument, and an {@code MessageDigest}
+ * object must be instantiated with one of the {@code getInstance} methods
+ * without an {@code AlgorithmParameterSpec} argument. Otherwise, if an
+ * implementation requires parameters, it must contain a public constructor
+ * that takes an {@code AlgorithmParameterSpec} argument, and an
+ * {@code MessageDigest} object must be instantiated with one of the
+ * {@code getInstance} methods with an {@code AlgorithmParameterSpec} argument.
+ *
  * <p> All the abstract methods in this class must be implemented by a
  * cryptographic service provider who wishes to supply the implementation
  * of a particular message digest algorithm.
