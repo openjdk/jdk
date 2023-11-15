@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ public class ClassInitializationTest {
     public static void main(String... args) throws Exception {
 
         // (1)
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=info",
-                                                                  "-Xverify:all",
-                                                                  "-Xmx128m",
-                                                                  "BadMap50");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=info",
+                                                                             "-Xverify:all",
+                                                                             "-Xmx128m",
+                                                                             "BadMap50");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldNotHaveExitValue(0);
         out.shouldContain("Start class verification for:");
@@ -54,10 +54,10 @@ public class ClassInitializationTest {
         out.shouldContain("Fail over class verification to old verifier for: BadMap50");
 
         // (2) class+init should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=off",
-                                                   "-Xverify:all",
-                                                   "-Xmx128m",
-                                                   "BadMap50");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+init=off",
+                                                              "-Xverify:all",
+                                                              "-Xmx128m",
+                                                              "BadMap50");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotHaveExitValue(0);
         out.shouldNotContain("[class,init]");

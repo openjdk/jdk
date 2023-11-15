@@ -40,6 +40,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
+ * @bug 8318144
  * @enablePreview
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
@@ -70,7 +71,11 @@ public class SwitchBootstrapsTest {
     }
 
     private void testEnum(Enum<?> target, int start, int result, Object... labels) throws Throwable {
-        MethodType switchType = MethodType.methodType(int.class, target.getClass(), int.class);
+        testEnum(target.getClass(), target, start, result, labels);
+    }
+
+    private void testEnum(Class<?> targetClass, Enum<?> target, int start, int result, Object... labels) throws Throwable {
+        MethodType switchType = MethodType.methodType(int.class, targetClass, int.class);
         MethodHandle indy = ((CallSite) BSM_ENUM_SWITCH.invoke(MethodHandles.lookup(), "", switchType, labels)).dynamicInvoker();
         assertEquals((int) indy.invoke(target, start), result);
         assertEquals(-1, (int) indy.invoke(null, start));
@@ -136,6 +141,31 @@ public class SwitchBootstrapsTest {
         testEnum(E1.A, 1, 1, "A", "A", "B");
         testEnum(E1.A, 2, 3, "A", "A", "B");
         testEnum(E1.A, 0, 0);
+    }
+
+    public void testEnumsWithConstants() throws Throwable {
+        enum E {
+            A {},
+            B {},
+            C {}
+        }
+        ClassDesc eDesc = E.class.describeConstable().get();
+        Object[] typeParams = new Object[] {
+            EnumDesc.of(eDesc, "A"),
+            EnumDesc.of(eDesc, "B"),
+            EnumDesc.of(eDesc, "C"),
+            "a",
+            String.class
+        };
+        testType(E.A, 0, 0, typeParams);
+        testType(E.B, 0, 1, typeParams);
+        testType(E.C, 0, 2, typeParams);
+        testType("a", 0, 3, typeParams);
+        testType("x", 0, 4, typeParams);
+        testType('a', 0, 5, typeParams);
+        testEnum(E.class, E.A, 0, 0, "A", "B", "C");
+        testEnum(E.class, E.B, 0, 1, "A", "B", "C");
+        testEnum(E.class, E.C, 0, 2, "A", "B", "C");
     }
 
     public void testWrongSwitchTypes() throws Throwable {
