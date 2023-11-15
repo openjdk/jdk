@@ -46,23 +46,32 @@ import java.util.HashMap;
 @State(Scope.Benchmark)
 @Fork(value = 3)
 public class HashMapBench {
+    class Key {
+        int x;
+        Key(int x) { this.x = x; }
+        public int hashCode() { return x; }
+        public boolean equals(Object other) { return this.hashCode() == other.hashCode(); }
+    }
+
+    static void blackhole(Object o) {}
+
     @Param("1024")
     private int size;
 
     @Param({"1", "2", "4"})
     private int fillInterval;
 
-    ArrayList<Integer> keys;
-    HashMap<Integer, Object> map;
+    ArrayList<Key> keys;
+    HashMap<Key, Object> map;
 
     @Setup
     public void setUp() {
         keys = new ArrayList<>();
         map = new HashMap<>();
         for (int i = 0; i < size; ++i) {
-            keys.add(i);
+            keys.add(new Key(i));
             if (i % fillInterval == 0) {
-                map.put(i, new Object());
+                map.put(new Key(i), new Object());
             }
         }
     }
@@ -71,6 +80,23 @@ public class HashMapBench {
     public void replace() {
         for (int i = 0; i < size; ++i) {
             map.replace(keys.get(i), new Object());
+        }
+    }
+
+    @Benchmark
+    public void computeIfAbsent() {
+        for (int i = 0; i < size; ++i) {
+            map.computeIfAbsent(new Key(i), key -> new Object());
+        }
+    }
+
+    @Benchmark
+    public void cacheUpdate() {
+        for (int i = 0; i < size; ++i) {
+            Key key = new Key(i);
+            if (!map.containsKey(key)) {
+                map.put(key, new Object());
+            }
         }
     }
 }
