@@ -65,7 +65,7 @@ class CompressedKlassPointers : public AllStatic {
   // - Bit  [0-7]   shift
   // - Bit  8       UseCompressedClassPointers
   // - Bits [16-64] the base.
-  static uint64_t _compressionInfo;
+  static uint64_t _compression_info;
   static constexpr int base_alignment = 16;
   static constexpr uint64_t mask_base = ~right_n_bits(base_alignment);
   static constexpr int shift_bitlen = 8; // read with a mov8
@@ -95,9 +95,9 @@ public:
 
   static void     print_mode(outputStream* st);
 
-  static bool     use_compressed_class_pointers() { return (_compressionInfo & nth_bit(bitpos_useccp)); }
-  static address  base()             { return  (address)(_compressionInfo & mask_base); }
-  static int      shift()            { return  (int)(_compressionInfo & right_n_bits(shift_bitlen)); }
+  static bool     use_compressed_class_pointers() { return (_compression_info & nth_bit(bitpos_useccp)); }
+  static address  base()             { return  (address)(_compression_info & mask_base); }
+  static int      shift()            { return  (int)(_compression_info & right_n_bits(shift_bitlen)); }
   static size_t   range()            { return  _range; }
 
   static bool is_null(Klass* v)      { return v == nullptr; }

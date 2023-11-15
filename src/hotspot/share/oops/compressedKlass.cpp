@@ -34,7 +34,7 @@ int CompressedKlassPointers::_shift = 0;
 size_t CompressedKlassPointers::_range = 0;
 // Note: initialization value is unchanged for -UseCompressedClassPointers, so
 // the bit mirroring UseCompressedClassPointers is off and matches the switch.
-uint64_t CompressedKlassPointers::_compressionInfo;
+uint64_t CompressedKlassPointers::_compression_info;
 
 #ifdef _LP64
 
@@ -50,7 +50,7 @@ void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) 
   assert((base_i & ~mask_base) == 0, "Base not aligned?");
   assert(_shift <= 63, "Sanity");
 
-  _compressionInfo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
+  _compression_info = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
 
   assert(base() == _base, "compressionInfo encoding");
   assert(shift() == _shift, "compressionInfo encoding");
