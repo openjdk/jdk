@@ -29,7 +29,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 8259609 8276116
+ * @bug 8259609 8276116 8311932
  * @summary C2: optimize long range checks in long counted loops
  * @library /test/lib /
  * @requires vm.compiler2.enabled
