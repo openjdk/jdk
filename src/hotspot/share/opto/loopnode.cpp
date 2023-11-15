@@ -858,7 +858,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   if (range_checks.size() > 0) {
     // This transformation requires peeling one iteration. Also, if it has range checks and they are eliminated by
-    // predication, then 2 predicates are added for one range check. Finally, transforming a long range check requires
+    // Loop Predication, then 2 Hoisted Check Predicates are added for one range check. Finally, transforming a long range check requires
     // extra logic to be executed before the loop is entered and for the outer loop. As a result, the transformations
     // can't pay off for a small number of iterations: roughly, if the loop runs for 3 iterations, it's going to execute
     // as many range checks once transformed with range checks eliminated (1 peeled iteration with range checks
