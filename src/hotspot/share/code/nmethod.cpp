@@ -697,12 +697,12 @@ nmethod::nmethod(
 
     clear_unloading_state();
 
+    finalize_relocations();
+
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
-
-    finalize_relocations();
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -887,12 +887,12 @@ nmethod::nmethod(
     }
 #endif
 
+    finalize_relocations();
+
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
-
-    finalize_relocations();
 
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
@@ -1149,7 +1149,11 @@ void nmethod::finalize_relocations() {
   // we don't have to race with deoptimization
   RelocIterator iter(this);
   while (iter.next()) {
-    if (iter.type() == relocInfo::post_call_nop_type) {
+    if (iter.type() == relocInfo::virtual_call_type) {
+      virtual_call_Relocation* r = iter.virtual_call_reloc();
+      NativeMovConstReg* value = nativeMovConstReg_at(r->cached_value());
+      value->set_data((intptr_t)new CompiledICData());
+    } else if (iter.type() == relocInfo::post_call_nop_type) {
       post_call_nop_Relocation* const reloc = iter.post_call_nop_reloc();
       address pc = reloc->addr();
       install_post_call_nop_displacement(this, pc);
@@ -1180,8 +1184,7 @@ void nmethod::make_deoptimized() {
   while (iter.next()) {
 
     switch (iter.type()) {
-      case relocInfo::virtual_call_type:
-      case relocInfo::opt_virtual_call_type: {
+      case relocInfo::virtual_call_type: {
         CompiledIC *ic = CompiledIC_at(&iter);
         address pc = ic->end_of_call();
         NativePostCallNop* nop = nativePostCallNop_at(pc);
@@ -1191,8 +1194,9 @@ void nmethod::make_deoptimized() {
         assert(NativeDeoptInstruction::is_deopt_at(pc), "check");
         break;
       }
-      case relocInfo::static_call_type: {
-        CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
+      case relocInfo::static_call_type:
+      case relocInfo::opt_virtual_call_type: {
+        CompiledDirectCall *csc = CompiledDirectCall::at(iter.reloc());
         address pc = csc->end_of_call();
         NativePostCallNop* nop = nativePostCallNop_at(pc);
         //tty->print_cr(" - static pc %p", pc);
@@ -1219,29 +1223,29 @@ void nmethod::verify_clean_inline_caches() {
   RelocIterator iter(this, oops_reloc_begin());
   while(iter.next()) {
     switch(iter.type()) {
-      case relocInfo::virtual_call_type:
-      case relocInfo::opt_virtual_call_type: {
+      case relocInfo::virtual_call_type: {
         CompiledIC *ic = CompiledIC_at(&iter);
-        CodeBlob *cb = CodeCache::find_blob(ic->ic_destination());
+        CodeBlob *cb = CodeCache::find_blob(ic->destination());
         assert(cb != nullptr, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
         if( nm != nullptr ) {
           // Verify that inline caches pointing to bad nmethods are clean
-          if (!nm->is_in_use() || (nm->method()->code() != nm)) {
+          if (!nm->is_in_use() || nm->is_unloading()) {
             assert(ic->is_clean(), "IC should be clean");
           }
         }
         break;
       }
-      case relocInfo::static_call_type: {
-        CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
-        CodeBlob *cb = CodeCache::find_blob(csc->destination());
+      case relocInfo::static_call_type:
+      case relocInfo::opt_virtual_call_type: {
+        CompiledDirectCall *cdc = CompiledDirectCall::at(iter.reloc());
+        CodeBlob *cb = CodeCache::find_blob(cdc->destination());
         assert(cb != nullptr, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
-        if( nm != nullptr ) {
+        if (nm != nullptr) {
           // Verify that inline caches pointing to bad nmethods are clean
-          if (!nm->is_in_use() || (nm->method()->code() != nm)) {
-            assert(csc->is_clean(), "IC should be clean");
+          if (!nm->is_in_use() || nm->is_unloading() || nm->method()->code() != nm) {
+            assert(cdc->is_clean(), "IC should be clean");
           }
         }
         break;
@@ -1418,7 +1422,6 @@ void nmethod::unlink() {
   // the Method, because it is only concurrently unlinked by
   // the entry barrier, which acquires the per nmethod lock.
   unlink_from_method();
-  clear_ic_callsites();
 
   if (is_osr_method()) {
     invalidate_osr_method();
@@ -1463,10 +1466,11 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
     ec = next;
   }
 
+  purge_ic_callsites();
+
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
-
   CodeCache::unregister_old_nmethod(this);
 
   CodeBlob::purge(free_code_cache_data, unregister_nmethod);
@@ -1604,16 +1608,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
         // Check compiledIC holders associated with this nmethod
         ResourceMark rm;
         CompiledIC *ic = CompiledIC_at(&iter);
-        if (ic->is_icholder_call()) {
-          CompiledICHolder* cichk = ic->cached_icholder();
-          f->do_metadata(cichk->holder_metadata());
-          f->do_metadata(cichk->holder_klass());
-        } else {
-          Metadata* ic_oop = ic->cached_metadata();
-          if (ic_oop != nullptr) {
-            f->do_metadata(ic_oop);
-          }
-        }
+        ic->metadata_do(f);
       }
     }
   }
@@ -1750,8 +1745,7 @@ void nmethod::do_unloading(bool unloading_occurred) {
   if (is_unloading()) {
     unlink();
   } else {
-    guarantee(unload_nmethod_caches(unloading_occurred),
-              "Should not need transition stubs");
+    unload_nmethod_caches(unloading_occurred);
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
       bs_nm->disarm(this);
@@ -2284,15 +2278,23 @@ void nmethod::verify() {
 }
 
 
-void nmethod::verify_interrupt_point(address call_site) {
+void nmethod::verify_interrupt_point(address call_site, bool is_inline_cache) {
 
   // Verify IC only when nmethod installation is finished.
   if (!is_not_installed()) {
     if (CompiledICLocker::is_safe(this)) {
-      CompiledIC_at(this, call_site);
+      if (is_inline_cache) {
+        CompiledIC_at(this, call_site);
+      } else {
+        CompiledDirectCall::at(call_site);
+      }
     } else {
       CompiledICLocker ml_verify(this);
-      CompiledIC_at(this, call_site);
+      if (is_inline_cache) {
+        CompiledIC_at(this, call_site);
+      } else {
+        CompiledDirectCall::at(call_site);
+      }
     }
   }
 
@@ -2316,15 +2318,15 @@ void nmethod::verify_scopes() {
     address stub = nullptr;
     switch (iter.type()) {
       case relocInfo::virtual_call_type:
-        verify_interrupt_point(iter.addr());
+        verify_interrupt_point(iter.addr(), true /* is_inline_cache */);
         break;
       case relocInfo::opt_virtual_call_type:
         stub = iter.opt_virtual_call_reloc()->static_stub();
-        verify_interrupt_point(iter.addr());
+        verify_interrupt_point(iter.addr(), false /* is_inline_cache */);
         break;
       case relocInfo::static_call_type:
         stub = iter.static_call_reloc()->static_stub();
-        //verify_interrupt_point(iter.addr());
+        verify_interrupt_point(iter.addr(), false /* is_inline_cache */);
         break;
       case relocInfo::runtime_call_type:
       case relocInfo::runtime_call_w_cp_type: {
@@ -3239,93 +3241,12 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
 
 #endif
 
-class DirectNativeCallWrapper: public NativeCallWrapper {
-private:
-  NativeCall* _call;
-
-public:
-  DirectNativeCallWrapper(NativeCall* call) : _call(call) {}
-
-  virtual address destination() const { return _call->destination(); }
-  virtual address instruction_address() const { return _call->instruction_address(); }
-  virtual address next_instruction_address() const { return _call->next_instruction_address(); }
-  virtual address return_address() const { return _call->return_address(); }
-
-  virtual address get_resolve_call_stub(bool is_optimized) const {
-    if (is_optimized) {
-      return SharedRuntime::get_resolve_opt_virtual_call_stub();
-    }
-    return SharedRuntime::get_resolve_virtual_call_stub();
-  }
-
-  virtual void set_destination_mt_safe(address dest) {
-    _call->set_destination_mt_safe(dest);
-  }
-
-  virtual void set_to_interpreted(const methodHandle& method, CompiledICInfo& info) {
-    CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
-    {
-      csc->set_to_interpreted(method, info.entry());
-    }
-  }
-
-  virtual void verify() const {
-    // make sure code pattern is actually a call imm32 instruction
-    _call->verify();
-    _call->verify_alignment();
-  }
-
-  virtual void verify_resolve_call(address dest) const {
-    CodeBlob* db = CodeCache::find_blob(dest);
-    assert(db != nullptr && !db->is_adapter_blob(), "must use stub!");
-  }
-
-  virtual bool is_call_to_interpreted(address dest) const {
-    CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
-    return cb->contains(dest);
-  }
-
-  virtual bool is_safe_for_patching() const { return false; }
-
-  virtual NativeInstruction* get_load_instruction(virtual_call_Relocation* r) const {
-    return nativeMovConstReg_at(r->cached_value());
-  }
-
-  virtual void *get_data(NativeInstruction* instruction) const {
-    return (void*)((NativeMovConstReg*) instruction)->data();
-  }
-
-  virtual void set_data(NativeInstruction* instruction, intptr_t data) {
-    ((NativeMovConstReg*) instruction)->set_data(data);
-  }
-};
-
-NativeCallWrapper* nmethod::call_wrapper_at(address call) const {
-  return new DirectNativeCallWrapper((NativeCall*) call);
-}
-
-NativeCallWrapper* nmethod::call_wrapper_before(address return_pc) const {
-  return new DirectNativeCallWrapper(nativeCall_before(return_pc));
-}
-
 address nmethod::call_instruction_address(address pc) const {
   if (NativeCall::is_call_before(pc)) {
     NativeCall *ncall = nativeCall_before(pc);
     return ncall->instruction_address();
   }
   return nullptr;
-}
-
-CompiledStaticCall* nmethod::compiledStaticCall_at(Relocation* call_site) const {
-  return CompiledDirectStaticCall::at(call_site);
-}
-
-CompiledStaticCall* nmethod::compiledStaticCall_at(address call_site) const {
-  return CompiledDirectStaticCall::at(call_site);
-}
-
-CompiledStaticCall* nmethod::compiledStaticCall_before(address return_addr) const {
-  return CompiledDirectStaticCall::before(return_addr);
 }
 
 #if defined(SUPPORT_DATA_STRUCTS)
@@ -3341,15 +3262,15 @@ void nmethod::print_calls(outputStream* st) {
   RelocIterator iter(this);
   while (iter.next()) {
     switch (iter.type()) {
-    case relocInfo::virtual_call_type:
-    case relocInfo::opt_virtual_call_type: {
+    case relocInfo::virtual_call_type: {
       CompiledICLocker ml_verify(this);
       CompiledIC_at(&iter)->print();
       break;
     }
     case relocInfo::static_call_type:
-      st->print_cr("Static call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
-      CompiledDirectStaticCall::at(iter.reloc())->print();
+    case relocInfo::opt_virtual_call_type:
+      st->print_cr("Direct call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
+      CompiledDirectCall::at(iter.reloc())->print();
       break;
     default:
       break;

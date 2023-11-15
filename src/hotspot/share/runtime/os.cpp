@@ -30,7 +30,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/interpreter.hpp"

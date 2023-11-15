@@ -29,7 +29,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -38,7 +37,6 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -624,8 +622,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   Label ok;
 
-  const Register holder = t1;
   const Register receiver = j_rarg0;
+  const Register holder = t1;
   const Register tmp = t2;  // A call-clobbered register not used for arg passing
 
   // -------------------------------------------------------------------------
@@ -639,11 +637,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ block_comment("c2i_unverified_entry {");
-    __ load_klass(t0, receiver, tmp);
-    __ ld(tmp, Address(holder, CompiledICHolder::holder_klass_offset()));
-    __ ld(xmethod, Address(holder, CompiledICHolder::holder_metadata_offset()));
-    __ beq(t0, tmp, ok);
-    __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+
+    __ ic_check();
+    __ ld(xmethod, Address(holder, CompiledICData::speculated_method_offset()));
 
     __ bind(ok);
     // Method might have been compiled since the call site was patched to
@@ -985,7 +981,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ j(exit);
 
     CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1051,7 +1047,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, tr_call);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1424,19 +1420,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register ic_reg = t1;
   const Register receiver = j_rarg0;
 
-  Label hit;
-  Label exception_pending;
-
   __ verify_oop(receiver);
-  assert_different_registers(ic_reg, receiver, t0, t2);
-  __ cmp_klass(receiver, ic_reg, t0, t2 /* call-clobbered t2 as a tmp */, hit);
+  assert_different_registers(receiver, t0, t1);
 
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  // Verified entry point must be aligned
-  __ align(8);
-
-  __ bind(hit);
+  __ ic_check();
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
@@ -1871,6 +1858,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ leave();
 
   // Any exception pending?
+  Label exception_pending;
   __ ld(t0, Address(xthread, in_bytes(Thread::pending_exception_offset())));
   __ bnez(t0, exception_pending);
 

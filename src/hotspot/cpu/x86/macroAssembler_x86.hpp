@@ -896,6 +896,8 @@ public:
 
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
   void emit_static_call_stub();
 

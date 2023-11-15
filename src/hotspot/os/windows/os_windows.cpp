@@ -27,7 +27,6 @@
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"

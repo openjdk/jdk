@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/relocInfo.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
@@ -647,11 +646,6 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
     }
     if (StubRoutines::contains(addr)) {
       st->print_cr(INTPTR_FORMAT " is pointing to an (unnamed) stub routine", p2i(addr));
-      return;
-    }
-    // the InlineCacheBuffer is using stubs generated into a buffer blob
-    if (InlineCacheBuffer::contains(addr)) {
-      st->print_cr(INTPTR_FORMAT " is pointing into InlineCacheBuffer", p2i(addr));
       return;
     }
     VtableStub* v = VtableStubs::stub_containing(addr);

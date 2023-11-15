@@ -604,7 +604,7 @@ public:
   // verify operations
   void verify();
   void verify_scopes();
-  void verify_interrupt_point(address interrupt_point);
+  void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
   // Disassemble this nmethod with additional debug information, e.g. information about blocks.
   void decode2(outputStream* st) const;
@@ -701,13 +701,7 @@ public:
 
   virtual void metadata_do(MetadataClosure* f);
 
-  NativeCallWrapper* call_wrapper_at(address call) const;
-  NativeCallWrapper* call_wrapper_before(address return_pc) const;
   address call_instruction_address(address pc) const;
-
-  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
-  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
-  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
 
   virtual void  make_deoptimized();
   void finalize_relocations();
