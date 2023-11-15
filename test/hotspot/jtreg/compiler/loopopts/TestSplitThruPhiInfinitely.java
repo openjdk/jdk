@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
-#define SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
+/*
+ * @test
+ * @bug 8287284
+ * @summary The phi of cnt is split from the inner to the outer loop,
+ *          and then from outer loop to the inner loop again.
+ *          This ended in a endless optimization cycle.
+ * @library /test/lib /
+ * @run driver compiler.c2.loopopts.TestSplitThruPhiInfinitely
+ */
 
-#include "gc/shared/bufferNode.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
+package compiler.c2.loopopts;
 
-class Monitor;
-class Thread;
+import compiler.lib.ir_framework.*;
 
-class G1SATBMarkQueueSet : public SATBMarkQueueSet {
-public:
-  G1SATBMarkQueueSet(BufferNode::Allocator* allocator);
+public class TestSplitThruPhiInfinitely {
 
-  static void handle_zero_index_for_thread(Thread* t);
-  virtual SATBMarkQueue& satb_queue_for_thread(Thread* const t) const;
-  virtual void filter(SATBMarkQueue& queue);
-};
+    public static int cnt = 1;
 
-#endif // SHARE_GC_G1_G1SATBMARKQUEUESET_HPP
+    @Test
+    @IR(counts = {IRNode.PHI, " <= 10"})
+    public static void test() {
+        int j = 0;
+        do {
+            j = cnt;
+            for (int k = 0; k < 20000; k++) {
+                cnt += 2;
+            }
+        } while (++j < 10);
+    }
+
+    public static void main(String[] args) {
+        TestFramework.runWithFlags("-XX:-PartialPeelLoop");
+    }
+}
