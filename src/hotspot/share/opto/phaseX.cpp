@@ -1614,6 +1614,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
+  // If changed LShift inputs, check RShift users for useless sign-ext
   if( use_op == Op_LShiftI ) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);

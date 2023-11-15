@@ -252,7 +252,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
         if (clone_ptr != nullptr) {
           Node* clone = *clone_ptr;
           n->set_req(j, clone);
-          if (n->_idx < old_nodes) {
+          if (n->_idx < index_before_clone) {
             PhaseIterGVN::add_users_of_use_to_worklist(clone, n, *C->igvn_worklist());
           }
           updates++;
