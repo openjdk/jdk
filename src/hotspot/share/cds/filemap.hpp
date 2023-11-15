@@ -281,6 +281,7 @@ public:
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void copy_base_archive_name(const char* name);
+
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
   }

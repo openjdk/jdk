@@ -605,7 +605,7 @@ void Modules::serialize(SerializeClosure* soc) {
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(UseSharedSpaces && CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_loading_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
