@@ -64,7 +64,7 @@ class CompressedKlassPointers : public AllStatic {
   // compiler.
   // - Bit  [0-7]   encoding shift
   // - Bit  8       UseCompressedClassPointers
-  // - Bits [16-64] encoding  base
+  // - Bits [16-64] encoding base
   static uint64_t _compression_info;
   static constexpr int base_alignment = 16;
   static constexpr uint64_t mask_base = ~right_n_bits(base_alignment);
