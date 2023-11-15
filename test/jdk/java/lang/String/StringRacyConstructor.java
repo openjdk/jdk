@@ -216,7 +216,7 @@ public class StringRacyConstructor {
 
         // Exhaustively check compress returning the correct index of the non-latin1 char.
         final int SIZE = 48;
-        final byte FILL_BYTE = 0x52;
+        final byte FILL_BYTE = 'R';
         chars = new char[SIZE];
         bytes = new byte[chars.length];
         for (int i = 0; i < SIZE; i++) { // Every starting index
@@ -278,7 +278,7 @@ public class StringRacyConstructor {
      * incorrectly encoded as UTF-16.
      */
     public static String racyStringConstruction(String original) throws ConcurrentModificationException {
-        if (original.chars().max().orElseThrow() > 256) {
+        if (original.chars().max().getAsInt() >= 256) {
             throw new IllegalArgumentException(
                     "Only work with latin-1 Strings");
         }
@@ -308,7 +308,7 @@ public class StringRacyConstructor {
                     // ignore interrupt
                 }
                 if (i >= 1_000_000) {
-                    System.err.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
+                    System.out.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
                 }
                 return s;
             }
@@ -354,7 +354,7 @@ public class StringRacyConstructor {
                     // ignore interrupt
                 }
                 if (i >= 1_000_000) {
-                    System.err.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
+                    System.out.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
                 }
                 return s;
             }
@@ -401,7 +401,7 @@ public class StringRacyConstructor {
                     // ignore interrupt
                 }
                 if (i >= 1_000_000) {
-                    System.err.printf("Unable to create a string in %d iterations: %s%n", i, original);
+                    System.out.printf("Unable to create a string in %d iterations: %s%n", i, original);
                 }
                 return s;
             }
@@ -420,7 +420,7 @@ public class StringRacyConstructor {
 
         @Override
         public int length() {
-            return aString.length() + 1;
+            return aString.length();
         }
 
         @Override
