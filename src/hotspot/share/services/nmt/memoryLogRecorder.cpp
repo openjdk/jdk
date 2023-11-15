@@ -58,11 +58,17 @@
  Notes:
 
  Imagine that we issue os::malloc(20) call. We will get back not just the 20 bytes that we asked for,
-      but instead a bigger chunk, depending on the particular OS (and its malloc implementation):
+      but instead a bigger chunk, depending on the particular OS (and its malloc implementation).
+      For example, os::malloc(20) call on:
 
  - Linux allocates   24 bytes   BBBBBBBB BBBBBBBB BBBBDDDD
  - macOS allocates   32 bytes   BBBBBBBB BBBBBBBB BBBBDDDD DDDDDDDD
  - Windows allocates ?? bytes
+
+ where:
+
+ - B client chunk
+ - D malloc rounding
 
  In this case the malloc overhead is:
 
@@ -79,18 +85,19 @@
  - macOS allocates   48 bytes   AAAAAAAA AAAAAAAA BBBBBBBB BBBBBBBB BBBBCCDD DDDDDDDD
  - Windows allocates ?? bytes
 
- In this case the malloc overhead is:
-
- - Linux malloc overhead is   ((40 - 38) / 38) ==  5.3 % increase
- - macOS malloc overhead is   ((48 - 38) / 38) == 26.3 % increase
- - Windows malloc overhead is                        ? % increase
-
  where:
 
  - A NMT header
  - B client chunk
  - C NMT footer
  - D malloc rounding
+
+ In this case the malloc overhead is:
+
+ - Linux malloc overhead is   ((40 - 38) / 38) ==  5.3 % increase
+ - macOS malloc overhead is   ((48 - 38) / 38) == 26.3 % increase
+ - Windows malloc overhead is                        ? % increase
+
 
  When calculating the NMT overhead, this code will compare the allocated sizes, i.e. the actual
       acquired sizes, not requested sizes. In this case we would compare:
@@ -181,8 +188,8 @@ const char* NMT_MemoryLogRecorder::recall_thread_name(intx tid) {
   return "";
 }
 
-// on macOS malloc currently (macOS 13) returns the same value for same sizes
-// on Linux malloc can return different values for the same sizes
+// on macOS, malloc currently (macOS 13) returns the same value for the same requested size
+// on Linux, malloc can return different values for the same requested size
 static inline size_t _malloc_good_size_native(size_t size) {
   void *ptr = malloc(size);
   assert(ptr != nullptr, "must be, _malloc_good_size_native(%zu) == nullptr", size);
@@ -323,7 +330,7 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
 
   // find total_actual sizes for alloc requests and count how many of them there are
   constexpr size_t steps = 99;
-  size_t gap = _malloc_requests_count / (steps-1);
+  size_t gap = _malloc_requests_count / steps;
   for (size_t i=0; i<_malloc_requests_count; i++) {
     if ((count > _feedback_cutoff_count) && (i%gap == 0)) {
       fprintf(stderr, "%3ld", (steps - (i/gap))); fflush(stderr);
@@ -457,14 +464,14 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
       Entry* e = &entries[c];
       if (e->flags == NMTUtil::index_to_flag(i)) {
         if (is_active(e)) {
-          if (is_malloc(e)) {
+          if (is_alloc(e)) {
             requested += e->requested;
             allocated += e->actual;
             assert(e->actual >= e->requested, "e->actual >= e->requested [%zu, %zu]", e->actual, e->requested);
             assert(allocated >= requested, "allocated >= requested [%zu, %zu]", allocated, requested);
           } else {
             print_entry(e);
-            assert(false, "HUH? %d:%d:%d", is_malloc(e), is_realloc(e), is_free(e));
+            assert(false, "HUH?");
           }
         } else {
           if (is_malloc(e)) {
@@ -631,8 +638,17 @@ size_t NMT_MemoryLogRecorder::find_previous_entry(Entry* entries, size_t index, 
 
 void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t start) {
   assert(start < count, "start < count");
+  constexpr size_t steps = 99;
+  size_t gap = count / steps;
   for (size_t c=(count-1); c>0; c--) {
+    if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
+      fprintf(stderr, "%3ld", (c/gap)); fflush(stderr);
+    }
     Entry* e = &entries[c];
+    // look for a "free" operation, then walk backwards
+    // and remove (deactivate) all "realloc" and the originating
+    // alloc (which could be another "realloc" or just "malloc")
+    // in this chain
     if (is_free(e)) {
       deactivate(e);
       size_t found_index = find_previous_entry(entries, c, e->ptr);
@@ -648,39 +664,41 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
       }
     }
   }
+  if (count > _feedback_cutoff_count) {
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "\n");
+
   for (size_t c=0; c<count; c++) {
     Entry* e = &entries[c];
     if (is_active(e)) {
+      // there should be no more "free" operations left
       if (is_free(e)) {
         assert(false, "is_free(e)");
       }
     }
   }
+
   for (size_t c=(count-1); c>0; c--) {
     Entry* e = &entries[c];
     if (is_active(e)) {
+      // look for realloc, and only leave the last one
+      // in the chain, to reflect last and thusly currrent
+      // memory usage
       if (is_realloc(e)) {
-        deactivate(e);
         size_t found_index = find_previous_entry(entries, c, e->old);
         while (found_index != 0) {
           Entry* found = &entries[found_index];
           deactivate(found);
           if (is_realloc(e)) {
+            // if it's realloc, then we need to keep looking
             found_index = find_previous_entry(entries, found_index, found->old);
           } else {
+            // if it's malloc, then we are done
             found_index = 0;
             break;
           }
         }
-        fprintf(stderr, "\n\n");
-      }
-    }
-  }
-  for (size_t c=0; c<count; c++) {
-    Entry* e = &entries[c];
-    if (is_active(e)) {
-      if (is_realloc(e)) {
-        assert(false, "is_realloc(e)");
       }
     }
   }
@@ -699,14 +717,14 @@ void NMT_MemoryLogRecorder::print_summary(Entry* entries, size_t count) {
   long count_Objects = 0;
   long count_NMTObjects = 0;
   constexpr size_t steps = 99;
-  size_t gap = count / (steps-1);
+  size_t gap = count / steps;
   for (size_t c=0; c<count; c++) {
     if ((count > _feedback_cutoff_count) && (c%gap == 0)) {
       fprintf(stderr, "%3ld", (steps - (c/gap))); fflush(stderr);
     }
     Entry* e = access_active(entries, c);
     if (e != nullptr) {
-      if (is_malloc(e)) {
+      if (is_alloc(e)) {
         count_mallocs++;
         count_Objects++;
         total_requested += e->requested;

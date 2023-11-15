@@ -626,9 +626,6 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 }
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-//  if ((size == 1114-MemTracker::overhead_per_malloc()) && (memflags == NMTUtil::index_to_flag(9))) {
-//    fprintf(stderr, "AHA malloc\n");
-//  }
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
