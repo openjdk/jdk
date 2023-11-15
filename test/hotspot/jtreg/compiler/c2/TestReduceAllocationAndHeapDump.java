@@ -25,19 +25,54 @@
  * @test
  * @bug 8319784
  * @summary Check that the JVM is able to dump the heap even when there are ReduceAllocationMerge in the scope.
- * @requires vm.compiler2.enabled & vm.flagless
  * @library /test/lib /
- * @run main/othervm -server
- *                   -XX:CompileThresholdScaling=0.01
- *                   -XX:+HeapDumpAfterFullGC
- *                   -XX:CompileCommand=compileonly,compiler.c2.TestReduceAllocationAndHeapDump::testIt
- *                   -XX:CompileCommand=exclude,compiler.c2.TestReduceAllocationAndHeapDump::dummy
- *                   compiler.c2.TestReduceAllocationAndHeapDump
+ * @run main/othervm compiler.c2.TestReduceAllocationAndHeapDump
  */
 
 package compiler.c2;
 
+import java.io.File;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 public class TestReduceAllocationAndHeapDump {
+    public static void main(String[] args) throws Exception {
+        File dumpDirectory = new File("dumps");
+
+        try {
+            if (!dumpDirectory.exists()) {
+                dumpDirectory.mkdir();
+            }
+
+            String[] dumper_args = {
+                "-server",
+                "-XX:CompileThresholdScaling=0.01",
+                "-XX:+HeapDumpAfterFullGC",
+                "-XX:HeapDumpPath=" + dumpDirectory.getAbsolutePath(),
+                "-XX:CompileCommand=compileonly,compiler.c2.HeapDumper::testIt",
+                "-XX:CompileCommand=exclude,compiler.c2.HeapDumper::dummy",
+                HeapDumper.class.getName()
+            };
+
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(dumper_args);
+            Process p = pb.start();
+            OutputAnalyzer out = new OutputAnalyzer(p);
+
+            if (out.getExitValue() != 0) {
+                throw new IllegalStateException("Subprocess finished with non-zero exit code.");
+            }
+        } finally {
+            File[] files = dumpDirectory.listFiles((dir, name) -> name.endsWith(".hprof"));
+
+            for (File file : files) {
+                System.out.println("Deleting " + file.getAbsolutePath());
+                file.delete();
+            }
+        }
+    }
+}
+
+class HeapDumper {
     public static Point p = new Point(0);
 
     public static void main(String[] args) throws Exception {
@@ -59,8 +94,9 @@ public class TestReduceAllocationAndHeapDump {
     }
 
     public static void dummy(int x) {
-        if (x > 4900)
+        if (x > 4900) {
             System.gc();
+        }
     }
 }
 
