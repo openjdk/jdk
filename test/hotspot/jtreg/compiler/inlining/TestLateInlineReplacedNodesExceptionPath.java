@@ -23,7 +23,7 @@
 
 /*
  * @test
- * bug 8319764
+ * @bug 8319764
  * @summary C2 compilation asserts during incremental inlining because Phi input is out of bounds
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,TestLateInlineReplacedNodesExceptionPath::notInlined
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=1246687813 TestLateInlineReplacedNodesExceptionPath
