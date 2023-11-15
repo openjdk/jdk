@@ -51,6 +51,9 @@ public class Zip64DataDescriptor {
     // A byte array holding a small-sized Zip64 ZIP file, described below
     private byte[] zip64File;
 
+    // The offset in the ZIP file holding the Zip64 extra block size
+    private static final int ZIP64_BLOCK_SIZE_OFFSET = 33;
+
     @BeforeEach
     public void setup() {
         /*
@@ -150,9 +153,8 @@ public class Zip64DataDescriptor {
      * @param size the value to set in the 'data size' field.
      */
     private void setExtraSize(short size) {
-        int extSizeOffset = 33;
         ByteBuffer.wrap(zip64File).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(extSizeOffset, size);
+                .putShort(ZIP64_BLOCK_SIZE_OFFSET, size);
     }
 
     /*
