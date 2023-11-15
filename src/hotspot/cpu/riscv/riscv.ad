@@ -1888,13 +1888,13 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
+    case Op_CompressBits:      // fall through
+      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
-    case Op_CountPositives:
-      return UseRVV;
-
+    case Op_CountPositives:    // fall through
     case Op_EncodeISOArray:
-      return UseRVV && SpecialEncodeISOArray;
+      return UseRVV;
 
     case Op_PopCountI:
     case Op_PopCountL:

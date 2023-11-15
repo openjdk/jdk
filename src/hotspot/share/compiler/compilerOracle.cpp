@@ -673,20 +673,27 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   return true;
 }
 
-static bool parseEnumValueAsUintx(enum CompileCommand option, const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
-  if (option == CompileCommand::MemStat) {
-    if (strncasecmp(line, "collect", 7) == 0) {
-      value = (uintx)MemStatAction::collect;
-    } else if (strncasecmp(line, "print", 5) == 0) {
-      value = (uintx)MemStatAction::print;
-      print_final_memstat_report = true;
-    } else {
-      jio_snprintf(errorbuf, buf_size, "MemStat: invalid value expected 'collect' or 'print' (omitting value means 'collect')");
-    }
-    return true; // handled
+static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+
+#define IF_ENUM_STRING(S, CMD)                \
+  if (strncasecmp(line, S, strlen(S)) == 0) { \
+    bytes_read += (int)strlen(S);             \
+    CMD                                       \
+    return true;                              \
   }
+
+  IF_ENUM_STRING("collect", {
+    value = (uintx)MemStatAction::collect;
+  });
+  IF_ENUM_STRING("print", {
+    value = (uintx)MemStatAction::print;
+    print_final_memstat_report = true;
+  });
+#undef IF_ENUM_STRING
+
+  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+
   return false;
-#undef HANDLE_VALUE
 }
 
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
@@ -714,11 +721,13 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    // Is it a named enum?
-    bool success = parseEnumValueAsUintx(option, line, value, bytes_read, errorbuf, buf_size);
-    if (!success) {
-      // Is it a raw number?
-      success = (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1);
+    bool success = false;
+    if (option == CompileCommand::MemStat) {
+      // Special parsing for MemStat
+      success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
+    } else {
+      // parse as raw number
+      success = sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
