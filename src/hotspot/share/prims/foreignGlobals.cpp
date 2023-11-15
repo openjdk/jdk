@@ -126,62 +126,70 @@ void ArgumentShuffle::print_on(outputStream* os) const {
     to_reg.print_on(os);
     os->print_cr("");
   }
-  os->print_cr("Stack argument bytes: %d", _out_arg_bytes);
   os->print_cr("}");
 }
 
-int NativeCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage* out_regs, int num_args) const {
-  int src_pos = 0;
+int ForeignGlobals::compute_out_arg_bytes(const GrowableArray<VMStorage>& out_regs) {
   uint32_t max_stack_offset = 0;
-  for (int i = 0; i < num_args; i++) {
-    switch (sig_bt[i]) {
-      case T_BOOLEAN:
-      case T_CHAR:
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_FLOAT: {
-        VMStorage reg = _input_regs.at(src_pos++);
-        out_regs[i] = reg;
-        if (reg.is_stack())
-          max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
-        break;
-      }
-      case T_LONG:
-      case T_DOUBLE: {
-        assert((i + 1) < num_args && sig_bt[i + 1] == T_VOID, "expecting half");
-        VMStorage reg = _input_regs.at(src_pos++);
-        out_regs[i] = reg;
-        if (reg.is_stack())
-          max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
-        break;
-      }
-      case T_VOID: // Halves of longs and doubles
-        assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-        out_regs[i] = VMStorage::invalid();
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
+  for (VMStorage reg : out_regs) {
+    if (reg.is_stack())
+      max_stack_offset = MAX2(max_stack_offset, reg.offset() + reg.stack_size());
   }
   return align_up(max_stack_offset, 8);
 }
 
-int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const {
+int ForeignGlobals::java_calling_convention(const BasicType* signature, int num_args, GrowableArray<VMStorage>& out_regs) {
   VMRegPair* vm_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_args);
-  int slots = SharedRuntime::java_calling_convention(sig_bt, vm_regs, num_args);
+  int slots = SharedRuntime::java_calling_convention(signature, vm_regs, num_args);
   for (int i = 0; i < num_args; i++) {
     VMRegPair pair = vm_regs[i];
     // note, we ignore second here. Signature should consist of register-size values. So there should be
     // no need for multi-register pairs.
-    //assert(!pair.first()->is_valid() || pair.is_single_reg(), "must be: %s");
-    regs[i] = as_VMStorage(pair.first(), sig_bt[i]);
+    if (signature[i] != T_VOID) {
+      out_regs.push(as_VMStorage(pair.first(), signature[i]));
+    }
   }
   return slots << LogBytesPerInt;
 }
 
-class ComputeMoveOrder: public StackObj {
+GrowableArray<VMStorage> ForeignGlobals::replace_place_holders(const GrowableArray<VMStorage>& regs, const StubLocations& locs) {
+  GrowableArray<VMStorage> result(regs.length());
+  for (VMStorage reg : regs) {
+    result.push(reg.type() == StorageType::PLACEHOLDER ? locs.get(reg) : reg);
+  }
+  return result;
+}
+
+GrowableArray<VMStorage> ForeignGlobals::upcall_filter_receiver_reg(const GrowableArray<VMStorage>& unfiltered_regs) {
+  GrowableArray<VMStorage> out(unfiltered_regs.length() - 1);
+  // drop first arg reg
+  for (int i = 1; i < unfiltered_regs.length(); i++) {
+    out.push(unfiltered_regs.at(i));
+  }
+  return out;
+}
+
+GrowableArray<VMStorage> ForeignGlobals::downcall_filter_offset_regs(const GrowableArray<VMStorage>& regs,
+                                                                     BasicType* signature, int num_args,
+                                                                     bool& has_objects) {
+  GrowableArray<VMStorage> result(regs.length());
+  int reg_idx = 0;
+  for (int sig_idx = 0; sig_idx < num_args; sig_idx++) {
+    if (signature[sig_idx] == T_VOID) {
+      continue; // ignore upper halves
+    }
+
+    result.push(regs.at(reg_idx++));
+    if (signature[sig_idx] == T_OBJECT) {
+      has_objects = true;
+      sig_idx++; // skip offset
+      reg_idx++;
+    }
+  }
+  return result;
+}
+
+class ArgumentShuffle::ComputeMoveOrder: public StackObj {
   class MoveOperation;
 
   // segment_mask_or_size is not taken into account since
@@ -258,42 +266,29 @@ class ComputeMoveOrder: public StackObj {
   };
 
  private:
-  int _total_in_args;
-  const VMStorage* _in_regs;
-  int _total_out_args;
-  const VMStorage* _out_regs;
-  const BasicType* _in_sig_bt;
+  const GrowableArray<VMStorage>& _in_regs;
+  const GrowableArray<VMStorage>& _out_regs;
   VMStorage _tmp_vmreg;
   GrowableArray<MoveOperation*> _edges;
   GrowableArray<Move> _moves;
 
  public:
-  ComputeMoveOrder(int total_in_args, const VMStorage* in_regs, int total_out_args, VMStorage* out_regs,
-                   const BasicType* in_sig_bt, VMStorage tmp_vmreg) :
-      _total_in_args(total_in_args),
+  ComputeMoveOrder(const GrowableArray<VMStorage>& in_regs,
+                   const GrowableArray<VMStorage>& out_regs,
+                   VMStorage tmp_vmreg) :
       _in_regs(in_regs),
-      _total_out_args(total_out_args),
       _out_regs(out_regs),
-      _in_sig_bt(in_sig_bt),
       _tmp_vmreg(tmp_vmreg),
-      _edges(total_in_args),
-      _moves(total_in_args) {
+      _edges(in_regs.length()),
+      _moves(in_regs.length()) {
+    assert(in_regs.length() == out_regs.length(),
+      "stray registers? %d != %d", in_regs.length(), out_regs.length());
   }
 
   void compute() {
-    assert(_total_out_args >= _total_in_args, "can only add prefix args");
-    // Note that total_out_args args can be greater than total_in_args in the case of upcalls.
-    // There will be a leading MH receiver arg in the out args in that case.
-    //
-    // Leading args in the out args will be ignored below because we iterate from the end of
-    // the register arrays until !(in_idx >= 0), and total_in_args is smaller.
-    //
-    // Stub code adds a move for the receiver to j_rarg0 (and potential other prefix args) manually.
-    for (int in_idx = _total_in_args - 1, out_idx = _total_out_args - 1; in_idx >= 0; in_idx--, out_idx--) {
-      BasicType bt = _in_sig_bt[in_idx];
-      assert(bt != T_ARRAY, "array not expected");
-      VMStorage in_reg = _in_regs[in_idx];
-      VMStorage out_reg = _out_regs[out_idx];
+    for (int i = 0; i < _in_regs.length(); i++) {
+      VMStorage in_reg = _in_regs.at(i);
+      VMStorage out_reg = _out_regs.at(i);
 
       if (out_reg.is_stack() || out_reg.is_frame_data()) {
         // Move operations where the dest is the stack can all be
@@ -301,12 +296,8 @@ class ComputeMoveOrder: public StackObj {
         // The input and output stack spaces are distinct from each other.
         Move move{in_reg, out_reg};
         _moves.push(move);
-      } else if (in_reg == out_reg
-                 || bt == T_VOID) {
-        // 1. Can skip non-stack identity moves.
-        //
-        // 2. Upper half of long or double (T_VOID).
-        //    Don't need to do anything.
+      } else if (in_reg == out_reg) {
+        // Can skip non-stack identity moves.
         continue;
       } else {
         _edges.append(new MoveOperation(in_reg, out_reg));
@@ -314,12 +305,12 @@ class ComputeMoveOrder: public StackObj {
     }
     // Break any cycles in the register moves and emit the in the
     // proper order.
-    compute_store_order(_tmp_vmreg);
+    compute_store_order();
   }
 
   // Walk the edges breaking cycles between moves.  The result list
   // can be walked in order to produce the proper set of loads
-  void compute_store_order(VMStorage temp_register) {
+  void compute_store_order() {
     // Record which moves kill which registers
     KillerTable killer; // a map of VMStorage -> MoveOperation*
     for (int i = 0; i < _edges.length(); i++) {
@@ -328,7 +319,7 @@ class ComputeMoveOrder: public StackObj {
              "multiple moves with the same register as destination");
       killer.put(s->dst(), s);
     }
-    assert(!killer.contains(temp_register),
+    assert(!killer.contains(_tmp_vmreg),
            "make sure temp isn't in the registers that are killed");
 
     // create links between loads and stores
@@ -350,7 +341,7 @@ class ComputeMoveOrder: public StackObj {
           start = start->prev();
         }
         if (start->prev() == s) {
-          start->break_cycle(temp_register);
+          start->break_cycle(_tmp_vmreg);
         }
         // walk the chain forward inserting to store list
         while (start != nullptr) {
@@ -364,31 +355,18 @@ class ComputeMoveOrder: public StackObj {
   }
 
 public:
-  static GrowableArray<Move> compute_move_order(int total_in_args, const VMStorage* in_regs,
-                                                int total_out_args, VMStorage* out_regs,
-                                                const BasicType* in_sig_bt, VMStorage tmp_vmreg) {
-    ComputeMoveOrder cmo(total_in_args, in_regs, total_out_args, out_regs, in_sig_bt, tmp_vmreg);
+  static GrowableArray<Move> compute_move_order(const GrowableArray<VMStorage>& in_regs,
+                                                const GrowableArray<VMStorage>& out_regs,
+                                                VMStorage tmp_vmreg) {
+    ComputeMoveOrder cmo(in_regs, out_regs, tmp_vmreg);
     cmo.compute();
     return cmo._moves;
   }
 };
 
 ArgumentShuffle::ArgumentShuffle(
-    BasicType* in_sig_bt,
-    int num_in_args,
-    BasicType* out_sig_bt,
-    int num_out_args,
-    const CallingConventionClosure* input_conv,
-    const CallingConventionClosure* output_conv,
+    const GrowableArray<VMStorage>& in_regs,
+    const GrowableArray<VMStorage>& out_regs,
     VMStorage shuffle_temp) {
-
-  VMStorage* in_regs = NEW_RESOURCE_ARRAY(VMStorage, num_in_args);
-  input_conv->calling_convention(in_sig_bt, in_regs, num_in_args);
-
-  VMStorage* out_regs = NEW_RESOURCE_ARRAY(VMStorage, num_out_args);
-  _out_arg_bytes = output_conv->calling_convention(out_sig_bt, out_regs, num_out_args);
-
-  _moves = ComputeMoveOrder::compute_move_order(num_in_args, in_regs,
-                                                num_out_args, out_regs,
-                                                in_sig_bt, shuffle_temp);
+  _moves = ComputeMoveOrder::compute_move_order(in_regs, out_regs, shuffle_temp);
 }

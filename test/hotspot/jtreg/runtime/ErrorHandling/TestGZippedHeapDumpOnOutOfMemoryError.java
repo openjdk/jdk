@@ -63,7 +63,7 @@ public class TestGZippedHeapDumpOnOutOfMemoryError {
     }
 
     static void test(int level) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+HeapDumpOnOutOfMemoryError",
             "-XX:HeapDumpGzipLevel=" + level,
             "-Xmx128M",

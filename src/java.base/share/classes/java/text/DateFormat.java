@@ -61,10 +61,12 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * normalization.  The date is represented as a {@code Date} object or
  * as the milliseconds since January 1, 1970, 00:00:00 GMT.
  *
- * <p>{@code DateFormat} provides many class methods for obtaining default date/time
+ * <p>{@code DateFormat} provides static factory methods for obtaining default date/time
  * formatters based on the default or a given locale and a number of formatting
- * styles. The formatting styles include {@link #FULL}, {@link #LONG}, {@link #MEDIUM}, and {@link #SHORT}. More
- * detail and examples of using these styles are provided in the method
+ * styles. The formatting styles include {@link #FULL}, {@link #LONG}, {@link #MEDIUM}, and {@link #SHORT}.
+ * For any of the factory methods with the parameter <i>style</i>, an {@code
+ * IllegalArgumentException} will be thrown if <i>style</i> is not equal to any
+ * of the defined formatting styles. More detail and examples of using these styles are provided in the method
  * descriptions.
  *
  * <p>{@code DateFormat} helps you to format and parse dates for any locale.
@@ -162,7 +164,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * {@code null}, but any subsequent operations on the same instance may throw
  * {@code NullPointerException}.</li>
  * <li>The {@link #getCalendar()}, {@link #getNumberFormat()} and
- * {@link getTimeZone()} methods may return {@code null}, if the respective
+ * {@link #getTimeZone()} methods may return {@code null}, if the respective
  * values of this instance is set to {@code null} through the corresponding
  * setter methods. For Example: {@link #getTimeZone()} may return {@code null},
  * if the {@code TimeZone} value of this instance is set as
@@ -944,9 +946,12 @@ public abstract class DateFormat extends Format {
         /**
          * Returns the {@code Calendar} field associated with this
          * attribute. For example, if this represents the hours field of
-         * a {@code Calendar}, this would return
-         * {@code Calendar.HOUR}. If there is no corresponding
-         * {@code Calendar} constant, this will return -1.
+         * a {@code Calendar}, this method would return {@code Calendar.HOUR}.
+         * The return value of {@code -1} guarantees that this field does not
+         * represent any corresponding constant in {@code Calendar}.
+         *
+         * @implSpec The default implementation always returns {@code -1} if it does
+         * not represent any corresponding constant in {@code Calendar}.
          *
          * @return Calendar constant for this field
          * @see java.util.Calendar

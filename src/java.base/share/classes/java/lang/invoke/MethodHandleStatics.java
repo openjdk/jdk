@@ -62,6 +62,7 @@ class MethodHandleStatics {
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+    static final boolean VAR_HANDLE_SEGMENT_FORCE_EXACT;
     static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
@@ -91,6 +92,8 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
         VAR_HANDLE_IDENTITY_ADAPT = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT", "false"));
+        VAR_HANDLE_SEGMENT_FORCE_EXACT = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT", "false"));
 
         // Do not adjust this except for special platforms:
         MAX_ARITY = Integer.parseInt(

@@ -25,8 +25,6 @@
 /*
  * @test
  * @summary Test passing of Homogeneous Float Aggregates.
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  *
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHFA
  */

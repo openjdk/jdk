@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -3931,43 +3932,46 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    void gen_loads(Register base) {
-      for (uint i = 0; i < L; i += 1) {
-        __ ld(_regs[i], Address(base, 8 * i));
-      }
+    // generate load for the i'th register
+    void gen_load(uint i, Register base) {
+      assert(i < L, "invalid i: %u", i);
+      __ ld(_regs[i], Address(base, 8 * i));
     }
 
-    // Generate code extracting i-th unsigned word (4 bytes).
-    void get_u32(Register dest, uint i, Register rmask32) {
+    // add i'th 32-bit integer to dest
+    void add_u32(const Register dest, uint i, const Register rtmp = t0) {
       assert(i < 2 * L, "invalid i: %u", i);
 
-      if (i % 2 == 0) {
-        __ andr(dest, _regs[i / 2], rmask32);
+      if (is_even(i)) {
+        // Use the bottom 32 bits. No need to mask off the top 32 bits
+        // as addw will do the right thing.
+        __ addw(dest, dest, _regs[i / 2]);
       } else {
-        __ srli(dest, _regs[i / 2], 32);
+        // Use the top 32 bits by right-shifting them.
+        __ srli(rtmp, _regs[i / 2], 32);
+        __ addw(dest, dest, rtmp);
       }
     }
   };
 
   typedef RegCache<8> BufRegCache;
 
-  // a += rtmp1 + x + ac;
+  // a += value + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void m5_FF_GG_HH_II_epilogue(BufRegCache& reg_cache,
                                Register a, Register b, Register c, Register d,
                                int k, int s, int t,
-                               Register rtmp1, Register rtmp2, Register rmask32) {
-    // rtmp1 = rtmp1 + x + ac
-    reg_cache.get_u32(rtmp2, k, rmask32);
-    __ addw(rtmp1, rtmp1, rtmp2);
-    __ mv(rtmp2, t);
-    __ addw(rtmp1, rtmp1, rtmp2);
+                               Register value) {
+    // a += ac
+    __ addw(a, a, t, t1);
 
-    // a += rtmp1 + x + ac
-    __ addw(a, a, rtmp1);
+    // a += x;
+    reg_cache.add_u32(a, k);
+    // a += value;
+    __ addw(a, a, value);
 
     // a = Integer.rotateLeft(a, s) + b;
-    __ rolw_imm(a, a, s, rtmp1);
+    __ rolw_imm(a, a, s);
     __ addw(a, a, b);
   }
 
@@ -3976,7 +3980,7 @@ class StubGenerator: public StubCodeGenerator {
   void md5_FF(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = b & c
     __ andr(rtmp1, b, c);
 
@@ -3986,8 +3990,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = (b & c) | ((~b) & d)
     __ orr(rtmp1, rtmp1, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += ((b & d) | (c & (~d))) + x + ac;
@@ -3995,7 +3998,7 @@ class StubGenerator: public StubCodeGenerator {
   void md5_GG(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = b & d
     __ andr(rtmp1, b, d);
 
@@ -4005,8 +4008,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = (b & d) | (c & (~d))
     __ orr(rtmp1, rtmp1, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += ((b ^ c) ^ d) + x + ac;
@@ -4014,13 +4016,12 @@ class StubGenerator: public StubCodeGenerator {
   void md5_HH(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = (b ^ c) ^ d
-    __ xorr(rtmp1, b, c);
-    __ xorr(rtmp1, rtmp1, d);
+    __ xorr(rtmp2, b, c);
+    __ xorr(rtmp1, rtmp2, d);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += (c ^ (b | (~d))) + x + ac;
@@ -4028,13 +4029,12 @@ class StubGenerator: public StubCodeGenerator {
   void md5_II(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = c ^ (b | (~d))
-    __ orn(rtmp1, b, d);
-    __ xorr(rtmp1, c, rtmp1);
+    __ orn(rtmp2, b, d);
+    __ xorr(rtmp1, c, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // Arguments:
@@ -4051,11 +4051,11 @@ class StubGenerator: public StubCodeGenerator {
   //    x2     sp  (stack pointer)
   //    x3     gp  (global pointer)
   //    x4     tp  (thread pointer)
-  //    x5     t0  state0
-  //    x6     t1  state1
-  //    x7     t2  state2
+  //    x5     t0  (tmp register)
+  //    x6     t1  (tmp register)
+  //    x7     t2  state0
   //    x8  f0/s0  (frame pointer)
-  //    x9     s1  state3  [saved-reg]
+  //    x9     s1
   //   x10     a0  rtmp1 / c_rarg0
   //   x11     a1  rtmp2 / c_rarg1
   //   x12     a2  a     / c_rarg2
@@ -4066,9 +4066,9 @@ class StubGenerator: public StubCodeGenerator {
   //   x17     a7  state
   //   x18     s2  ofs     [saved-reg]  (multi_block == True)
   //   x19     s3  limit   [saved-reg]  (multi_block == True)
-  //   x20     s4
-  //   x21     s5
-  //   x22     s6  mask32  [saved-reg]
+  //   x20     s4  state1  [saved-reg]
+  //   x21     s5  state2  [saved-reg]
+  //   x22     s6  state3  [saved-reg]
   //   x23     s7
   //   x24     s8  buf0    [saved-reg]
   //   x25     s9  buf1    [saved-reg]
@@ -4101,6 +4101,8 @@ class StubGenerator: public StubCodeGenerator {
     const int S43 = 15;
     const int S44 = 21;
 
+    const int64_t mask32 = 0xffffffff;
+
     Register buf_arg   = c_rarg0; // a0
     Register state_arg = c_rarg1; // a1
     Register ofs_arg   = c_rarg2; // a2
@@ -4120,17 +4122,14 @@ class StubGenerator: public StubCodeGenerator {
     Register c         = x14; // a4
     Register d         = x15; // a5
 
-    Register state0    =  x5; // t0
-    Register state1    =  x6; // t1
-    Register state2    =  x7; // t2
-    Register state3    =  x9; // s1
+    Register state0    =  x7; // t2
+    Register state1    = x20; // s4
+    Register state2    = x21; // s5
+    Register state3    = x22; // s6
 
-    // using x9->x11 to allow compressed instructions
+    // using x10->x11 to allow compressed instructions
     Register rtmp1     = x10; // a0
     Register rtmp2     = x11; // a1
-
-    const int64_t MASK_32 = 0xffffffff;
-    Register rmask32   = x22; // s6
 
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
@@ -4142,7 +4141,7 @@ class StubGenerator: public StubCodeGenerator {
     if (multi_block) {
       saved_regs += RegSet::of(ofs, limit);
     }
-    saved_regs += RegSet::of(state3, rmask32);
+    saved_regs += RegSet::of(state1, state2, state3);
     saved_regs += reg_cache_saved_regs;
 
     __ push_reg(saved_regs, sp);
@@ -4153,22 +4152,20 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(ofs, ofs_arg);
       __ mv(limit, limit_arg);
     }
-    __ mv(rmask32, MASK_32);
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
     // and split them into 2 registers
+    __ mv(t0, mask32);
     __ ld(state0, Address(state));
     __ srli(state1, state0, 32);
-    __ andr(state0, state0, rmask32);
+    __ andr(state0, state0, t0);
     __ ld(state2, Address(state, 8));
     __ srli(state3, state2, 32);
-    __ andr(state2, state2, rmask32);
+    __ andr(state2, state2, t0);
 
     Label md5_loop;
     __ BIND(md5_loop);
-
-    reg_cache.gen_loads(buf);
 
     __ mv(a, state0);
     __ mv(b, state1);
@@ -4176,76 +4173,84 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(d, state3);
 
     // Round 1
-    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2, rmask32);
+    reg_cache.gen_load(0, buf);
+    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2);
+    reg_cache.gen_load(1, buf);
+    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2);
+    reg_cache.gen_load(2, buf);
+    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2);
+    reg_cache.gen_load(3, buf);
+    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2);
+    reg_cache.gen_load(4, buf);
+    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2);
+    reg_cache.gen_load(5, buf);
+    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2);
+    reg_cache.gen_load(6, buf);
+    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2);
+    reg_cache.gen_load(7, buf);
+    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2);
 
     // Round 2
-    md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c,  6, S22, 0xc040b340, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b, 11, S23, 0x265e5a51, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  0, S24, 0xe9b6c7aa, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d,  5, S21, 0xd62f105d, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c, 10, S22, 0x02441453, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b, 15, S23, 0xd8a1e681, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  4, S24, 0xe7d3fbc8, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d,  9, S21, 0x21e1cde6, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c, 14, S22, 0xc33707d6, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b,  3, S23, 0xf4d50d87, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  8, S24, 0x455a14ed, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d, 13, S21, 0xa9e3e905, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c,  2, S22, 0xfcefa3f8, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b,  7, S23, 0x676f02d9, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c,  6, S22, 0xc040b340, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b, 11, S23, 0x265e5a51, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  0, S24, 0xe9b6c7aa, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d,  5, S21, 0xd62f105d, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c, 10, S22, 0x02441453, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b, 15, S23, 0xd8a1e681, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  4, S24, 0xe7d3fbc8, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d,  9, S21, 0x21e1cde6, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c, 14, S22, 0xc33707d6, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b,  3, S23, 0xf4d50d87, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  8, S24, 0x455a14ed, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d, 13, S21, 0xa9e3e905, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c,  2, S22, 0xfcefa3f8, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b,  7, S23, 0x676f02d9, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2);
 
     // Round 3
-    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2);
 
     // Round 4
-    md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c,  7, S42, 0x432aff97, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b, 14, S43, 0xab9423a7, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  5, S44, 0xfc93a039, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d, 12, S41, 0x655b59c3, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c,  3, S42, 0x8f0ccc92, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b, 10, S43, 0xffeff47d, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  1, S44, 0x85845dd1, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d,  8, S41, 0x6fa87e4f, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c, 15, S42, 0xfe2ce6e0, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b,  6, S43, 0xa3014314, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a, 13, S44, 0x4e0811a1, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d,  4, S41, 0xf7537e82, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c, 11, S42, 0xbd3af235, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b,  2, S43, 0x2ad7d2bb, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  9, S44, 0xeb86d391, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c,  7, S42, 0x432aff97, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b, 14, S43, 0xab9423a7, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  5, S44, 0xfc93a039, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d, 12, S41, 0x655b59c3, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c,  3, S42, 0x8f0ccc92, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b, 10, S43, 0xffeff47d, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  1, S44, 0x85845dd1, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d,  8, S41, 0x6fa87e4f, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c, 15, S42, 0xfe2ce6e0, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b,  6, S43, 0xa3014314, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a, 13, S44, 0x4e0811a1, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d,  4, S41, 0xf7537e82, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c, 11, S42, 0xbd3af235, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b,  2, S43, 0x2ad7d2bb, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  9, S44, 0xeb86d391, rtmp1, rtmp2);
 
     __ addw(state0, state0, a);
     __ addw(state1, state1, b);
@@ -4262,16 +4267,153 @@ class StubGenerator: public StubCodeGenerator {
 
     // to minimize the number of memory operations:
     // write back the 4 state 4-byte values in pairs, with a single sd
-    __ andr(state0, state0, rmask32);
+    __ mv(t0, mask32);
+    __ andr(state0, state0, t0);
     __ slli(state1, state1, 32);
     __ orr(state0, state0, state1);
     __ sd(state0, Address(state));
-    __ andr(state2, state2, rmask32);
+    __ andr(state2, state2, t0);
     __ slli(state3, state3, 32);
     __ orr(state2, state2, state3);
     __ sd(state2, Address(state, 8));
 
     __ pop_reg(saved_regs, sp);
+    __ ret();
+
+    return (address) start;
+  }
+
+  /**
+   * Perform the quarter round calculations on values contained within four vector registers.
+   *
+   * @param aVec the SIMD register containing only the "a" values
+   * @param bVec the SIMD register containing only the "b" values
+   * @param cVec the SIMD register containing only the "c" values
+   * @param dVec the SIMD register containing only the "d" values
+   * @param tmp_vr temporary vector register holds intermedia values.
+   */
+  void chacha20_quarter_round(VectorRegister aVec, VectorRegister bVec,
+                          VectorRegister cVec, VectorRegister dVec, VectorRegister tmp_vr) {
+    // a += b, d ^= a, d <<<= 16
+    __ vadd_vv(aVec, aVec, bVec);
+    __ vxor_vv(dVec, dVec, aVec);
+    __ vrole32_vi(dVec, 16, tmp_vr);
+
+    // c += d, b ^= c, b <<<= 12
+    __ vadd_vv(cVec, cVec, dVec);
+    __ vxor_vv(bVec, bVec, cVec);
+    __ vrole32_vi(bVec, 12, tmp_vr);
+
+    // a += b, d ^= a, d <<<= 8
+    __ vadd_vv(aVec, aVec, bVec);
+    __ vxor_vv(dVec, dVec, aVec);
+    __ vrole32_vi(dVec, 8, tmp_vr);
+
+    // c += d, b ^= c, b <<<= 7
+    __ vadd_vv(cVec, cVec, dVec);
+    __ vxor_vv(bVec, bVec, cVec);
+    __ vrole32_vi(bVec, 7, tmp_vr);
+  }
+
+  /**
+   * int com.sun.crypto.provider.ChaCha20Cipher.implChaCha20Block(int[] initState, byte[] result)
+   *
+   *  Input arguments:
+   *  c_rarg0   - state, the starting state
+   *  c_rarg1   - key_stream, the array that will hold the result of the ChaCha20 block function
+   *
+   *  Implementation Note:
+   *   Parallelization is achieved by loading individual state elements into vectors for N blocks.
+   *   N depends on single vector register length.
+   */
+  address generate_chacha20Block() {
+    Label L_Rounds;
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+    __ enter();
+
+    const int states_len = 16;
+    const int step = 4;
+    const Register state = c_rarg0;
+    const Register key_stream = c_rarg1;
+    const Register tmp_addr = t0;
+    const Register length = t1;
+
+    // Organize vector registers in an array that facilitates
+    // putting repetitive opcodes into loop structures below.
+    const VectorRegister work_vrs[16] = {
+      v0, v1, v2,  v3,  v4,  v5,  v6,  v7,
+      v8, v9, v10, v11, v12, v13, v14, v15
+    };
+    const VectorRegister tmp_vr = v16;
+    const VectorRegister counter_vr = v17;
+
+    {
+      // Put 16 here, as com.sun.crypto.providerChaCha20Cipher.KS_MAX_LEN is 1024
+      // in java level.
+      __ vsetivli(length, 16, Assembler::e32, Assembler::m1);
+    }
+
+    // Load from source state.
+    // Every element in source state is duplicated to all elements in the corresponding vector.
+    __ mv(tmp_addr, state);
+    for (int i = 0; i < states_len; i += 1) {
+      __ vlse32_v(work_vrs[i], tmp_addr, zr);
+      __ addi(tmp_addr, tmp_addr, step);
+    }
+    // Adjust counter for every individual block.
+    __ vid_v(counter_vr);
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter_vr);
+
+    // Perform 10 iterations of the 8 quarter round set
+    {
+      const Register loop = t2; // share t2 with other non-overlapping usages.
+      __ mv(loop, 10);
+      __ BIND(L_Rounds);
+
+      chacha20_quarter_round(work_vrs[0], work_vrs[4], work_vrs[8],  work_vrs[12], tmp_vr);
+      chacha20_quarter_round(work_vrs[1], work_vrs[5], work_vrs[9],  work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[2], work_vrs[6], work_vrs[10], work_vrs[14], tmp_vr);
+      chacha20_quarter_round(work_vrs[3], work_vrs[7], work_vrs[11], work_vrs[15], tmp_vr);
+
+      chacha20_quarter_round(work_vrs[0], work_vrs[5], work_vrs[10], work_vrs[15], tmp_vr);
+      chacha20_quarter_round(work_vrs[1], work_vrs[6], work_vrs[11], work_vrs[12], tmp_vr);
+      chacha20_quarter_round(work_vrs[2], work_vrs[7], work_vrs[8],  work_vrs[13], tmp_vr);
+      chacha20_quarter_round(work_vrs[3], work_vrs[4], work_vrs[9],  work_vrs[14], tmp_vr);
+
+      __ sub(loop, loop, 1);
+      __ bnez(loop, L_Rounds);
+    }
+
+    // Add the original state into the end working state.
+    // We do this by first duplicating every element in source state array to the corresponding
+    // vector, then adding it to the post-loop working state.
+    __ mv(tmp_addr, state);
+    for (int i = 0; i < states_len; i += 1) {
+      __ vlse32_v(tmp_vr, tmp_addr, zr);
+      __ addi(tmp_addr, tmp_addr, step);
+      __ vadd_vv(work_vrs[i], work_vrs[i], tmp_vr);
+    }
+    // Add the counter overlay onto work_vrs[12] at the end.
+    __ vadd_vv(work_vrs[12], work_vrs[12], counter_vr);
+
+    // Store result to key stream.
+    {
+      const Register stride = t2; // share t2 with other non-overlapping usages.
+      // Every block occupies 64 bytes, so we use 64 as stride of the vector store.
+      __ mv(stride, 64);
+      for (int i = 0; i < states_len; i += 1) {
+        __ vsse32_v(work_vrs[i], key_stream, stride);
+        __ addi(key_stream, key_stream, step);
+      }
+    }
+
+    // Return length of output key_stream
+    __ slli(c_rarg0, length, 6);
+
+    __ leave();
     __ ret();
 
     return (address) start;
@@ -4368,6 +4510,20 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // INCLUDE_JFR
 
+  // exception handler for upcall stubs
+  address generate_upcall_stub_exception_handler() {
+    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    address start = __ pc();
+
+    // Native caller has no idea how to handle exceptions,
+    // so we just crash here. Up to callee to catch exceptions.
+    __ verify_oop(x10); // return a exception oop in a0
+    __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
+    __ should_not_reach_here();
+
+    return start;
+  }
+
 #undef __
 
   // Initialization
@@ -4452,6 +4608,8 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::riscv::_method_entry_barrier = generate_method_entry_barrier();
     }
 
+    StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+
     StubRoutines::riscv::set_completed();
   }
 
@@ -4496,6 +4654,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
       StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true,  "md5_implCompressMB");
     }
+
+    if (UseChaCha20Intrinsics) {
+      StubRoutines::_chacha20Block = generate_chacha20Block();
+    }
+
 #endif // COMPILER2_OR_JVMCI
   }
 

@@ -158,7 +158,7 @@ public class ClassWriter extends SubWriterHolderWriter {
      * @param target the content to which the documentation will be added
      */
     protected void buildClassInfo(Content target) {
-        Content c = new ContentBuilder();
+        Content c = HtmlTree.DIV(HtmlStyle.horizontalScroll);
         buildParamInfo(c);
         buildSuperInterfacesInfo(c);
         buildImplementedInterfacesInfo(c);
@@ -768,5 +768,10 @@ public class ClassWriter extends SubWriterHolderWriter {
             section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 }

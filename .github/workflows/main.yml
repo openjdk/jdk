@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -146,8 +146,8 @@ jobs:
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
-      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386 libgcc-s1:i386 libstdc++6:i386'
-      extra-conf-options: '--with-target-bits=32'
+      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386 libgcc-s1:i386 libstdc++6:i386 libffi-dev:i386'
+      extra-conf-options: '--with-target-bits=32 --enable-fallback-linker --enable-libffi-bundling'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x86 == 'true'
@@ -227,7 +227,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      xcode-toolset-version: '12.5.1'
+      xcode-toolset-version: '14.3.1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-x64 == 'true'
@@ -238,7 +238,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
-      xcode-toolset-version: '12.5.1'
+      xcode-toolset-version: '14.3.1'
       extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -318,7 +318,7 @@ jobs:
     with:
       platform: macos-x64
       bootjdk-platform: macos-x64
-      runs-on: macos-11
+      runs-on: macos-13
 
   test-windows-x64:
     name: windows-x64
