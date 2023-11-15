@@ -569,62 +569,60 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
                 float o = (float) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float r = (float) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float r = (float) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float r = (float) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float o = (float) vh.getAndSet(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float o = (float) vh.getAndSetAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 float o = (float) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 float o = (float) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -636,7 +634,6 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 float o = (float) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 float o = (float) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });

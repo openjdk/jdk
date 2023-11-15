@@ -4563,7 +4563,7 @@ return mh1;
      * <p>
      * For heap byte buffers, only the plain {@linkplain VarHandle.AccessMode#GET get}
      * and {@linkplain VarHandle.AccessMode#SET set} access modes are supported by the returned var handle.
-     * For all other access modes, an {@link UnsupportedOperationException} will be thrown.
+     * For all other access modes, an {@link IllegalStateException} will be thrown.
      * <p>
      * For direct buffers only, access of bytes at an index may be aligned or misaligned for {@code T},
      * with respect to the underlying memory address, {@code A} say, associated

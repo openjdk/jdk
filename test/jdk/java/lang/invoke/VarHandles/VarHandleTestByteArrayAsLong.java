@@ -633,107 +633,104 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
 
         if (array.isDirect()) {
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long r = (long) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long r = (long) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long r = (long) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndSet(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndSetAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndAdd(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndAddAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseAnd(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseXor(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 long o = (long) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }

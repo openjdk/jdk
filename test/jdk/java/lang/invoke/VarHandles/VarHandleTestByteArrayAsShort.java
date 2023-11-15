@@ -512,18 +512,17 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
                 short o = (short) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -567,7 +566,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 short o = (short) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -579,7 +577,6 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 short o = (short) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 short o = (short) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });

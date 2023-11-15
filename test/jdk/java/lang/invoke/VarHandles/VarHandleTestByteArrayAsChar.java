@@ -512,18 +512,17 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                 char o = (char) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -567,7 +566,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 char o = (char) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 char o = (char) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -579,7 +577,6 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 char o = (char) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
             checkUOE(() -> {
                 char o = (char) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });

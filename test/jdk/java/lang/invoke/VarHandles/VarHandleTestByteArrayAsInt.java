@@ -633,107 +633,104 @@ public class VarHandleTestByteArrayAsInt extends VarHandleBaseByteArrayTest {
 
         if (array.isDirect()) {
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int r = (int) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int r = (int) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int r = (int) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndSet(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndSetAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndSetRelease(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndAdd(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndAddAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndAddRelease(array, ci, VALUE_1);
             });
-
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseAnd(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseXor(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 int o = (int) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
         }

@@ -756,18 +756,18 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             });
 #end[Bitwise]
         } else {
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setVolatile(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setRelease(array, ci, VALUE_1);
             });
 
-            checkUOE(() -> {
+            checkISE(() -> {
                 vh.setOpaque(array, ci, VALUE_1);
             });
-
+#if[!CAS]
             checkUOE(() -> {
                 boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
             });
@@ -811,7 +811,52 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndSetRelease(array, ci, VALUE_1);
             });
+#else[CAS]
+            checkISE(() -> {
+                boolean r = vh.compareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
 
+            checkISE(() -> {
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ r = ($type$) vh.compareAndExchangeAcquire(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ r = ($type$) vh.compareAndExchangeRelease(array, ci, VALUE_2, VALUE_1);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetPlain(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSet(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                boolean r = vh.weakCompareAndSetRelease(array, ci, VALUE_1, VALUE_2);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndSet(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndSetAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndSetRelease(array, ci, VALUE_1);
+            });
+#end[CAS]
+#if[!AtomicAdd]
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndAdd(array, ci, VALUE_1);
             });
@@ -823,7 +868,20 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
             });
+#else[AtomicAdd]
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndAdd(array, ci, VALUE_1);
+            });
 
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndAddAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndAddRelease(array, ci, VALUE_1);
+            });
+#end[AtomicAdd]
+#if[!Bitwise]
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndBitwiseOr(array, ci, VALUE_1);
             });
@@ -859,6 +917,43 @@ public class VarHandleTestByteArrayAs$Type$ extends VarHandleBaseByteArrayTest {
             checkUOE(() -> {
                 $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
             });
+#else[Bitwise]
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOr(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOrAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseOrRelease(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAnd(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAndAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseAndRelease(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXor(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXorAcquire(array, ci, VALUE_1);
+            });
+
+            checkISE(() -> {
+                $type$ o = ($type$) vh.getAndBitwiseXorRelease(array, ci, VALUE_1);
+            });
+#end[Bitwise]
         }
     }
 

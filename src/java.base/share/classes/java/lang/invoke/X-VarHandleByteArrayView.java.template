@@ -216,7 +216,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static Object checkNullHeapBase(Object hb) {
             if (hb != null) {
-                throw new UnsupportedOperationException("Atomic access not supported for heap buffer");
+                throw new IllegalStateException("Atomic access not supported for heap buffer");
             }
             return hb;
         }
