@@ -54,7 +54,7 @@ public class Zip64DataDescriptor {
     @BeforeEach
     public void setup() {
         /*
-         * Structure of the ZIP64 file used below . Note the precense
+         * Structure of the ZIP64 file used below . Note the presence
          * of a Zip64 extended information extra field and the
          * Data Descriptor having 8-byte values for csize and size.
          *
