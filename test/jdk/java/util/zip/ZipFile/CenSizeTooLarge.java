@@ -181,7 +181,9 @@ public class CenSizeTooLarge {
 
     /**
      * By writing sparse 'holes' until the last CEN is detected, we can save disk space
-     * used by this test from ~2GB to ~4K
+     * used by this test from ~2GB to ~4K. Instances of this class should be passed
+     * directly to the ZipOutputStream constructor, without any buffering. Otherwise,
+     * writes from ZipOutputStream may not be detected correctly.
      */
     private static class SparseOutputStream extends FilterOutputStream {
         private final FileChannel channel;
