@@ -76,7 +76,7 @@ class ResolvedMethodEntry {
   u2 _number_of_parameters;          // Number of arguments for method
   u1 _tos_state;                     // TOS state
   u1 _flags;                         // Flags: [00|has_resolved_ref_index|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
-  u1 _bytecode1, _bytecode2;         // Resovled invoke codes
+  u1 _bytecode1, _bytecode2;         // Resolved invoke codes
 
   // Constructors
   public:
