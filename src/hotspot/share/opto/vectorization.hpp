@@ -575,6 +575,7 @@ class VLoopDependenceGraph : public StackObj {
 public:
   class DependenceEdge;
   class DependenceNode;
+  class PredsIterator;
 private:
   VLoop* _vloop;
   const VLoopMemorySlices& _memory_slices;
@@ -622,6 +623,9 @@ public:
   // Make a new dependence graph edge dprec->dsucc
   DependenceEdge* make_edge(DependenceNode* dpred, DependenceNode* dsucc);
 
+  PredsIterator iterate_preds(Node* n) const {
+    return PredsIterator(n, *this);
+  }
 
   // TODO more functionality!
 
@@ -680,6 +684,27 @@ public:
     int out_cnt(); // Outgoing edge count
 
     void print() const;
+  };
+
+  class PredsIterator {
+  private:
+    Node*           _n;
+    int             _next_idx;
+    int             _end_idx;
+    DependenceEdge* _dep_next;
+    Node*           _current;
+    bool            _done;
+
+  public:
+    PredsIterator(Node* n, const VLoopDependenceGraph &dg);
+    NONCOPYABLE(PredsIterator);
+    PredsIterator& operator=(PredsIterator&&) = delete;
+    // Allow move constructor for && (eg. capture return of function)
+    PredsIterator(PredsIterator&&) = default;
+
+    Node* current() { return _current; }
+    bool  done()    { return _done; }
+    void  next();
   };
 };
 

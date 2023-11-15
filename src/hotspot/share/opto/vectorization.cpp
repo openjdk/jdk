@@ -1424,3 +1424,39 @@ void VLoopDependenceGraph::DependenceNode::print() const {
   tty->print_cr(" ]");
 #endif
 }
+
+VLoopDependenceGraph::PredsIterator::PredsIterator(Node* n,
+                                                   const VLoopDependenceGraph &dg) {
+  _n = n;
+  _done = false;
+  if (_n->is_Store() || _n->is_Load()) {
+    // Load: only memory dependencies
+    // Store: memory dependence and data input
+    _next_idx = MemNode::Address;
+    _end_idx  = n->req();
+    _dep_next = dg.get_node(_n)->in_head();
+  } else if (_n->is_Mem()) {
+    _next_idx = 0;
+    _end_idx  = 0;
+    _dep_next = dg.get_node(_n)->in_head();
+  } else {
+    // Data node: only has its own edges
+    _next_idx = 1;
+    _end_idx  = _n->req();
+    _dep_next = nullptr;
+  }
+  next();
+}
+
+void VLoopDependenceGraph::PredsIterator::next() {
+  if (_dep_next != nullptr) {
+    // Have memory preds left
+    _current  = _dep_next->pred()->node();
+    _dep_next = _dep_next->next_in();
+  } else if (_next_idx < _end_idx) {
+    // Have data preds left
+    _current  = _n->in(_next_idx++);
+  } else {
+    _done = true;
+  }
+}
