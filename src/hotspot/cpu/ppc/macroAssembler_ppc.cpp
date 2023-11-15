@@ -2383,7 +2383,6 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   Label slow_path;
 
-
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
     lwz(tmp1, in_bytes(Klass::access_flags_offset()), tmp1);
@@ -2467,7 +2466,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   bind(locked);
   inc_held_monitor_count(t);
 
-  #ifdef ASSERT
+#ifdef ASSERT
   // Check that locked label is reached with flags == EQ.
   Label flag_correct;
   beq(flag, flag_correct);
@@ -2528,7 +2527,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     andi_(t, mark, markWord::monitor_value);
     bne(CCR0, inflated);
 
-  #ifdef ASSERT
+#ifdef ASSERT
     // Check header not unlocked (0b01).
     Label not_unlocked;
     andi_(t, mark, markWord::unlocked_value);
