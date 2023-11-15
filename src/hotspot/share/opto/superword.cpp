@@ -1114,7 +1114,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
 // We could query independent(s1, s2) for all pairs, but that results
 // in O(p.size * p.size) graph traversals. We can do it all in one BFS!
-// Start the BFS traversal at all nodes from the pack. Traverse DepPreds
+// Start the BFS traversal at all nodes from the pack. Traverse Preds
 // recursively, for nodes that have at least depth min_d, which is the
 // smallest depth of all nodes from the pack. Once we have traversed all
 // those nodes, and have not found another node from the pack, we know
@@ -1135,7 +1135,8 @@ Node* SuperWord::find_dependence(Node_List* p) {
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+    VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
+    for (; !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (in_loopbody(pred) && depth(pred) >= min_d) {
         if (visited_test(pred)) { // marked as in p?
@@ -1201,7 +1202,8 @@ bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
   visited_set(deep);
   int shal_depth = depth(shallow);
   assert(shal_depth <= depth(deep), "must be");
-  for (DepPreds preds(deep, _dg); !preds.done(); preds.next()) {
+  VLoopDependenceGraph::PredsIterator preds(deep, vla().dependence_graph());
+  for (; !preds.done(); preds.next()) {
     Node* pred = preds.current();
     if (in_loopbody(pred) && !visited_test(pred)) {
       if (shallow == pred) {
@@ -1928,15 +1930,15 @@ void SuperWord::verify_packs() {
 }
 #endif
 
-// The PacksetGraph combines the DepPreds graph with the packset. In the PackSet
+// The PacksetGraph combines the dependence graph with the packset. In the PackSet
 // graph, we have two kinds of nodes:
 //  (1) pack-node:   Represents all nodes of some pack p in a single node, which
 //                   shall later become a vector node.
 //  (2) scalar-node: Represents a node that is not in any pack.
-// For any edge (n1, n2) in DepPreds, we add an edge to the PacksetGraph for the
+// For any edge (n1, n2) in Preds, we add an edge to the PacksetGraph for the
 // PacksetGraph nodes corresponding to n1 and n2.
-// We work from the DepPreds graph, because it gives us all the data-dependencies,
-// as well as more refined memory-dependencies than the C2 graph. DepPreds does
+// We work from the dependence graph, because it gives us all the data-dependencies,
+// as well as more refined memory-dependencies than the C2 graph. Preds does
 // not have cycles. But packing nodes can introduce cyclic dependencies. Example:
 //
 //                                                       +--------+
@@ -2001,7 +2003,8 @@ public:
   GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
   bool schedule_success() const { return _schedule_success; }
 
-  // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
+  // Create nodes (from packs and scalar-nodes), and add edges, based on
+  // dependence graph.
   void build() {
     const GrowableArray<Node_List*> &packset = _slp->packset();
     const GrowableArray<Node*> &block = _slp->body();
@@ -2042,7 +2045,8 @@ public:
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
         assert(pid == get_pid(n), "all nodes in pack have same pid");
-        for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+        VLoopDependenceGraph::PredsIterator preds(n, _slp->vla().dependence_graph());
+        for (; !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
           if (pred_pid == pid &&
@@ -2065,7 +2069,8 @@ public:
       if (pid <= max_pid_packset) {
         continue; // Only scalar-nodes
       }
-      for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+      VLoopDependenceGraph::PredsIterator preds(n, _slp->vla().dependence_graph());
+      for (; !preds.done(); preds.next()) {
         Node* pred = preds.current();
         int pred_pid = get_pid_or_zero(pred);
         // Only add edges for mapped nodes (in block)
@@ -2156,7 +2161,7 @@ public:
 };
 
 // The C2 graph (specifically the memory graph), needs to be re-ordered.
-// (1) Build the PacksetGraph. It combines the DepPreds graph with the
+// (1) Build the PacksetGraph. It combines the dependence graph with the
 //     packset. The PacksetGraph gives us the dependencies that must be
 //     respected after scheduling.
 // (2) Schedule the PacksetGraph to the memops_schedule, which represents
@@ -2902,7 +2907,8 @@ void SuperWord::compute_max_depth() {
       if (!n->is_Phi()) {
         int d_orig = depth(n);
         int d_in   = 0;
-        for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+        VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
+        for (; !preds.done(); preds.next()) {
           Node* pred = preds.current();
           if (in_loopbody(pred)) {
             d_in = MAX2(d_in, depth(pred));
