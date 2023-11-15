@@ -674,9 +674,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   return true;
 }
 
-// Parse an uintx-based option value. Also takes care of parsing enum values for options that are enums.
-// Returns true if ok, false if the value could not be parsed.
-static bool parseUintxValue(enum CompileCommand option, const char* line, uintx& value, int& bytes_read) {
+static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
 
 #define IF_ENUM_STRING(S, CMD)                \
   if (strncasecmp(line, S, strlen(S)) == 0) { \
@@ -685,22 +683,16 @@ static bool parseUintxValue(enum CompileCommand option, const char* line, uintx&
     return true;                              \
   }
 
-  if (option == CompileCommand::MemStat) {
-    IF_ENUM_STRING("collect", {
-        value = (uintx)MemStatAction::collect;
-    });
-    IF_ENUM_STRING("print", {
-        value = (uintx)MemStatAction::print;
-        print_final_memstat_report = true;
-    });
-    return false;
-  }
+  IF_ENUM_STRING("collect", {
+    value = (uintx)MemStatAction::collect;
+  });
+  IF_ENUM_STRING("print", {
+    value = (uintx)MemStatAction::print;
+    print_final_memstat_report = true;
+  });
 #undef IF_ENUM_STRING
 
-  // Option is not an enum. Parse as literal number.
-  if ((sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1)) {
-    return true;
-  }
+  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
 
   return false;
 }
@@ -732,7 +724,15 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    if (parseUintxValue(option, line, value, bytes_read)) {
+    bool success = false;
+    if (option == CompileCommand::MemStat) {
+      // Special parsing for MemStat
+      success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
+    } else {
+      // parse as raw number
+      success = sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1;
+    }
+    if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
