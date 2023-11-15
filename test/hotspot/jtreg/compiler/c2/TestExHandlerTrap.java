@@ -51,7 +51,7 @@ import java.util.ArrayList;
  *   -XX:CompileCommand=PrintCompilation,compiler.c2.TestExHandlerTrap::payload
  *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::payload
  *   -XX:CompileCommand=dontinline,compiler.c2.TestExHandlerTrap::maybeThrow
- *   -XX:-PruneDeadExceptionHandlers
+ *   -XX:-ProfileExceptionHandlers
  *   compiler.c2.TestExHandlerTrap
  */
 

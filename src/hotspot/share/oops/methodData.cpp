@@ -966,7 +966,7 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
     object_size += DataLayout::compute_size_in_bytes(args_cell);
   }
 
-  if (PruneDeadExceptionHandlers && method()->has_exception_handler()) {
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
     int num_ex_handlers = method()->exception_table_length();
     object_size += num_ex_handlers * single_ex_handler_data_size();
   }
@@ -1293,7 +1293,7 @@ void MethodData::initialize() {
   }
 
   _ex_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
-  if (PruneDeadExceptionHandlers && method()->has_exception_handler()) {
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
     int num_ex_handlers = method()->exception_table_length();
     object_size += num_ex_handlers * single_ex_handler_data_size();
     ExceptionTableElement* ex_handlers = method()->exception_table_start();
@@ -1398,7 +1398,7 @@ ProfileData* MethodData::bci_to_data(int bci) {
 }
 
 DataLayout* MethodData::ex_handler_bci_to_data_helper(int bci) {
-  assert(PruneDeadExceptionHandlers, "not profiling");
+  assert(ProfileExceptionHandlers, "not profiling");
   for (int i = 0; i < num_ex_handler_data(); i++) {
     DataLayout* ex_handler_data = ex_handler_data_at(i);
     if (ex_handler_data->bci() == bci) {
