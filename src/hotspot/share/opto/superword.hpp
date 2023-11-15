@@ -118,10 +118,6 @@ class SuperWord : public ResourceObj {
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
-  GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
-
-  DepGraph _dg; // Dependence graph
-
   // Scratch pads
   VectorSet    _visited;       // Visited set
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
@@ -153,7 +149,6 @@ class SuperWord : public ResourceObj {
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const DepGraph&                  dg()      const { return _dg; }
  private:
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style

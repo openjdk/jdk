@@ -51,8 +51,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
-  _dg(_arena),                                              // dependence graph
   _visited(arena()),                                        // visited node set
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
@@ -323,9 +321,6 @@ bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
   initialize_bb();
-
-  // build _dg, _disjoint_ptrs
-  dependence_graph();
 
   // compute function depth(Node*)
   compute_max_depth();
@@ -825,149 +820,6 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   }
 #endif
   return iv_adjustment;
-}
-
-//---------------------------dependence_graph---------------------------
-// Construct dependency graph.
-// Add dependence edges to load/store nodes for memory dependence
-//    A.out()->DependNode.in(1) and DependNode.out()->B.prec(x)
-void SuperWord::dependence_graph() {
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  assert(cl->is_main_loop(), "SLP should only work on main loops");
-
-  // First, assign a dependence node to each memory node
-  for (int i = 0; i < body().length(); i++ ) {
-    Node *n = body().at(i);
-    if (n->is_Mem() || n->is_memory_phi()) {
-      _dg.make_node(n);
-    }
-  }
-
-  const GrowableArray<PhiNode*> &mem_slice_head = _vla.memory_slices().heads();
-  const GrowableArray<MemNode*> &mem_slice_tail = _vla.memory_slices().tails();
-
-  // For each memory slice, create the dependences
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    Node* n      = mem_slice_head.at(i);
-    Node* n_tail = mem_slice_tail.at(i);
-
-    // Get slice in predecessor order (last is first)
-    mem_slice_preds(n_tail, n, _nlist);
-
-#ifndef PRODUCT
-    if(TraceSuperWord && Verbose) {
-      tty->print_cr("SuperWord::dependence_graph: built a new mem slice");
-      for (int j = _nlist.length() - 1; j >= 0 ; j--) {
-        _nlist.at(j)->dump();
-      }
-    }
-#endif
-    // Make the slice dependent on the root
-    DepMem* slice = _dg.dep(n);
-    _dg.make_edge(_dg.root(), slice);
-
-    // Create a sink for the slice
-    DepMem* slice_sink = _dg.make_node(nullptr);
-    _dg.make_edge(slice_sink, _dg.tail());
-
-    // Now visit each pair of memory ops, creating the edges
-    for (int j = _nlist.length() - 1; j >= 0 ; j--) {
-      Node* s1 = _nlist.at(j);
-
-      // If no dependency yet, use slice
-      if (_dg.dep(s1)->in_cnt() == 0) {
-        _dg.make_edge(slice, s1);
-      }
-      VPointer p1(s1->as_Mem(), phase(), lpt(), nullptr, false);
-      bool sink_dependent = true;
-      for (int k = j - 1; k >= 0; k--) {
-        Node* s2 = _nlist.at(k);
-        if (s1->is_Load() && s2->is_Load())
-          continue;
-        VPointer p2(s2->as_Mem(), phase(), lpt(), nullptr, false);
-
-        int cmp = p1.cmp(p2);
-        if (SuperWordRTDepCheck &&
-            p1.base() != p2.base() && p1.valid() && p2.valid()) {
-          // Trace disjoint pointers
-          OrderedPair pp(p1.base(), p2.base());
-          _disjoint_ptrs.append_if_missing(pp);
-        }
-        if (!VPointer::not_equal(cmp)) {
-          // Possibly same address
-          _dg.make_edge(s1, s2);
-          sink_dependent = false;
-        }
-      }
-      if (sink_dependent) {
-        _dg.make_edge(s1, slice_sink);
-      }
-    }
-
-    if (TraceSuperWord) {
-      tty->print_cr("\nDependence graph for slice: %d", n->_idx);
-      for (int q = 0; q < _nlist.length(); q++) {
-        _dg.print(_nlist.at(q));
-      }
-      tty->cr();
-    }
-
-    _nlist.clear();
-  }
-
-  if (TraceSuperWord) {
-    tty->print_cr("\ndisjoint_ptrs: %s", _disjoint_ptrs.length() > 0 ? "" : "NONE");
-    for (int r = 0; r < _disjoint_ptrs.length(); r++) {
-      _disjoint_ptrs.at(r).print();
-      tty->cr();
-    }
-    tty->cr();
-  }
-
-}
-
-//---------------------------mem_slice_preds---------------------------
-// Return a memory slice (node list) in predecessor order starting at "start"
-void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds) {
-  assert(preds.length() == 0, "start empty");
-  Node* n = start;
-  Node* prev = nullptr;
-  while (true) {
-    NOT_PRODUCT( if(is_trace_mem_slice()) tty->print_cr("SuperWord::mem_slice_preds: n %d", n->_idx);)
-    assert(in_loopbody(n), "must be in block");
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* out = n->fast_out(i);
-      if (out->is_Load()) {
-        if (in_loopbody(out)) {
-          preds.push(out);
-          if (TraceSuperWord && Verbose) {
-            tty->print_cr("SuperWord::mem_slice_preds: added pred(%d)", out->_idx);
-          }
-        }
-      } else {
-        // FIXME
-        if (out->is_MergeMem() && !in_loopbody(out)) {
-          // Either unrolling is causing a memory edge not to disappear,
-          // or need to run igvn.optimize() again before SLP
-        } else if (out->is_memory_phi() && !in_loopbody(out)) {
-          // Ditto.  Not sure what else to check further.
-        } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
-          // StoreCM has an input edge used as a precedence edge.
-          // Maybe an issue when oop stores are vectorized.
-        } else {
-          assert(out == prev || prev == nullptr, "no branches off of store slice");
-        }
-      }//else
-    }//for
-    if (n == stop) break;
-    preds.push(n);
-    if (TraceSuperWord && Verbose) {
-      tty->print_cr("SuperWord::mem_slice_preds: added pred(%d)", n->_idx);
-    }
-    prev = n;
-    assert(n->is_Mem(), "unexpected node %s", n->Name());
-    n = n->in(MemNode::Memory);
-  }
 }
 
 //------------------------------stmts_can_pack---------------------------
@@ -2008,7 +1860,6 @@ public:
   void build() {
     const GrowableArray<Node_List*> &packset = _slp->packset();
     const GrowableArray<Node*> &block = _slp->body();
-    const DepGraph &dg = _slp->dg();
     // Map nodes in packsets
     for (int i = 0; i < packset.length(); i++) {
       Node_List* p = packset.at(i);
@@ -3381,9 +3232,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 
 //------------------------------init---------------------------
 void SuperWord::init() {
-  _dg.init();
   _packset.clear();
-  _disjoint_ptrs.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;
