@@ -62,9 +62,9 @@ class CompressedKlassPointers : public AllStatic {
   // space to hide additional info away in low bytes. It even allows us the luxury
   // to use 8 bits for shift and flag each, resulting in 8-bit moves used by the
   // compiler.
-  // - Bit  [0-7]   shift
+  // - Bit  [0-7]   encoding shift
   // - Bit  8       UseCompressedClassPointers
-  // - Bits [16-64] the base.
+  // - Bits [16-64] encoding  base
   static uint64_t _compression_info;
   static constexpr int base_alignment = 16;
   static constexpr uint64_t mask_base = ~right_n_bits(base_alignment);
