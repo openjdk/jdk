@@ -705,12 +705,12 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        String[] as = aliases == null ?
+        String[] as =
+            aliases == null ?
                 zeroAliases :
-                (this.getClass().getClassLoader() == null ||
-                 this.getClass().getClassLoader() == ClassLoader.getPlatformClassLoader()) ?
-                        aliases :
-                        Arrays.copyOf(aliases, aliases.length);
+                VM.isSystemDomainLoader(getClass().getClassLoader()) ?
+                    aliases :
+                    Arrays.copyOf(aliases, aliases.length);
 
         // Skip checks for the standard, built-in Charsets we always load
         // during initialization.
