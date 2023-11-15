@@ -4259,46 +4259,42 @@ FCVT_SAFE(fcvt_l_d, d);
 
 #undef FCVT_SAFE
 
-void MacroAssembler::java_round_float(Register dst, FloatRegister src,
-                                      FloatRegister ftmp, Register tmp) {
+void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  assert_different_registers(dst, tmp);
   mv(dst, zr);
 
-  fclass_s(tmp, src);
+  fclass_s(t0, src);
 
   // dst = 0
   // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(tmp, tmp, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
-  bnez(tmp, done);
+  andi(t0, t0, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
+  bnez(t0, done);
 
   // dst = (src + 0.5f) rounded down towards negative infinity
   // if +/-inf, +/-normal numbers
-  li(tmp, 0x3f000000);
-  fmv_w_x(ftmp, tmp);
+  li(t0, 0x3f000000);
+  fmv_w_x(ftmp, t0);
   fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_w_s(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
 }
 
-void MacroAssembler::java_round_double(Register dst, FloatRegister src,
-                                       FloatRegister ftmp, Register tmp) {
+void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  assert_different_registers(dst, tmp);
   mv(dst, zr);
 
-  fclass_d(tmp, src);
+  fclass_d(t0, src);
 
   // dst = 0
   // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(tmp, tmp, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
-  bnez(tmp, done);
+  andi(t0, t0, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
+  bnez(t0, done);
 
   // dst = (src + 0.5) rounded down towards negative infinity
   // if +/-inf, +/-normal numbers
-  li(tmp, 0x3fe0000000000000);
-  fmv_d_x(ftmp, tmp);
+  li(t0, 0x3fe0000000000000);
+  fmv_d_x(ftmp, t0);
   fadd_d(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
