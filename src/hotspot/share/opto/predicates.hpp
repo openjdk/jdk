@@ -257,9 +257,7 @@ class ParsePredicate : public StackObj {
 // Utility class for queries on Runtime Predicates.
 class RuntimePredicate : public StackObj {
   static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
-
   static bool may_be_runtime_predicate_if(Node* node);
-  static bool is_not_zero_trip_guard(const IfProjNode* if_proj);
 
  public:
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);

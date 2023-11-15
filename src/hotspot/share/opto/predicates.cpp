@@ -87,17 +87,14 @@ bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason d
 // A Runtime Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
 bool RuntimePredicate::may_be_runtime_predicate_if(Node* node) {
   if (node->is_IfProj()) {
-    const int opcode_if = node->in(0)->Opcode();
-    if ((opcode_if == Op_If && is_not_zero_trip_guard(node->as_IfProj()))
+    const IfNode* if_node = node->in(0)->as_If();
+    const int opcode_if = if_node->Opcode();
+    if ((opcode_if == Op_If && !if_node->is_zero_trip_guard())
         || opcode_if == Op_RangeCheck) {
       return true;
     }
   }
   return false;
-}
-
-bool RuntimePredicate::is_not_zero_trip_guard(const IfProjNode* if_proj) {
-  return !if_proj->in(0)->as_If()->is_zero_trip_guard();
 }
 
 ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
