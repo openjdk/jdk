@@ -267,7 +267,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.COUNTED_LOOP, "1" })
-    @IR(failOn = { IRNode.LOOP})
+    @IR(failOn = { IRNode.LOOP })
     public static void testStridePosScalePosInIntLoopShortLoop1(int start, int stop, long length, long offset) {
         final long scale = 2;
         final int stride = 1;
