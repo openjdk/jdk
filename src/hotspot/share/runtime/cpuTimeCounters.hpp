@@ -38,6 +38,8 @@ public:
     gc_conc_mark,
     gc_conc_refine,
     gc_service,
+    vm,
+    conc_dedup,
     COUNT,
   };
 

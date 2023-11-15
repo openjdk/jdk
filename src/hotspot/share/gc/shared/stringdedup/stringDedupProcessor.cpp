@@ -70,9 +70,9 @@ void StringDedup::Processor::initialize() {
   _processor = new Processor();
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
-    _concurrent_dedup_thread_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS_CPUTIME, "conc_dedup",
-                                        PerfData::U_Ticks, CHECK);
+    CPUTimeCounters* instance = CPUTimeCounters::get_instance();
+    instance->create_counter(CPUTimeGroups::conc_dedup); 
+    _concurrent_dedup_thread_cpu_time = instance->get_counter(CPUTimeGroups::conc_dedup);
   }
 }
 

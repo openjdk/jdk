@@ -40,6 +40,10 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
       return "gc_conc_refine";
     case gc_service:
       return "gc_service";
+    case vm:
+      return "vm";
+    case conc_dedup:
+      return "conc_dedup";
     case COUNT:
       return "Illegal counter";
   };
@@ -107,11 +111,9 @@ PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
 }
 
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
-    assert(_counter != nullptr, "ASDF");
     jlong net_cpu_time = _total - _counter->get_value();
     _counter->inc(net_cpu_time);
     if (_update_gc_counters) {
-      assert(_gc_counters != nullptr, "asdf");
       _gc_counters->inc_total_cpu_time(net_cpu_time);
     }
 }
