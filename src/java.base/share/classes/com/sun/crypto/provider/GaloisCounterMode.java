@@ -820,7 +820,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         * Continues a multi-part update of the Additional Authentication
+         * Continues a multipart update of the Additional Authentication
          * Data (AAD), using a subset of the provided buffer.  All AAD must be
          * supplied before beginning operations on the ciphertext (via the
          * {@code update} and {@code doFinal} methods).
@@ -1476,7 +1476,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         /**
          * Use available data from ibuffer and 'in' to verify and decrypt the
-         * data.  If the verification fails, the 'out' left to it's original
+         * data.  If the verification fails, the 'out' left to its original
          * values if crypto was in-place; otherwise 'out' is zeroed
          */
         @Override
@@ -1536,7 +1536,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
         /**
          * Use available data from ibuffer and 'src' to verify and decrypt the
-         * data.  If the verification fails, the 'dst' left to it's original
+         * data.  If the verification fails, the 'dst' left to its original
          * values if crypto was in-place; otherwise 'dst' is zeroed
          */
         @Override
