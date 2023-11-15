@@ -58,7 +58,11 @@ public class Zip64DataDescriptor {
          * of a Zip64 extended information extra field and the
          * Data Descriptor having 8-byte values for csize and size.
          *
-         * The file was produced using the following command:
+         * The file was produced using the zip command on MacOS
+         * (zip 3.0, by Info-ZIP), in streamming mode (to enable Zip64),
+         * using the -fd option (to force the use of data descriptors)
+         *
+         * The following command was used:
          * <pre>echo hello | zip -fd > hello.zip</pre>
          *
          * ------  Local File Header  ------
