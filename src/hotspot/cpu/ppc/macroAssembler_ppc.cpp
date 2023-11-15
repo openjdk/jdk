@@ -2495,11 +2495,11 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   Label slow_path;
 
   const Register mark = tmp1;
+  const Register top = tmp2;
   const Register t = tmp3;
 
   { // Lightweight unlock
     Label push_and_slow;
-    const Register top = tmp2;
 
     // Check if obj is top of lock-stack.
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
@@ -2552,13 +2552,24 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     bind(inflated_load_monitor);
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
 #ifdef ASSERT
-    // TODO: Check lock-stack does not contain obj.
     andi_(t, mark, markWord::monitor_value);
     bne(CCR0, inflated);
     stop("Fast Unlock not monitor");
 #endif
 
     bind(inflated);
+
+#ifdef ASSERT
+    Label check_done;
+    subi(top, top, oopSize);
+    cmplwi(CCR0, top, in_bytes(JavaThread::lock_stack_base_offset()));
+    blt(CCR0, check_done);
+    ldx(t, top, R16_thread);
+    cmpd(flag, obj, t);
+    bne(flag, inflated);
+    stop("Fast Unlock lock on stack");
+    bind(check_done);
+#endif
 
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
