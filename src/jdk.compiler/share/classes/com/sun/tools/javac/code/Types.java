@@ -1677,11 +1677,8 @@ public class Types {
                 /* if we are seeing the same pair again then there is an issue with the sealed hierarchy
                  * bail out, a detailed error will be reported downstream
                  */
-                if (pairsSeen.contains(newPair)) {
+                if (!pairsSeen.add(newPair))
                     return false;
-                } else {
-                    pairsSeen.add(newPair);
-                }
                 if (isSubtype(erasure(ts.type), erasure(ss.type))) {
                     return false;
                 }
