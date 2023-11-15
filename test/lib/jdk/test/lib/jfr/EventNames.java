@@ -160,6 +160,7 @@ public class EventNames {
     public static final String CompilerPhase = PREFIX + "CompilerPhase";
     public static final String CompilationFailure = PREFIX + "CompilationFailure";
     public static final String CompilerInlining = PREFIX + "CompilerInlining";
+    public static final String CompilerQueueUtilization = PREFIX + "CompilerQueueUtilization";
     public static final String CompilerStatistics = PREFIX + "CompilerStatistics";
     public static final String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public static final String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";

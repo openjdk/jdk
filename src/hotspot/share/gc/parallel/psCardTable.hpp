@@ -82,7 +82,7 @@ class PSCardTable: public CardTable {
                                   uint stripe_index,
                                   uint n_stripes);
 
-  bool addr_is_marked_imprecise(void *addr);
+  bool is_dirty_for_addr(void *addr);
 
   // Card marking
   void inline_write_ref_field_gc(void* field) {
