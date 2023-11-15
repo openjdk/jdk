@@ -59,24 +59,6 @@ public class GathererAPITest {
         );
     }
 
-    private final static void assertThrowsNPE(Supplier<? extends Object> supplier) {
-        try {
-            var discard = supplier.get();
-        } catch (NullPointerException npe) {
-            return;
-        }
-        fail("Expected NullPointerException but wasn't thrown!");
-    }
-
-    private final static <T> void assertThrowsUOE(Supplier<T> supplier) {
-        try {
-            var discard = supplier.get();
-        } catch (UnsupportedOperationException uoe) {
-            return;
-        }
-        fail("Expected NullPointerException but wasn't thrown!");
-    }
-
     private final static <T,A,R> Gatherer<T,A,R> verifyGathererContract(Gatherer<T,A,R> gatherer) {
         // basics
         assertNotNull(gatherer);
@@ -112,27 +94,42 @@ public class GathererAPITest {
 
     @Test
     public void testGathererFactoriesNPE() {
-        assertThrowsNPE(() -> Gatherer.of(nullInitializer, integrator, combiner, finisher));
-        assertThrowsNPE(() -> Gatherer.of(initializer, nullIntegrator, combiner, finisher));
-        assertThrowsNPE(() -> Gatherer.of(initializer, integrator, nullCombiner, finisher));
-        assertThrowsNPE(() -> Gatherer.of(initializer, integrator, combiner, nullFinisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(nullInitializer, integrator, combiner, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(initializer, nullIntegrator, combiner, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(initializer, integrator, nullCombiner, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(initializer, integrator, combiner, nullFinisher));
 
-        assertThrowsNPE(() -> Gatherer.of(nullIntegrator));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(nullIntegrator));
 
-        assertThrowsNPE(() -> Gatherer.of(nullIntegrator, finisher));
-        assertThrowsNPE(() -> Gatherer.of(integrator, nullFinisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(nullIntegrator, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.of(integrator, nullFinisher));
 
-        assertThrowsNPE(() -> Gatherer.ofSequential(nullInitializer, integrator));
-        assertThrowsNPE(() -> Gatherer.ofSequential(initializer, nullIntegrator));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(nullInitializer, integrator));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(initializer, nullIntegrator));
 
-        assertThrowsNPE(() -> Gatherer.ofSequential(nullIntegrator));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(nullIntegrator));
 
-        assertThrowsNPE(() -> Gatherer.ofSequential(nullIntegrator, finisher));
-        assertThrowsNPE(() -> Gatherer.ofSequential(integrator, nullFinisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(nullIntegrator, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(integrator, nullFinisher));
 
-        assertThrowsNPE(() -> Gatherer.ofSequential(nullInitializer, integrator, finisher));
-        assertThrowsNPE(() -> Gatherer.ofSequential(initializer, nullIntegrator, finisher));
-        assertThrowsNPE(() -> Gatherer.ofSequential(initializer, integrator, nullFinisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(nullInitializer, integrator, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(initializer, nullIntegrator, finisher));
+        assertThrows(NullPointerException.class,
+                () -> Gatherer.ofSequential(initializer, integrator, nullFinisher));
     }
 
     @Test

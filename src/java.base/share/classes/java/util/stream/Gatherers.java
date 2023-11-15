@@ -358,7 +358,9 @@ public final class Gatherers {
         Objects.requireNonNull(mapper, "'mapper' must not be null");
 
         class State {
-            final ArrayDeque<Future<R>> window = new ArrayDeque<>(maxConcurrency);
+            // ArrayDeque default initial size is 16
+            final ArrayDeque<Future<R>> window =
+                    new ArrayDeque<>(Math.min(maxConcurrency, 16));
             final Semaphore windowLock = new Semaphore(maxConcurrency);
 
             final boolean integrate(T element,
