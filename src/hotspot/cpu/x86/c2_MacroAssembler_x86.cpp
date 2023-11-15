@@ -967,12 +967,12 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // Load the mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
+    // Prefetch top.
+    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
     // Check for monitor (0b10).
     testptr(mark, markWord::monitor_value);
     jcc(Assembler::notZero, inflated);
-
-    // Load top.
-    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
 
     // Check if lock-stack is full.
     cmpl(top, LockStack::end_offset() - 1);
@@ -1065,11 +1065,13 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
   { // Lightweight Unlock
 
+    // Load top.
+    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
     // Prefetch mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Check if obj is top of lock-stack.
-    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
     cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
     // Top of lock stack was not obj. Must be monitor.
     jcc(Assembler::notEqual, inflated_check_lock_stack);
