@@ -31,9 +31,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ThreadedVirtualAllocTestType
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.whitebox.WhiteBox;
 
 public class ThreadedVirtualAllocTestType {
@@ -45,8 +43,6 @@ public class ThreadedVirtualAllocTestType {
   public static void main(String args[]) throws Exception {
     OutputAnalyzer output;
 
-    String pid = Long.toString(ProcessTools.getProcessId());
-    ProcessBuilder pb = new ProcessBuilder();
 
     Thread reserveThread = new Thread() {
       public void run() {
@@ -56,9 +52,8 @@ public class ThreadedVirtualAllocTestType {
     reserveThread.start();
     reserveThread.join();
 
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail"});
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=512KB, committed=0KB)");
+    output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+    checkReservedCommittedSummary(output,512, 0);
     output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved 512KB for Test");
 
     Thread commitThread = new Thread() {
@@ -69,8 +64,8 @@ public class ThreadedVirtualAllocTestType {
     commitThread.start();
     commitThread.join();
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=512KB, committed=128KB)");
+    output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+    checkReservedCommittedSummary(output,512, 128);
     output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed 128KB");
 
     Thread uncommitThread = new Thread() {
@@ -81,7 +76,8 @@ public class ThreadedVirtualAllocTestType {
     uncommitThread.start();
     uncommitThread.join();
 
-    output = new OutputAnalyzer(pb.start());
+    output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+    checkReservedCommittedSummary(output,512, 0);
     output.shouldContain("Test (reserved=512KB, committed=0KB)");
     output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed");
 
@@ -93,9 +89,18 @@ public class ThreadedVirtualAllocTestType {
     releaseThread.start();
     releaseThread.join();
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("Test (reserved=");
+    output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+    checkReservedCommittedSummary(output,0, 0);
     output.shouldNotContain("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved");
+  }
+
+  static long peakKB = 0;
+
+  public static void checkReservedCommittedSummary(OutputAnalyzer output, long reservedKB, long committedKB) {
+    if (committedKB > peakKB) {
+      peakKB = committedKB;
+    }
+    NMTTestUtils.checkReservedCommittedSummary(output, reservedKB, committedKB, peakKB);
   }
 
 }

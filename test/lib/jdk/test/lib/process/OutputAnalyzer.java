@@ -621,6 +621,14 @@ public final class OutputAnalyzer {
         return asLines(getOutput());
     }
 
+    public List<String> stdoutAsLines() {
+        return asLines(getStdout());
+    }
+
+    public List<String> stderrAsLines() {
+        return asLines(getStderr());
+    }
+
     private List<String> asLines(String buffer) {
         return Arrays.asList(buffer.split("\\R"));
     }
@@ -784,6 +792,61 @@ public final class OutputAnalyzer {
             }
         }
         return -1;
+    }
+
+    private void searchLinesForMultiLinePattern(String[] haystack, String[] needles, boolean verbose) {
+        int needleIdx = 0;
+        int haystackIdx = 0;
+        boolean started = false;
+        boolean found = false;
+        while (needleIdx < needles.length && haystackIdx < haystack.length && (started == false || found == true)) {
+            if (verbose) {
+                System.out.println("" + haystackIdx + ":" + haystack[haystackIdx]);
+            }
+            found = haystack[haystackIdx].contains(needles[needleIdx]);
+            if (found) {
+                if (verbose) {
+                    System.out.println("Matches pattern " + needleIdx + " (\"" + haystack[haystackIdx] + "\")");
+                }
+                started = true;
+                needleIdx++;
+            }
+            haystackIdx++;
+        }
+        if (needleIdx < needles.length) {
+            String err = "First unmatched: \"" + needles[needleIdx] + "\"";
+            if (!verbose) { // don't print twice
+                reportDiagnosticSummary();
+            }
+            throw new RuntimeException(err);
+        }
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stdoutLines, needles, verbose);
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String... needles) {
+        stdoutShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stderrLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stderrLines, needles, verbose);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String... needles) {
+        stderrShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void shouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] lines = asLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(lines, needles, verbose);
+    }
+
+    public void shouldContainMultiLinePattern(String... needles) {
+        shouldContainMultiLinePattern(needles, true);
     }
 
 }

@@ -130,7 +130,7 @@ public class MallocStressTest {
 
         // All test memory allocated should be released
         output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("Test (reserved=");
+        output.shouldContain("Test (reserved=0KB, committed=0KB)");
 
         // Verify that tracking level has not been downgraded
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
