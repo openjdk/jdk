@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 6972078
+ * @bug 6972078 8319938
  * @key headful
  * @requires (os.family == "linux")
  * @summary Verifies if user is able to select single directory if multi selection
- * is enabled for JFileChooser.
+ *          is enabled for JFileChooser.
  * @run main TestFileChooserSingleDirectorySelection
  */
 
@@ -51,8 +51,10 @@ public class TestFileChooserSingleDirectorySelection {
     private static JButton getSelectedFilesButton;
     private static Robot robot;
     private static boolean passed;
-    private static File[] testDir;
-    private static File[] tempFile;
+    private static File testDir;
+    private static File testFile;
+    private static File[] SubDirs;
+    private static File[] subFiles;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("sun.java2d.uiScale", "1.0");
@@ -62,18 +64,35 @@ public class TestFileChooserSingleDirectorySelection {
         try {
             // create test directory
             String tmpDir = System.getProperty("user.home");
-            testDir = new File[1];
-            testDir[0] = new File(tmpDir, "testDir");
-            if (!testDir[0].exists())
-                testDir[0].mkdir();
-            testDir[0].deleteOnExit();
 
-            // create temporary files inside testDir
-            tempFile = new File[5];
+            // Create a test directory that contains only folders
+            testDir = new File(tmpDir, "testDir");
+            if (!testDir.exists()) {
+                testDir.mkdir();
+            }
+            testDir.deleteOnExit();
+
+            // create sub directories inside test directory
+            SubDirs = new File[5];
             for (int i = 0; i < 5; ++i) {
-                tempFile[i] = File.createTempFile("temp", ".txt",
-                        new File(testDir[0].getAbsolutePath()));
-                tempFile[i].deleteOnExit();
+                SubDirs[i] = new File(testDir, "subDir_" + (i+1));
+                SubDirs[i].mkdir();
+                SubDirs[i].deleteOnExit();
+            }
+
+            // Create a test directory that contains only files
+            testFile = new File(tmpDir, "testFile");
+            if (!testFile.exists()) {
+                testFile.mkdir();
+            }
+            testFile.deleteOnExit();
+
+            // create temporary files inside testFile
+            subFiles = new File[5];
+            for (int i = 0; i < 5; ++i) {
+                subFiles[i] = File.createTempFile("subFiles_" + (i+1),
+                        ".txt", new File(testFile.getAbsolutePath()));
+                subFiles[i].deleteOnExit();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,7 +114,7 @@ public class TestFileChooserSingleDirectorySelection {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
-                fileChooser.setCurrentDirectory(testDir[0]);
+                fileChooser.setCurrentDirectory(testFile);
             });
 
             robot.waitForIdle();
@@ -117,6 +136,7 @@ public class TestFileChooserSingleDirectorySelection {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
+                fileChooser.setCurrentDirectory(testDir);
             });
             robot.waitForIdle();
             robot.delay(1000);
@@ -137,6 +157,7 @@ public class TestFileChooserSingleDirectorySelection {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
+                fileChooser.setCurrentDirectory(testDir);
             });
             robot.waitForIdle();
             robot.delay(1000);
@@ -154,7 +175,7 @@ public class TestFileChooserSingleDirectorySelection {
     private static void createAndShowUI() {
         frame = new JFrame("Test File Chooser Single Directory Selection");
         frame.getContentPane().setLayout(new BorderLayout());
-        fileChooser = new JFileChooser("user.home");
+        fileChooser = new JFileChooser(testDir);
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setControlButtonsAreShown(false);
 
