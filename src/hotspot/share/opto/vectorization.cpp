@@ -686,6 +686,7 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
   }
 }
+#endif
 
 bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   reset(lpt, allow_cfg);
@@ -1049,8 +1050,8 @@ const char* VLoopBody::construct() {
         }
       }
       assert(found, "every non-cfg node must have an input that is also inside the loop");
-#endif
     }
+#endif
   }
 
   // Create reverse-post-order list of nodes in body
@@ -1125,4 +1126,3 @@ void VLoopBody::print() const {
 
 
 
-#endif
