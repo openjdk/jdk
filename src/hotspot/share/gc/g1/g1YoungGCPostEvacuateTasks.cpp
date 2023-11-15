@@ -40,6 +40,7 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
