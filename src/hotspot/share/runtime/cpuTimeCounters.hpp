@@ -51,7 +51,7 @@ private:
   CPUTimeCounters();
   static CPUTimeCounters* _instance;
 
-  // An array of PerfCounters which correspond to the various counters we want 
+  // An array of PerfCounters which correspond to the various counters we want
   // to track. Indexed by the enum value `CPUTimeType`.
   PerfCounter* _cpu_time_counters[CPUTimeGroups::COUNT];
 
