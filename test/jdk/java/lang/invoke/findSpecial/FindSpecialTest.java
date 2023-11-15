@@ -57,7 +57,7 @@ public class FindSpecialTest {
             throw new Error(m1 + " not exist");
         }
         String classpath = m1.toString() + File.pathSeparator + TEST_CLASS_PATH;
-        executeCommand(createTestJavaProcessBuilder( "-cp", classpath,
+        executeCommand(createTestJavaProcessBuilder("-cp", classpath,
                                                     TEST_MAIN_CLASS))
                 .shouldHaveExitValue(0);
     }

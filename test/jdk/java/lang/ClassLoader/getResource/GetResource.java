@@ -147,8 +147,9 @@ public class GetResource {
 
         cmdLine.add("GetResource");
         cmdLine.add(expected);
-        ProcessBuilder pb = createTestJavaProcessBuilder(cmdLine)
-                                .directory(dir.toFile());  // change working directory
+        ProcessBuilder pb = createTestJavaProcessBuilder(cmdLine);
+        pb.directory(dir.toFile()); // change working directory
+        pb.environment().remove("CLASSPATH"); // remove CLASSPATH environment variable
         executeCommand(pb).shouldHaveExitValue(0);
     }
 

@@ -232,7 +232,7 @@ public class LogGeneratedClassesTest {
             }
 
             ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
-                        "-cp", CLASSES.toString(),
+                                   "-cp", CLASSES.toString(),
                                    "-Djava.security.manager=allow",
                                    "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                    "com.example.TestLambda").directory(testDir.toFile());
@@ -251,7 +251,7 @@ public class LogGeneratedClassesTest {
         Files.createDirectories(dumpDir.resolve("com/example/nonsense"));
         Files.createFile(dumpDir.resolve("com/example/nonsense/nonsense"));
         ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
-                    "-cp", CLASSES.toString(),
+                               "-cp", CLASSES.toString(),
                                "-Djava.security.manager=allow",
                                "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                longFQCN).directory(testDir.toFile());
