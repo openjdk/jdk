@@ -1728,16 +1728,16 @@ void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask,
   vsetvli(x0, t0, Assembler::e8, lmul);
   vmv_v_i(v4, 0);
   // convert the src data from bits to bytes.
-  vmerge_vim(v4, v4, 1); // v0 as implicit mask vector
-  vmv_v_i(v12, 0);
+  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
   // reset the dst data(in bytes) to zero.
-  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_v_i(v12, 0);
   // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
   vmv_s_x(v0, mask);
   // expand the src data(in bytes) to dst(in bytes).
   vsetvli(x0, t0, Assembler::e8, lmul);
   viota_m(v8, v0);
-  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask vector
+  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
   // convert the dst data from bytes to bits.
   vmseq_vi(v0, v12, 1);
   // store result back.
