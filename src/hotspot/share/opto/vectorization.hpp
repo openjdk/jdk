@@ -519,10 +519,10 @@ class DepMem : public ArenaObj {
 };
 
 class VLoopDependenceGraph : public StackObj {
-public:
+private:
   class DependenceEdge;
   class DependenceNode;
-private:
+
   const VLoop& _vloop;
   const VLoopMemorySlices& _memory_slices;
   const VLoopBody& _body;
@@ -552,6 +552,9 @@ public:
 
   void build();
 
+  void print() const;
+
+private:
   DependenceNode* root() const { return _root; }
   DependenceNode* sink() const { return _sink; }
 
@@ -568,10 +571,6 @@ public:
 
   // Make a new dependence graph edge dprec->dsucc
   DependenceEdge* make_edge(DependenceNode* dpred, DependenceNode* dsucc);
-
-  // TODO more functionality!
-
-  void print() const;
 
   // An edge in the dependence graph.  The edges incident to a dependence
   // node are threaded through _next_in for incoming edges and _next_out
@@ -628,6 +627,7 @@ public:
     void print() const;
   };
 
+public:
   class PredsIterator {
   private:
     Node*           _n;
