@@ -71,7 +71,7 @@ void StringDedup::Processor::initialize() {
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
     CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-    instance->create_counter(CPUTimeGroups::conc_dedup); 
+    instance->create_counter(CPUTimeGroups::conc_dedup);
     _concurrent_dedup_thread_cpu_time = instance->get_counter(CPUTimeGroups::conc_dedup);
   }
 }

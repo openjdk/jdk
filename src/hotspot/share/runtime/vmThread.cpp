@@ -140,7 +140,7 @@ void VMThread::create() {
                                                  PerfData::U_Ticks, CHECK);
     if (os::is_thread_cpu_time_supported()) {
       CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-      instance->create_counter(CPUTimeGroups::vm); 
+      instance->create_counter(CPUTimeGroups::vm);
       _perf_vm_thread_cpu_time = instance->get_counter(CPUTimeGroups::vm);
     }
   }
