@@ -418,8 +418,13 @@ public:
   }
 
   void analyze();
+
   const GrowableArray<PhiNode*> &heads() const { return _heads; }
   const GrowableArray<MemNode*> &tails() const { return _tails; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice(Node* head, Node* tail, GrowableArray<Node*> &slice) const;
+
   DEBUG_ONLY(void print() const;)
 };
 
@@ -597,7 +602,7 @@ private:
 
   GrowableArray<DependenceNode*> _map;
   DependenceNode* _root;
-  DependenceNode* _tail;
+  DependenceNode* _sink;
 
 public:
   VLoopDependenceGraph(VLoop* vloop,
@@ -607,30 +612,40 @@ public:
     _memory_slices(memory_slices),
     _body(body),
     _map(vloop->arena(), 8,  0, nullptr),
-    _root(new (vloop->arena()) DependenceNode(nullptr)),
-    _tail(new (vloop->arena()) DependenceNode(nullptr)) {}
+    _root(nullptr),
+    _sink(nullptr) {}
 
   NONCOPYABLE(VLoopDependenceGraph);
 
   void reset() {
     _map.clear();
+    _root = new (_vloop->arena()) DependenceNode(nullptr);
+    _sink = new (_vloop->arena()) DependenceNode(nullptr);
   }
 
   void build();
 
-  DependenceNode* root() { return _root; }
-  DependenceNode* tail() { return _tail; }
+  DependenceNode* root() const { return _root; }
+  DependenceNode* sink() const { return _sink; }
 
   // Return dependence node corresponding to an ideal node
-  // TODO rename? assert that return is not null?
-  DependenceNode* dep(Node* node) const { return _map.at(node->_idx); }
+  DependenceNode* get_node(Node* node) const {
+    assert(node != nullptr, "must not be nullptr");
+    DependenceNode* d = _map.at(node->_idx);
+    assert(d != nullptr, "must find dependence node");
+    return d;
+  }
 
   // Make a new dependence graph node for an ideal node.
   DependenceNode* make_node(Node* node);
 
+  // Make a new dependence graph edge dprec->dsucc
+  DependenceEdge* make_edge(DependenceNode* dpred, DependenceNode* dsucc);
+
+
   // TODO more functionality!
 
-  DEBUG_ONLY(void print() const;)
+  void print() const;
 
   // An edge in the dependence graph.  The edges incident to a dependence
   // node are threaded through _next_in for incoming edges and _next_out
@@ -684,11 +699,10 @@ public:
     void set_in_head(DependenceEdge* hd)  { _in_head = hd;    }
     void set_out_head(DependenceEdge* hd) { _out_head = hd;   }
 
-    // TODO
-    //int in_cnt();  // Incoming edge count
-    //int out_cnt(); // Outgoing edge count
+    int in_cnt();  // Incoming edge count
+    int out_cnt(); // Outgoing edge count
 
-    //void print();
+    void print() const;
   };
 };
 

@@ -996,6 +996,54 @@ void VLoopMemorySlices::analyze() {
 #endif
 }
 
+void VLoopMemorySlices::get_slice(Node* head,
+                                  Node* tail,
+                                  GrowableArray<Node*> &slice) const {
+  slice.clear();
+  // Start at tail, and go up through Store nodes.
+  // For each Store node, find all Loads below that Store.
+  // Terminate once we reach the head.
+  Node* n = tail;
+  Node* prev = nullptr;
+  while (true) {
+    // TODO enable print here!
+    // NOT_PRODUCT( if(is_trace_mem_slice()) tty->print_cr("VLoopMemorySlices::get_slice: n %d", n->_idx);)
+    assert(_vloop->in_loopbody(n), "must be in block");
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_Load()) {
+        if (_vloop->in_loopbody(out)) {
+          slice.push(out);
+          if (TraceSuperWord && Verbose) {
+            tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", out->_idx);
+          }
+        }
+      } else {
+        // Expect other outputs to be the prev (with some exceptions)
+        if (out->is_MergeMem() && !_vloop->in_loopbody(out)) {
+          // Either unrolling is causing a memory edge not to disappear,
+          // or need to run igvn.optimize() again before SLP
+        } else if (out->is_memory_phi() && !_vloop->in_loopbody(out)) {
+          // Ditto.  Not sure what else to check further.
+        } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
+          // StoreCM has an input edge used as a precedence edge.
+          // Maybe an issue when oop stores are vectorized.
+        } else {
+          assert(out == prev || prev == nullptr, "no branches off of store slice");
+        }
+      }
+    }
+    if (n == head) { return; };
+    slice.push(n);
+    if (TraceSuperWord && Verbose) {
+      tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", n->_idx);
+    }
+    prev = n;
+    assert(n->is_Mem(), "unexpected node %s", n->Name());
+    n = n->in(MemNode::Memory);
+  }
+}
+
 #ifndef PRODUCT
 void VLoopMemorySlices::print() const {
   tty->print_cr("\nVLoopMemorySlices::print: %s",
@@ -1279,23 +1327,93 @@ void VLoopDependenceGraph::build() {
   const GrowableArray<PhiNode*> &mem_slice_head = _memory_slices.heads();
   const GrowableArray<MemNode*> &mem_slice_tail = _memory_slices.tails();
 
-  // TODO
+  ResourceMark rm;
+  GrowableArray<Node*> slice_nodes;
+
+  // For each memory slice, create the dependences
+  for (int i = 0; i < mem_slice_head.length(); i++) {
+    Node* head = mem_slice_head.at(i);
+    Node* tail = mem_slice_tail.at(i);
+
+    // Get slice in predecessor order (last is first)
+    _memory_slices.get_slice(head, tail, slice_nodes);
 
 #ifndef PRODUCT
+    if(TraceSuperWord && Verbose) {
+      tty->print_cr("VLoopDependenceGraph::build: built a new mem slice");
+      for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+        slice_nodes.at(j)->dump();
+      }
+    }
+#endif
+    // Make the slice dependent on the root
+    DependenceNode* slice_head = get_node(head);
+    make_edge(root(), slice_head);
+
+    // Create a sink for the slice
+    DependenceNode* slice_sink = make_node(nullptr);
+    make_edge(slice_sink, sink());
+
+    // Now visit each pair of memory ops, creating the edges
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      Node* s1 = slice_nodes.at(j);
+
+      // If no dependency yet, use slice_head
+      if (get_node(s1)->in_cnt() == 0) {
+        make_edge(slice_head, get_node(s1));
+      }
+      VPointer p1(s1->as_Mem(), _vloop->phase(), _vloop->lpt(), nullptr, false);
+      bool sink_dependent = true;
+      for (int k = j - 1; k >= 0; k--) {
+        Node* s2 = slice_nodes.at(k);
+        if (s1->is_Load() && s2->is_Load()) {
+          continue;
+        }
+        VPointer p2(s2->as_Mem(), _vloop->phase(), _vloop->lpt(), nullptr, false);
+
+        int cmp = p1.cmp(p2);
+        // TODO remove completely?
+        // TODO printing now already removed here
+        //if (SuperWordRTDepCheck &&
+        //    p1.base() != p2.base() && p1.valid() && p2.valid()) {
+        //  // Trace disjoint pointers
+        //  OrderedPair pp(p1.base(), p2.base());
+        //  _disjoint_ptrs.append_if_missing(pp);
+        //}
+        if (!VPointer::not_equal(cmp)) {
+          // Possibly same address
+          make_edge(get_node(s1), get_node(s2));
+          sink_dependent = false;
+        }
+      }
+      if (sink_dependent) {
+        make_edge(get_node(s1), slice_sink);
+      }
+    }
+  }
+
   if (TraceSuperWord) {
     print();
   }
-#endif
 }
 
-#ifndef PRODUCT
 void VLoopDependenceGraph::print() const {
   tty->print_cr("\nVLoopDependenceGraph::print:");
-  // TODO
+  tty->print_cr("root:");
+  root()->print();
+  tty->print_cr("memory nodes:");
+  for (int i = 0; i < _map.length(); i++) {
+    DependenceNode* d = _map.at(i);
+    if (d != nullptr) {
+      d->print();
+    }
+  }
+  tty->print_cr("sink:");
+  sink()->print();
 }
-#endif
 
-VLoopDependenceGraph::DependenceNode* VLoopDependenceGraph::make_node(Node* node) {
+VLoopDependenceGraph::DependenceNode*
+VLoopDependenceGraph::make_node(Node* node) {
   DependenceNode* m = new (_vloop->arena()) DependenceNode(node);
   if (node != nullptr) {
     assert(_map.at_grow(node->_idx) == nullptr, "one init only");
@@ -1304,3 +1422,50 @@ VLoopDependenceGraph::DependenceNode* VLoopDependenceGraph::make_node(Node* node
   return m;
 }
 
+VLoopDependenceGraph::DependenceEdge*
+VLoopDependenceGraph::make_edge(DependenceNode* dpred, DependenceNode* dsucc) {
+  DependenceEdge* e = new (_vloop->arena()) DependenceEdge(dpred,
+                                                           dsucc,
+                                                           dsucc->in_head(),
+                                                           dpred->out_head());
+  dpred->set_out_head(e);
+  dsucc->set_in_head(e);
+  return e;
+}
+
+int VLoopDependenceGraph::DependenceNode::in_cnt() {
+  int ct = 0;
+  for (DependenceEdge* e = _in_head; e != nullptr; e = e->next_in()) {
+    ct++;
+  };
+  return ct;
+}
+
+int VLoopDependenceGraph::DependenceNode::out_cnt() {
+  int ct = 0;
+  for (DependenceEdge* e = _out_head; e != nullptr; e = e->next_out()) {
+    ct++;
+  }
+  return ct;
+}
+
+
+void VLoopDependenceGraph::DependenceNode::print() const {
+#ifndef PRODUCT
+  if (_node != nullptr) {
+    tty->print("  DependenceNode %4d %-6s (", _node->_idx, _node->Name());
+  } else {
+    tty->print("  DependenceNode sentinel (");
+  }
+  for (DependenceEdge* p = _in_head; p != nullptr; p = p->next_in()) {
+    Node* pred = p->pred()->node();
+    tty->print(" %d", pred != nullptr ? pred->_idx : 0);
+  }
+  tty->print(") [");
+  for (DependenceEdge* s = _out_head; s != nullptr; s = s->next_out()) {
+    Node* succ = s->succ()->node();
+    tty->print(" %d", succ != nullptr ? succ->_idx : 0);
+  }
+  tty->print_cr(" ]");
+#endif
+}
