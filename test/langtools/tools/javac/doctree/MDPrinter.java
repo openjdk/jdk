@@ -21,6 +21,13 @@
  * questions.
  */
 
+/* @test
+ * @bug 8298405
+ * @summary Make sure MDPrinter.java compiles
+ * @modules jdk.internal.md/jdk.internal.org.commonmark.node
+ *          jdk.internal.md/jdk.internal.org.commonmark.parser
+ * @compile MDPrinter.java
+ */
 
 import java.io.IOException;
 import java.io.PrintStream;

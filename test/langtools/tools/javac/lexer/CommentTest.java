@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8298405
  * @summary Proper lexing of comments, especially /// comments
@@ -34,7 +34,6 @@
 
 import java.util.Objects;
 
-import com.sun.tools.javac.parser.JavadocTokenizer;
 import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens;
 import com.sun.tools.javac.util.Context;
@@ -70,7 +69,7 @@ public class CommentTest extends TestRunner {
     }
 
     /**
-     * Whitespace before the commennt is completely ignored.
+     * Whitespace before the comment is completely ignored.
      */
     @Test
     public void testRaggedInitialIndent() {

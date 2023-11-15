@@ -34,7 +34,6 @@
  */
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -58,10 +57,10 @@ public class TestTransformer extends JavadocTester {
         tester.runTests();
     }
 
-    ToolBox tb = new ToolBox();
+    private final ToolBox tb = new ToolBox();
 
     @Test
-    public void testFindStandardTransformer_raw() throws Exception {
+    public void testFindStandardTransformer_raw() {
         int count = 0;
         var sl = ServiceLoader.load(DocTrees.DocCommentTreeTransformer.class);
         for (var t : sl) {
@@ -79,7 +78,7 @@ public class TestTransformer extends JavadocTester {
     }
 
     @Test
-    public void testFindStandardTransformer_stream() throws Exception {
+    public void testFindStandardTransformer_stream() {
         var dct = getTransformer("standard");
         checking("transformer");
         if (dct.isPresent()) {
@@ -92,8 +91,9 @@ public class TestTransformer extends JavadocTester {
 
     private Optional<DocTrees.DocCommentTreeTransformer> getTransformer(String name) {
         var sl = ServiceLoader.load(DocTrees.DocCommentTreeTransformer.class);
-        return StreamSupport.stream(sl.spliterator(), false)
-                .filter(p -> p.name().equals(name))
+        return sl.stream()
+                .map(ServiceLoader.Provider::get)
+                .filter(t -> t.name().equals(name))
                 .findFirst();
     }
 
