@@ -690,8 +690,12 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
 bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   reset(lpt, allow_cfg);
 
-  tty->print_cr("VLoop::check_precondition");
-  lpt->dump_head();
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("VLoop::check_precondition");
+    lpt->dump_head();
+  }
+#endif
 
   const char* return_state = check_preconditions_helper();
   assert(return_state != nullptr, "must have return state");
@@ -699,7 +703,11 @@ bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
     return true; // success
   }
 
-  tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
+  }
+#endif
   return false; // failure
 }
 
@@ -770,15 +778,24 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   bool success = check_preconditions(lpt, allow_cfg);
   if (!success) { return false; }
 
-  tty->print_cr("VLoopAnalyzer::analyze");
-  lpt->dump_head();
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("VLoopAnalyzer::analyze");
+    lpt->dump_head();
+  }
+#endif
 
   const char* return_state = analyze_helper();
   assert(return_state != nullptr, "must have return state");
   if (return_state == VLoopAnalyzer::SUCCESS) {
     return true; // success
   }
-  tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
+  }
+#endif
   return false; // failure
 }
 
