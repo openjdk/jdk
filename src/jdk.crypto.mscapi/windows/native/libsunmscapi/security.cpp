@@ -444,7 +444,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
         }
         else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+                CERT_SYSTEM_STORE_LOCAL_MACHINE | CERT_STORE_MAXIMUM_ALLOWED_FLAG, pszCertStoreName);
         }
         else {
             PP("jCertStoreLocation is not a valid value");
