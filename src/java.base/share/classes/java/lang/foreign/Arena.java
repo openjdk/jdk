@@ -319,50 +319,11 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws WrongThreadException if this arena is confined, and this method is called
      *         from a thread other than the arena's owner thread
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly
-     * @throws CleanupException if an exception is thrown while executing a custom cleanup action
+     * @throws RuntimeException if an exception is thrown while executing a custom cleanup action
      *                          associated with this arena (e.g. as a result of calling
      *                          {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
      *                          {@link MemorySegment#reinterpret(Arena, Consumer)}).
      */
     @Override
     void close();
-
-    /**
-     * Thrown when an arena is {@linkplain Arena#close() closed explicitly} to indicate that an exception has occurred
-     * while executing a custom cleanup action associated with the arena. Custom cleanup actions can be attached
-     * to an arena when calling {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
-     * {@link MemorySegment#reinterpret(Arena, Consumer)}. If more than one cleanup action fails,
-     * then this exception models the first failure whereas subsequent failures are
-     * {@linkplain Throwable#addSuppressed(Throwable) suppressed}. The order in which cleanup actions
-     * are executed is unspecified.
-     *
-     * @see MemorySegment#reinterpret(Arena, Consumer)
-     * @see MemorySegment#reinterpret(long, Arena, Consumer)
-     * @since 22
-     */
-    final class CleanupException extends RuntimeException {
-        @Serial
-        private static final long serialVersionUID = -403985082231157866L;
-
-        /**
-         * Constructs a {@code CleanupException} with the given detail message and cause.
-         *
-         * @param  message the detail message, can be null
-         * @param  cause the cause, can be null
-         */
-        public CleanupException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        /**
-         * Constructs a {@code CleanupException} with the given cause and a detail
-         * message of {@code (cause==null ? null : cause.toString())} (which
-         * typically contains the class and detail message of {@code cause}).
-         *
-         * @param  cause the cause, can be null
-         */
-        public CleanupException(Throwable cause) {
-            super(cause);
-        }
-    }
 }

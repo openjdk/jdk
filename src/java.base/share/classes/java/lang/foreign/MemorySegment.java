@@ -720,9 +720,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * }
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@link #byteSize()}. If the provided arena is {@linkplain Arena#close() closed explicitly},
-     * any exception thrown by the cleanup action is rethrown as a {@link Arena.CleanupException} when
-     * the arena is closed.
+     * cleanup action is {@link #byteSize()}.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its
@@ -767,9 +765,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * }
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
-     * cleanup action is {@code newSize}. If the provided arena is {@linkplain Arena#close() closed explicitly},
-     * any exception thrown by the cleanup action is rethrown as a {@link Arena.CleanupException} when
-     * the arena is closed.
+     * cleanup action is {@code newSize}.
      *
      * @apiNote The cleanup action (if present) should take care not to leak the received
      *          segment to external clients that might access the segment after its

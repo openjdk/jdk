@@ -32,7 +32,6 @@ import java.lang.foreign.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Arena.CleanupException;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -387,35 +386,35 @@ public class TestSegments {
     @Test
     void testThrowInCleanup() {
         AtomicInteger counter = new AtomicInteger();
-        CleanupException thrown = null;
+        RuntimeException thrown = null;
         Set<String> expected = new HashSet<>();
         try (Arena arena = Arena.ofConfined()) {
             for (int i = 0 ; i < 10 ; i++) {
                 String msg = "exception#" + i;
                 expected.add(msg);
                 MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
-                    throw new AssertionError(msg);
+                    throw new IllegalArgumentException(msg);
                 });
             }
             for (int i = 10 ; i < 20 ; i++) {
                 String msg = "exception#" + i;
                 expected.add(msg);
                 MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
-                    throw new AssertionError(msg);
+                    throw new IllegalArgumentException(msg);
                 });
             }
             MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
-        } catch (CleanupException ex) {
+        } catch (RuntimeException ex) {
             thrown = ex;
         }
         assertNotNull(thrown);
         assertEquals(counter.get(), 1);
         assertEquals(thrown.getSuppressed().length, 19);
-        Throwable[] errors = new AssertionError[20];
-        assertTrue(thrown.getCause() instanceof AssertionError);
-        errors[0] = thrown.getCause();
+        Throwable[] errors = new IllegalArgumentException[20];
+        assertTrue(thrown instanceof IllegalArgumentException);
+        errors[0] = thrown;
         for (int i = 0 ; i < 19 ; i++) {
-            assertTrue(thrown.getSuppressed()[i] instanceof AssertionError);
+            assertTrue(thrown.getSuppressed()[i] instanceof IllegalArgumentException);
             errors[i + 1] = thrown.getSuppressed()[i];
         }
         for (Throwable t : errors) {

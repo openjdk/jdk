@@ -26,7 +26,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.Arena.CleanupException;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
@@ -255,15 +254,16 @@ public abstract sealed class MemorySessionImpl
         }
 
         static void cleanup(ResourceCleanup first) {
-            CleanupException pendingException = null;
+            RuntimeException pendingException = null;
             ResourceCleanup current = first;
             while (current != null) {
                 try {
                     current.cleanup();
-                } catch (Throwable ex) {
+                } catch (RuntimeException ex) {
                     if (pendingException == null) {
-                        pendingException = new CleanupException(ex);
-                    } else {
+                        pendingException = ex;
+                    } else if (ex != pendingException) {
+                        // note: self-suppression is not supported
                         pendingException.addSuppressed(ex);
                     }
                 }
