@@ -485,7 +485,7 @@ public class SignerInfo implements DerEncoder {
      * @param directSign whether the signature is calculated on the content
      *                   directly. This makes difference for Ed448.
      */
-    public static void algorithmsConformanceCheck(
+    private static void algorithmsConformanceCheck(
             AlgorithmId digAlgId, AlgorithmId encAlgId, PublicKey key,
             boolean directSign) throws NoSuchAlgorithmException {
         String encAlg = encAlgId.getName();
