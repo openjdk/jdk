@@ -20,19 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.Point;
-import java.awt.Robot;
-import java.io.File;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -40,9 +27,23 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @key headful
  * @requires (os.family == "linux")
  * @summary Verifies if user is able to select single directory if multi selection
- *          is enabled for JFileChooser.
+ * is enabled for JFileChooser.
  * @run main TestFileChooserSingleDirectorySelection
  */
+
+import java.io.File;
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.Point;
+import java.awt.Robot;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class TestFileChooserSingleDirectorySelection {
     private static JFrame frame;
@@ -62,7 +63,7 @@ public class TestFileChooserSingleDirectorySelection {
 
         try {
             // create test directory
-            String tmpDir = System.getProperty("user.home");
+            String tmpDir = System.getProperty("java.io.tmpdir");
 
             // Create a test directory that contains only folders
             testDir = new File(tmpDir, "testDir");
