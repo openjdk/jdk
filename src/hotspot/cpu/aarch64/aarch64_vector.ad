@@ -3763,8 +3763,7 @@ instruct vzeroExtBtoX(vReg dst, vReg src) %{
                             $src$$FloatRegister, T_BYTE, /* is_unsigned */ true);
     } else {
       assert(UseSVE > 0, "must be sve");
-      Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-      __ sve_vector_extend($dst$$FloatRegister, size,
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                            $src$$FloatRegister, __ B, /* is_unsigned */ true);
     }
   %}
@@ -3784,8 +3783,7 @@ instruct vzeroExtStoX(vReg dst, vReg src) %{
                             $src$$FloatRegister, T_SHORT, /* is_unsigned */ true);
     } else {
       assert(UseSVE > 0, "must be sve");
-      Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-      __ sve_vector_extend($dst$$FloatRegister, size,
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                            $src$$FloatRegister, __ H, /* is_unsigned */ true);
     }
   %}
@@ -3796,8 +3794,9 @@ instruct vzeroExtItoX(vReg dst, vReg src) %{
   match(Set dst (VectorUCastI2X src));
   format %{ "vzeroExtItoX $dst, $src" %}
   ins_encode %{
-    assert(Matcher::vector_element_basic_type(this) == T_LONG, "must be");
-    uint length_in_bytes =  Matcher::vector_length_in_bytes(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       // 2I to 2L
       __ neon_vector_extend($dst$$FloatRegister, T_LONG, length_in_bytes,
