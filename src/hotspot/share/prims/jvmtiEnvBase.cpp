@@ -624,7 +624,10 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
 
 bool
 JvmtiEnvBase::is_vthread_alive(oop vt) {
-  return java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
+  oop cont = java_lang_VirtualThread::continuation(vt);
+
+  return !jdk_internal_vm_Continuation::done(cont) &&
+         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
          java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
 }
 
@@ -1974,7 +1977,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
     if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
       return;
     }
-    if (target_jt == nullptr) {    // unmounted virtual  thread
+    if (target_jt == nullptr) {    // unmounted virtual thread
       hs_cl->do_vthread(target_h); // execute handshake closure callback on current thread directly
     }
   }
@@ -2409,9 +2412,7 @@ SetFramePopClosure::do_thread(Thread *target) {
 
 void
 SetFramePopClosure::do_vthread(Handle target_h) {
-  Thread* current = Thread::current();
-
-  if (!JvmtiEnvBase::is_vthread_alive(_target_h())) {
+  if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
     return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
   }
   if (!_self && !JvmtiVTSuspender::is_vthread_suspended(_target_h())) {
