@@ -369,6 +369,7 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   if (target == nullptr) { // an unmounted virtual thread
     return;  // EnterInterpOnlyModeClosure will be executed right after mount.
   }
+  ThreadsListHandle tlh(current);
   EnterInterpOnlyModeClosure hs;
   if (target->is_handshake_safe_for(current)) {
     hs.do_thread(target);
