@@ -2215,7 +2215,7 @@ public abstract sealed class $Type$Buffer
      *
      * @implNote
      * This implementation throws {@code UnsupportedOperationException} for
-     * non-direct buffers when the given unit size is greater then {@code 8}.
+     * non-direct buffers when the given unit size is greater then {@code 1}.
      *
      * @param  index
      *         The index to query for alignment offset, must be non-negative, no
