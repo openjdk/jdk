@@ -36,10 +36,11 @@
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
+VPointer::VPointer(MemNode* mem, const VLoop& vloop,
+                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
                    Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _phase(phase), _lpt(lpt),
-  _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
+  _mem(mem), _vloop(vloop),
+  _phase(phase), _lpt(lpt),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
@@ -109,7 +110,8 @@ VPointer::VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _phase(p->_phase), _lpt(p->_lpt), _iv(p->_iv),
+  _mem(p->_mem), _vloop(p->_vloop),
+  _phase(p->_phase), _lpt(p->_lpt),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
@@ -1226,14 +1228,14 @@ void VLoopDependenceGraph::build() {
       if (get_node(s1)->in_cnt() == 0) {
         make_edge(slice_head, get_node(s1));
       }
-      VPointer p1(s1->as_Mem(), _vloop.phase(), _vloop.lpt(), nullptr, false);
+      VPointer p1(s1->as_Mem(), _vloop, _vloop.phase(), _vloop.lpt(), nullptr, false);
       bool sink_dependent = true;
       for (int k = j - 1; k >= 0; k--) {
         Node* s2 = slice_nodes.at(k);
         if (s1->is_Load() && s2->is_Load()) {
           continue;
         }
-        VPointer p2(s2->as_Mem(), _vloop.phase(), _vloop.lpt(), nullptr, false);
+        VPointer p2(s2->as_Mem(), _vloop, _vloop.phase(), _vloop.lpt(), nullptr, false);
 
         int cmp = p1.cmp(p2);
         // TODO remove completely?

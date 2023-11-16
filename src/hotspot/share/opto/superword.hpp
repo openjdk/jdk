@@ -126,7 +126,7 @@ class SuperWord : public ResourceObj {
  public:
   SuperWord(const VLoopAnalyzer &vla);
 
-  static void unrolling_analysis(VLoop &vloop, int &local_loop_unroll_factor);
+  static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
   const VLoopAnalyzer& vla() const      { return _vla; }
   IdealLoopTree* lpt() const            { return vla().lpt(); }

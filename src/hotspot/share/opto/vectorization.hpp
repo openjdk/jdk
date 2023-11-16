@@ -429,12 +429,12 @@ private:
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
-class VPointer : public ArenaObj {
+class VPointer : public StackObj {
  protected:
   MemNode*        _mem;      // My memory reference node
+  const VLoop&    _vloop;
   PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
   IdealLoopTree*  _lpt;      // Current IdealLoopTree
-  PhiNode*        _iv;       // The loop induction variable
 
   Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
@@ -452,9 +452,10 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  PhaseIdealLoop* phase() const { return _phase; }
-  IdealLoopTree*  lpt() const   { return _lpt; }
-  PhiNode*        iv() const    { return _iv; }
+  const VLoop&    vloop() const { return _vloop; }
+  PhaseIdealLoop* phase() const { return _vloop.phase(); }
+  IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
+  PhiNode*        iv() const    { return _vloop.iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -475,8 +476,9 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
-            Node_Stack* nstack, bool analyze_only);
+  VPointer(MemNode* mem, const VLoop& vloop,
+           PhaseIdealLoop* phase, IdealLoopTree* lpt,
+           Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
@@ -517,7 +519,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, phase(), lpt(), nullptr, false);
+      VPointer p_mem(mem, vloop(), phase(), lpt(), nullptr, false);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.
