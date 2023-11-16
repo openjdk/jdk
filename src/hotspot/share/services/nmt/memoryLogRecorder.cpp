@@ -626,7 +626,7 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
 }
 
 size_t NMT_MemoryLogRecorder::find_previous_entry(Entry* entries, size_t index, address ptr) {
-  if (index >= 0) {
+  if (index > 0) {
     for (size_t b=index-1; b>0; b--) {
       if (entries[b].ptr == ptr) {
         return b;
@@ -688,11 +688,11 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
       if (is_realloc(e)) {
         size_t found_index = find_previous_entry(entries, c, e->old);
         while (found_index != 0) {
-          Entry* found = &entries[found_index];
-          deactivate(found);
+          e = &entries[found_index];
+          deactivate(e);
           if (is_realloc(e)) {
             // if it's realloc, then we need to keep looking
-            found_index = find_previous_entry(entries, found_index, found->old);
+            found_index = find_previous_entry(entries, found_index, e->old);
           } else {
             // if it's malloc, then we are done
             found_index = 0;

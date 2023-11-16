@@ -631,7 +631,6 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   if (NMTPreInit::handle_malloc(&rc, size)) {
     // No need to fill with 0 because DumpSharedSpaces doesn't use these
     // early allocations.
-    //fprintf(stderr, " malloc %d:%12p:%12ld:%s\n", MemTracker::enabled(), rc, size, NMTUtil::flag_to_name(memflags));
     return rc;
   }
 
@@ -659,7 +658,6 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 #ifdef ASSERT
-  //fprintf(stderr, "  alloc %d:%12p:%12ld:%s\n", MemTracker::enabled(), outer_ptr, outer_size, NMTUtil::flag_to_name(memflags));
   NMT_MemoryLogRecorder::log(memflags, outer_size, (address)outer_ptr, nullptr, &stack);
 #endif
 
@@ -680,14 +678,9 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-//  if ((size == 1114-MemTracker::overhead_per_malloc()) && (memflags == NMTUtil::index_to_flag(9))) {
-//    fprintf(stderr, "AHA realloc\n");
-//  }
-  
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
-    //fprintf(stderr, "realloc %12p:%12p:%12ld:%s\n", rc, memblock, size, NMTUtil::flag_to_name(memflags));
     return rc;
   }
 
@@ -739,7 +732,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     }
 
 #ifdef ASSERT
-    //fprintf(stderr, "realloc %d:%12p:%12p:%12ld:%s\n", MemTracker::enabled(), new_outer_ptr, header, new_outer_size, NMTUtil::flag_to_name(memflags));
     NMT_MemoryLogRecorder::log(memflags, new_outer_size, (address)new_outer_ptr, (address)header, &stack);
 #endif
 
@@ -769,7 +761,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     }
 
 #ifdef ASSERT
-    //fprintf(stderr, "realloc %d:%12p:%12p:%12ld:%s\n", MemTracker::enabled(), memblock, rc, size, NMTUtil::flag_to_name(memflags));
     NMT_MemoryLogRecorder::log(memflags, size, (address)rc, (address)memblock, &stack);
 #endif
   }
@@ -783,7 +774,6 @@ void  os::free(void *memblock) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
-    //fprintf(stderr, "   free %d:%12p\n", MemTracker::enabled(), memblock);
     return;
   }
 
@@ -805,7 +795,6 @@ void  os::free(void *memblock) {
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
 #ifdef ASSERT
-  //fprintf(stderr, "   free %d:%12p\n", MemTracker::enabled(), old_outer_ptr);
   NMT_MemoryLogRecorder::log(flags, 0, (address)old_outer_ptr);
 #endif
 
