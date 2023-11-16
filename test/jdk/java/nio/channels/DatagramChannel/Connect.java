@@ -42,11 +42,11 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class Connect {
 
-    static final PrintStream log = System.err;
-    static final String NOW = Instant.now().toString();
-    static final String MESSAGE = "Hello " + NOW;
-    static final String OTHER = "Hey " + NOW;
-    static final String RESPONSE = "Hi " + NOW;
+    static final PrintStream err = System.err;
+    static final String TIME_STAMP = Instant.now().toString();
+    static final String MESSAGE = "Hello " + TIME_STAMP;
+    static final String OTHER = "Hey " + TIME_STAMP;
+    static final String RESPONSE = "Hi " + TIME_STAMP;
     static final int MAX = Math.max(256, MESSAGE.getBytes(US_ASCII).length + 16);
 
     public static void main(String[] args) throws Exception {
@@ -114,12 +114,12 @@ public class Connect {
                 ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
                 bb.put(bytes);
                 bb.flip();
-                log.println("Initiator connecting to: " + connectSocketAddress);
+                err.println("Initiator connecting to: " + connectSocketAddress);
                 dc.connect(connectSocketAddress);
-                log.println("Initiator bound to: " + dc.getLocalAddress());
+                err.println("Initiator bound to: " + dc.getLocalAddress());
 
                 // Send a message
-                log.println("Initiator attempting to write to Responder at " + connectSocketAddress);
+                err.println("Initiator attempting to write to Responder at " + connectSocketAddress);
                 dc.write(bb);
 
                 // Try to send to some other address
@@ -129,17 +129,17 @@ public class Connect {
                     try (DatagramChannel other = DatagramChannel.open()) {
                         InetSocketAddress otherAddress = new InetSocketAddress(loopback, 0);
                         other.bind(otherAddress);
-                        log.println("Testing if Initiator throws AlreadyConnectedException");
+                        err.println("Testing if Initiator throws AlreadyConnectedException");
                         otherAddress = (InetSocketAddress) other.getLocalAddress();
                         assert port != otherAddress.getPort();
                         assert !connectSocketAddress.equals(otherAddress);
-                        log.printf("Initiator sending \"%s\" to other address %s%n", OTHER, otherAddress);
+                        err.printf("Initiator sending \"%s\" to other address %s%n", OTHER, otherAddress);
                         dc.send(ByteBuffer.wrap(OTHER.getBytes(US_ASCII)), otherAddress);
                     }
                     throw new RuntimeException("Initiator allowed send to other address while already connected");
                 } catch (AlreadyConnectedException ace) {
                     // Correct behavior
-                    log.println("Initiator got expected " + ace);
+                    err.println("Initiator got expected " + ace);
                 }
 
                 // wait for response
@@ -150,22 +150,22 @@ public class Connect {
                     bb.flip();
 
                     // Read a reply
-                    log.println("Initiator waiting to read");
+                    err.println("Initiator waiting to read");
                     dc.read(bb);
                     bb.flip();
                     CharBuffer cb = US_ASCII.newDecoder().decode(bb);
-                    log.println("Initiator received from Responder at " + connectSocketAddress + ": " + cb);
+                    err.println("Initiator received from Responder at " + connectSocketAddress + ": " + cb);
                     if (!RESPONSE.equals(cb.toString())) {
-                        log.println("Initiator received unexpected message: continue waiting");
+                        err.println("Initiator received unexpected message: continue waiting");
                         continue;
                     }
                     break;
                 }
             } catch (Exception ex) {
-                log.println("Initiator threw exception: " + ex);
+                err.println("Initiator threw exception: " + ex);
                 throw new RuntimeException(ex);
             } finally {
-                log.println("Initiator finished");
+                err.println("Initiator finished");
             }
         }
 
@@ -192,14 +192,14 @@ public class Connect {
             while (true) {
                 try {
                     // Listen for a message
-                    log.println("Responder waiting to receive");
+                    err.println("Responder waiting to receive");
                     SocketAddress sa = dc.receive(bb);
                     bb.flip();
                     CharBuffer cb = US_ASCII.
                             newDecoder().decode(bb);
-                    log.println("Responder received from Initiator at " + sa + ": " + cb);
+                    err.println("Responder received from Initiator at " + sa + ": " + cb);
                     if (!MESSAGE.equals(cb.toString())) {
-                        log.println("Responder received unexpected message: continue waiting");
+                        err.println("Responder received unexpected message: continue waiting");
                         bb.clear();
                         continue;
                     }
@@ -209,15 +209,15 @@ public class Connect {
                     bb.clear();
                     bb.put(RESPONSE.getBytes(US_ASCII));
                     bb.flip();
-                    log.println("Responder attempting to write: " + dc.getRemoteAddress());
+                    err.println("Responder attempting to write: " + dc.getRemoteAddress());
                     dc.write(bb);
                     bb.flip();
                     break;
                 } catch (Exception ex) {
-                    log.println("Responder threw exception: " + ex);
+                    err.println("Responder threw exception: " + ex);
                     throw new RuntimeException(ex);
                 } finally {
-                    log.println("Responder finished");
+                    err.println("Responder finished");
                 }
             }
         }
