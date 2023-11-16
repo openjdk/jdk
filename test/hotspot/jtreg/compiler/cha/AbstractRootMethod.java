@@ -38,7 +38,7 @@
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation
- *                   -XX:-StressMethodHandleLinkerInlining -XX:-StressIncrementalInlining
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.AbstractRootMethod
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
@@ -47,7 +47,7 @@
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-StressMethodHandleLinkerInlining -XX:-StressIncrementalInlining
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.AbstractRootMethod
  */
 package compiler.cha;
