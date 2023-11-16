@@ -233,19 +233,11 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_I.enable_feature();
-  ext_M.enable_feature();
-  ext_A.enable_feature();
-  ext_F.enable_feature();
-  ext_D.enable_feature();
-  ext_C.enable_feature();
-  ext_H.enable_feature();
-  ext_V.enable_feature();
-
   ext_Zicbom.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
+  // If we running on a pre-6.5 kernel
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
