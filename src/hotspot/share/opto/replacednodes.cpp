@@ -222,6 +222,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
     }
 
     // Clone nodes and record mapping from current to cloned nodes
+    uint index_before_clone = C->unique();
     for (uint i = 0; i < to_fix.size(); ++i) {
       Node* n = to_fix.at(i);
       if (n->is_CFG() || n->in(0) != nullptr) { // End of a chain
@@ -251,6 +252,9 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
         if (clone_ptr != nullptr) {
           Node* clone = *clone_ptr;
           n->set_req(j, clone);
+          if (n->_idx < index_before_clone) {
+            PhaseIterGVN::add_users_of_use_to_worklist(clone, n, *C->igvn_worklist());
+          }
           updates++;
         }
       }
