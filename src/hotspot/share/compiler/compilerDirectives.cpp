@@ -433,11 +433,10 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       // Parse ccstr and create mask
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        CHeapBitMap mask(PHASE_NUM_TYPES, mtCompiler);
-        PhaseNameValidator validator(option, mask);
+        PhaseNameValidator validator(option);
         if (validator.is_valid()) {
           assert(validator.is_set(), "Must be set");
-          set.cloned()->_ideal_phase_name_mask.set_from(mask);
+          set.cloned()->set_ideal_phase_mask(validator);
         }
       }
     }

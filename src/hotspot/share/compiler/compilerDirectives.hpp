@@ -199,8 +199,12 @@ void set_##name(void* value) {                                      \
   compilerdirectives_c1_string_flags(set_string_function_definition)
 #undef set_string_function_definition
 
-  BitMap& ideal_phase_mask() { return _ideal_phase_name_mask; };
-  bool should_print_phase(CompilerPhaseType cpt) { return _ideal_phase_name_mask.at(cpt); };
+  void set_ideal_phase_mask(const PhaseNameValidator& v) {
+    _ideal_phase_name_mask.set_from(v.mask());
+  };
+  bool should_print_phase(const CompilerPhaseType cpt) const {
+    return _ideal_phase_name_mask.at(cpt);
+  };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }

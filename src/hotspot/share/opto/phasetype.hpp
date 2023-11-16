@@ -156,12 +156,19 @@ class PhaseNameIter {
 
 class PhaseNameValidator {
  private:
+  CHeapBitMap _mask;
   bool _valid;
   bool _set;
   char* _bad;
 
+
  public:
-  PhaseNameValidator(ccstrlist option, BitMap& mask) : _valid(true), _set(false), _bad(nullptr) {
+  PhaseNameValidator(ccstrlist option)
+                    : _mask(PHASE_NUM_TYPES, mtCompiler),
+                      _valid(true),
+                      _set(false),
+                      _bad(nullptr)
+  {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
@@ -172,11 +179,11 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        mask.set_range(0,PHASE_NUM_TYPES);
+        _mask.set_range(0,PHASE_NUM_TYPES);
         _set = true;
       } else {
         assert(cpt < PHASE_NUM_TYPES, "out of bounds");
-        mask.set_bit(cpt);
+        _mask.set_bit(cpt);
         _set = true;
       }
     }
@@ -188,17 +195,10 @@ class PhaseNameValidator {
     }
   }
 
-  bool is_valid() const {
-    return _valid;
-  }
-
-  bool is_set() const {
-    return _set;
-  }
-
-  const char* what() const {
-    return _bad;
-  }
+  const BitMap& mask() const { return _mask; }
+  bool is_valid() const { return _valid; }
+  bool is_set() const { return _set; }
+  const char* what() const { return _bad; }
 };
 
 #endif // SHARE_OPTO_PHASETYPE_HPP

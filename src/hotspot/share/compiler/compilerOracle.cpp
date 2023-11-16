@@ -777,8 +777,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       }
 #ifndef PRODUCT
       else if (option == CompileCommand::PrintIdealPhase) {
-        CHeapBitMap mask(PHASE_NUM_TYPES, mtCompiler);
-        PhaseNameValidator validator(value, mask);
+        PhaseNameValidator validator(value);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
