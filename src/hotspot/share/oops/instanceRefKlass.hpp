@@ -56,7 +56,7 @@ class InstanceRefKlass: public InstanceKlass {
   InstanceRefKlass(const ClassFileParser& parser);
 
  public:
-  InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceRefKlass();
 
   // Oop fields (and metadata) iterators
   //

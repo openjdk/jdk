@@ -46,7 +46,7 @@ private:
   InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
 public:
-  InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceClassLoaderKlass();
 
   // Oop fields (and metadata) iterators
   //

@@ -104,6 +104,10 @@ static bool tag_array_is_zero_initialized(Array<u1>* tags) {
 
 #endif
 
+ConstantPool::ConstantPool() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 ConstantPool::ConstantPool(Array<u1>* tags) :
   _tags(tags),
   _length(tags->length()) {

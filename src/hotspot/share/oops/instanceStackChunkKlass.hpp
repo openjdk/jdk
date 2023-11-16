@@ -113,7 +113,7 @@ private:
   InstanceStackChunkKlass(const ClassFileParser& parser);
 
 public:
-  InstanceStackChunkKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceStackChunkKlass();
 
   // Casting from Klass*
   static InstanceStackChunkKlass* cast(Klass* k) {

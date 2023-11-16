@@ -162,7 +162,7 @@ class ConstantPool : public Metadata {
   }
 
   ConstantPool(Array<u1>* tags);
-  ConstantPool() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  ConstantPool();
  public:
   static ConstantPool* allocate(ClassLoaderData* loader_data, int length, TRAPS);
 

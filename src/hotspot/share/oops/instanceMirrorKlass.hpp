@@ -53,7 +53,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
  public:
-  InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  InstanceMirrorKlass();
 
   static InstanceMirrorKlass* cast(Klass* k) {
     return const_cast<InstanceMirrorKlass*>(cast(const_cast<const Klass*>(k)));
