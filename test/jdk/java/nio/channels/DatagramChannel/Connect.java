@@ -216,10 +216,9 @@ public class Connect {
                 } catch (Exception ex) {
                     err.println("Responder threw exception: " + ex);
                     throw new RuntimeException(ex);
-                } finally {
-                    err.println("Responder finished");
                 }
             }
+            err.println("Responder finished");
         }
 
         @Override
