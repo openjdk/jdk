@@ -582,6 +582,10 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   char* result = nullptr;
   const bool randomize = RandomizeClassSpaceLocation;
 
+  // We try, in various ways, to reserve a memory region that is both optimized for fast narrow Klass encoding
+  // and still randomly located to provide a form of ASLR. These attempts may fail if the address space is
+  // very fragmented.
+
   // First try to reserve in low address ranges.
   if (try_in_low_address_ranges) {
     constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
@@ -623,9 +627,10 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 
 #ifdef AARCH64
     if (result == nullptr) {
-      // If that failed, attempt to allocate at any 4G-aligned address. The disadvantage to the
-      // approach taken above is that os::reserve_memory_aligned needs to over-allocate to guarantee
-      // the alignment, and that will temporarily spike the vsize of the process.
+      // If that failed, attempt to allocate at any 4G-aligned address but let the system decide
+      // where. For ASLR we now rely on the system.
+      // Since this will lead to temporary over-reservation of address space, it will spike the
+      // vsize of the process and therefore may fail if a vsize limit is in place (e.g. ulimit -v)
       const size_t alignment2 = 4 * G;
       log_debug(metaspace, map)("Trying to allocate at any " SIZE_FORMAT_X "-aligned address", alignment2);
       result = os::reserve_memory_aligned(size, alignment2, false);
