@@ -53,6 +53,7 @@ public class StringRacyConstructor {
 
     private static final Field STRING_CODER_FIELD;
     private static final Field SB_CODER_FIELD;
+    private static final boolean COMPACT_STRINGS;
 
     static {
         try {
@@ -60,6 +61,7 @@ public class StringRacyConstructor {
             STRING_CODER_FIELD.setAccessible(true);
             SB_CODER_FIELD = Class.forName("java.lang.AbstractStringBuilder").getDeclaredField("coder");
             SB_CODER_FIELD.setAccessible(true);
+            COMPACT_STRINGS = isCompactStrings();
         } catch (NoSuchFieldException ex ) {
             throw new ExceptionInInitializerError(ex);
         } catch (ClassNotFoundException e) {
@@ -120,6 +122,9 @@ public class StringRacyConstructor {
      * @param orig a string
      */
     private static boolean validCoder(String orig) {
+        if (!COMPACT_STRINGS) {
+            assertEquals(UTF16, coder(orig), "Non-COMPACT STRINGS coder must be UTF16");
+        }
         int accum = 0;
         for (int i = 0; i < orig.length(); i++)
             accum |= orig.charAt(i);
@@ -207,7 +212,7 @@ public class StringRacyConstructor {
             if (intResult == 0) {
                 if (printWarningCount == 0) {
                     printWarningCount = 1;
-                    System.out.println("StringUTF16.compress returned 0, may not be intrinsic");
+                    System.err.println("Intrinsic for StringUTF16.compress returned 0, may not have been updated.");
                 }
             } else {
                 assertEquals(3, intResult, "return length not-equal, iteration: " + i);
@@ -307,9 +312,6 @@ public class StringRacyConstructor {
                 } catch (InterruptedException ie) {
                     // ignore interrupt
                 }
-                if (i >= 1_000_000) {
-                    System.out.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
-                }
                 return s;
             }
         }
@@ -320,7 +322,7 @@ public class StringRacyConstructor {
      * incorrectly encoded as UTF-16 using the APIs for Codepoints.
      */
     public static String racyStringConstructionCodepoints(String original) throws ConcurrentModificationException {
-        if (original.chars().max().orElseThrow() > 256) {
+        if (original.chars().max().getAsInt() >= 256) {
             throw new IllegalArgumentException(
                     "Can only work with latin-1 Strings");
         }
@@ -353,9 +355,6 @@ public class StringRacyConstructor {
                 } catch (InterruptedException ie) {
                     // ignore interrupt
                 }
-                if (i >= 1_000_000) {
-                    System.out.printf("Unable to produce a UTF16 string in %d iterations: %s%n", i, original);
-                }
                 return s;
             }
         }
@@ -367,7 +366,7 @@ public class StringRacyConstructor {
      * than the original due to the surrogate encoding.
      */
     public static String racyStringConstructionCodepointsSurrogates(String original) throws ConcurrentModificationException {
-        if (original.chars().max().orElseThrow() > 256) {
+        if (original.chars().max().getAsInt() >= 256) {
             throw new IllegalArgumentException(
                     "Can only work with latin-1 Strings");
         }
@@ -399,9 +398,6 @@ public class StringRacyConstructor {
                     thread.join();
                 } catch (InterruptedException ie) {
                     // ignore interrupt
-                }
-                if (i >= 1_000_000) {
-                    System.out.printf("Unable to create a string in %d iterations: %s%n", i, original);
                 }
                 return s;
             }
