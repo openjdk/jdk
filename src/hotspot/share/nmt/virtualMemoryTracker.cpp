@@ -32,7 +32,7 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
-size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot{};
 
 #ifdef ASSERT
 void VirtualMemory::update_peak(size_t size) {
@@ -49,9 +49,6 @@ void VirtualMemory::update_peak(size_t size) {
 #endif // ASSERT
 
 void VirtualMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
-  // Use placement operator new to initialize static data area.
-  ::new ((void*)_snapshot) VirtualMemorySnapshot();
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {

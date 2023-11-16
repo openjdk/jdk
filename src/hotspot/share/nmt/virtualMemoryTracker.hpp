@@ -95,7 +95,7 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class VirtualMemorySnapshot : public AnyObj {
   friend class VirtualMemorySummary;
 
  private:
@@ -172,11 +172,11 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return (VirtualMemorySnapshot*)_snapshot;
+    return &_snapshot;
   }
 
  private:
-  static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
+  static VirtualMemorySnapshot _snapshot;
 };
 
 
