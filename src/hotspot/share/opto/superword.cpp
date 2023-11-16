@@ -231,12 +231,12 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
               Node* in = n->in(j);
               // Don't propagate through a memory
               if (!in->is_Mem() &&
-                  vloop.in_loopbody(in) &&
+                  vloop.in_body(in) &&
                   in->bottom_type()->basic_type() == T_INT) {
                 bool same_type = true;
                 for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
                   Node *use = in->fast_out(k);
-                  if (!vloop.in_loopbody(use) &&
+                  if (!vloop.in_body(use) &&
                       use->bottom_type()->basic_type() != bt) {
                     same_type = false;
                     break;
@@ -362,7 +362,7 @@ void SuperWord::find_adjacent_refs() {
     Node* n = body().at(i);
     if (n->is_Mem() &&
         !n->is_LoadStore() &&
-        in_loopbody(n) &&
+        in_body(n) &&
         is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {
@@ -873,8 +873,8 @@ bool SuperWord::exists_at(Node* s, uint pos) {
 bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
   if (!s1->is_Mem() ||
       !s2->is_Mem() ||
-      !in_loopbody(s1) ||
-      !in_loopbody(s2)) {
+      !in_body(s1) ||
+      !in_body(s2)) {
     return false;
   }
 
@@ -990,7 +990,7 @@ Node* SuperWord::find_dependence(Node_List* p) {
     VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
     for (; !preds.done(); preds.next()) {
       Node* pred = preds.current();
-      if (in_loopbody(pred) && depth(pred) >= min_d) {
+      if (in_body(pred) && depth(pred) >= min_d) {
         if (visited_test(pred)) { // marked as in p?
           return pred;
         }
@@ -1057,7 +1057,7 @@ bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
   VLoopDependenceGraph::PredsIterator preds(deep, vla().dependence_graph());
   for (; !preds.done(); preds.next()) {
     Node* pred = preds.current();
-    if (in_loopbody(pred) && !visited_test(pred)) {
+    if (in_body(pred) && !visited_test(pred)) {
       if (shallow == pred) {
         return false;
       }
@@ -1148,8 +1148,8 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
-    if (!in_loopbody(t1) ||
-        !in_loopbody(t2) ||
+    if (!in_body(t1) ||
+        !in_body(t2) ||
         t1->is_Mem() ||
         t2->is_Mem())  {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
@@ -1192,13 +1192,13 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
     num_s1_uses++;
-    if (!in_loopbody(t1) || t1->is_Mem()) {
+    if (!in_body(t1) || t1->is_Mem()) {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
     }
     for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
       Node* t2 = s2->fast_out(j);
-      if (!in_loopbody(t2) || t2->is_Mem()) {
+      if (!in_body(t2) || t2->is_Mem()) {
         // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
         continue;
       }
@@ -1765,7 +1765,7 @@ void SuperWord::verify_packs() {
     Node_List* p = _packset.at(i);
     for (uint k = 0; k < p->size(); k++) {
       Node* n = p->at(k);
-      assert(in_loopbody(n), "only nodes in bb can be in packset");
+      assert(in_body(n), "only nodes in bb can be in packset");
       assert(!processed.member(n), "node should only occur once in packset");
       assert(my_pack(n) == p, "n has consisten packset info");
       processed.push(n);
@@ -1817,7 +1817,7 @@ public:
   }
   // Get pid, if there is a packset node that n belongs to. Else return 0.
   int get_pid_or_zero(const Node* n) const {
-    if (!_slp->in_loopbody(n)) {
+    if (!_slp->in_body(n)) {
       return 0;
     }
     int idx = _slp->body_idx(n);
@@ -1834,7 +1834,7 @@ public:
   }
   void set_pid(Node* n, int pid) {
     assert(n != nullptr && pid > 0, "sane inputs");
-    assert(_slp->in_loopbody(n), "must be");
+    assert(_slp->in_body(n), "must be");
     int idx = _slp->body_idx(n);
     _pid.at_put_grow(idx, pid);
     _pid_to_node.at_put_grow(pid - 1, n, nullptr);
@@ -2097,7 +2097,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
       // If there are only loads in a slice, we never update the memory
       // state in the loop, hence there is no phi for the memory state.
       // We just keep the old memory state that was outside the loop.
-      assert(n->is_Load() && !in_loopbody(n->in(MemNode::Memory)),
+      assert(n->is_Load() && !in_body(n->in(MemNode::Memory)),
              "only loads can have memory state from outside loop");
     } else {
       _igvn.replace_input_of(n, MemNode::Memory, current_state);
@@ -2128,7 +2128,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
     uses_after_loop.clear();
     for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
       Node* use = last_store->fast_out(k);
-      if (!in_loopbody(use)) {
+      if (!in_body(use)) {
         uses_after_loop.push(use);
       }
     }
@@ -2761,7 +2761,7 @@ void SuperWord::compute_max_depth() {
         VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
         for (; !preds.done(); preds.next()) {
           Node* pred = preds.current();
-          if (in_loopbody(pred)) {
+          if (in_body(pred)) {
             d_in = MAX2(d_in, depth(pred));
           }
         }
@@ -2782,10 +2782,10 @@ void SuperWord::compute_max_depth() {
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
         requires_long_to_int_conversion(n->Opcode())) ||
-      !in_loopbody(n->in(1))) {
+      !in_body(n->in(1))) {
     return T_ILLEGAL;
   }
-  assert(in_loopbody(n), "must be in the bb");
+  assert(in_body(n), "must be in the bb");
   BasicType src_t = velt_basic_type(n->in(1));
   BasicType dst_t = velt_basic_type(n);
   // Do not use superword for non-primitives.
@@ -2809,7 +2809,7 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   VectorNode::vector_operands(n, &start, &end);
   for (uint i = start; i < end; ++i) {
     Node* input = n->in(i);
-    if (!in_loopbody(input)) continue;
+    if (!in_body(input)) continue;
     BasicType newt = longer_type_for_conversion(input);
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
@@ -2817,7 +2817,7 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   // find the longest type among use nodes.
   for (uint i = 0; i < n->outcnt(); ++i) {
     Node* output = n->raw_out(i);
-    if (!in_loopbody(output)) continue;
+    if (!in_body(output)) continue;
     BasicType newt = longer_type_for_conversion(output);
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
@@ -2860,13 +2860,13 @@ void SuperWord::compute_vector_element_type() {
         Node* in  = n->in(j);
         // Don't propagate through a memory
         if (!in->is_Mem() &&
-            in_loopbody(in) &&
+            in_body(in) &&
             velt_type(in)->basic_type() == T_INT &&
             data_size(n) < data_size(in)) {
           bool same_type = true;
           for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
             Node *use = in->fast_out(k);
-            if (!in_loopbody(use) || !same_velt_type(use, n)) {
+            if (!in_body(use) || !same_velt_type(use, n)) {
               same_type = false;
               break;
             }
@@ -2884,7 +2884,7 @@ void SuperWord::compute_vector_element_type() {
             if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() &&
-                  in_loopbody(load) &&
+                  in_body(load) &&
                   velt_type(load)->basic_type() == T_INT) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
                 // (LoadUS/LoadUB) values. Store nodes only have one version.
@@ -2909,10 +2909,10 @@ void SuperWord::compute_vector_element_type() {
       assert(nn->is_Cmp(), "always have Cmp above Bool");
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      assert(in_loopbody(nn->in(1)) ||
-             in_loopbody(nn->in(2)),
+      assert(in_body(nn->in(1)) ||
+             in_body(nn->in(2)),
              "one of the inputs must be in the loop too");
-      if (in_loopbody(nn->in(1))) {
+      if (in_body(nn->in(1))) {
         set_velt_type(n, velt_type(nn->in(1)));
       } else {
         set_velt_type(n, velt_type(nn->in(2)));

@@ -90,7 +90,7 @@ public:
   };
 
 
-  bool in_loopbody(const Node* n) const {
+  bool in_body(const Node* n) const {
     // TODO refactor to allow cfg. See counter example with
     // nodes on backedge but backedge has no additional outputs
     const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
@@ -244,7 +244,7 @@ public:
   DEBUG_ONLY(void print() const;)
 
   int body_idx(const Node* n) const {
-    assert(_vloop.in_loopbody(n), "must be in loop_body");
+    assert(_vloop.in_body(n), "must be in loop_body");
     return _body_idx.at(n->_idx);
   }
 
@@ -252,7 +252,7 @@ public:
 
 private:
   void set_body_idx(Node* n, int i) {
-    assert(_vloop.in_loopbody(n), "must be in loop_body");
+    assert(_vloop.in_body(n), "must be in loop_body");
     _body_idx.at_put_grow(n->_idx, i);
   }
 };

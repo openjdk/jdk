@@ -133,7 +133,7 @@ class SuperWord : public ResourceObj {
   PhaseIdealLoop* phase() const         { return vla().phase(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
   PhiNode* iv() const                   { return vla().iv(); }
-  bool in_loopbody(const Node* n) const { return vla().in_loopbody(n); }
+  bool in_body(const Node* n) const     { return vla().in_body(n); }
   bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
   const GrowableArray<Node*>& body() const { return vla().body().body(); }
   int body_idx(const Node* n) const     { return vla().body().body_idx(n); }
@@ -205,7 +205,7 @@ class SuperWord : public ResourceObj {
   // my_pack
  public:
   Node_List* my_pack(Node* n) {
-    return !vla().in_loopbody(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
+    return !vla().in_body(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
   }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }

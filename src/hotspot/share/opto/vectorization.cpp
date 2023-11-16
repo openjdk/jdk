@@ -922,7 +922,7 @@ void VLoopReductions::mark_reductions() {
         find_in_path(
           first, input, lpt->_body.size(),
           [&](const Node* n) { return n->Opcode() == first->Opcode() &&
-                                      _vloop.in_loopbody(n); },
+                                      _vloop.in_body(n); },
           [&](const Node* n) { return n == phi; });
       if (path.first != nullptr) {
         reduction_input = input;
@@ -941,7 +941,7 @@ void VLoopReductions::mark_reductions() {
     for (int i = 0; i < path_nodes; i++) {
       for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
         Node* u = current->fast_out(j);
-        if (!_vloop.in_loopbody(u)) {
+        if (!_vloop.in_body(u)) {
           continue;
         }
         if (u == succ) {
@@ -977,7 +977,7 @@ void VLoopMemorySlices::analyze() {
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     PhiNode* phi = cl->fast_out(i)->isa_Phi();
     if (phi != nullptr &&
-        _vloop.in_loopbody(phi) &&
+        _vloop.in_body(phi) &&
         phi->is_memory_phi()) {
       Node* phi_tail  = phi->in(LoopNode::LoopBackControl);
       if (phi_tail != phi->in(LoopNode::EntryControl)) {
@@ -1006,11 +1006,11 @@ void VLoopMemorySlices::get_slice(Node* head,
   while (true) {
     // TODO enable print here!
     // NOT_PRODUCT( if(is_trace_mem_slice()) tty->print_cr("VLoopMemorySlices::get_slice: n %d", n->_idx);)
-    assert(_vloop.in_loopbody(n), "must be in block");
+    assert(_vloop.in_body(n), "must be in block");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
-        if (_vloop.in_loopbody(out)) {
+        if (_vloop.in_body(out)) {
           slice.push(out);
           if (TraceSuperWord && Verbose) {
             tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", out->_idx);
@@ -1018,10 +1018,10 @@ void VLoopMemorySlices::get_slice(Node* head,
         }
       } else {
         // Expect other outputs to be the prev (with some exceptions)
-        if (out->is_MergeMem() && !_vloop.in_loopbody(out)) {
+        if (out->is_MergeMem() && !_vloop.in_body(out)) {
           // Either unrolling is causing a memory edge not to disappear,
           // or need to run igvn.optimize() again before SLP
-        } else if (out->is_memory_phi() && !_vloop.in_loopbody(out)) {
+        } else if (out->is_memory_phi() && !_vloop.in_body(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
@@ -1067,7 +1067,7 @@ const char* VLoopBody::construct() {
   int body_count = 0;
   for (uint i = 0; i < lpt->_body.size(); i++) {
     Node* n = lpt->_body.at(i);
-    if (!_vloop.in_loopbody(n)) { continue; }
+    if (!_vloop.in_body(n)) { continue; }
 
     // Create a temporary map
     set_body_idx(n, i);
@@ -1092,7 +1092,7 @@ const char* VLoopBody::construct() {
       bool found = false;
       for (uint j = 0; j < n->req(); j++) {
         Node* def = n->in(j);
-        if (def != nullptr && _vloop.in_loopbody(def)) {
+        if (def != nullptr && _vloop.in_body(def)) {
           found = true;
           break;
         }
@@ -1122,7 +1122,7 @@ const char* VLoopBody::construct() {
       int old_size = stack.length();
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
-        if (_vloop.in_loopbody(use) &&
+        if (_vloop.in_body(use) &&
             !visited.test(body_idx(use)) &&
             // Don't go around backedge
             (!use->is_Phi() || n == cl)) {
