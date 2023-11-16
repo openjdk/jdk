@@ -45,7 +45,7 @@ import sun.util.locale.provider.CalendarDataUtility;
  */
 public class CLDRCalendarDataProviderImpl extends CalendarDataProviderImpl {
 
-    private static final Map<String, Integer> firstDays = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> firstDay = new ConcurrentHashMap<>();
     private static final Map<String, Integer> minDays = new ConcurrentHashMap<>();
 
     public CLDRCalendarDataProviderImpl(Type type, Set<String> langtags) {
@@ -74,7 +74,7 @@ public class CLDRCalendarDataProviderImpl extends CalendarDataProviderImpl {
      */
     private static int findValue(String key, Locale locale) {
         Map<String, Integer> map = CalendarDataUtility.FIRST_DAY_OF_WEEK.equals(key) ?
-            firstDays : minDays;
+            firstDay : minDays;
         String region = locale.getCountry();
 
         if (region.isEmpty()) {
