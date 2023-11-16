@@ -188,10 +188,6 @@ ArchiveBuilder::~ArchiveBuilder() {
   }
 }
 
-bool ArchiveBuilder::is_dumping_full_module_graph() {
-  return DumpSharedSpaces && MetaspaceShared::use_full_module_graph();
-}
-
 class GatherKlassesAndSymbols : public UniqueMetaspaceClosure {
   ArchiveBuilder* _builder;
 
@@ -237,7 +233,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
 #if INCLUDE_CDS_JAVA_HEAP
-  if (is_dumping_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     ClassLoaderDataShared::iterate_symbols(&doit);
   }
 #endif
@@ -586,7 +582,7 @@ void ArchiveBuilder::dump_rw_metadata() {
   make_shallow_copies(&_rw_region, &_rw_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (is_dumping_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     // Archive the ModuleEntry's and PackageEntry's of the 3 built-in loaders
     char* start = rw_region()->top();
     ClassLoaderDataShared::allocate_archived_tables();
@@ -603,7 +599,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   make_shallow_copies(&_ro_region, &_ro_src_objs);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (is_dumping_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     char* start = ro_region()->top();
     ClassLoaderDataShared::init_archived_tables();
     alloc_stats()->record_modules(ro_region()->top() - start, /*read_only*/true);

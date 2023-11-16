@@ -286,6 +286,7 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
       initial_gvn()->hash_find_insert(use);
     }
     record_for_igvn(use);
+    PhaseIterGVN::add_users_of_use_to_worklist(nn, use, *_igvn_worklist);
     i -= uses_found;    // we deleted 1 or more copies of this edge
   }
 }

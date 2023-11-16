@@ -1269,7 +1269,8 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
-    MetaspaceShared::disable_full_module_graph();
+    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::disable_dumping_full_module_graph();
     log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif

@@ -520,10 +520,10 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
+CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
-  if (size <= 0) {
+  assert(size > 0, "Code cache allocation request must be > 0");
+  if (size == 0) {
     return nullptr;
   }
   CodeBlob* cb = nullptr;
@@ -1575,10 +1575,14 @@ void CodeCache::print_memory_overhead() {
 
 #ifndef PRODUCT
 
-void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
+void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
   if (PrintCodeCache2) {  // Need to add a new flag
     ResourceMark rm;
-    if (size == 0)  size = cb->size();
+    if (size == 0) {
+      int s = cb->size();
+      assert(s >= 0, "CodeBlob size is negative: %d", s);
+      size = (uint) s;
+    }
     tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
   }
 }
