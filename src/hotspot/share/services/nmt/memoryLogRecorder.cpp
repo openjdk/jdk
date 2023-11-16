@@ -164,7 +164,7 @@ static volatile thread_name_info *_threads_names = nullptr;
 
 void NMT_MemoryLogRecorder::remember_thread_name(const char* name) {
   if (_threads_names == nullptr) {
-    _threads_names = (thread_name_info*)calloc(_threads_names_capacity, sizeof(thread_name_info));
+    ALLOW_C_FUNCTION(::calloc, _threads_names = (thread_name_info*)::calloc(_threads_names_capacity, sizeof(thread_name_info));)
   }
   if (_threads_names_counter < _threads_names_capacity) {
     size_t counter = _threads_names_counter++;
@@ -174,7 +174,7 @@ void NMT_MemoryLogRecorder::remember_thread_name(const char* name) {
     }
   } else {
     _threads_names_capacity *= 2;
-    _threads_names = (thread_name_info*)realloc((void*)_threads_names, _threads_names_capacity*sizeof(thread_name_info));
+    ALLOW_C_FUNCTION(::realloc, _threads_names = (thread_name_info*)::realloc((void*)_threads_names, _threads_names_capacity*sizeof(thread_name_info));)
     remember_thread_name(name);
   }
 }
@@ -191,7 +191,7 @@ const char* NMT_MemoryLogRecorder::recall_thread_name(intx tid) {
 // on macOS, malloc currently (macOS 13) returns the same value for the same requested size
 // on Linux, malloc can return different values for the same requested size
 static inline size_t _malloc_good_size_native(size_t size) {
-  void *ptr = malloc(size);
+  ALLOW_C_FUNCTION(::malloc, void *ptr = ::malloc(size);)
   assert(ptr != nullptr, "must be, _malloc_good_size_native(%zu) == nullptr", size);
   size_t actual = 0;
 #if defined(LINUX)
@@ -201,7 +201,7 @@ static inline size_t _malloc_good_size_native(size_t size) {
 #elif defined(__APPLE__)
   actual = malloc_size(ptr);
 #endif
-  free(ptr);
+  ALLOW_C_FUNCTION(::free, ::free(ptr);)
   return actual;
 }
 
@@ -226,8 +226,8 @@ void NMT_MemoryLogRecorder::calculate_good_sizes(Entry* entries, size_t count) {
   find_malloc_requests_buckets_sizes(entries, count);
   assert(_good_sizes_counts == nullptr, "good_sizes_counts == nullptr");
   assert(_good_sizes_totals == nullptr, "_good_sizes_totals == nullptr");
-  _good_sizes_counts = (size_t*)calloc(_malloc_requests_count, sizeof(size_t));
-  _good_sizes_totals = (size_t*)calloc(_malloc_requests_count, sizeof(size_t));
+  ALLOW_C_FUNCTION(::calloc, _good_sizes_counts = (size_t*)::calloc(_malloc_requests_count, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, _good_sizes_totals = (size_t*)::calloc(_malloc_requests_count, sizeof(size_t));)
   assert(_good_sizes_counts != nullptr, "good_sizes_counts != nullptr");
   assert(_good_sizes_totals != nullptr, "_good_sizes_totals != nullptr");
 
@@ -267,7 +267,7 @@ void NMT_MemoryLogRecorder::find_malloc_requests_buckets_sizes(Entry* entries, s
   if (_malloc_requests_buckets == nullptr) {
     assert(_malloc_requests_count == 0, "malloc_requests_count == 0");
     size_t buckets_max = 4;
-    _malloc_requests_buckets = (size_t*)calloc(buckets_max, sizeof(size_t));
+    ALLOW_C_FUNCTION(::calloc, _malloc_requests_buckets = (size_t*)::calloc(buckets_max, sizeof(size_t));)
     assert(_malloc_requests_buckets != nullptr, "malloc_requests_buckets != nullptr");
     for (size_t c=0; c<count; c++) {
       Entry* e = access_active(entries, c);
@@ -284,7 +284,7 @@ void NMT_MemoryLogRecorder::find_malloc_requests_buckets_sizes(Entry* entries, s
           }
           if (!found) {
             buckets_max *= 2;
-            _malloc_requests_buckets = (size_t*)realloc(_malloc_requests_buckets, buckets_max*sizeof(size_t));
+            ALLOW_C_FUNCTION(::realloc, _malloc_requests_buckets = (size_t*)::realloc(_malloc_requests_buckets, buckets_max*sizeof(size_t));)
             assert(_malloc_requests_buckets != nullptr, "malloc_requests_buckets != nullptr");
             memset(&_malloc_requests_buckets[buckets_max/2], 0, buckets_max*sizeof(size_t)/2);
           }
@@ -312,8 +312,8 @@ void NMT_MemoryLogRecorder::find_malloc_requests_buckets_sizes(Entry* entries, s
 void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double cutoff) {
   find_malloc_requests_buckets_sizes(entries, count);
 
-  size_t* histogram_counts = (size_t*)calloc(_malloc_requests_count, sizeof(size_t));
-  size_t* histogram_actual_sizes = (size_t*)calloc(_malloc_requests_count, sizeof(size_t));
+  ALLOW_C_FUNCTION(::calloc, size_t* histogram_counts = (size_t*)::calloc(_malloc_requests_count, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, size_t* histogram_actual_sizes = (size_t*)::calloc(_malloc_requests_count, sizeof(size_t));)
   assert(histogram_counts != nullptr, "histogram_counts != nullptr");
   assert(histogram_actual_sizes != nullptr, "histogram_actual_sizes != nullptr");
 
@@ -412,8 +412,8 @@ void NMT_MemoryLogRecorder::print_histogram(Entry* entries, size_t count, double
 //  assert(a_total-r_total == o_total, "a_total-r_total:%zu == o_total:%zu", a_total-r_total, o_total);
 //  assert(alloc_overhead == o_total, "alloc_overhead:%zu == total_requested:%zu", alloc_overhead, o_total);
 
-  free(histogram_actual_sizes);
-  free(histogram_counts);
+  ALLOW_C_FUNCTION(::free, ::free(histogram_actual_sizes);)
+  ALLOW_C_FUNCTION(::free, ::free(histogram_counts);)
 }
 
 void NMT_MemoryLogRecorder::print_entry(Entry* e) {
@@ -501,7 +501,7 @@ void NMT_MemoryLogRecorder::report_by_component(Entry* entries, size_t count) {
 }
 
 void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
-  intx *threads = (intx*)calloc(_threads_names_counter, sizeof(intx));
+  ALLOW_C_FUNCTION(::calloc, intx *threads = (intx*)::calloc(_threads_names_counter, sizeof(intx));)
   assert(threads != nullptr, "threads != nullptr");
   for (size_t c=0; c<count; c++) {
     Entry* e = access_active(entries, c);
@@ -522,11 +522,11 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
   }
 #endif
 
-  size_t* counter_malloc = (size_t*)calloc(_threads_names_counter, sizeof(size_t));
-  size_t* counter_realloc = (size_t*)calloc(_threads_names_counter, sizeof(size_t));
-  size_t* counter_free = (size_t*)calloc(_threads_names_counter, sizeof(size_t));
-  size_t* sizes_requested = (size_t*)calloc(_threads_names_counter, sizeof(size_t));
-  size_t* sizes_actual = (size_t*)calloc(_threads_names_counter, sizeof(size_t));
+  ALLOW_C_FUNCTION(::calloc, size_t* counter_malloc = (size_t*)::calloc(_threads_names_counter, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, size_t* counter_realloc = (size_t*)::calloc(_threads_names_counter, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, size_t* counter_free = (size_t*)::calloc(_threads_names_counter, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, size_t* sizes_requested = (size_t*)::calloc(_threads_names_counter, sizeof(size_t));)
+  ALLOW_C_FUNCTION(::calloc, size_t* sizes_actual = (size_t*)::calloc(_threads_names_counter, sizeof(size_t));)
   assert(counter_malloc != nullptr, "counter_malloc != nullptr");
   assert(counter_realloc != nullptr, "counter_realloc != nullptr");
   assert(counter_free != nullptr, "counter_free != nullptr");
@@ -617,12 +617,12 @@ void NMT_MemoryLogRecorder::report_by_thread(Entry* entries, size_t count) {
 
   fprintf(stderr, "\nfound %zu threads\n", _threads_names_counter);
 
-  free(sizes_actual);
-  free(sizes_requested);
-  free(counter_free);
-  free(counter_realloc);
-  free(counter_malloc);
-  free(threads);
+  ALLOW_C_FUNCTION(::free, ::free(sizes_actual);)
+  ALLOW_C_FUNCTION(::free, ::free(sizes_requested);)
+  ALLOW_C_FUNCTION(::free, ::free(counter_free);)
+  ALLOW_C_FUNCTION(::free, ::free(counter_realloc);)
+  ALLOW_C_FUNCTION(::free, ::free(counter_malloc);)
+  ALLOW_C_FUNCTION(::free, ::free(threads);)
 }
 
 size_t NMT_MemoryLogRecorder::find_previous_entry(Entry* entries, size_t index, address ptr) {
@@ -880,10 +880,10 @@ void NMT_MemoryLogRecorder::dump(Entry* entries, size_t count) {
   assert(_good_sizes_counts != nullptr, "good_sizes_counts != nullptr");
   assert(_malloc_requests_buckets != nullptr, "malloc_requests_buckets != nullptr");
   assert(_threads_names != nullptr, "_threads_names != nullptr");
-  free(_good_sizes_totals);
-  free(_good_sizes_counts);
-  free(_malloc_requests_buckets);
-  free((void*)_threads_names);
+  ALLOW_C_FUNCTION(::free, ::free(_good_sizes_totals);)
+  ALLOW_C_FUNCTION(::free, ::free(_good_sizes_counts);)
+  ALLOW_C_FUNCTION(::free, ::free(_malloc_requests_buckets);)
+  ALLOW_C_FUNCTION(::free, ::free((void*)_threads_names);)
 }
 
 void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, address old, const NativeCallStack *stack) {
@@ -901,7 +901,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
 #endif
     {
       if (_entries == nullptr) {
-        _entries = (Entry*)calloc(RecordMemoryAllocations, sizeof(Entry));
+        ALLOW_C_FUNCTION(::calloc, _entries = (Entry*)::calloc(RecordMemoryAllocations, sizeof(Entry));)
         assert(_entries != nullptr, "_entries != nullptr");
       }
       if (!done) {
@@ -920,7 +920,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
           _entry = &_entries[count++];
         } else {
           dump(_entries, count);
-          free((void*)_entries);
+          ALLOW_C_FUNCTION(::free, ::free((void*)_entries);)
           _entries = nullptr;
           //exit(0);
         }

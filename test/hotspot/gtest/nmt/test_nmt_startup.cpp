@@ -49,30 +49,43 @@
 static jlong benchmark(int count, int* indexes, void** pointers, DataStruct* data) {
   jlong start = os::javaTimeNanos();
   for (int i=0; i<count; i++) {
+    //fprintf(stderr, "  data[%d] requested:%10ld, actual:%10ld, pointer:%12p, pointer_prev:%12p\n",
+    //        i, data[i].requested, data[i].actual, (void*)data[i].pointer, (void*)data[i].pointer_prev);
     if (data[i].requested > 0) { // malloc or realloc
       address frames[4] = { (address)data[i].frame1, (address)data[i].frame2, (address)data[i].frame3, (address)data[i].frame4 };
       NativeCallStack stack = NativeCallStack(&frames[0], sizeof(frames)/sizeof(address));
       if (data[i].pointer_prev == 0L) { // malloc
-        pointers[i] = os::malloc(data[i].requested, NMTUtil::index_to_flag(data[i].flags), stack);
+        ALLOW_C_FUNCTION(::malloc, pointers[i] = os::malloc(data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
+        assert(pointers[i]!=nullptr, "malloc pointers[i]!=nullptr");
+        //fprintf(stderr, "    malloc pointers[i]:%p\n", pointers[i]);
       } else { // realloc
         int index = indexes[i];
-        // the pointer this free refers to might have not been captured in our record session
+        // the pointer this realloc refers to might have not been captured in our record session
+        // i.e. before NMT was initialized, and we only capture after NMT is initialized
         if (index >= 0) {
-          assert(index >= 0, "must be (%d > 0)", index);
-          assert(pointers[index] != nullptr, "must be (%p != nullptr)", pointers[index]);
-          pointers[i] = os::realloc(pointers[index], data[i].requested, NMTUtil::index_to_flag(data[i].flags), stack);
+          assert(index >= 0, "realloc must be (%d > 0)", index);
+          assert(pointers[index]!=nullptr, "realloc pointers[index]!=nullptr");
+          //fprintf(stderr, "    pointers[%d]:%p\n", index, pointers[index]);
+          ALLOW_C_FUNCTION(::realloc, pointers[i] = os::realloc(pointers[index], data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
+          assert(pointers[i]!=nullptr, "realloc pointers[i]!=nullptr");
+          pointers[index] = nullptr;
+          //fprintf(stderr, "    realloc pointers[%d]:%p\n", i, pointers[i]);
         } else {
           // substitute malloc for realloc here, so that any "free" that references this "realloc" has something to reference
-          pointers[i] = os::malloc(data[i].requested, NMTUtil::index_to_flag(data[i].flags), stack);
+          ALLOW_C_FUNCTION(::malloc, pointers[i] = os::malloc(data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
+          assert(pointers[i]!=nullptr, "substitute malloc pointers[i]!=nullptr");
+          //fprintf(stderr, "    substitute malloc pointers[%d]:%p\n", i, pointers[i]);
         }
       }
     } else { // free
       int index = indexes[i];
-      // the pointer this free refers to might have not been captured in our record session
+      // the pointer this realloc refers to might have not been captured in our record session
+      // i.e. before NMT was initialized, and we only capture after NMT is initialized
       if (index >= 0) {
         assert(index >= 0, "must be (%d > 0)", index);
-        assert(pointers[index] != nullptr, "must be (%p != nullptr)", pointers[index]);
-        os::free(pointers[index]);
+        assert(pointers[index]!=nullptr, "free pointers[index]!=nullptr");
+        //fprintf(stderr, "    free pointers[%6d]:%p\n", index, pointers[index]);
+        ALLOW_C_FUNCTION(::free, os::free(pointers[index]);)
         pointers[index] = nullptr;
       }
     }
@@ -84,7 +97,9 @@ static jlong benchmark(int count, int* indexes, void** pointers, DataStruct* dat
 static void free_remaining_pointers(int count, void** pointers) {
   for (int i=0; i<count; i++) {
     if (pointers[i] != nullptr) {
-      os::free(pointers[i]);
+      //fprintf(stderr, " free pointers[%d]:%p\n", i, (void*)pointers[i]);
+      ALLOW_C_FUNCTION(::free, os::free(pointers[i]);)
+      pointers[i] = nullptr;
     }
   }
 }
@@ -150,11 +165,11 @@ static void collect_indexes(int count, int* indexes, void** pointers, DataStruct
       }
     }
   }
-//  for (int i=count-1; i>=0; i--) {
-//    if (indexes[i] == -2) {
-//      fprintf(stderr, "pointer NOT FOUND\n");
-//    }
-//  }
+  for (int i=count-1; i>=0; i--) {
+    if (indexes[i] == -2) {
+      fprintf(stderr, "pointer NOT FOUND\n");
+    }
+  }
 }
 
 void test(int count, int* indexes, void** pointers, DataStruct* data) {
@@ -172,33 +187,38 @@ void test(int count, int* indexes, void** pointers, DataStruct* data) {
   //MemTracker::final_report(tty);
 }
 
+#if defined(__APPLE__)
 
 TEST_VM(NMTPerformance, test_startup_memory_mac_data) {
   int count = DATA_MAC_COUNT;
-  int* indexes = (int*)calloc(count, sizeof(int));
-  void** pointers = (void**)calloc(count, sizeof(void*));
+  ALLOW_C_FUNCTION(::calloc, int* indexes = (int*)calloc(count, sizeof(int));)
+  ALLOW_C_FUNCTION(::calloc, void** pointers = (void**)calloc(count, sizeof(void*));)
   DataStruct* data = data_mac;
-  
-  assert(indexes!=nullptr, "must be");
-  assert(pointers!=nullptr, "must be");
+
+  assert(indexes!=nullptr, "indexes!=nullptr");
+  assert(pointers!=nullptr, "pointers!=nullptr");
 
   test(count, indexes, pointers, data);
-  
-  free(pointers);
-  free(indexes);
+
+  ALLOW_C_FUNCTION(::free, ::free(pointers);)
+  ALLOW_C_FUNCTION(::free, ::free(indexes);)
 }
+
+#elif defined(LINUX)
 
 TEST_VM(NMTPerformance, test_startup_memory_linux_data) {
   int count = DATA_LINUX_COUNT;
-  int* indexes = (int*)calloc(count, sizeof(int));
-  void** pointers = (void**)calloc(count, sizeof(void*));
+  ALLOW_C_FUNCTION(::calloc, int* indexes = (int*)calloc(count, sizeof(int));)
+  ALLOW_C_FUNCTION(::calloc, void** pointers = (void**)calloc(count, sizeof(void*));)
   DataStruct* data = data_linux;
 
-  assert(indexes!=nullptr, "must be");
-  assert(pointers!=nullptr, "must be");
+  assert(indexes!=nullptr, "indexes!=nullptr");
+  assert(pointers!=nullptr, "pointers!=nullptr");
 
   test(count, indexes, pointers, data);
 
-  free(pointers);
-  free(indexes);
+  ALLOW_C_FUNCTION(::free, ::free(pointers);)
+  ALLOW_C_FUNCTION(::free, ::free(indexes);)
 }
+
+#endif

@@ -28,6 +28,7 @@
 
 typedef struct DataStruct
 {
+  long time;
   long pointer;
   long pointer_prev;
   long frame1;
@@ -37,6 +38,7 @@ typedef struct DataStruct
   size_t requested;
   size_t actual;
   int flags;
+  int active;
   const char* flags_name;
 }
 DataStruct;
