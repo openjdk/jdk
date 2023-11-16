@@ -23,11 +23,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0670 ء آ أ ؤ إ ئ ا ب ة ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ى ي]</exemplarCharacters>
+		<exemplarCharacters>[ً ٌ ٍ َ ُ ِ ّ ْ ٰ ء آ أ ؤ إ ئ ا ب ة ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ى ي]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F پ چ ژ ڜ ڢ ڤ ڥ ٯ ڧ ڨ ک گ ی]</exemplarCharacters>
 		<exemplarCharacters type="index">[ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \] \&amp;]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \] \&amp;]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

@@ -296,13 +296,13 @@ public final class Utils {
 
         public static BaseAndScale of(Object array) {
             return switch (array) {
-                case byte[]   __ -> BaseAndScale.BYTE;
-                case char[]   __ -> BaseAndScale.CHAR;
-                case short[]  __ -> BaseAndScale.SHORT;
-                case int[]    __ -> BaseAndScale.INT;
-                case float[]  __ -> BaseAndScale.FLOAT;
-                case long[]   __ -> BaseAndScale.LONG;
-                case double[] __ -> BaseAndScale.DOUBLE;
+                case byte[]   _ -> BaseAndScale.BYTE;
+                case char[]   _ -> BaseAndScale.CHAR;
+                case short[]  _ -> BaseAndScale.SHORT;
+                case int[]    _ -> BaseAndScale.INT;
+                case float[]  _ -> BaseAndScale.FLOAT;
+                case long[]   _ -> BaseAndScale.LONG;
+                case double[] _ -> BaseAndScale.DOUBLE;
                 default -> throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
             };
         }

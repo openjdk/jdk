@@ -1262,15 +1262,15 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   }
 
 #if INCLUDE_CDS
-  if (is_internal_module_property(key) ||
-      strcmp(key, "jdk.module.main") == 0) {
+  if (is_internal_module_property(key)) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
-    MetaspaceShared::disable_full_module_graph();
+    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::disable_dumping_full_module_graph();
     log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif
@@ -3064,9 +3064,9 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   if (ArchiveClassesAtExit == nullptr && !RecordDynamicDumpInfo) {
-    DynamicDumpSharedSpaces = false;
+    CDSConfig::disable_dumping_dynamic_archive();
   } else {
-    DynamicDumpSharedSpaces = true;
+    CDSConfig::enable_dumping_dynamic_archive();
   }
 
   if (AutoCreateSharedArchive) {
@@ -3087,7 +3087,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     UseSharedSpaces = false;
   }
 
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_archive()) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
@@ -3494,7 +3494,7 @@ void Arguments::init_shared_archive_paths() {
           // If +AutoCreateSharedArchive and the specified shared archive does not exist,
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            DynamicDumpSharedSpaces = true;
+            CDSConfig::enable_dumping_dynamic_archive();
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
             SharedArchivePath = get_default_shared_archive_path();
             SharedArchiveFile = nullptr;

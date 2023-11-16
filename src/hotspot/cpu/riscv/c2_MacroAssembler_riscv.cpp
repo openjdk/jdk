@@ -1658,27 +1658,99 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
 // otherwise return +/- 1.0 using sign of input.
 // one - gives us a floating-point 1.0 (got from matching rule)
 // bool is_double - specifies single or double precision operations will be used.
-void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one, bool is_double) {
-  Register tmp1 = t0;
-
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_double) {
   Label done;
 
-  is_double ? fclass_d(tmp1, src)
-            : fclass_s(tmp1, src);
-
-  is_double ? fmv_d(dst, src)
-            : fmv_s(dst, src);
+  is_double ? fclass_d(t0, dst)
+            : fclass_s(t0, dst);
 
   // check if input is -0, +0, signaling NaN or quiet NaN
-  andi(tmp1, tmp1, fclass_mask::zero | fclass_mask::nan);
+  andi(t0, t0, fclass_mask::zero | fclass_mask::nan);
 
-  bnez(tmp1, done);
+  bnez(t0, done);
 
   // use floating-point 1.0 with a sign of input
-  is_double ? fsgnj_d(dst, one, src)
-            : fsgnj_s(dst, one, src);
+  is_double ? fsgnj_d(dst, one, dst)
+            : fsgnj_s(dst, one, dst);
 
   bind(done);
+}
+
+void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be compressed.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v8, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // compress the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vcompress_vm(v8, v4, v0);
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v8, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ true);
+}
+
+void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be expanded.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v12, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // expand the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  viota_m(v8, v0);
+  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v12, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,

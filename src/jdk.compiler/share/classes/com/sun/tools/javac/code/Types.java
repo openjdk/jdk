@@ -1665,37 +1665,46 @@ public class Types {
                 && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     true :
-                    !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
+                    !(new DisjointChecker().areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym));
         }
         return result;
     }
     // where
-        private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
-            if (isSubtype(erasure(ts.type), erasure(ss.type))) {
-                return false;
-            }
-            // if both are classes or both are interfaces, shortcut
-            if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
-                return false;
-            }
-            if (ts.isInterface() && !ss.isInterface()) {
-                /* so ts is interface but ss is a class
-                 * an interface is disjoint from a class if the class is disjoint form the interface
+        class DisjointChecker {
+            Set<Pair<ClassSymbol, ClassSymbol>> pairsSeen = new HashSet<>();
+            private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
+                Pair<ClassSymbol, ClassSymbol> newPair = new Pair<>(ts, ss);
+                /* if we are seeing the same pair again then there is an issue with the sealed hierarchy
+                 * bail out, a detailed error will be reported downstream
                  */
-                return areDisjoint(ss, ts);
+                if (!pairsSeen.add(newPair))
+                    return false;
+                if (isSubtype(erasure(ts.type), erasure(ss.type))) {
+                    return false;
+                }
+                // if both are classes or both are interfaces, shortcut
+                if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
+                    return false;
+                }
+                if (ts.isInterface() && !ss.isInterface()) {
+                    /* so ts is interface but ss is a class
+                     * an interface is disjoint from a class if the class is disjoint form the interface
+                     */
+                    return areDisjoint(ss, ts);
+                }
+                // a final class that is not subtype of ss is disjoint
+                if (!ts.isInterface() && ts.isFinal()) {
+                    return true;
+                }
+                // if at least one is sealed
+                if (ts.isSealed() || ss.isSealed()) {
+                    // permitted subtypes have to be disjoint with the other symbol
+                    ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
+                    ClassSymbol other = sealedOne == ts ? ss : ts;
+                    return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
+                }
+                return false;
             }
-            // a final class that is not subtype of ss is disjoint
-            if (!ts.isInterface() && ts.isFinal()) {
-                return true;
-            }
-            // if at least one is sealed
-            if (ts.isSealed() || ss.isSealed()) {
-                // permitted subtypes have to be disjoint with the other symbol
-                ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
-                ClassSymbol other = sealedOne == ts ? ss : ts;
-                return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
-            }
-            return false;
         }
 
         private TypeRelation isCastable = new TypeRelation() {

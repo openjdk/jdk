@@ -306,7 +306,7 @@ class CompletenessAnalyzer {
         AMPAMP(TokenKind.AMPAMP, XEXPR, true),  //  &&
         BARBAR(TokenKind.BARBAR, XEXPR, true),  //  ||
         PLUS(TokenKind.PLUS, XEXPR1, true),  //  +
-        SUB(TokenKind.SUB, XEXPR1, true),  //  -
+        SUB(TokenKind.SUB, XEXPR1 | XDECL, true),  //  -
         SLASH(TokenKind.SLASH, XEXPR, true),  //  /
         BAR(TokenKind.BAR, XEXPR, true),  //  |
         CARET(TokenKind.CARET, XEXPR, true),  //  ^
