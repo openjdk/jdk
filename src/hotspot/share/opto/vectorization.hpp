@@ -433,8 +433,6 @@ class VPointer : public StackObj {
  protected:
   MemNode*        _mem;      // My memory reference node
   const VLoop&    _vloop;
-  PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
-  IdealLoopTree*  _lpt;      // Current IdealLoopTree
 
   Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
@@ -476,13 +474,18 @@ class VPointer : public StackObj {
     NotComparable = (Less | Greater | Equal)
   };
 
+  VPointer(MemNode* mem, const VLoop& vloop) :
+    VPointer(mem, vloop, nullptr, false) {}
+  VPointer(MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+    VPointer(mem, vloop, nstack, true) {}
+ private:
   VPointer(MemNode* mem, const VLoop& vloop,
-           PhaseIdealLoop* phase, IdealLoopTree* lpt,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
 
+ public:
   bool valid()  { return _adr != nullptr; }
   bool has_iv() { return _scale != 0; }
 
@@ -519,7 +522,7 @@ class VPointer : public StackObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, vloop(), phase(), lpt(), nullptr, false);
+      VPointer p_mem(mem, vloop());
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.
