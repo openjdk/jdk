@@ -730,7 +730,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
     __ BIND(L_copy_large);
     arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
-  }  
+  }
   return start;
 }
 
