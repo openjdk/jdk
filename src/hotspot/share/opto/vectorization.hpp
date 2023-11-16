@@ -79,9 +79,16 @@ public:
   PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
   bool is_allow_cfg()     const { return _allow_cfg; }
   CountedLoopEndNode* pre_loop_end() const {
-    assert(_pre_loop_end != nullptr, "");
+    assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
+    assert(_pre_loop_end != nullptr, "must have found it");
     return _pre_loop_end;
   };
+  CountedLoopNode* pre_loop_head() const {
+    CountedLoopNode* head = pre_loop_end()->loopnode();
+    assert(head != nullptr, "must find head");
+    return head;
+  };
+
 
   bool in_loopbody(const Node* n) const {
     // TODO refactor to allow cfg. See counter example with

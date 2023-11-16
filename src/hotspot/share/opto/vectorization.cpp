@@ -136,7 +136,7 @@ bool VPointer::invariant(Node* n) const {
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
       Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, cl->pre_loop_head());
+      return phase()->is_dominator(n_c, vloop().pre_loop_head());
     }
   }
   return is_not_member;
@@ -767,9 +767,7 @@ const char* VLoop::check_preconditions_helper() {
     if (pre_opaq1->Opcode() != Op_Opaque1) {
       return VLoop::FAILURE_PRE_LOOP_LIMIT;
     }
-    // TODO refactor caching
     _pre_loop_end = pre_end;
-    _cl->set_pre_loop_end(pre_end);
   }
 
   return VLoop::SUCCESS;

@@ -3081,7 +3081,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   Node* lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
-  Node* pre_ctrl = cl()->pre_loop_head()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = vla().pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
