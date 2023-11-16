@@ -63,7 +63,7 @@ public class HBShaper {
      *     int8_t i8[4];
      * };
      */
-   private static final UnionLayout VarIntLayout = MemoryLayout.unionLayout(
+    private static final UnionLayout VarIntLayout = MemoryLayout.unionLayout(
         JAVA_INT.withName("u32"),
         JAVA_INT.withName("i32"),
         MemoryLayout.sequenceLayout(2, JAVA_SHORT).withName("u16"),
@@ -81,7 +81,7 @@ public class HBShaper {
      *     hb_var_int_t var;
      * };
      */
-     private static final StructLayout PositionLayout = MemoryLayout.structLayout(
+    private static final StructLayout PositionLayout = MemoryLayout.structLayout(
         JAVA_INT.withName("x_advance"),
         JAVA_INT.withName("y_advance"),
         JAVA_INT.withName("x_offset"),
@@ -141,28 +141,28 @@ public class HBShaper {
 
     private static final MemorySegment store_layout_results_stub;
 
-   private static FunctionDescriptor
+    private static FunctionDescriptor
        getFunctionDescriptor(MemoryLayout retType,
                              MemoryLayout... argTypes) {
 
        return (retType == null) ?
                FunctionDescriptor.ofVoid(argTypes) :
                FunctionDescriptor.of(retType, argTypes);
-   }
+    }
 
-   private static MethodHandle getMethodHandle
+    private static MethodHandle getMethodHandle
          (String mName,
           FunctionDescriptor fd) {
 
-       try {
-           MethodType mType = fd.toMethodType();
-           return MH_LOOKUP.findStatic(HBShaper.class, mName, mType);
-       } catch (IllegalAccessException | NoSuchMethodException e) {
-          return null;
+        try {
+            MethodType mType = fd.toMethodType();
+            return MH_LOOKUP.findStatic(HBShaper.class, mName, mType);
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+           return null;
        }
    }
 
-   static {
+    static {
         MH_LOOKUP = MethodHandles.lookup();
         LINKER = Linker.nativeLinker();
         SYM_LOOKUP = SymbolLookup.loaderLookup().or(LINKER.defaultLookup());
@@ -344,7 +344,7 @@ public class HBShaper {
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
         return (glyphID != 0) ? 1 : 0;
-}
+    }
 
     private static int get_variation_glyph(
         MemorySegment font_ptr,   /* Not used */
@@ -656,5 +656,5 @@ public class HBShaper {
         startPt.x = advX;
         startPt.y = advY;
         startPt.x = advX;
-  }
+    }
 }

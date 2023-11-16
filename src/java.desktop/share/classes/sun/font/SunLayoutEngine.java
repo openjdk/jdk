@@ -189,11 +189,13 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
                         typo_flags, gmask);
             }
         } else {
-           long pFace = getFacePtr(font);
-            shape(font, strike, ptSize, mat, pFace,
+            long pFace = getFacePtr(font);
+            if (pFace != 0) {
+                shape(font, strike, ptSize, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
+            }
         }
     }
 
