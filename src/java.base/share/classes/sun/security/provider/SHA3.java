@@ -99,7 +99,7 @@ abstract class SHA3 extends DigestBase {
        keccak();
     }
 
-     void finishAbsorb() {
+    void finishAbsorb() {
         int numOfPadding =
                 setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
         if (numOfPadding < 1) {

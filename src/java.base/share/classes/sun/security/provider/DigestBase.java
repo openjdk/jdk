@@ -141,7 +141,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         engineUpdate(buf, 0, buf.length);
     }
 
-        // compress complete blocks
+    // compress complete blocks
     private int implCompressMultiBlock(byte[] b, int ofs, int limit) {
         implCompressMultiBlockCheck(b, ofs, limit);
         return implCompressMultiBlock0(b, ofs, limit);
