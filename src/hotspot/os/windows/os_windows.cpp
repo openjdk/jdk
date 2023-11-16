@@ -80,6 +80,7 @@
 #include "windbghelp.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 #ifdef _DEBUG
@@ -505,12 +506,17 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
   return nullptr;
 }
 
+enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
+// Wrapper around _endthreadex(), exit() and _exit()
+[[noreturn]]
+static void exit_process_or_thread(Ept what, int code);
+
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-unsigned __stdcall os::win32::thread_native_entry(void* t) {
+static unsigned __stdcall thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
@@ -558,7 +564,8 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
-  return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
+  exit_process_or_thread(EPT_THREAD, res);
+  return res;
 }
 
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
@@ -745,7 +752,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(nullptr,
                              (unsigned)stack_size,
-                             &os::win32::thread_native_entry,
+                             &thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -1202,7 +1209,7 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     if (dumpFile != nullptr) {
       CloseHandle(dumpFile);
     }
-    win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+    exit_process_or_thread(EPT_PROCESS, 1);
   }
 
   dumpType = (MINIDUMP_TYPE)(MiniDumpWithFullMemory | MiniDumpWithHandleData |
@@ -1226,12 +1233,12 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     jio_fprintf(stderr, "Call to MiniDumpWriteDump() failed (Error 0x%x)\n", GetLastError());
   }
   CloseHandle(dumpFile);
-  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
+  exit_process_or_thread(EPT_PROCESS, 1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
+  exit_process_or_thread(EPT_PROCESS_DIE, -1);
 }
 
 void  os::dll_unload(void *lib) {
@@ -1240,33 +1247,22 @@ void  os::dll_unload(void *lib) {
     snprintf(name, MAX_PATH, "<not available>");
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryUnload event;
-  event.set_name(name);
-#endif
+  JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
 
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_result(true);)
   } else {
     const DWORD errcode = ::GetLastError();
     char buf[500];
     size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
-#if INCLUDE_JFR
-    event.set_success(false);
     if (tl == 0) {
       os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
-    event.set_errorMessage(buf);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_error_msg(buf);)
   }
 }
 
@@ -1535,21 +1531,14 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(name);
-#endif
-  void * result = LoadLibrary(name);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
+  result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1563,11 +1552,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(ebuf);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(ebuf);)
     return nullptr;
   }
 
@@ -1578,11 +1563,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("open on dll file did not work");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("open on dll file did not work");)
     return nullptr;
   }
 
@@ -1609,11 +1590,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("failed to get lib architecture");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("failed to get lib architecture");)
     return nullptr;
   }
 
@@ -1658,11 +1635,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("lib architecture matches, but other error occured");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("lib architecture matches, but other error occured");)
     return nullptr;
   }
 
@@ -1676,12 +1649,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
-#if INCLUDE_JFR
-  event.set_success(false);
-  event.set_errorMessage(ebuf);
-  event.commit();
-#endif
-
+  JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
 }
 
@@ -2250,7 +2218,7 @@ void* os::win32::install_signal_handler(int sig, signal_handler_t handler) {
     sigbreakHandler = handler;
     return oldHandler;
   } else {
-    return ::signal(sig, handler);
+    return CAST_FROM_FN_PTR(void*, ::signal(sig, handler));
   }
 }
 
@@ -2903,22 +2871,23 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (InterceptOSException) goto exit;
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
+  if (!InterceptOSException) {
+    DWORD exceptionCode = exceptionInfo->ExceptionRecord->ExceptionCode;
 #if defined(_M_ARM64)
-  address pc = (address)exceptionInfo->ContextRecord->Pc;
+    address pc = (address) exceptionInfo->ContextRecord->Pc;
 #elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
+    address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+    address pc = (address) exceptionInfo->ContextRecord->Eip;
 #endif
-  Thread* t = Thread::current_or_null_safe();
+    Thread* thread = Thread::current_or_null_safe();
 
-  if (exception_code != EXCEPTION_BREAKPOINT) {
-    report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                exceptionInfo->ContextRecord);
+    if (exceptionCode != EXCEPTION_BREAKPOINT) {
+      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+                  exceptionInfo->ContextRecord);
+    }
   }
-exit:
+
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
@@ -4097,7 +4066,7 @@ static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
   return TRUE;
 }
 
-int os::win32::exit_process_or_thread(Ept what, int exit_code) {
+static void exit_process_or_thread(Ept what, int exit_code) {
   // Basic approach:
   //  - Each exiting thread registers its intent to exit and then does so.
   //  - A thread trying to terminate the process must wait for all
@@ -4275,7 +4244,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  return exit_code;
+  os::infinite_sleep();
 }
 
 #undef EXIT_TIMEOUT
@@ -4853,11 +4822,11 @@ ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
 }
 
 void os::exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+  exit_process_or_thread(EPT_PROCESS, num);
 }
 
 void os::_exit(int num) {
-  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
+  exit_process_or_thread(EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?

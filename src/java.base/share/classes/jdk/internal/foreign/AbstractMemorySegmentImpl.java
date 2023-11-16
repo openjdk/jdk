@@ -558,29 +558,23 @@ public abstract sealed class AbstractMemorySegmentImpl
         } else {
             bufferScope = MemorySessionImpl.createHeap(bufferRef(bb));
         }
+        long off = bbAddress + ((long)pos << scaleFactor);
+        long len = (long)size << scaleFactor;
         if (base != null) {
             return switch (base) {
-                case byte[] __ ->
-                        new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case short[] __ ->
-                        new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case char[] __ ->
-                        new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case int[] __ ->
-                        new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case float[] __ ->
-                        new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case long[] __ ->
-                        new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                case double[] __ ->
-                        new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly, bufferScope);
-                default -> throw new AssertionError("Cannot get here");
+                case byte[]   _ -> new HeapMemorySegmentImpl.OfByte(off, base, len, readOnly, bufferScope);
+                case short[]  _ -> new HeapMemorySegmentImpl.OfShort(off, base, len, readOnly, bufferScope);
+                case char[]   _ -> new HeapMemorySegmentImpl.OfChar(off, base, len, readOnly, bufferScope);
+                case int[]    _ -> new HeapMemorySegmentImpl.OfInt(off, base, len, readOnly, bufferScope);
+                case float[]  _ -> new HeapMemorySegmentImpl.OfFloat(off, base, len, readOnly, bufferScope);
+                case long[]   _ -> new HeapMemorySegmentImpl.OfLong(off, base, len, readOnly, bufferScope);
+                case double[] _ -> new HeapMemorySegmentImpl.OfDouble(off, base, len, readOnly, bufferScope);
+                default         -> throw new AssertionError("Cannot get here");
             };
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferScope);
+            return new NativeMemorySegmentImpl(off, len, readOnly, bufferScope);
         } else {
-            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferScope);
+            return new MappedMemorySegmentImpl(off, unmapper, len, readOnly, bufferScope);
         }
     }
 
@@ -721,13 +715,10 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     private static int getScaleFactor(Buffer buffer) {
         return switch (buffer) {
-            case ByteBuffer   __ -> 0;
-            case CharBuffer   __ -> 1;
-            case ShortBuffer  __ -> 1;
-            case IntBuffer    __ -> 2;
-            case FloatBuffer  __ -> 2;
-            case LongBuffer   __ -> 3;
-            case DoubleBuffer __ -> 3;
+            case ByteBuffer   _                 -> 0;
+            case CharBuffer   _, ShortBuffer  _ -> 1;
+            case IntBuffer    _, FloatBuffer  _ -> 2;
+            case LongBuffer   _, DoubleBuffer _ -> 3;
         };
     }
 
@@ -736,235 +727,235 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public byte get(ValueLayout.OfByte layout, long offset) {
-        return (byte) layout.varHandle().get(this, offset);
+        return (byte) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfByte layout, long offset, byte value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public boolean get(ValueLayout.OfBoolean layout, long offset) {
-        return (boolean) layout.varHandle().get(this, offset);
+        return (boolean) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public char get(ValueLayout.OfChar layout, long offset) {
-        return (char) layout.varHandle().get(this, offset);
+        return (char) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfChar layout, long offset, char value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public short get(ValueLayout.OfShort layout, long offset) {
-        return (short) layout.varHandle().get(this, offset);
+        return (short) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfShort layout, long offset, short value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public int get(ValueLayout.OfInt layout, long offset) {
-        return (int) layout.varHandle().get(this, offset);
+        return (int) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfInt layout, long offset, int value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public float get(ValueLayout.OfFloat layout, long offset) {
-        return (float) layout.varHandle().get(this, offset);
+        return (float) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfFloat layout, long offset, float value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public long get(ValueLayout.OfLong layout, long offset) {
-        return (long) layout.varHandle().get(this, offset);
+        return (long) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfLong layout, long offset, long value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public double get(ValueLayout.OfDouble layout, long offset) {
-        return (double) layout.varHandle().get(this, offset);
+        return (double) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(ValueLayout.OfDouble layout, long offset, double value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public MemorySegment get(AddressLayout layout, long offset) {
-        return (MemorySegment) layout.varHandle().get(this, offset);
+        return (MemorySegment) layout.varHandle().get((MemorySegment)this, offset);
     }
 
     @ForceInline
     @Override
     public void set(AddressLayout layout, long offset, MemorySegment value) {
-        layout.varHandle().set(this, offset, value);
+        layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
     @ForceInline
     @Override
     public byte getAtIndex(ValueLayout.OfByte layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (byte) layout.varHandle().get(this, index * layout.byteSize());
+        return (byte) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public boolean getAtIndex(ValueLayout.OfBoolean layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (boolean) layout.varHandle().get(this, index * layout.byteSize());
+        return (boolean) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public char getAtIndex(ValueLayout.OfChar layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (char) layout.varHandle().get(this, index * layout.byteSize());
+        return (char) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public short getAtIndex(ValueLayout.OfShort layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (short) layout.varHandle().get(this, index * layout.byteSize());
+        return (short) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfByte layout, long index, byte value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public int getAtIndex(ValueLayout.OfInt layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (int) layout.varHandle().get(this, index * layout.byteSize());
+        return (int) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public float getAtIndex(ValueLayout.OfFloat layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (float) layout.varHandle().get(this, index * layout.byteSize());
+        return (float) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public long getAtIndex(ValueLayout.OfLong layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (long) layout.varHandle().get(this, index * layout.byteSize());
+        return (long) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public double getAtIndex(ValueLayout.OfDouble layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (double) layout.varHandle().get(this, index * layout.byteSize());
+        return (double) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @ForceInline
     @Override
     public MemorySegment getAtIndex(AddressLayout layout, long index) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        return (MemorySegment) layout.varHandle().get(this, index * layout.byteSize());
+        return (MemorySegment) layout.varHandle().get((MemorySegment)this, index * layout.byteSize());
     }
 
     @ForceInline
     @Override
     public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
-        layout.varHandle().set(this, index * layout.byteSize(), value);
+        layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
     @Override
