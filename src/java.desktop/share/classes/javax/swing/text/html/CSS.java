@@ -2968,13 +2968,13 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(this.svalue);
+            return Objects.hashCode(svalue);
         }
 
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.BackgroundImage img
-                   && Objects.equals(this.svalue, img.svalue);
+                   && Objects.equals(svalue, img.svalue);
         }
     }
 
