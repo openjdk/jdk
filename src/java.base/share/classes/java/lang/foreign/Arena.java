@@ -28,7 +28,6 @@ package java.lang.foreign;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.ref.CleanerFactory;
 
-import java.io.Serial;
 import java.lang.foreign.MemorySegment.Scope;
 import java.util.function.Consumer;
 
