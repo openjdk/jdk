@@ -1774,6 +1774,13 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+bool IfNode::is_zero_trip_guard() const {
+  if (in(1)->is_Bool() && in(1)->in(1)->is_Cmp()) {
+    return in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard;
+  }
+  return false;
+}
+
 #ifndef PRODUCT
 //------------------------------dump_spec--------------------------------------
 void IfNode::dump_spec(outputStream *st) const {

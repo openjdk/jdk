@@ -279,7 +279,7 @@ import java.util.Objects;
  * operations indicated by {@linkplain RoundingMode rounding modes}
  * are a proper superset of the IEEE 754 rounding-direction
  * attributes.
-
+ *
  * <p>{@code BigDecimal} arithmetic will most resemble IEEE 754
  * decimal arithmetic if a {@code MathContext} corresponding to an
  * IEEE 754 decimal format, such as {@linkplain MathContext#DECIMAL64
@@ -291,6 +291,27 @@ import java.util.Objects;
  * results. Operations that would generate a NaN or exact infinity,
  * such as dividing by zero, throw an {@code ArithmeticException} in
  * {@code BigDecimal} arithmetic.
+ *
+ * <h2><a id=algorithmicComplexity>Algorithmic Complexity</a></h2>
+ *
+ * Operations on {@code BigDecimal} values have a range of algorithmic
+ * complexities; in general, those complexities are a function of both
+ * the size of the unscaled value as well as the size of the
+ * scale. For example, an {@linkplain BigDecimal#multiply(BigDecimal)
+ * exact multiply} of two {@code BigDecimal} values is subject to the
+ * same {@linkplain BigInteger##algorithmicComplexity complexity
+ * constraints} as {@code BigInteger} multiply of the unscaled
+ * values. In contrast, a {@code BigDecimal} value with a compact
+ * representation like {@code new BigDecimal(1E-1000000000)} has a
+ * {@link toPlainString} result with over one billion characters.
+ *
+ * <p>Operations may also allocate and compute on intermediate
+ * results, potentially those allocations may be as large as in
+ * proportion to the running time of the algorithm.
+ *
+ * <p>Users of {@code BigDecimal} concerned with bounding the running
+ * time or space of operations can screen out {@code BigDecimal}
+ * values with unscaled values or scales above a chosen magnitude.
  *
  * @see     BigInteger
  * @see     MathContext
@@ -3482,21 +3503,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 return "0";
             }
             int trailingZeros = checkScaleNonZero((-(long)scale));
-            StringBuilder buf;
-            if(intCompact!=INFLATED) {
-                buf = new StringBuilder(20+trailingZeros);
-                buf.append(intCompact);
-            } else {
-                String str = intVal.toString();
-                buf = new StringBuilder(str.length()+trailingZeros);
-                buf.append(str);
+            String str = intCompact != INFLATED
+                ? Long.toString(intCompact)
+                : intVal.toString();
+            int len = str.length() + trailingZeros;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
+            StringBuilder buf = new StringBuilder(len);
+            buf.append(str);
+            buf.repeat('0', trailingZeros);
             return buf.toString();
         }
-        String str ;
+        String str;
         if(intCompact!=INFLATED) {
             str = Long.toString(Math.abs(intCompact));
         } else {
@@ -3506,11 +3525,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /* Returns a digit.digit string */
-    private String getValueString(int signum, String intString, int scale) {
+    private static String getValueString(int signum, String intString, int scale) {
         /* Insert decimal point */
         StringBuilder buf;
         int insertionPoint = intString.length() - scale;
-        if (insertionPoint == 0) {  /* Point goes right before intVal */
+        if (insertionPoint == 0) {  /* Point goes just before intVal */
             return (signum<0 ? "-0." : "0.") + intString;
         } else if (insertionPoint > 0) { /* Point goes inside intVal */
             buf = new StringBuilder(intString);
@@ -3518,11 +3537,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (signum < 0)
                 buf.insert(0, '-');
         } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuilder(3-insertionPoint + intString.length());
-            buf.append(signum<0 ? "-0." : "0.");
-            for (int i=0; i<-insertionPoint; i++) {
-                buf.append('0');
+            int len = (signum < 0 ? 3 : 2) + scale;
+            if (len < 0) {
+                throw new OutOfMemoryError("too large to fit in a String");
             }
+            buf = new StringBuilder(len);
+            buf.append(signum<0 ? "-0." : "0.");
+            buf.repeat('0', -insertionPoint);  // insertionPoint != MIN_VALUE
             buf.append(intString);
         }
         return buf.toString();
