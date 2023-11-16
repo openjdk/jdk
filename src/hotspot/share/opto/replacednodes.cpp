@@ -152,12 +152,12 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       } else if (n->outcnt() != 0 && n != improved) {
         if (n->is_Phi()) {
           Node* region = n->in(0);
-          Node* prev = stack.node_at(stack.size() - 2);
-          for (uint j = 1; j < region->req(); ++j) {
-            if (n->in(j) == prev) {
-              Node* in = region->in(j);
-              if (in != nullptr && !in->is_top()) {
-                if (is_dominator(ctl, in)) {
+          if (n->req() == region->req()) { // ignore dead phis
+            Node* prev = stack.node_at(stack.size() - 2);
+            for (uint j = 1; j < region->req(); ++j) {
+              if (n->in(j) == prev) {
+                Node* in = region->in(j);
+                if (in != nullptr && !in->is_top() && is_dominator(ctl, in)) {
                   valid_control.set(in->_idx);
                   collect_nodes_to_clone(stack, to_fix);
                 }
