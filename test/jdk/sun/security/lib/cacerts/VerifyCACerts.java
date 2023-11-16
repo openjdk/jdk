@@ -28,7 +28,7 @@
  *      8209452 8209506 8210432 8195793 8216577 8222089 8222133 8222137 8222136
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
- *      8305975 8304760 8307134 8295894 8314960 8317373 8317374
+ *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -47,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 99;
+    private static final int COUNT = 103;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "86:0A:D5:92:16:A1:11:20:4B:86:18:D5:7C:83:F3:F4:62:50:24:F9:D0:7F:58:59:34:C4:7F:81:0B:15:A7:CE";
+            = "25:CA:3F:68:80:2E:73:63:8E:84:EF:2C:F3:14:5B:76:DC:D3:03:76:8C:13:8E:76:01:8D:D5:D4:C9:5C:53:0E";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -163,6 +163,14 @@ public class VerifyCACerts {
                     "18:F1:FC:7F:20:5D:F8:AD:DD:EB:7F:E0:07:DD:57:E3:AF:37:5A:9C:4D:8D:73:54:6B:F4:F1:FE:D1:E1:8D:35");
             put("quovadisrootca3g3 [jdk]",
                     "88:EF:81:DE:20:2E:B0:18:45:2E:43:F8:64:72:5C:EA:5F:BD:1F:C2:D9:D2:05:73:07:09:C5:D8:B8:69:0F:46");
+            put("digicertcseccrootg5 [jdk]",
+                    "26:C5:6A:D2:20:8D:1E:9B:15:2F:66:85:3B:F4:79:7C:BE:B7:55:2C:1F:3F:47:72:51:E8:CB:1A:E7:E7:97:BF");
+            put("digicertcsrsarootg5 [jdk]",
+                    "73:53:B6:D6:C2:D6:DA:42:47:77:3F:3F:07:D0:75:DE:CB:51:34:21:2B:EA:D0:92:8E:F1:F4:61:15:26:09:41");
+            put("digicerttlseccrootg5 [jdk]",
+                    "01:8E:13:F0:77:25:32:CF:80:9B:D1:B1:72:81:86:72:83:FC:48:C6:E1:3B:E9:C6:98:12:85:4A:49:0C:1B:05");
+            put("digicerttlsrsarootg5 [jdk]",
+                    "37:1A:00:DC:05:33:B3:72:1A:7E:EB:40:E8:41:9E:70:79:9D:2B:0A:0F:2C:1D:80:69:31:65:F7:CE:C4:AD:75");
             put("secomscrootca2 [jdk]",
                     "51:3B:2C:EC:B8:10:D4:CD:E5:DD:85:39:1A:DF:C6:C2:DD:60:D8:7B:B7:36:D2:B5:21:48:4A:A4:7A:0E:BE:F6");
             put("swisssigngoldg2ca [jdk]",

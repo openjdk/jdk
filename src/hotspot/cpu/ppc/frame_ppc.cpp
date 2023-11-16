@@ -454,7 +454,6 @@ intptr_t *frame::initial_deoptimization_info() {
 frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc) {}
 #endif
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   BasicObjectLock* result = (BasicObjectLock*) at_relative(ijava_idx(monitors));
   // make sure the pointer points inside the frame
