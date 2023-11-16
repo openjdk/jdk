@@ -52,10 +52,12 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
   GrowableArray<VMStorage> input_regs(pcount);
   for (int i = 0, bt_idx = 0; i < pcount; i++) {
     oop type_oop = java_lang_invoke_MethodType::ptype(type, i);
-    assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
-    BasicType bt = java_lang_Class::primitive_type(type_oop);
+    BasicType bt = java_lang_Class::as_BasicType(type_oop);
     basic_type[bt_idx++] = bt;
-    input_regs.push(ForeignGlobals::parse_vmstorage(arg_moves_oop->obj_at(i)));
+    oop reg_oop = arg_moves_oop->obj_at(i);
+    if (reg_oop != nullptr) {
+      input_regs.push(ForeignGlobals::parse_vmstorage(reg_oop));
+    }
 
     if (bt == BasicType::T_DOUBLE || bt == BasicType::T_LONG) {
       basic_type[bt_idx++] = T_VOID;
