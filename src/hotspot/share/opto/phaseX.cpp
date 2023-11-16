@@ -1449,9 +1449,9 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
 }
 
 //------------------------------add_users_to_worklist--------------------------
-void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
+void PhaseIterGVN::add_users_to_worklist0(Node* n, Unique_Node_List& worklist) {
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    _worklist.push(n->fast_out(i));  // Push on worklist
+    worklist.push(n->fast_out(i));  // Push on worklist
   }
 }
 
@@ -1476,117 +1476,121 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   return nullptr;
 }
 
-void PhaseIterGVN::add_users_to_worklist( Node *n ) {
-  add_users_to_worklist0(n);
+void PhaseIterGVN::add_users_to_worklist(Node *n) {
+  add_users_to_worklist0(n, _worklist);
 
+  Unique_Node_List& worklist = _worklist;
   // Move users of node to worklist
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i); // Get use
+    add_users_of_use_to_worklist(n, use, worklist);
+  }
+}
 
-    if( use->is_Multi() ||      // Multi-definer?  Push projs on worklist
-        use->is_Store() )       // Enable store/load same address
-      add_users_to_worklist0(use);
+void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist) {
+  if(use->is_Multi() ||      // Multi-definer?  Push projs on worklist
+      use->is_Store() )       // Enable store/load same address
+    add_users_to_worklist0(use, worklist);
 
-    // If we changed the receiver type to a call, we need to revisit
-    // the Catch following the call.  It's looking for a non-null
-    // receiver to know when to enable the regular fall-through path
-    // in addition to the NullPtrException path.
-    if (use->is_CallDynamicJava() && n == use->in(TypeFunc::Parms)) {
-      Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
-      if (p != nullptr) {
-        add_users_to_worklist0(p);
-      }
+  // If we changed the receiver type to a call, we need to revisit
+  // the Catch following the call.  It's looking for a non-null
+  // receiver to know when to enable the regular fall-through path
+  // in addition to the NullPtrException path.
+  if (use->is_CallDynamicJava() && n == use->in(TypeFunc::Parms)) {
+    Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
+    if (p != nullptr) {
+      add_users_to_worklist0(p, worklist);
     }
+  }
 
-    uint use_op = use->Opcode();
-    if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
-      add_users_to_worklist(use); // Put Bool on worklist
-      if (use->outcnt() > 0) {
-        Node* bol = use->raw_out(0);
-        if (bol->outcnt() > 0) {
-          Node* iff = bol->raw_out(0);
-          if (iff->outcnt() == 2) {
-            // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
-            // phi merging either 0 or 1 onto the worklist
-            Node* ifproj0 = iff->raw_out(0);
-            Node* ifproj1 = iff->raw_out(1);
-            if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
-              Node* region0 = ifproj0->raw_out(0);
-              Node* region1 = ifproj1->raw_out(0);
-              if( region0 == region1 )
-                add_users_to_worklist0(region0);
-            }
+  uint use_op = use->Opcode();
+  if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
+    add_users_to_worklist0(use, worklist); // Put Bool on worklist
+    if (use->outcnt() > 0) {
+      Node* bol = use->raw_out(0);
+      if (bol->outcnt() > 0) {
+        Node* iff = bol->raw_out(0);
+        if (iff->outcnt() == 2) {
+          // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
+          // phi merging either 0 or 1 onto the worklist
+          Node* ifproj0 = iff->raw_out(0);
+          Node* ifproj1 = iff->raw_out(1);
+          if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
+            Node* region0 = ifproj0->raw_out(0);
+            Node* region1 = ifproj1->raw_out(0);
+            if( region0 == region1 )
+              add_users_to_worklist0(region0, worklist);
           }
         }
       }
-      if (use_op == Op_CmpI || use_op == Op_CmpL) {
-        Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
-        if (phi != nullptr) {
-          // Input to the cmp of a loop exit check has changed, thus
-          // the loop limit may have changed, which can then change the
-          // range values of the trip-count Phi.
-          _worklist.push(phi);
-        }
+    }
+    if (use_op == Op_CmpI || use_op == Op_CmpL) {
+      Node* phi = countedloop_phi_from_cmp(use->as_Cmp(), n);
+      if (phi != nullptr) {
+        // Input to the cmp of a loop exit check has changed, thus
+        // the loop limit may have changed, which can then change the
+        // range values of the trip-count Phi.
+        worklist.push(phi);
       }
-      if (use_op == Op_CmpI) {
-        Node* cmp = use;
-        Node* in1 = cmp->in(1);
-        Node* in2 = cmp->in(2);
-        // Notify CmpI / If pattern from CastIINode::Value (left pattern).
-        // Must also notify if in1 is modified and possibly turns into X (right pattern).
-        //
-        // in1  in2                   in1  in2
-        //  |    |                     |    |
-        //  +--- | --+                 |    |
-        //  |    |   |                 |    |
-        // CmpINode  |                CmpINode
-        //    |      |                   |
-        // BoolNode  |                BoolNode
-        //    |      |        OR         |
-        //  IfNode   |                 IfNode
-        //    |      |                   |
-        //  IfProj   |                 IfProj   X
-        //    |      |                   |      |
-        //   CastIINode                 CastIINode
-        //
-        if (in1 != in2) { // if they are equal, the CmpI can fold them away
-          if (in1 == n) {
-            // in1 modified -> could turn into X -> do traversal based on right pattern.
-            for (DUIterator_Fast i2max, i2 = cmp->fast_outs(i2max); i2 < i2max; i2++) {
-              Node* bol = cmp->fast_out(i2); // For each Bool
-              if (bol->is_Bool()) {
-                for (DUIterator_Fast i3max, i3 = bol->fast_outs(i3max); i3 < i3max; i3++) {
-                  Node* iff = bol->fast_out(i3); // For each If
-                  if (iff->is_If()) {
-                    for (DUIterator_Fast i4max, i4 = iff->fast_outs(i4max); i4 < i4max; i4++) {
-                      Node* if_proj = iff->fast_out(i4); // For each IfProj
-                      assert(if_proj->is_IfProj(), "If only has IfTrue and IfFalse as outputs");
-                      for (DUIterator_Fast i5max, i5 = if_proj->fast_outs(i5max); i5 < i5max; i5++) {
-                        Node* castii = if_proj->fast_out(i5); // For each CastII
-                        if (castii->is_CastII() &&
-                            castii->as_CastII()->carry_dependency()) {
-                          _worklist.push(castii);
-                        }
+    }
+    if (use_op == Op_CmpI) {
+      Node* cmp = use;
+      Node* in1 = cmp->in(1);
+      Node* in2 = cmp->in(2);
+      // Notify CmpI / If pattern from CastIINode::Value (left pattern).
+      // Must also notify if in1 is modified and possibly turns into X (right pattern).
+      //
+      // in1  in2                   in1  in2
+      //  |    |                     |    |
+      //  +--- | --+                 |    |
+      //  |    |   |                 |    |
+      // CmpINode  |                CmpINode
+      //    |      |                   |
+      // BoolNode  |                BoolNode
+      //    |      |        OR         |
+      //  IfNode   |                 IfNode
+      //    |      |                   |
+      //  IfProj   |                 IfProj   X
+      //    |      |                   |      |
+      //   CastIINode                 CastIINode
+      //
+      if (in1 != in2) { // if they are equal, the CmpI can fold them away
+        if (in1 == n) {
+          // in1 modified -> could turn into X -> do traversal based on right pattern.
+          for (DUIterator_Fast i2max, i2 = cmp->fast_outs(i2max); i2 < i2max; i2++) {
+            Node* bol = cmp->fast_out(i2); // For each Bool
+            if (bol->is_Bool()) {
+              for (DUIterator_Fast i3max, i3 = bol->fast_outs(i3max); i3 < i3max; i3++) {
+                Node* iff = bol->fast_out(i3); // For each If
+                if (iff->is_If()) {
+                  for (DUIterator_Fast i4max, i4 = iff->fast_outs(i4max); i4 < i4max; i4++) {
+                    Node* if_proj = iff->fast_out(i4); // For each IfProj
+                    assert(if_proj->is_IfProj(), "If only has IfTrue and IfFalse as outputs");
+                    for (DUIterator_Fast i5max, i5 = if_proj->fast_outs(i5max); i5 < i5max; i5++) {
+                      Node* castii = if_proj->fast_out(i5); // For each CastII
+                      if (castii->is_CastII() &&
+                          castii->as_CastII()->carry_dependency()) {
+                        worklist.push(castii);
                       }
                     }
                   }
                 }
               }
             }
-          } else {
-            // Only in2 modified -> can assume X == in2 (left pattern).
-            assert(n == in2, "only in2 modified");
-            // Find all CastII with input in1.
-            for (DUIterator_Fast jmax, j = in1->fast_outs(jmax); j < jmax; j++) {
-              Node* castii = in1->fast_out(j);
-              if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
-                // Find If.
-                if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
-                  Node* ifnode = castii->in(0)->in(0);
-                  // Check that if connects to the cmp
-                  if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
-                    _worklist.push(castii);
-                  }
+          }
+        } else {
+          // Only in2 modified -> can assume X == in2 (left pattern).
+          assert(n == in2, "only in2 modified");
+          // Find all CastII with input in1.
+          for (DUIterator_Fast jmax, j = in1->fast_outs(jmax); j < jmax; j++) {
+            Node* castii = in1->fast_out(j);
+            if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
+              // Find If.
+              if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
+                Node* ifnode = castii->in(0)->in(0);
+                // Check that if connects to the cmp
+                if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
+                  worklist.push(castii);
                 }
               }
             }
@@ -1594,108 +1598,107 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
+  }
 
-    // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
-    // Patterns:
-    // ConstraintCast+ -> Sub
-    // ConstraintCast+ -> Phi
-    // ConstraintCast+ -> Xor
-    if (use->is_ConstraintCast()) {
-      auto push_the_uses_to_worklist = [&](Node* n){
-        if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
-          _worklist.push(n);
-        }
-      };
-      auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
-      use->visit_uses(push_the_uses_to_worklist, is_boundary);
+  // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
+  // Patterns:
+  // ConstraintCast+ -> Sub
+  // ConstraintCast+ -> Phi
+  // ConstraintCast+ -> Xor
+  if (use->is_ConstraintCast()) {
+    auto push_the_uses_to_worklist = [&](Node* n){
+      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n){ return !n->is_ConstraintCast(); };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary);
+  }
+  // If changed LShift inputs, check RShift users for useless sign-ext
+  if( use_op == Op_LShiftI ) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_RShiftI)
+        worklist.push(u);
+    }
+  }
+  // If changed LShift inputs, check And users for shift and mask (And) operation
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
+        worklist.push(u);
+      }
+    }
+  }
+  // If changed AddI/SubI inputs, check CmpU for range check optimization.
+  if (use_op == Op_AddI || use_op == Op_SubI) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->is_Cmp() && (u->Opcode() == Op_CmpU)) {
+        worklist.push(u);
+      }
+    }
+  }
+  // If changed AddP inputs, check Stores for loop invariant
+  if( use_op == Op_AddP ) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->is_Mem())
+        worklist.push(u);
+    }
+  }
+  // If changed initialization activity, check dependent Stores
+  if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
+    InitializeNode* init = use->as_Allocate()->initialization();
+    if (init != nullptr) {
+      Node* imem = init->proj_out_or_null(TypeFunc::Memory);
+      if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+    }
+  }
+  // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
+  // CatchNode::Value() is responsible for killing that path. The CatchNode has to be explicitly enqueued for igvn
+  // to guarantee the change is not missed.
+  if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
+    Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
+    if (p != nullptr) {
+      add_users_to_worklist0(p, worklist);
+    }
+  }
 
-    }
-    // If changed LShift inputs, check RShift users for useless sign-ext
-    if( use_op == Op_LShiftI ) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        if (u->Opcode() == Op_RShiftI)
-          _worklist.push(u);
-      }
-    }
-    // If changed LShift inputs, check And users for shift and mask (And) operation
-    if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {
-          _worklist.push(u);
-        }
-      }
-    }
-    // If changed AddI/SubI inputs, check CmpU for range check optimization.
-    if (use_op == Op_AddI || use_op == Op_SubI) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        if (u->is_Cmp() && (u->Opcode() == Op_CmpU)) {
-          _worklist.push(u);
-        }
-      }
-    }
-    // If changed AddP inputs, check Stores for loop invariant
-    if( use_op == Op_AddP ) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        if (u->is_Mem())
-          _worklist.push(u);
-      }
-    }
-    // If changed initialization activity, check dependent Stores
-    if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
-      InitializeNode* init = use->as_Allocate()->initialization();
-      if (init != nullptr) {
-        Node* imem = init->proj_out_or_null(TypeFunc::Memory);
-        if (imem != nullptr)  add_users_to_worklist0(imem);
-      }
-    }
-    // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
-    // CatchNode::Value() is responsible for killing that path. The CatchNode has to be explicitly enqueued for igvn
-    // to guarantee the change is not missed.
-    if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
-      Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
-      if (p != nullptr) {
-        add_users_to_worklist0(p);
-      }
-    }
+  if (use_op == Op_Initialize) {
+    Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
+    if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+  }
+  // Loading the java mirror from a Klass requires two loads and the type
+  // of the mirror load depends on the type of 'n'. See LoadNode::Value().
+  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
 
-    if (use_op == Op_Initialize) {
-      Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
-      if (imem != nullptr)  add_users_to_worklist0(imem);
-    }
-    // Loading the java mirror from a Klass requires two loads and the type
-    // of the mirror load depends on the type of 'n'. See LoadNode::Value().
-    //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    bool has_load_barrier_nodes = bs->has_load_barrier_nodes();
-
-    if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
-      for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-        Node* u = use->fast_out(i2);
-        const Type* ut = u->bottom_type();
-        if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
-          if (has_load_barrier_nodes) {
-            // Search for load barriers behind the load
-            for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
-              Node* b = u->fast_out(i3);
-              if (bs->is_gc_barrier_node(b)) {
-                _worklist.push(b);
-              }
+  if (use_op == Op_LoadP && use->bottom_type()->isa_rawptr()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      const Type* ut = u->bottom_type();
+      if (u->Opcode() == Op_LoadP && ut->isa_instptr()) {
+        if (has_load_barrier_nodes) {
+          // Search for load barriers behind the load
+          for (DUIterator_Fast i3max, i3 = u->fast_outs(i3max); i3 < i3max; i3++) {
+            Node* b = u->fast_out(i3);
+            if (bs->is_gc_barrier_node(b)) {
+              worklist.push(b);
             }
           }
-          _worklist.push(u);
         }
+        worklist.push(u);
       }
     }
-    if (use->Opcode() == Op_OpaqueZeroTripGuard) {
-      assert(use->outcnt() <= 1, "OpaqueZeroTripGuard can't be shared");
-      if (use->outcnt() == 1) {
-        Node* cmp = use->unique_out();
-        _worklist.push(cmp);
-      }
+  }
+  if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+    assert(use->outcnt() <= 1, "OpaqueZeroTripGuard can't be shared");
+    if (use->outcnt() == 1) {
+      Node* cmp = use->unique_out();
+      worklist.push(cmp);
     }
   }
 }
