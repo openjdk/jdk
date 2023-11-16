@@ -143,7 +143,7 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack, void* malloc_base_old) {
+  const NativeCallStack& stack) {
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
