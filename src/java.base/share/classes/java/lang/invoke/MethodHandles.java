@@ -4561,9 +4561,11 @@ return mh1;
      * or greater than the {@code ByteBuffer} limit minus the size (in bytes) of
      * {@code T}.
      * <p>
-     * For heap byte buffers, only the plain {@linkplain VarHandle.AccessMode#GET get}
-     * and {@linkplain VarHandle.AccessMode#SET set} access modes are supported by the returned var handle.
-     * For all other access modes, an {@link IllegalStateException} will be thrown.
+     * For heap byte buffers, access is always unaligned. As a result, only the plain
+     * {@linkplain VarHandle.AccessMode#GET get}
+     * and {@linkplain VarHandle.AccessMode#SET set} access modes are supported by the
+     * returned var handle. For all other access modes, an {@link IllegalStateException}
+     * will be thrown.
      * <p>
      * For direct buffers only, access of bytes at an index may be aligned or misaligned for {@code T},
      * with respect to the underlying memory address, {@code A} say, associated
@@ -4606,8 +4608,6 @@ return mh1;
      * update access modes compare values using their bitwise representation
      * (see {@link Float#floatToRawIntBits} and
      * {@link Double#doubleToRawLongBits}, respectively).
-     * <p>
-     * Access to heap byte buffers is always unaligned.
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
      * @param byteOrder the endianness of the view array elements, as
