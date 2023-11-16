@@ -986,7 +986,16 @@ gss_init_sec_context(OM_uint32 *minor_status,
                     newCred,
                     &lifeTime);
             if (!(SEC_SUCCESS(ss))) {
-                goto err;
+                if (firstTime) {
+                    OM_uint32 dummy;
+                    gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+                }
+                delete newCred;
+                if (output_token->value) {
+                    gss_release_buffer(NULL, output_token);
+                }
+                output_token = GSS_C_NO_BUFFER;
+                return GSS_S_FAILURE;
             }
             pc->phCred = newCred;
             pc->isLocalCred = TRUE;
@@ -1008,7 +1017,16 @@ gss_init_sec_context(OM_uint32 *minor_status,
 
     if (!SEC_SUCCESS(ss)) {
         PP("InitializeSecurityContext failed");
-        goto err;
+        if (firstTime) {
+            OM_uint32 dummy;
+            gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+        }
+        delete newCred;
+        if (output_token->value) {
+            gss_release_buffer(NULL, output_token);
+        }
+        output_token = GSS_C_NO_BUFFER;
+        return GSS_S_FAILURE;
     }
 
     pc->flags = *ret_flags = flag_sspi_to_gss(outFlag);
