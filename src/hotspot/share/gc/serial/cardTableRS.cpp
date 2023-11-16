@@ -351,7 +351,7 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   using Word = uintptr_t;
 
   static_assert(clean_card_val() == (CardValue)-1, "inv");
-  constexpr Word clean_word = (Word)-1;
+  constexpr Word clean_word = (Word)CardTable::clean_card_row_val();
 
   CardValue* i_card = start_card;
 
@@ -369,7 +369,7 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   while (i_card + sizeof(Word) <= end_card) {
     Word* i_word = reinterpret_cast<Word*>(i_card);
     if (*i_word != clean_word) {
-      // Found a clean card in this word; fall back to per-CardValue comparison.
+      // Found a dirty card in this word; fall back to per-CardValue comparison.
       break;
     }
     i_card += sizeof(Word);
@@ -487,7 +487,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
 
     if (dirty_l == end_card) {
       // No dirty cards to iterate.
-      break;
+      return;
     }
 
     HeapWord* const addr_l = ct->addr_for(dirty_l);

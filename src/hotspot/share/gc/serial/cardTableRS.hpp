@@ -54,7 +54,7 @@ class CardTableRS : public CardTable {
   static void clear_cards(CardValue* start, CardValue* end);
 
   static CardTable::CardValue* find_first_dirty_card(CardValue* const start_card,
-                                              CardValue* const end_card);
+                                                     CardValue* const end_card);
   template<typename Func>
   CardTable::CardValue* find_first_clean_card(CardValue* const start_card,
                                               CardValue* const end_card,
