@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 8170859
- * @summary Ensure no incubator modules are resolved by default in the image
+ * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng DefaultImage
+ * @summary Ensure no incubator modules are resolved by default in the image
  */
 
 import java.io.ByteArrayOutputStream;
