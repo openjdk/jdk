@@ -4474,7 +4474,7 @@ static const int64_t bits3 = right_n_bits(3);
     // First, U_2:U_1:U_0 += (U_2 >> 2)
     __ srli(tmp1, U_2, 2);
     __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
-    __ andi(U_2, U_2, bits2); // Clear U_2 except for the first two bits
+    __ andi(U_2, U_2, bits2); // Clear U_2 except for the lowest two bits
     __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
     __ add(U_2, U_2, tmp2);
 
