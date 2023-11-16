@@ -1173,6 +1173,7 @@ void VLoopBody::print() const {
 #endif
 
 void VLoopDependenceGraph::build() {
+  assert(_map.length() == 0, "must be freshly reset");
   CountedLoopNode *cl = _vloop.cl();
   // TODO remove, seems unnecessary
   assert(cl->is_main_loop(), "SLP should only work on main loops");
@@ -1253,14 +1254,56 @@ void VLoopDependenceGraph::build() {
     }
   }
 
+  compute_max_depth();
+
+#ifndef PRODUCT
   if (TraceSuperWord) {
     print();
   }
+#endif
 }
 
+void VLoopDependenceGraph::compute_max_depth() {
+  assert(_depth.length() == 0, "must be freshly reset");
+  // set all depths to zero
+  _depth.at_put_grow(_body.body().length()-1, 0);
+
+  int ct = 0;
+  bool again;
+  do {
+    again = false;
+    for (int i = 0; i < _body.body().length(); i++) {
+      Node* n = _body.body().at(i);
+      if (!n->is_Phi()) {
+        int d_orig = depth(n);
+        int d_in   = 0;
+        PredsIterator preds(n, *this);
+        for (; !preds.done(); preds.next()) {
+          Node* pred = preds.current();
+          if (_vloop.in_body(pred)) {
+            d_in = MAX2(d_in, depth(pred));
+          }
+        }
+        if (d_in + 1 != d_orig) {
+          set_depth(n, d_in + 1);
+          again = true;
+        }
+      }
+    }
+    ct++;
+  } while (again);
+
+  if (TraceSuperWord && Verbose) {
+    tty->print_cr("\nVLoopDependenceGraph::compute_max_depth iterated: %d times", ct);
+  }
+}
+
+
+#ifndef PRODUCT
 void VLoopDependenceGraph::print() const {
   tty->print_cr("\nVLoopDependenceGraph::print:");
-  tty->print_cr("root:");
+  // Memory graph
+  tty->print_cr("memory root:");
   root()->print();
   tty->print_cr("memory nodes:");
   for (int i = 0; i < _map.length(); i++) {
@@ -1269,9 +1312,24 @@ void VLoopDependenceGraph::print() const {
       d->print();
     }
   }
-  tty->print_cr("sink:");
+  tty->print_cr("memory sink:");
   sink()->print();
+  // Combined graph
+  tty->print_cr("\nDependencies inside combined graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("d:%2d %5d %-10s (", depth(n), n->_idx, n->Name());
+    PredsIterator preds(n, *this);
+    for (; !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (_vloop.in_body(pred)) {
+        tty->print("%d ", pred->_idx);
+      }
+    }
+    tty->print_cr(")");
+  }
 }
+#endif
 
 VLoopDependenceGraph::DependenceNode*
 VLoopDependenceGraph::make_node(Node* node) {

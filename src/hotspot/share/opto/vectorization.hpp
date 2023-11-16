@@ -268,9 +268,11 @@ private:
   const VLoopMemorySlices& _memory_slices;
   const VLoopBody& _body;
 
+  // node->_idx -> DependenceNode* (or nullptr)
   GrowableArray<DependenceNode*> _map;
   DependenceNode* _root;
   DependenceNode* _sink;
+  GrowableArray<int> _depth; // body_idx -> depth in graph (DAG)
 
 public:
   VLoopDependenceGraph(const VLoop& vloop,
@@ -281,7 +283,8 @@ public:
     _body(body),
     _map(vloop.arena(), 8,  0, nullptr),
     _root(nullptr),
-    _sink(nullptr) {}
+    _sink(nullptr),
+    _depth(vloop.arena(), 8,  0, 0) {}
 
   NONCOPYABLE(VLoopDependenceGraph);
 
@@ -289,11 +292,14 @@ public:
     _map.clear();
     _root = new (_vloop.arena()) DependenceNode(nullptr);
     _sink = new (_vloop.arena()) DependenceNode(nullptr);
+    _depth.clear();
   }
 
   void build();
 
+#ifndef PRODUCT
   void print() const;
+#endif
 
 private:
   DependenceNode* root() const { return _root; }
@@ -386,6 +392,20 @@ public:
     bool  done()    { return _done; }
     void  next();
   };
+
+  // Depth in graph (DAG). Used to prune search paths.
+  int depth(Node* n) const {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    return _depth.at(_body.body_idx(n));
+  }
+
+private:
+  void set_depth(Node* n, int d) {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    _depth.at_put(_body.body_idx(n), d);
+  }
+
+  void compute_max_depth();
 };
 
 // Analyze the loop in preparation for auto-vectorization. This class is

@@ -66,11 +66,10 @@ class OrderedPair;
 class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
-  int         _depth;     // Max expression (DAG) depth from block start
   const Type* _velt_type; // vector element type
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
+  SWNodeInfo() : _alignment(-1), _velt_type(nullptr), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -137,6 +136,7 @@ class SuperWord : public ResourceObj {
   bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
   const GrowableArray<Node*>& body() const { return vla().body().body(); }
   int body_idx(const Node* n) const     { return vla().body().body_idx(n); }
+  int depth(Node* n) const              { return vla().dependence_graph().depth(n); }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -190,10 +190,6 @@ class SuperWord : public ResourceObj {
   // memory alignment for a node
   int alignment(Node* n)                     { return _node_info.adr_at(body_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
-
-  // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n)                         { return _node_info.adr_at(body_idx(n))->_depth; }
-  void set_depth(Node* n, int d)             { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
   const Type* velt_type(Node* n)             { return _node_info.adr_at(body_idx(n))->_velt_type; }
@@ -301,8 +297,6 @@ class SuperWord : public ResourceObj {
   bool is_vector_use(Node* use, int u_idx);
   // Initialize per node info
   void initialize_bb();
-  // Compute max depth for expressions from beginning of block
-  void compute_max_depth();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.

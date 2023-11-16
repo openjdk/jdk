@@ -270,6 +270,8 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
 //------------------------------SLP_extract---------------------------
 // Extract the superword level parallelism
 //
+// TODO adjust this explanation here
+//
 // 1) A reverse post-order of nodes in the block is constructed.  By scanning
 //    this list from first to last, all definitions are visited before their uses.
 //
@@ -321,9 +323,6 @@ bool SuperWord::SLP_extract() {
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
   initialize_bb();
-
-  // compute function depth(Node*)
-  compute_max_depth();
 
   // Compute vector element types
   compute_vector_element_type();
@@ -2743,40 +2742,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 void SuperWord::initialize_bb() {
   Node* last = body().at(body().length() - 1);
   grow_node_info(body_idx(last));
-}
-
-//------------------------------compute_max_depth---------------------------
-// Compute max depth for expressions from beginning of block
-// Use to prune search paths during test for independence.
-void SuperWord::compute_max_depth() {
-  int ct = 0;
-  bool again;
-  do {
-    again = false;
-    for (int i = 0; i < body().length(); i++) {
-      Node* n = body().at(i);
-      if (!n->is_Phi()) {
-        int d_orig = depth(n);
-        int d_in   = 0;
-        VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
-        for (; !preds.done(); preds.next()) {
-          Node* pred = preds.current();
-          if (in_body(pred)) {
-            d_in = MAX2(d_in, depth(pred));
-          }
-        }
-        if (d_in + 1 != d_orig) {
-          set_depth(n, d_in + 1);
-          again = true;
-        }
-      }
-    }
-    ct++;
-  } while (again);
-
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("compute_max_depth iterated: %d times", ct);
-  }
 }
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
