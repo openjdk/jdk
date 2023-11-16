@@ -1134,8 +1134,13 @@ public final class StackMapGenerator {
                 for (int i = 0; i < target.localsSize; i++) {
                     merge(locals[i], target.locals, i, target);
                 }
+                if (stackSize != target.stackSize) {
+                    generatorError("Stack size mismatch");
+                }
                 for (int i = 0; i < target.stackSize; i++) {
-                    merge(stack[i], target.stack, i, target);
+                    if (merge(stack[i], target.stack, i, target) == Type.TOP_TYPE) {
+                        generatorError("Stack content mismatch");
+                    }
                 }
             }
         }
@@ -1183,13 +1188,14 @@ public final class StackMapGenerator {
             }
         }
 
-        private void merge(Type me, Type[] toTypes, int i, Frame target) {
+        private Type merge(Type me, Type[] toTypes, int i, Frame target) {
             var to = toTypes[i];
             var newTo = to.mergeFrom(me, classHierarchy);
             if (to != newTo && !to.equals(newTo)) {
                 toTypes[i] = newTo;
                 target.dirty = true;
             }
+            return newTo;
         }
 
         private static int trimAndCompress(Type[] types, int count) {
