@@ -4516,6 +4516,15 @@ return mh1;
      * Only plain {@linkplain VarHandle.AccessMode#GET get} and {@linkplain VarHandle.AccessMode#SET set}
      * access modes are supported by the returned var handle. For all other access modes, an
      * {@link UnsupportedOperationException} will be thrown.
+     *
+     * @apiNote if access modes other than plain access are required, clients should
+     * consider using off-heap memory through
+     * {@linkplain java.nio.ByteBuffer#allocateDirect(int) direct byte buffers} or
+     * off-heap {@linkplain java.lang.foreign.MemorySegment memory segments},
+     * or memory segments backed by a
+     * {@linkplain java.lang.foreign.MemorySegment#ofArray(long[]) {@code long[]}},
+     * for which stronger alignment guarantees can be made.
+     *
      * @param viewArrayClass the view array class, with a component type of
      * type {@code T}
      * @param byteOrder the endianness of the view array elements, as
