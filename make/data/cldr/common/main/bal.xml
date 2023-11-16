@@ -12,9 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
 			<localeSeparator>{0}، {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
 			<language type="bal">بلۆچی</language>
@@ -108,12 +106,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<layout>
 		<orientation>
 			<characterOrder>right-to-left</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u064E \u064F \u0650 \u0651 \u0652 آ ا ئ ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ک گ ل م ن و ۆ ه ی ێ ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[\u200C\u200D \u064B \u0654 ء أ ؤ إ ة ث ح خ ذ ص ض ط ظ ع غ ف ق ں ھ ہ]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[َ ُ ِ ّ ْ آ ا ئ ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ک گ ل م ن و ۆ ه ی ێ ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[\u200C\u200D ً ٔ ء أ ؤ إ ة ث ح خ ذ ص ض ط ظ ع غ ف ق ں ھ ہ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[آ ا {ای} {اێ} {ائی} ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ف ک گ ل م ن و ه ی]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[، ؛ \: ! ؟ . ' ‹ › &quot; « »]</exemplarCharacters>
 	</characters>
@@ -181,32 +178,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="provisional">2/4</quarter>
 							<quarter type="3" draft="provisional">3/4</quarter>
 							<quarter type="4" draft="provisional">4/4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="provisional">1</quarter>
-							<quarter type="2" draft="provisional">2</quarter>
-							<quarter type="3" draft="provisional">3</quarter>
-							<quarter type="4" draft="provisional">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="provisional">ائوَلی چارِک</quarter>
-							<quarter type="2" draft="provisional">دومی چارِک</quarter>
-							<quarter type="3" draft="provisional">سئیمی چارِک</quarter>
-							<quarter type="4" draft="provisional">چارُمی چارِک</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="provisional">1/4</quarter>
-							<quarter type="2" draft="provisional">2/4</quarter>
-							<quarter type="3" draft="provisional">3/4</quarter>
-							<quarter type="4" draft="provisional">4/4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="provisional">1</quarter>
-							<quarter type="2" draft="provisional">2</quarter>
-							<quarter type="3" draft="provisional">3</quarter>
-							<quarter type="4" draft="provisional">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="provisional">ائوَلی چارِک</quarter>
@@ -540,62 +511,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="provisional">latn</defaultNumberingSystem>
-		<symbols numberSystem="latn">
-			<decimal draft="provisional">.</decimal>
-			<group draft="provisional">,</group>
-			<percentSign draft="provisional">%</percentSign>
-			<plusSign draft="provisional">+</plusSign>
-			<minusSign draft="provisional">-</minusSign>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="provisional">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="provisional">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="provisional">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern draft="provisional">¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="BRL">
 				<displayName draft="provisional">برازیلی ریال</displayName>
-				<symbol draft="provisional">R$</symbol>
-				<symbol alt="narrow" draft="provisional">R$</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="provisional">یورۆ</displayName>
-				<symbol draft="provisional">€</symbol>
-				<symbol alt="narrow" draft="provisional">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="provisional">برتانی پئوند</displayName>
-				<symbol draft="provisional">£</symbol>
-				<symbol alt="narrow" draft="provisional">£</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName draft="provisional">هندُستانی روپّئیی</displayName>
-				<symbol draft="provisional">₹</symbol>
-				<symbol alt="narrow" draft="provisional">₹</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName draft="provisional">اێرانی ریال</displayName>
@@ -604,22 +531,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<displayName draft="provisional">جاپانی یَن</displayName>
 				<symbol draft="provisional">¥</symbol>
-				<symbol alt="narrow" draft="provisional">¥</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName draft="provisional">پاکستانی روپی</displayName>
 				<symbol draft="provisional">Rs</symbol>
-				<symbol alt="narrow" draft="provisional">Rs</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName draft="provisional">روسی روبل</displayName>
 				<symbol draft="provisional">₽</symbol>
-				<symbol alt="narrow" draft="provisional">₽</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName draft="provisional">امریکی دالر</displayName>
 				<symbol draft="provisional">$</symbol>
-				<symbol alt="narrow" draft="provisional">$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName draft="provisional">نگیشّتگێن زَرّ</displayName>

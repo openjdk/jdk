@@ -15,11 +15,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="ab"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ab">Аԥсшәа</language>
 			<language type="ace" draft="unconfirmed">ачех</language>
@@ -890,40 +885,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а ә б в г {гә} {гь} ӷ {ӷә} {ӷь} д {дә} е ж {жә} {жь} з ӡ {ӡә} и к {кә} {кь} қ {қә} {қь} ҟ {ҟә} {ҟь} л м н о п ԥ р с т {тә} ҭ {ҭә} у ф х {хә} {хь} ҳ {ҳә} ц {цә} ҵ {ҵә} ч ҷ ҽ ҿ џ {џь} ш {шә} {шь} ы ь ҩ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[{а\u0301} ҕ {ҕә} {ҕь} {е\u0301} {и\u0301} {о\u0301} ҧ {у\u0301} {ы\u0301}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{а́} ҕ {ҕә} {ҕь} {е́} {и́} {о́} ҧ {у́} {ы́}]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г {ГӘ} {ГЬ} Ӷ {ӶӘ} {ӶЬ} Д {ДӘ} Е Ж {ЖӘ} {ЖЬ} З Ӡ {ӠӘ} И К {КӘ} {КЬ} Қ {ҚӘ} {ҚЬ} Ҟ {ҞӘ} {ҞЬ} Л М Н О П Ԥ Р С Т {ТӘ} Ҭ {ҬӘ} У Ф Х {ХӘ} {ХЬ} Ҳ {ҲӘ} Ц {ЦӘ} Ҵ {ҴӘ} Ч Ҷ Ҽ Ҿ Џ {ЏЬ} Ш {ШӘ} {ШЬ} Ы Ҩ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
-		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
-		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
-		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
-		<ellipsis type="word-final" draft="unconfirmed">{0} …</ellipsis>
-		<ellipsis type="word-initial" draft="unconfirmed">… {0}</ellipsis>
-		<ellipsis type="word-medial" draft="unconfirmed">{0} … {1}</ellipsis>
-		<moreInformation draft="unconfirmed">?</moreInformation>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="unconfirmed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
-			<parseLenient sample="¥" draft="unconfirmed">[¥￥]</parseLenient>
-			<parseLenient sample="₩" draft="unconfirmed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="unconfirmed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ٫]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -978,15 +955,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1160,20 +1131,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">Ажь</month>
-							<month type="2" draft="unconfirmed">Жəаб</month>
-							<month type="3" draft="unconfirmed">Хəажә</month>
-							<month type="4" draft="unconfirmed">Мш</month>
-							<month type="5" draft="unconfirmed">Лаҵ</month>
-							<month type="6" draft="unconfirmed">Рашә</month>
-							<month type="7" draft="unconfirmed">Ԥхынгә</month>
-							<month type="8" draft="unconfirmed">Нанҳә</month>
-							<month type="9" draft="unconfirmed">Цəыб</month>
-							<month type="10" draft="unconfirmed">Жьҭ</month>
-							<month type="11" draft="unconfirmed">Абҵ</month>
-							<month type="12" draft="unconfirmed">Ԥхынҷ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">Жь</month>
 							<month type="2" draft="unconfirmed">Жə</month>
@@ -1188,43 +1145,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11" draft="unconfirmed">Б</month>
 							<month type="12" draft="unconfirmed">Ҷ</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">Ажьырныҳəа</month>
-							<month type="2" draft="unconfirmed">Жəабран</month>
-							<month type="3" draft="unconfirmed">Хəажəкыра</month>
-							<month type="4" draft="unconfirmed">Мшаԥы</month>
-							<month type="5" draft="unconfirmed">Лаҵара</month>
-							<month type="6" draft="unconfirmed">Рашəара</month>
-							<month type="7" draft="unconfirmed">Ԥхынгəы</month>
-							<month type="8" draft="unconfirmed">Нанҳəа</month>
-							<month type="9" draft="unconfirmed">Цəыббра</month>
-							<month type="10" draft="unconfirmed">Жьҭаара</month>
-							<month type="11" draft="unconfirmed">Абҵара</month>
-							<month type="12" draft="unconfirmed">Ԥхынҷкәын</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">Ам</day>
-							<day type="mon" draft="unconfirmed">Ашә</day>
-							<day type="tue" draft="unconfirmed">Аҩ</day>
-							<day type="wed" draft="unconfirmed">Ах</day>
-							<day type="thu" draft="unconfirmed">Аԥ</day>
-							<day type="fri" draft="unconfirmed">Ахә</day>
-							<day type="sat" draft="unconfirmed">Ас</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">М</day>
-							<day type="mon" draft="unconfirmed">Шә</day>
-							<day type="tue" draft="unconfirmed">Ҩ</day>
-							<day type="wed" draft="unconfirmed">Х</day>
-							<day type="thu" draft="unconfirmed">Ԥ</day>
-							<day type="fri" draft="unconfirmed">Хә</day>
-							<day type="sat" draft="unconfirmed">С</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun" draft="unconfirmed">Ам</day>
 							<day type="mon" draft="unconfirmed">Ашә</day>
 							<day type="tue" draft="unconfirmed">Аҩ</day>
@@ -1244,15 +1169,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">Ам</day>
-							<day type="mon" draft="unconfirmed">Ашә</day>
-							<day type="tue" draft="unconfirmed">Аҩ</day>
-							<day type="wed" draft="unconfirmed">Ах</day>
-							<day type="thu" draft="unconfirmed">Аԥ</day>
-							<day type="fri" draft="unconfirmed">Ахә</day>
-							<day type="sat" draft="unconfirmed">Ас</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">М</day>
 							<day type="mon" draft="unconfirmed">Шә</day>
@@ -1262,48 +1178,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri" draft="unconfirmed">Хә</day>
 							<day type="sat" draft="unconfirmed">С</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">Ам</day>
-							<day type="mon" draft="unconfirmed">Ашә</day>
-							<day type="tue" draft="unconfirmed">Аҩ</day>
-							<day type="wed" draft="unconfirmed">Ах</day>
-							<day type="thu" draft="unconfirmed">Аԥ</day>
-							<day type="fri" draft="unconfirmed">Ахә</day>
-							<day type="sat" draft="unconfirmed">Ас</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">Амҽыша</day>
-							<day type="mon" draft="unconfirmed">Ашәахьа</day>
-							<day type="tue" draft="unconfirmed">Аҩаша</day>
-							<day type="wed" draft="unconfirmed">Ахаша</day>
-							<day type="thu" draft="unconfirmed">Аԥшьаша</day>
-							<day type="fri" draft="unconfirmed">Ахәаша</day>
-							<day type="sat" draft="unconfirmed">Асабша</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">1-тәи акв.</quarter>
-							<quarter type="2" draft="unconfirmed">2-тәи акв.</quarter>
-							<quarter type="3" draft="unconfirmed">3-тәи акв.</quarter>
-							<quarter type="4" draft="unconfirmed">4-тәи акв.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1-тәи аквартал</quarter>
-							<quarter type="2" draft="unconfirmed">2-тәи аквартал</quarter>
-							<quarter type="3" draft="unconfirmed">3-тәи аквартал</quarter>
-							<quarter type="4" draft="unconfirmed">4-тәи аквартал</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1" draft="unconfirmed">1-тәи акв.</quarter>
 							<quarter type="2" draft="unconfirmed">2-тәи акв.</quarter>
@@ -1318,32 +1196,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -1409,15 +1261,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1431,11 +1277,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y 'ш'. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, d MMM y 'ш'. G</dateFormatItem>
 						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="unconfirmed">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="unconfirmed">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E, dd.MM</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d MMM</dateFormatItem>
@@ -1455,9 +1298,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G" draft="unconfirmed">y 'ш'. G – y 'ш'. G</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">y–y 'шш'. G</greatestDifference>
@@ -1500,9 +1340,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
@@ -1538,9 +1375,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y</greatestDifference>
@@ -1619,18 +1453,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="unconfirmed">амч</displayName>
 			</field>
 			<field type="day">
-				<displayName draft="unconfirmed">амш</displayName>
-				<relative type="-1" draft="unconfirmed">иацы</relative>
-				<relative type="0" draft="unconfirmed">иахьа</relative>
-				<relative type="1" draft="unconfirmed">уаҵәы</relative>
-			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">амш</displayName>
-				<relative type="-1" draft="unconfirmed">иацы</relative>
-				<relative type="0" draft="unconfirmed">иахьа</relative>
-				<relative type="1" draft="unconfirmed">уаҵәы</relative>
-			</field>
-			<field type="day-narrow">
 				<displayName draft="unconfirmed">амш</displayName>
 				<relative type="-1" draft="unconfirmed">иацы</relative>
 				<relative type="0" draft="unconfirmed">иахьа</relative>
@@ -3894,29 +3716,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="unconfirmed">latn</native>
-		</otherNumberingSystems>
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed"> </group>
 			<approximatelySign draft="unconfirmed">≈</approximatelySign>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="unconfirmed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -3929,20 +3733,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<currencyFormat type="standard">
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
 				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
-				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BMD">
 				<displayName draft="unconfirmed">бермудтәи адоллар</displayName>
-				<displayName count="other" draft="unconfirmed">бермудтәи адоллар</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">евро</displayName>
-				<displayName count="other" draft="unconfirmed">евро</displayName>
 			</currency>
 			<currency type="GEL">
 				<symbol alt="narrow" draft="unconfirmed">ლ</symbol>
@@ -3959,9 +3758,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RUB">
 				<symbol draft="unconfirmed">₽</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">леоне</displayName>
-				<displayName count="other" draft="unconfirmed">леоне</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">леоне (1964—2022)</displayName>
 			</currency>
 			<currency type="THB">
 				<symbol draft="unconfirmed">฿</symbol>
@@ -3987,24 +3788,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other" draft="unconfirmed">{0} мшы</pluralMinimalPairs>
 		</minimalPairs>
 	</numbers>
-	<units>
-		<unitLength type="long">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-		</unitLength>
-		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-		</unitLength>
-	</units>
 	<listPatterns>
 		<listPattern>
 			<listPatternPart type="end" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
@@ -4014,41 +3797,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ма {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} ма {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0}-и {1}-и</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
 			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>

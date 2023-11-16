@@ -2333,8 +2333,13 @@ public class ClassReader {
             }
             mt.thrown = thrown.toList();
             mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
-            if (mt.recvtype != null) {
-                mt.recvtype = addTypeAnnotations(mt.recvtype, TargetType.METHOD_RECEIVER);
+
+            Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
+            if (recvtype != null) {
+                Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
+                if (annotated != recvtype) {
+                    mt.recvtype = annotated;
+                }
             }
             return null;
         }
