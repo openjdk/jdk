@@ -894,13 +894,6 @@ static inline intptr_t get_next_hash(Thread* current, oop obj) {
   return value;
 }
 
-// Can be called from non JavaThreads (e.g., VMThread) for FastHashCode
-// calculations as part of JVM/TI tagging.
-static bool is_lock_owned(Thread* thread, oop obj) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "only call this with new lightweight locking enabled");
-  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
-}
-
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
   while (true) {
@@ -1293,6 +1286,13 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
     return;
   }
   (void)inflate(Thread::current(), obj, inflate_cause_vm_internal);
+}
+
+// Can be called from non JavaThreads (e.g., VMThread) for FastHashCode
+// calculations as part of JVM/TI tagging.
+static bool is_lock_owned(Thread* thread, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only call this with new lightweight locking enabled");
+  return thread->is_Java_thread() ? JavaThread::cast(thread)->lock_stack().contains(obj) : false;
 }
 
 ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
