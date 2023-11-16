@@ -332,9 +332,6 @@
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
                                                                             \
-  develop(bool, SuperWordRTDepCheck, false,                                 \
-          "Enable runtime dependency checks.")                              \
-                                                                            \
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
                                                                             \

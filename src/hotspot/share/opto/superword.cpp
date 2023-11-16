@@ -3236,10 +3236,6 @@ void SuperWord::print_stmt(Node* s) {
 #endif
 }
 
-// ========================= OrderedPair =====================
-
-const OrderedPair OrderedPair::initial;
-
 // ========================= SWNodeInfo =====================
 
 const SWNodeInfo SWNodeInfo::initial;

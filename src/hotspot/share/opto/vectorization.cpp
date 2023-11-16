@@ -1234,14 +1234,6 @@ void VLoopDependenceGraph::build() {
         VPointer p2(s2->as_Mem(), _vloop);
 
         int cmp = p1.cmp(p2);
-        // TODO remove completely? - only a develop flag!
-        // TODO printing now already removed here
-        //if (SuperWordRTDepCheck &&
-        //    p1.base() != p2.base() && p1.valid() && p2.valid()) {
-        //  // Trace disjoint pointers
-        //  OrderedPair pp(p1.base(), p2.base());
-        //  _disjoint_ptrs.append_if_missing(pp);
-        //}
         if (!VPointer::not_equal(cmp)) {
           // Possibly same address
           make_edge(get_node(s1), get_node(s2));
@@ -1297,7 +1289,6 @@ void VLoopDependenceGraph::compute_max_depth() {
     tty->print_cr("\nVLoopDependenceGraph::compute_max_depth iterated: %d times", ct);
   }
 }
-
 
 #ifndef PRODUCT
 void VLoopDependenceGraph::print() const {
