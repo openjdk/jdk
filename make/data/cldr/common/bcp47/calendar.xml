@@ -19,11 +19,11 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="gregory" description="Gregorian calendar" alias="gregorian"/>
             <type name="hebrew" description="Traditional Hebrew calendar"/>
             <type name="indian" description="Indian calendar"/>
-            <type name="islamic" description="Islamic calendar"/>
-            <type name="islamic-umalqura" description="Islamic calendar, Umm al-Qura" since="24"/>
-            <type name="islamic-tbla" description="Islamic calendar, tabular (intercalary years [2,5,7,10,13,16,18,21,24,26,29] - astronomical epoch)" since="24"/>
-            <type name="islamic-civil" description="Islamic calendar, tabular (intercalary years [2,5,7,10,13,16,18,21,24,26,29] - civil epoch)" since="24"/>
-            <type name="islamic-rgsa" description="Islamic calendar, Saudi Arabia sighting" since="24"/>
+            <type name="islamic" description="Hijri calendar"/>
+            <type name="islamic-umalqura" description="Hijri calendar, Umm al-Qura" since="24"/>
+            <type name="islamic-tbla" description="Hijri calendar, tabular (intercalary years [2,5,7,10,13,16,18,21,24,26,29] - astronomical epoch)" since="24"/>
+            <type name="islamic-civil" description="Hijri calendar, tabular (intercalary years [2,5,7,10,13,16,18,21,24,26,29] - civil epoch)" since="24"/>
+            <type name="islamic-rgsa" description="Hijri calendar, Saudi Arabia sighting" since="24"/>
             <type name="iso8601" description="ISO calendar (Gregorian calendar using the ISO 8601 calendar week rules)" since="2.0"/>
             <type name="japanese" description="Japanese Imperial calendar"/>
             <type name="persian" description="Persian calendar"/>

@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <jni.h>
 
-void xor_op(jbyte *restrict src, jbyte *restrict dst, jint len);
+JNIEXPORT void xor_op(jbyte *restrict src, jbyte *restrict dst, jint len) {
+    for (int i = 0; i < len; ++i) {
+        dst[i] ^= src[i];
+    }
+}
 
 /*
  * Class:     com_oracle_jnitest_GetArrayCriticalXorOpImpl
@@ -9,8 +13,7 @@ void xor_op(jbyte *restrict src, jbyte *restrict dst, jint len);
  * Signature: ([BI[BII)V
  */
 JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayCriticalXorOpImpl_xor
-  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
+  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len) {
     jbyte *sbuf = NULL;
     jbyte *dbuf = NULL;
     jboolean sIsCopy = JNI_FALSE;
@@ -21,14 +24,6 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayCrit
     xor_op(&sbuf[sOff], &dbuf[dOff], len);
     (*env)->ReleasePrimitiveArrayCritical(env, dst, dbuf, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, src, sbuf, JNI_ABORT);
-    if (sIsCopy) {
-        fprintf(stderr, "SRC is copy - GetPrimitiveArrayCritical\n");
-        fflush(stderr);
-    }
-    if (dIsCopy) {
-        fprintf(stderr, "DST is copy - GetPrimitiveArrayCritical\n");
-        fflush(stderr);
-    }
 }
 
 /*
@@ -37,8 +32,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayCrit
  * Signature: ([BI[BII)V
  */
 JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayElementsXorOpImpl_xor
-  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
+  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len) {
     jbyte *sbuf = NULL;
     jbyte *dbuf = NULL;
     jboolean sIsCopy = JNI_FALSE;
@@ -49,14 +43,6 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayElem
     xor_op(&sbuf[sOff], &dbuf[dOff], len);
     (*env)->ReleaseByteArrayElements(env, dst, dbuf, 0);
     (*env)->ReleaseByteArrayElements(env, src, sbuf, JNI_ABORT);
-    if (sIsCopy) {
-        //fprintf(stderr, "SRC is copy - GetByteArrayElements\n");
-        fflush(stderr);
-    }
-    if (dIsCopy) {
-        //fprintf(stderr, "DST is copy - GetByteArrayElements\n");
-        fflush(stderr);
-    }
 }
 
 /*
@@ -65,8 +51,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayElem
  * Signature: ([BI[BII)V
  */
 JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayRegionXorOpImpl_xor
-  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
+  (JNIEnv *env, jobject obj, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len) {
     jbyte *sbuf = NULL;
     jbyte *dbuf = NULL;
 
@@ -117,16 +102,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayElem
     for (int i = 0; i < count; i++) {
         dbuf = (*env)->GetByteArrayElements(env, dst, &dIsCopy);
         dbuf = (*env)->GetByteArrayElements(env, src, &sIsCopy);
-        // (*env)->ReleaseByteArrayElements(env, dst, dbuf, JNI_ABORT);
         (*env)->ReleaseByteArrayElements(env, dst, dbuf, 0);
-        if (sIsCopy) {
-            //fprintf(stderr, "SRC is copy - GetByteArrayElements\n");
-            // fflush(stderr);
-        }
-        if (dIsCopy) {
-            //fprintf(stderr, "DST is copy - GetByteArrayElements\n");
-            // fflush(stderr);
-        }
     }
 }
 
@@ -146,13 +122,9 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayRegi
     free(sbuf);
 }
 
-__attribute__((visibility("default")))
-void xor_op(jbyte *restrict src, jbyte *restrict dst, jint len)
-{
-    jint i;
-
-    for (i = 0; i < len; ++i) {
-        dst[i] ^= src[i];
-    }
+JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayUnsafeXorOpImpl_xorOp
+  (JNIEnv *env, jobject obj, jlong src, jlong dst, jint len) {
+    jbyte *sbuf = (jbyte*)(void*)src;
+    jbyte *dbuf = (jbyte*)(void*)dst;
+    xor_op(sbuf, dbuf, len);
 }
-
