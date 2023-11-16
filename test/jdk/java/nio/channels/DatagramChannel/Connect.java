@@ -189,8 +189,8 @@ public class Connect {
 
         public void run() {
             ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
-            while (true) {
-                try {
+            try {
+                while (true) {
                     // Listen for a message
                     err.println("Responder waiting to receive");
                     SocketAddress sa = dc.receive(bb);
@@ -213,12 +213,13 @@ public class Connect {
                     dc.write(bb);
                     bb.flip();
                     break;
-                } catch (Exception ex) {
-                    err.println("Responder threw exception: " + ex);
-                    throw new RuntimeException(ex);
                 }
+            } catch (Exception ex) {
+                err.println("Responder threw exception: " + ex);
+                throw new RuntimeException(ex);
+            } finally {
+                err.println("Responder finished");
             }
-            err.println("Responder finished");
         }
 
         @Override
