@@ -2760,7 +2760,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
     // Separated the asserts so that we know which one fires.
     assert(_cm->out_of_regions(), "only way to reach here");
     assert(_task_queue->size() == 0, "only way to reach here");
-    double termination_start_time_ms = os::elapsedVTime() * 1000.0;
+    double termination_start_time_ms = os::elapsedTime() * 1000.0;
 
     // The G1CMTask class also extends the TerminatorTerminator class,
     // hence its should_exit_termination() method will also decide

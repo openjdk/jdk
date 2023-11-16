@@ -2587,7 +2587,7 @@ bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
     return false;
   }
 
-  if (UseSVE == 0 || !VectorNode::is_invariant_vector(m)) {
+  if (UseSVE == 0 || m->Opcode() != Op_Replicate) {
     return false;
   }
 
