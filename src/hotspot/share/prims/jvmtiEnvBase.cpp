@@ -624,10 +624,7 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
 
 bool
 JvmtiEnvBase::is_vthread_alive(oop vt) {
-  oop cont = java_lang_VirtualThread::continuation(vt);
-
-  return !jdk_internal_vm_Continuation::done(cont) &&
-         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
+  return java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
          java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
 }
 
@@ -2412,14 +2409,11 @@ SetFramePopClosure::do_thread(Thread *target) {
 
 void
 SetFramePopClosure::do_vthread(Handle target_h) {
-  if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
-    return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
-  }
   if (!_self && !JvmtiVTSuspender::is_vthread_suspended(_target_h())) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
-  javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_target_h());
+  javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
   _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
 
@@ -2463,9 +2457,6 @@ GetStackTraceClosure::do_thread(Thread *target) {
 
 void
 GetStackTraceClosure::do_vthread(Handle target_h) {
-  if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
-    return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
-  }
   Thread* current = Thread::current();
   ResourceMark rm(current);
 
@@ -2541,9 +2532,6 @@ GetFrameCountClosure::do_thread(Thread *target) {
 
 void
 GetFrameCountClosure::do_vthread(Handle target_h) {
-  if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
-    return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
-  }
   _result = ((JvmtiEnvBase*)_env)->get_frame_count(target_h(), _count_ptr);
 }
 
@@ -2564,9 +2552,6 @@ GetFrameLocationClosure::do_thread(Thread *target) {
 
 void
 GetFrameLocationClosure::do_vthread(Handle target_h) {
-  if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
-    return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
-  }
   _result = ((JvmtiEnvBase*)_env)->get_frame_location(target_h(), _depth,
                                                       _method_ptr, _location_ptr);
 }
