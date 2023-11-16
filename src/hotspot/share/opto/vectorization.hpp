@@ -272,6 +272,7 @@ protected:
   Node* _cl_exit = nullptr;
   PhiNode* _iv = nullptr;
   bool _allow_cfg = false;
+  CountedLoopEndNode* _pre_loop_end; // only for main loops
 
   static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
@@ -305,6 +306,10 @@ public:
   Node* cl_exit()         const { assert(_cl_exit != nullptr, ""); return _cl_exit; };
   PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
   bool is_allow_cfg()     const { return _allow_cfg; }
+  CountedLoopEndNode* pre_loop_end() const {
+    assert(_pre_loop_end != nullptr, "");
+    return _pre_loop_end;
+  };
 
   bool in_loopbody(const Node* n) const {
     // TODO refactor to allow cfg. See counter example with

@@ -695,7 +695,7 @@ bool SuperWord::ref_is_alignable(VPointer& p) {
   if (!p.has_iv()) {
     return true;   // no induction variable
   }
-  CountedLoopEndNode* pre_end = cl()->pre_loop_end();
+  CountedLoopEndNode* pre_end = vla().pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
   int preloop_stride = pre_end->stride_con();
 
@@ -3074,7 +3074,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 //   (iv + k) mod vector_align == 0
 void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   assert(cl()->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = cl()->pre_loop_end();
+  CountedLoopEndNode* pre_end = vla().pre_loop_end();
   Node* pre_opaq1 = pre_end->limit();
   assert(pre_opaq1->Opcode() == Op_Opaque1, "");
   Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;

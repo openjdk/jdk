@@ -769,6 +769,7 @@ const char* VLoop::check_preconditions_helper() {
       return VLoop::FAILURE_PRE_LOOP_LIMIT;
     }
     // TODO refactor caching
+    _pre_loop_end = pre_end;
     _cl->set_pre_loop_end(pre_end);
   }
 

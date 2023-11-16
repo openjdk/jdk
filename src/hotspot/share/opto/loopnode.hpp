@@ -331,7 +331,6 @@ public:
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
   CountedLoopNode* pre_loop_head() const;
-  CountedLoopEndNode* pre_loop_end();
   void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
