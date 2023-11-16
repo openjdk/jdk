@@ -2021,7 +2021,7 @@ public:
 
 char* DumpMerger::get_writer_path(const char* base_path, int seq) {
   // calculate required buffer size
-    size_t buf_size = strlen(base_path)
+  size_t buf_size = strlen(base_path)
                     + 2                 // ".p"
                     + 1 + (seq / 10)    // number
                     + 1;                // '\0'
@@ -2275,7 +2275,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   }
   int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
-  void update_parallel_dump_count(WorkerThreads* workers);
+  void prepare_parallel_dump(WorkerThreads* workers);
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
   virtual bool doit_prologue();
@@ -2347,7 +2347,7 @@ bool VM_HeapDumper::doit_prologue() {
   return VM_GC_Operation::doit_prologue();
 }
 
-void VM_HeapDumper::update_parallel_dump_count(WorkerThreads* workers) {
+void VM_HeapDumper::prepare_parallel_dump(WorkerThreads* workers) {
   uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
   uint num_requested_dump_threads = _num_dumper_threads;
   // check if we can dump in parallel based on requested and active threads
@@ -2356,6 +2356,7 @@ void VM_HeapDumper::update_parallel_dump_count(WorkerThreads* workers) {
   } else {
     _num_dumper_threads = clamp(num_requested_dump_threads, 2U, num_active_workers);
   }
+  _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
   bool can_parallel = _num_dumper_threads > 1;
   log_info(heapdump)("Requested dump threads %u, active dump threads %u, "
                      "actual dump threads %u, parallelism %s",
@@ -2408,8 +2409,7 @@ void VM_HeapDumper::doit() {
   set_global_writer();
 
   WorkerThreads* workers = ch->safepoint_workers();
-  update_parallel_dump_count(workers);
-  _dumper_controller = new (std::nothrow) DumperController(_num_dumper_threads);
+  prepare_parallel_dump(workers);
 
   if (!is_parallel_dump()) {
     work(VMDumperId);
