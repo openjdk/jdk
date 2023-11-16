@@ -1275,8 +1275,13 @@ public abstract class Provider extends Properties {
      */
     public Service getService(String type, String algorithm) {
         checkInitialized();
-        
-        ServiceKey key = new ServiceKey(type, algorithm, false);
+
+        ServiceKey key = previousKey.get();
+        if (!key.matches(type, algorithm)) {
+            key = new ServiceKey(type, algorithm, false);
+            previousKey.set(key);
+        }
+
         Service s = serviceMap.get(key);
         if (s == null) {
             s = legacyMap.get(key);
@@ -1302,8 +1307,8 @@ public abstract class Provider extends Properties {
     // re-use will occur e.g. as the framework traverses the provider
     // list and queries each provider with the same values until it finds
     // a matching service
-    private static volatile ServiceKey previousKey =
-                                            new ServiceKey("", "", false);
+    private static ThreadLocal<ServiceKey> previousKey =
+        ThreadLocal.withInitial(()-> new ServiceKey("", "", false));
 
     /**
      * Get an unmodifiable Set of all services supported by
