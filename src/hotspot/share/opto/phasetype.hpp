@@ -197,7 +197,7 @@ class PhaseNameValidator {
 
   const BitMap& mask() const { return _mask; }
   bool is_valid() const { return _valid; }
-  bool is_set() const { return _set; }
+  bool is_mask_set() const { return _set; }
   const char* what() const { return _bad; }
 };
 
