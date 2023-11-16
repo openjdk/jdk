@@ -126,8 +126,8 @@ public class ByteCodeRewriter
                 case Bytecodes._invokespecial:
                 case Bytecodes._invokestatic:
                 case Bytecodes._invokeinterface: {
-                    int cpci = method.getNativeShortArg(bci + 1);
-                    cpoolIndex = (short) cpCache.getEntryAt(cpci).getConstantPoolIndex();
+                    int methodIndex = method.getNativeShortArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getMethodEntryAt(methodIndex).getConstantPoolIndex();
                     writeShort(code, bci + 1, cpoolIndex);
                     break;
                 }
