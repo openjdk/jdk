@@ -1410,8 +1410,12 @@ public class TestAlignVector {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=32"})
-    // Ensure vector width is large enough to fit 32 byte for longs.
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=64"})
+    // Ensure vector width is large enough to fit 64 byte for longs:
+    // The offsets are: 25, 33, 57, 65
+    // In modulo 32:    25,  1, 25,  1  -> does not vectorize
+    // In modulo 64:    25, 33, 57,  1  -> at least first pair vectorizes
+    // This problem is because we compute modulo vector width in memory_alignment.
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.ADD_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
