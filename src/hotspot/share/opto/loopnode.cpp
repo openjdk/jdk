@@ -857,13 +857,13 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   }
 
   if (range_checks.size() > 0) {
-    // This transformation requires peeling one iteration. Also, if it has range checks and they are eliminated by
-    // Loop Predication, then 2 Hoisted Check Predicates are added for one range check. Finally, transforming a long range check requires
-    // extra logic to be executed before the loop is entered and for the outer loop. As a result, the transformations
-    // can't pay off for a small number of iterations: roughly, if the loop runs for 3 iterations, it's going to execute
-    // as many range checks once transformed with range checks eliminated (1 peeled iteration with range checks
-    // + 2 predicates per range checks) as it would have not transformed. It also has to pay for the extra logic on loop
-    // entry and for the outer loop.
+    // This transformation requires peeling one iteration. Also, if it has range checks and they are eliminated by Loop
+    // Predication, then 2 Hoisted Check Predicates are added for one range check. Finally, transforming a long range
+    // check requires extra logic to be executed before the loop is entered and for the outer loop. As a result, the
+    // transformations can't pay off for a small number of iterations: roughly, if the loop runs for 3 iterations, it's
+    // going to execute as many range checks once transformed with range checks eliminated (1 peeled iteration with
+    // range checks + 2 predicates per range checks) as it would have not transformed. It also has to pay for the extra
+    // logic on loop entry and for the outer loop.
     loop->compute_trip_count(this);
     if (head->is_CountedLoop() && head->as_CountedLoop()->has_exact_trip_count()) {
       if (head->as_CountedLoop()->trip_count() <= 3) {
