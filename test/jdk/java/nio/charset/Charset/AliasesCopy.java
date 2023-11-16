@@ -33,27 +33,22 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 public class AliasesCopy {
     private static final Set<String> ALIASES_SET = Set.of("foo-alias");
-    private static final String[] MUTABLE_ALIASES = ALIASES_SET.toArray(String[]::new);
+    private static final String[] ALIASES_ARRAY = ALIASES_SET.toArray(String[]::new);
 
     @Test
     public void aliasesCopy() {
-        final FooCharset cs = new FooCharset();
-        cs.changeAliasesAfterConstruction();
+        final FooCharset cs = new FooCharset(ALIASES_ARRAY);
+        ALIASES_ARRAY[0] = "bar-alias";
         assertIterableEquals(ALIASES_SET, cs.aliases());
     }
 
     private static final class FooCharset extends Charset {
-        private FooCharset() {
-            super("foo", MUTABLE_ALIASES);
-        }
-
-        private void changeAliasesAfterConstruction() {
-            MUTABLE_ALIASES[0] = "bar-alias";
+        private FooCharset(String[] aliases) {
+            super("foo", aliases);
         }
 
         @Override
