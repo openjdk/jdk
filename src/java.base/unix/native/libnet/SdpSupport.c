@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,27 +95,19 @@ Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
 
         /* copy socket options that are relevant to SDP */
         len = sizeof(arg);
-        if (getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, &len) == 0) {
-            res = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, len);
-            if (res < 0) JNU_ThrowIOExceptionWithLastError(env, "setsockopt SO_REUSEADDR");
-        }
+        if (getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, &len) == 0)
+            setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, len);
 #ifdef SO_REUSEPORT
         len = sizeof(arg);
-        if (getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, &len) == 0) {
-            res = setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, len);
-            if (res < 0) JNU_ThrowIOExceptionWithLastError(env, "setsockopt SO_REUSEPORT");
-        }
+        if (getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, &len) == 0)
+            setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, len);
 #endif
         len = sizeof(arg);
-        if (getsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, &len) == 0) {
-            res = setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, len);
-            if (res < 0) JNU_ThrowIOExceptionWithLastError(env, "setsockopt SO_OOBINLINE");
-        }
+        if (getsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, &len) == 0)
+            setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, len);
         len = sizeof(linger);
-        if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (void*)&linger, &len) == 0) {
-            res = setsockopt(s, SOL_SOCKET, SO_LINGER, (char*)&linger, len);
-            if (res < 0) JNU_ThrowIOExceptionWithLastError(env, "setsockopt SO_LINGER");
-        }
+        if (getsockopt(fd, SOL_SOCKET, SO_LINGER, (void*)&linger, &len) == 0)
+            setsockopt(s, SOL_SOCKET, SO_LINGER, (char*)&linger, len);
 
         RESTARTABLE(dup2(s, fd), res);
         if (res < 0)
