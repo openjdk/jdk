@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004489 8006509 8008577 8145136 8202537
+ * @bug 8004489 8006509 8008577 8145136 8202537 8306116
  * @summary Unit test for CLDR FormatData resources
  * @modules java.base/sun.util.locale.provider
  *          jdk.localedata
@@ -82,7 +82,7 @@ public class CldrFormatNamesTest {
                 "dd.MM.y G",
                 "dd.MM.yy GGGGG",
             },
-            "calendarname.islamic", "Islamischer Kalender",
+            "calendarname.islamic", "Hidschri-Kalender",
         },
         {
             Locale.FRANCE,
@@ -93,7 +93,7 @@ public class CldrFormatNamesTest {
                 "d MMM y G",
                 "dd/MM/y GGGGG",
             },
-            "calendarname.islamic", "calendrier musulman",
+            "calendarname.islamic", "calendrier h\u00e9girien",
         },
     };
 
