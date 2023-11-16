@@ -76,6 +76,12 @@ class JvmtiAgentList : AllStatic {
   static void load_xrun_agents() NOT_JVMTI_RETURN;
   static void unload_agents() NOT_JVMTI_RETURN;
 
+  static bool is_static_lib_loaded(const char* name);
+  static bool is_dynamic_lib_loaded(void* os_lib);
+#ifdef AIX
+  static bool is_dynamic_lib_loaded(dev64_t device, ino64_t inode);
+#endif
+
   static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);
 
   static Iterator agents() NOT_JVMTI({ Iterator it; return it; });

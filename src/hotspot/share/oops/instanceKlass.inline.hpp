@@ -27,10 +27,7 @@
 
 #include "oops/instanceKlass.hpp"
 
-#include "classfile/javaClasses.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/resourceArea.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"

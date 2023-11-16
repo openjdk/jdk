@@ -71,7 +71,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getTypeId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_type_id,
       (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_get_event_writer,
       (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_new_event_writer,
-      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)Z", (void*)jfr_event_writer_flush,
+      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)V", (void*)jfr_event_writer_flush,
+      (char*)"commit", (char*)"(J)J", (void*)jfr_commit,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,
       (char*)"setRepositoryLocation", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_repository_location,
       (char*)"setDumpPath", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_dump_path,
@@ -95,7 +96,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
-      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory
+      (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
+      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

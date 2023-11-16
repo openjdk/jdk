@@ -47,11 +47,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
 }
 
 bool ForeignGlobals::is_foreign_linker_supported() {
-#ifdef ABI_ELFv2
   return true;
-#else
-  return false;
-#endif
 }
 
 // Stubbed out, implement later
@@ -230,20 +226,12 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Register callerSP = as_Register(tmp); // preset
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
-
-    // replace any placeholders
-    if (from_reg.type() == StorageType::PLACEHOLDER) {
-      from_reg = locs.get(from_reg);
-    }
-    if (to_reg.type() == StorageType::PLACEHOLDER) {
-      to_reg = locs.get(to_reg);
-    }
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:

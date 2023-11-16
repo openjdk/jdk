@@ -30,15 +30,15 @@
  * @library /test/lib ../../../../java/security/testlibrary
  * @build CertificateBuilder
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1 AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1 AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1s AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1s AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=3 AIACertTimeout 2000 true
+ *      -Dcom.sun.security.cert.readtimeout=4 AIACertTimeout 1000 true
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=1500ms AIACertTimeout 2000 false
+ *      -Dcom.sun.security.cert.readtimeout=1500ms AIACertTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.enableAIAcaIssuers=true
- *      -Dcom.sun.security.cert.readtimeout=2750ms AIACertTimeout 2000 true
+ *      -Dcom.sun.security.cert.readtimeout=4500ms AIACertTimeout 1000 true
  * @run main/othervm -Djava.security.debug=certpath
  *      -Dcom.sun.security.enableAIAcaIssuers=false
  *      -Dcom.sun.security.cert.readtimeout=20000ms AIACertTimeout 10000 false

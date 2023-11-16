@@ -72,25 +72,6 @@ public sealed interface ClassModel
     /** {@return the interfaces implemented by this class} */
     List<ClassEntry> interfaces();
 
-    /**
-     * Transform this classfile into a new classfile with the aid of a
-     * {@link ClassTransform}.  The transform will receive each element of
-     * this class, as well as a {@link ClassBuilder} for building the new class.
-     * The transform is free to preserve, remove, or replace elements as it
-     * sees fit.
-     *
-     * @implNote
-     * <p>This method behaves as if:
-     * {@snippet lang=java :
-     *     Classfile.build(thisClass(), ConstantPoolBuilder.of(this),
-     *                     b -> b.transform(this, transform));
-     * }
-     *
-     * @param transform the transform
-     * @return the bytes of the new class
-     */
-    byte[] transform(ClassTransform transform);
-
     /** {@return whether this class is a module descriptor} */
     boolean isModuleInfo();
 
@@ -110,7 +91,7 @@ public sealed interface ClassModel
      *
      * @param debugOutput handler to receive debug information
      * @param classHierarchyResolver class hierarchy resolver to provide
-     *                               additional information about the class hiearchy
+     *                               additional information about the class hierarchy
      * @return a list of verification errors, or an empty list if no errors are
      * found
      */

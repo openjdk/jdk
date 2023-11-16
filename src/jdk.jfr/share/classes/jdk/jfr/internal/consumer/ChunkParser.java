@@ -40,7 +40,7 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.filter.CheckpointEvent;
 import jdk.jfr.internal.consumer.filter.ChunkWriter;
 
@@ -288,9 +288,6 @@ public final class ChunkParser {
         while (true) {
             if (parserState.isClosed()) {
                 return true;
-            }
-            if (chunkHeader.getLastNanos() > filterEnd)  {
-              return true;
             }
             chunkHeader.refresh();
             if (absoluteChunkEnd != chunkHeader.getEnd()) {

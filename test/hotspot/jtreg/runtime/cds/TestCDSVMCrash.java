@@ -24,6 +24,7 @@
 /*
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
+ * @requires vm.cds
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestCDSVMCrash
@@ -48,7 +49,7 @@
              }
          }
          // else this is the main test
-         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
+         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
                   "-XX:-CreateCoredumpOnCrash", "-Xmx128m", "-Xshare:on", TestCDSVMCrash.class.getName(),"throwOOME");
          OutputAnalyzer output = new OutputAnalyzer(pb.start());
          // executeAndLog should throw an exception in the VM crashed

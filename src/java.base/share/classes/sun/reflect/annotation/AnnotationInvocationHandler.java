@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,20 +383,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
-            Object hisValue = null;
-            AnnotationInvocationHandler hisHandler = asOneOfUs(o);
-            if (hisHandler != null) {
-                hisValue = hisHandler.memberValues.get(member);
+            Object otherValue = null;
+            AnnotationInvocationHandler otherHandler = asOneOfUs(o);
+            if (otherHandler != null) {
+                otherValue = otherHandler.memberValues.get(member);
             } else {
                 try {
-                    hisValue = memberMethod.invoke(o);
+                    otherValue = memberMethod.invoke(o);
                 } catch (InvocationTargetException e) {
                     return false;
                 } catch (IllegalAccessException e) {
                     throw new AssertionError(e);
                 }
             }
-            if (!memberValueEquals(ourValue, hisValue))
+            if (!memberValueEquals(ourValue, otherValue))
                 return false;
         }
         return true;
@@ -434,8 +434,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         // Check for array of string, class, enum const, annotation,
         // or ExceptionProxy
-        if (v1 instanceof Object[] && v2 instanceof Object[])
-            return Arrays.equals((Object[]) v1, (Object[]) v2);
+        if (v1 instanceof Object[] a1 && v2 instanceof Object[] a2)
+            return Arrays.equals(a1, a2);
 
         // Check for ill formed annotation(s)
         if (v2.getClass() != type)

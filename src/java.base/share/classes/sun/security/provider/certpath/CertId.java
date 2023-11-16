@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,19 +172,13 @@ public class CertId implements DerEncoder {
     }
 
     /**
-     * Returns a hashcode value for this CertId.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this CertId}
      */
     @Override public int hashCode() {
         if (myhash == -1) {
             myhash = hashAlgId.hashCode();
-            for (int i = 0; i < issuerNameHash.length; i++) {
-                myhash += issuerNameHash[i] * i;
-            }
-            for (int i = 0; i < issuerKeyHash.length; i++) {
-                myhash += issuerKeyHash[i] * i;
-            }
+            myhash += Arrays.hashCode(issuerNameHash);
+            myhash += Arrays.hashCode(issuerKeyHash);
             myhash += certSerialNumber.getNumber().hashCode();
         }
         return myhash;

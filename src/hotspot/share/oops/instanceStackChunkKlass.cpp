@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"

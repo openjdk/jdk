@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
     wsdo->bmCopyToScreen = FALSE;
 }
 
-JNIEXPORT GDIWinSDOps * JNICALL
+GDIWinSDOps *
 GDIWindowSurfaceData_GetOps(JNIEnv *env, jobject sData)
 {
     SurfaceDataOps *ops = SurfaceData_GetOps(env, sData);
@@ -484,7 +484,7 @@ GDIWindowSurfaceData_GetOps(JNIEnv *env, jobject sData)
     return (GDIWinSDOps *) ops;
 }
 
-JNIEXPORT GDIWinSDOps * JNICALL
+GDIWinSDOps *
 GDIWindowSurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData)
 {
     // use the 'no setup' version of GetOps
@@ -492,7 +492,7 @@ GDIWindowSurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData)
     return (GDIWinSDOps *) ops;
 }
 
-JNIEXPORT AwtComponent * JNICALL
+AwtComponent *
 GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
 {
     PDATA pData = NULL;
@@ -524,7 +524,7 @@ GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
     return static_cast<AwtComponent*>(pData);
 }
 
-JNIEXPORT HWND JNICALL
+HWND
 GDIWindowSurfaceData_GetWindow(JNIEnv *env, GDIWinSDOps *wsdo)
 {
     HWND window = wsdo->window;
@@ -897,7 +897,7 @@ static void GDIWinSD_GetRasInfo(JNIEnv *env,
     }
     if (wsdo->lockFlags & SD_LOCK_LUT) {
         pRasInfo->lutBase =
-            (long *) wsdo->device->GetSystemPaletteEntries();
+            (jint *) wsdo->device->GetSystemPaletteEntries();
         pRasInfo->lutSize = 256;
     } else {
         pRasInfo->lutBase = NULL;
@@ -1019,7 +1019,7 @@ static HDC GDIWinSD_GetDC(JNIEnv *env, GDIWinSDOps *wsdo,
     return env->ExceptionCheck() ? (HDC)NULL : info->hDC;
 }
 
-JNIEXPORT void JNICALL
+void
 GDIWinSD_InitDC(JNIEnv *env, GDIWinSDOps *wsdo, ThreadGraphicsInfo *info,
                jint type, jint *patrop,
                jobject clip, jobject comp, jint color)

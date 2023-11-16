@@ -40,12 +40,13 @@ import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.util.Output.LinePrinter;
 import jdk.jfr.internal.util.Output;
+import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * Base class for JFR diagnostic commands
@@ -116,10 +117,10 @@ abstract class AbstractDCmd {
 
     public String getPid() {
         // Invoking ProcessHandle.current().pid() would require loading more
-        // classes during startup so instead JVM.getJVM().getPid() is used.
+        // classes during startup so instead JVM.getPid() is used.
         // The pid will not be exposed to running Java application, only when starting
         // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
-        return JVM.getJVM().getPid();
+        return JVM.getPid();
     }
 
     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
@@ -134,7 +135,7 @@ abstract class AbstractDCmd {
     }
 
     private SafePath makeGenerated(Recording recording, Path directory) {
-        return new SafePath(directory.toAbsolutePath().resolve(Utils.makeFilename(recording)).normalize());
+        return new SafePath(directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize());
     }
 
     protected final Recording findRecording(String name) throws DCmdException {
@@ -200,11 +201,11 @@ abstract class AbstractDCmd {
     }
 
     protected final void printBytes(long bytes) {
-        print(Utils.formatBytes(bytes));
+        print(ValueFormatter.formatBytes(bytes));
     }
 
     protected final void printTimespan(Duration timespan, String separator) {
-        print(Utils.formatTimespan(timespan, separator));
+        print(ValueFormatter.formatTimespan(timespan, separator));
     }
 
     protected final void printPath(SafePath path) {
@@ -293,13 +294,13 @@ abstract class AbstractDCmd {
                     i++;
                 } else if (nc == 'p') {
                     if (pid == null) {
-                        pid = JVM.getJVM().getPid();
+                        pid = JVM.getPid();
                     }
                     sb.append(pid);
                     i++;
                 } else if (nc == 't') {
                     if (time == null) {
-                        time = Utils.formatDateTime(LocalDateTime.now());
+                        time = ValueFormatter.formatDateTime(LocalDateTime.now());
                     }
                     sb.append(time);
                     i++;

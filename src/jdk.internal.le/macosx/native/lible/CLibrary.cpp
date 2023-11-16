@@ -191,6 +191,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
     int error = ttyname_r(fd, data, len);
 
     if (error != 0) {
+        delete[] data;
         throw_errno(env);
         return ;
     }

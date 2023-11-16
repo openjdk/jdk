@@ -39,12 +39,13 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -406,15 +407,10 @@ class CompileReplay : public StackObj {
       bytecode.verify();
       int index = bytecode.index();
 
-      ConstantPoolCacheEntry* cp_cache_entry = nullptr;
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
 
-      // ResolvedIndyEntry and ConstantPoolCacheEntry must currently coexist.
-      // To address this, the variables below contain the values that *might*
-      // be used to avoid multiple blocks of similar code. When CPCE is obsoleted
-      // these can be removed
       oop appendix = nullptr;
       Method* adapter_method = nullptr;
       int pool_index = 0;
@@ -432,12 +428,10 @@ class CompileReplay : public StackObj {
         Symbol* name = cp->name_ref_at(index, bytecode.code());
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
-        cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-        cp_cache_entry->set_method_handle(cp, callInfo);
-
-        appendix = cp_cache_entry->appendix_if_resolved(cp);
-        adapter_method = cp_cache_entry->f1_as_method();
-        pool_index = cp_cache_entry->constant_pool_index();
+        ResolvedMethodEntry* method_entry = cp->cache()->set_method_handle(index, callInfo);
+        appendix = cp->cache()->appendix_if_resolved(method_entry);
+        adapter_method = method_entry->method();
+        pool_index = method_entry->constant_pool_index();
       } else {
         report_error("no dynamic invoke found");
         return nullptr;
@@ -842,9 +836,7 @@ class CompileReplay : public StackObj {
     // method to be rewritten (number of arguments at a call for instance)
     method->method_holder()->link_class(CHECK);
     assert(method->method_data() == nullptr, "Should only be initialized once");
-    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-    MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
-    method->set_method_data(method_data);
+    method->build_profiling_method_data(methodHandle(THREAD, method), CHECK);
 
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -40,6 +38,7 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.LabelContext;
+import jdk.internal.classfile.impl.ClassfileImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -78,13 +77,15 @@ public class GenerateStackMaps {
     List<GenData> data;
     Iterator<GenData> it;
     GenData d;
+    Classfile cc;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
+        cc = Classfile.of();
         data = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
-                var clm = Classfile.parse(p);
+                var clm = cc.parse(p);
                 var thisCls = clm.thisClass().asSymbol();
                 var cp = new SplitConstantPool((ClassReader)clm.constantPool());
                 for (var m : clm.methods()) {
@@ -120,6 +121,7 @@ public class GenerateStackMaps {
                 d.isStatic(),
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
+                (ClassfileImpl)cc,
                 d.handlers());
     }
 }

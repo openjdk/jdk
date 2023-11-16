@@ -25,15 +25,18 @@
  * @test
  * @bug 6943289
  * @summary  Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main Pos05
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Code_attribute.Exception_data;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.instruction.ExceptionCatch;
 import java.io.*;
 
 public class Pos05 {
@@ -80,10 +83,10 @@ public class Pos05 {
         System.err.println("verify: " + f);
         try {
             int count = 0;
-            ClassFile cf = ClassFile.read(f);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals(TEST_METHOD_NAME)) {
+            ClassModel cf = Classfile.of().parse(f.toPath());
+            MethodModel testMethod = null;
+            for (MethodModel m : cf.methods()) {
+                if (m.methodName().equalsString(TEST_METHOD_NAME)) {
                     testMethod = m;
                     break;
                 }
@@ -91,18 +94,18 @@ public class Pos05 {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            Code_attribute ea = (Code_attribute)testMethod.attributes.get(Attribute.Code);
-            if (testMethod == null) {
+            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            if (ea == null) {
                 throw new Error("Code attribute for test() method not found");
             }
-            Exception_data firstExceptionTable = null;
-            for (int i = 0 ; i < ea.exception_table_length; i++) {
+            ExceptionCatch firstExceptionTable = null;
+            for (int i = 0 ; i < ea.exceptionHandlers().size(); i++) {
                 if (firstExceptionTable == null) {
-                    firstExceptionTable = ea.exception_table[i];
+                    firstExceptionTable = ea.exceptionHandlers().get(i);
                 }
-                if (ea.exception_table[i].handler_pc != firstExceptionTable.handler_pc ||
-                        ea.exception_table[i].start_pc != firstExceptionTable.start_pc ||
-                        ea.exception_table[i].end_pc != firstExceptionTable.end_pc) {
+                if (ea.exceptionHandlers().get(i).handler() != firstExceptionTable.handler() ||
+                        ea.exceptionHandlers().get(i).tryStart() != firstExceptionTable.tryStart() ||
+                        ea.exceptionHandlers().get(i).tryEnd() != firstExceptionTable.tryEnd()) {
                     throw new Error("Multiple overlapping catch clause found in generated code");
                 }
                 count++;

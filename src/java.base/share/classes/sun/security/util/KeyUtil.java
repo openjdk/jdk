@@ -126,17 +126,19 @@ public final class KeyUtil {
      */
     public static final int getKeySize(AlgorithmParameters parameters) {
 
-        String algorithm = parameters.getAlgorithm();
-        switch (algorithm) {
+        switch (parameters.getAlgorithm()) {
             case "EC":
-                try {
-                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                // ECKeySizeParameterSpec is SunEC internal only
+                if (parameters.getProvider().getName().equals("SunEC")) {
+                    try {
+                        ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
-                    if (ps != null) {
-                        return ps.getKeySize();
+                        if (ps != null) {
+                            return ps.getKeySize();
+                        }
+                    } catch (InvalidParameterSpecException ipse) {
+                        // ignore
                     }
-                } catch (InvalidParameterSpecException ipse) {
-                    // ignore
                 }
 
                 try {

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -60,7 +58,8 @@ class FilterDeadLabelsTest {
 
     @Test
     void testFilterDeadLabels() {
-        var code = Classfile.parse(Classfile.build(ClassDesc.of("cls"), List.of(Classfile.Option.filterDeadLabels(true)), clb ->
+        var cc = Classfile.of(Classfile.DeadLabelsOption.DROP_DEAD_LABELS);
+        var code = cc.parse(cc.build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     deadLabelFragments().forEach(f -> f.accept(cob));
@@ -75,7 +74,7 @@ class FilterDeadLabelsTest {
     @ParameterizedTest
     @MethodSource("deadLabelFragments")
     void testThrowOnDeadLabels(Consumer<CodeBuilder> fragment) {
-        assertThrows(IllegalStateException.class, () -> Classfile.build(ClassDesc.of("cls"), clb ->
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     fragment.accept(cob);

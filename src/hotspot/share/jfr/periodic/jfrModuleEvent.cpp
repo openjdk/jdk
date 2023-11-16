@@ -62,7 +62,7 @@ static void write_module_dependency_event(const void* from_module, const ModuleE
   EventModuleRequire event(UNTIMED);
   event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
-  event.set_source((const ModuleEntry* const)from_module);
+  event.set_source((const ModuleEntry*)from_module);
   event.set_requiredModule(to_module);
   event.commit();
 }

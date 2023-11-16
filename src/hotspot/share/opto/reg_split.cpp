@@ -503,7 +503,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
   Node                *n1, *n2, *n3;
-  Node_List           *defs,*phis;
   bool                *UPblock;
   bool                 u1, u2, u3;
   Block               *b, *pred;
@@ -519,9 +518,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   //----------Setup Code----------
   // Create a convenient mapping from lrg numbers to reaches/leaves indices
   uint *lrg2reach = NEW_SPLIT_ARRAY(uint, maxlrg);
-  // Keep track of DEFS & Phis for later passes
-  defs = new Node_List();
-  phis = new Node_List();
   // Gather info on which LRG's are spilling, and build maps
   for (bidx = 1; bidx < maxlrg; bidx++) {
     if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
@@ -569,8 +565,14 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 #undef NEW_SPLIT_ARRAY
 
   // Initialize to array of empty vectorsets
-  for( slidx = 0; slidx < spill_cnt; slidx++ )
-    UP_entry[slidx] = new VectorSet(split_arena);
+  // Each containing at most spill_cnt * _cfg.number_of_blocks() entries.
+  for (slidx = 0; slidx < spill_cnt; slidx++) {
+    UP_entry[slidx] = new(split_arena) VectorSet(split_arena);
+  }
+
+  // Keep track of DEFS & Phis for later passes
+  Node_List defs(split_arena, 8);
+  Node_List phis(split_arena, 16);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
@@ -702,7 +704,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         }  // end if not found correct phi
         // Here you have either found or created the Phi, so record it
         assert(phi != nullptr,"Must have a Phi Node here");
-        phis->push(phi);
+        phis.push(phi);
         // PhiNodes should either force the LRG UP or DOWN depending
         // on its inputs and the register pressure in the Phi's block.
         UPblock[slidx] = true;  // Assume new DEF is UP
@@ -1189,7 +1191,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       if( deflrg.reg() >= LRG::SPILL_REG ) {    // Spilled?
         uint slidx = lrg2reach[defidx];
         // Add to defs list for later assignment of new live range number
-        defs->push(n);
+        defs.push(n);
         // Set a flag on the Node indicating it has already spilled.
         // Only do it for capacity spills not conflict spills.
         if( !deflrg._direct_conflict )
@@ -1308,9 +1310,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   //----------PASS 2----------
   // Reset all DEF live range numbers here
-  for( insidx = 0; insidx < defs->size(); insidx++ ) {
+  for( insidx = 0; insidx < defs.size(); insidx++ ) {
     // Grab the def
-    n1 = defs->at(insidx);
+    n1 = defs.at(insidx);
     // Set new lidx for DEF
     new_lrg(n1, maxlrg++);
   }
@@ -1320,8 +1322,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // info for each spilled LRG and update edges.
   // Walk the phis list to patch inputs, split phis, and name phis
   uint lrgs_before_phi_split = maxlrg;
-  for( insidx = 0; insidx < phis->size(); insidx++ ) {
-    Node *phi = phis->at(insidx);
+  for( insidx = 0; insidx < phis.size(); insidx++ ) {
+    Node *phi = phis.at(insidx);
     assert(phi->is_Phi(),"This list must only contain Phi Nodes");
     Block *b = _cfg.get_block_for_node(phi);
     // Grab the live range number
@@ -1389,8 +1391,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   //----------PASS 3----------
   // Pass over all Phi's to union the live ranges
-  for( insidx = 0; insidx < phis->size(); insidx++ ) {
-    Node *phi = phis->at(insidx);
+  for( insidx = 0; insidx < phis.size(); insidx++ ) {
+    Node *phi = phis.at(insidx);
     assert(phi->is_Phi(),"This list must only contain Phi Nodes");
     // Walk all inputs to Phi and Union input live range with Phi live range
     for( uint i = 1; i < phi->req(); i++ ) {
@@ -1408,9 +1410,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     }  // End for all inputs to the Phi Node
   }  // End for all Phi Nodes
   // Now union all two address instructions
-  for (insidx = 0; insidx < defs->size(); insidx++) {
+  for (insidx = 0; insidx < defs.size(); insidx++) {
     // Grab the def
-    n1 = defs->at(insidx);
+    n1 = defs.at(insidx);
     // Set new lidx for DEF & handle 2-addr instructions
     if (n1->is_Mach() && ((twoidx = n1->as_Mach()->two_adr()) != 0)) {
       assert(_lrg_map.find(n1->in(twoidx)) < maxlrg,"Assigning bad live range index");

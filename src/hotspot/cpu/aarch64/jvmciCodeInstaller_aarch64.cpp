@@ -28,6 +28,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -122,7 +123,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
       return;
@@ -155,7 +156,7 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
   if (Continuations::enabled()) {
     // Check for proper post_call_nop
     NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
-    if (nop == NULL) {
+    if (nop == nullptr) {
       JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
     } else {
       _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);

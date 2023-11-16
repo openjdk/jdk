@@ -132,7 +132,8 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
-  bool try_clean_mem_phi(PhaseGVN* phase);
+  bool is_diamond() const;
+  void try_clean_mem_phis(PhaseIterGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
@@ -233,16 +234,17 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
-  int  is_diamond_phi(bool check_control_only = false) const;
+  int is_diamond_phi() const;
+  bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
-  const int inst_mem_id() const { return _inst_mem_id; }
-  const int inst_id()     const { return _inst_id; }
-  const int inst_index()  const { return _inst_index; }
-  const int inst_offset() const { return _inst_offset; }
+  int inst_mem_id() const { return _inst_mem_id; }
+  int inst_id()     const { return _inst_id; }
+  int inst_index()  const { return _inst_index; }
+  int inst_offset() const { return _inst_offset; }
   bool is_same_inst_field(const Type* tp, int mem_id, int id, int index, int offset) {
     return type()->basic_type() == tp->basic_type() &&
            inst_mem_id() == mem_id &&
@@ -266,6 +268,8 @@ public:
 #else //ASSERT
   void verify_adr_type(bool recursive = false) const {}
 #endif //ASSERT
+
+  const TypeTuple* collect_types(PhaseGVN* phase) const;
 };
 
 //------------------------------GotoNode---------------------------------------
@@ -337,7 +341,7 @@ private:
 protected:
   ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
   Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
-  Node* search_identical(int dist);
+  Node* search_identical(int dist, PhaseIterGVN* igvn);
 
   Node* simple_subsuming(PhaseIterGVN* igvn);
 
@@ -427,6 +431,7 @@ public:
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
+  bool is_zero_trip_guard() const;
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
@@ -436,6 +441,8 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
 };
 
 class RangeCheckNode : public IfNode {
@@ -453,15 +460,17 @@ public:
 };
 
 // Special node that denotes a Parse Predicate added during parsing. A Parse Predicate serves as placeholder to later
-// create Runtime Predicates above it. They all share the same uncommon trap. The Parse Predicate will follow the
-// Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
+// create Regular Predicates (Runtime Predicates with possible Assertion Predicates) above it. Together they form a
+// Predicate Block. The Parse Predicate and Regular Predicates share the same uncommon trap.
+// There are three kinds of Parse Predicates:
 // Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
 // Predicate (used for integer overflow checks when creating a counted loop).
 // More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
+  bool _useless; // If the associated loop dies, this parse predicate becomes useless and can be cleaned up by Value().
  public:
-  ParsePredicateNode(Node* control, Node* bol, Deoptimization::DeoptReason deopt_reason);
+  ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
@@ -469,6 +478,25 @@ class ParsePredicateNode : public IfNode {
     return _deopt_reason;
   }
 
+  bool is_useless() const {
+    return _useless;
+  }
+
+  void mark_useless() {
+    _useless = true;
+  }
+
+  void mark_useful() {
+    _useless = false;
+  }
+
+  Node* uncommon_trap() const;
+
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) {
+    return nullptr; // Don't optimize
+  }
+
+  const Type* Value(PhaseGVN* phase) const;
   NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };
 

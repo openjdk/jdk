@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8200337 8307377
+ * @bug 8200337 8307377 8306578
  * @summary Generalize see and link tags for user-defined anchors
  * @library /tools/lib ../../lib
  * @modules
@@ -140,14 +140,14 @@ public class TestSeeLinkAnchor extends JavadocTester {
                 "--no-platform-links",
                 "nolabel");
 
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true, """
-                    warning: missing reference label
+                    error: missing reference label
                     Link with missing label: {@link ##main}.
                                              ^
                     """,
             """
-                    Class1.java:5: warning: missing reference label
+                    Class1.java:5: error: missing reference label
                     @see ##main
                     ^
                     """);

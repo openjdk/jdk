@@ -1371,7 +1371,7 @@ public class ModuleDescriptorTest {
      * complete set of packages.
      */
     public void testReadsWithBadPackageFinder() throws Exception {
-        ByteBuffer bb = ByteBuffer.wrap(Classfile.buildModule(
+        ByteBuffer bb = ByteBuffer.wrap(Classfile.of().buildModule(
                 ModuleAttribute.of(
                         ModuleDesc.of("foo"),
                         mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)

@@ -114,7 +114,7 @@ class ValueType: public CompilationResourceObj {
     assert(_size > -1, "shouldn't be asking for size");
     return _size;
   }
-  virtual const char tchar() const               = 0; // the type 'character' for printing
+  virtual char tchar() const                     = 0; // the type 'character' for printing
   virtual const char* name() const               = 0; // the type name for printing
   virtual bool is_constant() const               { return false; }
 
@@ -177,7 +177,7 @@ class VoidType: public ValueType {
  public:
   VoidType(): ValueType(voidTag, 0) {}
   virtual ValueType* base() const                { return voidType; }
-  virtual const char tchar() const               { return 'v'; }
+  virtual char tchar() const                     { return 'v'; }
   virtual const char* name() const               { return "void"; }
   virtual VoidType* as_VoidType()                { return this; }
 };
@@ -187,7 +187,7 @@ class IntType: public ValueType {
  public:
   IntType(): ValueType(intTag, 1) {}
   virtual ValueType* base() const                { return intType; }
-  virtual const char tchar() const               { return 'i'; }
+  virtual char tchar() const                     { return 'i'; }
   virtual const char* name() const               { return "int"; }
   virtual IntType* as_IntType()                  { return this; }
 };
@@ -211,7 +211,7 @@ class LongType: public ValueType {
  public:
   LongType(): ValueType(longTag, 2) {}
   virtual ValueType* base() const                { return longType; }
-  virtual const char tchar() const               { return 'l'; }
+  virtual char tchar() const                     { return 'l'; }
   virtual const char* name() const               { return "long"; }
   virtual LongType* as_LongType()                { return this; }
 };
@@ -235,7 +235,7 @@ class FloatType: public ValueType {
  public:
   FloatType(): ValueType(floatTag, 1) {}
   virtual ValueType* base() const                { return floatType; }
-  virtual const char tchar() const               { return 'f'; }
+  virtual char tchar() const                     { return 'f'; }
   virtual const char* name() const               { return "float"; }
   virtual FloatType* as_FloatType()              { return this; }
 };
@@ -259,7 +259,7 @@ class DoubleType: public ValueType {
  public:
   DoubleType(): ValueType(doubleTag, 2) {}
   virtual ValueType* base() const                { return doubleType; }
-  virtual const char tchar() const               { return 'd'; }
+  virtual char tchar() const                     { return 'd'; }
   virtual const char* name() const               { return "double"; }
   virtual DoubleType* as_DoubleType()            { return this; }
 };
@@ -283,7 +283,7 @@ class ObjectType: public ValueType {
  public:
   ObjectType(): ValueType(objectTag, 1) {}
   virtual ValueType* base() const                { return objectType; }
-  virtual const char tchar() const               { return 'a'; }
+  virtual char tchar() const                     { return 'a'; }
   virtual const char* name() const               { return "object"; }
   virtual ObjectType* as_ObjectType()            { return this; }
   virtual ciObject* constant_value() const       { ShouldNotReachHere(); return nullptr; }
@@ -371,7 +371,7 @@ class MetadataType: public ValueType {
  public:
   MetadataType(): ValueType(metaDataTag, 1) {}
   virtual ValueType* base() const                       { return objectType; }
-  virtual const char tchar() const                      { return 'a'; }
+  virtual char tchar() const                            { return 'a'; }
   virtual const char* name() const                      { return "object"; }
   virtual MetadataType* as_MetadataType()               { return this; }
   bool is_loaded() const;
@@ -428,7 +428,7 @@ class AddressType: public ValueType {
  public:
   AddressType(): ValueType(addressTag, 1) {}
   virtual ValueType* base() const                { return addressType; }
-  virtual const char tchar() const               { return 'r'; }
+  virtual char tchar() const                     { return 'r'; }
   virtual const char* name() const               { return "address"; }
   virtual AddressType* as_AddressType()          { return this; }
 };
@@ -453,7 +453,7 @@ class IllegalType: public ValueType {
  public:
   IllegalType(): ValueType(illegalTag, -1) {}
   virtual ValueType* base() const                { return illegalType; }
-  virtual const char tchar() const               { return ' '; }
+  virtual char tchar() const                     { return ' '; }
   virtual const char* name() const               { return "illegal"; }
   virtual IllegalType* as_IllegalType()          { return this; }
 };

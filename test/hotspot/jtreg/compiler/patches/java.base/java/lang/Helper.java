@@ -77,6 +77,11 @@ public class Helper {
         return dst;
     }
 
+    @jdk.internal.vm.annotation.ForceInline
+    public static char getChar(byte[] value, int index) {
+        return StringUTF16.getChar(value, index);
+    }
+
     public static void putCharSB(byte[] val, int index, int c) {
         StringUTF16.putCharSB(val, index, c);
     }

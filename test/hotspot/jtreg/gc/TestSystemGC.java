@@ -58,8 +58,8 @@ package gc;
  */
 
 /*
- * @test id=ZSingleGenMode
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @test id=ZSinglegen
+ * @requires vm.gc.ZSinglegen
  * @comment ZGC will not start when LargePages cannot be allocated, therefore
  *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.
@@ -67,8 +67,8 @@ package gc;
  */
 
 /*
- * @test id=Z
- * @requires vm.gc.Z & vm.opt.final.ZGenerational
+ * @test id=ZGenerational
+ * @requires vm.gc.ZGenerational
  * @comment ZGC will not start when LargePages cannot be allocated, therefore
  *          we do not run such configuration.
  * @summary Runs System.gc() with different flags.

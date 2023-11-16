@@ -181,7 +181,7 @@ final class Disassemble extends Command {
     private List<Long> combineChunkSizes(List<Long> sizes, int maxChunks, long maxSize) {
         List<Long> reduced = new ArrayList<Long>();
         int chunks = 1;
-        long fileSize = sizes.get(0);
+        long fileSize = sizes.getFirst();
         for (int i = 1; i < sizes.size(); i++) {
             long size = sizes.get(i);
             if (fileSize + size > maxSize || chunks == maxChunks) {

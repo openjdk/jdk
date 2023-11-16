@@ -26,13 +26,18 @@
  * @bug 8008762
  * @summary Type annotation on inner class in anonymous class
  *          shows up as regular annotation
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 
 public class T8008762 extends ClassfileTestHelper{
     public static void main(String[] args) throws Exception {
@@ -43,13 +48,13 @@ public class T8008762 extends ClassfileTestHelper{
         expected_tinvisibles = 0;
         expected_tvisibles = 4;
 
-        ClassFile cf = getClassFile("T8008762$Test$1$InnerAnon.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f, false);
+        ClassModel cm = getClassFile("T8008762$Test$1$InnerAnon.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm, false);
         }
-        for (Method m : cf.methods) {
-            test(cf, m, false);
+        for (MethodModel mm: cm.methods()) {
+            test(mm, false);
         }
         countAnnotations();
 

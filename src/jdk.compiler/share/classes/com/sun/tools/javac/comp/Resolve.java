@@ -53,7 +53,6 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
-import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,7 +64,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -2432,7 +2430,6 @@ public class Resolve {
 
         if (kind.contains(KindSelector.TYP)) {
             sym = findType(env, name);
-
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -3606,6 +3603,18 @@ public class Resolve {
                 return selName != null && selName == names._super ?
                         ReferenceKind.SUPER :
                         ReferenceKind.BOUND;
+            }
+        }
+
+        @Override
+        Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
+            if (originalSite.hasTag(TYPEVAR) && sym.kind == MTH) {
+                sym = (sym.flags() & Flags.PRIVATE) != 0 ?
+                        new AccessError(env, site, sym) :
+                        sym;
+                return accessBase(sym, pos, location, originalSite, name, true);
+            } else {
+                return super.access(env, pos, location, sym);
             }
         }
     }

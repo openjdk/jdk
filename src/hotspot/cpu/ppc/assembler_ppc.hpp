@@ -337,15 +337,6 @@ class Assembler : public AbstractAssembler {
     MFCTR_OPCODE  = (MFSPR_OPCODE | 9 << SPR_0_4_SHIFT),
 
     // Attention: Higher and lower half are inserted in reversed order.
-    MTTFHAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
-    MFTFHAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
-    MTTFIAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
-    MFTFIAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
-    MTTEXASR_OPCODE  = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
-    MFTEXASR_OPCODE  = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
-    MTTEXASRU_OPCODE = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
-    MFTEXASRU_OPCODE = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
-
     MTVRSAVE_OPCODE  = (MTSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
     MFVRSAVE_OPCODE  = (MFSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
 
@@ -765,17 +756,6 @@ class Assembler : public AbstractAssembler {
 
     // Vector Permute and Xor (introduced with Power 8)
     VPERMXOR_OPCODE     = (4u  << OPCODE_SHIFT |   45u),
-
-    // Transactional Memory instructions (introduced with Power 8)
-    TBEGIN_OPCODE    = (31u << OPCODE_SHIFT |  654u << 1),
-    TEND_OPCODE      = (31u << OPCODE_SHIFT |  686u << 1),
-    TABORT_OPCODE    = (31u << OPCODE_SHIFT |  910u << 1),
-    TABORTWC_OPCODE  = (31u << OPCODE_SHIFT |  782u << 1),
-    TABORTWCI_OPCODE = (31u << OPCODE_SHIFT |  846u << 1),
-    TABORTDC_OPCODE  = (31u << OPCODE_SHIFT |  814u << 1),
-    TABORTDCI_OPCODE = (31u << OPCODE_SHIFT |  878u << 1),
-    TSR_OPCODE       = (31u << OPCODE_SHIFT |  750u << 1),
-    TCHECK_OPCODE    = (31u << OPCODE_SHIFT |  718u << 1),
 
     // Icache and dcache related instructions
     DCBA_OPCODE    = (31u << OPCODE_SHIFT |  758u << 1),
@@ -1814,33 +1794,6 @@ class Assembler : public AbstractAssembler {
   // Data Stream Control Register
   inline void mtdscr(Register s1);
   inline void mfdscr(Register d );
-  // Transactional Memory Registers
-  inline void mftfhar(Register d);
-  inline void mftfiar(Register d);
-  inline void mftexasr(Register d);
-  inline void mftexasru(Register d);
-
-  // TEXASR bit description
-  enum transaction_failure_reason {
-    // Upper half (TEXASRU):
-    tm_failure_code       =  0, // The Failure Code is copied from tabort or treclaim operand.
-    tm_failure_persistent =  7, // The failure is likely to recur on each execution.
-    tm_disallowed         =  8, // The instruction is not permitted.
-    tm_nesting_of         =  9, // The maximum transaction level was exceeded.
-    tm_footprint_of       = 10, // The tracking limit for transactional storage accesses was exceeded.
-    tm_self_induced_cf    = 11, // A self-induced conflict occurred in Suspended state.
-    tm_non_trans_cf       = 12, // A conflict occurred with a non-transactional access by another processor.
-    tm_trans_cf           = 13, // A conflict occurred with another transaction.
-    tm_translation_cf     = 14, // A conflict occurred with a TLB invalidation.
-    tm_inst_fetch_cf      = 16, // An instruction fetch was performed from a block that was previously written transactionally.
-    tm_tabort             = 31, // Termination was caused by the execution of an abort instruction.
-    // Lower half:
-    tm_suspended          = 32, // Failure was recorded in Suspended state.
-    tm_failure_summary    = 36, // Failure has been detected and recorded.
-    tm_tfiar_exact        = 37, // Value in the TFIAR is exact.
-    tm_rot                = 38, // Rollback-only transaction.
-    tm_transaction_level  = 52, // Transaction level (nesting depth + 1).
-  };
 
   // PPC 1, section 2.4.1 Branch Instructions
   inline void b(  address a, relocInfo::relocType rt = relocInfo::none);
@@ -2451,25 +2404,6 @@ class Assembler : public AbstractAssembler {
 
   // Vector Permute and Xor (introduced with Power 8)
   inline void vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
-
-  // Transactional Memory instructions (introduced with Power 8)
-  inline void tbegin_();    // R=0
-  inline void tbeginrot_(); // R=1 Rollback-Only Transaction
-  inline void tend_();    // A=0
-  inline void tendall_(); // A=1
-  inline void tabort_();
-  inline void tabort_(Register a);
-  inline void tabortwc_(int t, Register a, Register b);
-  inline void tabortwci_(int t, Register a, int si);
-  inline void tabortdc_(int t, Register a, Register b);
-  inline void tabortdci_(int t, Register a, int si);
-  inline void tsuspend_(); // tsr with L=0
-  inline void tresume_();  // tsr with L=1
-  inline void tcheck(int f);
-
-  static bool is_tbegin(int x) {
-    return TBEGIN_OPCODE == (x & (0x3f << OPCODE_SHIFT | 0x3ff << 1));
-  }
 
   // The following encoders use r0 as second operand. These instructions
   // read r0 as '0'.

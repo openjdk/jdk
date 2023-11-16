@@ -264,6 +264,10 @@ public:
   // The number of root regions to scan.
   uint num_root_regions() const;
 
+  // Is the given memregion contained in the root regions; the MemRegion must
+  // match exactly.
+  bool contains(const MemRegion mr) const;
+
   void cancel_scan();
 
   // Flag that we're done with root region scanning and notify anyone
@@ -467,6 +471,8 @@ public:
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
+  // Set live bytes for concurrent marking.
+  void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -505,7 +511,7 @@ public:
   // running.
   void abort_marking_threads();
 
-  void update_accum_task_vtime(int i, double vtime) {
+  void update_accum_task_vtime(uint i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }
 
@@ -555,6 +561,7 @@ public:
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
   void add_root_region(HeapRegion* r);
+  bool is_root_region(HeapRegion* r);
   void root_region_scan_abort_and_wait();
 
 private:
@@ -628,8 +635,6 @@ private:
     // The regular clock call is called once the number of visited
     // references reaches this limit
     refs_reached_period           = 1024,
-    // Initial value for the hash seed, used in the work stealing code
-    init_hash_seed                = 17
   };
 
   G1CMObjArrayProcessor       _objArray_processor;
@@ -697,8 +702,6 @@ private:
   double                      _elapsed_time_ms;
   // Termination time of this task
   double                      _termination_time_ms;
-  // When this task got into the termination protocol
-  double                      _termination_start_time_ms;
 
   TruncatedSeq                _marking_step_diff_ms;
 

@@ -276,7 +276,10 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
-  _object.release(_oop_storage);
+  if (!_object.is_null()) {
+    // Release object's oop storage if it hasn't already been done.
+    release_object();
+  }
 }
 
 oop ObjectMonitor::object() const {
@@ -383,7 +386,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return false;
   }
 
-  JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(current);)
+  JFR_ONLY(JfrConditionalFlush<EventJavaMonitorEnter> flush(current);)
   EventJavaMonitorEnter event;
   if (event.is_started()) {
     event.set_monitorClass(object()->klass());
@@ -536,7 +539,7 @@ bool ObjectMonitor::deflate_monitor() {
   } else {
     // Attempt async deflation protocol.
 
-    // Set a nullptr owner to DEFLATER_MARKER to force any contending thread
+    // Set a null owner to DEFLATER_MARKER to force any contending thread
     // through the slow path. This is just the first part of the async
     // deflation dance.
     if (try_set_owner_from(nullptr, DEFLATER_MARKER) != nullptr) {
@@ -561,7 +564,7 @@ bool ObjectMonitor::deflate_monitor() {
     // to retry. This is the second part of the async deflation dance.
     if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
-      // ObjectMonitor is now busy. Restore owner to nullptr if it is
+      // ObjectMonitor is now busy. Restore owner to null if it is
       // still DEFLATER_MARKER:
       if (try_set_owner_from(DEFLATER_MARKER, nullptr) != DEFLATER_MARKER) {
         // Deferred decrement for the JT EnterI() that cancelled the async deflation.
@@ -594,6 +597,9 @@ bool ObjectMonitor::deflate_monitor() {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
   }
+
+  // Release object's oop storage since the ObjectMonitor has been deflated:
+  release_object();
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
   // to force any racing threads to retry.
@@ -657,20 +663,19 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 // Convert the fields used by is_busy() to a string that can be
 // used for diagnostic output.
 const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
-  ss->print("is_busy: waiters=%d, ", _waiters);
-  if (contentions() > 0) {
-    ss->print("contentions=%d, ", contentions());
-  } else {
-    ss->print("contentions=0");
-  }
-  if (!owner_is_DEFLATER_MARKER()) {
-    ss->print("owner=" INTPTR_FORMAT, p2i(owner_raw()));
-  } else {
-    // We report nullptr instead of DEFLATER_MARKER here because is_busy()
-    // ignores DEFLATER_MARKER values.
-    ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
-  }
-  ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
+  ss->print("is_busy: waiters=%d"
+            ", contentions=%d"
+            ", owner=" PTR_FORMAT
+            ", cxq=" PTR_FORMAT
+            ", EntryList=" PTR_FORMAT,
+            _waiters,
+            (contentions() > 0 ? contentions() : 0),
+            owner_is_DEFLATER_MARKER()
+                // We report null instead of DEFLATER_MARKER here because is_busy()
+                // ignores DEFLATER_MARKER values.
+                ? p2i(nullptr)
+                : p2i(owner_raw()),
+            p2i(_cxq),
             p2i(_EntryList));
   return ss->base();
 }

@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single "exports" declaration in the {@link jdk.internal.classfile.attribute.ModuleAttribute}.
+ * Models a single "exports" declaration in the {@link ModuleAttribute}.
  */
 public sealed interface ModuleExportInfo
         permits UnboundAttribute.UnboundModuleExportInfo {

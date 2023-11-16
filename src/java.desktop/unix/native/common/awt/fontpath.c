@@ -48,10 +48,6 @@
 #define AWT_UNLOCK()
 #endif /* !HEADLESS */
 
-#if defined(__linux__) && !defined(MAP_FAILED)
-#define MAP_FAILED ((caddr_t)-1)
-#endif
-
 #ifndef HEADLESS
 extern Display *awt_display;
 #endif /* !HEADLESS */

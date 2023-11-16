@@ -197,11 +197,11 @@ public:
   template <class T>
   void threads_do(T *cl) const;
 
-  uint length() const                       { return _length; }
+  uint length() const                 { return _length; }
 
-  JavaThread *const thread_at(uint i) const { return _threads[i]; }
+  JavaThread *thread_at(uint i) const { return _threads[i]; }
 
-  JavaThread *const *threads() const        { return _threads; }
+  JavaThread *const *threads() const  { return _threads; }
 
   // Returns -1 if target is not found.
   int find_index_of_JavaThread(JavaThread* target);

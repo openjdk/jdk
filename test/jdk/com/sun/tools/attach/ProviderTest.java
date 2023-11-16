@@ -107,7 +107,7 @@ public class ProviderTest {
     public static class TestMain {
         public static void main(String args[]) throws Exception {
             // deal with internal builds where classes are loaded from the
-            // 'classes' directory rather than rt.jar
+            // 'classes' directory rather than the runtime image
             ClassLoader cl = AttachProvider.class.getClassLoader();
             if (cl != ClassLoader.getSystemClassLoader()) {
                 System.out.println("Attach API not loaded by system class loader - test skipped");

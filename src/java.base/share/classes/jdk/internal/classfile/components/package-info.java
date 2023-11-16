@@ -72,7 +72,7 @@
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
  * <p>
- * Single class remappigng example:
+ * Single class remapping example:
  * {@snippet lang="java" class="PackageSnippets" region="singleClassRemap"}
  * <p>
  * Remapping of all classes under specific package:
@@ -90,7 +90,7 @@
  *
  * <h3>{@link CodeRelabeler}</h3>
  * {@link CodeRelabeler} is a {@link jdk.internal.classfile.CodeTransform}
- * replacing all occurences of {@link jdk.internal.classfile.Label} in the
+ * replacing all occurrences of {@link jdk.internal.classfile.Label} in the
  * transformed code with new instances.
  * All {@link jdk.internal.classfile.instruction.LabelTarget} instructions are
  * adjusted accordingly.

@@ -62,6 +62,7 @@ class MethodHandleStatics {
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
+    static final boolean VAR_HANDLE_SEGMENT_FORCE_EXACT;
     static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
@@ -91,6 +92,8 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
         VAR_HANDLE_IDENTITY_ADAPT = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT", "false"));
+        VAR_HANDLE_SEGMENT_FORCE_EXACT = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT", "false"));
 
         // Do not adjust this except for special platforms:
         MAX_ARITY = Integer.parseInt(
@@ -185,8 +188,8 @@ class MethodHandleStatics {
     /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
     /*non-public*/
     static Error uncaughtException(Throwable ex) {
-        if (ex instanceof Error)  throw (Error) ex;
-        if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+        if (ex instanceof Error error) throw error;
+        if (ex instanceof RuntimeException re) throw re;
         throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {

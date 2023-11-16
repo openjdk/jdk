@@ -209,7 +209,7 @@ G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
 }
 
 void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint index) {
-  _region_attr.set_humongous_candidate(index, region_at(index)->rem_set()->is_tracked());
+  _region_attr.set_humongous_candidate(index);
 }
 
 void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
@@ -247,13 +247,19 @@ inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
-  return hr->is_obj_dead(obj, hr->parsable_bottom());
+  if (hr->is_in_parsable_area(obj)) {
+    // This object is in the parsable part of the heap, live unless scrubbed.
+    return is_obj_filler(obj);
+  } else {
+    // From Remark until a region has been concurrently scrubbed, parts of the
+    // region is not guaranteed to be parsable. Use the bitmap for liveness.
+    return !concurrent_mark()->mark_bitmap()->is_marked(obj);
+  }
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
-  if (obj == nullptr) {
-    return false;
-  }
+  assert(obj != nullptr, "precondition");
+
   return is_obj_dead(obj, heap_region_containing(obj));
 }
 

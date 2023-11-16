@@ -25,7 +25,7 @@ package gc.x;
 
 /**
  * @test TestMemoryManagerMXBean
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC memory manager MXBean
  * @modules java.management
  * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx128M gc.x.TestMemoryManagerMXBean

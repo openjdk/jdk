@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/iterator.inline.hpp"

@@ -27,6 +27,7 @@
 #ifndef CPU_RISCV_ASSEMBLER_RISCV_HPP
 #define CPU_RISCV_ASSEMBLER_RISCV_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -270,7 +271,7 @@ class Address {
     return _mode != literal && base() == reg;
   }
 
-  const address target() const {
+  address target() const {
     assert_is_literal();
     return _literal._target;
   }
@@ -1073,7 +1074,26 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-// Float and Double Conversion Instruction
+enum fclass_mask {
+  minf       = 1 << 0,   // negative infinite
+  mnorm      = 1 << 1,   // negative normal number
+  msubnorm   = 1 << 2,   // negative subnormal number
+  mzero      = 1 << 3,   // negative zero
+  pzero      = 1 << 4,   // positive zero
+  psubnorm   = 1 << 5,   // positive subnormal number
+  pnorm      = 1 << 6,   // positive normal number
+  pinf       = 1 << 7,   // positive infinite
+  snan       = 1 << 8,   // signaling NaN
+  qnan       = 1 << 9,   // quiet NaN
+  zero       = mzero    | pzero,
+  subnorm    = msubnorm | psubnorm,
+  norm       = mnorm    | pnorm,
+  inf        = minf     | pinf,
+  nan        = snan     | qnan,
+  finite     = zero     | subnorm   | norm,
+};
+
+// Float and Double Conversion/Classify Instruction
 #define INSN(NAME, op, funct3, funct5, funct7)            \
   void NAME(Register Rd, FloatRegister Rs1) {             \
     unsigned insn = 0;                                    \
@@ -1399,7 +1419,6 @@ enum VectorMask {
   // Vector Floating-Point Sign-Injection Instructions
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
-  INSN(vfsgnj_vv,  0b1010111, 0b001, 0b001000);
 
   // Vector Floating-Point MIN/MAX Instructions
   INSN(vfmax_vv,   0b1010111, 0b001, 0b000110);
@@ -1551,11 +1570,6 @@ enum VectorMask {
   INSN(vmflt_vf, 0b1010111, 0b101, 0b011011);
   INSN(vmfne_vf, 0b1010111, 0b101, 0b011100);
   INSN(vmfeq_vf, 0b1010111, 0b101, 0b011000);
-
-  // Vector Floating-Point Sign-Injection Instructions
-  INSN(vfsgnjx_vf, 0b1010111, 0b101, 0b001010);
-  INSN(vfsgnjn_vf, 0b1010111, 0b101, 0b001001);
-  INSN(vfsgnj_vf,  0b1010111, 0b101, 0b001000);
 
   // Vector Floating-Point MIN/MAX Instructions
   INSN(vfmax_vf, 0b1010111, 0b101, 0b000110);
@@ -1794,6 +1808,11 @@ enum Nf {
   INSN(vlse16_v, 0b0000111, 0b101, 0b10, 0b0);
   INSN(vlse32_v, 0b0000111, 0b110, 0b10, 0b0);
   INSN(vlse64_v, 0b0000111, 0b111, 0b10, 0b0);
+
+  INSN(vsse8_v,  0b0100111, 0b000, 0b10, 0b0);
+  INSN(vsse16_v, 0b0100111, 0b101, 0b10, 0b0);
+  INSN(vsse32_v, 0b0100111, 0b110, 0b10, 0b0);
+  INSN(vsse64_v, 0b0100111, 0b111, 0b10, 0b0);
 
 #undef INSN
 #undef patch_VLdSt
@@ -2793,7 +2812,13 @@ public:
       c_slli(Rd, shamt);                                                                     \
       return;                                                                                \
     }                                                                                        \
-    _slli(Rd, Rs1, shamt);                                                                   \
+    if (shamt != 0) {                                                                        \
+      _slli(Rd, Rs1, shamt);                                                                 \
+    } else {                                                                                 \
+      if (Rd != Rs1) {                                                                       \
+        addi(Rd, Rs1, 0);                                                                    \
+      }                                                                                      \
+    }                                                                                        \
   }
 
   INSN(slli);
@@ -2808,7 +2833,13 @@ public:
       C_NAME(Rd, shamt);                                                                     \
       return;                                                                                \
     }                                                                                        \
-    NORMAL_NAME(Rd, Rs1, shamt);                                                             \
+    if (shamt != 0) {                                                                        \
+      NORMAL_NAME(Rd, Rs1, shamt);                                                           \
+    } else {                                                                                 \
+      if (Rd != Rs1) {                                                                       \
+        addi(Rd, Rs1, 0);                                                                    \
+      }                                                                                      \
+    }                                                                                        \
   }
 
   INSN(srai, c_srai, _srai);

@@ -1,29 +1,28 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
  * @test
- * @enablePreview
  * @run testng TestLayouts
  */
 
@@ -33,6 +32,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
@@ -98,13 +98,13 @@ public class TestLayouts {
             VarHandle indexHandle = seq.varHandle(MemoryLayout.PathElement.sequenceElement());
             // init segment
             for (int i = 0 ; i < 10 ; i++) {
-                indexHandle.set(segment, (long)i, i);
+                indexHandle.set(segment, 0L, (long)i, i);
             }
             //check statically indexed handles
             for (int i = 0 ; i < 10 ; i++) {
                 VarHandle preindexHandle = seq.varHandle(MemoryLayout.PathElement.sequenceElement(i));
-                int expected = (int)indexHandle.get(segment, (long)i);
-                int found = (int)preindexHandle.get(segment);
+                int expected = (int)indexHandle.get(segment, 0L, (long)i);
+                int found = (int)preindexHandle.get(segment, 0L);
                 assertEquals(expected, found);
             }
         }
@@ -201,12 +201,7 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(-2, JAVA_SHORT));
     }
 
-    @Test(dataProvider = "basicLayouts")
-    public void testSequenceInferredCount(MemoryLayout layout) {
-        assertEquals(MemoryLayout.sequenceLayout(layout),
-                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.byteSize(), layout));
-    }
-
+    @Test
     public void testSequenceNegativeElementCount() {
         assertThrows(IllegalArgumentException.class, // negative
                 () -> MemoryLayout.sequenceLayout(-1, JAVA_SHORT));
@@ -218,6 +213,23 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
+    }
+
+    @Test
+    public void testSequenceLayoutWithZeroLength() {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout.toString().toLowerCase(Locale.ROOT), "[0:i4]");
+
+        SequenceLayout nested = MemoryLayout.sequenceLayout(0, layout);
+        assertEquals(nested.toString().toLowerCase(Locale.ROOT), "[0:[0:i4]]");
+
+        SequenceLayout layout2 = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout, layout2);
+
+        SequenceLayout nested2 = MemoryLayout.sequenceLayout(0, layout2);
+        assertEquals(nested, nested2);
     }
 
     @Test
@@ -258,10 +270,13 @@ public class TestLayouts {
 
     @Test
     public void testStructToString() {
-        StructLayout padding = MemoryLayout.structLayout(JAVA_INT).withName("struct");
-        assertEquals(padding.toString(), "[i4](struct)");
-        var toStringUnaligned = padding.withByteAlignment(8).toString();
-        assertEquals(toStringUnaligned, "8%[i4](struct)");
+        for (ByteOrder order : List.of(ByteOrder.LITTLE_ENDIAN, ByteOrder.BIG_ENDIAN)) {
+            String intRepresentation = (order == ByteOrder.LITTLE_ENDIAN ? "i" : "I");
+            StructLayout padding = MemoryLayout.structLayout(JAVA_INT.withOrder(order)).withName("struct");
+            assertEquals(padding.toString(), "[" + intRepresentation + "4](struct)");
+            var toStringUnaligned = padding.withByteAlignment(8).toString();
+            assertEquals(toStringUnaligned, "8%[" + intRepresentation + "4](struct)");
+        }
     }
 
     @Test(dataProvider = "layoutKinds")
@@ -295,14 +310,14 @@ public class TestLayouts {
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long byteAlign) {
         layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
-        MemoryLayout.sequenceLayout(layout);
+        MemoryLayout.sequenceLayout(1, layout);
     }
 
     @Test(dataProvider="layoutsAndAlignments")
     public void testBadSequenceElementSizeNotMultipleOfAlignment(MemoryLayout layout, long byteAlign) {
         boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
         try {
-            MemoryLayout.sequenceLayout(layout);
+            MemoryLayout.sequenceLayout(1, layout);
             assertFalse(shouldFail);
         } catch (IllegalArgumentException ex) {
             assertTrue(shouldFail);
@@ -344,6 +359,37 @@ public class TestLayouts {
         SequenceLayout layout = MemoryLayout.sequenceLayout(10, JAVA_INT);
         // Step must be != 0
         PathElement.sequenceElement(3, 0);
+    }
+
+    @Test
+    public void testVarHandleCaching() {
+        assertSame(JAVA_INT.varHandle(), JAVA_INT.varHandle());
+        assertSame(JAVA_INT.withName("foo").varHandle(), JAVA_INT.varHandle());
+
+        assertNotSame(JAVA_INT_UNALIGNED.varHandle(), JAVA_INT.varHandle());
+        assertNotSame(ADDRESS.withTargetLayout(JAVA_INT).varHandle(), ADDRESS.varHandle());
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class,
+        expectedExceptionsMessageRegExp=".*Negative offset.*")
+    public void testScaleNegativeOffset() {
+        JAVA_INT.scale(-1, 0);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class,
+        expectedExceptionsMessageRegExp=".*Negative index.*")
+    public void testScaleNegativeIndex() {
+        JAVA_INT.scale(0, -1);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void testScaleAddOverflow() {
+        JAVA_INT.scale(Long.MAX_VALUE, 1);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void testScaleMultiplyOverflow() {
+        JAVA_INT.scale(0, Long.MAX_VALUE);
     }
 
     @DataProvider(name = "badAlignments")
@@ -483,7 +529,6 @@ public class TestLayouts {
     static Stream<MemoryLayout> groupLayoutStream() {
         return Stream.of(
                 MemoryLayout.sequenceLayout(10, JAVA_INT),
-                MemoryLayout.sequenceLayout(JAVA_INT),
                 MemoryLayout.structLayout(JAVA_INT, MemoryLayout.paddingLayout(4), JAVA_LONG),
                 MemoryLayout.unionLayout(JAVA_LONG, JAVA_DOUBLE)
         );

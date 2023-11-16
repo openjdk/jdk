@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.util.math
  *          java.base/sun.security.util.math.intpoly
- *          jdk.crypto.ec/sun.security.ec.ed
+ *          java.base/sun.security.ec.ed
  * @run main TestEdOps
  */
 

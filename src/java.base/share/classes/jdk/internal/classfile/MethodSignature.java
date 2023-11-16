@@ -82,7 +82,7 @@ public sealed interface MethodSignature
     /**
      * @return method signature
      * @param typeParameters signatures for the type parameters
-     * @param exceptions sigantures for the exceptions
+     * @param exceptions signatures for the exceptions
      * @param result signature for the return type
      * @param arguments signatures for the method arguments
      */

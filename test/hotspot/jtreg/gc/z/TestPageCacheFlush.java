@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestPageCacheFlush
- * @requires vm.gc.Z & vm.opt.final.ZGenerational
+ * @requires vm.gc.ZGenerational
  * @summary Test ZGC page cache flushing
  * @library /test/lib
  * @run driver gc.z.TestPageCacheFlush
@@ -68,7 +68,7 @@ public class TestPageCacheFlush {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
+        ProcessTools.executeProcess(ProcessTools.createLimitedTestJavaProcessBuilder(
                                     "-XX:+UseZGC",
                                     "-XX:+ZGenerational",
                                     "-Xms128M",

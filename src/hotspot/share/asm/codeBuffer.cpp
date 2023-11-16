@@ -1061,11 +1061,6 @@ void CodeSection::print(const char* name) {
 }
 
 void CodeBuffer::print() {
-  if (this == nullptr) {
-    tty->print_cr("null CodeBuffer pointer");
-    return;
-  }
-
   tty->print_cr("CodeBuffer:");
   for (int n = 0; n < (int)SECT_LIMIT; n++) {
     // print each section
@@ -1250,6 +1245,7 @@ bool DbgStrings::is_empty() const {
 
 void DbgStrings::share(const DbgStrings &src) {
   precond(is_empty());
+  clear();
   _strings = src._strings->reuse();
 }
 

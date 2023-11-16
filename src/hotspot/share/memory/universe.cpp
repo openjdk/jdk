@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -114,6 +115,7 @@ enum OutOfMemoryInstance { _oom_java_heap,
                            _oom_count };
 
 OopHandle Universe::_out_of_memory_errors;
+OopHandle Universe:: _class_init_stack_overflow_error;
 OopHandle Universe::_delayed_stack_overflow_error_message;
 OopHandle Universe::_preallocated_out_of_memory_error_array;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
@@ -466,7 +468,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
         if (!is_reference_type((BasicType)i)) {
           oop m = _basic_type_mirrors[i].resolve();
-          assert(m != nullptr, "archived mirrors should not be nullptr");
+          assert(m != nullptr, "archived mirrors should not be null");
         }
       }
     } else
@@ -610,6 +612,9 @@ oop Universe::out_of_memory_error_realloc_objects() {
 
 // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
 oop Universe::out_of_memory_error_retry()              { return out_of_memory_errors()->obj_at(_oom_retry);  }
+
+oop Universe::class_init_out_of_memory_error()         { return out_of_memory_errors()->obj_at(_oom_java_heap); }
+oop Universe::class_init_stack_overflow_error()        { return _class_init_stack_overflow_error.resolve(); }
 oop Universe::delayed_stack_overflow_error_message()   { return _delayed_stack_overflow_error_message.resolve(); }
 
 
@@ -818,7 +823,7 @@ jint universe_init() {
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
   }
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     MetaspaceShared::prepare_for_dumping();
   }
 #endif
@@ -1027,6 +1032,11 @@ bool universe_post_init() {
 
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());
+
+  // Setup preallocated StackOverflowError for use with class initialization failure
+  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackOverflowError(), true, CHECK_false);
+  instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  Universe::_class_init_stack_overflow_error = OopHandle(Universe::vm_global(), instance);
 
   Universe::initialize_known_methods(CHECK_false);
 

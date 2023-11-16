@@ -21,17 +21,22 @@
  * questions.
  */
 
+import jdk.internal.classfile.*;
 import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
 
 /*
  * @test ClassLiterals
  * @summary test that new type arguments are emitted to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 
 public class NewTypeArguments extends ClassfileTestHelper{
@@ -43,13 +48,13 @@ public class NewTypeArguments extends ClassfileTestHelper{
         expected_tinvisibles = 3;
         expected_tvisibles = 0;
 
-        ClassFile cf = getClassFile("NewTypeArguments$Test.class");
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("NewTypeArguments$Test.class");
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m, true);
+        for (MethodModel m: cm.methods()) {
+            test(m, true);
         }
 
         countAnnotations();

@@ -157,7 +157,12 @@ final class PlainTunnelingConnection extends HttpConnection {
 
     @Override
     public void close() {
-        delegate.close();
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
+        delegate.close(cause);
         connected = false;
     }
 

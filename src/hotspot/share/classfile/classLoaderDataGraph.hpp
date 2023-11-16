@@ -41,9 +41,10 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphIteratorBase;
   friend class VMStructs;
  private:
-  // All CLDs (except the null CLD) can be reached by walking _head->_next->...
+  // All CLDs (except unlinked CLDs) can be reached by walking _head->_next->...
   static ClassLoaderData* volatile _head;
-  static ClassLoaderData* _unloading;
+  // All unlinked CLDs
+  static ClassLoaderData* _unloading_head;
 
   // Set if there's anything to purge in the deallocate lists or previous versions
   // during a safepoint after class unloading in a full GC.
@@ -67,9 +68,8 @@ class ClassLoaderDataGraph : public AllStatic {
   static void clear_claimed_marks();
   static void clear_claimed_marks(int claim);
   static void verify_claimed_marks_cleared(int claim);
-  // Iteration through CLDG inside a safepoint; GC support
+  // Iteration through CLDG; GC support
   static void cld_do(CLDClosure* cl);
-  static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void always_strong_cld_do(CLDClosure* cl);
   // Iteration through CLDG not by GC.
@@ -96,11 +96,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void safepoint_and_clean_metaspaces();
   // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
-
-  // VM_CounterDecay iteration support
-  static InstanceKlass* try_get_next_class();
-  static void adjust_saved_class(ClassLoaderData* cld);
-  static void adjust_saved_class(Klass* klass);
 
   static void verify_dictionary();
   static void print_dictionary(outputStream* st);

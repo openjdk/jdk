@@ -497,7 +497,7 @@ public final class ClassPrinterImpl {
             case OfBoolean cv -> leafs("boolean", String.valueOf((int)cv.constantValue() != 0));
             case OfClass clv -> leafs("class", clv.className().stringValue());
             case OfEnum ev -> leafs("enum class", ev.className().stringValue(),
-                                    "contant name", ev.constantName().stringValue());
+                                    "constant name", ev.constantName().stringValue());
             case OfAnnotation av -> leafs("annotation class", av.annotation().className().stringValue());
             case OfArray av -> new Node[]{new ListNodeImpl(FLOW, "array", av.values().stream().map(
                     ev -> new MapNodeImpl(FLOW, "value").with(elementValueToTree(ev))))};
@@ -535,7 +535,7 @@ public final class ClassPrinterImpl {
                 case ObjectVerificationTypeInfo o ->
                     ret.accept(o.className().name().stringValue());
                 case UninitializedVerificationTypeInfo u ->
-                    ret.accept("UNITIALIZED @" + lr.labelToBci(u.newTarget()));
+                    ret.accept("UNINITIALIZED @" + lr.labelToBci(u.newTarget()));
             }
         });
     }
@@ -570,9 +570,8 @@ public final class ClassPrinterImpl {
     private static Node[] constantPoolToTree(ConstantPool cp, Verbosity verbosity) {
         if (verbosity == Verbosity.TRACE_ALL) {
             var cpNode = new MapNodeImpl(BLOCK, "constant pool");
-            for (int i = 1; i < cp.entryCount();) {
-                var e = cp.entryByIndex(i);
-                cpNode.with(new MapNodeImpl(FLOW, i)
+            for (PoolEntry e : cp) {
+                cpNode.with(new MapNodeImpl(FLOW, e.index())
                         .with(leaf("tag", switch (e.tag()) {
                             case TAG_UTF8 -> "Utf8";
                             case TAG_INTEGER -> "Integer";
@@ -637,7 +636,6 @@ public final class ClassPrinterImpl {
                                 "value", String.valueOf(ve.constantValue())
                             );
                         }));
-                i += e.width();
             }
             return new Node[]{cpNode};
         } else {
@@ -914,7 +912,7 @@ public final class ClassPrinterImpl {
                             "method type", ema.enclosingMethodType()
                                     .map(Utf8Entry::stringValue).orElse("null")));
                 case ExceptionsAttribute exa ->
-                    nodes.add(list("excceptions", "exc", exa.exceptions().stream()
+                    nodes.add(list("exceptions", "exc", exa.exceptions().stream()
                             .map(e -> e.name().stringValue())));
                 case InnerClassesAttribute ica ->
                     nodes.add(new ListNodeImpl(BLOCK, "inner classes", ica.classes().stream()

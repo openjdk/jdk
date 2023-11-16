@@ -320,8 +320,9 @@ protected:
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
   DCmdArgument<bool> _overwrite;
+  DCmdArgument<jlong> _parallel;
 public:
-  static int num_arguments() { return 4; }
+  static int num_arguments() { return 5; }
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "GC.heap_dump";
@@ -952,5 +953,70 @@ public:
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
+
+class CompilationMemoryStatisticDCmd: public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _human_readable;
+  DCmdArgument<MemorySizeArgument> _minsize;
+public:
+  static int num_arguments() { return 2; }
+  CompilationMemoryStatisticDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.memory";
+  }
+  static const char* description() {
+    return "Print compilation footprint";
+  }
+  static const char* impact() {
+    return "Medium: Pause time depends on number of compiled methods";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+#ifdef LINUX
+
+class SystemMapDCmd : public DCmdWithParser {
+  DCmdArgument<bool> _human_readable;
+public:
+  static int num_arguments() { return 1; }
+  SystemMapDCmd(outputStream* output, bool heap);
+  static const char* name() { return "System.map"; }
+  static const char* description() {
+    return "Prints an annotated process memory map of the VM process (linux only).";
+  }
+  static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "control", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class SystemDumpMapDCmd : public DCmdWithParser {
+  DCmdArgument<bool> _human_readable;
+  DCmdArgument<char*> _filename;
+public:
+  static int num_arguments() { return 2; }
+  SystemDumpMapDCmd(outputStream* output, bool heap);
+  static const char* name() { return "System.dump_map"; }
+  static const char* description() {
+    return "Dumps an annotated process memory map to an output file (linux only).";
+  }
+  static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "control", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+#endif // LINUX
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

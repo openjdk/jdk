@@ -34,6 +34,7 @@
 
 const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const {
   const TypeKlassPtr* superk = super_t->isa_klassptr();
+  assert(sub_t != Type::TOP && !TypePtr::NULL_PTR->higher_equal(sub_t), "should be not null");
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
   // Oop can't be a subtype of abstract type that has no subclass.
@@ -42,6 +43,18 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     if (!superklass->is_interface() && superklass->is_abstract() &&
         !superklass->as_instance_klass()->has_subklass()) {
       Compile::current()->dependencies()->assert_leaf_type(superklass);
+      if (subk->is_same_java_type_as(superk) && !sub_t->maybe_null()) {
+        // The super_t has no subclasses, and sub_t has the same type and is not null,
+        // hence the check should always evaluate to EQ. However, this is an impossible
+        // situation since super_t is also abstract, and hence sub_t cannot have the
+        // same type and be non-null.
+        // Still, if the non-static method of an abstract class without subclasses is
+        // force-compiled, the Param0 has the self/this pointer with NotNull. This
+        // method would now never be called, because of the leaf-type dependency. Hence,
+        // just for consistency with verification, we return EQ.
+        return TypeInt::CC_EQ;
+      }
+      // subk is either a supertype of superk, or null. In either case, superk is a subtype.
       return TypeInt::CC_GT;
     }
   }
@@ -167,6 +180,15 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
   if (super_t->singleton() && subk != nullptr) {
+    if (obj_or_subklass->bottom_type() == Type::TOP) {
+      // The bottom type of obj_or_subklass is TOP, despite its recorded type
+      // being an OOP or a klass pointer. This can happen for example in
+      // transient scenarios where obj_or_subklass is a projection of the TOP
+      // node. In such cases, skip verification to avoid violating the contract
+      // of LoadKlassNode::make(). This does not weaken the effect of verify(),
+      // as SubTypeCheck nodes with TOP obj_or_subklass inputs are dead anyway.
+      return true;
+    }
     const Type* cached_t = Value(phase); // cache the type to validate consistency
     switch (C->static_subtype_check(superk, subk)) {
       case Compile::SSC_easy_test: {
@@ -216,5 +238,22 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   }
   return subklass;
 }
+#endif
 
+uint SubTypeCheckNode::size_of() const {
+  return sizeof(*this);
+}
+
+uint SubTypeCheckNode::hash() const {
+  return NO_HASH;
+}
+
+#ifndef PRODUCT
+void SubTypeCheckNode::dump_spec(outputStream* st) const {
+  if (_method != nullptr) {
+    st->print(" profiled at: ");
+    _method->print_short_name(st);
+    st->print(":%d", _bci);
+  }
+}
 #endif

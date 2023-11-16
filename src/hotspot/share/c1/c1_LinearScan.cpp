@@ -1949,6 +1949,14 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     // interval at the throwing instruction must be searched using the operands
     // of the phi function
     Value from_value = phi->operand_at(handler->phi_operand());
+    if (from_value == nullptr) {
+      // We have reached here in a kotlin application running with JVMTI
+      // capability "can_access_local_variables".
+      // The illegal state is not yet propagated to this phi. Do it here.
+      phi->make_illegal();
+      // We can skip the illegal phi edge.
+      return;
+    }
 
     // with phi functions it can happen that the same from_value is used in
     // multiple mappings, so notify move-resolver that this is allowed

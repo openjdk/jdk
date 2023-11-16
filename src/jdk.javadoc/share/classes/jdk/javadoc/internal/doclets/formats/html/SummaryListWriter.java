@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Arrays;
 import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
@@ -38,7 +39,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
@@ -47,6 +47,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
 /**
  * Base class for generating a summary page that lists elements with a common characteristic,
  * such as deprecated elements, preview elements, and so on.
+ *
+ * Note: the use of "Summary" in this context is distinct from the use of "summary" in the
+ * context of {@link AbstractMemberWriter#buildSummary(Content)}.
+ *
+ * @param <B> a builder, to determine the elements to be included in the summary
  */
 public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
@@ -102,25 +107,42 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
+     * {@return the page mode to use}
+     */
+    protected abstract PageMode getPageMode();
+
+    /**
+     * {@return the page descrition, for the {@code <meta>} element}
+     */
+    protected abstract String getDescription();
+
+    /**
+     * {@return the heading for the page}
+     */
+    protected abstract Content getHeadContent();
+
+    /**
+     * {@return the title for the page}
+     */
+    protected abstract String getTitleKey();
+
+    /**
      * Generate the API summary.
      *
-     * @param pageMode page mode to use
-     * @param description page description
-     * @param headContent page heading content
-     * @param titleKey page title resource key
      * @throws DocFileIOException if there is a problem writing the summary list
      */
-    protected void generateSummaryListFile(PageMode pageMode, String description,
-                                           Content headContent, String titleKey)
-            throws DocFileIOException {
-        HtmlTree body = getHeader(pageMode, titleKey);
+    @Override
+    public void buildPage() throws DocFileIOException {
+        HtmlTree body = getHeader(getPageMode(), getTitleKey());
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
+                HtmlStyle.title, getHeadContent());
         content.add(HtmlTree.DIV(HtmlStyle.header, heading));
         addContentSelectors(content);
-        content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
-        content.add(getContentsList());
+        if (showContentsList()) {
+            content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
+            content.add(getContentsList());
+        }
         addExtraSection(content);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
@@ -148,7 +170,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 """).asContent());
         bodyContents.setFooter(getFooter());
         body.add(bodyContents);
-        printHtmlDocument(null, description, body);
+        printHtmlDocument(null, getDescription(), body);
     }
 
     /**
@@ -163,6 +185,13 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey))).setId(HtmlId.of("contents-" + id.name()));
         content.add(li);
+    }
+
+    /**
+     * {@return {@code true} if the contents list should be generated, {@code false} if not}
+     */
+    protected boolean showContentsList() {
+        return true;
     }
 
     /**
@@ -182,9 +211,9 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
+     * {@return the header for the API Summary listing}
      * @param pageMode page mode to use
      * @param titleKey page title resource key
-     * {@return the header for the API Summary listing}
      */
     public HtmlTree getHeader(PageMode pageMode, String titleKey) {
         String title = resources.getText(titleKey);
@@ -251,13 +280,15 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     protected Content getSummaryLink(Element e) {
+        // TODO: notable that these do not go through the writerFactory
+        //       also maybe notable that annotation type members are not handled as such
         AbstractMemberWriter writer = switch (e.getKind()) {
             case INTERFACE, CLASS, ENUM,
-                 ANNOTATION_TYPE, RECORD -> new NestedClassWriterImpl(this);
-            case FIELD -> new FieldWriterImpl(this);
-            case METHOD -> new MethodWriterImpl(this);
-            case CONSTRUCTOR -> new ConstructorWriterImpl(this);
-            case ENUM_CONSTANT -> new EnumConstantWriterImpl(this);
+                 ANNOTATION_TYPE, RECORD -> new NestedClassWriter(this);
+            case FIELD -> new FieldWriter(this);
+            case METHOD -> new MethodWriter(this);
+            case CONSTRUCTOR -> new ConstructorWriter(this);
+            case ENUM_CONSTANT -> new EnumConstantWriter(this);
             case RECORD_COMPONENT ->
                 throw new AssertionError("Record components are not supported by SummaryListWriter!");
             default ->
@@ -283,21 +314,23 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Subclasses allow the user to show or hide parts of the content in the page.
-     * This method should be used to add the UI to select the visible page content.
+     * Allow Subclasses to add a content selector UI such as a row of radio buttons
+     * near the top of the page. This method does not add anything.
      *
      * @param target the content to which the UI should be added
      */
-    protected abstract void addContentSelectors(Content target);
+    protected void addContentSelectors(Content target) {}
 
     /**
-     * Some subclasses of this class display an extra column in their element tables.
-     * This methods allows them to return the content to show for {@code element}.
+     * Allow subclasses to add an extra table column for an element.
+     * This methods does not add any content by returning {@code null}.
      *
      * @param element the element
      * @return content for extra content or null
      */
-    protected abstract Content getExtraContent(Element element);
+    protected Content getExtraContent(Element element) {
+        return null;
+    }
 
     /**
      * Gets the table header to use for a table with the first column identified by {@code headerKey}.
@@ -331,10 +364,11 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
     }
 
     /**
-     * Allow subclasses to add extra tabs to the element tables.
+     * Allow subclasses to add extra tabs to the element tables. This method does not
+     * add any tabs.
      *
      * @param table the element table
      * @param headingKey the key for the caption (default tab)
      */
-    protected abstract void addTableTabs(Table<Element> table, String headingKey);
+    protected void addTableTabs(Table<Element> table, String headingKey) {}
 }

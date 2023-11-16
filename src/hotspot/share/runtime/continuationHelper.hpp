@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ public:
 
   static inline void push_pd(const frame& f);
 
+  static inline address return_address_at(intptr_t* sp);
+  static inline void patch_return_address_at(intptr_t* sp, address pc);
+
   static inline int frame_align_words(int size);
   static inline intptr_t* frame_align_pointer(intptr_t* sp);
 
@@ -68,7 +71,7 @@ public:
   static inline address real_pc(const frame& f);
   static inline void patch_pc(const frame& f, address pc);
   static address* return_pc_address(const frame& f);
-  static address return_pc(const frame& f) { return *return_pc_address(f); }
+  static address return_pc(const frame& f);
   static bool is_stub(CodeBlob* cb);
 
 #ifdef ASSERT

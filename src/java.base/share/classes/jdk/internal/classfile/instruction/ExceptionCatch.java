@@ -67,8 +67,8 @@ public sealed interface ExceptionCatch extends PseudoInstruction
     /**
      * {@return an exception table pseudo-instruction}
      * @param handler the handler for the exception
-     * @param tryStart the beginning of the instruction range for the gaurded instructions
-     * @param tryEnd the end of the instruction range for the gaurded instructions
+     * @param tryStart the beginning of the instruction range for the guarded instructions
+     * @param tryEnd the end of the instruction range for the guarded instructions
      * @param catchTypeEntry the type of exception to catch, or empty if this
      *                       handler is unconditional
      */

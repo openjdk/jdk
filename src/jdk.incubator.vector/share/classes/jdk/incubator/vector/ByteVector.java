@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1071,7 +1071,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-    /**
+   /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,byte,byte,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,byte,VectorMask)
@@ -2480,14 +2480,26 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     }
 
     @ForceInline
-    final <F>
-    VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp) {
+    private final
+    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
         byte[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
+        ByteSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), byte.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ByteVector::toShuffle0);
     }
 
     /**
@@ -2833,7 +2845,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract byte lane(int i);
@@ -2851,7 +2863,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract ByteVector withLane(int i, byte e);
@@ -3269,8 +3281,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *         if {@code offset+N*1 < 0}
      *         or {@code offset+N*1 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3321,8 +3331,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *         or {@code offset+N*1 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -4084,10 +4092,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         private ByteSpecies(VectorShape shape,
                 Class<? extends ByteVector> vectorType,
                 Class<? extends AbstractMask<Byte>> maskType,
-                Class<? extends AbstractShuffle<Byte>> shuffleType,
                 Function<Object, ByteVector> vectorFactory) {
             super(shape, LaneType.of(byte.class),
-                  vectorType, maskType, shuffleType,
+                  vectorType, maskType,
                   vectorFactory);
             assert(this.elementSize() == Byte.SIZE);
         }
@@ -4363,7 +4370,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_64_BIT,
                             Byte64Vector.class,
                             Byte64Vector.Byte64Mask.class,
-                            Byte64Vector.Byte64Shuffle.class,
                             Byte64Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4371,7 +4377,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_128_BIT,
                             Byte128Vector.class,
                             Byte128Vector.Byte128Mask.class,
-                            Byte128Vector.Byte128Shuffle.class,
                             Byte128Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4379,7 +4384,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_256_BIT,
                             Byte256Vector.class,
                             Byte256Vector.Byte256Mask.class,
-                            Byte256Vector.Byte256Shuffle.class,
                             Byte256Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4387,7 +4391,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_512_BIT,
                             Byte512Vector.class,
                             Byte512Vector.Byte512Mask.class,
-                            Byte512Vector.Byte512Shuffle.class,
                             Byte512Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4395,7 +4398,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_Max_BIT,
                             ByteMaxVector.class,
                             ByteMaxVector.ByteMaxMask.class,
-                            ByteMaxVector.ByteMaxShuffle.class,
                             ByteMaxVector::new);
 
     /**

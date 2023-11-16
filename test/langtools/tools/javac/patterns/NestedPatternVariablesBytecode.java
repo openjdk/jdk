@@ -28,7 +28,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NestedPatternVariablesBytecode
  */
@@ -38,12 +43,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Instruction;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -54,7 +55,7 @@ public class NestedPatternVariablesBytecode extends TestRunner {
     private static final String TEST_METHOD = "test";
 
     ToolBox tb;
-    ClassFile cf;
+    ClassModel cf;
 
     public NestedPatternVariablesBytecode() {
         super(System.err);
@@ -83,31 +84,28 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                 .outdir(curPath)
                 .run();
 
-        cf = ClassFile.read(curPath.resolve("NestedPatterVariablesTest.class"));
-        Method testMethod = Arrays.stream(cf.methods)
-                                  .filter(m -> isTestMethod(m))
+        cf = Classfile.of().parse(curPath.resolve("NestedPatterVariablesTest.class"));
+        MethodModel testMethod = cf.methods().stream()
+                                  .filter(this::isTestMethod)
                                   .findAny()
-                                  .get();
-        Code_attribute code_attribute = (Code_attribute) testMethod.attributes.get(Attribute.Code);
+                                  .orElseThrow();
+        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.CODE).orElseThrow();
 
         List<String> actualCode = getCodeInstructions(code_attribute);
         List<String> expectedCode = Arrays.asList(
-                "aload_1", "instanceof", "ifeq", "aload_1", "checkcast", "astore_2", "aload_2", "instanceof",
-                "ifeq", "aload_2", "checkcast", "astore_3", "aload_3", "areturn", "aconst_null", "areturn");
+                "ALOAD_1", "INSTANCEOF", "IFEQ", "ALOAD_1", "CHECKCAST", "ASTORE_2", "ALOAD_2", "INSTANCEOF",
+                "IFEQ", "ALOAD_2", "CHECKCAST", "ASTORE_3", "ALOAD_3", "ARETURN", "ACONST_NULL", "ARETURN");
         tb.checkEqual(expectedCode, actualCode);
     }
 
-    boolean isTestMethod(Method m) {
-        try {
-            return TEST_METHOD.equals(m.getName(cf.constant_pool));
-        } catch (ConstantPoolException e) {
-            throw new IllegalStateException(e);
-        }
+    boolean isTestMethod(MethodModel m) {
+        return m.methodName().equalsString(TEST_METHOD);
     }
 
-    List<String> getCodeInstructions(Code_attribute code) {
-        return StreamSupport.stream(code.getInstructions().spliterator(), false)
-                .map(Instruction::getMnemonic)
+    List<String> getCodeInstructions(CodeAttribute code) {
+        return code.elementList().stream()
+                .filter(ce -> ce instanceof Instruction)
+                .map(ins -> ((Instruction) ins).opcode().name())
                 .toList();
     }
 }

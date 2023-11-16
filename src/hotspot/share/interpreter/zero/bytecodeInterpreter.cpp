@@ -23,6 +23,7 @@
  */
 
 // no precompiled headers
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,10 +46,12 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -405,7 +408,7 @@ JRT_END
         target = obj;                                               \
       }                                                             \
       CALL_VM(InterpreterRuntime::post_field_access(THREAD,         \
-                                  target, cache),                   \
+                                  target, entry),                   \
                                   handle_exception);                \
     }                                                               \
   }                                                                 \
@@ -425,7 +428,7 @@ JRT_END
         target = obj;                                               \
       }                                                             \
       CALL_VM(InterpreterRuntime::post_field_modification(THREAD,   \
-                                  target, cache,                    \
+                                  target, entry,                    \
                                   (jvalue*)STACK_SLOT(-1)),         \
                                   handle_exception);                \
     }                                                               \
@@ -1721,8 +1724,8 @@ run:
       CASE(_getstatic):
         {
           u2 index;
-          ConstantPoolCacheEntry* cache;
           index = Bytes::get_native_u2(pc+1);
+          ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
           // QQQ Need to make this as inlined as possible. Probably need to
           // split all the bytecode cases out so c++ compiler has a chance
@@ -1735,26 +1738,25 @@ run:
             code = Bytecodes::_getfield;
           }
 
-          cache = cp->entry_at(index);
-          if (!cache->is_resolved(code)) {
+          if (!entry->is_resolved(code)) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
-            cache = cp->entry_at(index);
+            entry = cp->resolved_field_entry_at(index);
           }
 
           oop obj;
           if ((Bytecodes::Code)opcode == Bytecodes::_getstatic) {
-            Klass* k = cache->f1_as_klass();
+            Klass* k = entry->field_holder();
             obj = k->java_mirror();
             MORE_STACK(1);  // Assume single slot push
           } else {
             obj = STACK_OBJECT(-1);
             CHECK_NULL(obj);
             // Check if we can rewrite non-volatile _getfield to one of the _fast_Xgetfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+            if (REWRITE_BYTECODES && !entry->is_volatile() &&
                   ((Bytecodes::Code)opcode != Bytecodes::_nofast_getfield)) {
               // Rewrite current BC to _fast_Xgetfield.
-              REWRITE_AT_PC(fast_get_type(cache->flag_state()));
+              REWRITE_AT_PC(fast_get_type((TosState)(entry->tos_state())));
             }
           }
 
@@ -1763,9 +1765,9 @@ run:
           //
           // Now store the result on the stack
           //
-          TosState tos_type = cache->flag_state();
-          int field_offset = cache->f2_as_index();
-          if (cache->is_volatile()) {
+          TosState tos_type = (TosState)(entry->tos_state());
+          int field_offset = entry->field_offset();
+          if (entry->is_volatile()) {
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
               OrderAccess::fence();
             }
@@ -1841,14 +1843,14 @@ run:
           }
 
           UPDATE_PC_AND_CONTINUE(3);
-         }
+        }
 
       CASE(_putfield):
       CASE(_nofast_putfield):
       CASE(_putstatic):
         {
           u2 index = Bytes::get_native_u2(pc+1);
-          ConstantPoolCacheEntry* cache = cp->entry_at(index);
+          ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
           // Interpreter runtime does not expect "nofast" opcodes,
           // prepare the vanilla opcode for it.
@@ -1857,10 +1859,10 @@ run:
             code = Bytecodes::_putfield;
           }
 
-          if (!cache->is_resolved(code)) {
+          if (!entry->is_resolved(code)) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, code),
                     handle_exception);
-            cache = cp->entry_at(index);
+            entry = cp->resolved_field_entry_at(index);
           }
 
           // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
@@ -1868,14 +1870,14 @@ run:
 
           oop obj;
           int count;
-          TosState tos_type = cache->flag_state();
+          TosState tos_type = (TosState)(entry->tos_state());
 
           count = -1;
           if (tos_type == ltos || tos_type == dtos) {
             --count;
           }
           if ((Bytecodes::Code)opcode == Bytecodes::_putstatic) {
-            Klass* k = cache->f1_as_klass();
+            Klass* k = entry->field_holder();
             obj = k->java_mirror();
           } else {
             --count;
@@ -1883,10 +1885,10 @@ run:
             CHECK_NULL(obj);
 
             // Check if we can rewrite non-volatile _putfield to one of the _fast_Xputfield.
-            if (REWRITE_BYTECODES && !cache->is_volatile() &&
+            if (REWRITE_BYTECODES && !entry->is_volatile() &&
                   ((Bytecodes::Code)opcode != Bytecodes::_nofast_putfield)) {
               // Rewrite current BC to _fast_Xputfield.
-              REWRITE_AT_PC(fast_put_type(cache->flag_state()));
+              REWRITE_AT_PC(fast_put_type((TosState)(entry->tos_state())));
             }
           }
 
@@ -1895,8 +1897,8 @@ run:
           //
           // Now store the result
           //
-          int field_offset = cache->f2_as_index();
-          if (cache->is_volatile()) {
+          int field_offset = entry->field_offset();
+          if (entry->is_volatile()) {
             switch (tos_type) {
               case ztos:
                 obj->release_byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
@@ -2274,20 +2276,20 @@ run:
       CASE(_invokehandle): {
 
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
 
-        if (! cache->is_resolved((Bytecodes::Code) opcode)) {
+        if (! entry->is_resolved((Bytecodes::Code) opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
+          entry = cp->resolved_method_entry_at(index);
         }
 
-        Method* method = cache->f1_as_method();
+        Method* method = entry->method();
         if (VerifyOops) method->verify();
 
-        if (cache->has_appendix()) {
+        if (entry->has_appendix()) {
           constantPoolHandle cp(THREAD, METHOD->constants());
-          SET_STACK_OBJECT(cache->appendix_if_resolved(cp), 0);
+          SET_STACK_OBJECT(cp->cache()->appendix_if_resolved(entry), 0);
           MORE_STACK(1);
         }
 
@@ -2305,11 +2307,10 @@ run:
         // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        if (!cache->is_resolved((Bytecodes::Code)opcode)) {
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
+        if (!entry->is_resolved((Bytecodes::Code)opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
         }
 
         istate->set_msg(call_method);
@@ -2317,31 +2318,31 @@ run:
         // Special case of invokeinterface called for virtual method of
         // java.lang.Object.  See cpCache.cpp for details.
         Method* callee = nullptr;
-        if (cache->is_forced_virtual()) {
-          CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-          if (cache->is_vfinal()) {
-            callee = cache->f2_as_vfinal_method();
+        if (entry->is_forced_virtual()) {
+          CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+          if (entry->is_vfinal()) {
+            callee = entry->method();
           } else {
             // Get receiver.
-            int parms = cache->parameter_size();
+            int parms = entry->number_of_parameters();
             // Same comments as invokevirtual apply here.
             oop rcvr = STACK_OBJECT(-parms);
             VERIFY_OOP(rcvr);
             Klass* rcvrKlass = rcvr->klass();
-            callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
+            callee = (Method*) rcvrKlass->method_at_vtable(entry->table_index());
           }
-        } else if (cache->is_vfinal()) {
+        } else if (entry->is_vfinal()) {
           // private interface method invocations
           //
           // Ensure receiver class actually implements
           // the resolved interface class. The link resolver
           // does this, but only for the first time this
           // interface is being called.
-          int parms = cache->parameter_size();
+          int parms = entry->number_of_parameters();
           oop rcvr = STACK_OBJECT(-parms);
           CHECK_NULL(rcvr);
           Klass* recv_klass = rcvr->klass();
-          Klass* resolved_klass = cache->f1_as_klass();
+          Klass* resolved_klass = entry->interface_klass();
           if (!recv_klass->is_subtype_of(resolved_klass)) {
             ResourceMark rm(THREAD);
             char buf[200];
@@ -2350,7 +2351,7 @@ run:
               resolved_klass->external_name());
             VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
           }
-          callee = cache->f2_as_vfinal_method();
+          callee = entry->method();
         }
         if (callee != nullptr) {
           istate->set_callee(callee);
@@ -2363,18 +2364,18 @@ run:
         }
 
         // this could definitely be cleaned up QQQ
-        Method *interface_method = cache->f2_as_interface_method();
+        Method *interface_method = entry->method();
         InstanceKlass* iclass = interface_method->method_holder();
 
         // get receiver
-        int parms = cache->parameter_size();
+        int parms = entry->number_of_parameters();
         oop rcvr = STACK_OBJECT(-parms);
         CHECK_NULL(rcvr);
         InstanceKlass* int2 = (InstanceKlass*) rcvr->klass();
 
         // Receiver subtype check against resolved interface klass (REFC).
         {
-          Klass* refc = cache->f1_as_klass();
+          Klass* refc = entry->interface_klass();
           itableOffsetEntry* scan;
           for (scan = (itableOffsetEntry*) int2->start_of_itable();
                scan->interface_klass() != nullptr;
@@ -2427,30 +2428,30 @@ run:
       CASE(_invokestatic): {
         u2 index = Bytes::get_native_u2(pc+1);
 
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
         // QQQ Need to make this as inlined as possible. Probably need to split all the bytecode cases
         // out so c++ compiler has a chance for constant prop to fold everything possible away.
 
-        if (!cache->is_resolved((Bytecodes::Code)opcode)) {
+        if (!entry->is_resolved((Bytecodes::Code)opcode)) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          cache = cp->entry_at(index);
+          entry = cp->resolved_method_entry_at(index);
         }
 
         istate->set_msg(call_method);
         {
           Method* callee;
           if ((Bytecodes::Code)opcode == Bytecodes::_invokevirtual) {
-            CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-            if (cache->is_vfinal()) {
-              callee = cache->f2_as_vfinal_method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !Arguments::is_dumping_archive()) {
+            CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+            if (entry->is_vfinal()) {
+              callee = entry->method();
+              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
             } else {
               // get receiver
-              int parms = cache->parameter_size();
+              int parms = entry->number_of_parameters();
               // this works but needs a resourcemark and seems to create a vtable on every call:
               // Method* callee = rcvr->klass()->vtable()->method_at(cache->f2_as_index());
               //
@@ -2476,13 +2477,13 @@ run:
                   However it seems to have a vtable in the right location. Huh?
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
-              callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
+              callee = (Method*) rcvrKlass->method_at_vtable(entry->table_index());
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
-              CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
+              CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             }
-            callee = cache->f1_as_method();
+            callee = entry->method();
           }
 
           istate->set_callee(callee);
@@ -2584,8 +2585,8 @@ run:
 
       CASE(_fast_agetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2599,8 +2600,8 @@ run:
 
       CASE(_fast_bgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2613,8 +2614,8 @@ run:
 
       CASE(_fast_cgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2627,8 +2628,8 @@ run:
 
       CASE(_fast_dgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2642,8 +2643,8 @@ run:
 
       CASE(_fast_fgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2656,8 +2657,8 @@ run:
 
       CASE(_fast_igetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2670,8 +2671,8 @@ run:
 
       CASE(_fast_lgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2685,8 +2686,8 @@ run:
 
       CASE(_fast_sgetfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = STACK_OBJECT(-1);
         CHECK_NULL(obj);
@@ -2699,14 +2700,14 @@ run:
 
       CASE(_fast_aputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->obj_field_put(field_offset, STACK_OBJECT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2714,14 +2715,14 @@ run:
 
       CASE(_fast_bputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->byte_field_put(field_offset, STACK_INT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2729,14 +2730,14 @@ run:
 
       CASE(_fast_zputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->byte_field_put(field_offset, (STACK_INT(-1) & 1)); // only store LSB
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2744,14 +2745,14 @@ run:
 
       CASE(_fast_cputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->char_field_put(field_offset, STACK_INT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2759,14 +2760,14 @@ run:
 
       CASE(_fast_dputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-3);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->double_field_put(field_offset, STACK_DOUBLE(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -3);
@@ -2774,14 +2775,14 @@ run:
 
       CASE(_fast_fputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->float_field_put(field_offset, STACK_FLOAT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2789,14 +2790,14 @@ run:
 
       CASE(_fast_iputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->int_field_put(field_offset, STACK_INT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2804,14 +2805,14 @@ run:
 
       CASE(_fast_lputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-3);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->long_field_put(field_offset, STACK_LONG(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -3);
@@ -2819,14 +2820,14 @@ run:
 
       CASE(_fast_sputfield): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
 
         oop obj = STACK_OBJECT(-2);
         CHECK_NULL(obj);
 
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
-        int field_offset = cache->f2_as_index();
+        int field_offset = entry->field_offset();
         obj->short_field_put(field_offset, STACK_INT(-1));
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
@@ -2841,8 +2842,8 @@ run:
 
       CASE(_fast_aaccess_0): {
         u2 index = Bytes::get_native_u2(pc+2);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = LOCALS_OBJECT(0);
         CHECK_NULL(obj);
@@ -2857,8 +2858,8 @@ run:
 
       CASE(_fast_iaccess_0): {
         u2 index = Bytes::get_native_u2(pc+2);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = LOCALS_OBJECT(0);
         CHECK_NULL(obj);
@@ -2872,8 +2873,8 @@ run:
 
       CASE(_fast_faccess_0): {
         u2 index = Bytes::get_native_u2(pc+2);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
-        int field_offset = cache->f2_as_index();
+        ResolvedFieldEntry* entry = cp->resolved_field_entry_at(index);
+        int field_offset = entry->field_offset();
 
         oop obj = LOCALS_OBJECT(0);
         CHECK_NULL(obj);
@@ -2887,14 +2888,14 @@ run:
 
       CASE(_fast_invokevfinal): {
         u2 index = Bytes::get_native_u2(pc+1);
-        ConstantPoolCacheEntry* cache = cp->entry_at(index);
+        ResolvedMethodEntry* entry = cp->resolved_method_entry_at(index);
 
-        assert(cache->is_resolved(Bytecodes::_invokevirtual), "Should be resolved before rewriting");
+        assert(entry->is_resolved(Bytecodes::_invokevirtual), "Should be resolved before rewriting");
 
         istate->set_msg(call_method);
 
-        CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
-        Method* callee = cache->f2_as_vfinal_method();
+        CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
+        Method* callee = entry->method();
         istate->set_callee(callee);
         if (JVMTI_ENABLED && THREAD->is_interp_only_mode()) {
           istate->set_callee_entry_point(callee->interpreter_entry());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
+    boolean keepAliveOptionsSupported() {
+        return keepAliveOptionsSupported0();
+    }
+
+    @Override
     void setIpDontFragment(int fd, final boolean value, boolean isIPv6) throws SocketException {
         setIpDontFragment0(fd, value, isIPv6);
     }
@@ -51,8 +56,45 @@ class WindowsSocketOptions extends PlatformSocketOptions {
         return getIpDontFragment0(fd, isIPv6);
     }
 
+    @Override
+    void setTcpKeepAliveProbes(int fd, final int value) throws SocketException {
+        setTcpKeepAliveProbes0(fd, value);
+    }
+
+    @Override
+    int getTcpKeepAliveProbes(int fd) throws SocketException {
+        return getTcpKeepAliveProbes0(fd);
+    }
+
+    @Override
+    void setTcpKeepAliveTime(int fd, final int value) throws SocketException {
+        setTcpKeepAliveTime0(fd, value);
+    }
+
+    @Override
+    int getTcpKeepAliveTime(int fd) throws SocketException {
+        return getTcpKeepAliveTime0(fd);
+    }
+
+    @Override
+    void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
+        setTcpKeepAliveIntvl0(fd, value);
+    }
+
+    @Override
+    int getTcpKeepAliveIntvl(int fd) throws SocketException {
+        return getTcpKeepAliveIntvl0(fd);
+    }
+
+    private static native boolean keepAliveOptionsSupported0();
     private static native void setIpDontFragment0(int fd, boolean value, boolean isIPv6) throws SocketException;
     private static native boolean getIpDontFragment0(int fd, boolean isIPv6) throws SocketException;
+    private static native void setTcpKeepAliveProbes0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveProbes0(int fd) throws SocketException;
+    private static native void setTcpKeepAliveTime0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
+    private static native void setTcpKeepAliveIntvl0(int fd, int value) throws SocketException;
+    private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
 
     static {
         if (System.getSecurityManager() == null) {

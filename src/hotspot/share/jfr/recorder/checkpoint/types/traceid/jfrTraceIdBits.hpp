@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBITS_HPP
 
 #include "jfr/utilities/jfrTypes.hpp"
-#include "jni.h"
 #include "memory/allStatic.hpp"
 
 class JfrTraceIdBits : AllStatic {
@@ -35,28 +34,28 @@ class JfrTraceIdBits : AllStatic {
   static traceid load(const T* ptr);
 
   template <typename T>
-  static void store(jbyte bits, const T* ptr);
+  static void store(uint8_t bits, const T* ptr);
 
   template <typename T>
-  static void cas(jbyte bits, const T* ptr);
+  static void cas(uint8_t bits, const T* ptr);
 
   template <typename T>
-  static void meta_store(jbyte bits, const T* ptr);
+  static void meta_store(uint8_t bits, const T* ptr);
 
   template <typename T>
-  static void mask_store(jbyte mask, const T* ptr);
+  static void mask_store(uint8_t mask, const T* ptr);
 
   template <typename T>
-  static void meta_mask_store(jbyte mask, const T* ptr);
+  static void meta_mask_store(uint8_t mask, const T* ptr);
 
   template <typename T>
-  static void clear(jbyte bits, const T* ptr);
+  static void clear(uint8_t bits, const T* ptr);
 
   template <typename T>
-  static void clear_cas(jbyte bits, const T* ptr);
+  static void clear_cas(uint8_t bits, const T* ptr);
 
   template <typename T>
-  static void meta_clear(jbyte bits, const T* ptr);
+  static void meta_clear(uint8_t bits, const T* ptr);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBITS_HPP

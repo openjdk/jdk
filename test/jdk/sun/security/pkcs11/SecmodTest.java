@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 // common infrastructure for Secmod tests
 
+import jtreg.SkippedException;
+
 import java.io.*;
 
 import java.security.Provider;
@@ -34,7 +36,7 @@ public class SecmodTest extends PKCS11Test {
     static String DBDIR;
     static char[] password = "test12".toCharArray();
     static String keyAlias = "mykey";
-    static boolean useSqlite = false;
+    static boolean useSqlite = true;
 
     static void useSqlite(boolean b) {
         useSqlite = b;
@@ -43,13 +45,11 @@ public class SecmodTest extends PKCS11Test {
     static boolean initSecmod() throws Exception {
         useNSS();
         LIBPATH = getNSSLibDir();
-        if (LIBPATH == null) {
-            return false;
-        }
         // load all the libraries except libnss3 into memory
-        if (loadNSPR(LIBPATH) == false) {
-            return false;
+        if ((LIBPATH == null) || (!loadNSPR(LIBPATH))) {
+            throw new SkippedException("Failed to load NSS libraries");
         }
+
         safeReload(LIBPATH + System.mapLibraryName("softokn3"));
         safeReload(LIBPATH + System.mapLibraryName("nssckbi"));
 

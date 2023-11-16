@@ -30,6 +30,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
@@ -236,6 +237,8 @@ class frame {
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
+  Method* safe_interpreter_frame_method() const;
+
   // All frames:
 
   // A low-level interface for vframes:
@@ -246,6 +249,12 @@ class frame {
   intptr_t  at_absolute(int index) const         { return *addr_at(index); }
   // Interpreter frames in continuation stacks are on the heap, and internal addresses are relative to fp.
   intptr_t  at_relative(int index) const         { return (intptr_t)(fp() + fp()[index]); }
+
+  intptr_t  at_relative_or_null(int index) const {
+    return (fp()[index] != 0)
+      ? (intptr_t)(fp() + fp()[index])
+      : 0;
+  }
 
   intptr_t at(int index) const                   {
     return _on_heap ? at_relative(index) : at_absolute(index);
@@ -370,6 +379,7 @@ class frame {
   BasicObjectLock* next_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   BasicObjectLock* previous_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   static int interpreter_frame_monitor_size();
+  static int interpreter_frame_monitor_size_in_bytes();
 
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
 
@@ -514,11 +524,10 @@ class FrameValues {
     if (a->location == b->location) {
       return a->priority - b->priority;
     }
-    return a->location - b->location;
+    return checked_cast<int>(a->location - b->location);
   }
 
-  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,
-                bool on_heap = false);
+  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1);
 
  public:
   // Used by frame functions to describe locations.

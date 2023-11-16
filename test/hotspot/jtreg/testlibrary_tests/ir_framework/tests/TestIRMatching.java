@@ -100,12 +100,12 @@ public class TestIRMatching {
                  GoodFailOnRegexConstraint.create(MultipleFailOnBad.class, "fail10()", 1,  2, 3)
         );
 
-        runCheck(BadCountsConstraint.create(BadCount.class, "bad1()", 1, 1, "Load"),
+        runCheck(BadCountsConstraint.create(BadCount.class, "bad1()", 1, 2, "Load"),
                  GoodCountsConstraint.create(BadCount.class, "bad1()", 2),
                  GoodCountsConstraint.create(BadCount.class, "bad2()", 1),
-                 BadCountsConstraint.create(BadCount.class, "bad2()", 2,  1, "Store"),
-                 BadCountsConstraint.create(BadCount.class, "bad3()", 1,  1, "Load"),
-                 BadCountsConstraint.create(BadCount.class, "bad3()", 2,  1, "Store")
+                 BadCountsConstraint.create(BadCount.class, "bad2()", 2,  2, "Store"),
+                 BadCountsConstraint.create(BadCount.class, "bad3()", 1,  2, "Load"),
+                 BadCountsConstraint.create(BadCount.class, "bad3()", 2,  2, "Store")
         );
 
         runCheck(GoodRuleConstraint.create(Calls.class, "calls()", 1),
@@ -178,7 +178,7 @@ public class TestIRMatching {
                  GoodRuleConstraint.create(Traps.class, "predicateTrap()", 4),
                  BadFailOnConstraint.create(Traps.class, "nullCheck()", 1, "CallStaticJava", "uncommon_trap"),
                  BadFailOnConstraint.create(Traps.class, "nullCheck()", 2, "CallStaticJava", "uncommon_trap", "null_check"),
-                 BadFailOnConstraint.create(Traps.class, "nullCheck()", 3, "uncommon_trap", "unstable_if"),
+                 BadFailOnConstraint.create(Traps.class, "nullCheck()", 3, "uncommon_trap", "class_check"),
                  GoodRuleConstraint.create(Traps.class, "nullCheck()", 4),
                  BadFailOnConstraint.create(Traps.class, "nullAssert()", 1, "CallStaticJava", "uncommon_trap"),
                  BadFailOnConstraint.create(Traps.class, "nullAssert()", 2, "CallStaticJava", "uncommon_trap", "null_assert"),
@@ -222,10 +222,10 @@ public class TestIRMatching {
         } else {
             cmp = "cmp";
         }
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, cmp, "precise"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,cmp, "precise", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
-                 GoodFailOnConstraint.create(CheckCastArray.class, "array()", 3),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "precise"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "precise", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
+                 GoodFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 3),
                  Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
                      GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1)
                      : BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1, "checkcast_arraycopy")
@@ -629,10 +629,6 @@ class CountComparisons {
                   IRNode.STORE, "<=1",
                   IRNode.STORE, " <= 1",
                   IRNode.STORE, "  <=  1",
-                  IRNode.STORE, "!= 0",
-                  IRNode.STORE, "!=0",
-                  IRNode.STORE, " != 0",
-                  IRNode.STORE, "  !=  0",
                   IRNode.STORE, "> 0",
                   IRNode.STORE, ">0",
                   IRNode.STORE, " > 0",
@@ -823,27 +819,32 @@ class GoodCount {
 
 class BadCount {
     int iFld;
+    int iFld2;
     int result;
+    int result2;
     @Test
-    @IR(counts = {IRNode.LOAD, "!= 1"}) // fail
+    @IR(counts = {IRNode.LOAD, "> 1000"}) // fail
     @IR(counts = {IRNode.STORE, "> 0"})
     public void bad1() {
         result = iFld;
+        result2 = iFld2;
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD, "1"}) // fail
-    @IR(counts = {IRNode.STORE, "< 1"})
+    @IR(counts = {IRNode.LOAD, "2"}) // fail
+    @IR(counts = {IRNode.STORE, "< 2"})
     public void bad2() {
         result = iFld;
+        result2 = iFld2;
     }
 
 
     @Test
     @IR(counts = {IRNode.LOAD, "0"}) // fail
-    @IR(counts = {IRNode.STORE, " <= 0"}) // fail
+    @IR(counts = {IRNode.STORE, " <= 1"}) // fail
     public void bad3() {
         result = iFld;
+        result2 = iFld2;
     }
 }
 
@@ -1079,11 +1080,11 @@ class Traps {
     @Test
     @IR(failOn = IRNode.TRAP) // fails
     @IR(failOn = IRNode.NULL_CHECK_TRAP) // fails
-    @IR(failOn = IRNode.UNSTABLE_IF_TRAP) // fails
+    @IR(failOn = IRNode.CLASS_CHECK_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
-                  IRNode.CLASS_CHECK_TRAP,
+                  IRNode.UNSTABLE_IF_TRAP,
                   IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
@@ -1236,8 +1237,14 @@ class CheckCastArray {
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClass", // fails
                   IRNode.CHECKCAST_ARRAY_OF, "ir_framework/tests/MyClass"}) // fails
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClasss", IRNode.CHECKCAST_ARRAY_OF, "Object"})
-    public boolean array() {
-        return oArr instanceof MyClass[];
+    public boolean array(Object[] arr) {
+        return arr instanceof MyClass[];
+    }
+
+    @Run(test = "array")
+    public void testArray() {
+        array(oArr);
+        array(mArr);
     }
 
     @Test

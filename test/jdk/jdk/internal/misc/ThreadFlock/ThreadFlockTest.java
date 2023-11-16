@@ -1042,7 +1042,7 @@ class ThreadFlockTest {
     @Test
     void testToString() {
         try (var flock = ThreadFlock.open("xxxx")) {
-            assertTrue(flock.toString().contains("xxx"));
+            assertTrue(flock.toString().contains("xxxx"));
         }
     }
 

@@ -26,7 +26,12 @@
  * @bug 8025087
  * @summary Verify that pre-JDK8 classfiles with default and/or static methods
  *          are refused correctly.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -37,7 +42,7 @@
  * @run main BadClassfile
  */
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symbol;
@@ -59,15 +64,9 @@ public class BadClassfile {
 
     private static void test(String classname, String expected) throws Exception {
         File classfile = new File(System.getProperty("test.classes", "."), classname + ".class");
-        ClassFile cf = ClassFile.read(classfile);
-
-        cf = new ClassFile(cf.magic, Target.JDK1_7.minorVersion,
-                 Target.JDK1_7.majorVersion, cf.constant_pool, cf.access_flags,
-                cf.this_class, cf.super_class, cf.interfaces, cf.fields,
-                cf.methods, cf.attributes);
-
-        new ClassWriter().write(cf, classfile);
-
+        ClassModel cf = Classfile.of().parse(classfile.toPath());
+        Classfile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof ClassfileVersion)
+                .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.withVersion(Target.JDK1_7.majorVersion, Target.JDK1_7.minorVersion))));
         JavaCompiler c = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) c.getTask(null, null, null, Arrays.asList("-classpath", System.getProperty("test.classes", ".")), null, null);
         Symtab syms = Symtab.instance(task.getContext());

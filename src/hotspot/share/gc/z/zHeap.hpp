@@ -118,7 +118,7 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* object_cl, bool visit_weaks);
-  void object_and_field_iterate(ObjectClosure* object_cl, OopFieldClosure* field_cl, bool visit_weaks);
+  void object_and_field_iterate_for_verify(ObjectClosure* object_cl, OopFieldClosure* field_cl, bool visit_weaks);
   ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers, bool visit_weaks);
 
   void threads_do(ThreadClosure* tc) const;

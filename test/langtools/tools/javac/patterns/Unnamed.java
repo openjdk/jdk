@@ -21,11 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
- * @enablePreview
  * @compile Unnamed.java
  * @run main Unnamed
  */
@@ -79,6 +78,8 @@ public class Unnamed {
         assertEquals(2, testMixVarWithExplicit(new Box<>(new R2())));
         assertEquals("binding", unnamedGuardAddsBindings("match1", "binding"));
         assertEquals("any", unnamedGuardAddsBindings(42, 42));
+        assertEquals(true, testUnnamedPrimitiveAndExhaustiveness(new Prim1(4)));
+        assertEquals(false, testUnnamedPrimitiveAndExhaustiveness(new Prim2(5)));
 
         unnamedTest();
     }
@@ -95,6 +96,9 @@ public class Unnamed {
         }
         try (final Lock _ = null) { }
         try (@Foo Lock _ = null) { }
+
+        try (Lock _ = null) { }
+        catch (Exception | Error _) { }
 
         String[] strs = new String[] { "str1", "str2" };
         for (var _ : strs) {
@@ -269,6 +273,29 @@ public class Unnamed {
             case Object _: yield "any";
         };
     }
+
+    boolean testUnnamedPrimitiveAndExhaustiveness(RecordWithPrimitive a) {
+        boolean r1 = switch (a) {
+            case Prim1(var _) -> true;
+            case Prim2(_) -> false;
+        };
+
+        boolean r2 = switch (a) {
+            case Prim1(var _) -> true;
+            case Prim2(var _) -> false;
+        };
+
+        boolean r3 = switch (a) {
+            case Prim1(_) -> true;
+            case Prim2(_) -> false;
+        };
+
+        return r1 && r2 && r3;
+    }
+
+    sealed interface RecordWithPrimitive permits Prim1, Prim2 {};
+    record Prim1(int n1) implements RecordWithPrimitive {};
+    record Prim2(int n2) implements RecordWithPrimitive {};
 
     // JEP 443 examples
     record Point(int x, int y) { }

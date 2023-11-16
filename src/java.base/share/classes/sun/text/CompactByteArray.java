@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public final class CompactByteArray implements Cloneable {
             if (elementAt((char)i) != other.elementAt((char)i))
                 return false;
         }
-        return true; // we made it through the guantlet.
+        return true; // we made it through the gauntlet.
     }
 
     /**

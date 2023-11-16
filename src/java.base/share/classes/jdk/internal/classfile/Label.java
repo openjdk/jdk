@@ -28,7 +28,7 @@ import jdk.internal.classfile.impl.LabelImpl;
 
 /**
  * A marker for a position within the instructions of a method body.  The
- * assocation between a label's identity and the position it represents is
+ * association between a label's identity and the position it represents is
  * managed by the entity managing the method body (a {@link CodeModel} or {@link
  * CodeBuilder}), not the label itself; this allows the same label to have a
  * meaning both in an existing method (as managed by a {@linkplain CodeModel})

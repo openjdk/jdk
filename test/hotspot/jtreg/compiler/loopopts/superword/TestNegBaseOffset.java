@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @comment Test fails only with -Xcomp when profiling data is not present.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1
- *                   -XX:CompileOnly=compiler/loopopts/superword/TestNegBaseOffset
+ *                   -XX:CompileOnly=compiler.loopopts.superword.TestNegBaseOffset::*
  *                   compiler.loopopts.superword.TestNegBaseOffset
  */
 
@@ -56,4 +56,3 @@ public class TestNegBaseOffset {
         }
     }
 }
-

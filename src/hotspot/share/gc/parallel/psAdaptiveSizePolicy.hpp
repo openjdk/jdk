@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,11 +300,11 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   virtual void clear_generation_free_space_flags();
 
-  float major_pause_old_slope() { return _major_pause_old_estimator->slope(); }
-  float major_pause_young_slope() {
+  double major_pause_old_slope() { return _major_pause_old_estimator->slope(); }
+  double major_pause_young_slope() {
     return _major_pause_young_estimator->slope();
   }
-  float major_collection_slope() { return _major_collection_estimator->slope();}
+  double major_collection_slope() { return _major_collection_estimator->slope();}
 
   // Given the amount of live data in the heap, should we
   // perform a Full GC?

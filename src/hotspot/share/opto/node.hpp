@@ -70,6 +70,7 @@ class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
 class ConINode;
+class ConvertNode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -129,6 +130,8 @@ class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NegNode;
+class NegVNode;
 class NeverBranchNode;
 class Opaque1Node;
 class OuterStripMinedLoopNode;
@@ -158,6 +161,7 @@ class RegionNode;
 class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
+class SafePointScalarMergeNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -724,8 +728,11 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
           DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
+        DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
+      DEFINE_CLASS_ID(Convert, Type, 10)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -778,8 +785,9 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
+    DEFINE_CLASS_ID(Neg,      Node, 19)
 
-    _max_classes  = ClassMask_LShift
+    _max_classes  = ClassMask_Neg
   };
   #undef DEFINE_CLASS_ID
 
@@ -829,9 +837,9 @@ protected:
   }
 
 public:
-  const juint class_id() const { return _class_id; }
+  juint class_id() const { return _class_id; }
 
-  const juint flags() const { return _flags; }
+  juint flags() const { return _flags; }
 
   void add_flag(juint fl) { init_flags(fl); }
 
@@ -883,6 +891,7 @@ public:
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
   DEFINE_CLASS_QUERY(Cmp)
+  DEFINE_CLASS_QUERY(Convert)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
@@ -939,6 +948,8 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(Neg)
+  DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
@@ -953,6 +964,7 @@ public:
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
+  DEFINE_CLASS_QUERY(SafePointScalarMerge)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
@@ -1116,6 +1128,13 @@ public:
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
 
+  // Visit boundary uses of the node and apply a callback function for each.
+  // Recursively traverse uses, stopping and applying the callback when
+  // reaching a boundary node, defined by is_boundary. Note: the function
+  // definition appears after the complete type definition of Node_List.
+  template <typename Callback, typename Check>
+  void visit_uses(Callback callback, Check is_boundary) const;
+
 //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
@@ -1210,12 +1229,16 @@ public:
   // Whether this is a memory-writing machine node.
   bool is_memory_writer() const { return is_Mach() && bottom_type()->has_memory(); }
 
+  // Whether this is a memory phi node
+  bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:
@@ -1611,6 +1634,35 @@ public:
   void dump() const;
   void dump_simple() const;
 };
+
+// Definition must appear after complete type definition of Node_List
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) const {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* out = fast_out(k);
+    if (!visited.test_set(out->_idx)) { worklist.push(out); }
+  }
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) {
+      callback(use);
+    } else {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        Node* out = use->fast_out(k);
+        if (!visited.test_set(out->_idx)) { worklist.push(out); }
+      }
+    }
+  }
+}
+
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {

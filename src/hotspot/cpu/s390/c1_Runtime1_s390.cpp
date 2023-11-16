@@ -233,6 +233,12 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Other registers used in this stub.
   const Register handler_addr = Z_R4;
 
+  if (AbortVMOnException) {
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Z_EXC_OOP);
+    restore_live_registers(sasm);
+  }
+
   // Verify that only exception_oop, is valid at this time.
   __ invalidate_registers(Z_EXC_OOP, Z_EXC_PC);
 

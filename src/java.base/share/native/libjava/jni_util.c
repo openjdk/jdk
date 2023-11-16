@@ -915,7 +915,7 @@ getStringUTF8(JNIEnv *env, jstring jstr, jboolean strict)
     // we need two bytes for each latin-1 char above 127 (negative jbytes)
     for (i = 0; i < len; i++) {
         if (strict && str[i] == 0) {
-            (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+            (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
             JNU_ThrowIllegalArgumentException(env, "NUL character not allowed in platform string");
             return NULL;
         }
@@ -926,7 +926,7 @@ getStringUTF8(JNIEnv *env, jstring jstr, jboolean strict)
 
     result = MALLOC_MIN4(rlen);
     if (result == NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+        (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
         JNU_ThrowOutOfMemoryError(env, "requested array size exceeds VM limit");
         return NULL;
     }
@@ -940,7 +940,7 @@ getStringUTF8(JNIEnv *env, jstring jstr, jboolean strict)
             result[ri++] = c;
         }
     }
-    (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, value, str, JNI_ABORT);
     result[rlen] = '\0';
     return result;
 }

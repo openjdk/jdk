@@ -60,7 +60,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder withField(Utf8Entry name, Utf8Entry descriptor, Consumer<? super FieldBuilder> handler) {
-        return downstream.with(new BufferedFieldBuilder(terminal.constantPool,
+        return downstream.with(new BufferedFieldBuilder(terminal.constantPool, terminal.context,
                                                         name, descriptor, null)
                                        .run(handler)
                                        .toModel());
@@ -68,7 +68,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
-        BufferedFieldBuilder builder = new BufferedFieldBuilder(terminal.constantPool,
+        BufferedFieldBuilder builder = new BufferedFieldBuilder(terminal.constantPool, terminal.context,
                                                                 field.fieldName(), field.fieldType(),
                                                                 field);
         builder.transform(field, transform);
@@ -78,7 +78,7 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder withMethod(Utf8Entry name, Utf8Entry descriptor, int flags,
                                    Consumer<? super MethodBuilder> handler) {
-        return downstream.with(new BufferedMethodBuilder(terminal.constantPool,
+        return downstream.with(new BufferedMethodBuilder(terminal.constantPool, terminal.context,
                                                          name, descriptor, null)
                                        .run(handler)
                                        .toModel());
@@ -86,7 +86,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
-        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool,
+        BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool, terminal.context,
                                                                   method.methodName(), method.methodType(), method);
         builder.transform(method, transform);
         return downstream.with(builder.toModel());

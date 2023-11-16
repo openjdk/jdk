@@ -63,7 +63,6 @@ public class Compiler {
      * Graal is enabled if following conditions are true:
      * - we are not in Interpreter mode
      * - UseJVMCICompiler flag is true
-     * - jvmci.Compiler variable is equal to 'graal'
      * - TieredCompilation is not used or TieredStopAtLevel is greater than 3
      * No need to check client mode because it set UseJVMCICompiler to false.
      *
@@ -84,6 +83,25 @@ public class Compiler {
         // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
         if (tieredCompilation != null && tieredCompilation &&
             compLevel != null && compLevel <= 3) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * libraal is enabled if isGraalEnabled is true and:
+     * - UseJVMCINativeLibrary flag is true
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    public static boolean isLibgraalEnabled() {
+        if (!isGraalEnabled()) {
+            return false;
+        }
+        Boolean useJvmciNativeLibrary = WB.getBooleanVMFlag("UseJVMCINativeLibrary");
+        if (useJvmciNativeLibrary == null || !useJvmciNativeLibrary) {
             return false;
         }
         return true;

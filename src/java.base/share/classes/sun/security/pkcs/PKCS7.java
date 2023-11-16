@@ -152,6 +152,10 @@ public class PKCS7 {
         ObjectIdentifier contentType = block.contentType;
         DerValue content = block.getContent();
 
+        if (content == null) {
+            throw new ParsingException("content is null");
+        }
+
         if (contentType.equals(ContentInfo.SIGNED_DATA_OID)) {
             parseSignedData(content);
         } else if (contentType.equals(ContentInfo.OLD_SIGNED_DATA_OID)) {
@@ -555,17 +559,6 @@ public class PKCS7 {
             return intResult.toArray(result);
         }
         return null;
-    }
-
-    /**
-     * Returns all signerInfos which self-verify.
-     *
-     * @exception NoSuchAlgorithmException on unrecognized algorithms.
-     * @exception SignatureException on signature handling errors.
-     */
-    public SignerInfo[] verify()
-    throws NoSuchAlgorithmException, SignatureException {
-        return verify(null);
     }
 
     /**

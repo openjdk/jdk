@@ -26,7 +26,6 @@
 #define CPU_X86_INTERP_MASM_X86_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 
@@ -104,20 +103,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache,
-                                  Register index,
-                                  int bcp_offset,
-                                  size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                               Register index,
-                                               Register bytecode,
-                                               int byte_no,
-                                               int bcp_offset,
-                                               size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache,
-                                      Register tmp,
-                                      int bcp_offset,
-                                      size_t index_size = sizeof(u2));
+
   void get_cache_index_at_bcp(Register index,
                               int bcp_offset,
                               size_t index_size = sizeof(u2));
@@ -129,11 +115,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_klass_at_index(Register klass,  // contains the Klass on return
                                     Register cpool,  // the constant pool (corrupted on return)
                                     Register index); // the constant pool index (corrupted on return)
-
-  void load_resolved_method_at_index(int byte_no,
-                                     Register method,
-                                     Register cache,
-                                     Register index);
 
   NOT_LP64(void f2ieee();)        // truncate ftos to 32bits
   NOT_LP64(void d2ieee();)        // truncate dtos to 64bits
@@ -178,7 +159,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(TosState state);       // transition state -> vtos
 
   void empty_expression_stack() {
-    movptr(rsp, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    movptr(rcx, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    lea(rsp, Address(rbp, rcx, Address::times_ptr));
     // null last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     NOT_LP64(empty_FPU_stack());
@@ -257,10 +239,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void record_klass_in_profile_helper(Register receiver, Register mdp,
                                       Register reg2, int start_row,
                                       Label& done, bool is_virtual_call);
-  void record_item_in_profile_helper(Register item, Register mdp,
-                                     Register reg2, int start_row, Label& done, int total_rows,
-                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
-                                     int non_profiled_offset);
+  void record_item_in_profile_helper(Register item, Register mdp, Register reg2, int start_row,
+                                     Label& done, int total_rows,
+                                     OffsetFunction item_offset_fn,
+                                     OffsetFunction item_count_offset_fn);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
@@ -277,7 +259,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_ret(Register return_bci, Register mdp);
   void profile_null_seen(Register mdp);
   void profile_typecheck(Register mdp, Register klass, Register scratch);
-  void profile_typecheck_failed(Register mdp);
+
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register scratch2);
@@ -307,7 +289,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
 
   void load_resolved_indy_entry(Register cache, Register index);
-
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_X86_INTERP_MASM_X86_HPP

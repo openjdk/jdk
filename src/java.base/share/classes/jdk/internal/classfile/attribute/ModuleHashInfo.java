@@ -30,7 +30,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models hash information for a single module in the {@link jdk.internal.classfile.attribute.ModuleHashesAttribute}.
+ * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  */
 public sealed interface ModuleHashInfo
         permits UnboundAttribute.UnboundModuleHashInfo {

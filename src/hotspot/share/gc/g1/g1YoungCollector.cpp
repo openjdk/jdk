@@ -30,6 +30,7 @@
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -464,6 +465,13 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
+
+  // Must be before collection set calculation, requires collection set to not
+  // be calculated yet.
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start(_gc_cause);
+  }
+
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
@@ -507,10 +515,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
 #endif
-
-  if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start(_gc_cause);
-  }
 
   evac_failure_injector()->arm_if_needed();
 }
@@ -950,6 +954,15 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
+void G1YoungCollector::enqueue_candidates_as_root_regions() {
+  assert(collector_state()->in_concurrent_start_gc(), "must be");
+
+  G1CollectionSetCandidates* candidates = collection_set()->candidates();
+  for (HeapRegion* r : *candidates) {
+    _g1h->concurrent_mark()->add_root_region(r);
+  }
+}
+
 void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                                     G1ParScanThreadStateSet* per_thread_states) {
   G1GCPhaseTimes* p = phase_times();
@@ -971,6 +984,13 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
+
+  // Regions in the collection set candidates are roots for the marking (they are
+  // not marked through considering they are very likely to be reclaimed soon.
+  // They need to be enqueued explicitly compared to survivor regions.
+  if (collector_state()->in_concurrent_start_gc()) {
+    enqueue_candidates_as_root_regions();
+  }
 
   _evac_failure_regions.post_collection();
 

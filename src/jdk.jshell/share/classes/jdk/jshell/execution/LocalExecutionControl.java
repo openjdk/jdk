@@ -26,7 +26,6 @@ package jdk.jshell.execution;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -77,26 +76,26 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static final String CANCEL_CLASS = "REPL.$Cancel$";
     private static final ClassDesc CD_Cancel = ClassDesc.of(CANCEL_CLASS);
     private static final ClassDesc CD_ThreadDeath = ClassDesc.of("java.lang.ThreadDeath");
-    private static final MethodTypeDesc MTD_void = MethodTypeDesc.of(ConstantDescs.CD_void);
 
     private static byte[] instrument(byte[] classFile) {
-        return Classfile.parse(classFile)
-                        .transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+        var cc = Classfile.of();
+        return cc.transform(cc.parse(classFile),
+                        ClassTransform.transformingMethodBodies((cob, coe) -> {
                             if (coe instanceof BranchInstruction)
-                                cob.invokestatic(CD_Cancel, "stopCheck", MTD_void);
+                                cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
                             cob.with(coe);
                         }));
     }
 
     private static ClassBytecodes genCancelClass() {
-        return new ClassBytecodes(CANCEL_CLASS, Classfile.build(CD_Cancel, clb ->
+        return new ClassBytecodes(CANCEL_CLASS, Classfile.of().build(CD_Cancel, clb ->
              clb.withFlags(Classfile.ACC_PUBLIC)
                 .withField("allStop", ConstantDescs.CD_boolean, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC | Classfile.ACC_VOLATILE)
-                .withMethodBody("stopCheck", MTD_void, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, cob ->
+                .withMethodBody("stopCheck", ConstantDescs.MTD_void, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, cob ->
                         cob.getstatic(CD_Cancel, "allStop", ConstantDescs.CD_boolean)
                            .ifThenElse(tb -> tb.new_(CD_ThreadDeath)
                                                .dup()
-                                               .invokespecial(CD_ThreadDeath, "<init>", MTD_void)
+                                               .invokespecial(CD_ThreadDeath, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
                                                .athrow(),
                                        eb -> eb.return_()))));
     }

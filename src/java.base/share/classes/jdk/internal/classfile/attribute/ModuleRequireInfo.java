@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single "requires" declaration in the {@link jdk.internal.classfile.attribute.ModuleAttribute}.
+ * Models a single "requires" declaration in the {@link ModuleAttribute}.
  */
 public sealed interface ModuleRequireInfo
         permits UnboundAttribute.UnboundModuleRequiresInfo {
@@ -56,6 +56,9 @@ public sealed interface ModuleRequireInfo
      */
     int requiresFlagsMask();
 
+    /**
+     * {@return the access flags}
+     */
     default Set<AccessFlag> requiresFlags() {
         return AccessFlag.maskToAccessFlags(requiresFlagsMask(), AccessFlag.Location.MODULE_REQUIRES);
     }

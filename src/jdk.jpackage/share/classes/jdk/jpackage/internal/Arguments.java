@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -336,6 +338,12 @@ public class Arguments {
         MAC_SIGNING_KEY_NAME ("mac-signing-key-user-name",
                     OptionCategories.PLATFORM_MAC),
 
+        MAC_APP_IMAGE_SIGN_IDENTITY ("mac-app-image-sign-identity",
+                    OptionCategories.PLATFORM_MAC),
+
+        MAC_INSTALLER_SIGN_IDENTITY ("mac-installer-sign-identity",
+                    OptionCategories.PLATFORM_MAC),
+
         MAC_SIGNING_KEYCHAIN ("mac-signing-keychain",
                     OptionCategories.PLATFORM_MAC),
 
@@ -578,7 +586,7 @@ public class Arguments {
         boolean hasRuntime = allOptions.contains(
                 CLIOptions.PREDEFINED_RUNTIME_IMAGE);
         boolean installerOnly = !imageOnly && hasAppImage;
-        boolean isMac = Platform.isMac();
+        boolean isMac = OperatingSystem.isMacOS();
         runtimeInstaller = !imageOnly && hasRuntime && !hasAppImage &&
                 !hasMainModule && !hasMainJar;
 
@@ -628,6 +636,24 @@ public class Arguments {
                         CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
                         CLIOptions.JLINK_OPTIONS.getIdWithPrefix());
             }
+        }
+        if (allOptions.contains(CLIOptions.MAC_SIGNING_KEY_NAME) &&
+            allOptions.contains(CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY)) {
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.MAC_SIGNING_KEY_NAME.getIdWithPrefix(),
+                        CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getIdWithPrefix());
+        }
+        if (allOptions.contains(CLIOptions.MAC_SIGNING_KEY_NAME) &&
+            allOptions.contains(CLIOptions.MAC_INSTALLER_SIGN_IDENTITY)) {
+                throw new PackagerException("ERR_MutuallyExclusiveOptions",
+                        CLIOptions.MAC_SIGNING_KEY_NAME.getIdWithPrefix(),
+                        CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getIdWithPrefix());
+        }
+        if (isMac && (imageOnly || "dmg".equals(type)) &&
+            allOptions.contains(CLIOptions.MAC_INSTALLER_SIGN_IDENTITY)) {
+                throw new PackagerException("ERR_InvalidTypeOption",
+                        CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getIdWithPrefix(),
+                        type);
         }
         if (allOptions.contains(CLIOptions.DMG_CONTENT)
                 && !("dmg".equals(type))) {

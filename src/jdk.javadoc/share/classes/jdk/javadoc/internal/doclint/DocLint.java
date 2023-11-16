@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -61,6 +63,7 @@ import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.StringUtils.DamerauLevenshteinDistance;
 
 /**
  * Multi-function entry point for the doc check utility.
@@ -372,6 +375,29 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     Env env;
     Checker checker;
+
+    public static List<String> suggestSimilar(Collection<String> knownTags, String unknownTag) {
+        final double MIN_SIMILARITY = 2.0 / 3;
+        record Pair(String tag, double similarity) { }
+        return knownTags.stream()
+                .distinct() // filter duplicates in known, otherwise they will result in duplicates in suggested
+                .map(t -> new Pair(t, similarity(t, unknownTag)))
+                .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.tag, unknownTag)) // debug
+                .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
+                .map(Pair::tag)
+                .toList();
+    }
+
+    // a value in [0, 1] range: the closer the value is to 1, the more similar
+    // the strings are
+    private static double similarity(String a, String b) {
+        // Normalize the distance so that similarity between "x" and "y" is
+        // less than that of "ax" and "ay". Use the greater of two lengths
+        // as normalizer, as it's an upper bound for the distance.
+        return 1.0 - ((double) DamerauLevenshteinDistance.of(a, b))
+                / Math.max(a.length(), b.length());
+    }
 
     public boolean isValidOption(String opt) {
         if (opt.equals(XMSGS_OPTION))

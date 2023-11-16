@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -244,7 +243,7 @@ class Invokers {
                 throw newIllegalArgumentException("need homogeneous rest arguments", restargType);
         }
         if (argType == Object.class)  return Object[].class;
-        return Array.newInstance(argType, 0).getClass();
+        return argType.arrayType();
     }
 
     public String toString() {

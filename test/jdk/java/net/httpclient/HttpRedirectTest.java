@@ -20,9 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.AfterClass;
@@ -60,7 +59,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 /**
  * @test
@@ -69,6 +67,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer HttpRedirectTest
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
@@ -175,7 +174,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
             // HTTPS/1.1
             HttpsServer sserver1 = HttpsServer.create(sa, 100);
             sserver1.setExecutor(executor);
-            sserver1.setHttpsConfigurator(new HttpsConfigurator(context));
+            sserver1.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), context));
             https1Server = HttpTestServer.of(sserver1);
             https1Server.addHandler(new HttpTestRedirectHandler("https", https1Server),
                     "/HttpRedirectTest/https1/");

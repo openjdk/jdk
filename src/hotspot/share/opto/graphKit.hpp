@@ -82,7 +82,8 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(!has_exceptions(), "user must call transfer_exceptions_into_jvms");
+    assert(failing() || !has_exceptions(),
+           "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
 
@@ -904,7 +905,7 @@ class GraphKit : public Phase {
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

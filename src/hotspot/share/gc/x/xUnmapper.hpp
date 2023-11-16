@@ -36,9 +36,14 @@ private:
   XPageAllocator* const _page_allocator;
   XConditionLock        _lock;
   XList<XPage>          _queue;
+  size_t                _enqueued_bytes;
+  bool                  _warned_sync_unmapping;
   bool                  _stop;
 
   XPage* dequeue();
+  bool try_enqueue(XPage* page);
+  size_t queue_capacity() const;
+  bool is_saturated() const;
   void do_unmap_and_destroy_page(XPage* page) const;
 
 protected:

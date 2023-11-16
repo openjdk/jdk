@@ -73,7 +73,7 @@ class UTF8 : AllStatic {
 
   // Utility methods
 
-  // Returns nullptr if 'c' it not found. This only works as long
+  // Returns null if 'c' it not found. This only works as long
   // as 'c' is an ASCII character
   static const jbyte* strrchr(const jbyte* base, int length, jbyte c) {
     assert(length >= 0, "sanity check");

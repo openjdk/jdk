@@ -3700,8 +3700,8 @@ public class CreateSymbols {
                 Function<String, MethodParam> string2Param =
                         p -> {
                             int sep = p.indexOf(':');
-                            return new MethodParam(Integer.parseInt(p.substring(0, sep)),
-                                                    p.substring(sep + 1));
+                            return new MethodParam(Integer.parseInt(p.substring(0, sep), 16),
+                                                   p.substring(sep + 1));
                         };
                 methodParameters =
                         deserializeList(inMethodParameters).stream()

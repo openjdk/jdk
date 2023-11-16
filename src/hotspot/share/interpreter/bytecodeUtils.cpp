@@ -353,7 +353,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
 
 StackSlotAnalysisData::StackSlotAnalysisData(BasicType type) : _bci(INVALID), _type(type) {}
 
-StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci(bci), _type(type) {
+StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci((u2)bci), _type(type) {
   assert(bci >= 0, "BCI must be >= 0");
   assert(bci < 65536, "BCI must be < 65536");
 }
@@ -968,7 +968,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_getstatic:
     case Bytecodes::_getfield: {
       // Find out the type of the field accessed.
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -982,7 +982,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
 
     case Bytecodes::_putstatic:
     case Bytecodes::_putfield: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -1003,7 +1003,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       if (code == Bytecodes::_invokedynamic) {
         cp_index = ((int) Bytes::get_native_u4(code_base + pos));
       } else {
-        cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        cp_index = Bytes::get_native_u2(code_base + pos);
       }
 
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
@@ -1081,7 +1081,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   }
 
   // If we have more than one branch target, process these too.
-  for (int64_t i = 0; i < dests.length(); ++i) {
+  for (int i = 0; i < dests.length(); ++i) {
     if (_stacks->at(dests.at(i)) == nullptr) {
       _added_one = true;
     }
@@ -1132,7 +1132,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_dastore:
       return 3;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int type_index = cp->signature_ref_index_at(name_and_type_index);
@@ -1143,7 +1143,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base+ pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
@@ -1326,7 +1326,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     }
 
     case Bytecodes::_getstatic: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       print_field_and_class(os, _method, cp_index, code);
       return true;
     }
@@ -1337,7 +1337,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
       if (print_NPE_cause0(os, source_bci, 0, max_detail - 1, inner_expr)) {
         os->print(".");
       }
-      int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       os->print("%s", get_field_name(_method, cp_index, code));
       return true;
     }
@@ -1346,7 +1346,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokeinterface: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       if (max_detail == _max_cause_detail && !inner_expr) {
         os->print(" because the return value of \"");
       }
@@ -1414,7 +1414,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_monitorexit:
       os->print("Cannot exit synchronized block"); break;
     case Bytecodes::_getfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
@@ -1422,13 +1422,13 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base + pos);
         os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base+ pos);
         os->print("Cannot invoke \"");
         print_method_name(os, _method, cp_index, code);
         os->print("\"");
@@ -1447,7 +1447,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
 
   // If this NPE was created via reflection, we have no real NPE.
   if (method->method_holder() ==
-      vmClasses::reflect_NativeConstructorAccessorImpl_klass()) {
+      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
     return false;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8260284
  * @summary Fix "assert(_base == Int) failed: Not an Int" due to a top divisor not handled correctly in no_dependent_zero_check().
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivWithTopDivisor compiler.loopopts.TestDivWithTopDivisor
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivWithTopDivisor::* compiler.loopopts.TestDivWithTopDivisor
  */
 
 package compiler.loopopts;
@@ -83,4 +83,3 @@ public class TestDivWithTopDivisor {
         }
     }
 }
-

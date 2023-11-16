@@ -210,6 +210,7 @@ extern "C" {
   void JNICALL JVM_RegisterVectorSupportMethods(JNIEnv *env, jclass vsclass);
 #if INCLUDE_JVMCI
   jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
+  jlong    JNICALL JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets);
   void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
 #endif
 }
@@ -229,6 +230,7 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_jdk_internal_vm_vector_VectorSupport_registerNatives", nullptr, FN_PTR(JVM_RegisterVectorSupportMethods)},
 #if INCLUDE_JVMCI
   { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            nullptr, FN_PTR(JVM_GetJVMCIRuntime)             },
+  { CC"Java_jdk_vm_ci_services_Services_readSystemPropertiesInfo", nullptr, FN_PTR(JVM_ReadSystemPropertiesInfo)    },
   { CC"Java_jdk_vm_ci_hotspot_CompilerToVM_registerNatives",       nullptr, FN_PTR(JVM_RegisterJVMCINatives)        },
 #endif
 #if INCLUDE_JFR

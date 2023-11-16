@@ -86,7 +86,7 @@ JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setQuickAck0
     int optval;
     int rv;
     optval = (on ? 1 : 0);
-    rv = setsockopt(fd, SOL_SOCKET, TCP_NODELAYACK, &optval, sizeof (optval));
+    rv = setsockopt(fd, IPPROTO_TCP, TCP_NODELAYACK, &optval, sizeof (optval));
     handleError(env, rv, "set option TCP_NODELAYACK failed");
 }
 
@@ -99,7 +99,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_getQuickAck0
 (JNIEnv *env, jobject unused, jint fd) {
     int on;
     socklen_t sz = sizeof (on);
-    int rv = getsockopt(fd, SOL_SOCKET, TCP_NODELAYACK, &on, &sz);
+    int rv = getsockopt(fd, IPPROTO_TCP, TCP_NODELAYACK, &on, &sz);
     handleError(env, rv, "get option TCP_NODELAYACK failed");
     return on != 0;
 }
@@ -111,7 +111,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_getQuickAck0
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_quickAckSupported0
 (JNIEnv *env, jobject unused) {
-    return socketOptionSupported(SOL_SOCKET, TCP_NODELAYACK);
+    return socketOptionSupported(IPPROTO_TCP, TCP_NODELAYACK);
 }
 
 /*
@@ -150,10 +150,10 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_keepAliveOptionsSupport
 
 /*
  * Class:     jdk_net_AIXSocketOptions
- * Method:    setTcpkeepAliveProbes0
+ * Method:    setTcpKeepAliveProbes0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpkeepAliveProbes0
+JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd, jint optval) {
     jint rv = setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &optval, sizeof (optval));
     handleError(env, rv, "set option TCP_KEEPCNT failed");
@@ -183,10 +183,10 @@ JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpKeepAliveIntvl0
 
 /*
  * Class:     jdk_net_AIXSocketOptions
- * Method:    getTcpkeepAliveProbes0
+ * Method:    getTcpKeepAliveProbes0
  * Signature: (I)I;
  */
-JNIEXPORT jint JNICALL Java_jdk_net_AIXSocketOptions_getTcpkeepAliveProbes0
+JNIEXPORT jint JNICALL Java_jdk_net_AIXSocketOptions_getTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd) {
     jint optval, rv;
     socklen_t sz = sizeof (optval);

@@ -436,10 +436,10 @@ public interface ThreadReference extends ObjectReference {
      * this method and resumption of thread execution, the
      * state of the stack is undefined.
      * <p>
-     * The target VM may not support, or may only provide limited support,
-     * for forcing a method to return when the thread is a virtual thread.
-     * It may, for example, only support this operation when the virtual
-     * thread is suspended at a breakpoint or singlestep event.
+     * This method may be used to force a return from the current frame
+     * of a virtual thread when it is suspended at an event.
+     * An implementation may support forcing a return from the current frame
+     * of a suspended virtual thread in other cases.
      * <p>
      * No further instructions are executed in the called
      * method. Specifically, finally blocks are not executed. Note:
@@ -484,7 +484,7 @@ public interface ThreadReference extends ObjectReference {
      * @throws IncompatibleThreadStateException if this
      * thread is not suspended.
      *
-     * @throws OpaqueFrameException if this thread is a virtual thread and the
+     * @throws OpaqueFrameException if this thread is a suspended virtual thread and the
      * target VM is unable to force the method to return.
      *
      * @throws NativeMethodException if the frame to be returned from

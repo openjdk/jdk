@@ -28,14 +28,19 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+            java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main EnclosingMethodTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.EnclosingMethod_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -140,10 +145,10 @@ public class EnclosingMethodTest extends TestResult {
         for (Class<?> clazz : noEnclosingMethod) {
             try {
                 addTestCase("Class should not have EnclosingMethod attribute : " + clazz);
-                ClassFile classFile = readClassFile(clazz);
+                ClassModel classFile = readClassFile(clazz);
                 checkEquals(countEnclosingMethodAttributes(classFile),
-                        0l, "number of the EnclosingMethod attribute in the class is zero : "
-                                + classFile.getName());
+                        0L, "number of the EnclosingMethod attribute in the class is zero : "
+                                + classFile.thisClass().name());
             } catch (Exception e) {
                 addFailure(e);
             }
@@ -157,25 +162,24 @@ public class EnclosingMethodTest extends TestResult {
                         + (clazz.isAnonymousClass() ? "anonymous" : "local");
                 addTestCase(info);
                 printf("Testing test case : %s\n", info);
-                ClassFile classFile = readClassFile(clazz);
+                ClassModel classFile = readClassFile(clazz);
                 String className = clazz.getName();
                 checkEquals(countEnclosingMethodAttributes(classFile), 1l,
                         "number of the EnclosingMethod attribute in the class is one : "
                                 + clazz);
-                EnclosingMethod_attribute attr = (EnclosingMethod_attribute)
-                        classFile.getAttribute(Attribute.EnclosingMethod);
+                EnclosingMethodAttribute attr = classFile.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
 
                 if (!checkNotNull(attr, "the EnclosingMethod attribute is not null : " + className)) {
                     // stop checking, attr is null. test case failed
                     return;
                 }
-                checkEquals(classFile.constant_pool.getUTF8Value(attr.attribute_name_index),
+                checkEquals(attr.attributeName(),
                         "EnclosingMethod",
                         "attribute_name_index of EnclosingMethod attribute in the class : " + className);
-                checkEquals(attr.attribute_length, 4,
+                checkEquals(((BoundAttribute<?>)attr).payloadLen(), 4,
                         "attribute_length of EnclosingMethod attribute in the class : " + className);
                 String expectedClassName = enclosingMethod.enclosingClazz().getName();
-                checkEquals(classFile.constant_pool.getClassInfo(attr.class_index).getName(),
+                checkEquals(attr.enclosingClass().name().stringValue(),
                         expectedClassName, String.format(
                         "enclosing class of EnclosingMethod attribute in the class %s is %s",
                                 className, expectedClassName));
@@ -183,10 +187,10 @@ public class EnclosingMethodTest extends TestResult {
                 String expectedMethodName = enclosingMethod.enclosingMethod();
                 if (expectedMethodName.isEmpty()) {
                     // class does not have an enclosing method
-                    checkEquals(attr.method_index, 0, String.format(
+                    checkEquals(attr.enclosingMethod().isPresent()? attr.enclosingMethod().get().index(): 0, 0, String.format(
                             "enclosing method of EnclosingMethod attribute in the class %s is null", className));
                 } else {
-                    String methodName = classFile.constant_pool.getNameAndTypeInfo(attr.method_index).getName();
+                    String methodName = attr.enclosingMethodName().get().stringValue() + attr.enclosingMethodType().get().stringValue();
                     checkTrue(methodName.startsWith(expectedMethodName), String.format(
                             "enclosing method of EnclosingMethod attribute in the class %s" +
                                     " is method name %s" +
@@ -199,9 +203,9 @@ public class EnclosingMethodTest extends TestResult {
         });
     }
 
-    private long countEnclosingMethodAttributes(ClassFile classFile) {
-        return Stream.of(classFile.attributes.attrs)
-                .filter(x -> x instanceof EnclosingMethod_attribute)
+    private long countEnclosingMethodAttributes(ClassModel classFile) {
+        return classFile.attributes().stream()
+                .filter(x -> x instanceof EnclosingMethodAttribute)
                 .count();
     }
 

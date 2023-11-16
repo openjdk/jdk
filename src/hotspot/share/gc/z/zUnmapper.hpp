@@ -36,9 +36,14 @@ private:
   ZPageAllocator* const _page_allocator;
   ZConditionLock        _lock;
   ZList<ZPage>          _queue;
+  size_t                _enqueued_bytes;
+  bool                  _warned_sync_unmapping;
   bool                  _stop;
 
   ZPage* dequeue();
+  bool try_enqueue(ZPage* page);
+  size_t queue_capacity() const;
+  bool is_saturated() const;
   void do_unmap_and_destroy_page(ZPage* page) const;
 
 protected:

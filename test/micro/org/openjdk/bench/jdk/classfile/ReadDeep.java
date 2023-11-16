@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -99,9 +97,10 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsCountLoads(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
             int[] count = new int[1];
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             cm.forEachElement(ce -> {
                 if (ce instanceof MethodModel mm) {
                     mm.forEachElement(me -> {
@@ -122,8 +121,9 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsDeepIterate(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             bh.consume(iterateAll(cm));
         }
     }

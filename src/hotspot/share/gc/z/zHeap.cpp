@@ -293,19 +293,19 @@ bool ZHeap::is_allocating(zaddress addr) const {
 
 void ZHeap::object_iterate(ObjectClosure* object_cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  ZHeapIterator iter(1 /* nworkers */, visit_weaks);
+  ZHeapIterator iter(1 /* nworkers */, visit_weaks, false /* for_verify */);
   iter.object_iterate(object_cl, 0 /* worker_id */);
 }
 
-void ZHeap::object_and_field_iterate(ObjectClosure* object_cl, OopFieldClosure* field_cl, bool visit_weaks) {
+void ZHeap::object_and_field_iterate_for_verify(ObjectClosure* object_cl, OopFieldClosure* field_cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  ZHeapIterator iter(1 /* nworkers */, visit_weaks);
+  ZHeapIterator iter(1 /* nworkers */, visit_weaks, true /* for_verify */);
   iter.object_and_field_iterate(object_cl, field_cl, 0 /* worker_id */);
 }
 
 ParallelObjectIteratorImpl* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  return new ZHeapIterator(nworkers, visit_weaks);
+  return new ZHeapIterator(nworkers, visit_weaks, false /* for_verify */);
 }
 
 void ZHeap::serviceability_initialize() {
@@ -380,7 +380,7 @@ bool ZHeap::print_location(outputStream* st, zaddress addr) const {
   st->print(PTR_FORMAT " is a zaddress: ", untype(addr));
 
   if (addr == zaddress::null) {
-    st->print_raw_cr("NULL");
+    st->print_raw_cr("null");
     return true;
   }
 
@@ -435,7 +435,7 @@ bool ZHeap::print_location(outputStream* st, zpointer ptr) const {
   const zaddress addr =  ZPointer::uncolor(ptr);
 
   if (addr == zaddress::null) {
-    st->print_raw_cr("NULL");
+    st->print_raw_cr("null");
     return true;
   }
 

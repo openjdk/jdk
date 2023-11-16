@@ -129,15 +129,10 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
-  private native int getConstantPoolCacheIndexTag0();
-  public         int getConstantPoolCacheIndexTag() {
-    return getConstantPoolCacheIndexTag0();
-  }
-
-  private native int getConstantPoolCacheLength0(Class<?> aClass);
-  public         int getConstantPoolCacheLength(Class<?> aClass) {
+  private native Object[] getResolvedReferences0(Class<?> aClass);
+  public         Object[] getResolvedReferences(Class<?> aClass) {
     Objects.requireNonNull(aClass);
-    return getConstantPoolCacheLength0(aClass);
+    return getResolvedReferences0(aClass);
   }
 
   private native int remapInstructionOperandFromCPCache0(Class<?> aClass, int index);
@@ -151,6 +146,30 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native int getFieldEntriesLength0(Class<?> aClass);
+  public         int getFieldEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getFieldEntriesLength0(aClass);
+  }
+
+  private native int getFieldCPIndex0(Class<?> aClass, int index);
+  public         int getFieldCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getFieldCPIndex0(aClass, index);
+  }
+
+  private native int getMethodEntriesLength0(Class<?> aClass);
+  public         int getMethodEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getMethodEntriesLength0(aClass);
+  }
+
+  private native int getMethodCPIndex0(Class<?> aClass, int index);
+  public         int getMethodCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getMethodCPIndex0(aClass, index);
+  }
+
   private native int getIndyInfoLength0(Class<?> aClass);
   public         int getIndyInfoLength(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -161,6 +180,19 @@ public class WhiteBox {
   public         int getIndyCPIndex(Class<?> aClass, int index) {
     Objects.requireNonNull(aClass);
     return getIndyCPIndex0(aClass, index);
+  }
+
+  private native String printClasses0(String classNamePattern, int flags);
+  public         String printClasses(String classNamePattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    return printClasses0(classNamePattern, flags);
+  }
+
+  private native String printMethods0(String classNamePattern, String methodPattern, int flags);
+  public         String printMethods(String classNamePattern, String methodPattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    Objects.requireNonNull(methodPattern);
+    return printMethods0(classNamePattern, methodPattern, flags);
   }
 
   // JVMTI
@@ -290,6 +322,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
@@ -608,6 +643,7 @@ public class WhiteBox {
 
   // VM flags
   public native boolean isConstantVMFlag(String name);
+  public native boolean isDefaultVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntVMFlag(String name, long value);
@@ -750,4 +786,6 @@ public class WhiteBox {
   public native void unlockCritical();
 
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
 }

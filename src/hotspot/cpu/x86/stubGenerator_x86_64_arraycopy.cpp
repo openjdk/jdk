@@ -56,12 +56,12 @@
 BLOCK_COMMENT("inc_counter " #counter); \
 inc_counter_np(_masm, counter, rscratch);
 
-static void inc_counter_np(MacroAssembler* _masm, int& counter, Register rscratch) {
+static void inc_counter_np(MacroAssembler* _masm, uint& counter, Register rscratch) {
   __ incrementl(ExternalAddress((address)&counter), rscratch);
 }
 
 #if COMPILER2_OR_JVMCI
-static int& get_profile_ctr(int shift) {
+static uint& get_profile_ctr(int shift) {
   if (shift == 0) {
     return SharedRuntime::_jbyte_array_copy_ctr;
   } else if (shift == 1) {

@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single "opens" declaration in the {@link jdk.internal.classfile.attribute.ModuleAttribute}.
+ * Models a single "opens" declaration in the {@link ModuleAttribute}.
  */
 public sealed interface ModuleOpenInfo
         permits UnboundAttribute.UnboundModuleOpenInfo {
@@ -56,6 +56,9 @@ public sealed interface ModuleOpenInfo
      */
     int opensFlagsMask();
 
+    /**
+     * {@return the access flags}
+     */
     default Set<AccessFlag> opensFlags() {
         return AccessFlag.maskToAccessFlags(opensFlagsMask(), AccessFlag.Location.MODULE_OPENS);
     }

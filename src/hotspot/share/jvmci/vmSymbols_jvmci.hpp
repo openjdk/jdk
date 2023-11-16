@@ -102,7 +102,6 @@
   template(forPrimitive_name,                                     "forPrimitive")                                                         \
   template(forPrimitive_signature,                                "(CJ)Ljdk/vm/ci/meta/PrimitiveConstant;")                               \
   template(method_string_bool_long_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
-  template(initializeSavedProperties_name,                        "initializeSavedProperties")                                            \
 
 #endif
 

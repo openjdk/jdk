@@ -25,7 +25,6 @@
  * @test
  * @bug 8304585
  * @run junit CallerSensitiveMethodInvoke
- * @run junit/othervm -Djdk.reflect.useDirectMethodHandle=false CallerSensitiveMethodInvoke
  * @summary Test Method::invoke that wraps exception in InvocationTargetException properly
  */
 

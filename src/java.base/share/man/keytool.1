@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "KEYTOOL" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "KEYTOOL" "1" "2024" "JDK 22-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -447,7 +447,7 @@ single-element certificate chain.
 When the \f[V]-signer\f[R] option is specified, a new certificate is
 generated and signed by the designated signer and stored as a
 multiple-element certificate chain (containing the generated certificate
-itself, and the signer?s certificate chain).
+itself, and the signer\[aq]s certificate chain).
 The certificate chain and private key are stored in a new keystore entry
 that is identified by its alias.
 .PP
@@ -467,8 +467,8 @@ specified.
 The \f[V]-signer\f[R] value specifies the alias of a
 \f[V]PrivateKeyEntry\f[R] for the signer that already exists in the
 keystore.
-This option is used to sign the certificate with the signer?s private
-key.
+This option is used to sign the certificate with the signer\[aq]s
+private key.
 This is especially useful for key agreement algorithms (i.e.
 the \f[V]-keyalg\f[R] value is \f[V]XDH\f[R], \f[V]X25519\f[R],
 \f[V]X448\f[R], or \f[V]DH\f[R]) as these keys cannot be used for
@@ -476,7 +476,7 @@ digital signatures, and therefore a self-signed certificate cannot be
 created.
 .PP
 The \f[V]-signerkeypass\f[R] value specifies the password of the
-signer?s private key.
+signer\[aq]s private key.
 It can be specified if the private key of the signer entry is protected
 by a password different from the store password.
 .PP

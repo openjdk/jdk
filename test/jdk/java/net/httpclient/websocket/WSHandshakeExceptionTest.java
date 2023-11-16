@@ -25,16 +25,15 @@
  * @test
  * @bug 8240666
  * @summary Basic test for WebSocketHandshakeException
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.net.http
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
  * @run testng/othervm -Djdk.internal.httpclient.debug=true WSHandshakeExceptionTest
  */
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -47,6 +46,8 @@ import java.net.InetAddress;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocketHandshakeException;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -172,7 +173,7 @@ public class WSHandshakeExceptionTest {
         httpTestServer.createContext("/nonutf8body", new BodyHandler());
 
         httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
         httpsURI = "wss://localhost:" + httpsTestServer.getAddress().getPort() + "/";
         httpsNonUtf8URI = "wss://localhost:" + httpsTestServer.getAddress().getPort() + "/nonutf8body";
         httpsTestServer.createContext("/nonutf8body", new BodyHandler());

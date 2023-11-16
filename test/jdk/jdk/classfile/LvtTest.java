@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -81,7 +79,7 @@ class LvtTest {
 
     @Test
     void getLVTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = Classfile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("m"))
                         .map(MethodModel::code)
@@ -106,18 +104,20 @@ class LvtTest {
 
     @Test
     void buildLVTEntries() throws Exception {
-        ClassModel c = Classfile.parse(fileBytes);
+        var cc = Classfile.of();
+        ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = c.transform(Transforms.threeLevelNoop);
-        ClassRecord orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
-        ClassRecord transformed = ClassRecord.ofClassModel(Classfile.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        byte[] newClass = cc.transform(c, Transforms.threeLevelNoop);
+        ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
     }
 
     @Test
     void testCreateLoadLVT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -172,7 +172,7 @@ class LvtTest {
                               }));
         });
 
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
         var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
         var lvs = lvt.localVariables();
@@ -189,7 +189,7 @@ class LvtTest {
 
     @Test
     void getLVTTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = Classfile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("n"))
                         .map(MethodModel::code)
@@ -229,7 +229,8 @@ class LvtTest {
 
     @Test
     void testCreateLoadLVTT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -275,7 +276,7 @@ class LvtTest {
                                         .localVariable(1, u, jlObject, start, end);
                                   }));
         });
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
         var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
         var lvts = lvtt.localVariableTypes();
@@ -301,7 +302,7 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.parse(fileBytes, Classfile.Option.processDebug(false));
+        ClassModel c = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
         c.forEachElement(e -> {
             if (e instanceof MethodModel m) {

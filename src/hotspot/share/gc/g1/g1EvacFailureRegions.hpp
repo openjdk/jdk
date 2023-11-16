@@ -63,7 +63,7 @@ public:
                    HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
 
-  // Return a G1AbstractSubTask which does necessary preparation for evacuation failure regions
+  // Return a G1AbstractSubTask which does necessary preparation for evacuation failed regions
   G1AbstractSubTask* create_prepare_regions_task();
 
   uint num_regions_failed_evacuation() const {

@@ -1627,7 +1627,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ la_patchable(t0, target, offset);
       __ lbu(t0, Address(t0, offset));
     });
-    __ addw(t0, t0, zr);
     __ bnez(t0, dtrace_method_entry);
     __ bind(dtrace_method_entry_done);
   }
@@ -1702,7 +1701,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ fast_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
     }
 
     __ bind(count);
@@ -1830,7 +1829,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ test_bit(t0, old_hdr, exact_log2(markWord::monitor_value));
       __ bnez(t0, slow_path_unlock);
-      __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     }
 
@@ -2479,7 +2478,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #endif
   // compiler left unloaded_class_index in j_rarg0 move to where the
   // runtime expects it.
-  __ addiw(c_rarg1, j_rarg0, 0);
+  __ sign_extend(c_rarg1, j_rarg0, 32);
 
   // we need to set the past SP to the stack pointer of the stub frame
   // and the pc to the address where this runtime call will return

@@ -24,6 +24,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.security.cert.*;
 import java.util.*;
@@ -49,6 +50,8 @@ public class StatusResponseManagerTests {
     private static final boolean debug = true;
     private static final boolean ocspDebug = false;
 
+    private static Field responseCacheField;
+
     // PKI components we will need for this test
     static String passwd = "passphrase";
     static String ROOT_ALIAS = "root";
@@ -69,6 +72,10 @@ public class StatusResponseManagerTests {
     static X509Certificate[] chain;
 
     public static void main(String[] args) throws Exception {
+        responseCacheField =
+                StatusResponseManager.class.getDeclaredField("responseCache");
+        responseCacheField.setAccessible(true);
+
         Map<String, TestCase> testList =
                 new LinkedHashMap<String, TestCase>() {{
             put("Basic OCSP fetch test", testOcspFetch);
@@ -118,9 +125,9 @@ public class StatusResponseManagerTests {
                 } else if (!responseMap.containsKey(sslCert)) {
                     message = "Response map key is incorrect, expected " +
                             sslCert.getSubjectX500Principal().toString();
-                } else if (srm.size() != 1) {
+                } else if (responseCacheSize(srm) != 1) {
                     message = "Incorrect number of cache entries: " +
-                            "expected 1, got " + srm.size();
+                            "expected 1, got " + responseCacheSize(srm);
                 } else {
                     pass = Boolean.TRUE;
                 }
@@ -149,15 +156,15 @@ public class StatusResponseManagerTests {
 
                 // There should be two entries in the returned map and
                 // two entries in the cache when the operation is complete.
-                if (srm.size() != 2) {
+                if (responseCacheSize(srm) != 2) {
                     message = "Incorrect number of responses: expected 2, got "
-                            + srm.size();
+                            + responseCacheSize(srm);
                 } else {
                     // Next, clear the SRM, then check the size again
-                    srm.clear();
-                    if (srm.size() != 0) {
+                    clearResponseCache(srm);
+                    if (responseCacheSize(srm) != 0) {
                         message = "Incorrect number of responses: expected 0," +
-                                " got " + srm.size();
+                                " got " + responseCacheSize(srm);
                     } else {
                         pass = Boolean.TRUE;
                     }
@@ -197,9 +204,9 @@ public class StatusResponseManagerTests {
                             sslCert.getSubjectX500Principal().toString() +
                             " and " +
                             intCert.getSubjectX500Principal().toString();
-                } else if (srm.size() != 2) {
+                } else if (responseCacheSize(srm) != 2) {
                     message = "Incorrect number of cache entries: " +
-                            "expected 2, got " + srm.size();
+                            "expected 2, got " + responseCacheSize(srm);
                 } else {
                     pass = Boolean.TRUE;
                 }
@@ -230,16 +237,16 @@ public class StatusResponseManagerTests {
 
                 // There should be two entries in the returned map and
                 // two entries in the cache when the operation is complete.
-                if (srm.size() != 2) {
+                if (responseCacheSize(srm) != 2) {
                     message = "Incorrect number of responses: expected 2, got "
-                            + srm.size();
+                            + responseCacheSize(srm);
                 } else {
                     // Next, wait for more than 5 seconds so the responses
                     // in the SRM will expire.
                     Thread.sleep(7000);
-                    if (srm.size() != 0) {
+                    if (responseCacheSize(srm) != 0) {
                         message = "Incorrect number of responses: expected 0," +
-                                " got " + srm.size();
+                                " got " + responseCacheSize(srm);
                     } else {
                         pass = Boolean.TRUE;
                     }
@@ -424,6 +431,16 @@ public class StatusResponseManagerTests {
         boolean[] kuBitSettings = {true, false, false, false, false, true,
             true, false, false};
         cbld.addKeyUsageExt(kuBitSettings);
+    }
+
+    private static int responseCacheSize(
+            StatusResponseManager srm) throws IllegalAccessException {
+        return ((sun.security.util.Cache)responseCacheField.get(srm)).size();
+    }
+
+    private static void clearResponseCache(
+            StatusResponseManager srm) throws IllegalAccessException {
+        ((sun.security.util.Cache)responseCacheField.get(srm)).clear();
     }
 
     /**

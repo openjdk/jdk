@@ -1443,18 +1443,19 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
                 @Override
                 public void run() {
                     try {
-                        int c = 0;
+                        int len = 0;
+                        byte[] buf = new byte[16 * 1024];
                         try {
-                            while ((c = is.read()) != -1) {
-                                os.write(c);
+                            while ((len = is.read(buf)) != -1) {
+                                os.write(buf, 0, len);
                                 os.flush();
                                 // if DEBUG prints a + or a - for each transferred
                                 // character.
-                                if (DEBUG) System.out.print(tag);
+                                if (DEBUG) System.out.print(String.valueOf(tag).repeat(len));
                             }
                             is.close();
                         } catch (IOException ex) {
-                            if (DEBUG || !stopped && c >  -1)
+                            if (DEBUG || !stopped && len > -1)
                                 ex.printStackTrace(System.out);
                             end.completeExceptionally(ex);
                         } finally {

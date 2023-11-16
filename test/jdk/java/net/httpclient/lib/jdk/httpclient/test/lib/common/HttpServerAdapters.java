@@ -30,7 +30,6 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
@@ -798,14 +797,14 @@ public interface HttpServerAdapters {
                     return HttpTestServer.of(underlying);
                 }
                 case HTTP_1_1 ->  {
-                    InetSocketAddress sa = new InetSocketAddress(
-                            InetAddress.getLoopbackAddress(), 0);
+                    InetAddress loopback = InetAddress.getLoopbackAddress();
+                    InetSocketAddress sa = new InetSocketAddress(loopback, 0);
                     HttpServer underlying;
                     if (sslContext == null) {
                         underlying = HttpServer.create(sa, 0); // HTTP
                     } else {
                         HttpsServer https = HttpsServer.create(sa, 0); // HTTPS
-                        https.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+                        https.setHttpsConfigurator(new TestServerConfigurator(loopback, sslContext));
                         underlying = https;
                     }
                     if (executor != null) {

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_HPP
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -271,4 +271,4 @@ private:
   template<typename Function> void iterate_all(Function function) const;
 };
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_HPP

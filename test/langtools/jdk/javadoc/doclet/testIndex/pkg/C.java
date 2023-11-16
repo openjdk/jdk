@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,45 @@
 
 package pkg;
 
+/**
+ * A class to test sorting of index items.
+ *
+ * <h2>C</h2>
+ *
+ * Section "C" should appear right before language elements with the same name.
+ *
+ * <h3>C/D</h3>
+ *
+ * Section "C/D" should appear after items named "C" in the index.
+ *
+ * {@index c/d should appear before the section above}
+ */
 public class C {
 
-    //Test that Java appears before JDK in the index.  The fact
-    //that 'D' is uppercase and 'a' is lowercase should make no difference
-    //in ordering.
+    /**
+     * Empty constructor.
+     */
+    public C() {}
+
+    /**
+     * Constructor with a parameter.
+     * @param i an int
+     */
+    public C(int i) {}
+
+    /**
+     * Lower case "c" method should appear before upper case "C" elements and sections in index.
+     */
+    public void c() {}
+
+    /**
+     * Should appear after all items named "c" or "C".
+     */
+    public void c_() {}
+
+    // Test that Java appears before JDK in the index.  The fact
+    // that 'D' is uppercase and 'a' is lowercase should make no difference
+    // in ordering.
     public static final String JDK = "1.5";
     public static final String Java = "1.5";
 

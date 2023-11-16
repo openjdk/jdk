@@ -25,21 +25,19 @@
  * @test
  * @bug 8022186 8271254
  * @summary javac generates dead code if a try with an empty body has a finalizer
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_String_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Instruction.KindVisitor;
-import com.sun.tools.classfile.Instruction.TypeKind;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.InvokeInstruction;
 import com.sun.tools.javac.util.Assert;
 import java.io.BufferedInputStream;
 import java.nio.file.Files;
@@ -65,97 +63,27 @@ public class DeadCodeGeneratedForEmptyTryTest {
 
     void checkClassFile(final Path path) throws Exception {
         numberOfRefToStr = 0;
-        ClassFile classFile = ClassFile.read(
-                new BufferedInputStream(Files.newInputStream(path)));
-        constantPool = classFile.constant_pool;
-        utf8Index = constantPool.getUTF8Index("STR_TO_LOOK_FOR");
-        for (Method method: classFile.methods) {
-            if (method.getName(constantPool).equals("methodToLookFor")) {
-                Code_attribute codeAtt = (Code_attribute)method.attributes.get(Attribute.Code);
-                for (Instruction inst: codeAtt.getInstructions()) {
-                    inst.accept(codeVisitor, null);
-                }
+        ClassModel classFile = Classfile.of().parse(
+                new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
+        constantPool = classFile.constantPool();
+        for (MethodModel method: classFile.methods()) {
+            if (method.methodName().equalsString("methodToLookFor")) {
+                CodeAttribute codeAtt = method.findAttribute(Attributes.CODE).orElseThrow();
+                codeAtt.elementList().stream()
+                        .filter(ce -> ce instanceof Instruction)
+                        .forEach(ins -> checkIndirectRefToString((Instruction) ins));
             }
         }
         Assert.check(numberOfRefToStr == 1,
                 "There should only be one reference to a CONSTANT_String_info structure in the generated code");
     }
-
-    CodeVisitor codeVisitor = new CodeVisitor();
-
-    class CodeVisitor implements KindVisitor<Void, Void> {
-
-        void checkIndirectRefToString(int cp_index) {
-            try {
-                CPInfo cInfo = constantPool.get(cp_index);
-                if (cInfo instanceof CONSTANT_String_info) {
-                    CONSTANT_String_info strInfo = (CONSTANT_String_info)cInfo;
-                    if (strInfo.string_index == utf8Index) {
-                        numberOfRefToStr++;
-                    }
-                }
-            } catch (InvalidIndex ex) {
-                throw new AssertionError("invalid constant pool index at " + cp_index);
+    void checkIndirectRefToString(Instruction instruction) {
+        if (instruction instanceof InvokeInstruction invokeInstruction) {
+            MemberRefEntry refEntry = invokeInstruction.method();
+            if (constantPool.entryByIndex(refEntry.type().index()) instanceof Utf8Entry) {
+                numberOfRefToStr++;
             }
         }
-
-        @Override
-        public Void visitNoOperands(Instruction instr, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitArrayType(Instruction instr, TypeKind kind, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitBranch(Instruction instr, int offset, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitConstantPoolRef(Instruction instr, int index, Void p) {
-            checkIndirectRefToString(index);
-            return null;
-        }
-
-        @Override
-        public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Void p) {
-            checkIndirectRefToString(index);
-            return null;
-        }
-
-        @Override
-        public Void visitLocal(Instruction instr, int index, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitLocalAndValue(Instruction instr, int index, int value, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitValue(Instruction instr, int value, Void p) {
-            return null;
-        }
-
-        @Override
-        public Void visitUnknown(Instruction instr, Void p) {
-            return null;
-        }
-
     }
 
     public class Test1 {

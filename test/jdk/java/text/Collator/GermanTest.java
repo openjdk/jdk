@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @library /java/text/testlib
  * @summary test German Collation
+ * @run junit GermanTest
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -41,12 +42,12 @@ attribution to Taligent may not be removed.
 import java.util.Locale;
 import java.text.Collator;
 
-// Quick dummy program for printing out test results
-public class GermanTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new GermanTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+// Quick dummy program for printing out test results
+public class GermanTest {
 
     /*
      * Shared data for TestPrimary() and TestTertiary()
@@ -97,13 +98,15 @@ public class GermanTest extends CollatorTest {
         -1,  1
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                testSourceData, testTargetData, primaryResults);
     }
 
+    @Test
     public void TestTertiary() {
-        doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                testSourceData, testTargetData, tertiaryResults);
     }
 

@@ -25,6 +25,8 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
 import java.util.Objects;
@@ -68,7 +70,8 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
     public SequenceLayout withElementCount(long elementCount) {
-        return new SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name());
+        return Utils.wrapOverflow(() ->
+                new SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name()));
     }
 
     /**
@@ -176,7 +179,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
 
     @Override
     public String toString() {
-        boolean max = (Long.MAX_VALUE / elementLayout.byteSize()) == elemCount;
+        boolean max = (Long.MAX_VALUE / Math.max(1, elementLayout.byteSize())) == elemCount;
         return decorateLayoutString(String.format("[%s:%s]",
                 max ? "*" : elemCount, elementLayout));
     }

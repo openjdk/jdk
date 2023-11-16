@@ -27,7 +27,7 @@
 #include "gc/x/xLargePages.inline.hpp"
 #include "gc/x/xMapper_windows.hpp"
 #include "gc/x/xSyscall_windows.hpp"
-#include "gc/x/xVirtualMemory.hpp"
+#include "gc/x/xVirtualMemory.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

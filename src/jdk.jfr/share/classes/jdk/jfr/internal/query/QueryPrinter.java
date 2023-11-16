@@ -38,7 +38,7 @@ import jdk.jfr.Experimental;
 import jdk.jfr.Relational;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.EventStream;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.Columnizer;
 import jdk.jfr.internal.util.Output;
 import jdk.jfr.internal.util.StopWatch;

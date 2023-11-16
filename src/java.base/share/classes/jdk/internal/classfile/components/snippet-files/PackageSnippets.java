@@ -25,11 +25,13 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 
+import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.CodeModel;
@@ -97,13 +99,16 @@ class PackageSnippets {
     // @end
     @interface Test{}
 
+    private static final ClassDesc CD_Foo = ClassDesc.of("Foo");
+    private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
+
     void singleClassRemap(ClassModel... allMyClasses) {
         // @start region="singleClassRemap"
         var classRemapper = ClassRemapper.of(
-                Map.of(ClassDesc.of("Foo"), ClassDesc.of("Bar")));
-
+                Map.of(CD_Foo, CD_Bar));
+        var cc = Classfile.of();
         for (var classModel : allMyClasses) {
-            byte[] newBytes = classRemapper.remapClass(classModel);
+            byte[] newBytes = classRemapper.remapClass(cc, classModel);
 
         }
         // @end
@@ -113,9 +118,9 @@ class PackageSnippets {
         // @start region="allPackageRemap"
         var classRemapper = ClassRemapper.of(cd ->
                 ClassDesc.ofDescriptor(cd.descriptorString().replace("Lcom/oldpackage/", "Lcom/newpackage/")));
-
+        var cc = Classfile.of();
         for (var classModel : allMyClasses) {
-            byte[] newBytes = classRemapper.remapClass(classModel);
+            byte[] newBytes = classRemapper.remapClass(cc, classModel);
 
         }
         // @end
@@ -123,20 +128,23 @@ class PackageSnippets {
 
     void codeLocalsShifting(ClassModel classModel) {
         // @start region="codeLocalsShifting"
-        byte[] newBytes = classModel.transform((classBuilder, classElement) -> {
-                if (classElement instanceof MethodModel method)
-                    classBuilder.transformMethod(method,
-                            MethodTransform.transformingCode(
-                                    CodeLocalsShifter.of(method.flags(), method.methodTypeSymbol())));
-                else
-                    classBuilder.accept(classElement);
-            });
+        byte[] newBytes = Classfile.of().transform(
+                classModel,
+                (classBuilder, classElement) -> {
+                    if (classElement instanceof MethodModel method)
+                        classBuilder.transformMethod(method,
+                                MethodTransform.transformingCode(
+                                        CodeLocalsShifter.of(method.flags(), method.methodTypeSymbol())));
+                    else
+                        classBuilder.accept(classElement);
+                });
         // @end
     }
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = classModel.transform(
+        byte[] newBytes = Classfile.of().transform(
+                classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -150,7 +158,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -203,7 +211,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));

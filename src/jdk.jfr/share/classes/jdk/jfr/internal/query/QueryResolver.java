@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.query.FilteredType.Filter;
 import jdk.jfr.internal.query.Query.Condition;
 import jdk.jfr.internal.query.Query.Expression;

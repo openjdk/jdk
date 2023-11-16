@@ -26,7 +26,12 @@
  * @bug 8044411
  * @summary Tests the RuntimeVisibleAnnotations/RuntimeInvisibleAnnotations attribute.
  *          Checks that the attribute is generated for bridge method.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
@@ -70,10 +75,10 @@ public class RuntimeAnnotationsForGenericMethodTest extends RuntimeAnnotationsTe
                 TestAnnotationInfos annotations = groupedAnnotations.get(i);
                 // generate: public class Test extends java.util.ArrayList<Integer>
                 TestCase.TestClassInfo clazz = testCase.addClassInfo("java.util.ArrayList<Integer>", ClassType.CLASS, "Test" + i);
-                TestCase.TestMethodInfo method = clazz.addMethodInfo("add(java.lang.Integer)", "public");
+                TestCase.TestMethodInfo method = clazz.addMethodInfo("add(Integer)", "public");
                 method.addParameter("Integer", "i");
                 annotations.annotate(method);
-                TestCase.TestMethodInfo synMethod = clazz.addMethodInfo("add(java.lang.Object)", true, "public");
+                TestCase.TestMethodInfo synMethod = clazz.addMethodInfo("add(Object)", true, "public");
                 annotations.annotate(synMethod);
             }
             testCases.add(testCase);

@@ -35,9 +35,12 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -645,16 +648,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register size  = R12_scratch2;
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(cache, size /* tmp */);
-    __ lhz(size, Array<ResolvedIndyEntry>::base_offset_in_bytes() + in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
+    __ lhz(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
-    __ get_cache_and_index_at_bcp(cache, 1, index_size);
-
-    // Get least significant byte of 64 bit value:
-#if defined(VM_LITTLE_ENDIAN)
-    __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()), cache);
-#else
-    __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()) + 7, cache);
-#endif
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, size /* tmp */);
+    __ lhz(size, in_bytes(ResolvedMethodEntry::num_parameters_offset()), cache);
   }
   __ sldi(size, size, Interpreter::logStackElementSize);
   __ add(R15_esp, R15_esp, size);
@@ -1053,15 +1051,20 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Also initialize them for non-native calls for better tool support (even though
   // you may not get the most recent version as described above).
   __ li(R0, 0);
-  __ std(R26_monitor, _ijava_state_neg(monitors), R1_SP);
+  __ li(R12_scratch2, -(frame::ijava_state_size / wordSize));
+  __ std(R12_scratch2, _ijava_state_neg(monitors), R1_SP);
   __ std(R14_bcp, _ijava_state_neg(bcp), R1_SP);
   if (ProfileInterpreter) { __ std(R28_mdx, _ijava_state_neg(mdx), R1_SP); }
-  __ std(R15_esp, _ijava_state_neg(esp), R1_SP);
+  __ sub(R12_scratch2, R15_esp, R1_SP);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  __ std(R12_scratch2, _ijava_state_neg(esp), R1_SP);
   __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
 
   // Store sender's SP and this frame's top SP.
-  __ subf(R12_scratch2, Rtop_frame_size, R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
+  __ neg(R12_scratch2, Rtop_frame_size);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.
@@ -1284,7 +1287,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     // Update monitor in state.
     __ ld(R11_scratch1, 0, R1_SP);
-    __ std(R26_monitor, _ijava_state_neg(monitors), R11_scratch1);
+    __ sub(R12_scratch2, R26_monitor, R11_scratch1);
+    __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+    __ std(R12_scratch2, _ijava_state_neg(monitors), R11_scratch1);
   }
 
   // jvmti/jvmpi support

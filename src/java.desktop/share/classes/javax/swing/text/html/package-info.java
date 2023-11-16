@@ -43,6 +43,7 @@
  *     which HTMLEditorKit is based.
  * </ul>
  *
+ * @spec https://www.w3.org/TR/REC-html32.html HTML 3.2 Reference Specification
  * @since 1.2
  * @serial exclude
  */

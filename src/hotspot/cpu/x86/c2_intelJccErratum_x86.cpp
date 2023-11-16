@@ -100,7 +100,7 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   if (index_in_block < block->number_of_nodes() - 1) {
     Node* next = block->get_node(index_in_block + 1);
     if (next->is_Mach() && (next->as_Mach()->flags() & Node::PD::Flag_intel_jcc_erratum)) {
-      jcc_size += mach->size(regalloc);
+      jcc_size += next->size(regalloc);
     }
   }
   if (jcc_size > largest_jcc_size()) {
@@ -146,5 +146,6 @@ IntelJccErratumAlignment::~IntelJccErratumAlignment() {
     return;
   }
 
+  assert(pc() - _start_pc > 0, "No instruction aligned");
   assert(!IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(_start_pc, pc()), "Invalid jcc_size estimate");
 }

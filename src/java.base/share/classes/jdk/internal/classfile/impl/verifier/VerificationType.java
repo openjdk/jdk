@@ -116,7 +116,7 @@ class VerificationType {
                             Category1                    = (Category1Flag         << BitsPerByte) | Primitive,
                             Category2                    = (Category2Flag         << BitsPerByte) | Primitive,
                             Category2_2nd            = (Category2_2ndFlag << BitsPerByte) | Primitive,
-                            // Primitive values (type descriminator stored in most-signifcant bytes)
+                            // Primitive values (type discriminator stored in most-significant bytes)
                             // Bogus needs the " | Primitive".    Else, isReference(Bogus) returns TRUE.
                             Bogus                            = (ITEM_Bogus            << 2 * BitsPerByte) | Primitive,
                             Boolean                        = (ITEM_Boolean        << 2 * BitsPerByte) | Category1,
@@ -131,7 +131,7 @@ class VerificationType {
                             Double_2nd                 = (ITEM_Double_2nd << 2 * BitsPerByte) | Category2_2nd,
                             // Used by Uninitialized (second and third bytes hold the bci)
                             BciMask                        = 0xffff << BitsPerByte,
-                            // A bci of -1 is an Unintialized-This
+                            // A bci of -1 is an Uninitialized-This
                             BciForThis = 0xffff,
                             // Query values
                             ReferenceQuery         = (ReferenceFlag         << BitsPerByte) | TypeQuery,
@@ -212,7 +212,7 @@ class VerificationType {
         // the 'query' types should technically return 'false' here, if we
         // allow this to return true, we can perform the test using only
         // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
-        // Since noone should call this on a query type anyway, this is ok.
+        // Since no one should call this on a query type anyway, this is ok.
         if(is_check()) context.verifyError("Must not be a check type (wrong value returned)");
         // should only return false if it's a primitive, and the category1 flag
         // is not set.

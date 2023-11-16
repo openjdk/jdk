@@ -22,13 +22,18 @@
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 /*
  * @test Wildcards
  * @bug 6843077
  * @summary test that annotations target wildcards get emitted to classfile
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  */
 public class Wildcards {
     public static void main(String[] args) throws Exception {
@@ -39,13 +44,13 @@ public class Wildcards {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassFile cf = ClassFile.read(classFile);
-        test(cf);
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        test(cm);
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m);
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
         }
 
         countAnnotations();
@@ -54,72 +59,28 @@ public class Wildcards {
             throw new Exception(errors + " errors found");
         System.out.println("PASSED");
     }
-
-    void test(ClassFile cf) {
-        test(cf, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, Attribute.RuntimeInvisibleTypeAnnotations, false);
+    void test(AttributedElement m) {
+        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
+        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
     }
-
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    void test(ClassFile cf, Field m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, String name, boolean visible) {
-        int index = cf.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = cf.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
+    <T extends Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
+        Attribute<T> attr_instance = m.findAttribute(attr_name).orElse(null);
+        if (attr_instance != null) {
+            switch (attr_instance) {
+                case RuntimeVisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    visibles += tAttr.annotations().size();
+                }
+                case RuntimeInvisibleTypeAnnotationsAttribute tAttr -> {
+                    all += tAttr.annotations().size();
+                    invisibles += tAttr.annotations().size();
+                }
+                default -> throw new AssertionError();
+            }
         }
     }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Field m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
     File writeTestFile() throws IOException {
-      File f = new File("Test.java");
+        File f = new File("Test.java");
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)));
         out.println("import java.lang.annotation.*;");
         out.println("import java.util.*;");

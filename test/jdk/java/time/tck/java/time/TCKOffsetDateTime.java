@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1381,6 +1381,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) == 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a,b) == 0, true);
     }
 
     @Test

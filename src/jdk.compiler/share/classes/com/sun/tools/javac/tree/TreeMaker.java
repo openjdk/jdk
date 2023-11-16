@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,8 @@ public class TreeMaker implements JCTree.Factory {
                 || node instanceof JCModuleDecl
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
+                || node instanceof JCMethodDecl
+                || node instanceof JCVariableDecl
                 || (node instanceof JCExpressionStatement expressionStatement
                     && expressionStatement.expr instanceof JCErroneous),
                     () -> node.getClass().getSimpleName());
@@ -1159,7 +1161,7 @@ public class TreeMaker implements JCTree.Factory {
                   !it.hasNext();
             }
         }
-        return false;
+        return sym.kind == TYP && (sym.flags_field & Flags.UNNAMED_CLASS) != 0;
     }
 
     /** The name of synthetic parameter number `i'.

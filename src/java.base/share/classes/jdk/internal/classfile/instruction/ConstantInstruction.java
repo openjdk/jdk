@@ -136,7 +136,7 @@ public sealed interface ConstantInstruction extends Instruction {
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.BIPUSH && op != Opcode.SIPUSH)
-            throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected BIPUSH or SIPUSH", op, op.kind()));
+            throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected BIPUSH or SIPUSH", op));
         return new AbstractInstruction.UnboundArgumentConstantInstruction(op, value);
     }
 
@@ -150,7 +150,7 @@ public sealed interface ConstantInstruction extends Instruction {
     static LoadConstantInstruction ofLoad(Opcode op, LoadableConstantEntry constant) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.LDC && op != Opcode.LDC_W && op != Opcode.LDC2_W)
-            throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected LDC, LDC_W or LDC2_W", op, op.kind()));
+            throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected LDC, LDC_W or LDC2_W", op));
         return new AbstractInstruction.UnboundLoadConstantInstruction(op, constant);
     }
 }

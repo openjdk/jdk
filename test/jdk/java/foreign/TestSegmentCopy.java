@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestSegmentCopy
  */
 
@@ -35,9 +34,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
 
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -72,6 +73,24 @@ public class TestSegmentCopy {
                     Type.BYTE.check(s2, s2Offset, i, i);
                 }
             }
+        }
+    }
+
+    @Test(expectedExceptions = UnsupportedOperationException.class, dataProvider = "segmentKinds")
+    public void testReadOnlyCopy(SegmentKind kind1, SegmentKind kind2) {
+        MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
+        MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
+        // check failure with read-only dest
+        MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class, dataProvider = "types")
+    public void testBadOverflow(Type type) {
+        if (type.layout.byteSize() > 1) {
+            MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+            MemorySegment.copy(segment, type.layout, 0, segment, type.layout, 0, Long.MAX_VALUE);
+        } else {
+            throw new SkipException("Byte layouts do not overflow");
         }
     }
 
@@ -151,7 +170,7 @@ public class TestSegmentCopy {
         }
 
         VarHandle handle() {
-            return MethodHandles.memorySegmentViewVarHandle(layout);
+            return layout.varHandle();
         }
 
         void set(MemorySegment segment, long offset, int index, int val) {
@@ -187,6 +206,13 @@ public class TestSegmentCopy {
             }
         }
         return cases.toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    static Object[][] types() {
+        return Arrays.stream(Type.values())
+                .map(t -> new Object[] { t })
+                .toArray(Object[][]::new);
     }
 
     @DataProvider
