@@ -653,11 +653,14 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
       deactivate(e);
       size_t found_index = find_previous_entry(entries, c, e->ptr);
       while (found_index != 0) {
-        Entry* found = &entries[found_index];
-        deactivate(found);
+        e = &entries[found_index];
+        deactivate(e);
         if (is_realloc(e)) {
-          found_index = find_previous_entry(entries, found_index, found->old);
+          // if it's realloc, then we need to keep looking
+          found_index = find_previous_entry(entries, found_index, e->old);
         } else {
+          // if it's malloc, then we are done
+          assert(is_malloc(e), "is_malloc(e)");
           found_index = 0;
           break;
         }
@@ -695,6 +698,7 @@ void NMT_MemoryLogRecorder::consolidate(Entry* entries, size_t count, size_t sta
             found_index = find_previous_entry(entries, found_index, e->old);
           } else {
             // if it's malloc, then we are done
+            assert(is_malloc(e), "is_malloc(e)");
             found_index = 0;
             break;
           }
