@@ -2028,7 +2028,7 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return (this.svalue != null) ? Objects.hashCode(this.svalue) : 0;
+            return (this.svalue != null) ? this.svalue.hashCode() : 0;
         }
 
         @Override
@@ -2968,7 +2968,7 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return (this.svalue != null) ? this.svalue.hashCode() : 0;
+            return (this.svalue != null) ? Objects.hashCode(this.svalue) : 0;
         }
 
         @Override
