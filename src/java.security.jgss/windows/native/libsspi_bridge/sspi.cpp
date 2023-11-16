@@ -413,7 +413,7 @@ gss_import_name(OM_uint32 *minor_status,
     }
     PP("import_name to %ls", value);
     gss_name_struct* name = new gss_name_struct;
-    if (name == NULL) {
+    if (name == nullptr) {
         delete[] value;
         return GSS_S_FAILURE;
     }
