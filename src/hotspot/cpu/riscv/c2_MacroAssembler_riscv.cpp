@@ -1475,21 +1475,22 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
   case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
   default:        BLOCK_COMMENT("arrays_hashcode {");                break;
+    ShouldNotReachHere();
   }
 
   const int stride = 4;
   const Register pow31_3_4 = tmp6;
-  const Register pow31_1_2 = tmp5;
+  const Register pow31_2   = tmp5;
   const Register chunk     = tmp4;
 
   Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
 
-  // result has already been zeroed earlier
+  // result has a value initially
 
   beqz(cnt, DONE);
 
-  ld(pow31_1_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                                + 2 * sizeof(jint))); // [31^^1][31^^2]
+  lw(pow31_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                              + 2 * sizeof(jint))); // [31^^2]
 
   andi(chunk, cnt, ~(stride-1));
   beqz(chunk, TAIL);
@@ -1509,19 +1510,19 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
                                 + 0 * sizeof(jint))); // [31^^3:31^^4]
 
   bind(WIDE_LOOP);
-  DO_ELEMENT_LOAD(tmp1, 0)
-  DO_ELEMENT_LOAD(tmp3, 1)
   mulw(result, result, pow31_3_4); // 31^^4 * h
+  DO_ELEMENT_LOAD(tmp1, 0);
   srli(tmp2, pow31_3_4, 32);
   mulw(tmp1, tmp1, tmp2);          // 31^^3 * ary[i+0]
   addw(result, result, tmp1);
-  mulw(tmp3, tmp3, pow31_1_2);     // 31^^2 * ary[i+1]
+  DO_ELEMENT_LOAD(tmp3, 1);
+  mulw(tmp3, tmp3, pow31_2);       // 31^^2 * ary[i+1]
   addw(result, result, tmp3);
-  DO_ELEMENT_LOAD(tmp1, 2)
-  DO_ELEMENT_LOAD(tmp3, 3)
-  srli(tmp2, pow31_1_2, 32);
-  mulw(tmp1, tmp1, tmp2);          // 31^^1 * ary[i+2]
+  DO_ELEMENT_LOAD(tmp1, 2);
+  slli(tmp2, tmp1, 5);             // optimize 31^^1 * ary[i+2]
+  subw(tmp1, tmp2, tmp1);          // with ary[i+2]<<5 - ary[i+2]
   addw(result, result, tmp1);
+  DO_ELEMENT_LOAD(tmp3, 3);
   addw(result, result, tmp3);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
                                    //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
   subw(chunk, chunk, stride);
@@ -1533,9 +1534,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   bind(TAIL_LOOP);
   DO_ELEMENT_LOAD(tmp1, 0)
-  slli(tmp2, result, 5);
-  subw(result, tmp2, result);
-  addw(result, result, tmp1); // result = result + ary[i]
+  slli(tmp2, result, 5);           // optimize 31 * result
+  subw(result, tmp2, result);      // with result<<5 - result
+  addw(result, result, tmp1);
   subw(cnt, cnt, 1);
   add(ary, ary, elsize);
   bnez(cnt, TAIL_LOOP);
