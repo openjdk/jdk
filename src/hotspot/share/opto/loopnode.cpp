@@ -4792,42 +4792,32 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
     // n is a data node.
     // Verify that its ctrl is the same.
 
-    // Broken part of VerifyLoopOptimizations (A)
-    // Reason:
-    //   BUG, wrong control set for example in
-    //   PhaseIdealLoop::split_if_with_blocks
-    //   at "set_ctrl(x, new_ctrl);"
-    /*
-    if( _loop_or_ctrl[i] != loop_verify->_loop_or_ctrl[i] &&
-        get_ctrl_no_update(n) != loop_verify->get_ctrl_no_update(n) ) {
-      tty->print("Mismatched control setting for: ");
+    Node* ctrl_this = get_ctrl_no_update(n);
+    Node* ctrl_verify = phase_verify->get_ctrl_no_update(n);
+    if(_loop_or_ctrl[i] != phase_verify->_loop_or_ctrl[i] &&
+       ctrl_this != ctrl_verify) {
+      tty->print_cr("Mismatched ctrl for non-ctrl node: ");
       n->dump();
-      if( fail++ > 10 ) return;
-      Node *c = get_ctrl_no_update(n);
-      tty->print("We have it as: ");
-      if( c->in(0) ) c->dump();
-        else tty->print_cr("N%d",c->_idx);
-      tty->print("Verify thinks: ");
-      if( loop_verify->has_ctrl(n) )
-        loop_verify->get_ctrl_no_update(n)->dump();
-      else
-        loop_verify->get_loop_idx(n)->dump();
+      tty->print_cr("Ctrl for this:");
+      ctrl_this->dump();
+      tty->print_cr("Ctrl for verify:");
+      ctrl_verify->dump();
       tty->cr();
+      return false; // fail
     }
-    */
     return true; // pass
   } else {
     assert(!phase_verify->has_ctrl(n), "sanity");
     // n is a ctrl node.
     // Verify that not has_ctrl, and that get_loop_idx is the same.
 
-    if (!C->major_progress()) {
+    //if (!C->major_progress()) {
       // Loop selection can be messed up if we did a major progress
       // operation, like split-if.  Do not verify in that case.
       IdealLoopTree* loop_this = get_loop_idx(n);
       IdealLoopTree* loop_verify = phase_verify->get_loop_idx(n);
       if(loop_this->_head != loop_verify->_head ||
-	 loop_this->_tail != loop_verify->_tail ) {
+         loop_this->_tail != loop_verify->_tail ) {
         tty->print_cr("Mismatch get_loop_idx for ctrl node:");
         n->dump();
         tty->print_cr("Loop for this:");
@@ -4835,8 +4825,9 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
         tty->print_cr("Loop for verif::");
         loop_verify->dump();
         tty->cr();
+        return false; // fail
       }
-    }
+    //}
     return true; // pass
   }
 }
