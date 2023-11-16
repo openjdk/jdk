@@ -1057,8 +1057,9 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * Returns a stream consisting of the results of applying the given
      * {@link Gatherer} to the elements of this stream.
      *
-     * <p>This is an <a href="package-summary.html#Extensibility">extension point</a>
-     * for <a href="package-summary.html#StreamOps">intermediate operations</a>.
+     * <p>This is a <a href="package-summary.html#StreamOps">stateful
+     * intermediate operation</a> that is an
+     * <a href="package-summary.html#Extensibility">extension point</a>.
      *
      * <p>Gatherers are highly flexible and can describe a vast array of
      * possibly stateful operations, with support for short-circuiting, and
