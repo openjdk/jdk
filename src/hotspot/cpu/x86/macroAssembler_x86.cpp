@@ -8525,7 +8525,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     // alignment
     Label post_alignment;
 
-    // if length of the string is less than 16, handle it in an old fashioned way
+    // if length of the string is less than 32, handle it the old fashioned way
     testl(len, -32);
     jcc(Assembler::zero, below_threshold);
 
@@ -8614,7 +8614,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     lea(src, Address(src, tmp5, Address::times_2));
     lea(dst, Address(dst, tmp5, Address::times_1));
     subptr(len, tmp5);
-    jmpb(copy_chars_loop);
+    jmp(copy_chars_loop);
 
     bind(below_threshold);
   }
