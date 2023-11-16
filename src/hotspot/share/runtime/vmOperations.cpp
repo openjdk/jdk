@@ -344,7 +344,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
     if (monitor->is_owner_anonymous()) {
       // There's no need to collect anonymous owned monitors
-      // because the callers of this code is only interested
+      // because the caller of this code is only interested
       // in JNI owned monitors.
       return;
     }
