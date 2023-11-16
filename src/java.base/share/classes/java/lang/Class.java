@@ -3713,7 +3713,7 @@ public final class Class<T> implements java.io.Serializable,
         PublicMethods.MethodList res = getMethodsRecursive(
             name,
             parameterTypes == null ? EMPTY_CLASS_ARRAY : parameterTypes,
-            /* includeStatic */ true);
+            /* includeStatic */ true, /* publicOnly */ true);
         return res == null ? null : res.getMostSpecific();
     }
 
@@ -3722,9 +3722,10 @@ public final class Class<T> implements java.io.Serializable,
     // via ReflectionFactory.copyMethod.
     private PublicMethods.MethodList getMethodsRecursive(String name,
                                                          Class<?>[] parameterTypes,
-                                                         boolean includeStatic) {
-        // 1st check declared public methods
-        Method[] methods = privateGetDeclaredMethods(/* publicOnly */ true);
+                                                         boolean includeStatic,
+                                                         boolean publicOnly) {
+        // 1st check declared methods
+        Method[] methods = privateGetDeclaredMethods(publicOnly);
         PublicMethods.MethodList res = PublicMethods.MethodList
             .filter(methods, name, parameterTypes, includeStatic);
         // if there is at least one match among declared methods, we need not
@@ -3738,15 +3739,14 @@ public final class Class<T> implements java.io.Serializable,
         // we must consult the superclass (if any) recursively...
         Class<?> sc = getSuperclass();
         if (sc != null) {
-            res = sc.getMethodsRecursive(name, parameterTypes, includeStatic);
+            res = sc.getMethodsRecursive(name, parameterTypes, includeStatic, publicOnly);
         }
 
         // ...and coalesce the superclass methods with methods obtained
         // from directly implemented interfaces excluding static methods...
         for (Class<?> intf : getInterfaces(/* cloneArray */ false)) {
             res = PublicMethods.MethodList.merge(
-                res, intf.getMethodsRecursive(name, parameterTypes,
-                                              /* includeStatic */ false));
+                res, intf.getMethodsRecursive(name, parameterTypes, includeStatic, publicOnly));
         }
 
         return res;
@@ -4787,4 +4787,49 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private native int getClassAccessFlagsRaw0();
+
+    private Method getAnyMethod(String name, Class<?>... parameterTypes) {
+        Objects.requireNonNull(name, "name must not be null");
+        Objects.requireNonNull(parameterTypes, "parameterTypes must not be null");
+        PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, false);
+        return res == null ? null : getReflectionFactory().copyMethod(res.getMostSpecific());
+    }
+
+    /**
+     * Return the first method that meets the requirements of an application main method.
+     * The method must:
+     * <ul>
+     *  <li>be declared this class's hierarchy</li>
+     *  <li>have the name "main"</li>
+     *  <li>must have no arguments or a single argument of type {@code String[]}</li>
+     *  <li>must have the return type of void</li>
+     *  <li>must not be private or abstract</li>
+     *  </ul>
+     *  Main methods that have a {@code String[]} argument will be chosen over main
+     *  methods with no argument.
+     *
+     * @return the candidate main method or null if none found
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Method getMainMethod() {
+        boolean isPreview = PreviewFeatures.isEnabled();
+        Method mainMethod = getAnyMethod("main", String[].class);
+
+        if (isPreview && mainMethod == null) {
+            mainMethod = getAnyMethod("main");
+        }
+
+        if (mainMethod != null) {
+            int mods = mainMethod.getModifiers();
+
+            if (Modifier.isPrivate(mods) || Modifier.isAbstract(mods) ||
+                    mainMethod.getReturnType() != void.class) {
+                mainMethod = null;
+            } else if (!isPreview && !(Modifier.isStatic(mods) && Modifier.isPublic(mods))) {
+                mainMethod = null;
+            }
+        }
+
+        return mainMethod;
+    }
 }

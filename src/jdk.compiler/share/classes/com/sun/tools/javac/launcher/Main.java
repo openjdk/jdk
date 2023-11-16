@@ -85,7 +85,6 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 
-import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 
@@ -434,10 +433,9 @@ public class Main {
             throw new Fault(Errors.CantFindClass(mainClassName));
         }
 
-        Method mainMethod;
-        try {
-            mainMethod = MainMethodFinder.findMainMethod(appClass);
-        } catch (NoSuchMethodException e) {
+        Method mainMethod = appClass.getMainMethod();
+
+        if (mainMethod == null) {
             throw new Fault(Errors.CantFindMainMethod(mainClassName));
         }
 
