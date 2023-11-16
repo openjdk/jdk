@@ -2795,6 +2795,12 @@ BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper
   return def->bottom_type()->is_vect()->element_basic_type();
 }
 
+bool Matcher::is_non_long_integral_vector(const Node* n) {
+  BasicType bt = vector_element_basic_type(n);
+  assert(bt != T_CHAR, "char is not allowed in vector");
+  return is_subword_type(bt) || bt == T_INT;
+}
+
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing(), "sanity");

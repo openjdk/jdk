@@ -173,6 +173,7 @@ class Inet4Address extends InetAddress {
      * @throws IllegalArgumentException if the {@code ipv4AddressLiteral} cannot be
      *         parsed as an IPv4 address literal.
      * @throws NullPointerException if the {@code ipv4AddressLiteral} is {@code null}.
+     * @since 22
      */
     public static Inet4Address ofLiteral(String ipv4AddressLiteral) {
         Objects.requireNonNull(ipv4AddressLiteral);

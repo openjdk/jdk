@@ -85,6 +85,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -224,10 +225,11 @@
   nonstatic_field(ConstantPool,                _source_file_name_index,                       u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_references,                          OopHandle)                             \
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
-  nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
   nonstatic_field(ConstantPoolCache,           _resolved_field_entries,                       Array<ResolvedFieldEntry>*)            \
   nonstatic_field(ResolvedFieldEntry,          _cpool_index,                                  u2)                                    \
+  nonstatic_field(ConstantPoolCache,           _resolved_method_entries,                      Array<ResolvedMethodEntry>*)           \
+  nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
@@ -336,15 +338,6 @@
   nonstatic_field(Annotations,                 _fields_annotations,                           Array<Array<u1>*>*)                    \
   nonstatic_field(Annotations,                 _class_type_annotations,                       Array<u1>*)                            \
   nonstatic_field(Annotations,                 _fields_type_annotations,                      Array<Array<u1>*>*)                    \
-                                                                                                                                     \
-  /***********************/                                                                                                          \
-  /* Constant Pool Cache */                                                                                                          \
-  /***********************/                                                                                                          \
-                                                                                                                                     \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             intx)                                  \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f1,                                  Metadata*)                             \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \
                                                                                                                                      \
   /*****************************/                                                                                                    \
   /* Method related structures */                                                                                                    \
@@ -488,6 +481,8 @@
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
   nonstatic_field(Array<ResolvedFieldEntry>,   _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedFieldEntry>,   _data[0],                                      ResolvedFieldEntry)                    \
+  nonstatic_field(Array<ResolvedMethodEntry>,  _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedMethodEntry>,  _data[0],                                      ResolvedMethodEntry)                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
@@ -975,6 +970,7 @@
   unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
+  unchecked_nonstatic_field(Array<ResolvedMethodEntry>,_data,                                 sizeof(ResolvedMethodEntry))           \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
   unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
                                                                                                                                      \
@@ -1749,12 +1745,7 @@
   declare_c2_type(MinVNode, VectorNode)                                   \
   declare_c2_type(LoadVectorNode, LoadNode)                               \
   declare_c2_type(StoreVectorNode, StoreNode)                             \
-  declare_c2_type(ReplicateBNode, VectorNode)                             \
-  declare_c2_type(ReplicateSNode, VectorNode)                             \
-  declare_c2_type(ReplicateINode, VectorNode)                             \
-  declare_c2_type(ReplicateLNode, VectorNode)                             \
-  declare_c2_type(ReplicateFNode, VectorNode)                             \
-  declare_c2_type(ReplicateDNode, VectorNode)                             \
+  declare_c2_type(ReplicateNode, VectorNode)                              \
   declare_c2_type(PopulateIndexNode, VectorNode)                          \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
@@ -1908,6 +1899,7 @@
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
             declare_type(Array<ResolvedFieldEntry>, MetaspaceObj)         \
+            declare_type(Array<ResolvedMethodEntry>, MetaspaceObj)        \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
             declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
                                                                           \
@@ -1925,8 +1917,8 @@
   declare_toplevel_type(CodeBlob*)                                        \
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
-  declare_toplevel_type(ConstantPoolCacheEntry)                           \
   declare_toplevel_type(ResolvedFieldEntry)                               \
+  declare_toplevel_type(ResolvedMethodEntry)                              \
   declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \
@@ -2203,18 +2195,6 @@
   declare_constant(ConstantPool::_indy_bsm_offset)                        \
   declare_constant(ConstantPool::_indy_argc_offset)                       \
   declare_constant(ConstantPool::_indy_argv_offset)                       \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
-                                                                          \
-  /********************************/                                      \
-  /* ConstantPoolCacheEntry enums */                                      \
-  /********************************/                                      \
-                                                                          \
-  declare_constant(ConstantPoolCacheEntry::is_volatile_shift)             \
-  declare_constant(ConstantPoolCacheEntry::is_final_shift)                \
-  declare_constant(ConstantPoolCacheEntry::is_forced_virtual_shift)       \
-  declare_constant(ConstantPoolCacheEntry::is_vfinal_shift)               \
-  declare_constant(ConstantPoolCacheEntry::is_field_entry_shift)          \
-  declare_constant(ConstantPoolCacheEntry::tos_state_shift)               \
                                                                           \
   /***************************************/                               \
   /* JavaThreadStatus enum               */                               \
