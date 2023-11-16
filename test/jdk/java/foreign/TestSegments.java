@@ -423,6 +423,31 @@ public class TestSegments {
         assertTrue(expected.isEmpty());
     }
 
+    @Test
+    void testThrowInCleanupSame() {
+        AtomicInteger counter = new AtomicInteger();
+        Throwable thrown = null;
+        IllegalArgumentException iae = new IllegalArgumentException();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw iae;
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw iae;
+                });
+            }
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } catch (RuntimeException ex) {
+            thrown = ex;
+        }
+        assertEquals(thrown, iae);
+        assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 0);
+    }
+
     @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {
