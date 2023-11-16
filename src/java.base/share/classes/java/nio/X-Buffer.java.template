@@ -2289,7 +2289,7 @@ public abstract sealed class $Type$Buffer
      *
      * @implNote
      * This implementation throws {@code UnsupportedOperationException} for
-     * non-direct buffers when the given unit size is greater then {@code 8}.
+     * non-direct buffers when the given unit size is greater then {@code 1}.
      *
      * @param  unitSize
      *         The unit size in bytes, must be a power of {@code 2}
