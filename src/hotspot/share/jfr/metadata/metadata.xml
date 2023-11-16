@@ -848,6 +848,19 @@
     <Field type="float" contentType="hertz" name="switchRate" label="Switch Rate" description="Number of context switches per second" />
   </Event>
 
+  <Event name="CompilerQueueUtilization" category="Java Virtual Machine, Compiler" label="Compiler Queue Utilization" period="everyChunk">
+    <Field type="CompilerType" name="compiler" label="Compiler" />
+    <Field type="long" contentType="hertz" name="addedRate" label="Requets Added Rate" description="Requests added per second"/>
+    <Field type="long" contentType="hertz" name="removedRate" label="Requests Removed Rate" description="Requests removed per second"/>
+    <Field type="long" name="queueSize" label="Queue Size"/>
+    <Field type="long" name="peakQueueSize" label="Peak Queue Size"/>
+    <Field type="long" name="addedCount" label="Requests Added"/>
+    <Field type="long" name="removedCount" label="Requests Removed"/>
+    <Field type="long" name="totalAddedCount" label="Total Requests Added"/>
+    <Field type="long" name="totalRemovedCount" label="Total Requests Removed"/>
+    <Field type="int" name="compilerThreadCount" label="Compiler Thread Count"/>
+  </Event>
+
   <Event name="NetworkUtilization" category="Operating System, Network" label="Network Utilization" period="everyChunk">
     <Field type="NetworkInterfaceName" name="networkInterface" label="Network Interface" description="Network Interface Name"/>
     <Field type="long" contentType="bits-per-second" name="readRate" label="Read Rate" description="Number of incoming bits per second"/>

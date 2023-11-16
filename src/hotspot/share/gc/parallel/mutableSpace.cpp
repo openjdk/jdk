@@ -247,7 +247,7 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
       assert(obj->forwardee() != obj, "must not be self-forwarded");
     }
 #endif
-    p += cast_to_oop(p)->size();
+    p += obj->size();
   }
 }
 
