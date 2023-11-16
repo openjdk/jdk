@@ -149,7 +149,7 @@ public class TestStringConstructionIntrinsics {
         assert (len + off < bytes.length);
         initializeBytes(off, len, ng, ngOffset);
         byte[] dst = new byte[bytes.length];
-        
+
         int calculated = Helper.compress(bytes, off, dst, 0, len);
         int expected = compress(bytes, off, dst, 0, len);
         if (calculated != expected) {
@@ -209,7 +209,7 @@ public class TestStringConstructionIntrinsics {
     private static void testConstructChars(int off, int len, int nonLatin1, int nlOffset) throws Exception {
         assert (len + off < bytes.length);
         initializeChars(off, len, nonLatin1, nlOffset);
-        
+
         int calculated = Helper.compress(chars, off, dst, 0, len);
         int expected = compress(chars, off, dst, 0, len);
         if (calculated != expected) {
