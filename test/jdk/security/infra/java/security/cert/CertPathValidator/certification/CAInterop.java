@@ -431,6 +431,26 @@
  * @run main/othervm -Djava.security.debug=certpath CAInterop teliarootcav2 CRL
  */
 
+/*
+ * @test id=emsignrootcag1
+ * @bug 8319187
+ * @summary Interoperability tests with eMudhra Root CA G1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop emsignrootcag1 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop emsignrootcag1 CRL
+ */
+
+/*
+ * @test id=emsigneccrootcag3
+ * @bug 8319187
+ * @summary Interoperability tests with eMudhra ECC Root CA G3
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop emsigneccrootcag3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop emsigneccrootcag3 CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs
  */
@@ -585,6 +605,13 @@ public class CAInterop {
             case "teliarootcav2" ->
                     new CATestURLs("https://juolukka.cover.telia.fi:10600",
                             "https://juolukka.cover.telia.fi:10601");
+
+            case "emsignrootcag1" ->
+                    new CATestURLs("https://testovg1.emsign.com/RootOVG1.html",
+                            "https://testovg1r.emsign.com/RootOVG1MR.html");
+            case "emsigneccrootcag3" ->
+                    new CATestURLs("https://testovg3.emsign.com/RootOVG3.html",
+                            "https://testovg3r.emsign.com/RootOVG3MR.html");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };
