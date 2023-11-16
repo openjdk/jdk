@@ -27,6 +27,7 @@ package sun.util.locale.provider;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /*
@@ -60,5 +61,19 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
             case "FormatData" -> Set.of("ja", "und");
             default -> Set.of("und");
         };
+    }
+
+    @Override
+    public boolean isSupportedProviderLocale(Locale locale, Set<String> langtags) {
+        if (Locale.ROOT.equals(locale)) {
+            return true;
+        }
+
+        locale = locale.stripExtensions();
+        if (langtags.contains(locale.toLanguageTag())) {
+            return true;
+        }
+
+        return false;
     }
 }
