@@ -4500,11 +4500,16 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    XMMRegister mask = $b$$XMMRegister;
+    if (EnableX86ECoreOpts) {
+      __ vpsrad($tmp$$XMMRegister, mask, 32, vector_len);
+      mask = $tmp$$XMMRegister;
+    }
+    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $atmp$$XMMRegister);
+    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
     __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
     __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
  %}
   ins_pipe( pipe_slow );
 %}
@@ -4536,11 +4541,17 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
+    XMMRegister mask = $b$$XMMRegister;
+    if (EnableX86ECoreOpts) {
+      __ vpxor($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp$$XMMRegister, vector_len);
+      __ vpcmpgtq($tmp$$XMMRegister, $tmp$$XMMRegister, mask, vector_len);
+      mask = $tmp$$XMMRegister;
+    }
+    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $atmp$$XMMRegister);
+    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
     __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
     __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4572,11 +4583,16 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    XMMRegister mask = $a$$XMMRegister;
+    if (EnableX86ECoreOpts) {
+      __ vpsrad($tmp$$XMMRegister, mask, 32, vector_len);
+      mask = $tmp$$XMMRegister;
+    }
+    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $btmp$$XMMRegister);
+    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
     __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
     __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4608,11 +4624,17 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   %}
   ins_encode %{
     int vector_len = Assembler::AVX_128bit;
-    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
+    XMMRegister mask = $a$$XMMRegister;
+    if (EnableX86ECoreOpts) {
+      __ vpxor($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp$$XMMRegister, vector_len);
+      __ vpcmpgtq($tmp$$XMMRegister, $tmp$$XMMRegister, mask, vector_len);
+      mask = $tmp$$XMMRegister;
+    }
+    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $btmp$$XMMRegister);
+    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
     __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
     __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

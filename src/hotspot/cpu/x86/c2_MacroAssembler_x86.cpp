@@ -1094,31 +1094,65 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
 
+  /* Note on 'non-obvious' assembly sequence:
+   *
+   * While there are vminps/vmaxps instructions, there are two important differences between hardware
+   * and Java on how they handle floats:
+   *  a. -0.0 and +0.0 are considered equal (vminps/vmaxps will return second parameter when inputs are equal)
+   *  b. NaN is not necesarily propagated (vminps/vmaxps will return second parameter when either input is NaN)
+   *
+   * It is still more efficient to use vminps/vmaxps, but with some pre/post-processing:
+   *  a. -0.0/+0.0: Bias negative (positive) numbers to second parameter before vminps (vmaxps)
+   *                (only useful when signs differ, noop otherwise)
+   *  b. NaN: Check if it was the first parameter that had the NaN (with vcmp[UNORD_Q])
+   */
   if (!is_double_word && is_min) {
-    vblendvps(atmp, a, b, a, vlen_enc);
-    vblendvps(btmp, b, a, a, vlen_enc);
+    XMMRegister mask = a;
+    if (EnableX86ECoreOpts) {
+      vpsrad(tmp, mask, 32, vlen_enc);
+      mask = tmp;
+    }
+    vblendvps(atmp, a, b, mask, vlen_enc, true, btmp);
+    vblendvps(btmp, b, a, mask, vlen_enc, true, tmp);
     vminps(tmp, atmp, btmp, vlen_enc);
     vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc);
+    vblendvps(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
   } else if (!is_double_word && !is_min) {
-    vblendvps(btmp, b, a, b, vlen_enc);
-    vblendvps(atmp, a, b, b, vlen_enc);
+    XMMRegister mask = b;
+    if (EnableX86ECoreOpts) {
+      vpsrad(tmp, mask, 32, vlen_enc);
+      mask = tmp;
+    }
+    vblendvps(btmp, b, a, mask, vlen_enc, true, atmp);
+    vblendvps(atmp, a, b, mask, vlen_enc, true, tmp);
     vmaxps(tmp, atmp, btmp, vlen_enc);
     vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc);
+    vblendvps(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
   } else if (is_double_word && is_min) {
-    vblendvpd(atmp, a, b, a, vlen_enc);
-    vblendvpd(btmp, b, a, a, vlen_enc);
+    XMMRegister mask = a;
+    if (EnableX86ECoreOpts) {
+      vpxor(tmp, tmp, tmp, vlen_enc);
+      vpcmpgtq(tmp, tmp, mask, vlen_enc);
+      mask = tmp;
+    }
+    vblendvpd(atmp, a, b, mask, vlen_enc, true, btmp);
+    vblendvpd(btmp, b, a, mask, vlen_enc, true, tmp);
     vminpd(tmp, atmp, btmp, vlen_enc);
     vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc);
+    vblendvpd(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
   } else {
     assert(is_double_word && !is_min, "sanity");
-    vblendvpd(btmp, b, a, b, vlen_enc);
-    vblendvpd(atmp, a, b, b, vlen_enc);
+    XMMRegister mask = b;
+    if (EnableX86ECoreOpts) {
+      vpxor(tmp, tmp, tmp, vlen_enc);
+      vpcmpgtq(tmp, tmp, mask, vlen_enc);
+      mask = tmp;
+    }
+    vblendvpd(btmp, b, a, mask, vlen_enc, true, atmp);
+    vblendvpd(atmp, a, b, mask, vlen_enc, true, tmp);
     vmaxpd(tmp, atmp, btmp, vlen_enc);
     vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc);
+    vblendvpd(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
   }
 }
 
@@ -5318,18 +5352,18 @@ void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegist
   if (opcode == Op_SignumVD) {
     vsubpd(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvpd(dst, one, dst, src, vec_enc);
+    vblendvpd(dst, one, dst, src, vec_enc, false, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc, true, xtmp1);
   } else {
     assert(opcode == Op_SignumVF, "");
     vsubps(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvps(dst, one, dst, src, vec_enc);
+    vblendvps(dst, one, dst, src, vec_enc, false, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvps(dst, dst, src, xtmp1, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc, true, xtmp1);
   }
 }
 
