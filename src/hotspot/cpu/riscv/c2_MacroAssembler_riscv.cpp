@@ -1519,15 +1519,15 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   srli(tmp2, pow31_3_4, 32);
   mulw(tmp1, tmp1, tmp2);          // 31^^3 * ary[i+0]
   addw(result, result, tmp1);
-  DO_ELEMENT_LOAD(tmp3, 1);
-  mulw(tmp3, tmp3, pow31_2);       // 31^^2 * ary[i+1]
-  addw(result, result, tmp3);
+  DO_ELEMENT_LOAD(tmp1, 1);
+  mulw(tmp1, tmp1, pow31_2);       // 31^^2 * ary[i+1]
+  addw(result, result, tmp1);
   DO_ELEMENT_LOAD(tmp1, 2);
   slli(tmp2, tmp1, 5);             // optimize 31^^1 * ary[i+2]
   subw(tmp1, tmp2, tmp1);          // with ary[i+2]<<5 - ary[i+2]
   addw(result, result, tmp1);
-  DO_ELEMENT_LOAD(tmp3, 3);
-  addw(result, result, tmp3);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
+  DO_ELEMENT_LOAD(tmp1, 3);
+  addw(result, result, tmp1);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
                                    //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
   addi(ary, ary, elsize * stride);
   bne(ary, chunks_end, WIDE_LOOP);
