@@ -625,7 +625,9 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
 
 bool
 JvmtiEnvBase::is_vthread_alive(oop vt) {
-  return java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
+  oop cont = java_lang_VirtualThread::continuation(vt);
+  return !jdk_internal_vm_Continuation::done(cont) &&
+         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
          java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
 }
 
