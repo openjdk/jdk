@@ -2316,6 +2316,7 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
+  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -3505,15 +3506,6 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   return recur_level;
 }
 
-static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* callee) {
-  if (callee->has_reserved_stack_access()) {
-    compilation->set_has_reserved_stack_access(true);
-  }
-  if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
-    compilation->set_has_monitors(true);
-  }
-}
-
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
 
@@ -3530,7 +3522,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
     if (try_method_handle_inline(callee, ignore_return)) {
-      set_flags_for_inlined_callee(compilation(), callee);
+      if (callee->has_reserved_stack_access()) {
+        compilation()->set_has_reserved_stack_access(true);
+      }
       return true;
     }
     return false;
@@ -3541,7 +3535,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
-      set_flags_for_inlined_callee(compilation(), callee);
+      if (callee->has_reserved_stack_access()) {
+        compilation()->set_has_reserved_stack_access(true);
+      }
       return true;
     }
     // try normal inlining
@@ -3559,7 +3555,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
     bc = code();
   }
   if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
-    set_flags_for_inlined_callee(compilation(), callee);
+    if (callee->has_reserved_stack_access()) {
+      compilation()->set_has_reserved_stack_access(true);
+    }
     return true;
   }
 
