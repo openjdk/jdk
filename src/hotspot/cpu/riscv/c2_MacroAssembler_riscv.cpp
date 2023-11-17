@@ -1482,8 +1482,8 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   const int stride = 4;
   const Register pow31_3_4 = tmp6;
   const Register pow31_2   = tmp5;
-  const Register chunk     = tmp4;
-  const Register chunks_end = chunk;
+  const Register chunks    = tmp4;
+  const Register chunks_end = chunks;
 
   Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
 
@@ -1494,10 +1494,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   lw(pow31_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
                               + 2 * sizeof(jint))); // [31^^2]
 
-  andi(chunk, cnt, ~(stride-1));
-  beqz(chunk, TAIL);
+  andi(chunks, cnt, ~(stride-1));
+  beqz(chunks, TAIL);
 
-  slli(chunks_end, chunk, chunks_end_shift);
+  slli(chunks_end, chunks, chunks_end_shift);
   add(chunks_end, ary, chunks_end);
   andi(cnt, cnt, stride-1); // don't forget about tail!
 
