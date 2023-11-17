@@ -27,6 +27,7 @@
 #      8157138 8190904
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
+# @requires vm.flagless
 # @build PropertiesTest
 # @run shell/timeout=600 PropertiesTest.sh
 
