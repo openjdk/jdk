@@ -86,7 +86,7 @@ public class EdDSAParameters {
             try {
                 return MessageDigest.getInstance("SHAKE256-LEN",
                         new IntegerParameterSpec(114 * 8));
-            } catch (NoSuchAlgorithmException ex) {
+            } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException ex) {
                 throw new ProviderException(ex);
             }
         }
@@ -97,7 +97,7 @@ public class EdDSAParameters {
             try {
                 return MessageDigest.getInstance("SHAKE256-LEN",
                         new IntegerParameterSpec(len * 8));
-            } catch (NoSuchAlgorithmException ex) {
+            } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException ex) {
                 throw new ProviderException(ex);
             }
         }

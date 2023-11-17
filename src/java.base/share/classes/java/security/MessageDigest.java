@@ -332,8 +332,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *         {@code null}
      *
      * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
-     *         implementation for the specified algorithm and parameters
+     *         implementation for the specified algorithm
      *         is not available from the specified {@code Provider} object
+     *
+     * @throws InvalidAlgorithmParameterException if the specified
+     *         initialization parameters are inappropriate for this
+     *         {@code MessageDigest}
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
@@ -342,12 +346,16 @@ public abstract class MessageDigest extends MessageDigestSpi {
      */
     public static MessageDigest getInstance(String algorithm,
             AlgorithmParameterSpec params, Provider provider)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
-                MessageDigestSpi.class, algorithm, params, provider);
-        return Delegate.of((MessageDigestSpi)instance.impl,
-                algorithm, instance.provider);
+        try {
+            GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                    MessageDigestSpi.class, algorithm, params, provider);
+            return Delegate.of((MessageDigestSpi)instance.impl,
+                    algorithm, instance.provider);
+        } catch (NoSuchAlgorithmException e) {
+            return handleException(e);
+        }
     }
 
     /**
@@ -377,8 +385,12 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *         or empty
      *
      * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
-     *         implementation for the specified algorithm and parameters
+     *         implementation for the specified algorithm
      *         is not available from the specified provider
+     *
+     * @throws InvalidAlgorithmParameterException if the specified
+     *         initialization parameters are inappropriate for this
+     *         {@code MessageDigest}
      *
      * @throws NoSuchProviderException if the specified provider is not
      *         registered in the security provider list
@@ -390,13 +402,17 @@ public abstract class MessageDigest extends MessageDigestSpi {
      */
     public static MessageDigest getInstance(String algorithm,
             AlgorithmParameterSpec params, String provider)
-            throws NoSuchAlgorithmException,
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException,
                     NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
-                MessageDigestSpi.class, algorithm, params, provider);
-        return Delegate.of((MessageDigestSpi)instance.impl,
-                algorithm, instance.provider);
+        try {
+            GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                    MessageDigestSpi.class, algorithm, params, provider);
+            return Delegate.of((MessageDigestSpi)instance.impl,
+                    algorithm, instance.provider);
+        } catch (NoSuchAlgorithmException e) {
+            return handleException(e);
+        }
     }
 
     /**
@@ -432,7 +448,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
      *         {@code MessageDigestSpi} implementation for the
-     *         specified algorithm and parameters
+     *         specified algorithm
+     *
+     * @throws InvalidAlgorithmParameterException if the specified
+     *         initialization parameters are inappropriate for this
+     *         {@code MessageDigest}
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
@@ -441,12 +461,25 @@ public abstract class MessageDigest extends MessageDigestSpi {
      */
     public static MessageDigest getInstance(String algorithm,
             AlgorithmParameterSpec params)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
-                MessageDigestSpi.class, algorithm, params);
-        return Delegate.of((MessageDigestSpi)instance.impl,
-                algorithm, instance.provider);
+        try {
+            GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
+                    MessageDigestSpi.class, algorithm, params);
+            return Delegate.of((MessageDigestSpi) instance.impl,
+                    algorithm, instance.provider);
+        } catch (NoSuchAlgorithmException e) {
+            return handleException(e);
+        }
+    }
+
+    private static MessageDigest handleException(NoSuchAlgorithmException e)
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidAlgorithmParameterException) {
+            throw (InvalidAlgorithmParameterException)cause;
+        }
+        throw e;
     }
 
     /**
