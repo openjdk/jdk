@@ -115,8 +115,8 @@ import java.util.function.Supplier;
  * Gatherer<Integer, ?, String> incrementThenToString = increment.andThen(toString);
  * }
  *
- * <p>As an example, a Gatherer implementing a sequential Prefix Scan 
- * could be done the following way:
+ * <p>As an example, a Gatherer implementing a sequential Prefix Scan could
+ * be done the following way:
  *
  * {@snippet lang = java:
  * public static <T, R> Gatherer<T, ?, R> scan(
