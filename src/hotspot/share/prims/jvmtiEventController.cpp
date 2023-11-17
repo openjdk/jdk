@@ -369,6 +369,8 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   if (target == nullptr) { // an unmounted virtual thread
     return;  // EnterInterpOnlyModeClosure will be executed right after mount.
   }
+  // Protects any existing JavaThread's from being terminated while it is set.
+  // The FJP carrier thread compensating mechanism can create carrier threads concurrently.
   ThreadsListHandle tlh(current);
   EnterInterpOnlyModeClosure hs;
   if (target->is_handshake_safe_for(current)) {
