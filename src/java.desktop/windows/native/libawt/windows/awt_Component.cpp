@@ -24,8 +24,6 @@
  */
 
 #include <cmath>
-#include <functional>
-#include <memory>
 
 #include "awt.h"
 
@@ -6367,6 +6365,7 @@ void AwtComponent::_SetParent(void * param) {
 
         AwtComponent *awtComponent = nullptr;
         AwtComponent *awtParent = nullptr;
+
         PDATA pData;
         if (self == NULL) {
             env->ExceptionClear();
