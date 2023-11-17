@@ -174,10 +174,6 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
     // Call the subclasses to add young-gen regions into the collection set.
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-  } else {
-    // We are going to skip evacuation and update refs because we reclaimed
-    // sufficient amounts of immediate garbage.
-    heap->shenandoah_policy()->record_abbreviated_cycle();
   }
 
   if (collection_set->has_old_regions()) {
