@@ -68,6 +68,8 @@ abstract class SHA3 extends DigestBase {
     private byte[] state = new byte[WIDTH];
     private long[] lanes = new long[DM*DM];
 
+    // Number of bytes in the state buffer that has been used in squeezing.
+    // Initialized as -1, becomes 0 when squeezing starts.
     private int squeezeOffset = -1;
 
     /**
