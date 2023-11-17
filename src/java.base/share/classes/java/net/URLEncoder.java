@@ -204,6 +204,9 @@ public class URLEncoder {
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
      * World Wide Web Consortium Recommendation</a> states that
      * UTF-8 should be used. Not doing so may introduce incompatibilities.</em>
+     * <p>
+     * If a character needs encoding but cannot be encoded, the
+     * {@linkplain CharsetEncoder##cae replacement bytes} will be used.
      *
      * @param   s   {@code String} to be translated.
      * @param charset the given charset
