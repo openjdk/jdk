@@ -174,14 +174,14 @@ time of writing.
 
 | Operating system  | Vendor/version used                |
 | ----------------- | ---------------------------------- |
-| Linux             | Oracle Enterprise Linux 6.4 / 8.x  |
+| Linux/x64         | Oracle Enterprise Linux 6.4 / 8.x  |
+| Linux/aarch64     | Oracle Enterprise Linux 7.6 / 8.x  |
 | macOS             | macOS 13.x (Ventura)               |
 | Windows           | Windows Server 2016                |
 
 The double version numbers for Linux are due to the hybrid model used at
 Oracle, where header files and external libraries from an older version are
-used when building on a more modern version of the OS. (This only applies to
-x64.)
+used when building on a more modern version of the OS.
 
 The Build Group has a wiki page with [Supported Build Platforms](
 https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From
@@ -270,7 +270,7 @@ pacman -S autoconf tar make zip unzip
 WSL comes in two flavors, WSL1 and WSL2. These are drastically different under
 the hood. WSL1 runs the binaries natively by translating Linux kernel calls
 into Windows kernel calls, while WSL2 runs Linux in a virtual machine. Both
-solutions has their pros and cons, and you might need to test both before
+solutions have their pros and cons, and you might need to test both before
 deciding which works best for you. Both WSL1 and WSL2 are supported, but to
 varying degrees.
 

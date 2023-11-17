@@ -364,14 +364,18 @@ to date at the time of writing.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Linux</td>
+<td>Linux/x64</td>
 <td>Oracle Enterprise Linux 6.4 / 8.x</td>
 </tr>
 <tr class="even">
+<td>Linux/aarch64</td>
+<td>Oracle Enterprise Linux 7.6 / 8.x</td>
+</tr>
+<tr class="odd">
 <td>macOS</td>
 <td>macOS 13.x (Ventura)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Windows</td>
 <td>Windows Server 2016</td>
 </tr>
@@ -379,8 +383,7 @@ to date at the time of writing.</p>
 </table>
 <p>The double version numbers for Linux are due to the hybrid model used
 at Oracle, where header files and external libraries from an older
-version are used when building on a more modern version of the OS. (This
-only applies to x64.)</p>
+version are used when building on a more modern version of the OS.</p>
 <p>The Build Group has a wiki page with <a
 href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported
 Build Platforms</a>. From time to time, this is updated by contributors
@@ -456,7 +459,7 @@ also be installed:</p>
 <p>WSL comes in two flavors, WSL1 and WSL2. These are drastically
 different under the hood. WSL1 runs the binaries natively by translating
 Linux kernel calls into Windows kernel calls, while WSL2 runs Linux in a
-virtual machine. Both solutions has their pros and cons, and you might
+virtual machine. Both solutions have their pros and cons, and you might
 need to test both before deciding which works best for you. Both WSL1
 and WSL2 are supported, but to varying degrees.</p>
 <p>To use WSL for building the JDK, you will need Windows 10 version
