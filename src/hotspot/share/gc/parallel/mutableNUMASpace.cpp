@@ -713,7 +713,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
 
   char *s = scan_start;
   while (s < scan_end) {
-    char *e = os::scan_pages(s, (char*)scan_end, &page_expected, &page_found);
+    char *e = (char*)scan_end;
     if (e == nullptr) {
       break;
     }
