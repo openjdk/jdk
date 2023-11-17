@@ -10302,7 +10302,7 @@ instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
-
+// fast ArraysSupport.vectorizedHashCode
 instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
                          iRegINoSp tmp1, iRegINoSp tmp2,
                          iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)

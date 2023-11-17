@@ -1458,6 +1458,7 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   BLOCK_COMMENT("} string_equals");
 }
 
+// jdk.internal.util.ArraysSupport.vectorizedHashCode
 void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
                                         Register tmp1, Register tmp2, Register tmp3,
                                         Register tmp4, BasicType eltype)
