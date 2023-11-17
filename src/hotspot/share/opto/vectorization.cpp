@@ -1269,8 +1269,7 @@ void VLoopDependenceGraph::compute_max_depth() {
       if (!n->is_Phi()) {
         int d_orig = depth(n);
         int d_in   = 0;
-        PredsIterator preds(n, *this);
-        for (; !preds.done(); preds.next()) {
+        for (PredsIterator preds(n, *this); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           if (_vloop.in_body(pred)) {
             d_in = MAX2(d_in, depth(pred));
@@ -1288,6 +1287,41 @@ void VLoopDependenceGraph::compute_max_depth() {
   if (TraceSuperWord && Verbose) {
     tty->print_cr("\nVLoopDependenceGraph::compute_max_depth iterated: %d times", ct);
   }
+}
+
+
+// Are all nodes in nodes mutually independent?
+// We could query independent(s1, s2) for all pairs, but that results
+// in O(size * size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the nodes list. Traverse
+// Preds recursively, for nodes that have at least depth min_d, which
+// is the smallest depth of all nodes from the nodes list. Once we have
+// traversed all those nodes, and have not found another node from the
+// nodes list, we know that all nodes in the nodes list are independent.
+bool VLoopDependenceGraph::mutually_independent(Node_List* nodes) const {
+  ResourceMark rm;
+  Unique_Node_List worklist; // traversal queue
+  VectorSet nodes_set;
+  int min_d = depth(nodes->at(0));
+  for (uint k = 0; k < nodes->size(); k++) {
+    Node* n = nodes->at(k);
+    min_d = MIN2(min_d, depth(n));
+    worklist.push(n); // start traversal at all nodes in nodes list
+    nodes_set.set(_body.body_idx(n)); // mark node
+  }
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (PredsIterator preds(n, *this); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (_vloop.in_body(pred) && depth(pred) >= min_d) {
+        if (nodes_set.test(_body.body_idx(pred))) { // in nodes list?
+          return false;
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return true;
 }
 
 #ifndef PRODUCT
@@ -1310,8 +1344,7 @@ void VLoopDependenceGraph::print() const {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("d:%2d %5d %-10s (", depth(n), n->_idx, n->Name());
-    PredsIterator preds(n, *this);
-    for (; !preds.done(); preds.next()) {
+    for (PredsIterator preds(n, *this); !preds.done(); preds.next()) {
       Node* pred = preds.current();
       if (_vloop.in_body(pred)) {
         tty->print("%d ", pred->_idx);

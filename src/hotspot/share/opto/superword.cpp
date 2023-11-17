@@ -961,45 +961,6 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return independent_path(shallow, deep);
 }
 
-//------------------------------find_dependence---------------------
-// Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
-// We could query independent(s1, s2) for all pairs, but that results
-// in O(p.size * p.size) graph traversals. We can do it all in one BFS!
-// Start the BFS traversal at all nodes from the pack. Traverse Preds
-// recursively, for nodes that have at least depth min_d, which is the
-// smallest depth of all nodes from the pack. Once we have traversed all
-// those nodes, and have not found another node from the pack, we know
-// that all nodes in the pack are independent.
-Node* SuperWord::find_dependence(Node_List* p) {
-  if (is_marked_reduction(p->at(0))) {
-    return nullptr; // ignore reductions
-  }
-  ResourceMark rm;
-  Unique_Node_List worklist; // traversal queue
-  int min_d = depth(p->at(0));
-  visited_clear();
-  for (uint k = 0; k < p->size(); k++) {
-    Node* n = p->at(k);
-    min_d = MIN2(min_d, depth(n));
-    worklist.push(n); // start traversal at all nodes in p
-    visited_set(n); // mark node
-  }
-  for (uint i = 0; i < worklist.size(); i++) {
-    Node* n = worklist.at(i);
-    VLoopDependenceGraph::PredsIterator preds(n, vla().dependence_graph());
-    for (; !preds.done(); preds.next()) {
-      Node* pred = preds.current();
-      if (in_body(pred) && depth(pred) >= min_d) {
-        if (visited_test(pred)) { // marked as in p?
-          return pred;
-        }
-        worklist.push(pred);
-      }
-    }
-  }
-  return nullptr;
-}
-
 //--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
@@ -1460,13 +1421,12 @@ void SuperWord::combine_packs() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     if (p != nullptr) {
-      Node* dependence = find_dependence(p);
-      if (dependence != nullptr) {
+      if (!is_marked_reduction(p->at(0)) &&
+          !vla().dependence_graph().mutually_independent(p)) {
 #ifndef PRODUCT
         if (TraceSuperWord) {
           tty->cr();
           tty->print_cr("WARNING: Found dependency at distance greater than 1.");
-          dependence->dump();
           tty->print_cr("In pack[%d]", i);
           print_pack(p);
         }
@@ -1737,28 +1697,20 @@ bool SuperWord::profitable(Node_List* p) {
 }
 
 #ifdef ASSERT
-void SuperWord::verify_packs() {
+void SuperWord::verify_packs() const {
   // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
-    Node* dependence = find_dependence(p);
-    if (dependence != nullptr) {
-      tty->print_cr("Other nodes in pack have dependence on:");
-      dependence->dump();
-      tty->print_cr("The following nodes are not independent:");
-      for (uint k = 0; k < p->size(); k++) {
-        Node* n = p->at(k);
-        if (!independent(n, dependence)) {
-          n->dump();
-        }
-      }
-      tty->print_cr("They are all from pack[%d]", i);
+    if (!is_marked_reduction(p->at(0)) &&
+        !vla().dependence_graph().mutually_independent(p)) {
+      tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
       print_pack(p);
+      assert(false, "pack nodes not mutually independent");
     }
-    assert(dependence == nullptr, "all nodes in pack must be mutually independent");
   }
 
   // Verify all nodes in packset have my_pack set correctly.
+  ResourceMark rm;
   Unique_Node_List processed;
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
@@ -3206,7 +3158,7 @@ void SuperWord::init() {
 }
 
 //------------------------------print_packset---------------------------
-void SuperWord::print_packset() {
+void SuperWord::print_packset() const {
 #ifndef PRODUCT
   tty->print_cr("packset");
   for (int i = 0; i < _packset.length(); i++) {
@@ -3222,14 +3174,14 @@ void SuperWord::print_packset() {
 }
 
 //------------------------------print_pack---------------------------
-void SuperWord::print_pack(Node_List* p) {
+void SuperWord::print_pack(Node_List* p) const {
   for (uint i = 0; i < p->size(); i++) {
     print_stmt(p->at(i));
   }
 }
 
 //------------------------------print_stmt---------------------------
-void SuperWord::print_stmt(Node* s) {
+void SuperWord::print_stmt(Node* s) const {
 #ifndef PRODUCT
   tty->print(" align: %d \t", alignment(s));
   s->dump();

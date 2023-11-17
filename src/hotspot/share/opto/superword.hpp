@@ -160,7 +160,7 @@ class SuperWord : public ResourceObj {
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
   // memory alignment for a node
-  int alignment(Node* n)                     { return _node_info.adr_at(body_idx(n))->_alignment; }
+  int alignment(Node* n) const               { return _node_info.adr_at(body_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // vector element type
@@ -172,7 +172,7 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n) {
+  Node_List* my_pack(Node* n) const {
     return !vla().in_body(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
   }
  private:
@@ -216,8 +216,6 @@ class SuperWord : public ResourceObj {
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
-  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
-  Node* find_dependence(Node_List* p);
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
@@ -249,7 +247,7 @@ class SuperWord : public ResourceObj {
   void filter_packs();
   // Verify that for every pack, all nodes are mutually independent.
   // Also verify that packset and my_pack are consistent.
-  DEBUG_ONLY(void verify_packs();)
+  DEBUG_ONLY(void verify_packs() const;)
   // Adjust the memory graph for the packed operations
   void schedule();
   // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
@@ -292,9 +290,9 @@ class SuperWord : public ResourceObj {
   void init();
 
   // print methods
-  void print_packset();
-  void print_pack(Node_List* p);
-  void print_stmt(Node* s);
+  void print_packset() const;
+  void print_pack(Node_List* p) const;
+  void print_stmt(Node* s) const;
 
   void packset_sort(int n);
 };

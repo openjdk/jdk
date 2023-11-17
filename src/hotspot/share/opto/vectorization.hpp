@@ -399,6 +399,9 @@ public:
     return _depth.at(_body.body_idx(n));
   }
 
+  // Are all nodes in nodes mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
+
 private:
   void set_depth(Node* n, int d) {
     assert(_vloop.in_body(n), "only call on nodes in loop");
