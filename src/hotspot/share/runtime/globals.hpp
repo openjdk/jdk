@@ -1220,9 +1220,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, UseCounterDecay, true,                                      \
-          "Adjust recompilation counters (deprecated)")                     \
-                                                                            \
   develop(intx, CounterHalfLifeTime,    30,                                 \
           "Half-life time of invocation counters (in seconds)")             \
                                                                             \
