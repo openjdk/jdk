@@ -214,15 +214,15 @@ void AwtCanvas::_SetEraseBackground(void *param) {
     if (canvas == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "peer");
-        delete sebs;
         env->DeleteGlobalRef(canvas);
+        delete sebs;
         return;
     }
     pData = JNI_GET_PDATA(canvas);
     if (pData == NULL) {
         THROW_NULL_PDATA_IF_NOT_DESTROYED(canvas);
-        delete sebs;
         env->DeleteGlobalRef(canvas);
+        delete sebs;
         return;
     }
 
@@ -230,8 +230,8 @@ void AwtCanvas::_SetEraseBackground(void *param) {
     c->m_eraseBackground = doErase;
     c->m_eraseBackgroundOnResize = doEraseOnResize;
 
-    delete sebs;
     env->DeleteGlobalRef(canvas);
+    delete sebs;
 }
 
 
