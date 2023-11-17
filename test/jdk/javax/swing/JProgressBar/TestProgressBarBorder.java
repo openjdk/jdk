@@ -25,86 +25,53 @@
  * @test
  * @bug 8224261
  * @key headful
- * @summary Verifies if JProgressBar border is painted even though border
+ * @library ../regtesthelpers
+ * @build Util
+ * @summary Verifies JProgressBar border is not painted when border
  *          painting is set to false
  * @run main TestProgressBarBorder
  */
 
-import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.JComponent;
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-public class TestProgressBarBorder {
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
-    private static JFrame frame;
+public class TestProgressBarBorder {
     private static JProgressBar progressBar;
-    private static volatile Point pt;
-    private static volatile boolean passed;
+    private static volatile boolean isImgSame;
+    private static BufferedImage borderPaintedImg;
+    private static BufferedImage borderNotPaintedImg;
 
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
-            if (laf.getName().contains("Nimbus") || laf.getName().contains("GTK")) {
-                System.out.println("Testing LAF: " + laf.getName());
-                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            } else {
+            if (!laf.getName().contains("Nimbus") && !laf.getName().contains("GTK")) {
                 continue;
             }
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    createAndShowUI();
-                });
+            System.out.println("Testing LAF: " + laf.getName());
+            SwingUtilities.invokeAndWait(() -> {
+                setLookAndFeel(laf);
+                createAndShowUI();
+            });
 
-                robot.waitForIdle();
-                robot.delay(1000);
+            borderPaintedImg = paintToImage(progressBar);
+            progressBar.setBorderPainted(false);
+            borderNotPaintedImg = paintToImage(progressBar);
+            isImgSame = Util.compareBufferedImages(borderPaintedImg, borderNotPaintedImg);
 
-                SwingUtilities.invokeAndWait(() -> {
-                    pt = progressBar.getLocationOnScreen();
-                });
-
-                BufferedImage borderPaintedImg =
-                        robot.createScreenCapture(new Rectangle(pt.x, pt.y,
-                                progressBar.getWidth(), progressBar.getHeight()));
-
-                progressBar.setBorderPainted(false);
-                robot.waitForIdle();
-                robot.delay(500);
-
-                BufferedImage borderNotPaintedImg =
-                        robot.createScreenCapture(new Rectangle(pt.x, pt.y,
-                                progressBar.getWidth(), progressBar.getHeight()));
-
-                robot.delay(500);
-
-                SwingUtilities.invokeAndWait(() -> {
-                    passed = compareImage(borderPaintedImg, borderNotPaintedImg);
-                });
-
-                if (!passed) {
-                    ImageIO.write(borderPaintedImg, "png", new File("borderPaintedImg.png"));
-                    ImageIO.write(borderNotPaintedImg, "png", new File("borderNotPaintedImg.png"));
-                    throw new RuntimeException("JProgressBar border is painted although " +
-                            "border painting is set to false");
-                }
-            } finally {
-                SwingUtilities.invokeAndWait(() -> {
-                    if (frame != null) {
-                        frame.dispose();
-                    }
-                });
+            if (isImgSame) {
+                ImageIO.write(borderPaintedImg, "png", new File("borderPaintedImg.png"));
+                ImageIO.write(borderNotPaintedImg, "png", new File("borderNotPaintedImg.png"));
+                throw new RuntimeException("JProgressBar border is painted when border\n" +
+                        " painting is set to false");
             }
         }
     }
@@ -121,40 +88,20 @@ public class TestProgressBarBorder {
     }
 
     private static void createAndShowUI() {
-        frame = new JFrame("Test JProgressBar Border");
-        JPanel p = new JPanel(new FlowLayout());
-        progressBar  = new JProgressBar();
+        progressBar = new JProgressBar();
+        progressBar.setSize(100,50);
         // set initial value
         progressBar.setValue(0);
         progressBar.setBorderPainted(true);
         progressBar.setStringPainted(true);
-        p.add(progressBar);
-        frame.add(p);
-        frame.setSize(200, 100);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
     }
 
-    /*
-    * Compare JProgressBar border painted and border not painted image and
-    * if both images width and height are equal but pixel's RGB values are
-    * not equal, method returns true; false otherwise.
-    */
-
-    private static boolean compareImage(BufferedImage img1, BufferedImage img2) {
-        if (img1.getWidth() == img2.getWidth()
-                && img1.getHeight() == img2.getHeight()) {
-            for (int x = 0; x < img1.getWidth(); ++x) {
-                for (int y = 0; y < img1.getHeight(); ++y) {
-                    if (img1.getRGB(x, y) != img2.getRGB(x, y)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } else {
-            return false;
-        }
+    private static BufferedImage paintToImage(JComponent content) {
+        BufferedImage im = new BufferedImage(content.getWidth(), content.getHeight(),
+                TYPE_INT_RGB);
+        Graphics g = im.getGraphics();
+        content.paint(g);
+        g.dispose();
+        return im;
     }
 }
