@@ -540,7 +540,7 @@ to compile successfully without issues.</p>
 <tbody>
 <tr class="odd">
 <td>Linux</td>
-<td>gcc 11.2.0</td>
+<td>gcc 13.2.0</td>
 </tr>
 <tr class="even">
 <td>macOS</td>
@@ -548,7 +548,7 @@ to compile successfully without issues.</p>
 </tr>
 <tr class="odd">
 <td>Windows</td>
-<td>Microsoft Visual Studio 2022 update 17.1.0</td>
+<td>Microsoft Visual Studio 2022 version 17.6.5</td>
 </tr>
 </tbody>
 </table>
@@ -561,7 +561,7 @@ limited to using C99 features that it does support.</p>
 generate a warning by <code>configure</code> and are unlikely to
 work.</p>
 <p>The JDK is currently known to be able to compile with at least
-version 11.2 of gcc.</p>
+version 13.2 of gcc.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not
@@ -1413,6 +1413,17 @@ like this:</p>
   http://httpredir.debian.org/debian/
 # If the target architecture is `riscv64`,
 # the path should be `debian-ports` instead of `debian`.</code></pre></li>
+<li><p>To create a Ubuntu-based chroot:</p>
+<pre><code>sudo debootstrap \
+  --arch=arm64 \
+  --verbose \
+  --components=main,universe \
+  --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+  --resolve-deps \
+  jammy \
+  ~/sysroot-arm64 \
+  http://ports.ubuntu.com/ubuntu-ports/
+# symlinks is in the universe repository</code></pre></li>
 <li><p>Make sure the symlinks inside the newly created chroot point to
 proper locations:</p>
 <pre><code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></pre></li>

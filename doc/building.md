@@ -334,11 +334,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                          |
-| ------------------ | ------------------------------------------ |
-| Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
-| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
+| Operating system   | Toolchain version                           |
+| ------------------ | ------------------------------------------- |
+| Linux              | gcc 13.2.0                                  |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
+| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -350,7 +350,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 11.2 of
+The JDK is currently known to be able to compile with at least version 13.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -1195,6 +1195,21 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
       http://httpredir.debian.org/debian/
     # If the target architecture is `riscv64`,
     # the path should be `debian-ports` instead of `debian`.
+    ```
+
+  * To create a Ubuntu-based chroot:
+
+    ```
+    sudo debootstrap \
+      --arch=arm64 \
+      --verbose \
+      --components=main,universe \
+      --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libffi-dev \
+      --resolve-deps \
+      jammy \
+      ~/sysroot-arm64 \
+      http://ports.ubuntu.com/ubuntu-ports/
+    # symlinks is in the universe repository
     ```
 
   * Make sure the symlinks inside the newly created chroot point to proper locations:

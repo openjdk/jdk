@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -40,6 +40,9 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/nmtDCmd.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,7 +62,6 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
-#include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -67,8 +69,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "trimCHeapDCmd.hpp"
+#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "trimCHeapDCmd.hpp"
+#include <errno.h>
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -133,6 +137,8 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -1151,3 +1157,45 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
+
+#ifdef LINUX
+
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+}
+
+void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
+  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+}
+
+SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
+  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_filename);
+}
+
+void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
+  stringStream default_name;
+  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
+  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  fileStream fs(name);
+  if (fs.is_open()) {
+    if (!MemTracker::enabled()) {
+      output()->print_cr("(NMT is disabled, will not annotate mappings).");
+    }
+    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    // For the readers convenience, resolve path name.
+    char tmp[JVM_MAXPATHLEN];
+    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
+    name = absname != nullptr ? absname : name;
+    output()->print_cr("Memory map dumped to \"%s\".", name);
+  } else {
+    output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
+  }
+}
+
+#endif // LINUX

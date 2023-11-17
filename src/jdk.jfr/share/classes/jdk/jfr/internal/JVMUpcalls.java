@@ -112,6 +112,10 @@ final class JVMUpcalls {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
                 return oldBytes;
             }
+            if (ei.isMirrorEvent()) {
+                return oldBytes;
+            }
+
             if (!forceInstrumentation) {
                 // Assume we are recording
                 MetadataRepository mr = MetadataRepository.getInstance();

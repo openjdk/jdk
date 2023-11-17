@@ -131,7 +131,7 @@ public class TestDumpOnCrash {
         }
         options.add(crasher.getName());
         options.add(signal);
-        Process p = ProcessTools.createTestJvm(options).start();
+        Process p = ProcessTools.createTestJavaProcessBuilder(options).start();
 
         OutputAnalyzer output = new OutputAnalyzer(p);
         System.out.println("========== Crasher process output:");

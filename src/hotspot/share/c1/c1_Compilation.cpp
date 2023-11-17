@@ -393,6 +393,7 @@ int Compilation::compile_java_method() {
     PhaseTraceTime timeit(_t_buildIR);
     build_hir();
   }
+  CHECK_BAILOUT_(no_frame_size);
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
   }
@@ -442,13 +443,13 @@ void Compilation::install_code(int frame_size) {
 
 void Compilation::compile_method() {
 
-  CompilationMemoryStatisticMark cmsm(env()->task()->directive());
-
   {
     PhaseTraceTime timeit(_t_setup);
 
     // setup compilation
     initialize();
+    CHECK_BAILOUT();
+
   }
 
   if (!method()->can_be_compiled()) {
@@ -601,6 +602,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
     _cfg_printer_output = new CFGPrinterOutput(this);
   }
 #endif
+
+  CompilationMemoryStatisticMark cmsm(directive);
+
   compile_method();
   if (bailed_out()) {
     _env->record_method_not_compilable(bailout_msg());

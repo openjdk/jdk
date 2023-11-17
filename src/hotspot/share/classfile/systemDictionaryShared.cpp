@@ -986,7 +986,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   assert(klass_loader != nullptr, "should not be called for boot loader");
   assert(loader1 != loader2, "must be");
 
-  if (DynamicDumpSharedSpaces && Thread::current()->is_VM_thread()) {
+  if (CDSConfig::is_dumping_dynamic_archive() && Thread::current()->is_VM_thread()) {
     // We are re-laying out the vtable/itables of the *copy* of
     // a class during the final stage of dynamic dumping. The
     // linking constraints for this class has already been recorded.

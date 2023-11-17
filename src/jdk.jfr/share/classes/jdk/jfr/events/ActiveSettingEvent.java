@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,14 @@ import jdk.jfr.Category;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ActiveSetting")
 @Label("Recording Setting")
 @Category("Flight Recorder")
 @StackTrace(false)
+@RemoveFields({"duration", "eventThread", "stackTrace"})
 public final class ActiveSettingEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
@@ -49,7 +51,7 @@ public final class ActiveSettingEvent extends AbstractJDKEvent {
     @Label("Setting Value")
     public String value;
 
-    public static void commit(long startTime, long duration, long id, String name, String value) {
+    public static void commit(long startTime, long id, String name, String value) {
         // Generated
     }
 
