@@ -1927,6 +1927,7 @@ void MacroAssembler::cvtsi2ssl(XMMRegister dst, Address src) {
   Assembler::cvtsi2ssl(dst, src);
 }
 
+#ifdef _LP64
 void MacroAssembler::cvtsi2sdq(XMMRegister dst, Register src) {
   if (UseAVX > 0) {
     xorpd(dst, dst);
@@ -1954,6 +1955,7 @@ void MacroAssembler::cvtsi2ssq(XMMRegister dst, Address src) {
   }
   Assembler::cvtsi2ssq(dst, src);
 }
+#endif  // _LP64
 
 void MacroAssembler::locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch) {
   assert(rscratch != noreg || always_reachable(adr), "missing");

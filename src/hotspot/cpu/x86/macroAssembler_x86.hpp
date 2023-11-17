@@ -810,10 +810,12 @@ public:
   void cvtsi2sdl(XMMRegister dst, Address src);
   void cvtsi2ssl(XMMRegister dst, Register src);
   void cvtsi2ssl(XMMRegister dst, Address src);
+#ifdef _LP64
   void cvtsi2sdq(XMMRegister dst, Register src);
   void cvtsi2sdq(XMMRegister dst, Address src);
   void cvtsi2ssq(XMMRegister dst, Register src);
   void cvtsi2ssq(XMMRegister dst, Address src);
+#endif
 
   void locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch = noreg);
 
