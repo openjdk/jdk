@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,30 @@
 
 /*
  * @test
- * @bug 8003881
- * @modules jdk.compiler
- * @run main/othervm -Djava.security.manager=allow LambdaAccessControlTest
- * @summary tests Lambda expression with a security manager at top level
+ * @bug 8314621
+ * @summary ClassNotFoundException due to lambda reference to elided anonymous inner class
  */
 
-public class LambdaAccessControlTest {
+public class ClassNotFoundExceptionDueToPrunedCodeTest {
     public static void main(String... args) {
-        System.setSecurityManager(new SecurityManager());
-        JJ<Integer> iii = (new CC())::impl;
-        System.out.printf(">>> %s\n", iii.foo(44));
-        iii = DD::impl;
-        System.out.printf(">>> %s\n", iii.foo(44));
-        return;
+        var o1 = false ? new Object() {} : null;
+        Runnable r = () -> {
+            System.out.println(o1 == o1);
+        };
+        r.run();
+
+        var o2 = true ? null : new Object() {};
+        r = () -> {
+            System.out.println(o2 == o2);
+        };
+        r.run();
+
+        var o3 = switch (0) { default -> { if (false) yield new Object() { }; else yield null; } };
+        r = () -> System.out.println(o3);
+        r.run();
+
+        var o4 = switch (0) { default -> { if (true) yield null; else yield new Object() { }; } };
+        r = () -> System.out.println(o4);
+        r.run();
     }
 }
-/*
- * support classes for the test
- */
-interface II<T> {  Object foo(T x); }
-interface JJ<R extends Number> extends II<R> { }
-class CC {  String impl(int i) { return "impl:"+i; }}
-class DD {  static String impl(int i) { return "impl:"+i; }}

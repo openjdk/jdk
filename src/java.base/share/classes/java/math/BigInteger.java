@@ -119,7 +119,7 @@ import jdk.internal.vm.annotation.Stable;
  * The range must be at least 1 to 2<sup>500000000</sup>.
  *
  * @apiNote
- * <a id=algorithmicComplexity>As {@code BigInteger} values are
+ * <span id="algorithmicComplexity">As {@code BigInteger} values are
  * arbitrary precision integers, the algorithmic complexity of the
  * methods of this class varies and may be superlinear in the size of
  * the input. For example, a method like {@link intValue()} would be
@@ -138,7 +138,7 @@ import jdk.internal.vm.annotation.Stable;
  * algorithms between the bounds of the naive and theoretical cases
  * include the Karatsuba multiplication
  * (<i>O</i>(<i>n<sup>1.585</sup></i>)) and 3-way Toom-Cook
- * multiplication (<i>O</i>(<i>n<sup>1.465</sup></i>)).</a>
+ * multiplication (<i>O</i>(<i>n<sup>1.465</sup></i>)).</span>
  *
  * <p>A particular implementation of {@link multiply(BigInteger)
  * multiply} is free to switch between different algorithms for
