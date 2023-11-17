@@ -1459,13 +1459,13 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 }
 
 void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
-                                        Register result,
+                                        Register result, Register tmp3,
                                         Register tmp4, Register tmp5, Register tmp6,
                                         BasicType eltype)
 {
   const Register tmp1      = t0;
   const Register tmp2      = t1;
-  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp4, tmp5, tmp6);
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
 
   const int elsize = arrays_hashcode_elsize(eltype);
   const int chunks_end_shift = exact_log2(elsize);
@@ -1482,6 +1482,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   const int stride = 4;
   const Register pow31_3_4 = tmp6;
+  const Register pow31_3   = tmp3;
   const Register pow31_2   = tmp5;
   const Register chunks    = tmp4;
   const Register chunks_end = chunks;
@@ -1513,12 +1514,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
                                 + 0 * sizeof(jint))); // [31^^3:31^^4]
+  srli(pow31_3, pow31_3_4, 32);
 
   bind(WIDE_LOOP);
   mulw(result, result, pow31_3_4); // 31^^4 * h
   DO_ELEMENT_LOAD(tmp1, 0);
-  srli(tmp2, pow31_3_4, 32);
-  mulw(tmp1, tmp1, tmp2);          // 31^^3 * ary[i+0]
+  mulw(tmp1, tmp1, pow31_3);       // 31^^3 * ary[i+0]
   addw(result, result, tmp1);
   DO_ELEMENT_LOAD(tmp1, 1);
   mulw(tmp1, tmp1, pow31_2);       // 31^^2 * ary[i+1]
