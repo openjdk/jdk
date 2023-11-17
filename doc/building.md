@@ -204,7 +204,7 @@ English**, which will affect all applications run by the user.
 Since this is annoying for users who prefer another locale, we strive to get
 the building and testing to work on other locales as well. This is on a "best
 effort" level, so beware! You might get odd results in both building and
-testing. If you do, remember that any other locale than US English are not
+testing. If you do, remember that locales other than US English are not
 supported nor recommended.
 
 It is also imperative to install the US English language pack in Visual Studio.
