@@ -6361,16 +6361,46 @@ ret:
 void AwtComponent::_SetParent(void * param) {
     if (AwtToolkit::IsMainThread()) {
         JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        std::unique_ptr<SetParentStruct> data(static_cast<SetParentStruct*>(param));
-        std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> self(data->component, [&env] (jobject self) -> void { env->DeleteGlobalRef(self); });
-        std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> parent(data->parentComp, [&env] (jobject parent) -> void { env->DeleteGlobalRef(parent); });
+        SetParentStruct *data = static_cast<SetParentStruct*>(param);
+        jobject self = data->component;
+        jobject parent = data->parentComp;
 
         AwtComponent *awtComponent = nullptr;
         AwtComponent *awtParent = nullptr;
         PDATA pData;
-        JNI_CHECK_PEER_RETURN(self.get());
+        if (self == NULL) {
+            env->ExceptionClear();
+            JNU_ThrowNullPointerException(env, "peer");
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
         awtComponent = (AwtComponent *) pData;
-        JNI_CHECK_PEER_RETURN(parent.get());
+        if (parent == NULL) {
+            env->ExceptionClear();
+            JNU_ThrowNullPointerException(env, "peer");
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
+        pData = JNI_GET_PDATA(parent);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(parent);
+            env->DeleteGlobalRef(self);
+            env->DeleteGlobalRef(parent);
+            delete data;
+            return;
+        }
         awtParent = (AwtComponent *) pData;
 
         HWND selfWnd = awtComponent->GetHWnd();
@@ -6380,6 +6410,9 @@ void AwtComponent::_SetParent(void * param) {
             // (only the proxy may be the native focus owner).
             ::SetParent(selfWnd, parentWnd);
         }
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(parent);
+        delete data;
     } else {
         AwtToolkit::GetInstance().InvokeFunction(AwtComponent::_SetParent, param);
     }
