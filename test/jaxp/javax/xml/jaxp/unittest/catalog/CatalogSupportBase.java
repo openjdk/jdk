@@ -1016,7 +1016,7 @@ public class CatalogSupportBase {
             return null;
         }
     }
-    
+
     /**
      * Simple policy implementation that grants a set of permissions to all code
      * sources and protection domains.
