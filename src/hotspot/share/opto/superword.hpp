@@ -89,7 +89,6 @@ class SuperWord : public ResourceObj {
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
   // Scratch pads
-  VectorSet    _visited;       // Visited set
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
 
@@ -182,12 +181,6 @@ class SuperWord : public ResourceObj {
   int get_vw_bytes_special(MemNode* s);
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
-
-  // visited set accessors
-  void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(body_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(body_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(body_idx(n)); }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }

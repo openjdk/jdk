@@ -51,7 +51,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _visited(arena()),                                        // visited node set
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
   _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
   _race_possible(false),                                    // cases where SDMU is true
