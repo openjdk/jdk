@@ -946,21 +946,6 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   return false;
 }
 
-//------------------------------independent---------------------------
-// Is there no data path from s1 to s2 or s2 to s1?
-bool SuperWord::independent(Node* s1, Node* s2) {
-  //  assert(s1->Opcode() == s2->Opcode(), "check isomorphic first");
-  int d1 = depth(s1);
-  int d2 = depth(s2);
-  if (d1 == d2) return s1 != s2;
-  Node* deep    = d1 > d2 ? s1 : s2;
-  Node* shallow = d1 > d2 ? s2 : s1;
-
-  visited_clear();
-
-  return independent_path(shallow, deep);
-}
-
 //--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
@@ -978,51 +963,6 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
         if (!s1_in->as_Phi()->is_tripcount(T_INT)) return false;
       } else {
         if (s1_in->Opcode() != s2_in->Opcode()) return false;
-      }
-    }
-  }
-  return true;
-}
-
-//------------------------------reduction---------------------------
-// Is there a data path between s1 and s2 and the nodes reductions?
-bool SuperWord::reduction(Node* s1, Node* s2) {
-  bool retValue = false;
-  int d1 = depth(s1);
-  int d2 = depth(s2);
-  if (d2 > d1) {
-    if (is_marked_reduction(s1) &&
-        is_marked_reduction(s2)) {
-      // This is an ordered set, so s1 should define s2
-      for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-        Node* t1 = s1->fast_out(i);
-        if (t1 == s2) {
-          // both nodes are reductions and connected
-          retValue = true;
-        }
-      }
-    }
-  }
-
-  return retValue;
-}
-
-//------------------------------independent_path------------------------------
-// Helper for independent
-bool SuperWord::independent_path(Node* shallow, Node* deep, uint dp) {
-  if (dp >= 1000) return false; // stop deep recursion
-  visited_set(deep);
-  int shal_depth = depth(shallow);
-  assert(shal_depth <= depth(deep), "must be");
-  VLoopDependenceGraph::PredsIterator preds(deep, vla().dependence_graph());
-  for (; !preds.done(); preds.next()) {
-    Node* pred = preds.current();
-    if (in_body(pred) && !visited_test(pred)) {
-      if (shallow == pred) {
-        return false;
-      }
-      if (shal_depth < depth(pred) && !independent_path(shallow, pred, dp+1)) {
-        return false;
       }
     }
   }

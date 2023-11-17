@@ -846,6 +846,21 @@ bool VLoopReductions::is_reduction(const Node* n) {
   return false;
 }
 
+bool VLoopReductions::is_marked_reduction_pair(Node* s1, Node* s2) const {
+  if (is_marked_reduction(s1) &&
+      is_marked_reduction(s2)) {
+    // This is an ordered set, so s1 should define s2
+    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
+      Node* t1 = s1->fast_out(i);
+      if (t1 == s2) {
+        // both nodes are reductions and connected
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool VLoopReductions::is_reduction_operator(const Node* n) {
   int opc = n->Opcode();
   return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
@@ -1289,6 +1304,39 @@ void VLoopDependenceGraph::compute_max_depth() {
   }
 }
 
+bool VLoopDependenceGraph::independent(Node* s1, Node* s2) const {
+  int d1 = depth(s1);
+  int d2 = depth(s2);
+
+  if (d1 == d2) {
+    // Same depth:
+    //  1) same node       -> dependent
+    //  2) different nodes -> same level implies there is no path
+    return s1 != s2;
+  }
+
+  // Traversal starting at the deeper node to find the shallower one.
+  Node* deep    = d1 > d2 ? s1 : s2;
+  Node* shallow = d1 > d2 ? s2 : s1;
+  int min_d = MIN2(d1, d2); // prune traversal at min_d
+
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(deep);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (PredsIterator preds(n, *this); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (_vloop.in_body(pred) && depth(pred) >= min_d) {
+        if (pred == shallow) {
+          return false; // found it -> dependent
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return true; // not found -> independent
+}
 
 // Are all nodes in nodes mutually independent?
 // We could query independent(s1, s2) for all pairs, but that results
@@ -1300,14 +1348,14 @@ void VLoopDependenceGraph::compute_max_depth() {
 // nodes list, we know that all nodes in the nodes list are independent.
 bool VLoopDependenceGraph::mutually_independent(Node_List* nodes) const {
   ResourceMark rm;
-  Unique_Node_List worklist; // traversal queue
+  Unique_Node_List worklist;
   VectorSet nodes_set;
   int min_d = depth(nodes->at(0));
   for (uint k = 0; k < nodes->size(); k++) {
     Node* n = nodes->at(k);
     min_d = MIN2(min_d, depth(n));
     worklist.push(n); // start traversal at all nodes in nodes list
-    nodes_set.set(_body.body_idx(n)); // mark node
+    nodes_set.set(_body.body_idx(n));
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);

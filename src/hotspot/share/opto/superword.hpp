@@ -108,7 +108,12 @@ class SuperWord : public ResourceObj {
   bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
   const GrowableArray<Node*>& body() const { return vla().body().body(); }
   int body_idx(const Node* n) const     { return vla().body().body_idx(n); }
-  int depth(Node* n) const              { return vla().dependence_graph().depth(n); }
+  bool independent(Node* s1, Node* s2) const {
+    return vla().dependence_graph().independent(s1, s2);
+  }
+  bool reduction(Node* s1, Node* s2) const {
+    return vla().reductions().is_marked_reduction_pair(s1, s2);
+  }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -214,15 +219,9 @@ class SuperWord : public ResourceObj {
   bool are_adjacent_refs(Node* s1, Node* s2);
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
-  // Is there no data path from s1 to s2 or s2 to s1?
-  bool independent(Node* s1, Node* s2);
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
-  // Is there a data path between s1 and s2 and both are reductions?
-  bool reduction(Node* s1, Node* s2);
-  // Helper for independent
-  bool independent_path(Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.

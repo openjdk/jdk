@@ -165,7 +165,9 @@ public:
   static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
   bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
-  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
+  bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+  // Are s1 and s2 reductions with a data path between them?
+  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
 private:
   // Whether n is a standard reduction operator.
   static bool is_reduction_operator(const Node* n);
@@ -174,8 +176,8 @@ private:
   static bool in_reduction_cycle(const Node* n, uint input);
   // Reference to the i'th input node of n, commuting the inputs of binary nodes
   // whose edges have been swapped. Assumes n is a commutative operation.
-public:
   static Node* original_input(const Node* n, uint i);
+public:
   // Find and mark reductions in a loop. Running mark_reductions() is similar to
   // querying is_reduction(n) for every node in the loop, but stricter in
   // that it assumes counted loops and requires that reduction nodes are not
@@ -393,16 +395,18 @@ public:
     void  next();
   };
 
+  // Are s1 and s2 independent? i.e. no path from s1 to s2 / s2 to s1?
+  bool independent(Node* s1, Node* s2) const;
+  // Are all nodes in nodes mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
+
+private:
   // Depth in graph (DAG). Used to prune search paths.
   int depth(Node* n) const {
     assert(_vloop.in_body(n), "only call on nodes in loop");
     return _depth.at(_body.body_idx(n));
   }
 
-  // Are all nodes in nodes mutually independent?
-  bool mutually_independent(Node_List* nodes) const;
-
-private:
   void set_depth(Node* n, int d) {
     assert(_vloop.in_body(n), "only call on nodes in loop");
     _depth.at_put(_body.body_idx(n), d);
