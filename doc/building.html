@@ -248,7 +248,7 @@ amount of technical expertise, a fair number of dependencies on external
 software, and reasonably powerful hardware.</p>
 <p>If you just want to use the JDK and not build it yourself, this
 document is not for you. See for instance <a
-href="http://openjdk.org/install">OpenJDK installation</a> for some
+href="https://openjdk.org/install">OpenJDK installation</a> for some
 methods of installing a prebuilt JDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
 <p>Make sure you are getting the correct version. As of JDK 10, the
@@ -405,9 +405,9 @@ conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
 a future release.</p>
 <h4 id="cygwin">Cygwin</h4>
-<p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment
-is required for building the JDK on Windows. If you have a 64-bit OS, we
-strongly recommend using the 64-bit version of Cygwin.</p>
+<p>A functioning <a href="https://www.cygwin.com/">Cygwin</a>
+environment is required for building the JDK on Windows. If you have a
+64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating
 all packages without any easy way to install or revert to a specific
 version of a package. This means that whenever you add or update a
@@ -540,7 +540,7 @@ to compile successfully without issues.</p>
 <tbody>
 <tr class="odd">
 <td>Linux</td>
-<td>gcc 11.2.0</td>
+<td>gcc 13.2.0</td>
 </tr>
 <tr class="even">
 <td>macOS</td>
@@ -561,7 +561,7 @@ limited to using C99 features that it does support.</p>
 generate a warning by <code>configure</code> and are unlikely to
 work.</p>
 <p>The JDK is currently known to be able to compile with at least
-version 11.2 of gcc.</p>
+version 13.2 of gcc.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not
@@ -635,9 +635,9 @@ been released. In that case, the preferred boot JDK will be version
 picked, use <code>--with-boot-jdk</code> to point to the JDK to use.</p>
 <h3 id="getting-jdk-binaries">Getting JDK binaries</h3>
 <p>JDK binaries for Linux, Windows and macOS can be downloaded from <a
-href="http://jdk.java.net">jdk.java.net</a>. An alternative is to
+href="https://jdk.java.net">jdk.java.net</a>. An alternative is to
 download the <a
-href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle
+href="https://www.oracle.com/technetwork/java/javase/downloads">Oracle
 JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt
 OpenJDK Project</a>, which publishes experimental prebuilt binaries for
 various platforms.</p>
@@ -663,7 +663,7 @@ most cases, it works fine.</p>
 <p>As a fallback, the second version allows you to point to the include
 directory and the lib directory separately.</p>
 <h3 id="freetype">FreeType</h3>
-<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType
+<p>FreeType2 from <a href="https://www.freetype.org/">The FreeType
 Project</a> is not required on any platform. The exception is on
 Unix-based platforms when configuring such that the build artifacts will
 reference a system installed library, rather than bundling the JDK's own
@@ -682,7 +682,7 @@ copy.</p>
 <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform FreeType files.</p>
 <h3 id="fontconfig">Fontconfig</h3>
-<p>Fontconfig from <a href="http://fontconfig.org">freedesktop.org
+<p>Fontconfig from <a href="https://fontconfig.org">freedesktop.org
 Fontconfig</a> is required on all platforms except Windows and
 macOS.</p>
 <ul>
@@ -695,7 +695,7 @@ macOS.</p>
 <code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform Fontconfig files.</p>
 <h3 id="cups">CUPS</h3>
-<p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a>
+<p>CUPS, <a href="https://www.cups.org">Common UNIX Printing System</a>
 header files are required on all platforms, except Windows. Often these
 files are provided by your operating system.</p>
 <ul>
@@ -709,7 +709,7 @@ files are provided by your operating system.</p>
 <p>Use <code>--with-cups=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your CUPS files.</p>
 <h3 id="x11">X11</h3>
-<p>Certain <a href="http://www.x.org/">X11</a> libraries and include
+<p>Certain <a href="https://www.x.org/">X11</a> libraries and include
 files are required on Linux.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
@@ -736,7 +736,7 @@ required.</p>
 <p>Use <code>--with-alsa=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your ALSA files.</p>
 <h3 id="libffi">libffi</h3>
-<p>libffi, the <a href="http://sourceware.org/libffi">Portable Foreign
+<p>libffi, the <a href="https://sourceware.org/libffi">Portable Foreign
 Function Interface Library</a> is required when building the Zero
 version of Hotspot.</p>
 <ul>
@@ -752,7 +752,7 @@ does not properly locate your libffi files.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
 <h3 id="autoconf">Autoconf</h3>
 <p>The JDK requires <a
-href="http://www.gnu.org/software/autoconf">Autoconf</a> on all
+href="https://www.gnu.org/software/autoconf">Autoconf</a> on all
 platforms. At least version 2.69 is required.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
@@ -771,7 +771,7 @@ autoconf, you can specify it using the <code>AUTOCONF</code> environment
 variable, like this:</p>
 <pre><code>AUTOCONF=&lt;path to autoconf&gt; configure ...</code></pre>
 <h3 id="gnu-make">GNU Make</h3>
-<p>The JDK requires <a href="http://www.gnu.org/software/make">GNU
+<p>The JDK requires <a href="https://www.gnu.org/software/make">GNU
 Make</a>. No other flavors of make are supported.</p>
 <p>At least version 3.81 of GNU Make must be used. For distributions
 supporting GNU Make 4.0 or above, we strongly recommend it. GNU Make 4.0
@@ -792,7 +792,7 @@ issues, but if you have a very old <code>make</code>, or a non-GNU Make
 <code>configure</code>, use the <code>MAKE</code> configure variable,
 e.g. <code>configure MAKE=/opt/gnu/make</code>.</p>
 <h3 id="gnu-bash">GNU Bash</h3>
-<p>The JDK requires <a href="http://www.gnu.org/software/bash">GNU
+<p>The JDK requires <a href="https://www.gnu.org/software/bash">GNU
 Bash</a>. No other shells are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
 <h2 id="running-configure">Running Configure</h2>
@@ -1097,9 +1097,9 @@ System</a> for details.</p>
 </ul>
 <h2 id="running-tests">Running Tests</h2>
 <p>Most of the JDK tests are using the <a
-href="http://openjdk.org/jtreg">JTReg</a> test framework. Make sure that
-your configuration knows where to find your installation of JTReg. If
-this is not picked up automatically, use the
+href="https://openjdk.org/jtreg">JTReg</a> test framework. Make sure
+that your configuration knows where to find your installation of JTReg.
+If this is not picked up automatically, use the
 <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to
 the JTReg framework. Note that this option should point to the JTReg
 home, i.e. the top directory, containing <code>lib/jtreg.jar</code>
@@ -1410,7 +1410,7 @@ like this:</p>
   --resolve-deps \
   buster \
   ~/sysroot-arm64 \
-  http://httpredir.debian.org/debian/
+  https://httpredir.debian.org/debian/
 # If the target architecture is `riscv64`,
 # the path should be `debian-ports` instead of `debian`.</code></pre></li>
 <li><p>To create a Ubuntu-based chroot:</p>
@@ -1686,7 +1686,7 @@ circumstances, it can actually slow things down.</p>
 <p>You can experiment by disabling precompiled headers using
 <code>--disable-precompiled-headers</code>.</p>
 <h3 id="icecc-icecream">Icecc / icecream</h3>
-<p><a href="http://github.com/icecc/icecream">icecc/icecream</a> is a
+<p><a href="https://github.com/icecc/icecream">icecc/icecream</a> is a
 simple way to setup a distributed compiler network. If you have multiple
 machines available for building the JDK, you can drastically cut
 individual build times by utilizing it.</p>
@@ -2280,7 +2280,7 @@ set of variable=value assignments, like this:</p>
 check <code>$BUILD/build-trace-time.log</code>. Use <code>JOBS=1</code>
 to avoid parallelism.</p>
 <p>Please check that you adhere to the <a
-href="http://openjdk.org/groups/build/doc/code-conventions.html">Code
+href="https://openjdk.org/groups/build/doc/code-conventions.html">Code
 Conventions for the Build System</a> before submitting patches.</p>
 <h2 id="contributing-to-the-jdk">Contributing to the JDK</h2>
 <p>So, now you've built your JDK, and made your first patch, and want to
