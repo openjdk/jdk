@@ -38,6 +38,16 @@ import java.security.spec.InvalidParameterSpecException;
  * message digest that has a various digest output length. This parameters
  * can be initialized with an {@link IntegerParameterSpec}. The integer
  * is the length of the digest output length in bits.
+ *
+ * This is defined in https://csrc.nist.gov/projects/computer-security-objects-register/algorithm-registration.
+ *
+ * ShakeOutputLen ::= INTEGER -- Output length in bits
+ *
+ * The algorithm identifiers for id-shake128-len and id-shake256-len carry the parameter ShakeOutputLen.
+ *
+ * Alg-SHAKE128-LEN ALGORITHM ::= { OID id-shake128-len PARMS ShakeOutputLen }
+ *
+ * Alg-SHAKE256-LEN ALGORITHM ::= { OID id-shake256-len PARMS ShakeOutputLen }
  */
 public class IntegerParameters extends AlgorithmParametersSpi {
     private int n;
