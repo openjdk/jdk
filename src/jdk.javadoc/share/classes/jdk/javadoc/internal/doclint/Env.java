@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,32 +62,13 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.StringUtils;
+import jdk.javadoc.internal.tool.AccessKind;
 
 /**
  * Utility container for current execution environment,
  * providing the current declaration and its doc comment.
  */
 public class Env {
-    /**
-     * Access kinds for declarations.
-     */
-    public enum AccessKind {
-        PRIVATE,
-        PACKAGE,
-        PROTECTED,
-        PUBLIC;
-
-        static AccessKind of(Set<Modifier> mods) {
-            if (mods.contains(Modifier.PUBLIC))
-                return AccessKind.PUBLIC;
-            else if (mods.contains(Modifier.PROTECTED))
-                return AccessKind.PROTECTED;
-            else if (mods.contains(Modifier.PRIVATE))
-                return AccessKind.PRIVATE;
-            else
-                return AccessKind.PACKAGE;
-        }
-    }
 
     /** Message handler. */
     final Messages messages;

@@ -73,7 +73,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
-import jdk.javadoc.internal.doclint.Env;
+import jdk.javadoc.internal.tool.AccessKind;
 
 /**
  * Configure the output based on the options. Doclets should subclass
@@ -657,7 +657,7 @@ public abstract class BaseConfiguration {
         // set DocLint options per access kind (as is common with javac.)
         // A more sophisticated solution might be to derive the access kind from the
         // element owning the comment, and its enclosing elements.
-        return doclint != null && doclint.isGroupEnabled(group, Env.AccessKind.PUBLIC);
+        return doclint != null && doclint.isGroupEnabled(group, AccessKind.PUBLIC);
     }
     //</editor-fold>
 }

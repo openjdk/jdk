@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,33 @@
 
 package jdk.javadoc.internal.tool;
 
+import java.util.Set;
+import javax.lang.model.element.Modifier;
+
 /**
  * The access value kinds.
  */
 public enum AccessKind {
-    /** Limits access to public entities */
-    PUBLIC,
-    /** Limits access to public and protected entities */
-    PROTECTED,
+
+    // DO NOT REORDER THESE CONSTANTS OR CODE WILL BREAK
+
+    /** No limits */
+    PRIVATE,
     /** Limits access to public, protected and package private entities */
     PACKAGE,
-    /** No limits */
-    PRIVATE;
+    /** Limits access to public and protected entities */
+    PROTECTED,
+    /** Limits access to public entities */
+    PUBLIC;
+
+    public static AccessKind of(Set<Modifier> mods) {
+        if (mods.contains(Modifier.PUBLIC))
+            return AccessKind.PUBLIC;
+        else if (mods.contains(Modifier.PROTECTED))
+            return AccessKind.PROTECTED;
+        else if (mods.contains(Modifier.PRIVATE))
+            return AccessKind.PRIVATE;
+        else
+            return AccessKind.PACKAGE;
+    }
 }

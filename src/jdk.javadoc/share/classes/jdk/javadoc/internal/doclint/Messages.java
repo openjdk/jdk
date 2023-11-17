@@ -43,7 +43,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.util.StringUtils;
-import jdk.javadoc.internal.doclint.Env.AccessKind;
+import jdk.javadoc.internal.tool.AccessKind;
 
 /**
  * Message reporting for DocLint.
@@ -109,7 +109,7 @@ public class Messages {
         stats.setEnabled(b);
     }
 
-    boolean isEnabled(Group group, Env.AccessKind ak) {
+    boolean isEnabled(Group group, AccessKind ak) {
         return options.isEnabled(group, ak);
     }
 
@@ -176,7 +176,7 @@ public class Messages {
      * Handler for (sub)options specific to message handling.
      */
     static class Options {
-        Map<String, Env.AccessKind> map = new HashMap<>();
+        Map<String, AccessKind> map = new HashMap<>();
         private final Stats stats;
 
         static boolean isValidOptions(String opts) {
@@ -209,11 +209,11 @@ public class Messages {
         }
 
         /** Determine if a message group is enabled for a particular access level. */
-        boolean isEnabled(Group g, Env.AccessKind access) {
+        boolean isEnabled(Group g, AccessKind access) {
             if (map.isEmpty())
-                map.put("all", Env.AccessKind.PROTECTED);
+                map.put("all", AccessKind.PROTECTED);
 
-            Env.AccessKind ak = map.get(g.optName());
+            AccessKind ak = map.get(g.optName());
             if (ak != null && access.compareTo(ak) >= 0)
                 return true;
 
@@ -229,7 +229,7 @@ public class Messages {
 
         void setOptions(String opts) {
             if (opts == null)
-                setOption(ALL, Env.AccessKind.PRIVATE);
+                setOption(ALL, AccessKind.PRIVATE);
             else {
                 for (String opt: opts.split(","))
                     setOption(StringUtils.toLowerCase(opt.trim()));
@@ -244,16 +244,16 @@ public class Messages {
 
             int sep = arg.indexOf("/");
             if (sep > 0) {
-                Env.AccessKind ak = Env.AccessKind.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
+                AccessKind ak = AccessKind.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
                 setOption(arg.substring(0, sep), ak);
             } else {
                 setOption(arg, null);
             }
         }
 
-        private void setOption(String opt, Env.AccessKind ak) {
+        private void setOption(String opt, AccessKind ak) {
             map.put(opt, (ak != null) ? ak
-                    : opt.startsWith("-") ? Env.AccessKind.PUBLIC : Env.AccessKind.PRIVATE);
+                    : opt.startsWith("-") ? AccessKind.PUBLIC : AccessKind.PRIVATE);
         }
 
         private static final String ALL = "all";
