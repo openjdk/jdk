@@ -25,8 +25,6 @@
 
 package jdk.internal.event;
 
-import java.net.SocketAddress;
-
 /**
  * A JFR event for selection operations.  This event is mirrored in
  * {@code jdk.jfr.events.SelectionEvent } where the metadata for the event is
