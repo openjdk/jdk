@@ -176,7 +176,7 @@ public class Messages {
      * Handler for (sub)options specific to message handling.
      */
     static class Options {
-        Map<String, AccessLevel> map = new HashMap<>();
+        private final Map<String, AccessLevel> map = new HashMap<>();
         private final Stats stats;
 
         static boolean isValidOptions(String opts) {
@@ -211,7 +211,7 @@ public class Messages {
         /** Determine if a message group is enabled for a particular access level. */
         boolean isEnabled(Group g, AccessLevel access) {
             if (map.isEmpty())
-                map.put("all", AccessLevel.PROTECTED);
+                map.put(ALL, AccessLevel.PROTECTED);
 
             AccessLevel al = map.get(g.optName());
             if (al != null && access.compareTo(al) >= 0)
@@ -220,8 +220,7 @@ public class Messages {
             al = map.get(ALL);
             if (al != null && access.compareTo(al) >= 0) {
                 al = map.get(g.notOptName());
-                if (al == null || access.compareTo(al) > 0) // note >, not >=
-                    return true;
+                return al == null || access.compareTo(al) > 0; // note >, not >=
             }
 
             return false;
