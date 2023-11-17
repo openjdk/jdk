@@ -577,8 +577,8 @@ standard for C, and C++14 for C++.</p>
 <h3 id="gcc">gcc</h3>
 <p>The minimum accepted version of gcc is 6.0. Older versions will not
 be accepted by <code>configure</code>.</p>
-<p>The JDK is currently known to be able to compile with at least
-version 13.2 of gcc.</p>
+<p>The JDK is currently known to compile successfully with gcc version
+13.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not
@@ -1154,7 +1154,7 @@ href="testing.md">markdown</a>).</p>
 <h2 id="signing">Signing</h2>
 <h3 id="macos-1">macOS</h3>
 <p>Modern versions of macOS require applications to be signed and
-notarizied before distribution. See Apple's documentation for more
+notarized before distribution. See Apple's documentation for more
 background on what this means and how it works. To help support this,
 the JDK build can be configured to automatically sign all native
 binaries, and the JDK bundle, with all the options needed for successful
@@ -1171,7 +1171,7 @@ the special entitlement <code>com.apple.security.get-task-allow</code>
 to each binary. This entitlement is required to be able to dump core
 files from a process. Note that adding this entitlement makes the build
 invalid for notarization, so it is only added when signing in
-<code>debug</code> mode. To explicitly enable this kind of adhoc
+<code>debug</code> mode. To explicitly enable this kind of ad hoc
 signing, use configure parameter
 <code>--with-macosx-codesign=debug</code>. It will be enabled by default
 in most cases.</p>
@@ -1181,7 +1181,7 @@ operations done by the JDK build using the configure parameter
 on the architecture. For macOS on x64, it (at least at the time of this
 writing) results in completely unsigned binaries that should still work
 fine for development and debugging purposes. On aarch64, the Xcode
-linker will apply a default "adhoc" signing, without any entitlements.
+linker will apply a default "ad hoc" signing, without any entitlements.
 Such a build does not allow dumping core files.</p>
 <p>The default mode "auto" will try for <code>hardened</code> signing if
 the debug level is <code>release</code> and either the default identity
@@ -1274,35 +1274,34 @@ correctly setup. (See <code>make/autoconf/basics.m4</code> for
 details.)</p>
 <h3 id="native-libraries">Native Libraries</h3>
 <p>You will need copies of external native libraries for the
-<em>target</em> system, present on the <em>build</em> machine while
+<em>target</em> system present on the <em>build</em> machine while
 building.</p>
 <p>Take care not to replace the <em>build</em> system's version of these
-libraries by mistake, since that can render the <em>build</em> machine
+libraries by mistake, as that can render the <em>build</em> machine
 unusable.</p>
 <p>Make sure that the libraries you point to (ALSA, X11, etc) are for
-the <em>target</em>, not the <em>build</em>, platform.</p>
+the <em>target</em> platform, not the <em>build</em> platform.</p>
 <h4 id="alsa-1">ALSA</h4>
 <p>You will need alsa libraries suitable for your <em>target</em>
-system. For most cases, using Debian's pre-built libraries work
-fine.</p>
+system. In most cases, using Debian's pre-built libraries work fine.</p>
 <p>Note that alsa is needed even if you only want to build a headless
 JDK.</p>
 <ul>
 <li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
-Package Search</a> and search for the <code>libasound2</code> and
-<code>libasound2-dev</code> packages for your <em>target</em> system.
-Download them to /tmp.</p></li>
+Package Search</a>, search for the <code>libasound2</code> and
+<code>libasound2-dev</code> packages for your <em>target</em> system,
+and download them to /tmp.</p></li>
 <li><p>Install the libraries into the cross-compilation toolchain. For
 instance:</p>
 <pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
 dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
 dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
 <li><p>If alsa is not properly detected by <code>configure</code>, you
-can point it out by <code>--with-alsa</code>.</p></li>
+can specify it by <code>--with-alsa</code>.</p></li>
 </ul>
 <h4 id="x11-1">X11</h4>
 <p>You will need X11 libraries suitable for your <em>target</em> system.
-For most cases, using Debian's pre-built libraries work fine.</p>
+In most cases, using Debian's pre-built libraries work fine.</p>
 <p>Note that X11 is needed even if you only want to build a headless
 JDK.</p>
 <ul>
@@ -1339,8 +1338,8 @@ for deb in /tmp/target-x11/*.deb ; do dpkg-deb -x $deb . ; done
 mv usr/* .
 cd lib
 cp arm-linux-gnueabihf/* .</code></pre>
-<p>You can ignore the following messages. These libraries are not needed
-to successfully complete a full JDK build.</p>
+<p>You can ignore the following messages, since these libraries are not
+needed to successfully complete a full JDK build.</p>
 <pre><code>cp: cannot stat `arm-linux-gnueabihf/libICE.so&#39;: No such file or directory
 cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
 cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
@@ -1458,7 +1457,7 @@ like this:</p>
   https://httpredir.debian.org/debian/</code></pre>
 <p>If the target architecture is <code>riscv64</code>, the path should
 be <code>debian-ports</code> instead of <code>debian</code>.</p></li>
-<li><p>To create a Ubuntu-based chroot:</p>
+<li><p>To create an Ubuntu-based chroot:</p>
 <pre><code>sudo debootstrap \
   --arch=arm64 \
   --verbose \
@@ -1718,7 +1717,7 @@ code from on-the-fly checking.</p>
 <h3 id="ccache">Ccache</h3>
 <p>The JDK build supports building with ccache when using gcc or clang.
 Using ccache can radically speed up compilation of native code if you
-often rebuild the same sources. Your milage may vary however, so we
+often rebuild the same sources. Your mileage may vary however, so we
 recommend evaluating it for yourself. To enable it, make sure it's on
 the path and configure with <code>--enable-ccache</code>.</p>
 <h3 id="precompiled-headers">Precompiled Headers</h3>
@@ -2003,7 +2002,7 @@ configuration, and used by <code>make</code>. Setting
 <code>SOURCE_DATE_EPOCH</code> before running <code>make</code> will
 have no effect on the build.</p>
 <p>You must also make sure your build does not rely on
-<code>configure</code>'s default adhoc version strings. Default adhoc
+<code>configure</code>'s default ad hoc version strings. Default ad hoc
 version strings <code>OPT</code> segment include user name and source
 directory. You can either override just the <code>OPT</code> segment
 using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you
@@ -2014,7 +2013,7 @@ way:</p>
 <pre><code>export SOURCE_DATE_EPOCH=946684800
 bash configure --with-version-opt=adhoc
 make</code></pre>
-<p>Note that regardless if you specify a source date for
+<p>Note that regardless of whether you specify a source date for
 <code>configure</code> or not, the JDK build system will set
 <code>SOURCE_DATE_EPOCH</code> for all build tools when building. If
 <code>--with-source-date</code> has the value <code>current</code>
@@ -2049,8 +2048,8 @@ timestamp.</p>
 <li><code>--with-hotspot-build-time</code></li>
 </ul>
 <p>This option controls the build time string that will be included in
-the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>).
-When the source date is fixed (e.g. by setting
+the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>). If
+the source date is fixed (e.g. by setting
 <code>SOURCE_DATE_EPOCH</code>), the default value for
 <code>--with-hotspot-build-time</code> will be an ISO 8601
 representation of that time stamp. Otherwise the default value will be
@@ -2068,20 +2067,19 @@ configure. This can be overridden by
 <ul>
 <li><code>--enable-reproducible-build</code></li>
 </ul>
-<p>This option controls some additional behavior needed to make the
-build reproducible. When the source date is fixed (e.g. by setting
+<p>This option controls additional behavior needed to make the build
+reproducible. When the source date is fixed (e.g. by setting
 <code>SOURCE_DATE_EPOCH</code>), this flag will be turned on by default.
 Otherwise, the value is determined by heuristics. If it is explicitly
 turned off, the build might not be reproducible.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions
 for Advanced Users</h2>
 <h3 id="bash-completion">Bash Completion</h3>
-<p>The <code>configure</code> and <code>make</code> commands tries to
-play nice with bash command-line completion (using
-<code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use
-this functionality, make sure you enable completion in your
-<code>~/.bashrc</code> (see instructions for bash in your operating
-system).</p>
+<p>The <code>configure</code> and <code>make</code> commands try to play
+nice with bash command-line completion (using <code>&lt;tab&gt;</code>
+or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make
+sure you enable completion in your <code>~/.bashrc</code> (see
+instructions for bash in your operating system).</p>
 <p>Make completion will work out of the box, and will complete valid
 make targets. For instance, typing <code>make jdk-i&lt;tab&gt;</code>
 will complete to <code>make jdk-image</code>.</p>
