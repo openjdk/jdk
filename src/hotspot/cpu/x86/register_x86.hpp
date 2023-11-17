@@ -404,7 +404,7 @@ inline Register AbstractRegSet<Register>::last() {
 
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::first() {
-  int first = _bitset & -_bitset;
+  size_t first = _bitset & -_bitset;
   return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
 }
 
