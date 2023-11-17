@@ -10446,9 +10446,9 @@ instruct expand_Repl2I_reg(iRegL dst, iRegL src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateB src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 8));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "REPLIC8B $dst,$src\t # pack8B" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10463,8 +10463,8 @@ instruct Repl8B_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm" %}
   ins_encode %{
@@ -10481,8 +10481,8 @@ instruct Repl8B_imm(iRegL dst, immB_n0m1 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10491,8 +10491,8 @@ instruct Repl8B_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar byte to packed byte values (8 Bytes).
 instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 && Matcher::vector_element_basic_type(n) == T_BYTE);
   ins_should_rematerialize(true);
   format %{ "REPLIC8B $dst,$src\t # pack8B immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10502,9 +10502,9 @@ instruct Repl8B_immm1(iRegL dst, immB_minus1 src) %{
 // Exploit rotate_then_insert, if available
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateS src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 4));
+  predicate((n->as_Vector()->length() == 4) && Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "REPLIC4S $dst,$src\t # pack4S" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10518,8 +10518,8 @@ instruct Repl4S_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm" %}
   ins_encode %{
@@ -10536,8 +10536,8 @@ instruct Repl4S_imm(iRegL dst, immS_n0m1 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10546,8 +10546,8 @@ instruct Repl4S_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar short to packed short values (8 Bytes).
 instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 && Matcher::vector_element_basic_type(n) == T_SHORT);
   ins_should_rematerialize(true);
   format %{ "REPLIC4S $dst,$src\t # pack4S immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10557,9 +10557,9 @@ instruct Repl4S_immm1(iRegL dst, immS_minus1 src) %{
 // Exploit rotate_then_insert, if available.
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
-  match(Set dst (ReplicateI src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate((n->as_Vector()->length() == 2));
+  predicate((n->as_Vector()->length() == 2) && Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "REPLIC2I $dst,$src\t # pack2I" %}
   ins_encode %{
     if ($dst$$Register != $src$$Register) {
@@ -10572,8 +10572,8 @@ instruct Repl2I_reg_risbg(iRegL dst, iRegI src, flagsReg cr) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm" %}
   ins_encode %{
@@ -10588,8 +10588,8 @@ instruct Repl2I_imm(iRegL dst, immI_n0m1 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
@@ -10598,8 +10598,8 @@ instruct Repl2I_imm0(iRegL dst, immI_0 src) %{
 
 // Replicate scalar int to packed int values (8 Bytes).
 instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_INT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2I $dst,$src\t # pack2I immm1" %}
   ins_encode %{ __ z_lghi($dst$$Register, -1); %}
@@ -10609,9 +10609,10 @@ instruct Repl2I_immm1(iRegL dst, immI_minus1 src) %{
 //
 
 instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(!VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F indirect" %}
   expand %{
     stackSlotF tmp;
@@ -10624,9 +10625,10 @@ instruct Repl2F_reg_indirect(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float to packed float values in GREG (8 Bytes).
 instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
-  match(Set dst (ReplicateF src));
+  match(Set dst (Replicate src));
   effect(KILL cr);
-  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2);
+  predicate(VM_Version::has_FPSupportEnhancements() && n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   format %{ "REPLIC2F $dst,$src\t # pack2F direct" %}
   ins_encode %{
     assert(VM_Version::has_FPSupportEnhancements(), "encoder should never be called on old H/W");
@@ -10641,8 +10643,8 @@ instruct Repl2F_reg_direct(iRegL dst, regF src, flagsReg cr) %{
 
 // Replicate scalar float immediate to packed float values in GREG (8 Bytes).
 instruct Repl2F_imm(iRegL dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm" %}
   ins_encode %{
@@ -10660,8 +10662,8 @@ instruct Repl2F_imm(iRegL dst, immF src) %{
 // Replicate scalar float immediate zeroes to packed float values in GREG (8 Bytes).
 // Do this only for 'real' zeroes, especially don't loose sign of negative zeroes.
 instruct Repl2F_imm0(iRegL dst, immFp0 src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 && Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_should_rematerialize(true);
   format %{ "REPLIC2F $dst,$src\t # pack2F imm0" %}
   ins_encode %{ __ z_laz($dst$$Register, 0, Z_R0); %}
