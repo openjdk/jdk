@@ -487,11 +487,16 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * {@return the string representation of the ZIP file}
+     * {@return a string identifying this ZIP file}
+     *
+     * The exact details of the representation are subject to change and this
+     * string value is recommended only for debugging purposes. But the following
+     * format may be regarded as typical: The underlying ZIP file name followed
+     * by '@' and a hex representation of the identity hash for this {@code ZipFile}.
      */
     @Override
     public String toString() {
-        return "" + name + Integer.toHexString(System.identityHashCode(this));
+        return name + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 
     private class ZipEntryIterator<T extends ZipEntry>
