@@ -32,10 +32,10 @@
 
 G1SurvRateGroup::G1SurvRateGroup() :
   _stats_arrays_length(0),
+  _num_added_regions(0),
   _accum_surv_rate_pred(nullptr),
   _last_pred(0.0),
-  _surv_rate_predictors(nullptr),
-  _num_added_regions(0) {
+  _surv_rate_predictors(nullptr) {
   reset();
   start_adding_regions();
 }
@@ -82,12 +82,11 @@ void G1SurvRateGroup::stop_adding_regions() {
   }
 }
 
-void G1SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) {
-  guarantee(0 <= age_in_group && (size_t)age_in_group < _num_added_regions,
-            "age_in_group is %d not between 0 and " SIZE_FORMAT, age_in_group, _num_added_regions);
+void G1SurvRateGroup::record_surviving_words(uint age, size_t surv_words) {
+  assert(is_valid_age(age), "age is %u not between 0 and %u", age, _num_added_regions);
 
   double surv_rate = (double)surv_words / HeapRegion::GrainWords;
-  _surv_rate_predictors[age_in_group]->add(surv_rate);
+  _surv_rate_predictors[age]->add(surv_rate);
 }
 
 void G1SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predictor, bool update_predictors) {

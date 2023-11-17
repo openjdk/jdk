@@ -1592,7 +1592,7 @@ static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
 }
 
 // This function is called by the MonitorDeflationThread to deflate
-// ObjectMonitors. It is also called via do_final_audit_and_print_stats().
+// ObjectMonitors.
 size_t ObjectSynchronizer::deflate_idle_monitors() {
   Thread* current = Thread::current();
   if (current->is_Java_thread()) {
@@ -1622,10 +1622,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   size_t unlinked_count = 0;
   size_t deleted_count = 0;
   if (deflated_count > 0) {
-    // There are ObjectMonitors that have been deflated or this is the
-    // final audit and all the remaining ObjectMonitors have been
-    // deflated, BUT the MonitorDeflationThread blocked for the final
-    // safepoint during unlinking.
+    // There are ObjectMonitors that have been deflated.
 
     // Unlink deflated ObjectMonitors from the in-use list.
     ResourceMark rm;

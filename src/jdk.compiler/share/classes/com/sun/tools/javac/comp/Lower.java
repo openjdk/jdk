@@ -1196,6 +1196,18 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    private boolean noClassDefIn(JCTree tree) {
+        var scanner = new TreeScanner() {
+            boolean noClassDef = true;
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                noClassDef = false;
+            }
+        };
+        scanner.scan(tree);
+        return scanner.noClassDef;
+    }
+
     private void addPrunedInfo(JCTree tree) {
         List<JCTree> infoList = prunedTree.get(currentClass);
         infoList = (infoList == null) ? List.of(tree) : infoList.prepend(tree);
@@ -3030,10 +3042,10 @@ public class Lower extends TreeTranslator {
     @Override
     public void visitConditional(JCConditional tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (isTrue(cond)) {
+        if (isTrue(cond) && noClassDefIn(tree.falsepart)) {
             result = convert(translate(tree.truepart, tree.type), tree.type);
             addPrunedInfo(cond);
-        } else if (isFalse(cond)) {
+        } else if (isFalse(cond) && noClassDefIn(tree.truepart)) {
             result = convert(translate(tree.falsepart, tree.type), tree.type);
             addPrunedInfo(cond);
         } else {
@@ -3057,10 +3069,10 @@ public class Lower extends TreeTranslator {
      */
     public void visitIf(JCIf tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (isTrue(cond)) {
+        if (isTrue(cond) && noClassDefIn(tree.elsepart)) {
             result = translate(tree.thenpart);
             addPrunedInfo(cond);
-        } else if (isFalse(cond)) {
+        } else if (isFalse(cond) && noClassDefIn(tree.thenpart)) {
             if (tree.elsepart != null) {
                 result = translate(tree.elsepart);
             } else {

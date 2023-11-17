@@ -38,25 +38,25 @@ import java.lang.management.ThreadMXBean;
  */
 
 public class ConcurrentDeflation {
-    public static final int TOTAL_RUN_TIME = 10 * 1000;
+    public static final long TOTAL_RUN_TIME_NS = 10_000_000_000L;
     public static Object[] monitors = new Object[1000];
+    public static int monitorCount;
 
     public static void main(String[] args) throws Exception {
-        Thread thread_dumper  = new Thread(() -> dumpThreads());
-        thread_dumper.start();
-        Thread monitor_creator  = new Thread(() -> createMonitors());
-        monitor_creator.start();
+        Thread threadDumper = new Thread(() -> dumpThreads());
+        threadDumper.start();
+        Thread monitorCreator = new Thread(() -> createMonitors());
+        monitorCreator.start();
 
-        thread_dumper.join();
-        monitor_creator.join();
+        threadDumper.join();
+        monitorCreator.join();
     }
 
     static private void dumpThreads() {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        long startTime = System.currentTimeMillis();
         int dumpCount = 0;
-
-        while (System.currentTimeMillis() - startTime < TOTAL_RUN_TIME) {
+        long startTime = System.nanoTime();
+        while (System.nanoTime() - startTime < TOTAL_RUN_TIME_NS) {
             threadBean.dumpAllThreads(true, false);
             dumpCount++;
             try {
@@ -67,16 +67,14 @@ public class ConcurrentDeflation {
     }
 
     static private void createMonitors() {
-        int monitorCount = 0;
-
         int index = 0;
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < TOTAL_RUN_TIME) {
+        long startTime = System.nanoTime();
+        while (System.nanoTime() - startTime < TOTAL_RUN_TIME_NS) {
             index = index++ % 1000;
             monitors[index] = new Object();
             synchronized (monitors[index]) {
+                monitorCount++;
             }
-            monitorCount++;
         }
         System.out.println("Created " + monitorCount + " monitors");
     }

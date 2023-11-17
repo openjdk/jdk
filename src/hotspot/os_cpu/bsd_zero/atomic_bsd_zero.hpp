@@ -286,31 +286,19 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
 }
 
 // Atomically copy 64 bits of data
-static void atomic_copy64(const volatile void *src, volatile void *dst) {
-#if defined(PPC32)
-  double tmp;
-  asm volatile ("lfd  %0, 0(%1)\n"
-                "stfd %0, 0(%2)\n"
-                : "=f"(tmp)
-                : "b"(src), "b"(dst));
-#elif defined(S390) && !defined(_LP64)
-  double tmp;
-  asm volatile ("ld  %0, 0(%1)\n"
-                "std %0, 0(%2)\n"
-                : "=r"(tmp)
-                : "a"(src), "a"(dst));
-#else
-  *(jlong *) dst = *(const jlong *) src;
-#endif
+inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  int64_t tmp;
+  __atomic_load(reinterpret_cast<const volatile int64_t*>(src), &tmp, __ATOMIC_RELAXED);
+  __atomic_store(reinterpret_cast<volatile int64_t*>(dst), &tmp, __ATOMIC_RELAXED);
 }
 
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
-  volatile int64_t dest;
-  atomic_copy64(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
-  return PrimitiveConversions::cast<T>(dest);
+  T dest;
+  __atomic_load(const_cast<T*>(src), &dest, __ATOMIC_RELAXED);
+  return dest;
 }
 
 template<>
@@ -318,7 +306,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
-  atomic_copy64(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
+  __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }
 
 #endif // OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP
