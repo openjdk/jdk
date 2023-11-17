@@ -229,10 +229,10 @@ volatile bool JvmtiVTMSTransitionDisabler::_SR_mode = false;
 bool JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events = false;
 
 // The JvmtiVTMSTransitionDisabler sync protocol is enabled if this count > 0.
-int JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_count = 0;
+volatile int JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_count = 0;
 
 // JvmtiVTMSTraansitionDisabler sync protocol is enabled permanently after seeing a suspender.
-bool JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_permanently = false;
+volatile bool JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_permanently = false;
 
 #ifdef ASSERT
 void
@@ -261,7 +261,7 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  if (!_sync_protocol_enabled_permanently) {
+  if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
   }
   if (_thread != nullptr) {
@@ -281,10 +281,10 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
-  if (!_sync_protocol_enabled_permanently) {
+  if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
     if (is_SR) {
-      _sync_protocol_enabled_permanently = true;
+      Atomic::store(&_sync_protocol_enabled_permanently, true);
     }
   }
   VTMS_transition_disable_for_all();
@@ -302,7 +302,7 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
   } else {
     VTMS_transition_enable_for_all(); // enable VTMS transitions for all virtual threads
   }
-  if (!_sync_protocol_enabled_permanently) {
+  if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::dec_sync_protocol_enabled_count();
   }
 }
@@ -427,7 +427,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   if (!sync_protocol_enabled()) {
     assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
     thread->set_is_in_VTMS_transition(true);
-     java_lang_Thread::set_is_in_VTMS_transition(vt, true);
+    java_lang_Thread::set_is_in_VTMS_transition(vt, true);
     Atomic::inc(&_VTMS_transition_count);
     return;
   }

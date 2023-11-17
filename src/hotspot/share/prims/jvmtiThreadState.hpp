@@ -83,8 +83,8 @@ class JvmtiVTMSTransitionDisabler {
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
   static volatile bool _SR_mode;                         // there is an active suspender or resumer
   static volatile int _VTMS_transition_count;            // current number of VTMS transitions
-  static int  _sync_protocol_enabled_count;              // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
-  static bool _sync_protocol_enabled_permanently;        // seen a suspender: JvmtiVTMSTraansitionDisabler protocol is enabled permanently
+  static volatile int _sync_protocol_enabled_count;      // current number of JvmtiVTMSTransitionDisablers enabled sync protocol
+  static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTraansitionDisabler protocol is enabled permanently
 
   bool _is_SR;                                           // is suspender or resumer
   jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
@@ -102,9 +102,12 @@ class JvmtiVTMSTransitionDisabler {
 
   static void set_VTMS_transition_count(bool val)    { _VTMS_transition_count = val; }
 
-  static void inc_sync_protocol_enabled_count()      { _sync_protocol_enabled_count++; }
-  static void dec_sync_protocol_enabled_count()      { _sync_protocol_enabled_count--; }
-  static bool sync_protocol_enabled()                { return _sync_protocol_enabled_count > 0 || _sync_protocol_enabled_permanently; }
+  static void inc_sync_protocol_enabled_count()      { Atomic::inc(&_sync_protocol_enabled_count); }
+  static void dec_sync_protocol_enabled_count()      { Atomic::dec(&_sync_protocol_enabled_count); }
+  static int  sync_protocol_enabled_count()          { return Atomic::load(&_sync_protocol_enabled_count); }
+  static bool sync_protocol_enabled_permanently()    { return Atomic::load(&_sync_protocol_enabled_permanently); }
+
+  static bool sync_protocol_enabled()                { return sync_protocol_enabled_permanently() || sync_protocol_enabled_count() > 0; }
 
   // parameter is_SR: suspender or resumer
   JvmtiVTMSTransitionDisabler(bool is_SR = false);
