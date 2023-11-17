@@ -114,6 +114,11 @@ class SuperWord : public ResourceObj {
     return vla().reductions().is_marked_reduction_pair(s1, s2);
   }
 
+  // VLoopAnalyzer memory slices
+  bool same_memory_slice(MemNode* n1, MemNode* n2) const {
+    return vla().memory_slices().same_memory_slice(n1, n2);
+  }
+
   // VLoopAnalyzer body
   const GrowableArray<Node*>& body() const {
     return vla().body().body();
@@ -193,9 +198,6 @@ class SuperWord : public ResourceObj {
   // memory alignment for a node
   int alignment(Node* n) const               { return _node_info.adr_at(body_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
-
-  // TODO move!
-  bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
  public:

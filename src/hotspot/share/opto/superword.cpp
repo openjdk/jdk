@@ -2704,10 +2704,6 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   return off_mod;
 }
 
-bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
-  return phase()->C->get_alias_index(mem_ref->adr_type()) == phase()->C->get_alias_index(best_align_to_mem_ref->adr_type());
-}
-
 //------------------------------in_packset---------------------------
 // Are s1 and s2 in a pack pair and ordered as s1,s2?
 bool SuperWord::in_packset(Node* s1, Node* s2) {

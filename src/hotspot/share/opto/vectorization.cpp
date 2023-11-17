@@ -1059,6 +1059,11 @@ void VLoopMemorySlices::get_slice(Node* head,
   }
 }
 
+bool VLoopMemorySlices::same_memory_slice(MemNode* n1, MemNode* n2) const {
+  return _vloop.phase()->C->get_alias_index(n1->adr_type()) ==
+         _vloop.phase()->C->get_alias_index(n2->adr_type());
+}
+
 #ifndef PRODUCT
 void VLoopMemorySlices::print() const {
   tty->print_cr("\nVLoopMemorySlices::print: %s",

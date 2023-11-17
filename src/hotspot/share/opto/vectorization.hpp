@@ -214,6 +214,8 @@ public:
   // Get all memory nodes of a slice, in reverse order
   void get_slice(Node* head, Node* tail, GrowableArray<Node*> &slice) const;
 
+  bool same_memory_slice(MemNode* n1, MemNode* n2) const;
+
   DEBUG_ONLY(void print() const;)
 };
 
