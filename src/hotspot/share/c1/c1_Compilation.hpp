@@ -213,10 +213,10 @@ class Compilation: public StackObj {
   bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
 
-  static int desired_max_code_buffer_size() {
-    return (int)NMethodSizeLimit;  // default 64K
+  static uint desired_max_code_buffer_size() {
+    return (uint)NMethodSizeLimit;  // default 64K
   }
-  static int desired_max_constant_size() {
+  static uint desired_max_constant_size() {
     return desired_max_code_buffer_size() / 10;
   }
 

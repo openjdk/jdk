@@ -934,6 +934,26 @@ reg_class v11_reg(
     V11, V11_H, V11_J, V11_K
 );
 
+// class for vector register v12
+reg_class v12_reg(
+    V12, V12_H, V12_J, V12_K
+);
+
+// class for vector register v13
+reg_class v13_reg(
+    V13, V13_H, V13_J, V13_K
+);
+
+// class for vector register v14
+reg_class v14_reg(
+    V14, V14_H, V14_J, V14_K
+);
+
+// class for vector register v15
+reg_class v15_reg(
+    V15, V15_H, V15_J, V15_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1888,13 +1908,14 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
+    case Op_ExpandBits:        // fall through
+    case Op_CompressBits:      // fall through
+      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
-    case Op_CountPositives:
-      return UseRVV;
-
+    case Op_CountPositives:    // fall through
     case Op_EncodeISOArray:
-      return UseRVV && SpecialEncodeISOArray;
+      return UseRVV;
 
     case Op_PopCountI:
     case Op_PopCountL:
@@ -3501,6 +3522,46 @@ operand vReg_V10()
 operand vReg_V11()
 %{
   constraint(ALLOC_IN_RC(v11_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V14()
+%{
+  constraint(ALLOC_IN_RC(v14_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V15()
+%{
+  constraint(ALLOC_IN_RC(v15_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -7601,22 +7662,20 @@ instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
   ins_pipe(fp_dop_reg_reg_s);
 %}
 
-instruct signumD_reg(fRegD dst, fRegD src, immD zero, fRegD one) %{
-  match(Set dst (SignumD src (Binary zero one)));
-  format %{ "signumD  $dst, $src" %}
+instruct signumD_reg(fRegD dst, immD zero, fRegD one) %{
+  match(Set dst (SignumD dst (Binary zero one)));
+  format %{ "signumD  $dst, $dst" %}
   ins_encode %{
-    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
-                 as_FloatRegister($one$$reg), true /* is_double */);
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($one$$reg), true /* is_double */);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct signumF_reg(fRegF dst, fRegF src, immF zero, fRegF one) %{
-  match(Set dst (SignumF src (Binary zero one)));
-  format %{ "signumF  $dst, $src" %}
+instruct signumF_reg(fRegF dst, immF zero, fRegF one) %{
+  match(Set dst (SignumF dst (Binary zero one)));
+  format %{ "signumF  $dst, $dst" %}
   ins_encode %{
-    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
-                 as_FloatRegister($one$$reg), false /* is_double */);
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($one$$reg), false /* is_double */);
   %}
   ins_pipe(pipe_class_default);
 %}
