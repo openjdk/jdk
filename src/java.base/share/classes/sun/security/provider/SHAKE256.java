@@ -24,7 +24,10 @@
  */
 package sun.security.provider;
 
-import java.security.*;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.IntegerParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
