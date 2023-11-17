@@ -855,6 +855,28 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // not a loop after all
     return false;
   }
+
+  if (range_checks.size() > 0) {
+    // This transformation requires peeling one iteration. Also, if it has range checks and they are eliminated by Loop
+    // Predication, then 2 Hoisted Check Predicates are added for one range check. Finally, transforming a long range
+    // check requires extra logic to be executed before the loop is entered and for the outer loop. As a result, the
+    // transformations can't pay off for a small number of iterations: roughly, if the loop runs for 3 iterations, it's
+    // going to execute as many range checks once transformed with range checks eliminated (1 peeled iteration with
+    // range checks + 2 predicates per range checks) as it would have not transformed. It also has to pay for the extra
+    // logic on loop entry and for the outer loop.
+    loop->compute_trip_count(this);
+    if (head->is_CountedLoop() && head->as_CountedLoop()->has_exact_trip_count()) {
+      if (head->as_CountedLoop()->trip_count() <= 3) {
+        return false;
+      }
+    } else {
+      loop->compute_profile_trip_cnt(this);
+      if (!head->is_profile_trip_failed() && head->profile_trip_cnt() <= 3) {
+        return false;
+      }
+    }
+  }
+
   julong orig_iters = (julong)hi->hi_as_long() - lo->lo_as_long();
   iters_limit = checked_cast<int>(MIN2((julong)iters_limit, orig_iters));
 
@@ -4459,6 +4481,7 @@ void PhaseIdealLoop::build_and_optimize() {
   NOT_PRODUCT( C->verify_graph_edges(); )
   worklist.push(C->top());
   build_loop_late( visited, worklist, nstack );
+  if (C->failing()) { return; }
 
   if (_verify_only) {
     C->restore_major_progress(old_progress);
@@ -5991,6 +6014,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
       } else {
         // All of n's children have been processed, complete post-processing.
         build_loop_late_post(n);
+        if (C->failing()) { return; }
         if (nstack.is_empty()) {
           // Finished all nodes on stack.
           // Process next node on the worklist.
@@ -6137,13 +6161,15 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   Node *legal = LCA;            // Walk 'legal' up the IDOM chain
   Node *least = legal;          // Best legal position so far
   while( early != legal ) {     // While not at earliest legal
-#ifdef ASSERT
     if (legal->is_Start() && !early->is_Root()) {
+#ifdef ASSERT
       // Bad graph. Print idom path and fail.
       dump_bad_graph("Bad graph detected in build_loop_late", n, early, LCA);
       assert(false, "Bad graph detected in build_loop_late");
-    }
 #endif
+      C->record_method_not_compilable("Bad graph detected in build_loop_late");
+      return;
+    }
     // Find least loop nesting depth
     legal = idom(legal);        // Bump up the IDOM tree
     // Check for lower nesting depth

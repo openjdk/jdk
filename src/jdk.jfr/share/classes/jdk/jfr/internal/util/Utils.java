@@ -56,11 +56,6 @@ import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
-    public static final String FIELD_DURATION = "duration";
-    public static final String FIELD_STACK_TRACE = "stackTrace";
-    public static final String FIELD_START_TIME = "startTime";
-    public static final String FIELD_EVENT_THREAD = "eventThread";
-
     private static final Object flushObject = new Object();
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 

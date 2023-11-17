@@ -231,8 +231,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           int klass_index,
                                           bool& is_accessible,
                                           Klass* loading_klass);
-  static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -417,8 +415,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      int klass_index,
                                      bool& is_accessible,
                                      Klass* loading_klass);
-  static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);
