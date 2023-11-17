@@ -62,7 +62,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
 
   int32_t offset = 0;
-  __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+  __ movptr(t0, StubRoutines::method_entry_barrier(), offset);
   __ jalr(ra, t0, offset);
   __ j(continuation());
 

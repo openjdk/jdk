@@ -309,7 +309,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     __ beq(t0, t1, skip_barrier);
 
     int32_t offset = 0;
-    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ movptr(t0, StubRoutines::method_entry_barrier(), offset);
     __ jalr(ra, t0, offset);
     __ j(skip_barrier);
 
