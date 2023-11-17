@@ -1467,6 +1467,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
 
   const int elsize = arrays_hashcode_elsize(eltype);
+  const int chunks_end_shift = exact_log2(elsize);
 
   switch (eltype) {
   case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
@@ -1482,6 +1483,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   const Register pow31_3_4 = tmp6;
   const Register pow31_2   = tmp5;
   const Register chunk     = tmp4;
+  const Register chunks_end = chunk;
 
   Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
 
@@ -1494,7 +1496,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   andi(chunk, cnt, ~(stride-1));
   beqz(chunk, TAIL);
-  andi(cnt, cnt, stride-1);
+
+  slli(chunks_end, chunk, chunks_end_shift);
+  add(chunks_end, ary, chunks_end);
+  andi(cnt, cnt, stride-1); // don't forget about tail!
 
 #define DO_ELEMENT_LOAD(reg, idx) \
   switch (eltype) { \
@@ -1525,21 +1530,21 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
   DO_ELEMENT_LOAD(tmp3, 3);
   addw(result, result, tmp3);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
                                    //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
-  subw(chunk, chunk, stride);
   addi(ary, ary, elsize * stride);
-  bnez(chunk, WIDE_LOOP);
+  bne(ary, chunks_end, WIDE_LOOP);
 
   bind(TAIL);
   beqz(cnt, DONE);
+  slli(chunks_end, cnt, chunks_end_shift);
+  add(chunks_end, ary, chunks_end);
 
   bind(TAIL_LOOP);
   DO_ELEMENT_LOAD(tmp1, 0)
   slli(tmp2, result, 5);           // optimize 31 * result
   subw(result, tmp2, result);      // with result<<5 - result
   addw(result, result, tmp1);
-  subw(cnt, cnt, 1);
-  add(ary, ary, elsize);
-  bnez(cnt, TAIL_LOOP);
+  addi(ary, ary, elsize);
+  bne(ary, chunks_end, TAIL_LOOP);
 
 #undef DO_ELEMENT_LOAD
 
