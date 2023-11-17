@@ -238,9 +238,17 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <p>This representation hazard of decimal fractions is one reason to
  * use caution when storing monetary values as {@code float} or {@code
- * double}. Alternatives include using an integer type and storing
- * cents or mills or using {@link java.math.BigDecimal BigDecimal} to
- * store decimal fraction values exactly.
+ * double}. Alternatives include:
+ * <ul>
+ * <li>using {@link java.math.BigDecimal BigDecimal} to store decimal
+ * fractional values exactly
+ *
+ * <li>scaling up so the monetary value so it is an integer &mdash; for
+ * example, multiplying by 100 if the value is denominated in cents or
+ * multiplying by 1000 if the value is denominated in mills &mdash; and
+ * then storing the scaled value in an integer type.
+ *
+ *</ul>
  *
  * <p>For each finite floating-point value and a given floating-point
  * type, there is a contiguous region of the real number line which
@@ -272,7 +280,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Float.parseFloat("0.100000005215406417846679687499999");  // rounds down to oneTenthApproxAsFloat
  * }
  *
- * <p>An analogous range can be constructed similarly for the {@code
+ * <p>Similarly, an analogous range can be constructed  for the {@code
  * double} type based on the exact value of {@code double}
  * approximation to {@code 0.1d} and the numerical value of {@code
  * Math.ulp(0.1d)} and likewise for other particular numerical values
@@ -286,7 +294,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <li>equal to the exact result
  * </ul>
  *
- * A floating-point value doesn't "know" if it was the result of
+ * A floating-point value doesn't "know" whether it was the result of
  * rounding up, or rounding down, or an exact operation; it contains
  * no history of how it was computed. Consequently, the sum of
  * {@snippet lang="java" :
@@ -302,7 +310,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * }
  *
  * should <em>not</em> be expected to be exactly equal to 1.0, but
- * only close to 1.0. Consequently the following code is an infinite loop:
+ * only be close to 1.0. Consequently, the following code is an
+ * infinite loop:
  *
  * {@snippet lang="java" :
  * double d = 0.0;
@@ -311,7 +320,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * }
  * }
  *
- * Instead, for counted loops, use an integer loop count:
+ * Instead, use an integer loop count for counted loops:
  *
  * {@snippet lang="java" :
  * double d = 0.0;
