@@ -207,10 +207,10 @@ id="toc-editing-this-document">Editing this document</a></li>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the
 Impatient)</h2>
-<p>If you are eager to try out building the JDK, these simple steps
-works most of the time. They assume that you have installed Git (and
-Cygwin, MSYS2 or WSL if running on Windows), and want to clone the
-main-line JDK repository.</p>
+<p>If you are eager to try out building the JDK, these simple steps work
+most of the time. They assume that you have installed Git (and Cygwin,
+MSYS2 or WSL if running on Windows), and want to clone the main-line JDK
+repository.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source
 code</a>:<br />
@@ -1618,7 +1618,7 @@ are:</p>
 </table>
 <h3 id="considerations-for-specific-targets">Considerations for specific
 targets</h3>
-<h4 id="building-for-armaarch64">Building for ARM/aarch64</h4>
+<h4 id="building-for-arm32">Building for ARM32</h4>
 <p>A common cross-compilation target is the ARM CPU. When building for
 ARM, it is recommended to set the ABI profile. A number of pre-defined
 ABI profiles are available using <code>--with-abi-profile</code>:
@@ -2299,7 +2299,7 @@ path is correctly specified and reachable by Windows.</p></li>
 part of the command line arguments refer to paths, and converts those.
 In some circumstances, these heuristics can fail.</p>
 <p>If you are having strange build issues related to path conversion,
-you might need to debug how fixpath treats your paths. There are many
+you might need to debug how fixpath treats your paths. Here are some
 ways to do this.</p>
 <p>One way is to define the environment variable
 <code>DEBUG_FIXPATH</code>, e.g. <code>DEBUG_FIXPATH=1 make jdk</code>.

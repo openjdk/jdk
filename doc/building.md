@@ -2,7 +2,7 @@
 
 ## TL;DR (Instructions for the Impatient)
 
-If you are eager to try out building the JDK, these simple steps works most of
+If you are eager to try out building the JDK, these simple steps work most of
 the time. They assume that you have installed Git (and Cygwin, MSYS2 or WSL if
 running on Windows), and want to clone the main-line JDK repository.
 
@@ -1336,7 +1336,7 @@ Architectures that are known to successfully cross-compile like this are:
 
 ### Considerations for specific targets
 
-#### Building for ARM/aarch64
+#### Building for ARM32
 
 A common cross-compilation target is the ARM CPU. When building for ARM, it is
 recommended to set the ABI profile. A number of pre-defined ABI profiles are
@@ -2065,9 +2065,9 @@ calling a tool that does not understand Unix paths do we convert them to
 Windows paths.
 
 This conversion is done by the `fixpath.sh` tool, which is a small wrapper that
-modifies Unix-style paths to Windows-style paths. The fixpath
-tool is called with the first argument as a sub-command describing the action
-it should take. Available actions are `import`, `exec`, `print` and `verify`.
+modifies Unix-style paths to Windows-style paths. The fixpath tool is called
+with the first argument as a sub-command describing the action it should take.
+Available actions are `import`, `exec`, `print` and `verify`.
 
 * `import` is called at configure time to convert a path given by the user and
   that might be in Windows format to Unix path, which is used internally.
@@ -2087,7 +2087,7 @@ command line arguments refer to paths, and converts those. In some
 circumstances, these heuristics can fail.
 
 If you are having strange build issues related to path conversion, you might
-need to debug how fixpath treats your paths. There are many ways to do this.
+need to debug how fixpath treats your paths. Here are some ways to do this.
 
 One way is to define the environment variable `DEBUG_FIXPATH`, e.g.
 `DEBUG_FIXPATH=1 make jdk`. When set, any call to `fixpath exec` will result in
