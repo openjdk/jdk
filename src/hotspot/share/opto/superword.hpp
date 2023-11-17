@@ -78,7 +78,6 @@ class SuperWord : public ResourceObj {
  private:
   const VLoopAnalyzer  &_vla;
   Arena*          _arena;
-  PhaseIterGVN   &_igvn;
 
   enum consts { top_align = -1, bottom_align = -666 };
 
@@ -101,6 +100,7 @@ class SuperWord : public ResourceObj {
   const VLoopAnalyzer& vla() const      { return _vla; }
   IdealLoopTree* lpt() const            { return vla().lpt(); }
   PhaseIdealLoop* phase() const         { return vla().phase(); }
+  PhaseIterGVN& igvn() const            { return vla().phase()->igvn(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_body(const Node* n) const     { return vla().in_body(n); }
