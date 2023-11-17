@@ -51,7 +51,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
-  _nlist(arena(), 8, 0, nullptr),                           // scratch list of nodes
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -2320,7 +2319,6 @@ bool SuperWord::output() {
         return false; // bailout
       }
 
-      //// _body.at_put(i, vn);
       igvn().register_new_node_with_optimizer(vn);
       phase()->set_ctrl(vn, phase()->get_ctrl(first));
       for (uint j = 0; j < p->size(); j++) {

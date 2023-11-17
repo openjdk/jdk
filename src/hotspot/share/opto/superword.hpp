@@ -89,7 +89,6 @@ class SuperWord : public ResourceObj {
 
   // Scratch pads
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
-  GrowableArray<Node*> _nlist; // List of nodes
 
  public:
   SuperWord(const VLoopAnalyzer &vla);
