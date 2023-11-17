@@ -199,8 +199,8 @@ public class Messages {
         }
 
         static boolean accepts(String opt) {
-            for (AccessLevel g: AccessLevel.values())
-                if (opt.equals(StringUtils.toLowerCase(g.name()))) return true;
+            for (var level: AccessLevel.values())
+                if (opt.equals(StringUtils.toLowerCase(level.name()))) return true;
             return false;
         }
 
@@ -244,7 +244,7 @@ public class Messages {
 
             int sep = arg.indexOf("/");
             if (sep > 0) {
-                AccessLevel al = AccessLevel.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
+                var al = AccessLevel.valueOf(StringUtils.toUpperCase(arg.substring(sep + 1)));
                 setOption(arg.substring(0, sep), al);
             } else {
                 setOption(arg, null);

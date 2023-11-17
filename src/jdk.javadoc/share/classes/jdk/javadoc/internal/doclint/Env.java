@@ -194,18 +194,14 @@ public class Env {
         currElement = trees.getElement(currPath);
         currOverriddenMethods = ((JavacTypes) types).getOverriddenMethods(currElement);
 
-        AccessLevel al = AccessLevel.PUBLIC;
+        var level = AccessLevel.PUBLIC;
         for (TreePath p = path; p != null; p = p.getParentPath()) {
             Element e = trees.getElement(p);
             if (e != null && e.getKind() != ElementKind.PACKAGE && e.getKind() != ElementKind.MODULE) {
-                al = min(al, AccessLevel.of(e.getModifiers()));
+                level = min(level, AccessLevel.of(e.getModifiers()));
             }
         }
-        currAccess = al;
-    }
-
-    AccessLevel getAccessLevel() {
-        return currAccess;
+        currAccess = level;
     }
 
     long getPos(TreePath p) {

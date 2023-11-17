@@ -1199,10 +1199,8 @@ public class ElementsTable {
          * @param options the tool options
          */
         ModifierFilter(ToolOptions options) {
-
-            AccessLevel accessValue = null;
             for (ElementKind kind : ALLOWED_KINDS) {
-                accessValue = switch (kind) {
+                var accessValue = switch (kind) {
                     case METHOD  -> options.showMembersAccess();
                     case CLASS   -> options.showTypesAccess();
                     case PACKAGE -> options.showPackagesAccess();
