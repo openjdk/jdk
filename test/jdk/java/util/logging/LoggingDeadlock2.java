@@ -51,7 +51,6 @@
  * This is a regression test for this bug.
  */
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
@@ -163,7 +162,7 @@ public class LoggingDeadlock2 {
     private static final String classpath =
         System.getProperty("java.class.path");
 
-   private static final List<String> javaChildArgs = Arrays.asList(
+   private static final List<String> javaChildArgs = List.of(
        "-classpath", classpath, "LoggingDeadlock2$JavaChild");
 
     private static class ProcessResults {

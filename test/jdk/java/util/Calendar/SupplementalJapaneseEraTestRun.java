@@ -30,7 +30,6 @@
  * @run testng/othervm SupplementalJapaneseEraTestRun
  */
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -98,7 +97,7 @@ public class SupplementalJapaneseEraTestRun {
 
     private static void testRun(String property, List<String> javaParam)
             throws Throwable {
-        List<String> params = Arrays.asList(
+        List<String> params = List.of(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASS_PATH,
                 "-Djdk.calendar.japanese.supplemental.era=" + property,

@@ -38,7 +38,6 @@
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -75,7 +74,7 @@ public class UnNamedTest {
 
     private static void runCmd() throws Throwable {
         // access resource bundles that are exported private unconditionally.
-        List<String> args = Arrays.asList(
+        List<String> args = List.of(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASSES,
                 "--module-path", MODS_DIR.toString(),
@@ -91,7 +90,7 @@ public class UnNamedTest {
         }
 
         // --add-exports can't open resources
-        List<String> argsWithOpens = Arrays.asList(
+        List<String> argsWithOpens = List.of(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASSES,
                 "--module-path", MODS_DIR.toString(),

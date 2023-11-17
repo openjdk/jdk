@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -135,7 +134,7 @@ public class ModuleTestUtil {
      */
     public static void runModule(String mp, String mn, List<String> localeList)
             throws Throwable {
-        List<String> args = Arrays.asList(
+        List<String> args = List.of(
                 "-ea", "-esa",
                 "-p", mp,
                 "-m", mn);
@@ -161,7 +160,7 @@ public class ModuleTestUtil {
      */
     public static void runModuleWithCp(String cp, String mp, String mn,
             List<String> localeList, boolean expected) throws Throwable {
-        List<String> args = Arrays.asList(
+        List<String> args = List.of(
                 "-ea", "-esa",
                 "-cp", cp,
                 "-p", mp,
@@ -196,7 +195,7 @@ public class ModuleTestUtil {
      */
     public static void runModuleWithLegacyCode(String mp, String mn, List<String> localeList)
             throws Throwable {
-        List<String> args = Arrays.asList(
+        List<String> args = List.of(
                 "-ea", "-esa",
                 "-Djava.locale.useOldISOCodes=true",
                 "-p", mp,
