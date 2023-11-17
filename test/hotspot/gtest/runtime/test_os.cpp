@@ -506,7 +506,7 @@ TEST_VM(os, release_multi_mappings) {
   PRINT_MAPPINGS("B");
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len, false);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
 
   ASSERT_EQ(p2, p_middle_stripes);
 
@@ -562,9 +562,9 @@ TEST_VM(os, release_one_mapping_multi_commits) {
   PRINT_MAPPINGS("A");
   ASSERT_NE(p, (address)nullptr);
 
-  // reserve at border of the region
+  // // make things even more difficult by trying to reserve at the border of the region
   address border = p + num_stripes * stripe_len;
-  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len, false);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len);
   PRINT_MAPPINGS("B");
 
   ASSERT_TRUE(p2 == nullptr || p2 == border);
