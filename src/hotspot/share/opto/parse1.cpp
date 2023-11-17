@@ -1536,7 +1536,10 @@ void Parse::do_one_block() {
     ciMethodData* methodData = method()->method_data();
     if (methodData->is_mature()) {
       ciBitData data = methodData->ex_handler_bci_to_data(block()->start());
-      if (!data.ex_handler_entered() || StressPrunedExceptionHandlers) {
+      bool too_many_traps = C->too_many_traps(method(), block()->start(),
+                                              Deoptimization::Reason_unreached);
+      assert(StressPrunedExceptionHandlers || !too_many_traps, "too many traps. missing profiling somewhere?");
+      if ((!data.ex_handler_entered() && !too_many_traps) || StressPrunedExceptionHandlers) {
         // dead catch block
         // Emit an uncommon trap instead of processing the block.
         set_parse_bci(block()->start());
