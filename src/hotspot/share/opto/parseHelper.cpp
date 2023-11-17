@@ -421,6 +421,22 @@ static void ensure_phi(PhiNode* phi, uint pnum) {
     }
 }
 
+static const Type* initialize_null_field(GraphKit* kit, ciField* field, Node*& val) {
+  assert(val == nullptr, "must been a null field");
+  const Type* type;
+  BasicType bt = field->layout_type();
+
+  if (bt == T_OBJECT && field->type()->is_instance_klass()) {
+    val = kit->gvn().makecon(TypePtr::NULL_PTR);
+    type = TypeInstPtr::make(TypePtr::BotPTR, field->type()->as_instance_klass());
+  } else {
+    val = kit->zerocon(bt);
+    type = Type::get_const_basic_type(bt);
+  }
+
+  return type;
+}
+
 ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* r, int pnum) {
   assert(newin->is_virtual(), "only support VirtualState");
 
@@ -434,22 +450,29 @@ ObjectState& VirtualState::merge(ObjectState* newin, GraphKit* kit, RegionNode* 
 
       if (m != vs->_entries[i]) {
         ciField* field = ik->nonstatic_field_at(i);
-        BasicType bt = field->layout_type();
-        const Type* type = Type::get_const_basic_type(bt);
+        Node* n = vs->_entries[i];
+        const Type* tn;
+        if (n == nullptr) {
+          tn = initialize_null_field(kit, field, n);
+        } else {
+          tn = kit->gvn().type(n);
+        }
 
         if (m == nullptr || !m->is_Phi() || m->in(0) != r) {
+          const Type* type;
+
           if (m == nullptr) {
-            m = kit->zerocon(bt);
+            type = initialize_null_field(kit, field, m);
+          } else {
+            type = kit->gvn().type(m);
           }
+          type = type->meet(tn);
+
           m = PhiNode::make(r, m, type);
           kit->gvn().set_type(m, type);
           _entries[i] = m;
         }
 
-        Node* n = vs->_entries[i];
-        if (n == nullptr) {
-          n = kit->zerocon(bt);
-        }
         ensure_phi(m->as_Phi(), pnum);
         m->set_req(pnum, n);
         if (pnum == 1) {
