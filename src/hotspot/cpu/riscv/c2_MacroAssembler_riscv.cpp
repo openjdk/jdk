@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                  Register tmp2Reg) {
+void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
+                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg) {
   // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -109,7 +109,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "");
     Label slow;
-    lightweight_lock(oop, disp_hdr, tmp, t0, slow);
+    lightweight_lock(oop, disp_hdr, tmp, tmp3Reg, slow);
 
     // Indicate success on completion.
     mv(flag, zr);
@@ -157,8 +157,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                    Register tmp2Reg) {
+void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
+                                    Register tmp1Reg, Register tmp2Reg) {
   // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
