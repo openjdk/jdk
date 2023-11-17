@@ -38,8 +38,7 @@ import java.security.spec.InvalidParameterSpecException;
 public final class SHAKE256 extends SHA3 {
 
     public static class WithoutLen extends SHA3 {
-        public WithoutLen(AlgorithmParameterSpec p)
-                throws InvalidAlgorithmParameterException {
+        public WithoutLen() {
             super("SHAKE256-LEN", 64, (byte) 0x1F, 64);
         }
     }
