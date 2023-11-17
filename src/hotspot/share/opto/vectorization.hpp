@@ -89,7 +89,6 @@ public:
     return head;
   };
 
-
   bool in_body(const Node* n) const {
     // TODO refactor to allow cfg. See counter example with
     // nodes on backedge but backedge has no additional outputs
@@ -99,6 +98,11 @@ public:
     // const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
     // assert((ctrl == _cl) == (_phase->get_loop((Node*)ctrl) == _lpt), "WIP");
     // return _phase->get_loop((Node*)ctrl) == _lpt;
+  }
+
+  // Do we have to enforce strict alignment criteria on this platform?
+  static bool vectors_must_be_aligned() {
+   return !Matcher::misaligned_vectors_ok() || AlignVector;
   }
 
   // Check if the loop passes some basic preconditions for vectorization.

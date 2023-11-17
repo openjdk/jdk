@@ -514,12 +514,12 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
-// If strict memory alignment is required (vectors_should_be_aligned), then check if
-// mem_ref is aligned with best_align_to_mem_ref.
+// If strict memory alignment is required (VLoop::vectors_must_be_aligned),
+// then check if mem_ref is aligned with best_align_to_mem_ref.
 bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, VPointer& align_to_ref_p,
                                                    MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                                    Node_List &align_to_refs) {
-  if (!vectors_should_be_aligned()) {
+  if (!VLoop::vectors_must_be_aligned()) {
     // Alignment is not required by the hardware. No violation possible.
     return true;
   }
@@ -569,7 +569,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
     VPointer p1(s1, vla());
     // Only discard unalignable memory references if vector memory references
     // should be aligned on this platform.
-    if (vectors_should_be_aligned() && !ref_is_alignable(p1)) {
+    if (VLoop::vectors_must_be_aligned() && !ref_is_alignable(p1)) {
       *cmp_ct.adr_at(i) = 0;
       continue;
     }
@@ -797,7 +797,8 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
     // iv_adjustment_in_bytes must be a multiple of elt_size if vector memory
     // references should be aligned on this platform.
-    assert((ABS(iv_adjustment_in_bytes) % elt_size) == 0 || !vectors_should_be_aligned(),
+    assert((ABS(iv_adjustment_in_bytes) % elt_size) == 0 ||
+           !VLoop::vectors_must_be_aligned(),
            "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {

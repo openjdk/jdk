@@ -101,6 +101,7 @@ class SuperWord : public ResourceObj {
   PhaseIdealLoop* phase() const         { return vla().phase(); }
   PhaseIterGVN& igvn() const            { return vla().phase()->igvn(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
+  int iv_stride() const                 { return cl()->stride_con(); }
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_body(const Node* n) const     { return vla().in_body(n); }
 
@@ -167,8 +168,6 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return _arena; }
 
-  int iv_stride() const            { return cl()->stride_con(); }
-
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
     return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
@@ -183,9 +182,6 @@ class SuperWord : public ResourceObj {
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
-
-  // should we align vector memory references on this platform?
-  bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
   // memory alignment for a node
   int alignment(Node* n) const               { return _node_info.adr_at(body_idx(n))->_alignment; }
