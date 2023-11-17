@@ -516,14 +516,14 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
         while (mark.is_unlocked()) {
           // Try to swing into 'fast-locked' state.
           assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
-          const markWord new_mark = mark.set_fast_locked();
-          const markWord old_mark = mark;
-          mark = obj()->cas_set_mark(new_mark, old_mark);
+          const markWord locked_mark = mark.set_fast_locked();
+          const markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
           if (old_mark == mark) {
             // Successfully fast-locked, push object to lock-stack and return.
             lock_stack.push(obj());
             return;
           }
+          mark = old_mark;
         }
       }
       // All other paths fall-through to inflate-enter.
@@ -574,13 +574,13 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast-locking does not use the 'lock' argument.
       while (mark.is_fast_locked()) {
-        const markWord new_mark = mark.set_unlocked();
-        const markWord old_mark = mark;
-        mark = object->cas_set_mark(new_mark, old_mark);
+        const markWord unlocked_mark = mark.set_fast_locked();
+        const markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
         if (old_mark == mark) {
           current->lock_stack().remove(object);
           return;
         }
+        mark = old_mark;
       }
     } else if (LockingMode == LM_LEGACY) {
       markWord dhw = lock->displaced_header();
