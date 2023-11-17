@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "awt.h"
 #include "awt_Component.h"
 #include "awt_Toolkit.h"
-#include <java_awt_KeyboardFocusManager.h>
 #include <jni.h>
 
 static jobject getNativeFocusState(JNIEnv *env, void*(*ftn)()) {
@@ -41,17 +40,6 @@ static jobject getNativeFocusState(JNIEnv *env, void*(*ftn)()) {
 }
 
 extern "C" {
-
-/*
- * Class:     java_awt_KeyboardFocusManager
- * Method:    initIDs
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_java_awt_KeyboardFocusManager_initIDs
-    (JNIEnv *env, jclass cls)
-{
-}
 
 /*
  * Class:     sun_awt_windows_WKeyboardFocusManagerPeer

@@ -39,7 +39,7 @@ technical expertise, a fair number of dependencies on external software, and
 reasonably powerful hardware.
 
 If you just want to use the JDK and not build it yourself, this document is not
-for you. See for instance [OpenJDK installation](http://openjdk.org/install)
+for you. See for instance [OpenJDK installation](https://openjdk.org/install)
 for some methods of installing a prebuilt JDK.
 
 ## Getting the Source Code
@@ -213,7 +213,7 @@ Note: The Windows 32-bit x86 port is deprecated and may be removed in a future r
 
 #### Cygwin
 
-Install [Cygwin](http://www.cygwin.com/) as instructed on the home page. It is
+Install [Cygwin](https://www.cygwin.com/) as instructed on the home page. It is
 strongly recommended to use the 64-bit version of Cygwin.
 
 **Note:** Cygwin has a model of continuously updating all packages without any
@@ -366,11 +366,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
-| Operating system   | Toolchain version                          |
-| ------------------ | ------------------------------------------ |
-| Linux              | gcc 11.2.0                                 |
-| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)    |
-| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
+| Operating system   | Toolchain version                           |
+| ------------------ | ------------------------------------------- |
+| Linux              | gcc 13.2.0                                  |
+| macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
+| Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
 
 All compilers are expected to be able to handle the C11 language standard for
 C, and C++14 for C++.
@@ -380,7 +380,7 @@ C, and C++14 for C++.
 The minimum accepted version of gcc is 6.0. Older versions will not be
 accepted by `configure`.
 
-The JDK is currently known to be able to compile with at least version 11.2 of
+The JDK is currently known to be able to compile with at least version 13.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -493,7 +493,7 @@ include directory and the lib directory separately.
 
 ### FreeType
 
-FreeType2 from [The FreeType Project](http://www.freetype.org/) is not required
+FreeType2 from [The FreeType Project](https://www.freetype.org/) is not required
 on any platform. The exception is on Unix-based platforms when configuring such
 that the build artifacts will reference a system installed library,
 rather than bundling the JDK's own copy.
@@ -510,7 +510,7 @@ if `configure` does not automatically locate the platform FreeType files.
 
 ### Fontconfig
 
-Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
+Fontconfig from [freedesktop.org Fontconfig](https://fontconfig.org) is required
 on all platforms except Windows and macOS.
 
 * To install on an apt-based Linux, try running `sudo apt-get install
@@ -523,7 +523,7 @@ if `configure` does not automatically locate the platform Fontconfig files.
 
 ### CUPS
 
-CUPS, [Common UNIX Printing System](http://www.cups.org) header files are
+CUPS, [Common UNIX Printing System](https://www.cups.org) header files are
 required on all platforms, except Windows. Often these files are provided by
 your operating system.
 
@@ -538,7 +538,7 @@ files.
 
 ### X11
 
-Certain [X11](http://www.x.org/) libraries and include files are required on
+Certain [X11](https://www.x.org/) libraries and include files are required on
 Linux.
 
 * To install on an apt-based Linux, try running `sudo apt-get install
@@ -567,7 +567,7 @@ files.
 ### libffi
 
 libffi, the [Portable Foreign Function Interface Library](
-http://sourceware.org/libffi) is required when building the Zero version of
+https://sourceware.org/libffi) is required when building the Zero version of
 Hotspot.
 
 * To install on an apt-based Linux, try running `sudo apt-get install
@@ -583,7 +583,7 @@ files.
 
 ### Autoconf
 
-The JDK build requires [Autoconf](http://www.gnu.org/software/autoconf) on all
+The JDK build requires [Autoconf](https://www.gnu.org/software/autoconf) on all
 platforms. At least version 2.69 is required.
 
 * To install on an apt-based Linux, try running `sudo apt-get install
@@ -604,7 +604,7 @@ AUTOCONF=<path to autoconf> configure ...
 
 ### GNU Make
 
-The JDK build requires [GNU Make](http://www.gnu.org/software/make). No other
+The JDK build requires [GNU Make](https://www.gnu.org/software/make). No other
 flavors of make are supported.
 
 At least version 3.81 of GNU Make must be used. For distributions supporting
@@ -626,7 +626,7 @@ configure variable, e.g. `configure MAKE=/opt/gnu/make`.
 
 ### GNU Bash
 
-The JDK build requires [GNU Bash](http://www.gnu.org/software/bash). No other
+The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
@@ -907,7 +907,7 @@ Suggestions for Advanced Users](#hints-and-suggestions-for-advanced-users) and
 
 ## Running Tests
 
-Most of the JDK tests are using the [JTReg](http://openjdk.org/jtreg)
+Most of the JDK tests are using the [JTReg](https://openjdk.org/jtreg)
 test framework. Make sure that your configuration knows where to find your
 installation of JTReg. If this is not picked up automatically, use the
 `--with-jtreg=<path to jtreg home>` option to point to the JTReg framework.
@@ -1263,7 +1263,7 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     --resolve-deps \
     buster \
     ~/sysroot-arm64 \
-    http://httpredir.debian.org/debian/
+    https://httpredir.debian.org/debian/
   ```
 
   If the target architecture is `riscv64`, the path should be `debian-ports`
@@ -1474,7 +1474,7 @@ You can experiment by disabling pre-compiled headers using
 
 ### Icecc / icecream
 
-[icecc/icecream](http://github.com/icecc/icecream) is a simple way to setup a
+[icecc/icecream](https://github.com/icecc/icecream) is a simple way to setup a
 distributed compiler network. If you have multiple machines available for
 building the JDK, you can drastically cut individual build times by utilizing
 it.
@@ -2205,7 +2205,7 @@ To analyze build performance, run with `LOG=trace` and check `$BUILD/build-trace
 Use `JOBS=1` to avoid parallelism.
 
 Please check that you adhere to the [Code Conventions for the Build System](
-http://openjdk.org/groups/build/doc/code-conventions.html) before
+https://openjdk.org/groups/build/doc/code-conventions.html) before
 submitting patches.
 
 ## Contributing to the JDK

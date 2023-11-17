@@ -25,23 +25,24 @@
  * @test
  * @bug 8186046 8195694
  * @summary Test dynamic constant bootstraps
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng ConstantBootstrapsTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 ConstantBootstrapsTest
  */
 
-import jdk.experimental.bytecode.PoolHelper;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
-import java.lang.invoke.ConstantBootstraps;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandleInfo;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
-import java.lang.invoke.WrongMethodTypeException;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.invoke.*;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
@@ -61,13 +62,11 @@ public class ConstantBootstrapsTest {
 
     public void testNullConstant() throws Throwable {
         var handle = InstructionHelper.ldcDynamicConstant(L, "_", Object.class,
-                                                          ConstantBootstraps.class, "nullConstant", lookupMT(Object.class),
-                                                          S -> {});
+                ConstantBootstraps.class, "nullConstant", lookupMT(Object.class));
         assertNull(handle.invoke());
 
         handle = InstructionHelper.ldcDynamicConstant(L, "_", MethodType.class,
-                                                      ConstantBootstraps.class, "nullConstant", lookupMT(Object.class),
-                                                      S -> {});
+                ConstantBootstraps.class, "nullConstant", lookupMT(Object.class));
         assertNull(handle.invoke());
     }
 
@@ -92,8 +91,7 @@ public class ConstantBootstrapsTest {
 
         for (var desc : pm.keySet()) {
             var handle = InstructionHelper.ldcDynamicConstant(L, desc, Class.class,
-                                                              ConstantBootstraps.class, "primitiveClass", lookupMT(Class.class),
-                                                              S -> {});
+                    ConstantBootstraps.class, "primitiveClass", lookupMT(Class.class));
             assertEquals(handle.invoke(), pm.get(desc));
         }
     }
@@ -127,8 +125,7 @@ public class ConstantBootstrapsTest {
     public void testEnumConstant() throws Throwable {
         for (var v : StackWalker.Option.values()) {
             var handle = InstructionHelper.ldcDynamicConstant(L, v.name(), StackWalker.Option.class,
-                                                              ConstantBootstraps.class, "enumConstant", lookupMT(Enum.class),
-                                                              S -> { });
+                    ConstantBootstraps.class, "enumConstant", lookupMT(Enum.class));
             assertEquals(handle.invoke(), v);
         }
     }
@@ -141,21 +138,19 @@ public class ConstantBootstrapsTest {
 
     public void testGetStaticDecl() throws Throwable {
         var handle = InstructionHelper.ldcDynamicConstant(L, "TYPE", Class.class,
-                                                          ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class, Class.class),
-                                                          S -> { S.add("java/lang/Integer", PoolHelper::putClass); });
+                ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class, Class.class),
+                InstructionHelper.classDesc(Integer.class));
         assertEquals(handle.invoke(), int.class);
     }
 
     public void testGetStaticSelf() throws Throwable {
         var handle = InstructionHelper.ldcDynamicConstant(L, "MAX_VALUE", int.class,
-                                                          ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class),
-                                                          S -> { });
+                ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class));
         assertEquals(handle.invoke(), Integer.MAX_VALUE);
 
 
         handle = InstructionHelper.ldcDynamicConstant(L, "ZERO", BigInteger.class,
-                                                      ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class),
-                                                      S -> { });
+                ConstantBootstraps.class, "getStaticFinal", lookupMT(Object.class));
         assertEquals(handle.invoke(), BigInteger.ZERO);
     }
 
@@ -164,14 +159,10 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "_", List.class,
                 ConstantBootstraps.class, "invoke", lookupMT(Object.class, MethodHandle.class, Object[].class),
-                S -> {
-                    S.add("", (P, Z) -> {
-                        return P.putHandle(MethodHandleInfo.REF_invokeStatic, "java/util/List", "of",
-                                           MethodType.methodType(List.class, Object[].class).toMethodDescriptorString(),
-                                           true);
-                    });
-                    S.add(1).add(2).add(3).add(4);
-                });
+                MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, ConstantDescs.CD_List, "of",
+                        MethodType.methodType(List.class, Object[].class).toMethodDescriptorString()),
+                1, 2, 3, 4
+        );
         assertEquals(handle.invoke(), List.of(1, 2, 3, 4));
     }
 
@@ -179,14 +170,10 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "_", int.class,
                 ConstantBootstraps.class, "invoke", lookupMT(Object.class, MethodHandle.class, Object[].class),
-                S -> {
-                    S.add("", (P, Z) -> {
-                        return P.putHandle(MethodHandleInfo.REF_invokeStatic, "java/lang/Integer", "valueOf",
-                                           MethodType.methodType(Integer.class, String.class).toMethodDescriptorString(),
-                                           false);
-                    });
-                    S.add("42");
-                });
+                MethodHandleDesc.of(DirectMethodHandleDesc.Kind.STATIC, ConstantDescs.CD_Integer, "valueOf",
+                        MethodType.methodType(Integer.class, String.class).toMethodDescriptorString()),
+                "42"
+        );
         assertEquals(handle.invoke(), 42);
     }
 
@@ -195,29 +182,25 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "_", Collection.class,
                 ConstantBootstraps.class, "invoke", lookupMT(Object.class, MethodHandle.class, Object[].class),
-                S -> {
-                    S.add("", (P, Z) -> {
-                        return P.putHandle(MethodHandleInfo.REF_invokeStatic, "java/util/List", "of",
-                                           MethodType.methodType(List.class, Object[].class).toMethodDescriptorString(),
-                                           true);
-                    });
-                    S.add(1).add(2).add(3).add(4);
-                });
+                MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_STATIC, ConstantDescs.CD_List, "of",
+                        MethodType.methodType(List.class, Object[].class).toMethodDescriptorString()),
+                1, 2, 3, 4
+        );
         assertEquals(handle.invoke(), List.of(1, 2, 3, 4));
     }
 
     @Test(expectedExceptions = ClassCastException.class)
     public void testInvokeAsTypeClassCast() throws Throwable {
         ConstantBootstraps.invoke(MethodHandles.lookup(), "_", String.class,
-                                  MethodHandles.lookup().findStatic(Integer.class, "valueOf", MethodType.methodType(Integer.class, String.class)),
-                                  "42");
+                MethodHandles.lookup().findStatic(Integer.class, "valueOf", MethodType.methodType(Integer.class, String.class)),
+                "42");
     }
 
     @Test(expectedExceptions = WrongMethodTypeException.class)
     public void testInvokeAsTypeWrongReturnType() throws Throwable {
         ConstantBootstraps.invoke(MethodHandles.lookup(), "_", short.class,
-                                  MethodHandles.lookup().findStatic(Integer.class, "parseInt", MethodType.methodType(int.class, String.class)),
-                                  "42");
+                MethodHandles.lookup().findStatic(Integer.class, "parseInt", MethodType.methodType(int.class, String.class)),
+                "42");
     }
 
 
@@ -230,10 +213,9 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "f", VarHandle.class,
                 ConstantBootstraps.class, "fieldVarHandle", lookupMT(VarHandle.class, Class.class, Class.class),
-                S -> {
-                    S.add(X.class.getName().replace('.', '/'), PoolHelper::putClass).
-                            add("java/lang/String", PoolHelper::putClass);
-                });
+                InstructionHelper.classDesc(X.class),
+                InstructionHelper.classDesc(String.class)
+        );
 
         var vhandle = (VarHandle) handle.invoke();
         assertEquals(vhandle.varType(), String.class);
@@ -244,10 +226,9 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "sf", VarHandle.class,
                 ConstantBootstraps.class, "staticFieldVarHandle", lookupMT(VarHandle.class, Class.class, Class.class),
-                S -> {
-                    S.add(X.class.getName().replace('.', '/'), PoolHelper::putClass).
-                            add("java/lang/String", PoolHelper::putClass);
-                });
+                InstructionHelper.classDesc(X.class),
+                InstructionHelper.classDesc(String.class)
+        );
 
         var vhandle = (VarHandle) handle.invoke();
         assertEquals(vhandle.varType(), String.class);
@@ -258,9 +239,8 @@ public class ConstantBootstrapsTest {
         var handle = InstructionHelper.ldcDynamicConstant(
                 L, "_", VarHandle.class,
                 ConstantBootstraps.class, "arrayVarHandle", lookupMT(VarHandle.class, Class.class),
-                S -> {
-                    S.add(String[].class.getName().replace('.', '/'), PoolHelper::putClass);
-                });
+                InstructionHelper.classDesc(String[].class)
+        );
 
         var vhandle = (VarHandle) handle.invoke();
         assertEquals(vhandle.varType(), String.class);
