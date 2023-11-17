@@ -415,7 +415,12 @@ private:
   void compute_max_depth();
 };
 
-// TODO
+// Compute necessary vector element type for expressions
+// This propagates backwards a narrower integer type when the
+// upper bits of the value are not needed.
+// Example:  char a,b,c;  a = b + c;
+// Normally the type of the add is integer, but for packed character
+// operations the type of the add needs to be char.
 class VLoopTypes : public StackObj {
 private:
   const VLoop& _vloop;
@@ -443,12 +448,31 @@ public:
   void print() const;
 #endif
 
-  // Depth in graph (DAG). Used to prune search paths.
   const Type* velt_type(Node* n) const {
     assert(_vloop.in_body(n), "only call on nodes in loop");
     const Type* t = _velt_type.at(_body.body_idx(n));
     assert(t != nullptr, "must have type");
     return t;
+  }
+
+  BasicType velt_basic_type(Node* n) const {
+    return velt_type(n)->array_element_basic_type();
+  }
+
+  int data_size(Node* s) const {
+    int bsize = type2aelembytes(velt_basic_type(s));
+    assert(bsize != 0, "valid size");
+    return bsize;
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    const Type* vt1 = velt_type(n1);
+    const Type* vt2 = velt_type(n2);
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer types.
+      return data_size(n1) == data_size(n2);
+    }
+    return vt1 == vt2;
   }
 
 private:

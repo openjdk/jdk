@@ -1514,7 +1514,84 @@ void VLoopTypes::compute_vector_element_type() {
     set_velt_type(n, container_type(n));
   }
 
-  // TODO continue here!
+  // Propagate integer narrowed type backwards through operations
+  // that don't depend on higher order bits
+  for (int i = _body.body().length() - 1; i >= 0; i--) {
+    Node* n = _body.body().at(i);
+    // Only integer types need be examined
+    const Type* vtn = velt_type(n);
+    if (vtn->basic_type() == T_INT) {
+      uint start, end;
+      VectorNode::vector_operands(n, &start, &end);
+
+      for (uint j = start; j < end; j++) {
+        Node* in  = n->in(j);
+        // Don't propagate through a memory
+        if (!in->is_Mem() &&
+            _vloop.in_body(in) &&
+            velt_type(in)->basic_type() == T_INT &&
+            data_size(n) < data_size(in)) {
+          bool same_type = true;
+          for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
+            Node* use = in->fast_out(k);
+            if (!_vloop.in_body(use) || !same_velt_type(use, n)) {
+              same_type = false;
+              break;
+            }
+          }
+          if (same_type) {
+            // In any Java arithmetic operation, operands of small integer types
+            // (boolean, byte, char & short) should be promoted to int first.
+            // During narrowed integer type backward propagation, for some operations
+            // like RShiftI, Abs, and ReverseBytesI,
+            // the compiler has to know the higher order bits of the 1st operand,
+            // which will be lost in the narrowed type. These operations shouldn't
+            // be vectorized if the higher order bits info is imprecise.
+            const Type* vt = vtn;
+            int op = in->Opcode();
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
+              Node* load = in->in(1);
+              if (load->is_Load() &&
+                  _vloop.in_body(load) &&
+                  velt_type(load)->basic_type() == T_INT) {
+                // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
+                // (LoadUS/LoadUB) values. Store nodes only have one version.
+                vt = velt_type(load);
+              } else if (op != Op_LShiftI) {
+                // Widen type to int to avoid the creation of vector nodes. Note
+                // that left shifts work regardless of the signedness.
+                vt = TypeInt::INT;
+              }
+            }
+            set_velt_type(in, vt);
+          }
+        }
+      }
+    }
+  }
+
+  // Look for pattern: Bool -> Cmp -> x.
+  // Propagate type down to Cmp and Bool.
+  // If this gets vectorized, the bit-mask
+  // has the same size as the compared values.
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    Node* nn = n;
+    if (nn->is_Bool() && nn->in(0) == nullptr) {
+      nn = nn->in(1);
+      assert(nn->is_Cmp(), "always have Cmp above Bool");
+    }
+    if (nn->is_Cmp() && nn->in(0) == nullptr) {
+      assert(_vloop.in_body(nn->in(1)) ||
+             _vloop.in_body(nn->in(2)),
+             "one of the inputs must be in the loop too");
+      if (_vloop.in_body(nn->in(1))) {
+        set_velt_type(n, velt_type(nn->in(1)));
+      } else {
+        set_velt_type(n, velt_type(nn->in(2)));
+      }
+    }
+  }
 
 #ifndef PRODUCT
   if (TraceSuperWord && Verbose) {

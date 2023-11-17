@@ -65,10 +65,9 @@ class VPointer;
 class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
-  const Type* _velt_type; // vector element type
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _velt_type(nullptr), _my_pack(nullptr) {}
+  SWNodeInfo() : _alignment(-1), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -99,20 +98,47 @@ class SuperWord : public ResourceObj {
 
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
 
+  // VLoopAnalyzer
   const VLoopAnalyzer& vla() const      { return _vla; }
   IdealLoopTree* lpt() const            { return vla().lpt(); }
   PhaseIdealLoop* phase() const         { return vla().phase(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
   PhiNode* iv() const                   { return vla().iv(); }
   bool in_body(const Node* n) const     { return vla().in_body(n); }
-  bool is_marked_reduction(const Node* n) const { return vla().reductions().is_marked_reduction(n); }
-  const GrowableArray<Node*>& body() const { return vla().body().body(); }
-  int body_idx(const Node* n) const     { return vla().body().body_idx(n); }
-  bool independent(Node* s1, Node* s2) const {
-    return vla().dependence_graph().independent(s1, s2);
+
+  // VLoopAnalyzer reductions
+  bool is_marked_reduction(const Node* n) const {
+    return vla().reductions().is_marked_reduction(n);
   }
   bool reduction(Node* s1, Node* s2) const {
     return vla().reductions().is_marked_reduction_pair(s1, s2);
+  }
+
+  // VLoopAnalyzer body
+  const GrowableArray<Node*>& body() const {
+    return vla().body().body();
+  }
+  int body_idx(const Node* n) const     {
+    return vla().body().body_idx(n);
+  }
+
+  // VLoopAnalyzer dependence graph
+  bool independent(Node* s1, Node* s2) const {
+    return vla().dependence_graph().independent(s1, s2);
+  }
+
+  // VLoopAnalyzer vector element type
+  const Type* velt_type(Node* n) const {
+    return vla().types().velt_type(n);
+  }
+  BasicType velt_basic_type(Node* n) const {
+    return vla().types().velt_basic_type(n);
+  }
+  bool same_velt_type(Node* n1, Node* n2) const {
+    return vla().types().same_velt_type(n1, n2);
+  }
+  int data_size(Node* n) const {
+    return vla().types().data_size(n);
   }
 
 #ifndef PRODUCT
@@ -168,11 +194,7 @@ class SuperWord : public ResourceObj {
   int alignment(Node* n) const               { return _node_info.adr_at(body_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
-  // vector element type
-  const Type* velt_type(Node* n)             { return _node_info.adr_at(body_idx(n))->_velt_type; }
-  BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
-  void set_velt_type(Node* n, const Type* t) { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
-  bool same_velt_type(Node* n1, Node* n2);
+  // TODO move!
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
@@ -223,7 +245,6 @@ class SuperWord : public ResourceObj {
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   void set_alignment(Node* s1, Node* s2, int align);
-  int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
   void extend_packlist();
   int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
@@ -270,8 +291,6 @@ class SuperWord : public ResourceObj {
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
-  // Compute necessary vector element type for expressions
-  void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?
   bool in_packset(Node* s1, Node* s2);
   // Remove the pack at position pos in the packset
@@ -279,8 +298,6 @@ class SuperWord : public ResourceObj {
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
-  // Smallest type containing range of values
-  const Type* container_type(Node* n);
   // Adjust pre-loop limit so that in main loop, a load/store reference
   // to align_to_ref will be a position zero in the vector.
   void align_initial_loop_index(MemNode* align_to_ref);

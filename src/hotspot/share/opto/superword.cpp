@@ -324,9 +324,6 @@ bool SuperWord::SLP_extract() {
 
   initialize_bb();
 
-  // Compute vector element types
-  compute_vector_element_type();
-
   // Attempt vectorization
   find_adjacent_refs();
 
@@ -977,13 +974,6 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   } else {
     set_alignment(s2, align + data_size(s1));
   }
-}
-
-//------------------------------data_size---------------------------
-int SuperWord::data_size(Node* s) {
-  int bsize = type2aelembytes(velt_basic_type(s));
-  assert(bsize != 0, "valid size");
-  return bsize;
 }
 
 //------------------------------extend_packlist---------------------------
@@ -2548,7 +2538,6 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn._worklist.push(def);
 
     assert(false, "TODO is this dead code?");
-    set_velt_type(ex, velt_type(def));
   }
 }
 
@@ -2685,109 +2674,6 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   return max < 2 ? Matcher::superword_max_vector_size(bt) : max;
 }
 
-//-------------------------compute_vector_element_type-----------------------
-// Compute necessary vector element type for expressions
-// This propagates backwards a narrower integer type when the
-// upper bits of the value are not needed.
-// Example:  char a,b,c;  a = b + c;
-// Normally the type of the add is integer, but for packed character
-// operations the type of the add needs to be char.
-void SuperWord::compute_vector_element_type() {
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("\ncompute_velt_type:");
-  }
-
-  // Initial type
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
-    set_velt_type(n, container_type(n));
-  }
-
-  // Propagate integer narrowed type backwards through operations
-  // that don't depend on higher order bits
-  for (int i = body().length() - 1; i >= 0; i--) {
-    Node* n = body().at(i);
-    // Only integer types need be examined
-    const Type* vtn = velt_type(n);
-    if (vtn->basic_type() == T_INT) {
-      uint start, end;
-      VectorNode::vector_operands(n, &start, &end);
-
-      for (uint j = start; j < end; j++) {
-        Node* in  = n->in(j);
-        // Don't propagate through a memory
-        if (!in->is_Mem() &&
-            in_body(in) &&
-            velt_type(in)->basic_type() == T_INT &&
-            data_size(n) < data_size(in)) {
-          bool same_type = true;
-          for (DUIterator_Fast kmax, k = in->fast_outs(kmax); k < kmax; k++) {
-            Node *use = in->fast_out(k);
-            if (!in_body(use) || !same_velt_type(use, n)) {
-              same_type = false;
-              break;
-            }
-          }
-          if (same_type) {
-            // In any Java arithmetic operation, operands of small integer types
-            // (boolean, byte, char & short) should be promoted to int first.
-            // During narrowed integer type backward propagation, for some operations
-            // like RShiftI, Abs, and ReverseBytesI,
-            // the compiler has to know the higher order bits of the 1st operand,
-            // which will be lost in the narrowed type. These operations shouldn't
-            // be vectorized if the higher order bits info is imprecise.
-            const Type* vt = vtn;
-            int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
-              Node* load = in->in(1);
-              if (load->is_Load() &&
-                  in_body(load) &&
-                  velt_type(load)->basic_type() == T_INT) {
-                // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
-                // (LoadUS/LoadUB) values. Store nodes only have one version.
-                vt = velt_type(load);
-              } else if (op != Op_LShiftI) {
-                // Widen type to int to avoid the creation of vector nodes. Note
-                // that left shifts work regardless of the signedness.
-                vt = TypeInt::INT;
-              }
-            }
-            set_velt_type(in, vt);
-          }
-        }
-      }
-    }
-  }
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
-    Node* nn = n;
-    if (nn->is_Bool() && nn->in(0) == nullptr) {
-      nn = nn->in(1);
-      assert(nn->is_Cmp(), "always have Cmp above Bool");
-    }
-    if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      assert(in_body(nn->in(1)) ||
-             in_body(nn->in(2)),
-             "one of the inputs must be in the loop too");
-      if (in_body(nn->in(1))) {
-        set_velt_type(n, velt_type(nn->in(1)));
-      } else {
-        set_velt_type(n, velt_type(nn->in(2)));
-      }
-    }
-  }
-#ifndef PRODUCT
-  if (TraceSuperWord && Verbose) {
-    for (int i = 0; i < body().length(); i++) {
-      Node* n = body().at(i);
-      velt_type(n)->dump();
-      tty->print("\t");
-      n->dump();
-    }
-  }
-#endif
-}
-
 //------------------------------memory_alignment---------------------------
 // Alignment within a vector memory reference
 int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
@@ -2816,44 +2702,6 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   }
 #endif
   return off_mod;
-}
-
-//---------------------------container_type---------------------------
-// Smallest type containing range of values
-const Type* SuperWord::container_type(Node* n) {
-  if (n->is_Mem()) {
-    BasicType bt = n->as_Mem()->memory_type();
-    if (n->is_Store() && (bt == T_CHAR)) {
-      // Use T_SHORT type instead of T_CHAR for stored values because any
-      // preceding arithmetic operation extends values to signed Int.
-      bt = T_SHORT;
-    }
-    if (n->Opcode() == Op_LoadUB) {
-      // Adjust type for unsigned byte loads, it is important for right shifts.
-      // T_BOOLEAN is used because there is no basic type representing type
-      // TypeInt::UBYTE. Use of T_BOOLEAN for vectors is fine because only
-      // size (one byte) and sign is important.
-      bt = T_BOOLEAN;
-    }
-    return Type::get_const_basic_type(bt);
-  }
-  const Type* t = _igvn.type(n);
-  if (t->basic_type() == T_INT) {
-    // A narrow type of arithmetic operations will be determined by
-    // propagating the type of memory operations.
-    return TypeInt::INT;
-  }
-  return t;
-}
-
-bool SuperWord::same_velt_type(Node* n1, Node* n2) {
-  const Type* vt1 = velt_type(n1);
-  const Type* vt2 = velt_type(n2);
-  if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
-    // Compare vectors element sizes for integer types.
-    return data_size(n1) == data_size(n2);
-  }
-  return vt1 == vt2;
 }
 
 bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
