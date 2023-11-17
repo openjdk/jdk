@@ -57,11 +57,8 @@ address StubRoutines::riscv::_method_entry_barrier = nullptr;
 
 ATTRIBUTE_ALIGNED(64) const jint StubRoutines::riscv::_arrays_hashcode_powers_of_31[] =
 {
-         923521, // 0x000E1781
-          29791, // 0x0000745F
-            961, // 0x000003C1
-             31, // 0x0000001F
-              1, // 0x00000001
+         923521, // 31^^4 (0x000E1781)
+          29791, // 31^^3 (0x0000745F)
 };
 
 bool StubRoutines::riscv::_completed = false;

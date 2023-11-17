@@ -1491,8 +1491,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
 
   beqz(cnt, DONE);
 
-  lw(pow31_2, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                              + 2 * sizeof(jint))); // [31^^2]
+  mv(pow31_2, 961); // [31^^2]
 
   andi(chunks, cnt, ~(stride-1));
   beqz(chunks, TAIL);
