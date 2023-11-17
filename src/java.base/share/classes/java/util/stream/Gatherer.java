@@ -257,6 +257,10 @@ public interface Gatherer<T, A, R> {
      * Returns a composed Gatherer which connects the output of this Gatherer
      * to the input of that Gatherer.
      *
+     * @implSpec The implementation in this interface returns a new Gatherer
+     *           which is semantically equivalent to the combination of
+     *           {@code this} and {@code that} gatherer.
+     *
      * @param that the other gatherer
      * @param <RR> The type of output of that Gatherer
      * @throws NullPointerException if the argument is {@code null}
@@ -504,7 +508,7 @@ public interface Gatherer<T, A, R> {
          * @apiNote This is best-effort only, once this returns {@code true} it
          * should never return {@code false} again for the same instance.
          *
-         * @implSpec By default this method returns {@code false}.
+         * @implSpec The implementation in this interface returns {@code false}.
          *
          * @return {@code true} if this Downstream is known not to want any
          *         more elements sent to it, {@code false} if otherwise

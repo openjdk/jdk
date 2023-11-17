@@ -93,6 +93,35 @@ public class GathererAPITest {
     }
 
     @Test
+    public void testGathererDefaults() {
+        final Gatherer.Integrator<Void,Void,Void> expectedIntegrator =
+                (a,b,c) -> false;
+
+        class Test implements Gatherer<Void,Void,Void> {
+            @Override
+            public Integrator<Void, Void, Void> integrator() {
+                return expectedIntegrator;
+            }
+        }
+
+        var t = new Test();
+        assertSame(Gatherer.<Void>defaultInitializer(), t.initializer());
+        assertSame(expectedIntegrator, t.integrator());
+        assertSame(Gatherer.<Void>defaultCombiner(), t.combiner());
+        assertSame(Gatherer.<Void,Gatherer.Downstream<? super Void>>defaultFinisher(), t.finisher());
+    }
+
+    @Test
+    public void testDownstreamDefaults() {
+        class Test implements Gatherer.Downstream<Void> {
+            @Override public boolean push(Void v) { return false; }
+        }
+
+        var t = new Test();
+        assertEquals(false, t.isRejecting());
+    }
+
+    @Test
     public void testGathererFactoriesNPE() {
         assertThrows(NullPointerException.class,
                 () -> Gatherer.of(nullInitializer, integrator, combiner, finisher));
