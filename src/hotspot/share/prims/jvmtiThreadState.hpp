@@ -231,7 +231,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
-  static bool _seen_interp_only_mode; // needed for optimization
+  static bool _seen_interp_only_mode; // interp_only_mode was requested once
 
  public:
   ~JvmtiThreadState();
@@ -252,9 +252,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static void periodic_clean_up();
 
-  // JvmtiThreadState objects for virtual thread filtered events enabled globally
-  // must be created eagerly if the interp_only_mode is enabled. Otherwise,
-  // it is an important optimization to create JvmtiThreadState objects lazily.
+  // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
   static bool seen_interp_only_mode() {
     return _seen_interp_only_mode;
   }

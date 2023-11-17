@@ -527,20 +527,18 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
 
-  // JvmtiThreadState objects for virtual thread filtered events enabled globally
-  // must be created eagerly if the interp_only_mode is enabled. Otherwise,
+  // If interp_only_mode is enabled then we must eagerly create JvmtiThreadState
+  // objects for globally enabled virtual thread filtered events. Otherwise,
   // it is an important optimization to create JvmtiThreadState objects lazily.
   if (JvmtiThreadState::seen_interp_only_mode()) {
     JvmtiEventController::thread_started(thread);
   }
-  if (JvmtiExport::can_support_virtual_threads()) {
-    if (JvmtiExport::should_post_vthread_start()) {
-      JvmtiExport::post_vthread_start(vthread);
-    }
-    // post VirtualThreadMount event after VirtualThreadStart
-    if (JvmtiExport::should_post_vthread_mount()) {
-      JvmtiExport::post_vthread_mount(vthread);
-    }
+  if (JvmtiExport::should_post_vthread_start()) {
+    JvmtiExport::post_vthread_start(vthread);
+  }
+  // post VirtualThreadMount event after VirtualThreadStart
+  if (JvmtiExport::should_post_vthread_mount()) {
+    JvmtiExport::post_vthread_mount(vthread);
   }
 }
 
@@ -551,14 +549,12 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
 
-  if (JvmtiExport::can_support_virtual_threads()) {
-    // post VirtualThreadUnmount event before VirtualThreadEnd
-    if (JvmtiExport::should_post_vthread_unmount()) {
-      JvmtiExport::post_vthread_unmount(vthread);
-    }
-    if (JvmtiExport::should_post_vthread_end()) {
-      JvmtiExport::post_vthread_end(vthread);
-    }
+  // post VirtualThreadUnmount event before VirtualThreadEnd
+  if (JvmtiExport::should_post_vthread_unmount()) {
+    JvmtiExport::post_vthread_unmount(vthread);
+  }
+  if (JvmtiExport::should_post_vthread_end()) {
+    JvmtiExport::post_vthread_end(vthread);
   }
   VTMS_unmount_begin(vthread, /* last_unmount */ true);
   if (thread->jvmti_thread_state() != nullptr) {
@@ -575,8 +571,7 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
     VTMS_mount_begin(vthread);
   } else {
     VTMS_mount_end(vthread);
-    if (JvmtiExport::can_support_virtual_threads() &&
-        JvmtiExport::should_post_vthread_mount()) {
+    if (JvmtiExport::should_post_vthread_mount()) {
       JvmtiExport::post_vthread_mount(vthread);
     }
   }
@@ -585,8 +580,7 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
 void
 JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(jobject vthread, bool hide) {
   if (hide) {
-    if (JvmtiExport::can_support_virtual_threads() &&
-        JvmtiExport::should_post_vthread_unmount()) {
+    if (JvmtiExport::should_post_vthread_unmount()) {
       JvmtiExport::post_vthread_unmount(vthread);
     }
     VTMS_unmount_begin(vthread, /* last_unmount */ false);
