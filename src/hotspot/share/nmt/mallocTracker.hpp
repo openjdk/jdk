@@ -178,11 +178,6 @@ class MallocMemorySnapshot : public ResourceObj {
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
-  inline size_t thread_count() const {
-    MallocMemorySnapshot* s = const_cast<MallocMemorySnapshot*>(this);
-    return s->by_type(mtThreadStack)->malloc_count();
-  }
-
   void copy_to(MallocMemorySnapshot* s);
 
   // Make adjustment by subtracting chunks used by arenas
