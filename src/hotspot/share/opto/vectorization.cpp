@@ -825,6 +825,8 @@ const char* VLoopAnalyzer::analyze_helper() {
     return body_failure;
   }
 
+  _types.compute_vector_element_type();
+
   _dependence_graph.build();
 
   // TODO Move stuff from SLP_extract
@@ -1496,3 +1498,67 @@ void VLoopDependenceGraph::PredsIterator::next() {
     _done = true;
   }
 }
+
+void VLoopTypes::compute_vector_element_type() {
+  if (TraceSuperWord && Verbose) {
+    tty->print_cr("\nVLoopTypes::compute_vector_element_type:");
+  }
+
+  assert(_velt_type.length() == 0, "must be freshly reset");
+  // reserve space
+  _velt_type.at_put_grow(_body.body().length()-1, nullptr);
+
+  // Initial type
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    set_velt_type(n, container_type(n));
+  }
+
+  // TODO continue here!
+
+#ifndef PRODUCT
+  if (TraceSuperWord && Verbose) {
+    print();
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void VLoopTypes::print() const {
+  tty->print_cr("\nVLoopTypes::print:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  %5d %-10s ", n->_idx, n->Name());
+    velt_type(n)->dump();
+    tty->cr();
+  }
+}
+#endif
+
+const Type* VLoopTypes::container_type(Node* n) const {
+  if (n->is_Mem()) {
+    BasicType bt = n->as_Mem()->memory_type();
+    if (n->is_Store() && (bt == T_CHAR)) {
+      // Use T_SHORT type instead of T_CHAR for stored values because any
+      // preceding arithmetic operation extends values to signed Int.
+      bt = T_SHORT;
+    }
+    if (n->Opcode() == Op_LoadUB) {
+      // Adjust type for unsigned byte loads, it is important for right shifts.
+      // T_BOOLEAN is used because there is no basic type representing type
+      // TypeInt::UBYTE. Use of T_BOOLEAN for vectors is fine because only
+      // size (one byte) and sign is important.
+      bt = T_BOOLEAN;
+    }
+    return Type::get_const_basic_type(bt);
+  }
+  const Type* t = _vloop.phase()->igvn().type(n);
+  if (t->basic_type() == T_INT) {
+    // A narrow type of arithmetic operations will be determined by
+    // propagating the type of memory operations.
+    return TypeInt::INT;
+  }
+  return t;
+}
+
+

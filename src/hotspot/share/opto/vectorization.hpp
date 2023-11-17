@@ -415,6 +415,52 @@ private:
   void compute_max_depth();
 };
 
+// TODO
+class VLoopTypes : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
+
+  // body_idx -> vector element type
+  GrowableArray<const Type*> _velt_type;
+
+public:
+  VLoopTypes(const VLoop& vloop,
+             const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _velt_type(vloop.arena(), 8,  0, nullptr) {}
+
+  NONCOPYABLE(VLoopTypes);
+
+  void reset() {
+    _velt_type.clear();
+  }
+
+  void compute_vector_element_type();
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  // Depth in graph (DAG). Used to prune search paths.
+  const Type* velt_type(Node* n) const {
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(_body.body_idx(n));
+    assert(t != nullptr, "must have type");
+    return t;
+  }
+
+private:
+  void set_velt_type(Node* n, const Type* t) {
+    assert(t != nullptr, "cannot set nullptr");
+    assert(_vloop.in_body(n), "only call on nodes in loop");
+    _velt_type.at_put(_body.body_idx(n), t);
+  }
+
+  const Type* container_type(Node* n) const;
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible.
@@ -427,6 +473,7 @@ protected:
   VLoopReductions      _reductions;
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
+  VLoopTypes           _types;
   VLoopDependenceGraph _dependence_graph;
 
 public:
@@ -435,6 +482,7 @@ public:
     _reductions(*this),
     _memory_slices(*this),
     _body(*this),
+    _types(*this, _body),
     _dependence_graph(*this, _memory_slices, _body) {};
   NONCOPYABLE(VLoopAnalyzer);
 
@@ -447,6 +495,7 @@ public:
   const VLoopReductions& reductions() const            { return _reductions; }
   const VLoopMemorySlices& memory_slices() const       { return _memory_slices; }
   const VLoopBody& body() const                        { return _body; }
+  const VLoopTypes& types() const                      { return _types; }
   const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
 
 private:
@@ -455,6 +504,7 @@ private:
     _reductions.reset();
     _memory_slices.reset();
     _body.reset();
+    _types.reset();
     _dependence_graph.reset();
   }
   const char* analyze_helper();
