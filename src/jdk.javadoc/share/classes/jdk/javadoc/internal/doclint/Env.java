@@ -112,7 +112,7 @@ public class Env {
     DocCommentTree currDocComment;
     /**
      * The access level of the declaration containing the comment currently being analyzed.
-     * This is the minimum (most restrictive) access level of the declaration itself
+     * This is the most limiting access level of the declaration itself
      * and that of its containers. For example, a public method in a private class is
      * noted as private.
      */
@@ -194,14 +194,18 @@ public class Env {
         currElement = trees.getElement(currPath);
         currOverriddenMethods = ((JavacTypes) types).getOverriddenMethods(currElement);
 
-        var level = AccessLevel.PUBLIC;
+        // It's convenient to use AccessLevel to model effects that nesting has
+        // on access. While very similar, those are not the same concept.
+        var mostLimitingSoFar = AccessLevel.PUBLIC;
         for (TreePath p = path; p != null; p = p.getParentPath()) {
             Element e = trees.getElement(p);
             if (e != null && e.getKind() != ElementKind.PACKAGE && e.getKind() != ElementKind.MODULE) {
-                level = min(level, AccessLevel.of(e.getModifiers()));
+                var level = AccessLevel.of(e.getModifiers());
+                mostLimitingSoFar = mostLimitingSoFar.compareTo(level) <= 0
+                        ? mostLimitingSoFar : level;
             }
         }
-        currAccess = level;
+        currAccess = mostLimitingSoFar;
     }
 
     long getPos(TreePath p) {
@@ -329,12 +333,5 @@ public class Env {
             }
         }
         return List.of();
-    }
-
-
-    private <T extends Comparable<T>> T min(T item1, T item2) {
-        return (item1 == null) ? item2
-                : (item2 == null) ? item1
-                : item1.compareTo(item2) <= 0 ? item1 : item2;
     }
 }

@@ -30,19 +30,33 @@ import javax.lang.model.element.Modifier;
 
 /**
  * The access levels.
+ *
+ * These constants are ordered by their access limiting power. The bigger the
+ * {@link #ordinal() ordinal} of a constant, the more limiting power that
+ * constant has.
+ *
+ * That has a few useful implications. For example, the levels can be compared
+ * by {@link #compareTo}. It also means that {@code AccessLevel.values()[0]} and
+ * {@code AccessLevel.values()[values.length() - 1] and the constants with the
+ * smallest and the biggest limiting powers respectively.
  */
 public enum AccessLevel {
 
-    // DO NOT REORDER THESE CONSTANTS OR CODE WILL BREAK
-
-    /** No limits */
+    /** Does not limit access */
     PRIVATE,
-    /** Limits access to public, protected and package private entities */
+    /** Limits access to entities that are public, protected, or declared with package access */
     PACKAGE,
     /** Limits access to public and protected entities */
     PROTECTED,
     /** Limits access to public entities */
     PUBLIC;
+
+    static { // self-test to catch unintended reordering of the constants
+        assert PRIVATE.ordinal() == 0
+                && PACKAGE.ordinal() == 1
+                && PROTECTED.ordinal() == 2
+                && PUBLIC.ordinal() == 3;
+    }
 
     public static AccessLevel of(Set<Modifier> mods) {
         if (mods.contains(Modifier.PUBLIC))

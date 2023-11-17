@@ -935,9 +935,7 @@ public class ToolOptions {
      */
     private AccessLevel getAccessValue(String arg) throws OptionException {
         int colon = arg.indexOf(':');
-        String value = (colon > 0)
-                ? arg.substring(colon + 1)
-                : arg;
+        String value = (colon > 0) ? arg.substring(colon + 1) : arg;
         return switch (value) {
             case "public" -> AccessLevel.PUBLIC;
             case "protected" -> AccessLevel.PROTECTED;

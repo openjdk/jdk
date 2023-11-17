@@ -1185,12 +1185,8 @@ public class ElementsTable {
                                                     ElementKind.PACKAGE,
                                                     ElementKind.MODULE);
 
-        // all possible access levels allowed for each element
-        private final EnumMap<ElementKind, EnumSet<AccessLevel>> filterMap =
-                new EnumMap<>(ElementKind.class);
-
-        // the specified access level for each element
-        private final EnumMap<ElementKind, AccessLevel> accessMap =
+        // the allowed access level for each element kind
+        private final EnumMap<ElementKind, AccessLevel> allowedAccess =
                 new EnumMap<>(ElementKind.class);
 
         /**
@@ -1207,25 +1203,15 @@ public class ElementsTable {
                     case MODULE  -> options.showModuleContents();
                     default -> throw new AssertionError("unknown element: " + kind);
                 };
-                accessMap.put(kind, accessValue);
-                filterMap.put(kind, getFilterSet(accessValue));
+                allowedAccess.put(kind, accessValue);
             }
-        }
-
-        static EnumSet<AccessLevel> getFilterSet(AccessLevel accessValue) {
-            return switch (accessValue) {
-                case PUBLIC    -> EnumSet.of(AccessLevel.PUBLIC);
-                case PROTECTED -> EnumSet.of(AccessLevel.PUBLIC, AccessLevel.PROTECTED);
-                case PACKAGE   -> EnumSet.of(AccessLevel.PUBLIC, AccessLevel.PROTECTED, AccessLevel.PACKAGE);
-                case PRIVATE   -> EnumSet.allOf(AccessLevel.class);
-            };
         }
 
         public AccessLevel getAccessValue(ElementKind kind) {
             if (!ALLOWED_KINDS.contains(kind)) {
                 throw new IllegalArgumentException("not allowed: " + kind);
             }
-            return accessMap.getOrDefault(kind, AccessLevel.PROTECTED);
+            return allowedAccess.getOrDefault(kind, AccessLevel.PROTECTED);
         }
 
         /**
@@ -1235,21 +1221,13 @@ public class ElementsTable {
          * @return whether the modifiers pass this filter
          */
         public boolean checkModifier(Element e) {
-            Set<Modifier> modifiers = e.getModifiers();
-            AccessLevel fflag = AccessLevel.PACKAGE;
-            if (modifiers.contains(Modifier.PUBLIC)) {
-                fflag = AccessLevel.PUBLIC;
-            } else if (modifiers.contains(Modifier.PROTECTED)) {
-                fflag = AccessLevel.PROTECTED;
-            } else if (modifiers.contains(Modifier.PRIVATE)) {
-                fflag = AccessLevel.PRIVATE;
-            }
-            EnumSet<AccessLevel> filterSet = filterMap.get(getAllowedKind(e.getKind()));
-            return filterSet.contains(fflag);
+            var access = AccessLevel.of(e.getModifiers());
+            return allowedAccess.get(toTrackedKind(e.getKind())).compareTo(access) <= 0;
         }
 
-        // convert a requested element kind to an allowed access kind
-        private ElementKind getAllowedKind(ElementKind kind) {
+        // convert the requested element kind to a tracked access kind
+        // (access is tracked for certain kinds only)
+        private ElementKind toTrackedKind(ElementKind kind) {
             return switch (kind) {
                 case CLASS, METHOD, MODULE, PACKAGE -> kind;
                 case RECORD, ANNOTATION_TYPE, ENUM, INTERFACE -> ElementKind.CLASS;
