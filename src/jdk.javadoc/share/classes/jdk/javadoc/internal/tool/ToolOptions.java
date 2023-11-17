@@ -85,7 +85,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    private AccessKind expandRequires;
+    private AccessLevel expandRequires;
 
     /**
      * Argument for command-line option {@code --ignore-source-errors}.
@@ -106,22 +106,22 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    private AccessKind showMembersAccess;
+    private AccessLevel showMembersAccess;
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    private AccessKind showTypesAccess;
+    private AccessLevel showTypesAccess;
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    private AccessKind showPackagesAccess;
+    private AccessLevel showPackagesAccess;
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    private AccessKind showModuleContents;
+    private AccessLevel showModuleContents;
 
     /**
      * Argument for command-line option {@code -quiet}.
@@ -717,7 +717,7 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --expand-requires}.
      */
-    AccessKind expandRequires() {
+    AccessLevel expandRequires() {
         return expandRequires;
     }
 
@@ -746,28 +746,28 @@ public class ToolOptions {
     /**
      * Argument for command-line option {@code --show-members}.
      */
-    AccessKind showMembersAccess() {
+    AccessLevel showMembersAccess() {
         return showMembersAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-types}.
      */
-    AccessKind showTypesAccess() {
+    AccessLevel showTypesAccess() {
         return showTypesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-packages}.
      */
-    AccessKind showPackagesAccess() {
+    AccessLevel showPackagesAccess() {
         return showPackagesAccess;
     }
 
     /**
      * Argument for command-line option {@code --show-module-contents}.
      */
-    AccessKind showModuleContents() {
+    AccessLevel showModuleContents() {
         return showModuleContents;
     }
 
@@ -886,10 +886,10 @@ public class ToolOptions {
     private void setExpandRequires(String arg) throws OptionException {
         switch (arg) {
             case "transitive":
-                expandRequires = AccessKind.PUBLIC;
+                expandRequires = AccessLevel.PUBLIC;
                 break;
             case "all":
-                expandRequires = AccessKind.PRIVATE;
+                expandRequires = AccessLevel.PRIVATE;
                 break;
             default:
                 throw illegalOptionValue(arg);
@@ -899,10 +899,10 @@ public class ToolOptions {
     private void setShowModuleContents(String arg) throws OptionException {
         switch (arg) {
             case "api":
-                showModuleContents = AccessKind.PUBLIC;
+                showModuleContents = AccessLevel.PUBLIC;
                 break;
             case "all":
-                showModuleContents = AccessKind.PRIVATE;
+                showModuleContents = AccessLevel.PRIVATE;
                 break;
             default:
                 throw illegalOptionValue(arg);
@@ -912,10 +912,10 @@ public class ToolOptions {
     private void setShowPackageAccess(String arg) throws OptionException {
         switch (arg) {
             case "exported":
-                showPackagesAccess = AccessKind.PUBLIC;
+                showPackagesAccess = AccessLevel.PUBLIC;
                 break;
             case "all":
-                showPackagesAccess = AccessKind.PRIVATE;
+                showPackagesAccess = AccessLevel.PRIVATE;
                 break;
             default:
                 throw illegalOptionValue(arg);
@@ -948,20 +948,20 @@ public class ToolOptions {
      * -private, so on, in addition to the new ones such as
      * --show-types:public and so on.
      */
-    private AccessKind getAccessValue(String arg) throws OptionException {
+    private AccessLevel getAccessValue(String arg) throws OptionException {
         int colon = arg.indexOf(':');
         String value = (colon > 0)
                 ? arg.substring(colon + 1)
                 : arg;
         switch (value) {
             case "public":
-                return AccessKind.PUBLIC;
+                return AccessLevel.PUBLIC;
             case "protected":
-                return AccessKind.PROTECTED;
+                return AccessLevel.PROTECTED;
             case "package":
-                return AccessKind.PACKAGE;
+                return AccessLevel.PACKAGE;
             case "private":
-                return AccessKind.PRIVATE;
+                return AccessLevel.PRIVATE;
             default:
                 throw illegalOptionValue(value);
         }
@@ -971,14 +971,14 @@ public class ToolOptions {
      * Sets all access members to PROTECTED; this is the default.
      */
     private void setAccessDefault() {
-        setAccess(AccessKind.PROTECTED);
+        setAccess(AccessLevel.PROTECTED);
     }
 
     /*
      * This sets access to all the allowed kinds in the
      * access members.
      */
-    private void setAccess(AccessKind accessValue) {
+    private void setAccess(AccessLevel accessValue) {
         for (ElementKind kind : ElementsTable.ModifierFilter.ALLOWED_KINDS) {
             switch (kind) {
                 case METHOD:

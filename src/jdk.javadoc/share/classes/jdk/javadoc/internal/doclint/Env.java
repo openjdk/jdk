@@ -62,7 +62,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.MatchingUtils;
 import com.sun.tools.javac.util.StringUtils;
-import jdk.javadoc.internal.tool.AccessKind;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Utility container for current execution environment,
@@ -111,12 +111,12 @@ public class Env {
     /** The comment current being analyzed. */
     DocCommentTree currDocComment;
     /**
-     * The access kind of the declaration containing the comment currently being analyzed.
-     * This is the minimum (most restrictive) access kind of the declaration itself
+     * The access level of the declaration containing the comment currently being analyzed.
+     * This is the minimum (most restrictive) access level of the declaration itself
      * and that of its containers. For example, a public method in a private class is
      * noted as private.
      */
-    AccessKind currAccess;
+    AccessLevel currAccess;
     /** The set of methods, if any, that the current declaration overrides. */
     Set<? extends ExecutableElement> currOverriddenMethods;
 
@@ -194,17 +194,17 @@ public class Env {
         currElement = trees.getElement(currPath);
         currOverriddenMethods = ((JavacTypes) types).getOverriddenMethods(currElement);
 
-        AccessKind ak = AccessKind.PUBLIC;
+        AccessLevel al = AccessLevel.PUBLIC;
         for (TreePath p = path; p != null; p = p.getParentPath()) {
             Element e = trees.getElement(p);
             if (e != null && e.getKind() != ElementKind.PACKAGE && e.getKind() != ElementKind.MODULE) {
-                ak = min(ak, AccessKind.of(e.getModifiers()));
+                al = min(al, AccessLevel.of(e.getModifiers()));
             }
         }
-        currAccess = ak;
+        currAccess = al;
     }
 
-    AccessKind getAccessKind() {
+    AccessLevel getAccessLevel() {
         return currAccess;
     }
 

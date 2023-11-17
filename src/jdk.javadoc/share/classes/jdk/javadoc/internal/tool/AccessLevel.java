@@ -29,9 +29,9 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 /**
- * The access value kinds.
+ * The access levels.
  */
-public enum AccessKind {
+public enum AccessLevel {
 
     // DO NOT REORDER THESE CONSTANTS OR CODE WILL BREAK
 
@@ -44,14 +44,14 @@ public enum AccessKind {
     /** Limits access to public entities */
     PUBLIC;
 
-    public static AccessKind of(Set<Modifier> mods) {
+    public static AccessLevel of(Set<Modifier> mods) {
         if (mods.contains(Modifier.PUBLIC))
-            return AccessKind.PUBLIC;
+            return AccessLevel.PUBLIC;
         else if (mods.contains(Modifier.PROTECTED))
-            return AccessKind.PROTECTED;
+            return AccessLevel.PROTECTED;
         else if (mods.contains(Modifier.PRIVATE))
-            return AccessKind.PRIVATE;
+            return AccessLevel.PRIVATE;
         else
-            return AccessKind.PACKAGE;
+            return AccessLevel.PACKAGE;
     }
 }
