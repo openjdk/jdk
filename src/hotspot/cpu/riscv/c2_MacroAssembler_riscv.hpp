@@ -79,9 +79,8 @@
                      int elem_size);
 
   void arrays_hashcode(Register ary, Register cnt, Register result,
-                       Register tmp1, Register tmp2, Register tmp3,
-                       Register tmp4, Register tmp5, Register tmp6,
-                       BasicType eltype);
+                       Register tmp1, Register tmp2, Register tmp4,
+                       Register tmp5, Register tmp6, BasicType eltype);
   // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
 

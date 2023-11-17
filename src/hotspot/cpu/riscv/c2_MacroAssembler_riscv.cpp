@@ -1460,11 +1460,10 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
 void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt,
                                         Register result, Register tmp1, Register tmp2,
-                                        Register tmp3, Register tmp4, Register tmp5,
-                                        Register tmp6,
+                                        Register tmp4, Register tmp5, Register tmp6,
                                         BasicType eltype)
 {
-  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp4, tmp5, tmp6);
 
   const int elsize = arrays_hashcode_elsize(eltype);
   const int chunks_end_shift = exact_log2(elsize);
