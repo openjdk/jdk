@@ -670,8 +670,9 @@ public final class String
                 char[] ca = new char[en];
                 int clen = ad.decode(bytes, offset, length, ca);
                 if (COMPACT_STRINGS) {
-                    this.value = StringUTF16.compress(ca, 0, clen);
-                    this.coder = (this.value.length == clen) ? LATIN1 : UTF16;
+                    byte[] val = StringUTF16.compress(ca, 0, clen);;
+                    this.coder = StringUTF16.coderFromArrayLen(val, clen);
+                    this.value = val;
                     return;
                 }
                 coder = UTF16;
@@ -698,8 +699,9 @@ public final class String
                 throw new Error(x);
             }
             if (COMPACT_STRINGS) {
-                this.value = StringUTF16.compress(ca, 0, caLen);
-                this.coder = (this.value.length == caLen) ? LATIN1 : UTF16;
+                byte[] val = StringUTF16.compress(ca, 0, caLen);
+                this.coder = StringUTF16.coderFromArrayLen(val, caLen);
+                this.value = val;
                 return;
             }
             coder = UTF16;
@@ -838,9 +840,9 @@ public final class String
             throw new IllegalArgumentException(x);
         }
         if (COMPACT_STRINGS) {
-            byte[] value = StringUTF16.compress(ca, 0, caLen);
-            int coder = (value.length == len) ? LATIN1 : UTF16;
-            return new String(value, coder);
+            byte[] val = StringUTF16.compress(ca, 0, caLen);
+            int coder = StringUTF16.coderFromArrayLen(val, len);
+            return new String(val, coder);
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
@@ -4815,7 +4817,7 @@ public final class String
         }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(value, off, len);
-            this.coder = (val.length == len) ? LATIN1 : UTF16;
+            this.coder = StringUTF16.coderFromArrayLen(val, len);
             this.value = val;
             return;
         }

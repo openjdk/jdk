@@ -177,6 +177,14 @@ final class StringUTF16 {
         return val;
     }
 
+    // Clever way to get the coder from a byte array returned from compress
+    // that maybe either latin1 or UTF16-coded
+    // Equivalent to (len == val.length) ? LATIN1 : UTF16
+    @ForceInline
+    static byte coderFromArrayLen(byte[] value, int len) {
+        return (byte) ((len - value.length) >>> Integer.SIZE - 1);
+    }
+
     /**
      * {@return Compress the char array (containing UTF16) into a compact strings byte array}
      * If all the chars are LATIN1, it returns an array with len == count,
