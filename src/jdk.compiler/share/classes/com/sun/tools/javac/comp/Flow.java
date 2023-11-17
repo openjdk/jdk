@@ -1678,23 +1678,8 @@ public class Flow {
 
         @Override
         public void visitStringTemplate(JCStringTemplate tree) {
-            JCExpression processor = tree.processor;
-
-            if (processor != null) {
-                scan(processor);
-                Type interfaceType = types.asSuper(processor.type, syms.processorType.tsym);
-
-                if (interfaceType != null) {
-                    List<Type> typeArguments = interfaceType.getTypeArguments();
-
-                    if (typeArguments.size() == 2) {
-                        Type throwType = typeArguments.tail.head;
-
-                        if (throwType != null) {
-                            markThrown(tree, throwType);
-                        }
-                    }
-                }
+            for (Type thrown : tree.processMethodType.getThrownTypes()) {
+                markThrown(tree, thrown);
             }
 
             scan(tree.expressions);
