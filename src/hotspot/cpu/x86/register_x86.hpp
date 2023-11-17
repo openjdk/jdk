@@ -398,20 +398,20 @@ inline Register AbstractRegSet<Register>::first() {
 template <>
 inline Register AbstractRegSet<Register>::last() {
   if (_bitset == 0) { return noreg; }
-  size_t last = max_size() - 1 - count_leading_zeros(_bitset);
+  int last = max_size() - 1 - count_leading_zeros(_bitset);
   return as_Register(last);
 }
 
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::first() {
-  size_t first = _bitset & -_bitset;
+  int first = _bitset & -_bitset;
   return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
 }
 
 template <>
 inline XMMRegister AbstractRegSet<XMMRegister>::last() {
   if (_bitset == 0) { return xnoreg; }
-  size_t last = max_size() - 1 - count_leading_zeros(_bitset);
+  int last = max_size() - 1 - count_leading_zeros(_bitset);
   return as_XMMRegister(last);
 }
 
