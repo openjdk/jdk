@@ -3630,7 +3630,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ verify_oop(obj);
 
   if (tmp != obj) {
+    assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
     __ mov(tmp, obj);
+  } else {
+    assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
   }
   if (do_null) {
     __ testptr(tmp, tmp);
@@ -3676,7 +3679,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ load_klass(tmp, tmp, tmp_load_klass);
         }
 
-        __ xorptr(tmp, mdo_addr);
+        __ movptr(rscratch1, mdo_addr);
+        __ xorptr(tmp, rscratch1);
         __ testptr(tmp, TypeEntries::type_klass_mask);
         // klass seen before, nothing to do. The unknown bit may have been
         // set already but no need to check.
@@ -3686,13 +3690,12 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          __ cmpptr(mdo_addr, 0);
-          __ jccb(Assembler::equal, none);
-          __ cmpptr(mdo_addr, TypeEntries::null_seen);
-          __ jccb(Assembler::equal, none);
-          // There is a chance that the checks above (re-reading profiling
-          // data from memory) fail if another thread has just set the
+          __ testptr(rscratch1, TypeEntries::type_mask);
+          __ jccb(Assembler::zero, none);
+          // There is a chance that the checks above
+          // fail if another thread has just set the
           // profiling to this obj's klass
+          __ xorptr(tmp, rscratch1); // get back original value before XOR
           __ xorptr(tmp, mdo_addr);
           __ testptr(tmp, TypeEntries::type_klass_mask);
           __ jccb(Assembler::zero, next);

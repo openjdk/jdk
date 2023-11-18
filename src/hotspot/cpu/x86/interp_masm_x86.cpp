@@ -54,6 +54,8 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
   Label update, next, none;
 
+  assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+
   interp_verify_oop(obj, atos);
 
   testptr(obj, obj);
@@ -64,7 +66,8 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(update);
   load_klass(obj, obj, rscratch1);
 
-  xorptr(obj, mdo_addr);
+  movptr(rscratch1, mdo_addr);
+  xorptr(obj, rscratch1);
   testptr(obj, TypeEntries::type_klass_mask);
   jccb(Assembler::zero, next); // klass seen before, nothing to
                                // do. The unknown bit may have been
@@ -73,13 +76,14 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   testptr(obj, TypeEntries::type_unknown);
   jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
-  cmpptr(mdo_addr, 0);
-  jccb(Assembler::equal, none);
-  cmpptr(mdo_addr, TypeEntries::null_seen);
-  jccb(Assembler::equal, none);
-  // There is a chance that the checks above (re-reading profiling
-  // data from memory) fail if another thread has just set the
+  // is_type_none?
+  testptr(rscratch1, TypeEntries::type_mask);
+  jccb(Assembler::zero, none);
+
+  // There is a chance that the checks above
+  // fail if another thread has just set the
   // profiling to this obj's klass
+  xorptr(obj, rscratch1); // get back original value before XOR
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
   jccb(Assembler::zero, next);
