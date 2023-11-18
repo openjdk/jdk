@@ -502,5 +502,15 @@ public class BasicDateTime extends Basic {
                         jpDate.get(ChronoField.MONTH_OF_YEAR),
                         jpDate.get(ChronoField.DAY_OF_MONTH)),
                 jpDate);
+
+        ChronoLocalDate jpDate1 = JapaneseChronology.INSTANCE.dateNow();
+        test(Locale.JAPANESE,
+                "%tF",
+                String.format(
+                        "%04d-%02d-%02d",
+                        jpDate1.get(ChronoField.YEAR_OF_ERA),
+                        jpDate1.get(ChronoField.MONTH_OF_YEAR),
+                        jpDate1.get(ChronoField.DAY_OF_MONTH)),
+                jpDate1);
     }
 }
