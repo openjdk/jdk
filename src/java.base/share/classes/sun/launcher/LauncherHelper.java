@@ -71,7 +71,6 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -894,11 +893,13 @@ public final class LauncherHelper {
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
         try {
-            mainMethod = MainMethodFinder.findMainMethod(mainClass);
-        } catch (NoSuchMethodException nsme) {
-            // invalid main or not FX application, abort with an error
-            abort(null, "java.launcher.cls.error2", mainClass.getName(),
-                  JAVAFX_APPLICATION_CLASS_NAME);
+            mainMethod = mainClass.getMainMethod();
+
+            if (mainMethod == null) {
+                // invalid main or not FX application, abort with an error
+                abort(null, "java.launcher.cls.error2", mainClass.getName(),
+                      JAVAFX_APPLICATION_CLASS_NAME);
+            }
         } catch (Throwable e) {
             if (mainClass.getModule().isNamed()) {
                 abort(e, "java.launcher.module.error3",
