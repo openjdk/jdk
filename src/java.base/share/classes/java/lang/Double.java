@@ -202,7 +202,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
  *
- * Many surprises results of binary floating-point arithmetic trace
+ * Many surprising results of binary floating-point arithmetic trace
  * back to aspects of decimal to binary conversion and binary to
  * decimal conversion. While integer values can be exactly represented
  * in any base, which fractional values can be exactly represented in
@@ -330,7 +330,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * } // Value of d is equal to Math.nextDown(1.0).
  * }
  *
- * or test against a floating-point limit using ordered comparisons (&lt;, &lt;=, &gt;, &gt;=):
+ * or test against a floating-point limit using ordered comparisons
+ * ({@code <}, {@code <=}, {@code >}, {@code >=}):
  *
  * {@snippet lang="java" :
  *  double d = 0.0;
@@ -339,9 +340,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *  } // Value of d approximately 1.0999999999999999
  *  }
  *
- * Certain aspects of floating-point arithmetic may be surprising, but
- * IEEE 754 floating-point arithmetic follows a principled design and
- * its behavior is predictable on the Java platform.
+ * While floating-point arithmetic may have surprising results, IEEE
+ * 754 floating-point arithmetic follows a principled design and its
+ * behavior is predictable on the Java platform.
  *
  * @jls 4.2.3 Floating-Point Types, Formats, and Values
  * @jls 4.2.4. Floating-Point Operations
