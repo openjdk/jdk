@@ -202,16 +202,16 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
  *
- * Many surprising aspects of binary floating-point arithmetic trace
+ * Many surprises results of binary floating-point arithmetic trace
  * back to aspects of decimal to binary conversion and binary to
  * decimal conversion. While integer values can be exactly represented
- * in any base, which fractional values can be exactly represented is
- * a function of the base. For example, in base 10, 1/3 is a repeating
- * fraction (0.33333....); but in base 3, 1/3 is exactly
+ * in any base, which fractional values can be exactly represented in
+ * a base is a function of the base. For example, in base 10, 1/3 is a
+ * repeating fraction (0.33333....); but in base 3, 1/3 is exactly
  * 0.1<sub>(3)</sub>, that is 1&nbsp;&times;&nbsp;3<sup>-1</sup>.
- * Similarly, in base 10, 1/10 is exactly representable as 0.1, but in
- * base 2, it is a repeating fraction
- * (0.0001100110011...<sub>(2)</sub>).
+ * Similarly, in base 10, 1/10 is exactly representable as 0.1
+ * (1&nbsp;&times;&nbsp;10<sup>-1</sup>), but in base 2, it is a
+ * repeating fraction (0.0001100110011...<sub>(2)</sub>).
  *
  * <p>Values of the {@code float} type have {@value Float#PRECISION}
  * bits of precision and values of the {@code double} type have
@@ -246,7 +246,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <li>scaling up so the monetary value is an integer &mdash; for
  * example, multiplying by 100 if the value is denominated in cents or
  * multiplying by 1000 if the value is denominated in mills &mdash;
- * and then storing that scaled value in an integer type.
+ * and then storing that scaled value in an integer type
  *
  *</ul>
  *
@@ -291,8 +291,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * floating-point value as a result can be:
  * <ul>
  * <li>greater than the exact result
- * <li>less than the exact result
  * <li>equal to the exact result
+ * <li>less than the exact result
  * </ul>
  *
  * A floating-point value doesn't "know" whether it was the result of
@@ -311,7 +311,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * }
  *
  * should <em>not</em> be expected to be exactly equal to 1.0, but
- * only be close to 1.0. Consequently, the following code is an
+ * only to be close to 1.0. Consequently, the following code is an
  * infinite loop:
  *
  * {@snippet lang="java" :
