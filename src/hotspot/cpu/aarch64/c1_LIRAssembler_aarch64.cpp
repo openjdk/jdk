@@ -2700,7 +2700,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ verify_oop(obj);
 
   if (tmp != obj) {
+    assert_different_registers(obj, tmp, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
     __ mov(tmp, obj);
+  } else {
+    assert_different_registers(obj, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
   }
   if (do_null) {
     __ cbnz(tmp, update);
@@ -2744,23 +2747,24 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ load_klass(tmp, tmp);
         }
 
-        __ ldr(rscratch2, mdo_addr);
-        __ eor(tmp, tmp, rscratch2);
-        __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);
+        __ ldr(rscratch1, mdo_addr);
+        __ eor(tmp, tmp, rscratch1);
+        __ tst(tmp, TypeEntries::type_klass_mask);
         // klass seen before, nothing to do. The unknown bit may have been
         // set already but no need to check.
-        __ cbz(rscratch1, next);
+        __ br(Assembler::EQ, next);
 
         __ tbnz(tmp, exact_log2(TypeEntries::type_unknown), next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          __ cbz(rscratch2, none);
-          __ cmp(rscratch2, (u1)TypeEntries::null_seen);
+          // is_type_none?
+          __ tst(rscratch1, TypeEntries::type_mask);
           __ br(Assembler::EQ, none);
-          // There is a chance that the checks above (re-reading profiling
-          // data from memory) fail if another thread has just set the
+          // There is a chance that the checks above
+          // fail if another thread has just set the
           // profiling to this obj's klass
           __ dmb(Assembler::ISHLD);
+          __ eor(tmp, tmp, rscratch1); // get back original value before XOR
           __ ldr(rscratch2, mdo_addr);
           __ eor(tmp, tmp, rscratch2);
           __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);
@@ -2785,6 +2789,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ bind(none);
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       }
     } else {
       // There's a single possible klass at this profile point
@@ -2816,6 +2824,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
