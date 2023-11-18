@@ -639,14 +639,12 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
                                                    int which) {
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
-  if (!(cache_index >= 0 && cache_index < cpool->cache()->length())) {
+  if (!(which >= 0 && which < cpool->resolved_method_entries_length())) {
     // FIXME: should be an assert
     log_debug(class, resolve)("bad operand %d in:", which); cpool->print();
     return nullptr;
   }
-  ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-  return e->method_if_resolved(cpool);
+  return cpool->cache()->method_if_resolved(which);
 }
 
 
@@ -656,9 +654,7 @@ bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, in
     int indy_index = decode_invokedynamic_index(which);
     return cpool->resolved_indy_entry_at(indy_index)->has_appendix();
   } else {
-    int cache_index = decode_cpcache_index(which, true);
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->has_appendix();
+    return cpool->resolved_method_entry_at(which)->has_appendix();
   }
 }
 
@@ -668,21 +664,18 @@ oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int whi
     int indy_index = decode_invokedynamic_index(which);
     return cpool->resolved_reference_from_indy(indy_index);
   } else {
-    int cache_index = decode_cpcache_index(which, true);
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->appendix_if_resolved(cpool);
+    return cpool->cache()->appendix_if_resolved(which);
   }
 }
 
 
 bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == nullptr)  return false;  // nothing to load yet
-  int cache_index = decode_cpcache_index(which, true);
   if (is_invokedynamic_index(which)) {
-    return cpool->resolved_indy_entry_at(cache_index)->has_local_signature();
+    int indy_index = decode_invokedynamic_index(which);
+    return cpool->resolved_indy_entry_at(indy_index)->has_local_signature();
   } else {
-    ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
-    return e->has_local_signature();
+    return cpool->resolved_method_entry_at(which)->has_local_signature();
   }
 }
 
@@ -702,10 +695,12 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokevirtual:
-      // TODO: handle resolved method entries with new structure
+    case Bytecodes::_fast_invokevfinal: // Bytecode interpreter uses this
+      return resolved_method_entry_at(index)->constant_pool_index();
     default:
-      // change byte-ordering and go via cache
-      return remap_instruction_operand_from_cache(index);
+      tty->print_cr("Unexpected bytecode: %d", code);
+      ShouldNotReachHere(); // All cases should have been handled
+      return -1;
   }
 }
 
@@ -746,15 +741,6 @@ u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
             "an invokedynamic instruction does not have a klass");
   return uncached_klass_ref_index_at(to_cp_index(index, code));
 }
-
-int ConstantPool::remap_instruction_operand_from_cache(int operand) {
-  int cpc_index = operand;
-  DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
-  assert((int)(u2)cpc_index == cpc_index, "clean u2");
-  int member_index = cache()->entry_at(cpc_index)->constant_pool_index();
-  return member_index;
-}
-
 
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
   if (!(k->is_instance_klass() || k->is_objArray_klass())) {

@@ -24,7 +24,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="moh" draft="contributed">mohok</language>
 			<language type="nqo" draft="contributed">n’ko</language>
 			<language type="shi" draft="contributed">južni šilha</language>
-			<language type="tzm" draft="contributed">centralnoatlaski tamašek</language>
 			<language type="xh" draft="contributed">isikosa</language>
 			<language type="zgh" draft="contributed">standardni marokanski tamašek</language>
 			<language type="zu" draft="contributed">isizulu</language>
@@ -73,36 +72,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">dec</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">jan</month>
-							<month type="2">feb</month>
-							<month type="3" draft="contributed">mart</month>
-							<month type="4">apr</month>
-							<month type="5" draft="contributed">maj</month>
-							<month type="6" draft="contributed">jun</month>
-							<month type="7" draft="contributed">jul</month>
-							<month type="8">avg</month>
-							<month type="9">sept</month>
-							<month type="10">okt</month>
-							<month type="11">nov</month>
-							<month type="12">dec</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="wide">
-							<day type="sun" draft="contributed">nedjelja</day>
-							<day type="mon" draft="contributed">ponedeljak</day>
-							<day type="tue" draft="contributed">utorak</day>
-							<day type="wed" draft="contributed">srijeda</day>
-							<day type="thu" draft="contributed">četvrtak</day>
-							<day type="fri" draft="contributed">petak</day>
-							<day type="sat" draft="contributed">subota</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
 						<dayWidth type="wide">
 							<day type="sun" draft="contributed">nedjelja</day>
 							<day type="mon" draft="contributed">ponedeljak</day>
@@ -140,10 +112,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">prije podne</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">po podne</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="contributed">a</dayPeriod>
 							<dayPeriod type="pm" draft="contributed">p</dayPeriod>

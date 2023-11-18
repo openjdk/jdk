@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,16 +173,10 @@ public class SSLSocketSSLEngineCloseInbound {
      */
     public SSLSocketSSLEngineCloseInbound(String protocol) throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
-
         char[] passphrase = "passphrase".toCharArray();
 
-        try (FileInputStream keyFile = new FileInputStream(keyFilename);
-                FileInputStream trustFile = new FileInputStream(trustFilename)) {
-            ks.load(keyFile, passphrase);
-            ts.load(trustFile, passphrase);
-        }
+        KeyStore ks = KeyStore.getInstance(new File(keyFilename), passphrase);
+        KeyStore ts = KeyStore.getInstance(new File(trustFilename), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

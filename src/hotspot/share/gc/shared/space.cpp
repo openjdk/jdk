@@ -371,18 +371,11 @@ void TenuredSpace::print_on(outputStream* st) const {
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
-    prev_p = p;
     p += cast_to_oop(p)->size();
   }
   guarantee(p == top(), "end of last object must match end of space");
-  if (top() != end()) {
-    guarantee(top() == block_start_const(end()-1) &&
-              top() == block_start_const(top()),
-              "top should be start of unallocated block, if it exists");
-  }
 }
 
 bool Space::obj_is_alive(const HeapWord* p) const {
@@ -514,40 +507,6 @@ TenuredSpace::TenuredSpace(SerialBlockOffsetSharedArray* sharedOffsetArray,
 {
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
 }
-
-#define OBJ_SAMPLE_INTERVAL 0
-#define BLOCK_SAMPLE_INTERVAL 100
-
-void TenuredSpace::verify() const {
-  HeapWord* p = bottom();
-  HeapWord* prev_p = nullptr;
-  int objs = 0;
-  int blocks = 0;
-
-  while (p < top()) {
-    size_t size = cast_to_oop(p)->size();
-    // For a sampling of objects in the space, find it using the
-    // block offset table.
-    if (blocks == BLOCK_SAMPLE_INTERVAL) {
-      guarantee(p == block_start_const(p + (size/2)),
-                "check offset computation");
-      blocks = 0;
-    } else {
-      blocks++;
-    }
-
-    if (objs == OBJ_SAMPLE_INTERVAL) {
-      oopDesc::verify(cast_to_oop(p));
-      objs = 0;
-    } else {
-      objs++;
-    }
-    prev_p = p;
-    p += size;
-  }
-  guarantee(p == top(), "end of last object must match end of space");
-}
-
 
 size_t TenuredSpace::allowed_dead_ratio() const {
   return MarkSweepDeadRatio;
