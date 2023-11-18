@@ -419,6 +419,9 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     OSStatus err = SecKeychainSearchCreateFromAttributes(NULL, kSecCertificateItemClass, NULL, &keychainItemSearch);
     SecKeychainItemRef theItem = NULL;
     OSErr searchResult = noErr;
+    SecTrustSettingsDomain domains[] = {kSecTrustSettingsDomainUser, kSecTrustSettingsDomainAdmin, kSecTrustSettingsDomainSystem};
+    int numDomains = (int)sizeof(domains);
+
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
     if (jc_KeychainStore == NULL) {
@@ -471,32 +474,21 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             // kSecTrustSettingsDomainSystem is ignored because it seems to only contain data for root certificates
             jobject inputTrust = NULL;
             CFArrayRef trustSettings = NULL;
-
-            // Load user trustSettings into inputTrust
-            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings) == errSecSuccess && trustSettings != NULL) {
-                inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-                if (inputTrust == NULL) {
+            for (int n = 0; n < numDomains-1; n++) {
+                trustSettings = NULL;
+                // Load user trustSettings into inputTrust
+                if (SecTrustSettingsCopyTrustSettings(certRef, domains[n], &trustSettings) == errSecSuccess && trustSettings != NULL) {
+                    if(inputTrust == NULL) {
+                        inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                    }
+                    if (inputTrust == NULL) {
+                        CFRelease(trustSettings);
+                        goto errOut;
+                    }
+                    addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
                     CFRelease(trustSettings);
-                    goto errOut;
                 }
-                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
-                CFRelease(trustSettings);
             }
-            // Load admin trustSettings into inputTrust
-            trustSettings = NULL;
-            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings) == errSecSuccess && trustSettings != NULL) {
-                if (inputTrust == NULL) {
-                    inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-                }
-                if (inputTrust == NULL) {
-                    CFRelease(trustSettings);
-                    goto errOut;
-                }
-                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
-                CFRelease(trustSettings);
-            }
-
-            // Only add certificates with trust settings
             if (inputTrust == NULL) {
                 continue;
             }
@@ -512,6 +504,67 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             }
         }
     } while (searchResult == noErr);
+
+    // Read Trust Anchors
+    CFArrayRef currAnchors;
+    if(SecTrustCopyAnchorCertificates(&currAnchors) == errSecSuccess) {
+        CFIndex ncerts = CFArrayGetCount(currAnchors);
+
+        for (int i = 0; i < ncerts; i++) {
+            SecCertificateRef certRef = (SecCertificateRef)CFArrayGetValueAtIndex(currAnchors, i);
+            CSSM_DATA currCertificate;
+            err = SecCertificateGetData(certRef, &currCertificate);
+            jbyteArray certData = (*env)->NewByteArray(env, currCertificate.Length);
+            if (certData == NULL) {
+                goto errOut;
+            }
+            (*env)->SetByteArrayRegion(env, certData, 0, currCertificate.Length, (jbyte *)currCertificate.Data);
+
+            // Find the label.  It's a 'blob', but we interpret as characters.
+            jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certRef);
+            if (alias == NULL) {
+                goto errOut;
+            }
+
+            // See KeychainStore::createTrustedCertEntry for content of inputTrust for system root certs
+            // This time we load trust settings from domains kSecTrustSettingsDomainUser,
+            // kSecTrustSettingsDomainAdmin and kSecTrustSettingsDomainSystem
+            jobject inputTrust = NULL;
+            CFArrayRef trustSettings = NULL;
+            for (int n = 0; n < numDomains; n++) {
+                trustSettings = NULL;
+                // Load user trustSettings into inputTrust
+                if (SecTrustSettingsCopyTrustSettings(certRef, domains[n], &trustSettings) == errSecSuccess && trustSettings != NULL) {
+                    if(inputTrust == NULL) {
+                        inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                    }
+                    if (inputTrust == NULL) {
+                        CFRelease(trustSettings);
+                        goto errOut;
+                    }
+                    addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
+                    CFRelease(trustSettings);
+                }
+            }
+            if (inputTrust == NULL)
+                continue;
+
+            // Find the creation date.
+            jlong creationDate = getModDateFromItem(env, theItem);
+
+            // Call back to the Java object to create Java objects corresponding to this security object.
+            jlong nativeRef = ptr_to_jlong(certRef);
+            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
+            if ((*env)->ExceptionCheck(env)) {
+                goto errOut;
+            }
+        }
+
+    }
+
+    if (currAnchors != NULL) {
+        CFRelease(currAnchors);
+    }
 
 errOut:
     if (keychainItemSearch != NULL) {
