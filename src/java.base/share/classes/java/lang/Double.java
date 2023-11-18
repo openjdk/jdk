@@ -243,10 +243,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <li>using {@link java.math.BigDecimal BigDecimal} to store decimal
  * fractional values exactly
  *
- * <li>scaling up so the monetary value so it is an integer &mdash; for
+ * <li>scaling up so the monetary value is an integer &mdash; for
  * example, multiplying by 100 if the value is denominated in cents or
- * multiplying by 1000 if the value is denominated in mills &mdash; and
- * then storing the scaled value in an integer type.
+ * multiplying by 1000 if the value is denominated in mills &mdash;
+ * and then storing that scaled value in an integer type.
  *
  *</ul>
  *
@@ -286,8 +286,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Math.ulp(0.1d)} and likewise for other particular numerical values
  * in the {@code float} and {@code double} types.
  *
- * <p>As seen in the above conversions, compared to the exact result
- * the same floating-point value as a result can be:
+ * <p>As seen in the above conversions, compared to the exact
+ * numerical value the operation would have without rounding, the same
+ * floating-point value as a result can be:
  * <ul>
  * <li>greater than the exact result
  * <li>less than the exact result
