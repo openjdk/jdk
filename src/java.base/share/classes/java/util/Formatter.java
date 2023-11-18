@@ -54,12 +54,9 @@ import java.util.regex.Pattern;
 
 import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
@@ -4500,10 +4497,7 @@ public final class Formatter implements Closeable, Flushable {
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
                     char sep = '-';
                     ChronoField yearField;
-                    if (t instanceof ZonedDateTime
-                            || t instanceof OffsetDateTime
-                            || t instanceof LocalDateTime
-                            || t instanceof LocalDate) {
+                    if (t.query(TemporalQueries.chronology()) instanceof IsoChronology) {
                         yearField = ChronoField.YEAR;
                     } else {
                         yearField = ChronoField.YEAR_OF_ERA;
