@@ -3746,7 +3746,7 @@ public final class Class<T> implements java.io.Serializable,
         // from directly implemented interfaces excluding static methods...
         for (Class<?> intf : getInterfaces(/* cloneArray */ false)) {
             res = PublicMethods.MethodList.merge(
-                res, intf.getMethodsRecursive(name, parameterTypes, includeStatic, publicOnly));
+                res, intf.getMethodsRecursive(name, parameterTypes, /* includeStatic */ false, publicOnly));
         }
 
         return res;
@@ -4815,10 +4815,36 @@ public final class Class<T> implements java.io.Serializable,
      * "It is a compile-time error to declare two methods with override-equivalent
      * signatures in a class."
      * @return the candidate main method or null if none found
+     * @throws  SecurityException
+     *          If a security manager, <i>s</i>, is present and any of the
+     *          following conditions is met:
+     *          <ul>
+     *          <li> the caller's class loader is not the same as the
+     *          class loader of this class and invocation of
+     *          {@link SecurityManager#checkPermission
+     *          s.checkPermission} method with
+     *          {@code RuntimePermission("accessDeclaredMembers")}
+     *          denies access to the declared methods within this class
+     *          <li> the caller's class loader is not the same as or an
+     *          ancestor of the class loader for the current class and
+     *          invocation of {@link SecurityManager#checkPackageAccess
+     *          s.checkPackageAccess()} denies access to the package
+     *          of this class
+     *          </ul>
+     * @jls 8.2 Class Members
+     * @jls 8.4 Method Declarations
+     * @jls 8.4.2 Method Signature
      * @since 22
      */
     @PreviewFeature(feature=PreviewFeature.Feature.IMPLICIT_CLASSES)
+    @CallerSensitive
     public Method getMainMethod() {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+        }
+
         boolean isPreview = PreviewFeatures.isEnabled();
         Method mainMethod = getAnyMethod("main", String[].class);
 
