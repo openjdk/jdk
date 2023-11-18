@@ -63,7 +63,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
  *
- * The {@linkplain Double##equivalenceRelation discussion of binary to
+ * The {@linkplain Double##decimalToBinaryConversion discussion of binary to
  * decimal conversion issues} in {@code java.lang.Double} is also
  * applicable to {@code float} values.
  *
