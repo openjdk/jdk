@@ -24,13 +24,11 @@
 
 #pragma GCC target("avx2")
 #include "avx2-32bit-qsort.hpp"
-#include "avx2-64bit-qsort.hpp"
 #include "classfile_constants.h"
 
 
 #define DLL_PUBLIC __attribute__((visibility("default")))
 #define INSERTION_SORT_THRESHOLD_32BIT 16
-#define INSERTION_SORT_THRESHOLD_64BIT 20
 
 extern "C" {
 
@@ -39,14 +37,8 @@ extern "C" {
             case JVM_T_INT:
                 avx2_fast_sort((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
-            case JVM_T_LONG:
-                avx2_fast_sort((int64_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
-                break;
             case JVM_T_FLOAT:
                 avx2_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
-                break;
-            case JVM_T_DOUBLE:
-                avx2_fast_sort((double*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
         }
     }
@@ -56,14 +48,8 @@ extern "C" {
             case JVM_T_INT:
                 avx2_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
-            case JVM_T_LONG:
-                avx2_fast_partition((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-                break;
             case JVM_T_FLOAT:
                 avx2_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-                break;
-            case JVM_T_DOUBLE:
-                avx2_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
         }
     }
