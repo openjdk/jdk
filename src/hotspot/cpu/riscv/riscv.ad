@@ -8645,7 +8645,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, fRegF src) %{
 
   ins_cost(XFER_COST);
 
-  format %{ "fmv.x.w  $dst, $src\t#@MoveL2D_reg_stack" %}
+  format %{ "fmv.x.w  $dst, $src\t#@MoveF2I_reg_reg" %}
 
   ins_encode %{
     __ fmv_x_w(as_Register($dst$$reg), as_FloatRegister($src$$reg));
@@ -8699,7 +8699,7 @@ instruct MoveL2D_reg_reg(fRegD dst, iRegL src) %{
 
   ins_cost(XFER_COST);
 
-  format %{ "fmv.d.x  $dst, $src\t#@MoveD2L_reg_reg" %}
+  format %{ "fmv.d.x  $dst, $src\t#@MoveL2D_reg_reg" %}
 
   ins_encode %{
     __ fmv_d_x(as_FloatRegister($dst$$reg), as_Register($src$$reg));
@@ -8720,7 +8720,8 @@ instruct cmpF3_reg_reg(iRegINoSp dst, fRegF op1, fRegF op2)
   format %{ "flt.s  $dst, $op2, $op1\t#@cmpF3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.s  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpF3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8740,7 +8741,8 @@ instruct cmpD3_reg_reg(iRegINoSp dst, fRegD op1, fRegD op2)
   format %{ "flt.d  $dst, $op2, $op1\t#@cmpD3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.d  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpD3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8758,8 +8760,9 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   ins_cost(ALU_COST * 3 + BRANCH_COST);
   format %{ "slt   $dst, $op2, $op1\t#@cmpL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
-            "slt  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpL3_reg_reg"
+            "slt   $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8777,7 +8780,8 @@ instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpUL3_reg_reg"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8795,7 +8799,8 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
   format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpU3_reg_reg"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8940,12 +8945,12 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
   format %{
-    "ble $src1, $src2, Lsrc1.\t#@minI_rReg\n\t"
+    "ble $src1, $src2, Lsrc1\t#@minI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@minI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
@@ -8972,9 +8977,9 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     "bge $src1, $src2, Lsrc1\t#@maxI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@maxI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
