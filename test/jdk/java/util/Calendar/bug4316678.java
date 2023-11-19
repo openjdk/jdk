@@ -46,9 +46,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class bug4316678 {
 
     private static final String serializedData = "bug4316678.ser";
+
+    // Save JVM default TimeZone
     private static final TimeZone savedTz = TimeZone.getDefault();
 
-    // Save JVM default Locale and TimeZone
+    // Set custom JVM default TimeZone
     @BeforeAll
     static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));

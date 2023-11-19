@@ -59,15 +59,27 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build SigningPackageTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTest
  */
 public class SigningPackageTest {
 
+    private static boolean isAppImageSigned(JPackageCommand cmd) {
+        return cmd.hasArgument("--mac-signing-key-user-name") ||
+               cmd.hasArgument("--mac-app-image-sign-identity");
+    }
+
+    private static boolean isPKGSigned(JPackageCommand cmd) {
+        return cmd.hasArgument("--mac-signing-key-user-name") ||
+               cmd.hasArgument("--mac-installer-sign-identity");
+    }
+
     private static void verifyPKG(JPackageCommand cmd) {
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyPkgutil(outputBundle, getCertIndex(cmd));
-        SigningBase.verifySpctl(outputBundle, "install", getCertIndex(cmd));
+        SigningBase.verifyPkgutil(outputBundle, isPKGSigned(cmd), getCertIndex(cmd));
+        if (isPKGSigned(cmd)) {
+            SigningBase.verifySpctl(outputBundle, "install", getCertIndex(cmd));
+        }
     }
 
     private static void verifyDMG(JPackageCommand cmd) {
@@ -82,22 +94,45 @@ public class SigningPackageTest {
             // We will be called with all folders in DMG since JDK-8263155, but
             // we only need to verify app.
             if (dmgImage.endsWith(cmd.name() + ".app")) {
-                SigningBase.verifyCodesign(launcherPath, true, getCertIndex(cmd));
-                SigningBase.verifyCodesign(dmgImage, true, getCertIndex(cmd));
-                SigningBase.verifySpctl(dmgImage, "exec", getCertIndex(cmd));
+                SigningBase.verifyCodesign(launcherPath, isAppImageSigned(cmd),
+                                           getCertIndex(cmd));
+                SigningBase.verifyCodesign(dmgImage, isAppImageSigned(cmd),
+                                           getCertIndex(cmd));
+                if (isAppImageSigned(cmd)) {
+                    SigningBase.verifySpctl(dmgImage, "exec", getCertIndex(cmd));
+                }
             }
         });
     }
 
     private static int getCertIndex(JPackageCommand cmd) {
-        String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
-        return SigningBase.getDevNameIndex(devName);
+        if (cmd.hasArgument("--mac-signing-key-user-name")) {
+            String devName = cmd.getArgumentValue("--mac-signing-key-user-name");
+            return SigningBase.getDevNameIndex(devName);
+        } else {
+            // Signing-indentity
+            return Integer.valueOf(SigningBase.UNICODE_INDEX);
+        }
     }
 
     @Test
-    @Parameter("0")
-    @Parameter("1")
-    public static void test(int certIndex) throws Exception {
+    // ("signing-key or sign-identity", "sign app-image", "sign pkg", "certificate index"})
+    // Signing-key and ASCII certificate
+    @Parameter({"true", "true", "true", SigningBase.ASCII_INDEX})
+    // Signing-key and UNICODE certificate
+    @Parameter({"true", "true", "true", SigningBase.UNICODE_INDEX})
+    // Signing-indentity and UNICODE certificate
+    @Parameter({"false", "true", "true", SigningBase.UNICODE_INDEX})
+    // Signing-indentity, but sign app-image only and UNICODE certificate
+    @Parameter({"false", "true", "false", SigningBase.UNICODE_INDEX})
+    // Signing-indentity, but sign pkg only and UNICODE certificate
+    @Parameter({"false", "false", "true", SigningBase.UNICODE_INDEX})
+    public static void test(String... testArgs) throws Exception {
+        boolean signingKey = Boolean.parseBoolean(testArgs[0]);
+        boolean signAppImage = Boolean.parseBoolean(testArgs[1]);
+        boolean signPKG = Boolean.parseBoolean(testArgs[2]);
+        int certIndex = Integer.parseInt(testArgs[3]);
+
         SigningCheck.checkCertificates(certIndex);
 
         new PackageTest()
@@ -105,12 +140,39 @@ public class SigningPackageTest {
                 .forTypes(PackageType.MAC)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--mac-sign",
-                            "--mac-signing-key-user-name", SigningBase.getDevName(certIndex),
                             "--mac-signing-keychain", SigningBase.getKeyChain());
+                    if (signingKey) {
+                        cmd.addArguments("--mac-signing-key-user-name",
+                                         SigningBase.getDevName(certIndex));
+                    } else {
+                        if (signAppImage) {
+                            cmd.addArguments("--mac-app-image-sign-identity",
+                                             SigningBase.getAppCert(certIndex));
+                        }
+                        if (signPKG) {
+                            cmd.addArguments("--mac-installer-sign-identity",
+                                             SigningBase.getInstallerCert(certIndex));
+                        }
+                    }
                 })
                 .forTypes(PackageType.MAC_PKG)
                 .addBundleVerifier(SigningPackageTest::verifyPKG)
                 .forTypes(PackageType.MAC_DMG)
+                .addInitializer(cmd -> {
+                    if (!signingKey) {
+                        // jpackage throws expected error with
+                        // --mac-installer-sign-identity and DMG type
+                        cmd.removeArgumentWithValue("--mac-installer-sign-identity");
+                        // In case of not signing app image and DMG we need to
+                        // remove signing completely, otherwise we will default
+                        // to --mac-signing-key-user-name once
+                        // --mac-installer-sign-identity is removed.
+                        if (!signAppImage) {
+                            cmd.removeArgumentWithValue("--mac-signing-keychain");
+                            cmd.removeArgument("--mac-sign");
+                        }
+                    }
+                })
                 .addBundleVerifier(SigningPackageTest::verifyDMG)
                 .addBundleVerifier(SigningPackageTest::verifyAppImageInDMG)
                 .run();

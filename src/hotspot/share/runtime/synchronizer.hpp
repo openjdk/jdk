@@ -36,55 +36,6 @@ class LogStream;
 class ObjectMonitor;
 class ThreadsList;
 
-// Hash table of void* to a list of ObjectMonitor* owned by the JavaThread.
-// The JavaThread's owner key is either a JavaThread* or a stack lock
-// address in the JavaThread so we use "void*".
-//
-class ObjectMonitorsHashtable {
- private:
-  static unsigned int ptr_hash(void* const& s1) {
-    // 2654435761 = 2^32 * Phi (golden ratio)
-    return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
-  }
-
- public:
-  class PtrList;
-
- private:
-  // ResourceHashtable SIZE is specified at compile time so we
-  // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void*, PtrList*, 1031, AnyObj::C_HEAP, mtThread,
-                            &ObjectMonitorsHashtable::ptr_hash> PtrTable;
-  PtrTable* _ptrs;
-  size_t _key_count;
-  size_t _om_count;
-
- public:
-  // ResourceHashtable is passed to various functions and populated in
-  // different places so we allocate it using C_HEAP to make it immune
-  // from any ResourceMarks that happen to be in the code paths.
-  ObjectMonitorsHashtable() : _ptrs(new (mtThread) PtrTable), _key_count(0), _om_count(0) {}
-
-  ~ObjectMonitorsHashtable();
-
-  void add_entry(void* key, ObjectMonitor* om);
-
-  void add_entry(void* key, PtrList* list) {
-    _ptrs->put(key, list);
-    _key_count++;
-  }
-
-  PtrList* get_entry(void* key) {
-    PtrList** listpp = _ptrs->get(key);
-    return (listpp == nullptr) ? nullptr : *listpp;
-  }
-
-  bool has_entry(void* key, ObjectMonitor* om);
-
-  size_t key_count() { return _key_count; }
-  size_t om_count() { return _om_count; }
-};
-
 class MonitorList {
   friend class VMStructs;
 
@@ -172,29 +123,34 @@ class ObjectSynchronizer : AllStatic {
   // JNI detach support
   static void release_monitors_owned_by_thread(JavaThread* current);
 
+  // Iterate over all ObjectMonitors.
+  template <typename Function>
+  static void monitors_iterate(Function function);
+
+  // Iterate ObjectMonitors owned by any thread and where the owner `filter`
+  // returns true.
+  template <typename OwnerFilter>
+  static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
+
   // Iterate ObjectMonitors where the owner == thread; this does NOT include
-  // ObjectMonitors where owner is set to a stack lock address in thread:
-  //
-  // This version of monitors_iterate() works with the in-use monitor list.
-  static void monitors_iterate(MonitorClosure* m, JavaThread* thread);
-  // This version of monitors_iterate() works with the specified linked list.
-  static void monitors_iterate(MonitorClosure* closure,
-                               ObjectMonitorsHashtable::PtrList* list,
-                               JavaThread* thread);
+  // ObjectMonitors where owner is set to a stack lock address in thread.
+  static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
+
+  // Iterate ObjectMonitors owned by any thread.
+  static void owned_monitors_iterate(MonitorClosure* closure);
 
   // Initialize the gInflationLocks
   static void initialize();
 
-  // GC: we currently use aggressive monitor deflation policy
-  // Basically we try to deflate all monitors that are not busy.
-  static size_t deflate_idle_monitors(ObjectMonitorsHashtable* table);
+  // We currently use aggressive monitor deflation policy;
+  // basically we try to deflate all monitors that are not busy.
+  static size_t deflate_idle_monitors();
 
   // Deflate idle monitors:
   static void chk_for_block_req(JavaThread* current, const char* op_name,
                                 const char* cnt_name, size_t cnt, LogStream* ls,
                                 elapsedTimer* timer_p);
-  static size_t deflate_monitor_list(Thread* current, LogStream* ls, elapsedTimer* timer_p,
-                                     ObjectMonitorsHashtable* table);
+  static size_t deflate_monitor_list(Thread* current, LogStream* ls, elapsedTimer* timer_p);
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();
@@ -204,7 +160,8 @@ class ObjectSynchronizer : AllStatic {
   static bool is_final_audit() { return _is_final_audit; }
   static void set_is_final_audit() { _is_final_audit = true; }
   static jlong last_async_deflation_time_ns() { return _last_async_deflation_time_ns; }
-  static bool request_deflate_idle_monitors();  // for whitebox test support
+  static void request_deflate_idle_monitors();
+  static bool request_deflate_idle_monitors_from_wb();  // for whitebox test support
   static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
   static jlong time_since_last_async_deflation_ms();
 
@@ -214,7 +171,7 @@ class ObjectSynchronizer : AllStatic {
   static void chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                int* error_cnt_p);
   static void do_final_audit_and_print_stats();
-  static void log_in_use_monitor_details(outputStream* out);
+  static void log_in_use_monitor_details(outputStream* out, bool log_all);
 
  private:
   friend class SynchronizerTest;
@@ -250,6 +207,13 @@ class ObjectLocker : public StackObj {
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
+};
+
+// Interface to visit monitors
+class ObjectMonitorsView {
+public:
+  // Visit monitors that belong to the given thread
+  virtual void visit(MonitorClosure* closure, JavaThread* thread) = 0;
 };
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_HPP

@@ -435,7 +435,7 @@ abstract class LongPipeline<E_IN>
     public final LongStream distinct() {
         // While functional and quick to implement, this approach is not very efficient.
         // An efficient version requires a long-specific map/set implementation.
-        return boxed().distinct().mapToLong(i -> (long) i);
+        return boxed().distinct().mapToLong(i -> i);
     }
 
     // Terminal ops from LongStream

@@ -38,29 +38,31 @@ import java.util.HashMap;
 public class StringNameTable extends Name.Table {
 
     private final HashMap<String, Name> nameMap;
+    private final boolean intern;
 
 // Factory
 
-    public static StringNameTable create(Names names) {
-        return new StringNameTable(names);
+    public static StringNameTable create(Names names, boolean intern) {
+        return new StringNameTable(names, intern);
     }
 
 // Constructors
 
-    public StringNameTable(Names names) {
-        this(names, 0x8000);
+    public StringNameTable(Names names, boolean intern) {
+        this(names, 0x8000, intern);
     }
 
-    public StringNameTable(Names names, int initialCapacity) {
+    public StringNameTable(Names names, int initialCapacity, boolean intern) {
         super(names);
         this.nameMap = new HashMap<>(initialCapacity);
+        this.intern = intern;
     }
 
 // Name.Table
 
     @Override
     public Name fromString(String string) {
-        return this.nameMap.computeIfAbsent(string, s -> new NameImpl(this, s));
+        return this.nameMap.computeIfAbsent(string, s -> new NameImpl(this, intern ? s.intern() : s));
     }
 
     @Override

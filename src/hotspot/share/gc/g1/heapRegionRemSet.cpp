@@ -57,7 +57,6 @@ void HeapRegionRemSet::initialize(MemRegion reserved) {
 
 HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
-  _m(Mutex::service - 1, FormatBuffer<128>("HeapRegionRemSet#%u_lock", hr->hrm_index())),
   _code_roots(),
   _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
   _card_set(config, &_card_set_mm),
@@ -68,12 +67,7 @@ void HeapRegionRemSet::clear_fcc() {
   G1FromCardCache::clear(_hr->hrm_index());
 }
 
-void HeapRegionRemSet::clear(bool only_cardset) {
-  MutexLocker x(&_m, Mutex::_no_safepoint_check_flag);
-  clear_locked(only_cardset);
-}
-
-void HeapRegionRemSet::clear_locked(bool only_cardset, bool keep_tracked) {
+void HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
   if (!only_cardset) {
     _code_roots.clear();
   }
@@ -88,6 +82,7 @@ void HeapRegionRemSet::clear_locked(bool only_cardset, bool keep_tracked) {
 }
 
 void HeapRegionRemSet::reset_table_scanner() {
+  _code_roots.reset_table_scanner();
   _card_set.reset_table_scanner();
 }
 
@@ -108,33 +103,12 @@ void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
 
 void HeapRegionRemSet::add_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
-  assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
-          "should call add_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
-          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
-
-  MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
-  add_code_root_locked(nm);
-}
-
-void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
-  assert(nm != nullptr, "sanity");
-  assert((CodeCache_lock->owned_by_self() ||
-         (SafepointSynchronize::is_at_safepoint() &&
-          (_m.owned_by_self() || Thread::current()->is_VM_thread()))),
-          "not safely locked. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s, _m.owned_by_self(): %s, Thread::current()->is_VM_thread(): %s",
-          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),
-          BOOL_TO_STR(_m.owned_by_self()), BOOL_TO_STR(Thread::current()->is_VM_thread()));
-
-  if (!_code_roots.contains(nm)) { // with this test, we can assert that we do not modify the hash table while iterating over it
-    _code_roots.add(nm);
-  }
+  _code_roots.add(nm);
 }
 
 void HeapRegionRemSet::remove_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
-  assert_locked_or_safepoint(CodeCache_lock);
 
-  ConditionalMutexLocker ml(&_m, !CodeCache_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   _code_roots.remove(nm);
 
   // Check that there were no duplicates

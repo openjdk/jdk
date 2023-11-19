@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,11 +548,7 @@ public class TreeInfo {
             }
             case STRING_TEMPLATE: {
                 JCStringTemplate node = (JCStringTemplate) tree;
-                if (node.processor == null) {
-                    return node.pos;
-                } else {
-                    return getStartPos(node.processor);
-                }
+                return node.processor == null ? node.pos : getStartPos(node.processor);
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
@@ -1319,15 +1315,6 @@ public class TreeInfo {
     public static boolean isModuleInfo(JCCompilationUnit tree) {
         return tree.sourcefile.isNameCompatible("module-info", JavaFileObject.Kind.SOURCE)
                 && tree.getModuleDecl() != null;
-    }
-
-    public static JCModuleDecl getModule(JCCompilationUnit t) {
-        if (t.defs.nonEmpty()) {
-            JCTree def = t.defs.head;
-            if (def.hasTag(MODULEDEF))
-                return (JCModuleDecl) def;
-        }
-        return null;
     }
 
     public static boolean isPackageInfo(JCCompilationUnit tree) {

@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.Utils;
 /**
  * Implementation of event type.
@@ -56,8 +57,6 @@ public final class PlatformEventType extends Type {
 
     private boolean beginChunk;
     private boolean endChunk;
-    private boolean hasStackTrace = true;
-    private boolean hasDuration = true;
     private boolean hasPeriod = true;
     private boolean hasCutoff = false;
     private boolean hasThrottle = false;
@@ -131,14 +130,6 @@ public final class PlatformEventType extends Type {
         return settings;
     }
 
-    public void setHasStackTrace(boolean hasStackTrace) {
-        this.hasStackTrace = hasStackTrace;
-    }
-
-    public void setHasDuration(boolean hasDuration) {
-        this.hasDuration = hasDuration;
-    }
-
     public void setHasCutoff(boolean hasCutoff) {
        this.hasCutoff = hasCutoff;
     }
@@ -165,11 +156,15 @@ public final class PlatformEventType extends Type {
     }
 
     public boolean hasStackTrace() {
-        return this.hasStackTrace;
+        return getField(ImplicitFields.STACK_TRACE) != null;
     }
 
-    public boolean hasDuration() {
-        return this.hasDuration;
+    public boolean hasThreshold() {
+        if (hasCutoff) {
+            // Event has a duration, but not a threshold. Used by OldObjectSample
+            return false;
+        }
+        return getField(ImplicitFields.DURATION) != null;
     }
 
     public boolean hasPeriod() {

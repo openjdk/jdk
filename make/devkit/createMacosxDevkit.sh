@@ -106,8 +106,8 @@ for ex in $EXCLUDE_DIRS; do
 done
 
 echo "Copying Xcode.app..."
-echo rsync -rlH $INCLUDE_ARGS $EXCLUDE_ARGS "$XCODE_APP/." $DEVKIT_ROOT/Xcode.app/
-rsync -rlH $INCLUDE_ARGS $EXCLUDE_ARGS "$XCODE_APP/." $DEVKIT_ROOT/Xcode.app/
+echo rsync -rlH $INCLUDE_ARGS $EXCLUDE_ARGS "$XCODE_APP/." $DEVKIT_ROOT/Xcode
+rsync -rlH $INCLUDE_ARGS $EXCLUDE_ARGS "$XCODE_APP/." $DEVKIT_ROOT/Xcode
 
 ################################################################################
 
@@ -119,8 +119,8 @@ echo "Generating devkit.info..."
 rm -f $DEVKIT_ROOT/devkit.info
 echo-info "# This file describes to configure how to interpret the contents of this devkit"
 echo-info "DEVKIT_NAME=\"Xcode $XCODE_VERSION (devkit)\""
-echo-info "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode.app/Contents/Developer/usr/bin\""
-echo-info "DEVKIT_SYSROOT=\"\$DEVKIT_ROOT/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/$SDK_VERSION.sdk\""
+echo-info "DEVKIT_TOOLCHAIN_PATH=\"\$DEVKIT_ROOT/Xcode/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:\$DEVKIT_ROOT/Xcode/Contents/Developer/usr/bin\""
+echo-info "DEVKIT_SYSROOT=\"\$DEVKIT_ROOT/Xcode/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/$SDK_VERSION.sdk\""
 echo-info "DEVKIT_EXTRA_PATH=\"\$DEVKIT_TOOLCHAIN_PATH\""
 
 ################################################################################

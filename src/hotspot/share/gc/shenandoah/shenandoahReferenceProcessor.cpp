@@ -402,7 +402,7 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type, uint wo
 }
 
 template <typename T>
-void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {;
+void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {
   log_trace(gc, ref)("Processing discovered list #%u : " PTR_FORMAT, worker_id, p2i(refproc_data.discovered_list_head<T>()));
   T* list = refproc_data.discovered_list_addr<T>();
   // The list head is basically a GC root, we need to resolve and update it,

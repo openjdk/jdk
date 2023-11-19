@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,24 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
         var cc = Classfile.of();
         for (byte[] bytes : classes) {
             bh.consume(cc.parse(bytes).thisClass().asInternalName());
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void jdkReadMemberNames(Blackhole bh) {
+        var cc = Classfile.of();
+        for (byte[] bytes : classes) {
+            var cm = cc.parse(bytes);
+            bh.consume(cm.thisClass().asInternalName());
+            for (var f : cm.fields()) {
+                bh.consume(f.fieldName().stringValue());
+                bh.consume(f.fieldType().stringValue());
+            }
+            for (var m : cm.methods()) {
+                bh.consume(m.methodName().stringValue());
+                bh.consume(m.methodType().stringValue());
+            }
         }
     }
 

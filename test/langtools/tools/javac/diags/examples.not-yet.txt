@@ -215,3 +215,10 @@ compiler.misc.illegal.signature                               # the compiler can
 
 # this one needs a forged class file to be reproduced
 compiler.err.annotation.unrecognized.attribute.name
+
+# this one is transitional (waiting for FFM API to exit preview)
+compiler.warn.restricted.method
+
+# Pending removal
+compiler.note.implicit.annotation.processing
+compiler.warn.proc.use.proc.or.implicit
