@@ -1940,6 +1940,25 @@ MultipleStackTracesCollector::allocate_and_fill_stacks(jint thread_count) {
          "the last copied frame info must be the last record");
 }
 
+// AdapterClosure is to make use of JvmtiUnitedHandshakeClosure objects from
+// Handshake::execute() which is unaware of the do_vthread() member functions.
+class AdapterClosure : public HandshakeClosure {
+  JvmtiUnitedHandshakeClosure* _hs_cl;
+  Handle _target_h;
+
+ public:
+  AdapterClosure(JvmtiUnitedHandshakeClosure* hs_cl, Handle target_h)
+      : HandshakeClosure(hs_cl->name()), _hs_cl(hs_cl), _target_h(target_h) {}
+
+  virtual void do_thread(Thread* target) {
+    if (java_lang_VirtualThread::is_instance(_target_h())) {
+      _hs_cl->do_vthread(_target_h); // virtual thread
+    } else {
+      _hs_cl->do_thread(target);     // platform thread
+    }
+  }
+};
+
 // Supports platform and virtual threads.
 // JvmtiVTMSTransitionDisabler is always set by this function.
 void
@@ -1971,21 +1990,21 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
   bool self = target_jt == JavaThread::current();
 
   hs_cl->set_self(self);           // needed when suspend is required for non-current target thread
-  hs_cl->set_target_h(target_h);   // need this to differentiate between virtual and carrier thread
 
   if (java_lang_VirtualThread::is_instance(target_h())) { // virtual thread
     if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
       return;
     }
-    if (target_jt == nullptr) {    // unmounted virtual thread
+    if (target_jt == nullptr) {    // current or unmounted virtual thread
       hs_cl->do_vthread(target_h); // execute handshake closure callback on current thread directly
     }
   }
   if (target_jt != nullptr) {      // mounted virtual or platform thread
-    if (self) {                    // target thread is current
-      hs_cl->do_thread(target_jt); // execute handshake closure callback on current thread directly
+    AdapterClosure acl(hs_cl, target_h);
+    if (self) {                    // target platform thread is current
+      acl.do_thread(target_jt);    // execute handshake closure callback on current thread directly
     } else {
-      Handshake::execute(hs_cl, tlh, target_jt); // delegate to Handshake implementation
+      Handshake::execute(&acl, tlh, target_jt); // delegate to Handshake implementation
     }
   }
 }
@@ -2384,10 +2403,6 @@ SetFramePopClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   JavaThread* java_thread = JavaThread::cast(target);
 
-  if (java_lang_VirtualThread::is_instance(_target_h())) { // virtual thread
-    do_vthread(_target_h);
-    return;
-  }
   if (java_thread->is_exiting()) {
     return; // JVMTI_ERROR_THREAD_NOT_ALIVE (default)
   }
@@ -2412,7 +2427,7 @@ SetFramePopClosure::do_thread(Thread *target) {
 
 void
 SetFramePopClosure::do_vthread(Handle target_h) {
-  if (!_self && !JvmtiVTSuspender::is_vthread_suspended(_target_h())) {
+  if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
@@ -2443,10 +2458,6 @@ GetCurrentContendedMonitorClosure::do_thread(Thread *target) {
 
 void
 GetStackTraceClosure::do_thread(Thread *target) {
-  if (java_lang_VirtualThread::is_instance(_target_h())) { // virtual thread
-    do_vthread(_target_h);
-    return;
-  }
   Thread* current = Thread::current();
   ResourceMark rm(current);
 
@@ -2523,11 +2534,6 @@ GetFrameCountClosure::do_thread(Thread *target) {
   JavaThread* jt = JavaThread::cast(target);
   assert(target == jt, "just checking");
 
-  if (java_lang_VirtualThread::is_instance(_target_h())) { // virtual thread
-    do_vthread(_target_h);
-    return;
-  }
-
   if (!jt->is_exiting() && jt->threadObj() != nullptr) {
     _result = ((JvmtiEnvBase*)_env)->get_frame_count(jt, _count_ptr);
   }
@@ -2543,10 +2549,6 @@ GetFrameLocationClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
   assert(target == jt, "just checking");
 
-  if (java_lang_VirtualThread::is_instance(_target_h())) { // virtual thread
-    do_vthread(_target_h);
-    return;
-  }
   if (!jt->is_exiting() && jt->threadObj() != nullptr) {
     _result = ((JvmtiEnvBase*)_env)->get_frame_location(jt, _depth,
                                                         _method_ptr, _location_ptr);

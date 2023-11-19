@@ -467,18 +467,14 @@ class JvmtiHandshakeClosure : public HandshakeClosure {
 // It is intended to support both platform and virtual threads.
 class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
  protected:
-  Handle _target_h;
   jvmtiError _result;
   bool _self;
  public:
   JvmtiUnitedHandshakeClosure(const char* name)
     : HandshakeClosure(name),
-      _target_h(Handle()),
       _result(JVMTI_ERROR_THREAD_NOT_ALIVE),
       _self(false) {}
 
-  // used by JvmtiHandshake::execute
-  void set_target_h(Handle target_h) { _target_h = target_h; }
   void set_result(jvmtiError err) { _result = err; }
   void set_self(bool val) { _self = val; }
   jvmtiError result() { return _result; }
