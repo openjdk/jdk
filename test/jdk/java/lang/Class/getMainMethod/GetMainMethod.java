@@ -58,6 +58,9 @@
         foundMain(RootStatic.class, SuperStatic.class);
         foundMain(Interface.class);
         foundMain(RootInterface.class, Interface.class);
+        oneArg(ChooseOne.class);
+        oneArg(InheritOne.class);
+        oneArg(ImplementOne.class);
 
         if (hasErrors) {
             throw new RuntimeException("Has Errors");
@@ -76,8 +79,14 @@
 
     private static void noMain(Class<?> root) {
         Method main = root.getMainMethod();
-        test(main == null, "Main wrongly found in " + root);
+        test(main == null, "Main in wrong class from " + root);
     }
+
+    private static void oneArg(Class<?> root) {
+        Method main = root.getMainMethod();
+        test(main.getParameterCount() == 1, "Main found with no arguments in " + root);
+    }
+
 
     private static void test(boolean test, String message) {
         if (!test) {
@@ -117,4 +126,6 @@ class RootStatic extends SuperStatic {}
 interface Interface { default void main(String [] args) {} }
 class RootInterface implements Interface {}
 
-
+class ChooseOne { public static void main(String [] args) {} public static void main() {} }
+class InheritOne extends SuperStatic { public static void main() {} }
+class ImplementOne implements Interface { public static void main() {} }
