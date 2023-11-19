@@ -30,7 +30,7 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 
 /**
- * Represents the JDKCatalog
+ * Represents the built-in Catalog that hosts the DTDs for the Java platform.
  */
 public class JdkCatalog {
     public static final String JDKCATALOG = "/jdk/xml/internal/jdkcatalog/JDKCatalog.xml";
