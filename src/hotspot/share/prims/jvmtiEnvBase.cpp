@@ -627,8 +627,7 @@ bool
 JvmtiEnvBase::is_vthread_alive(oop vt) {
   oop cont = java_lang_VirtualThread::continuation(vt);
   return !jdk_internal_vm_Continuation::done(cont) &&
-         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW &&
-         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
+         java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW;
 }
 
 // Return JavaThread if virtual thread is mounted, null otherwise.
@@ -1995,7 +1994,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
     if (!JvmtiEnvBase::is_vthread_alive(target_h())) {
       return;
     }
-    if (target_jt == nullptr) {    // current or unmounted virtual thread
+    if (target_jt == nullptr) {    // unmounted virtual thread
       hs_cl->do_vthread(target_h); // execute handshake closure callback on current thread directly
     }
   }
