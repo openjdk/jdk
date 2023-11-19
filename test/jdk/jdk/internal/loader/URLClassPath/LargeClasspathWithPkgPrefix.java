@@ -25,7 +25,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -34,12 +33,12 @@ import jdk.test.lib.util.JarBuilder;
 /*
  * @test
  * @bug 8308184
- * @summary Verify that an application can be launched when the classpath contains large number of
- *          jars and the java.protocol.handler.pkgs system property is set
  * @library /test/lib/
  * @build jdk.test.lib.util.JarBuilder jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.process.ProcessTools
  * @run driver LargeClasspathWithPkgPrefix
+ * @summary Verify that an application can be launched when the classpath contains large number of
+ *          jars and the java.protocol.handler.pkgs system property is set
  */
 public class LargeClasspathWithPkgPrefix {
 
@@ -126,8 +125,7 @@ public class LargeClasspathWithPkgPrefix {
 
     // java -Djava.protocol.handler.pkgs=foo.bar.some.nonexistent.pkg -cp <classpath> Foo
     private static void launchApplication(String classPath) throws Exception {
-        String java = JDKToolFinder.getJDKTool("java");
-        ProcessBuilder pb = new ProcessBuilder(java,
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-Djava.protocol.handler.pkgs=foo.bar.some.nonexistent.pkg",
                 "-cp", classPath,
                 "Foo");

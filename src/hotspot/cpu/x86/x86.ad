@@ -8990,9 +8990,9 @@ instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kR
 %}
 
 
-instruct vmask_gen(kReg dst, rRegL len, rRegL temp) %{
+instruct vmask_gen(kReg dst, rRegL len, rRegL temp, rFlagsReg cr) %{
   match(Set dst (VectorMaskGen len));
-  effect(TEMP temp);
+  effect(TEMP temp, KILL cr);
   format %{ "vector_mask_gen32 $dst, $len \t! vector mask generator" %}
   ins_encode %{
     __ genmask($dst$$KRegister, $len$$Register, $temp$$Register);

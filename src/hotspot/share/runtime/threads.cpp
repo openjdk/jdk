@@ -82,6 +82,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/thread.inline.hpp"
@@ -1231,6 +1232,12 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
 JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
   assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
   for (JavaThread* q : *t_list) {
+    // Need to start processing before accessing oops in the thread.
+    StackWatermark* watermark = StackWatermarkSet::get(q, StackWatermarkKind::gc);
+    if (watermark != nullptr) {
+      watermark->start_processing();
+    }
+
     if (q->lock_stack().contains(obj)) {
       return q;
     }
