@@ -4788,10 +4788,8 @@ public final class Class<T> implements java.io.Serializable,
 
     private native int getClassAccessFlagsRaw0();
 
-    private Method getAnyMethod(String name, Class<?>... parameterTypes) {
-        Objects.requireNonNull(name, "name must not be null");
-        Objects.requireNonNull(parameterTypes, "parameterTypes must not be null");
-        PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, false);
+    private Method findMethod(boolean publicOnly, String name, Class<?>... parameterTypes) {
+        PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, publicOnly);
         return res == null ? null : getReflectionFactory().copyMethod(res.getMostSpecific());
     }
 
@@ -4839,28 +4837,32 @@ public final class Class<T> implements java.io.Serializable,
     @PreviewFeature(feature=PreviewFeature.Feature.IMPLICIT_CLASSES)
     @CallerSensitive
     public Method getMainMethod() {
+        boolean isPreview = PreviewFeatures.isEnabled();
+
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            checkMemberAccess(sm, Member.DECLARED, Reflection.getCallerClass(), true);
+            checkMemberAccess(sm, isPreview ? Member.DECLARED : Member.PUBLIC,
+                    Reflection.getCallerClass(), true);
         }
 
-        boolean isPreview = PreviewFeatures.isEnabled();
-        Method mainMethod = getAnyMethod("main", String[].class);
+        Method mainMethod = findMethod(!isPreview, "main", String[].class);
 
         if (isPreview && mainMethod == null) {
-            mainMethod = getAnyMethod("main");
+            mainMethod = findMethod(false, "main");
         }
 
-        if (mainMethod != null) {
-            int mods = mainMethod.getModifiers();
+        if (mainMethod == null) {
+            return null;
+        }
 
-            if (Modifier.isPrivate(mods) || Modifier.isAbstract(mods) ||
-                    mainMethod.getReturnType() != void.class) {
-                mainMethod = null;
-            } else if (!isPreview && !(Modifier.isStatic(mods) && Modifier.isPublic(mods))) {
-                mainMethod = null;
-            }
+        int mods = mainMethod.getModifiers();
+
+        if (Modifier.isAbstract(mods) ||
+                mainMethod.getReturnType() != void.class ||
+                (isPreview && Modifier.isPrivate(mods)) ||
+                (!isPreview && !Modifier.isStatic(mods))) {
+            return null;
         }
 
         return mainMethod;
