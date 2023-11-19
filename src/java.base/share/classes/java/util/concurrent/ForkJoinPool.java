@@ -676,7 +676,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Trimming workers. To release resources after periods of lack of
      * use, a worker starting to wait when the pool is quiescent will
      * time out and terminate if the pool has remained quiescent for
-     * period given by field keepAlive.
+     * period given by field keepAlive (default 60sec), which applies
+     * to the first timeout of a fully populated pool. Subsequent (or
+     * other) cases use delays such that, if still quiescent, all will
+     * be released before one additional keepAlive unit elapses.
      *
      * Joining Tasks
      * =============
@@ -1876,8 +1879,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                                    c, ((RC_MASK & (c - RC_UNIT)) |
                                        (TC_MASK & (c - TC_UNIT)) |
                                        (LMASK & c)))));
-        else if ((int)c == 0)             // was dropped on timeout
-            replaceable = false;
+        else if ((int)c != 0)
+            replaceable = true;           // signal below to cascade timeouts
         if (w != null) {                  // cancel remaining tasks
             for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; ) {
                 try {
@@ -2094,63 +2097,59 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return current phase, with IDLE set if worker should exit
      */
     private int awaitWork(WorkQueue w, int p) {
-        if (w != null) {
-            int idlePhase = p + IDLE, nextPhase = p + (IDLE << 1);
-            long pc = ctl, qc = (nextPhase & LMASK) | ((pc - RC_UNIT) & UMASK);
-            w.stackPred = (int)pc;                   // set ctl stack link
-            w.phase = idlePhase;                     // try to inactivate
-            if (!compareAndSetCtl(pc, qc))           // contended enque
-                return w.phase = p;                  // back out
-            int ac = (short)(qc >>> RC_SHIFT);
-            boolean quiescent = (ac <= 0 && quiescent());
-            if ((runState & STOP) != 0)
-                return idlePhase;
-            int spins = ac + ((((int)(qc >>> TC_SHIFT)) & SMASK) << 1);
-            while ((p = w.phase) == idlePhase && --spins > 0)
-                Thread.onSpinWait();  // spin for approx #accesses to signal
-            if (p == idlePhase) {
-                long deadline = (!quiescent ? 0L :   // timeout for trim
-                                 System.currentTimeMillis() + keepAlive);
-                WorkQueue[] qs = queues;
-                int n = (qs == null) ? 0 : qs.length;
-                for (int i = 0; i < n; ++i) {        // recheck queues
-                    WorkQueue q; ForkJoinTask<?>[] a; int cap;
-                    if ((q = qs[i]) != null &&
-                        (a = q.array) != null && (cap = a.length) > 0 &&
-                        a[q.base & (cap - 1)] != null &&
-                        ctl == qc && compareAndSetCtl(qc, pc)) {
-                        w.phase = (int)qc;           // release
-                        break;
-                    }
+        if ((p & IDLE) != 0 || w == null)       // already terminating
+            return p;
+        int nextPhase = p + (IDLE << 1);
+        long pc = ctl, qc = (nextPhase & LMASK) | ((pc - RC_UNIT) & UMASK);
+        w.stackPred = (int)pc;                  // set ctl stack link
+        w.phase = p | IDLE;                     // try to inactivate
+        if (!compareAndSetCtl(pc, qc))          // contended enque
+            return w.phase = p;                 // back out
+        WorkQueue[] qs = queues;                // recheck queues
+        int n = (qs == null) ? 0 : qs.length;
+        for (int l = n, r = nextPhase; l > 0; --l, ++r) {
+            WorkQueue q; ForkJoinTask<?>[] a; int cap;
+            if ((q = qs[r & SMASK & (n - 1)]) != null && (a = q.array) != null &&
+                (cap = a.length) > 0 && a[q.base & (cap - 1)] != null &&
+                qc == ctl && qc == compareAndExchangeCtl(qc, pc))
+                return p = w.phase = nextPhase; // self-signal
+            if ((p = w.phase) == nextPhase)
+                return p;                       // interleave signal checks
+            Thread.onSpinWait();                // reduce memory traffic
+        }
+        long deadline = 0L;                     // timeout if trimmable
+        if ((qc & RC_MASK) <= 0L && quiescent() && // all idle and w is ctl top
+            (nextPhase & SMASK) == ((int)(qc = ctl) & SMASK)) {
+            int nt = (short)(qc >>> TC_SHIFT), np = parallelism;
+            long delay = keepAlive;
+            if (np != nt)                       // scale if not at target
+                delay = Math.max(TIMEOUT_SLOP, delay / Math.max(2, np));
+            if ((deadline = delay + System.currentTimeMillis()) == 0L)
+                deadline = 1L;                  // avoid zero
+        }
+        LockSupport.setCurrentBlocker(this);    // emulate LockSupport.park
+        w.parker = Thread.currentThread();
+        for (p = IDLE;;) {
+            if ((runState & STOP) != 0 || (p = w.phase) == nextPhase)
+                break;
+            U.park(deadline != 0L, deadline);
+            if ((p = w.phase) == nextPhase || (runState & STOP) != 0)
+                break;
+            Thread.interrupted();               // clear for next park
+            if (deadline != 0L &&               // try to trim on timeout
+                deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
+                long sp = w.stackPred & LMASK, c;
+                if ((nextPhase & SMASK) == ((int)(c = ctl) & SMASK)  &&
+                    compareAndSetCtl(c, sp | (UMASK & (c - TC_UNIT)))) {
+                    w.source = DEREGISTERED;
+                    w.phase = nextPhase;
+                    break;
                 }
-                if ((p = w.phase) == idlePhase) {    // emulate LockSupport.park
-                    LockSupport.setCurrentBlocker(this);
-                    w.parker = Thread.currentThread();
-                    for (;;) {
-                        if ((runState & STOP) != 0 || (p = w.phase) != idlePhase)
-                            break;
-                        U.park(quiescent, deadline);
-                        if ((p = w.phase) != idlePhase || (runState & STOP) != 0)
-                            break;
-                        Thread.interrupted();        // clear for next park
-                        if (quiescent && TIMEOUT_SLOP >
-                            deadline - System.currentTimeMillis()) {
-                            long sp = w.stackPred & LMASK;
-                            long c = ctl, nc = sp | (UMASK & (c - TC_UNIT));
-                            if (((int)c & SMASK) == (idlePhase & SMASK) &&
-                                compareAndSetCtl(c, nc)) {
-                                w.source = DEREGISTERED;
-                                w.phase = (int)c;
-                                break;
-                            }
-                            deadline += keepAlive;   // not head; reset timer
-                        }
-                    }
-                    w.parker = null;
-                    LockSupport.setCurrentBlocker(null);
-                }
+                deadline = 0L;                  // no longer trimmable
             }
         }
+        w.parker = null;
+        LockSupport.setCurrentBlocker(null);
         return p;
     }
 
