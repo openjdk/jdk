@@ -105,7 +105,7 @@ size_t MonitorList::unlink_deflated(GrowableArray<ObjectMonitor*>* unlinked_list
   ObjectMonitor* prev = nullptr;
   ObjectMonitor* head = Atomic::load_acquire(&_head);
   ObjectMonitor* m = head;
-  // The in-use list head can be null during the final audit.
+
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor.
@@ -1697,11 +1697,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   // Deflate some idle ObjectMonitors.
   size_t deflated_count = deflate_monitor_list(&safepointer);
 
-  // Unlink the deflated ObjectMonitros from the in-use list.
+  // Unlink the deflated ObjectMonitors from the in-use list.
   size_t unlinked_count = 0;
   size_t deleted_count = 0;
   if (deflated_count > 0) {
-    ResourceMark rm;
+    ResourceMark rm(current);
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(&delete_list, &safepointer);
 
@@ -1737,12 +1737,12 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     // ThreadBlockInVM is destroyed here
   }
 
+  log.end(deflated_count, unlinked_count);
+
   OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
   OM_PERFDATA_OP(Deflations, inc(deflated_count));
 
   GVars.stw_random = os::random();
-
-  log.end(deflated_count, unlinked_count);
 
   if (deflated_count != 0) {
     _no_progress_cnt = 0;
