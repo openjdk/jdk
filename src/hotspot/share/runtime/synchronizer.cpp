@@ -474,7 +474,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.can_push()) {
         markWord mark = obj()->mark_acquire();
-        while (mark.is_unlocked()) {
+        while (mark.is_neutral()) {
           // Try to swing into 'fast-locked' state.
           assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
           const markWord locked_mark = mark.set_fast_locked();
