@@ -83,21 +83,21 @@ import java.util.function.IntBinaryOperator;
  * --------->  data flow direction
  *
  *
- *              |                                       |
- *              |   upstreamWriter                      |   upstreamReader
- *              |    obtained from                      |    obtained from
- *              |   upstreamWriter()                    |   upstreamReader()
- *              v                                       v
- *      +-------------------+                   +-------------------+
- *      *                   *                   *                   *
- *      *  SSLFlowDelegate  *                   *  SSLFlowDelegate  *
- *      *     encrypts      *                   *     decrypts      *
- *      +-------------------+                   +-------------------+
- *              |                                       |
- *              |   downWriter                          |   downReader
- *              | supplied to constructor               |  supplied to constructor
- *              v                                       v
- *
+ *                  |                                   |
+ *  upstreamWriter  |                                   | upstreamReader
+ *  obtained from   |                                   | obtained from
+ * upstreamWriter() |                                   | upstreamReader()
+ *                  v                                   v
+ *      +-----------------------------------------------------------+
+ *      *                                                           *
+ *      *                       SSLFlowDelegate                     *
+ *      *        encrypts                            decrypts       *
+ *      +-----------------------------------------------------------+
+ *                  |                                   |
+ *    downWriter    |                                   | downReader
+ *    supplied to   |                                   | supplied to
+ *    constructor   |                                   | constructor
+ *                  v                                   v
  *
  * }
  * </pre>
