@@ -199,16 +199,6 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVV) {
-    if (!ext_V.enabled()) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
-  }
-
   if (UseRVC && !ext_C.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
@@ -261,6 +251,25 @@ void VM_Version::initialize() {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
+
+  if (UseRVV) {
+    if (!ext_V.enabled()) {
+      warning("RVV is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseRVV, false);
+    } else {
+      // read vector length from vector CSR vlenb
+      _initial_vector_length = cpu_vector_length();
+    }
+  }
+
+#ifdef COMPILER2
+  c2_initialize();
+#endif // COMPILER2
+
+  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
@@ -271,10 +280,6 @@ void VM_Version::initialize() {
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
-
-#ifdef COMPILER2
-  c2_initialize();
-#endif // COMPILER2
 }
 
 #ifdef COMPILER2
@@ -288,18 +293,9 @@ void VM_Version::c2_initialize() {
   }
 
   if (!UseRVV) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
-  }
-
-  if (!UseRVV && MaxVectorSize) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  }
-
-  if (!UseRVV) {
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
-  }
-
-  if (UseRVV) {
+  } else {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
     } else if (!is_power_of_2(MaxVectorSize)) {

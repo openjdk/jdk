@@ -38,6 +38,10 @@
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
+
+  void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
+  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
+
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in macroAssembler_riscv.cpp.
@@ -157,10 +161,17 @@
   void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                          Register tmp1, Register tmp2, Register tmp3);
 
-  void signum_fp(FloatRegister dst, FloatRegister src, FloatRegister one,
-                 bool is_double);
+  void signum_fp(FloatRegister dst, FloatRegister one, bool is_double);
 
   // intrinsic methods implemented by rvv instructions
+
+  // compress bits, i.e. j.l.Integer/Long::compress.
+  void compress_bits_i_v(Register dst, Register src, Register mask);
+  void compress_bits_l_v(Register dst, Register src, Register mask);
+  // expand bits, i.e. j.l.Integer/Long::expand.
+  void expand_bits_i_v(Register dst, Register src, Register mask);
+  void expand_bits_l_v(Register dst, Register src, Register mask);
+
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
                        int elem_size);
