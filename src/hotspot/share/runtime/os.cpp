@@ -1873,10 +1873,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
-#define ARGSFMT " range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
 #define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
 
-  log_trace(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
+  log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
 
   assert(is_power_of_2(alignment), "alignment invalid (" ARGSFMT ")", ARGSFMTARGS);
   assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
@@ -2004,6 +2004,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
   return result;
 #undef ARGSFMT
