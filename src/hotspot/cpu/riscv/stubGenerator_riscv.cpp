@@ -2709,7 +2709,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ slli(needle_len, needle_len, BitsPerByte * wordSize / 2);
-    __ orr(haystack_len, haystack_len, needle_len); // restore needle_len(32bits)
+    __ orr(haystack_len, haystack_len, needle_len); // restore needle_len(3right_2_bits)
     __ sub(result, result, 1); // array index from 0, so result -= 1
 
     __ bind(L_HAS_ZERO_LOOP);
@@ -4416,8 +4416,8 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef COMPILER2
 
-static const int64_t bits2 = right_n_bits(2);
-static const int64_t bits3 = right_n_bits(3);
+static const int64_t right_2_bits = right_n_bits(2);
+static const int64_t right_3_bits = right_n_bits(3);
 
   // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
   // are represented as long[5], with BITS_PER_LIMB = 26.
@@ -4474,7 +4474,7 @@ static const int64_t bits3 = right_n_bits(3);
     // First, U_2:U_1:U_0 += (U_2 >> 2)
     __ srli(tmp1, U_2, 2);
     __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
-    __ andi(U_2, U_2, bits2); // Clear U_2 except for the lowest two bits
+    __ andi(U_2, U_2, right_2_bits); // Clear U_2 except for the lowest two bits
     __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
     __ add(U_2, U_2, tmp2);
 
@@ -4506,7 +4506,7 @@ static const int64_t bits3 = right_n_bits(3);
     Label here;
 
     RegSet saved_regs = RegSet::range(x18, x21);
-    RegSetIterator<Register> regs = (RegSet::range(x13, x31) - RegSet::range(x22, x27)).begin();
+    RegSetIterator<Register> regs = (RegSet::range(x14, x31) - RegSet::range(x22, x27)).begin();
     __ push_reg(saved_regs, sp);
 
     // Arguments
@@ -4515,7 +4515,7 @@ static const int64_t bits3 = right_n_bits(3);
     // R_n is the 128-bit randomly-generated key, packed into two
     // registers. The caller passes this key to us as long[5], with
     // BITS_PER_LIMB = 26.
-    const Register R_0 = *++regs, R_1 = *++regs;
+    const Register R_0 = *regs, R_1 = *++regs;
     poly1305_pack_26(R_0, R_1, r_start, t1, t2);
 
     // RR_n is (R_n >> 2) * 5
@@ -4562,7 +4562,7 @@ static const int64_t bits3 = right_n_bits(3);
       __ wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
       __ wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
 
-      __ andi(U_2, R_0, bits2);
+      __ andi(U_2, R_0, right_2_bits);
       __ mul(U_2, S_2, U_2);
 
       // Partial reduction mod 2**130 - 5
@@ -4607,7 +4607,7 @@ static const int64_t bits3 = right_n_bits(3);
 
     // Storing 41-64 bits of U_1 and first three bits from U_2 in one register
     __ srli(t1, U_1, 40);
-    __ andi(t2, U_2, bits3);
+    __ andi(t2, U_2, right_3_bits);
     __ slli(t2, t2, 24);
     __ add(t1, t1, t2);
     __ sd(t1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
