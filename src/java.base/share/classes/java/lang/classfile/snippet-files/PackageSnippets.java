@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.snippets;
 
+import java.lang.classfile.ClassBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -43,6 +44,7 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -217,8 +219,35 @@ class PackageSnippets {
         // @end
     }
 
-    void strictTransform() {
-        // @start region="strictTransform"
+    void strictTransform1() {
+        // @start region="strictTransform1"
+        CodeTransform fooToBar = (b, e) -> {
+            if (ClassFile.latestMajorVersion() > ClassFile.JAVA_22_VERSION) {
+                throw new IllegalArgumentException("Cannot run on JDK > 22");
+            }
+            switch (e) {
+                case ArrayLoadInstruction i -> doSomething(b, i);
+                case ArrayStoreInstruction i -> doSomething(b, i);
+                default ->  b.with(e);
+            }
+        };
+        // @end
+    }
+
+    void strictTransform2() {
+        // @start region="strictTransform2"
+        ClassTransform fooToBar = (b, e) -> {
+            switch (e) {
+                case ClassFileVersion v when v.majorVersion() > ClassFile.JAVA_22_VERSION ->
+                    throw new IllegalArgumentException("Cannot transform class file version " + v.majorVersion());
+                default ->  doSomething(b, e);
+            }
+        };
+        // @end
+    }
+
+    void strictTransform3() {
+        // @start region="strictTransform3"
         CodeTransform fooToBar = (b, e) -> {
             switch (e) {
                 case ArrayLoadInstruction i -> doSomething(b, i);
@@ -267,6 +296,8 @@ class PackageSnippets {
     }
 
     void doSomething(CodeBuilder b, CodeElement e) {}
+
+    void doSomething(ClassBuilder b, ClassElement e) {}
 
     void instrumentCallsTransform() {
         // @start region="instrumentCallsTransform"

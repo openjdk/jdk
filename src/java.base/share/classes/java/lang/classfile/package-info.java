@@ -395,10 +395,13 @@
  * Custom classfile transformations might be unaware of classfile elements
  * introduced by future JDK releases. To achieve deterministic stability,
  * classfile transforms interested in consuming all classfile elements should be
- * implemented strictly to throw exceptions if a new and unknown classfile
+ * implemented strictly to throw exceptions if running on a newer JDK, if the
+ * transformed class file is a newer version, or if a new and unknown classfile
  * element appears. As for example in the following strict compatibility-checking
- * code transformation snippet:
- * {@snippet lang="java" class="PackageSnippets" region="strictTransform"}
+ * transformation snippets:
+ * {@snippet lang="java" class="PackageSnippets" region="strictTransform1"}
+ * {@snippet lang="java" class="PackageSnippets" region="strictTransform2"}
+ * {@snippet lang="java" class="PackageSnippets" region="strictTransform3"}
  * <p>
  * Conversely, classfile transforms that are only interested in consuming a portion
  * of classfile elements do not need to concern with new and unknown classfile
