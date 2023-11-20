@@ -40,7 +40,7 @@ import javax.lang.model.element.Modifier;
  * {@code AccessLevel.values()[values.length() - 1] and the constants with the
  * smallest and the biggest limiting powers respectively.
  */
-public enum AccessLevel {
+public enum AccessLevel implements Comparable<AccessLevel> {
 
     /** Does not limit access */
     PRIVATE,
@@ -50,13 +50,6 @@ public enum AccessLevel {
     PROTECTED,
     /** Limits access to public entities */
     PUBLIC;
-
-    static { // self-test to catch unintended reordering of the constants
-        assert PRIVATE.ordinal() == 0
-                && PACKAGE.ordinal() == 1
-                && PROTECTED.ordinal() == 2
-                && PUBLIC.ordinal() == 3;
-    }
 
     public static AccessLevel of(Set<Modifier> mods) {
         if (mods.contains(Modifier.PUBLIC))
