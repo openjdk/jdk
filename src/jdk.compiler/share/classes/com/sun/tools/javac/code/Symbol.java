@@ -2276,6 +2276,21 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return asType().getReceiverType();
         }
 
+        public Type implicitReceiverType() {
+            ClassSymbol enclosingClass = enclClass();
+            if (enclosingClass == null) {
+                return null;
+            }
+            Type enclosingType = enclosingClass.type;
+            if (isConstructor()) {
+                return enclosingType.getEnclosingType();
+            }
+            if (!isStatic()) {
+                return enclosingType;
+            }
+            return null;
+        }
+
         @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getReturnType() {
             return asType().getReturnType();
