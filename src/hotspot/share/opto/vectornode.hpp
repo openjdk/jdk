@@ -94,7 +94,6 @@ class VectorNode : public TypeNode {
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
-  static int replicate_opcode(BasicType bt);
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_superword(const BasicType bt, int size);
@@ -109,7 +108,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
-  static bool is_invariant_vector(Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
@@ -1135,51 +1133,12 @@ class XorVMaskNode : public XorVNode {
 
 //=========================Promote_Scalar_to_Vector============================
 
-//------------------------------ReplicateBNode---------------------------------
-// Replicate byte scalar to be vector
-class ReplicateBNode : public VectorNode {
+class ReplicateNode : public VectorNode {
  public:
-  ReplicateBNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateSNode---------------------------------
-// Replicate short scalar to be vector
-class ReplicateSNode : public VectorNode {
- public:
-  ReplicateSNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateINode---------------------------------
-// Replicate int scalar to be vector
-class ReplicateINode : public VectorNode {
- public:
-  ReplicateINode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateLNode---------------------------------
-// Replicate long scalar to be vector
-class ReplicateLNode : public VectorNode {
- public:
-  ReplicateLNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateFNode---------------------------------
-// Replicate float scalar to be vector
-class ReplicateFNode : public VectorNode {
- public:
-  ReplicateFNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateDNode---------------------------------
-// Replicate double scalar to be vector
-class ReplicateDNode : public VectorNode {
- public:
-  ReplicateDNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
+  ReplicateNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {
+    assert(vt->element_basic_type() != T_BOOLEAN, "not support");
+    assert(vt->element_basic_type() != T_CHAR, "not support");
+  }
   virtual int Opcode() const;
 };
 

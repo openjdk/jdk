@@ -44,7 +44,7 @@ import jdk.test.lib.compiler.InMemoryJavaCompiler;
  */
 public class CondyNestedResolutionTest {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("CondyNestedResolution");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("CondyNestedResolution");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("StackOverflowError");
         oa.shouldContain("bsm1arg");
