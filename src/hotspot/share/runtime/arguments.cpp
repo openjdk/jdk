@@ -2615,7 +2615,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           mode_flag_cmd_line = true;
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
-      DumpSharedSpaces = true;
+      CDSConfig::enable_dumping_static_archive();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
@@ -3036,7 +3036,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
       //
@@ -3083,7 +3083,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
-  if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
+  if (UseSharedSpaces && check_unsupported_cds_runtime_properties()) {
     UseSharedSpaces = false;
   }
 
@@ -3364,7 +3364,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 }
 
 void Arguments::set_shared_spaces_flags_and_archive_paths() {
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
@@ -3375,7 +3375,7 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
   //
   // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
-  if (DumpSharedSpaces || UseSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive() || UseSharedSpaces) {
     init_shared_archive_paths();
   }
 #endif  // INCLUDE_CDS
@@ -3445,7 +3445,7 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
 void Arguments::init_shared_archive_paths() {
   if (ArchiveClassesAtExit != nullptr) {
     assert(!RecordDynamicDumpInfo, "already checked");
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
     check_unsupported_dumping_properties();
@@ -3467,7 +3467,7 @@ void Arguments::init_shared_archive_paths() {
         "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
 
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       assert(archives == 1, "must be");
       // Static dump is simple: only one archive is allowed in SharedArchiveFile. This file
       // will be overwritten no matter regardless of its contents
@@ -3932,7 +3932,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   set_object_alignment();
 
 #if !INCLUDE_CDS
-  if (DumpSharedSpaces || RequireSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive() || RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;

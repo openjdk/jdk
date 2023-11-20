@@ -123,6 +123,10 @@ class ObjectSynchronizer : AllStatic {
   // JNI detach support
   static void release_monitors_owned_by_thread(JavaThread* current);
 
+  // Iterate over all ObjectMonitors.
+  template <typename Function>
+  static void monitors_iterate(Function function);
+
   // Iterate ObjectMonitors owned by any thread and where the owner `filter`
   // returns true.
   template <typename OwnerFilter>
@@ -167,7 +171,7 @@ class ObjectSynchronizer : AllStatic {
   static void chk_in_use_entry(ObjectMonitor* n, outputStream* out,
                                int* error_cnt_p);
   static void do_final_audit_and_print_stats();
-  static void log_in_use_monitor_details(outputStream* out);
+  static void log_in_use_monitor_details(outputStream* out, bool log_all);
 
  private:
   friend class SynchronizerTest;

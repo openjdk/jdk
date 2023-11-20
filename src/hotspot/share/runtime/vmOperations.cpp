@@ -230,7 +230,6 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
   _result = result;
   _num_threads = 0; // 0 indicates all threads
   _threads = nullptr;
-  _result = result;
   _max_depth = max_depth;
   _with_locked_monitors = with_locked_monitors;
   _with_locked_synchronizers = with_locked_synchronizers;
@@ -245,7 +244,6 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
   _result = result;
   _num_threads = num_threads;
   _threads = threads;
-  _result = result;
   _max_depth = max_depth;
   _with_locked_monitors = with_locked_monitors;
   _with_locked_synchronizers = with_locked_synchronizers;
@@ -344,7 +342,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
     if (monitor->is_owner_anonymous()) {
       // There's no need to collect anonymous owned monitors
-      // because the callers of this code is only interested
+      // because the caller of this code is only interested
       // in JNI owned monitors.
       return;
     }
