@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,17 @@
  *          SHA-384, SHA-512 MessageDigest implementation.
  */
 import java.security.*;
+import java.security.spec.IntegerParameterSpec;
 import java.util.*;
 
 public class TestSHAClone {
 
-    // OracleUcrypto provider gets its digest impl from either
-    // libucrypto (starting S12 with SHA-3 support added) and
-    // libmd (pre-S12, no SHA-3 at all).
-    // The impls from libucrypto does not support clone but ones
-    // from libmd do.
     private static final String[] ALGOS = {
-        "SHA", "SHA-224", "SHA-256", "SHA-384", "SHA-512"
+            "SHA", "SHA-224", "SHA-256", "SHA-384", "SHA-512",
+            "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512",
+            "SHA512/224", "SHA512/224",
+            "SHAKE128", "SHAKE256",
+            "SHAKE128-LEN", "SHAKE256-LEN"
     };
 
     private static byte[] input1 = {
@@ -52,7 +52,9 @@ public class TestSHAClone {
     private MessageDigest md;
 
     private TestSHAClone(String algo, Provider p) throws Exception {
-        md = MessageDigest.getInstance(algo, p);
+        md = algo.endsWith("-LEN")
+                ? MessageDigest.getInstance(algo, new IntegerParameterSpec(80), p)
+                : MessageDigest.getInstance(algo, p);
     }
 
     private void run() throws Exception {
