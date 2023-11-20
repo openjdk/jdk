@@ -433,7 +433,7 @@ public class Main {
             throw new Fault(Errors.CantFindClass(mainClassName));
         }
 
-        Method mainMethod = appClass.getMainMethod();
+        Method mainMethod = appClass.findMainMethod();
 
         if (mainMethod == null) {
             throw new Fault(Errors.CantFindMainMethod(mainClassName));

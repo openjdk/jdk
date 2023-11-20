@@ -893,7 +893,7 @@ public final class LauncherHelper {
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
         try {
-            mainMethod = mainClass.getMainMethod();
+            mainMethod = mainClass.findMainMethod();
 
             if (mainMethod == null) {
                 // invalid main or not FX application, abort with an error
