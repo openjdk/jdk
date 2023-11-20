@@ -4701,7 +4701,7 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - tmp1, tmp2: temporary registers, will be destroyed
 void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
   // Check if we would have space on lock-stack for the object.
   lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
@@ -4735,7 +4735,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1,
 // - tmp1, tmp2: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
 #ifdef ASSERT
   {
