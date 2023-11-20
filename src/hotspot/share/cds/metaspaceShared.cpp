@@ -97,7 +97,6 @@ void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
-bool MetaspaceShared::_use_full_module_graph = true;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
@@ -782,11 +781,11 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     StringTable::allocate_shared_strings_array(CHECK);
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       log_info(cds)("archivedBootLayer not available, disabling full module graph");
-      disable_full_module_graph();
+      CDSConfig::disable_dumping_full_module_graph();
     }
     HeapShared::init_for_dumping(CHECK);
     ArchiveHeapWriter::init();
-    if (use_full_module_graph()) {
+    if (CDSConfig::is_dumping_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
     }
   }
@@ -1171,7 +1170,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         }
 #endif // _LP64
     log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("initial full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
@@ -1543,29 +1542,6 @@ bool MetaspaceShared::remap_shared_readonly_as_readwrite() {
     _remapped_readwrite = true;
   }
   return true;
-}
-
-bool MetaspaceShared::use_full_module_graph() {
-#if INCLUDE_CDS_JAVA_HEAP
-  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
-    return true;
-  }
-#endif
-  bool result = _use_optimized_module_handling && _use_full_module_graph;
-  if (DumpSharedSpaces) {
-    result &= HeapShared::can_write();
-  } else if (UseSharedSpaces) {
-    result &= ArchiveHeapLoader::can_use();
-  } else {
-    result = false;
-  }
-
-  if (result && UseSharedSpaces) {
-    // Classes used by the archived full module graph are loaded in JVMTI early phase.
-    assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
-           "CDS should be disabled if early class hooks are enabled");
-  }
-  return result;
 }
 
 void MetaspaceShared::print_on(outputStream* st) {

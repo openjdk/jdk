@@ -21,33 +21,37 @@
  * questions.
  */
 
-#include <errno.h>
+/*
+ * @test
+ * @bug 8287284
+ * @summary The phi of cnt is split from the inner to the outer loop,
+ *          and then from outer loop to the inner loop again.
+ *          This ended in a endless optimization cycle.
+ * @library /test/lib /
+ * @run driver compiler.c2.loopopts.TestSplitThruPhiInfinitely
+ */
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
+package compiler.c2.loopopts;
 
-EXPORT void empty() {}
+import compiler.lib.ir_framework.*;
 
-EXPORT int identity(int value) {
-    return value;
-}
+public class TestSplitThruPhiInfinitely {
 
-// 128 bit struct returned in buffer on SysV
-struct Big {
-    long long x;
-    long long y;
-};
+    public static int cnt = 1;
 
-EXPORT struct Big with_return_buffer() {
-    struct Big b;
-    b.x = 10;
-    b.y = 11;
-    return b;
-}
+    @Test
+    @IR(counts = {IRNode.PHI, " <= 10"})
+    public static void test() {
+        int j = 0;
+        do {
+            j = cnt;
+            for (int k = 0; k < 20000; k++) {
+                cnt += 2;
+            }
+        } while (++j < 10);
+    }
 
-EXPORT void do_upcall(void(*f)(void)) {
-    f();
+    public static void main(String[] args) {
+        TestFramework.runWithFlags("-XX:-PartialPeelLoop");
+    }
 }
