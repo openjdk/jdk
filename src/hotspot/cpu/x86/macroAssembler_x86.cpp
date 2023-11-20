@@ -8632,7 +8632,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     pshufd(tmp1Reg, tmp1Reg, 0);   // store Unicode mask in tmp1Reg
 
     andl(len, 0xfffffff0);
-    jcc(Assembler::zero, copy_16);
+    jccb(Assembler::zero, copy_16);
 
     // compress 16 chars per iter
     pxor(tmp4Reg, tmp4Reg);
@@ -8651,7 +8651,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     packuswb(tmp2Reg, tmp3Reg);    // only ASCII chars; compress each to 1 byte
     movdqu(Address(dst, len, Address::times_1), tmp2Reg);
     addptr(len, 16);
-    jcc(Assembler::notZero, copy_32_loop);
+    jccb(Assembler::notZero, copy_32_loop);
 
     // compress next vector of 8 chars (if any)
     bind(copy_16);
@@ -8696,11 +8696,9 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   jccb(Assembler::notZero, reset_sp);
   movb(Address(dst, len, Address::times_1), tmp5);  // ASCII char; compress to 1 byte
   increment(len);
-  jcc(Assembler::notZero, copy_chars_loop);
+  jccb(Assembler::notZero, copy_chars_loop);
 
-  // if compression succeeded, return length
-  jmpb(done);
-
+  // add len then return (len will be zero if compress succeeded, otherwise negative)
   bind(reset_sp);
   addl(result, len);
 
