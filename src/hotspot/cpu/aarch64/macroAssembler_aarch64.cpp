@@ -6710,8 +6710,7 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
 
 void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
-                                       const FloatRegister zero, Register input_start,
-                                       AbstractRegSet<FloatRegister> scratch) {
+                                       const FloatRegister zero, Register input_start) {
   _ {
     m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
   };

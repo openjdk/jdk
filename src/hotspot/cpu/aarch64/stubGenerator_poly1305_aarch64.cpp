@@ -129,7 +129,10 @@ address generate_poly1305_processBlocks2() {
   }
 
   const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++};
+  const FloatRegister v_s0[] = {*vregs++, *vregs++, *vregs++};
+
+  const FloatRegister v_u1[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
+  const FloatRegister v_s1[] = {*vregs++, *vregs++, *vregs++};
 
   const FloatRegister zero = *vregs++;
   const FloatRegister r_v[] = {*vregs++, *vregs++};
@@ -162,7 +165,9 @@ address generate_poly1305_processBlocks2() {
     {
     Label DONE, LOOP;
 
-    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
+    int BLOCKS_PER_ITERATION = 6;
+
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
     __ br(Assembler::LT, DONE);
 
     __ align(OptoLoopAlignment);
@@ -171,7 +176,7 @@ address generate_poly1305_processBlocks2() {
       // __ poly1305_load(S0, input_start);
       // __ poly1305_load(S1, input_start);
 
-      constexpr int COLS = 3;
+      constexpr int COLS = 4;
       LambdaAccumulator gen[COLS];
 
       __ poly1305_step(gen[0], S0, u0, input_start);
@@ -180,9 +185,13 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_step(gen[1], S1, u1, input_start);
       __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
-      __ poly1305_step_vec(gen[2], s_v, v_u0, zero, input_start, vregs.remaining());
-      __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), s_v, r_v, rr_v);
+      __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start, vregs.remaining());
+      __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), v_s0, r_v, rr_v);
       __ poly1305_reduce_vec(gen[2], v_u0, zero, vregs.remaining());
+
+      __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start, vregs.remaining());
+      __ poly1305_multiply_vec(gen[3], v_u1, vregs.remaining(), v_s1, r_v, rr_v);
+      __ poly1305_reduce_vec(gen[3], v_u1, zero, vregs.remaining());
 
       LambdaAccumulator::Iterator it[COLS];
       int len[COLS];
@@ -225,8 +234,8 @@ address generate_poly1305_processBlocks2() {
       }
     }
 
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
-    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
     __ br(Assembler::GE, LOOP);
 
     __ bind(DONE);
