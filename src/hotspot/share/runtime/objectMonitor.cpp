@@ -276,7 +276,7 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
-  release_object();
+  _object.release(_oop_storage);
 }
 
 oop ObjectMonitor::object() const {
