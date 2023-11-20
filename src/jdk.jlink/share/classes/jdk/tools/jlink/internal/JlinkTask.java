@@ -41,6 +41,7 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +50,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -82,6 +84,8 @@ import jdk.tools.jlink.plugin.PluginException;
 public class JlinkTask {
     public static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
+    // Run time based link internal resources files
+    private static final String OTHER_RESOURCES_FILE = "jdk/tools/jlink/internal/runlink_%s_resources";
     // jlink API ignores by default. Remove when signing is implemented.
     static final boolean IGNORE_SIGNING_DEFAULT = true;
 
@@ -543,9 +547,19 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
-        // Print info message when a run-image link is being performed
-        if (log != null && !config.useModulePath()) {
-            log.println("'jmods' folder not present, performing a run-time image based link.");
+        // Perform some setup for run-time image based links
+        Map<String, List<String>> nonClassRes = Collections.emptyMap();
+        if (!config.useModulePath()) {
+            final Map<String, List<String>> nonClassResMap = new HashMap<>();
+            final Module jdkJlink = JlinkTask.class.getModule();
+            cf.modules().stream().forEach((a) -> {
+                collectNonClassResources(a.name(), nonClassResMap, jdkJlink);
+            });
+            nonClassRes = nonClassResMap;
+            // Print info message when a run-image link is being performed
+            if (log != null) {
+                log.println("'jmods' folder not present, performing a run-time image based link.");
+            }
         }
 
         if (verbose && log != null) {
@@ -596,7 +610,27 @@ public class JlinkTask {
         }
         return new ImageHelper(cf, mods, targetPlatform, retainModulesPath,
                                ignoreSigning, config.useModulePath(),
-                               config.singleHop());
+                               config.singleHop(), nonClassRes);
+    }
+
+    private static void collectNonClassResources(String modName,
+                                                 Map<String, List<String>> nonResEntries,
+                                                 Module jdkJlink) {
+        String resName = String.format(OTHER_RESOURCES_FILE, modName);
+        try {
+            InputStream inStream = jdkJlink.getResourceAsStream(resName);
+            if (inStream != null) {
+                try (inStream) {
+                    String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
+                    nonResEntries.put(modName, Arrays.asList(input.split("\n")));
+                }
+            } else {
+                // Not all modules have non-class resources
+                nonResEntries.put(modName, Collections.emptyList());
+            }
+        } catch (IOException e) {
+            throw new InternalError("Failed to process run-time image resources for " + modName);
+        }
     }
 
     /*
@@ -868,6 +902,7 @@ public class JlinkTask {
         final Runtime.Version version;
         final Set<Archive> archives;
         final boolean singleHop;
+        final Map<String, List<String>> nonClassRes;
 
         ImageHelper(Configuration cf,
                     Map<String, Path> modsPaths,
@@ -875,12 +910,14 @@ public class JlinkTask {
                     Path packagedModulesPath,
                     boolean ignoreSigning,
                     boolean useModulePath,
-                    boolean singleHop) throws IOException {
+                    boolean singleHop,
+                    Map<String, List<String>> nonClassRes) throws IOException {
             Objects.requireNonNull(targetPlatform);
             this.targetPlatform = targetPlatform;
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
             this.singleHop = singleHop;
+            this.nonClassRes = nonClassRes;
 
             // use the version of java.base module, if present, as
             // the release version for multi-release JAR files
@@ -893,11 +930,11 @@ public class JlinkTask {
                 .orElse(Runtime.version());
 
             this.archives = modsPaths.entrySet().stream()
-                                .map(e -> newArchive(e.getKey(), e.getValue(), useModulePath))
+                                .map(e -> newArchive(e.getKey(), e.getValue(), useModulePath, this.nonClassRes.get(e.getKey())))
                                 .collect(Collectors.toSet());
         }
 
-        private Archive newArchive(String module, Path path, boolean useModulePath) {
+        private Archive newArchive(String module, Path path, boolean useModulePath, List<String> nonClassRes) {
             if (path.toString().endsWith(".jmod")) {
                 return new JmodArchive(module, path);
             } else if (path.toString().endsWith(".jar")) {
@@ -936,7 +973,7 @@ public class JlinkTask {
                 }
             } else if (ModuleFinder.ofSystem().find(module).isPresent()){
                 // the path is a JRTPath, when using a jmod-less image
-                return new RunImageArchive(module, path, singleHop);
+                return new RunImageArchive(module, path, singleHop, Objects.requireNonNull(nonClassRes));
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

@@ -34,8 +34,10 @@ import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.internal.util.OperatingSystem;
@@ -49,7 +51,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  * Plugin to collect resources from jmod which aren't classes or
- * resources. Needed for the the run-image-based jlink.
+ * resources. Needed for the the run-time image based jlink.
  */
 public final class AddRunImageResourcesPlugin extends AbstractPlugin {
 
@@ -58,11 +60,11 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
     private static final String BIN_DIRNAME = "bin";
     private static final String LIB_DIRNAME = "lib";
     private static final String NAME = "add-run-image-resources";
-    // This ought to be a package-less resource so as to not conflict with
-    // packages listed in the module descriptors. Making it package-less ensures
-    // it works for any module, regardless of packages present. This resource
-    // is being used in RunImageArchive class
-    private static final String RESPATH = "/%s/jdk_internal_runimage";
+    private static final String RESPATH_PREFIX = "/jdk.jlink/jdk/tools/jlink/internal/runlink_";
+    // This resource is being used in JLinkTask which passes its contents to
+    // RunImageArchive for further processing.
+    private static final String RESPATH = RESPATH_PREFIX + "%s_resources";
+    private static final String JLINK_MOD_NAME = "jdk.jlink";
 
     // Type file format:
     // '<type>|{0,1}|<sha-sum>|<file-path>'
@@ -91,10 +93,17 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        Platform targetPlatform = getTargetPlatform(in);
-        in.transformAndCopy(e -> { ResourcePoolEntry retval = recordAndFilterEntry(e, targetPlatform);
+        // Only add resources if we have the jdk.jlink module part of the
+        // link.
+        Optional<ResourcePoolModule> jdkJlink = in.moduleView().findModule("jdk.jlink");
+        if (jdkJlink.isPresent()) {
+            Platform targetPlatform = getTargetPlatform(in);
+            in.transformAndCopy(e -> { ResourcePoolEntry retval = recordAndFilterEntry(e, targetPlatform);
                                    return retval;}, out);
-        addModuleResourceEntries(out);
+            addModuleResourceEntries(out);
+        } else {
+            in.transformAndCopy(Function.identity(), out);
+        }
         return out.build();
     }
 
@@ -142,10 +151,11 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
             String resPathWithoutMod = resPathWithoutModule(entry, platform);
             String sha512 = computeSha512(entry, platform);
             moduleResources.add(String.format(TYPE_FILE_FORMAT, type, isSymlink, sha512, resPathWithoutMod));
-        } else if (entry.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE &&
-                String.format(RESPATH, entry.moduleName()).equals(entry.path())) {
+        } else if (entry.moduleName().equals(JLINK_MOD_NAME) &&
+                   entry.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE &&
+                   entry.path().startsWith(RESPATH_PREFIX)) {
             // Filter internal runtime image based link resource file which we
-            // create later
+            // create later on-the-fly
             return null;
         }
         return entry;

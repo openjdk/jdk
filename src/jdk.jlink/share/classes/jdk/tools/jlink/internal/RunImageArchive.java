@@ -31,17 +31,14 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,15 +49,15 @@ public class RunImageArchive implements Archive {
     private static final String JAVA_BASE_MODULE = "java.base";
     // File marker in lib/modules file for java.base indicating it got created
     // with a run-image-type link.
-    private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runimage.stamp";
-    private static final String OTHER_RESOURCES_FILE = "jdk_internal_runimage";
+    private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runtimeimage.stamp";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
     private final List<RunImageFile> files = new ArrayList<>();
+    private final List<String> otherRes;
     private final boolean singleHop;
 
-    RunImageArchive(String module, Path path, boolean singleHop) {
+    RunImageArchive(String module, Path path, boolean singleHop, List<String> otherRes) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -68,6 +65,7 @@ public class RunImageArchive implements Archive {
                     .orElseThrow(() ->
                         new IllegalArgumentException("Module " + module + " not part of the JDK install"));
         this.singleHop = singleHop;
+        this.otherRes = otherRes;
     }
 
     @Override
@@ -153,21 +151,16 @@ public class RunImageArchive implements Archive {
     }
 
     private void addNonClassResources() throws IOException {
-        String otherResourceFile = String.format(OTHER_RESOURCES_FILE, module);
-        Optional<InputStream> runImageResources = ref.open().open(otherResourceFile);
         // Not all modules will have other resources like bin, lib, legal etc.
-        // files. In that case the file won't exist in the modules image.
-        if (runImageResources.isPresent()) {
-            try (InputStream inStream = runImageResources.get()) {
-                String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
-                files.addAll(Arrays.asList(input.split("\n")).stream()
-                        .map(s -> {
-                            TypePathMapping m = mappingResource(s);
-                            return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, singleHop);
-                        })
-                        .filter(m -> m != null)
-                        .collect(Collectors.toList()));
-            }
+        // files. In that case the list will be empty.
+        if (!otherRes.isEmpty()) {
+            files.addAll(otherRes.stream()
+                    .map(s -> {
+                        TypePathMapping m = mappingResource(s);
+                        return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, singleHop);
+                    })
+                    .filter(m -> m != null)
+                    .collect(Collectors.toList()));
         }
     }
 
