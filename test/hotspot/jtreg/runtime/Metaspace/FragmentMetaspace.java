@@ -32,6 +32,7 @@
 /**
  * @test id=8320331
  * @bug 8320331
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
