@@ -1698,7 +1698,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ bnez(swap_reg, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
-      __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ lightweight_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
     }
 

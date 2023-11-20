@@ -67,15 +67,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     lwu(hdr, Address(hdr, Klass::access_flags_offset()));
     test_bit(t0, hdr, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bnez(t0, slow_case, true /* is_far */);
+  } else if (LockingMode == LM_LIGHTWEIGHT) {
+    // null check obj. load_klass performs load if DiagnoseSyncOnValueBasedClasses != 0.
+    ld(hdr, Address(obj));
   }
-
-  // Load object header
-  ld(hdr, Address(obj, hdr_offset));
 
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(obj, hdr, t0, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    ld(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     ori(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
