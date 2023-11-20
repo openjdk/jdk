@@ -625,7 +625,7 @@ public class HBShaper {
         @SuppressWarnings("restricted")
         MemorySegment glyphInfoArr = glyphInfo.reinterpret(glyphInfoSize);
 
-         for (int i=0; i<glyphCount; i++) {
+         for (int i = 0; i < glyphCount; i++) {
              int storei = i + initialCount;
              int cluster = (int)clusterHandle.get(glyphInfoArr, (long)i) - offset;
              gvdata._indices[storei] = baseIndex + cluster;
@@ -655,6 +655,5 @@ public class HBShaper {
         gvdata._positions[(storeadv*2)+1] = advY;
         startPt.x = advX;
         startPt.y = advY;
-        startPt.x = advX;
     }
 }

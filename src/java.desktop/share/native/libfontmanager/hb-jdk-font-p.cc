@@ -235,7 +235,7 @@ hb_font_t* jdk_font_create_hbp(
     hb_font_set_scale(font,
                       HBFloatToFixed(ptSize*devScale),
                       HBFloatToFixed(ptSize*devScale));
-  return font;
+    return font;
 }
 
 } // extern "C"

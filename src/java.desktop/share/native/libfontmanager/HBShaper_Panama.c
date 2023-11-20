@@ -138,6 +138,8 @@ JDKEXPORT int jdk_hb_shape(
 
      hb_buffer_destroy (buffer);
      hb_font_destroy(hbfont);
-     if (features != NULL) free(features);
+     if (features != NULL) {
+         free(features);
+     }
      return ret;
 }

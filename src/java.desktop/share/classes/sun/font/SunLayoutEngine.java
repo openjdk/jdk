@@ -35,6 +35,7 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 import java.awt.geom.Point2D;
+import java.lang.foreign.MemorySegment;
 import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -181,7 +182,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
         if (useFFM) {
-            java.lang.foreign.MemorySegment face = HBShaper.getFace(font);
+            MemorySegment face = HBShaper.getFace(font);
             if (face != null) {
                 HBShaper.shape(font, strike, ptSize, mat, face,
                         tr.text, data, key.script(),
