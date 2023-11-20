@@ -19,16 +19,6 @@ public class GetArrayForeignXorOpImpl implements XorOp {
         Linker linker;
         linker = Linker.nativeLinker();
         FunctionDescriptor xor_op_func = FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_INT);
-    }
-
-    static final MethodHandle xor_op;
-    static final Arena arena = Arena.ofConfined();
-    MemorySegment srcBuf;
-    MemorySegment dstBuf;
-
-    GetArrayForeignXorOpImpl(int len) {
-        srcBuf = arena.allocate(len);
-        dstBuf = arena.allocate(len);
         xor_op = linker.downcallHandle(SymbolLookup.loaderLookup().find("xor_op").orElseThrow(), xor_op_func, critical(false));
     }
 
@@ -42,14 +32,6 @@ public class GetArrayForeignXorOpImpl implements XorOp {
             MemorySegment dstBuf = arena.allocateFrom(JAVA_BYTE, MemorySegment.ofArray(dst), JAVA_BYTE, dOff, len);
             xor_op.invokeExact(srcBuf, dstBuf, len);
             MemorySegment.copy(dstBuf, JAVA_BYTE, 0, dst, dOff, len);
-        }
-    }
-
-    public void copy(int count, byte[] src, int sOff, byte[] dst, int dOff, int len) {
-        for (int i = 0; i < count; i++) {
-            MemorySegment.copy(src, sOff, srcBuf, JAVA_BYTE, 0, len);
-            MemorySegment.copy(dst, dOff, dstBuf, JAVA_BYTE, 0, len);
-            MemorySegment.copy(srcBuf, JAVA_BYTE, 0, dst, dOff, len);
         }
     }
 }

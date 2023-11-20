@@ -67,61 +67,6 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayRegi
     free(sbuf);
 }
 
-JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayCriticalXorOpImpl_copy
-  (JNIEnv *env, jobject obj, jint count, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
-    jbyte *sbuf = NULL;
-    jbyte *dbuf = NULL;
-    jboolean sIsCopy = JNI_FALSE;
-    jboolean dIsCopy = JNI_FALSE;
-
-    for (int i = 0; i < count; i++) {
-        sbuf = (*env)->GetPrimitiveArrayCritical(env, src, &sIsCopy);
-        dbuf = (*env)->GetPrimitiveArrayCritical(env, dst, &dIsCopy);
-        (*env)->ReleasePrimitiveArrayCritical(env, dst, dbuf, JNI_ABORT);
-        (*env)->ReleasePrimitiveArrayCritical(env, src, sbuf, 0);
-        if (sIsCopy) {
-            fprintf(stderr, "SRC is copy - GetPrimitiveArrayCritical\n");
-            fflush(stderr);
-        }
-        if (dIsCopy) {
-            fprintf(stderr, "DST is copy - GetPrimitiveArrayCritical\n");
-            fflush(stderr);
-        }
-    }
-}
-
-JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayElementsXorOpImpl_copy
-  (JNIEnv *env, jobject obj, jint count, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
-    jbyte *sbuf = NULL;
-    jbyte *dbuf = NULL;
-    jboolean sIsCopy = JNI_FALSE;
-    jboolean dIsCopy = JNI_FALSE;
-
-    for (int i = 0; i < count; i++) {
-        dbuf = (*env)->GetByteArrayElements(env, dst, &dIsCopy);
-        dbuf = (*env)->GetByteArrayElements(env, src, &sIsCopy);
-        (*env)->ReleaseByteArrayElements(env, dst, dbuf, 0);
-    }
-}
-
-JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayRegionXorOpImpl_copy
-  (JNIEnv *env, jobject obj, jint count, jbyteArray src, jint sOff, jbyteArray dst, jint dOff, jint len)
-{
-    jbyte *sbuf = malloc(len);
-    jbyte *dbuf = malloc(len);
-
-    for (int i = 0; i < count; i++) {
-        (*env)->GetByteArrayRegion(env, src, sOff, len, sbuf);
-        (*env)->GetByteArrayRegion(env, dst, dOff, len, dbuf);
-        (*env)->SetByteArrayRegion(env, dst, dOff, len, sbuf);
-    }
-
-    free(dbuf);
-    free(sbuf);
-}
-
 JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_xor_GetArrayUnsafeXorOpImpl_xorOp
   (JNIEnv *env, jobject obj, jlong src, jlong dst, jint len) {
     jbyte *sbuf = (jbyte*)(void*)src;
