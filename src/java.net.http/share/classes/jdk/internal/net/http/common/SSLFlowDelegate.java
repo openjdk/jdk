@@ -83,21 +83,21 @@ import java.util.function.IntBinaryOperator;
  * --------->  data flow direction
  *
  *
- *                  |                                   |
- *  upstreamWriter  |                                   | upstreamReader
- *  obtained from   |                                   | obtained from
- * upstreamWriter() |                                   | upstreamReader()
- *                  v                                   v
+ *                  |                                   ^
+ *  upstreamWriter  |                                   | downReader
+ *  obtained from   |                                   | supplied to
+ * upstreamWriter() |                                   | constructor
+ *                  v                                   |
  *      +-----------------------------------------------------------+
- *      *                                                           *
+ *      *                                            decrypts       *
  *      *                       SSLFlowDelegate                     *
- *      *        encrypts                            decrypts       *
+ *      *        encrypts                                           *
  *      +-----------------------------------------------------------+
- *                  |                                   |
- *    downWriter    |                                   | downReader
- *    supplied to   |                                   | supplied to
- *    constructor   |                                   | constructor
- *                  v                                   v
+ *                  |                                   ^
+ *    downWriter    |                                   | upstreamReader
+ *    supplied to   |                                   | obtained from
+ *    constructor   |                                   | upstreamReader()
+ *                  v                                   |
  *
  * }
  * </pre>
