@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                  Register tmp2Reg) {
+void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
+                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg) {
   // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -55,7 +55,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, t0);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, tmp3Reg, t0);
 
   // Load markWord from object into displaced_header.
   ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
@@ -109,7 +109,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "");
     Label slow;
-    lightweight_lock(oop, disp_hdr, tmp, t0, slow);
+    lightweight_lock(oop, disp_hdr, tmp, tmp3Reg, slow);
 
     // Indicate success on completion.
     mv(flag, zr);
@@ -157,8 +157,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                    Register tmp2Reg) {
+void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
+                                    Register tmp1Reg, Register tmp2Reg) {
   // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -169,7 +169,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, flag);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, t0);
 
   if (LockingMode == LM_LEGACY) {
     // Find the lock address and load the displaced header from the stack.
