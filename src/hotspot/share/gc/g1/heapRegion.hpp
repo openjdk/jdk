@@ -174,6 +174,7 @@ public:
 
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
+  void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
