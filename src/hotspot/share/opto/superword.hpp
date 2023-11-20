@@ -101,8 +101,8 @@ class SuperWord : public ResourceObj {
   PhaseIdealLoop* phase() const         { return vla().phase(); }
   PhaseIterGVN& igvn() const            { return vla().phase()->igvn(); }
   CountedLoopNode* cl() const           { return vla().cl(); }
-  int iv_stride() const                 { return cl()->stride_con(); }
   PhiNode* iv() const                   { return vla().iv(); }
+  int iv_stride() const                 { return vla().iv_stride(); }
   bool in_body(const Node* n) const     { return vla().in_body(n); }
 
   // VLoopAnalyzer reductions
@@ -144,6 +144,12 @@ class SuperWord : public ResourceObj {
   int data_size(Node* n) const {
     return vla().types().data_size(n);
   }
+  int vector_width(Node* n) const {
+    return vla().types().vector_width(n);
+  }
+  int vector_width_in_bytes(Node* n) const {
+    return vla().types().vector_width_in_bytes(n);
+  }
 
 #ifndef PRODUCT
   bool     is_debug()              { return _vector_loop_debug > 0; }
@@ -168,14 +174,6 @@ class SuperWord : public ResourceObj {
   // Accessors
   Arena* arena()                   { return _arena; }
 
-  int vector_width(Node* n) {
-    BasicType bt = velt_basic_type(n);
-    return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
-  }
-  int vector_width_in_bytes(Node* n) {
-    BasicType bt = velt_basic_type(n);
-    return vector_width(n)*type2aelembytes(bt);
-  }
   int get_vw_bytes_special(MemNode* s);
   MemNode* align_to_ref()            { return _align_to_ref; }
   void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }

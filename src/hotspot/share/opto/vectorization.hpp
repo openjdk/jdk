@@ -77,6 +77,7 @@ public:
   CountedLoopNode* cl()   const { assert(_cl      != nullptr, ""); return _cl; };
   Node* cl_exit()         const { assert(_cl_exit != nullptr, ""); return _cl_exit; };
   PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
+  int iv_stride()         const { return cl()->stride_con(); };
   bool is_allow_cfg()     const { return _allow_cfg; }
   CountedLoopEndNode* pre_loop_end() const {
     assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
@@ -479,6 +480,18 @@ public:
       return data_size(n1) == data_size(n2);
     }
     return vt1 == vt2;
+  }
+
+  // TODO rename?
+  int vector_width(Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    // TODO we should eventually remove iv_stride from here!
+    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
+  }
+
+  int vector_width_in_bytes(Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n) * type2aelembytes(bt);
   }
 
 private:
