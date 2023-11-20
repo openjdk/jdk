@@ -978,6 +978,12 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 void *os::Bsd::dlopen_helper(const char *filename, int mode) {
 #ifndef IA32
+  bool ieee_handling = IEEE_subnormal_handling_OK();
+  if (!ieee_handling) {
+    Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
+    log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+  }
+
   // Save and restore the floating-point environment around dlopen().
   // There are known cases where global library initialization sets
   // FPU flags that affect computation accuracy, for example, enabling
@@ -1004,7 +1010,17 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
     // flags. Silently fix things now.
     int rtn = fesetenv(&default_fenv);
     assert(rtn == 0, "fesetenv must succeed");
-    assert(IEEE_subnormal_handling_OK(), "fsetenv didn't work");
+    bool ieee_handling_after_issue = IEEE_subnormal_handling_OK();
+
+    if (ieee_handling_after_issue) {
+      Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
+      log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
+    } else {
+      Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
+      log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+    }
+
+    assert(ieee_handling_after_issue, "fesetenv didn't work");
   }
 #endif // IA32
 
