@@ -86,7 +86,7 @@ size_t MonitorList::max() const {
   return Atomic::load(&_max);
 }
 
-class ObjectMonitorDeflationSafepointer {
+class ObjectMonitorDeflationSafepointer : public StackObj {
   JavaThread* const                    _current;
   ObjectMonitorDeflationLogging* const _log;
 
@@ -1566,7 +1566,7 @@ static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
   return count;
 }
 
-class ObjectMonitorDeflationLogging {
+class ObjectMonitorDeflationLogging: public StackObj {
   LogStreamHandle(Debug, monitorinflation) _debug;
   LogStreamHandle(Info, monitorinflation)  _info;
   LogStream*                               _stream;
