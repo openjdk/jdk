@@ -111,18 +111,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // a subtype of super_klass. Blows registers tmp1, tmp2 and tmp3.
   void gen_subtype_check(Register sub_klass, Register super_klass, Register tmp1, Register tmp2, Label &ok_is_subtype);
 
-  void get_cache_and_index_at_bcp(Register cache, Register cpe_offset, int bcp_offset, size_t index_size = sizeof(u2));
   void load_resolved_indy_entry(Register cache, Register index);
-  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register cpe_offset, Register bytecode,
-                                               int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
+  void load_field_entry (Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void load_resolved_reference_at_index(Register result, Register index);
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register cpool, Register offset, Register iklass);
-
-  void load_resolved_method_at_index(int byte_no, Register cache, Register cpe_offset, Register method);
 
   // Pop topmost element from stack. It just disappears. Useful if
   // consumed previously by access via stackTop().

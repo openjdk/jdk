@@ -106,6 +106,11 @@ public class LinkerOptions {
         return c != null;
     }
 
+    public boolean allowsHeapAccess() {
+        Critical c = getOption(Critical.class);
+        return c != null && c.allowHeapAccess();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -145,8 +150,9 @@ public class LinkerOptions {
         }
     }
 
-    public record Critical() implements LinkerOptionImpl {
-        public static Critical INSTANCE = new Critical();
+    public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
+        public static Critical ALLOW_HEAP = new Critical(true);
+        public static Critical DONT_ALLOW_HEAP = new Critical(false);
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
