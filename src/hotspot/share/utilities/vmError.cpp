@@ -725,6 +725,14 @@ void VMError::report(outputStream* st, bool _verbose) {
                    "Runtime Environment to continue.");
     }
 
+#ifdef AIX
+  // avoid the cache update for malloc/mmap errors
+  if (should_report_bug(_id)) {
+    printf("update loaded lib cache !!!!!\n");
+    LoadedLibraries::reload();
+  }
+#endif
+
 #ifdef ASSERT
   // Error handler self tests
   // Meaning of codes passed through in the tests.
