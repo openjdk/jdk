@@ -31,13 +31,25 @@ import java.util.Random;
 
 public class IndexOf {
 
-    static Random generator = new Random();
+    static Random generator = new Random(1999);
     private static boolean failure = false;
 
     public static void main(String[] args) throws Exception {
+	String testName = "IndexOf";
+	for(int i = 0; i < 20000; i++) { int foo = testName.indexOf("dex");}
+	System.out.println("");
+	generator.setSeed(1999);
+        System.err.println(testName+": SimpleTest In");
         simpleTest();
+        System.err.println(testName+": SimpleTest Out");
+	generator.setSeed(1999);
+        System.err.println(testName+": compareIndexOfLastIndexOf In");
         compareIndexOfLastIndexOf();
+        System.err.println(testName+": compareIndexOfLastIndexOf Out");
+	generator.setSeed(1999);
+        System.err.println(testName+": compareStringStringBuffer In");
         compareStringStringBuffer();
+        System.err.println(testName+": compareStringStringBuffer Out");
 
         if (failure)
            throw new RuntimeException("One or more BitSet failures.");
@@ -83,12 +95,16 @@ public class IndexOf {
             int index1 = generator.nextInt(90) + 5;
             sourceBuffer = sourceBuffer.replace(index1, index1, targetString);
 
+	    //System.err.println("'"+sourceBuffer+"' ("+sourceBuffer.length()+") needle: '"+targetString+"' ("+targetString.length()+")");
             if (sourceBuffer.indexOf(targetString) != index1)
                 failCount++;
+	    //System.err.println("start index = 5");
             if (sourceBuffer.indexOf(targetString, 5) != index1)
                 failCount++;
+	    //System.err.println("start index = 99");
             if (sourceBuffer.indexOf(targetString, 99) == index1)
                 failCount++;
+	    //System.err.println("done");
         }
 
         report("Basic Test                   ", failCount);
@@ -135,6 +151,8 @@ public class IndexOf {
     private static void compareStringStringBuffer() {
         int failCount = 0;
 
+	generator.setSeed(1999);
+
         for (int x=0; x<10000; x++) {
             String testString = generateTestString(1, 100);
             int len = testString.length();
@@ -153,14 +171,22 @@ public class IndexOf {
             }
             String fragment = testString.substring(x1,x2);
 
+	    //System.err.println("  testString = '" + testString + "'");
+	    //System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = " + testString.length() + " len Buffer = " + testBuffer.length());
             int sAnswer = testString.indexOf(fragment);
             int sbAnswer = testBuffer.indexOf(fragment);
 
             if (sAnswer != sbAnswer) {
-		System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = " + testString.length() + " len Buffer = " + testBuffer.length());
-		System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
+				System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+				System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
+				System.err.println("  testString = '" + testString + "'");
+				System.err.println("  testBuffer = '" + testBuffer + "'");
                 failCount++;
-	    }
+			} else {
+				if (sAnswer > testString.length()) {
+					System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: " + testBuffer.length());
+				}
+			}
 
             int testIndex = getRandomIndex(-100, 100);
 
@@ -168,17 +194,25 @@ public class IndexOf {
             sbAnswer = testBuffer.indexOf(fragment, testIndex);
 
             if (sAnswer != sbAnswer) {
-		System.err.println("IndexOf fragment '" + fragment + "' index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+				System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length()	+ ") index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+				System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
+				System.err.println("  testString = '" + testString + "'");
+				System.err.println("  testBuffer = '" + testBuffer + "'");
                 failCount++;
-	    }
+			} else {
+				if ((sAnswer > testString.length()) || ((sAnswer != -1) && (sAnswer < testIndex))) {
+					System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: " + testBuffer.length() + " index: " + testIndex);
+				}
+			}
 
             sAnswer = testString.lastIndexOf(fragment);
             sbAnswer = testBuffer.lastIndexOf(fragment);
 
             if (sAnswer != sbAnswer) {
-		System.err.println("lastIndexOf fragment '" + fragment + "' len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+				System.err.println("lastIndexOf fragment '" + fragment + "' len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+				System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
                 failCount++;
-	    }
+	        }
 
             testIndex = getRandomIndex(-100, 100);
 
@@ -186,9 +220,9 @@ public class IndexOf {
             sbAnswer = testBuffer.lastIndexOf(fragment, testIndex);
 
             if (sAnswer != sbAnswer) {
-		System.err.println("lastIndexOf fragment '" + fragment + "' index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
-                failCount++;
-	    }
+				System.err.println("lastIndexOf fragment '" + fragment + "' index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+						failCount++;
+			}
         }
 
         report("String vs StringBuffer       ", failCount);
