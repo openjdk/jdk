@@ -141,16 +141,17 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time. We must weed out values
-  // we already know to be invalid later.
+  // We check user input for SharedBaseAddress at dumptime. We must weed out values
+  // we know will be invalid at runtime.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
-  // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
-  // start as base.
+  // be the encoding base, since the pre-computed narrow Klass IDs in the headers of
+  // archived objects refer to the mapping start as base.
   //
-  // Therefore, "shared_base" must be later usable as encoding base.
-  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
+  // Therefore, "shared_base" must be usable as encoding base. The only platform not
+  // accepting arbitrary immediates as encoding base is aarch64. Here, we require the
+  // base to be 32-bit aligned since such immediates can be used with 16-bit moves.
+  return AARCH64_ONLY(is_aligned(shared_base, nth_bit(32))) NOT_AARCH64(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -1331,11 +1332,11 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
                                      os::vm_page_size(), (char*) base_address);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
-      // case we reserve whereever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain nKlass IDs precalculated toward the start
+      // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
+      // encoding base since the archived heap objects contain nKlass IDs pre-calculated toward the start
       // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
       // try allocating in low-address regions.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* try_in_low_address_ranges */);
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
     }
 
     if (!total_space_rs.is_reserved()) {
