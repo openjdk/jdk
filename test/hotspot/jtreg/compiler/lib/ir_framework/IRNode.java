@@ -373,6 +373,21 @@ public class IRNode {
         beforeMatchingNameRegex(CAST_LL, "CastLL");
     }
 
+    public static final String CBNZW_GT = PREFIX + "CBNZW_GT" + POSTFIX;
+    static {
+        optoOnly(CBNZW_GT, "cbwgt");
+    }
+
+    public static final String CBZW_LE = PREFIX + "CBZW_LE" + POSTFIX;
+    static {
+        optoOnly(CBZW_LE, "cbwle");
+    }
+
+    public static final String CBZ_LE = PREFIX + "CBZ_LE" + POSTFIX;
+    static {
+        optoOnly(CBZ_LE, "cble");
+    }
+
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
         String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
