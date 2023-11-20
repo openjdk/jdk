@@ -410,7 +410,7 @@ class BufferBlob: public RuntimeBlob {
 
  public:
   // Creation
-  static BufferBlob* create(const char* name, int buffer_size);
+  static BufferBlob* create(const char* name, uint buffer_size);
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);
