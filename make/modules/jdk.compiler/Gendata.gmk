@@ -94,5 +94,3 @@ $(eval $(call SetupCopyFiles, COPY_TO_LIBS, \
 TARGETS += $(COPY_TO_LIBS)
 
 ################################################################################
-
-all: $(TARGETS)
