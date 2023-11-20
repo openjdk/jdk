@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,6 +90,7 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     @Override
     public Map<String, String> call() {
+        log("Entering call()");
         SafeMap map = new SafeMap();
         map.put("vm.flavor", this::vmFlavor);
         map.put("vm.compMode", this::vmCompMode);
@@ -125,6 +129,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlags(map);
 
         dump(map.map);
+        log("Leaving call()");
         return map.map;
     }
 
@@ -432,6 +437,8 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if docker is supported in a given environment
      */
     protected String dockerSupport() {
+        log("Entering dockerSupport()");
+
         boolean isSupported = false;
         if (Platform.isLinux()) {
            // currently docker testing is only supported for Linux,
@@ -450,6 +457,8 @@ public class VMProps implements Callable<Map<String, String>> {
            }
         }
 
+        log("dockerSupport(): platform check: isSupported = " + isSupported);
+
         if (isSupported) {
            try {
               isSupported = checkDockerSupport();
@@ -458,15 +467,59 @@ public class VMProps implements Callable<Map<String, String>> {
            }
          }
 
+        log("dockerSupport(): returning isSupported = " + isSupported);
         return "" + isSupported;
     }
 
+    // Configures process builder to redirect process stdout and stderr to a file.
+    // Returns file names for stdout and stderr.
+    private Map<String, String> redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
+        Map<String, String> result = new HashMap<>();
+        String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
+
+        String stdoutFileName = String.format("./%s-stdout--%s.log", fileNameBase, timeStamp);
+        pb.redirectOutput(new File(stdoutFileName));
+        log(msg + ": child process stdout redirected to " + stdoutFileName);
+        result.put("stdout", stdoutFileName);
+
+        String stderrFileName = String.format("./%s-stderr--%s.log", fileNameBase, timeStamp);
+        pb.redirectError(new File(stderrFileName));
+        log(msg + ": child process stderr redirected to " + stderrFileName);
+        result.put("stderr", stderrFileName);
+
+        return result;
+    }
+
+    private void printLogfileContent(Map<String, String> logFileNames) {
+        logFileNames.entrySet().stream()
+            .forEach(entry ->
+                {
+                    log("------------- " + entry.getKey());
+                    try {
+                        Files.lines(Path.of(entry.getValue()))
+                            .forEach(line -> log(line));
+                    } catch (IOException ie) {
+                        log("Exception while reading file: " + ie);
+                    }
+                    log("-------------");
+                });
+    }
+
     private boolean checkDockerSupport() throws IOException, InterruptedException {
+        log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
+        Map<String, String> logFileNames = redirectOutputToLogFile("checkDockerSupport(): <container> ps",
+                                                      pb, "container-ps");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
+        int exitValue = p.exitValue();
 
-        return (p.exitValue() == 0);
+        log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
+        if (exitValue != 0) {
+            printLogfileContent(logFileNames);
+        }
+
+        return (exitValue == 0);
     }
 
     /**
@@ -578,6 +631,40 @@ public class VMProps implements Callable<Map<String, String>> {
         } catch (IOException e) {
             throw new RuntimeException("Failed to dump properties into '"
                     + dumpFileName + "'", e);
+        }
+    }
+
+    /**
+     * Log diagnostic message.
+     *
+     * @param msg
+     */
+    protected static void log(String msg) {
+        // Always log to a file.
+        logToFile(msg);
+
+        // Also log to stderr; guarded by property to avoid excessive verbosity.
+        // By jtreg design stderr produced here will be visible
+        // in the output of a parent process. Note: stdout should not be used
+        // for logging as jtreg parses that output directly and only echoes it
+        // in the event of a failure.
+        if (Boolean.getBoolean("jtreg.log.vmprops")) {
+            System.err.println("VMProps: " + msg);
+        }
+    }
+
+    /**
+     * Log diagnostic message to a file.
+     *
+     * @param msg
+     */
+    protected static void logToFile(String msg) {
+        String fileName = "./vmprops.log";
+        try {
+            Files.writeString(Paths.get(fileName), msg + "\n", Charset.forName("ISO-8859-1"),
+                    StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to log into '" + fileName + "'", e);
         }
     }
 
