@@ -166,9 +166,6 @@ class SuperWord : public ResourceObj {
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-#ifndef PRODUCT
-  uintx          _vector_loop_debug; // provide more printing in debug mode
-#endif
 
   // Accessors
   Arena* arena()                   { return _arena; }

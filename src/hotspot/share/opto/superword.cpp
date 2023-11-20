@@ -56,13 +56,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
 {
-#ifndef PRODUCT
-  _vector_loop_debug = 0;
-  if (phase()->C->method() != nullptr) {
-    _vector_loop_debug = phase()->C->directive()->VectorizeDebugOption;
-  }
-
-#endif
 }
 
 //------------------------------early unrolling analysis------------------------------
@@ -1405,7 +1398,7 @@ void SuperWord::filter_packs() {
     bool impl = implemented(pk);
     if (!impl) {
 #ifndef PRODUCT
-      if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
+      if (TraceSuperWord && Verbose) {
         tty->print_cr("Unimplemented");
         pk->at(0)->dump();
       }
@@ -1429,7 +1422,7 @@ void SuperWord::filter_packs() {
       bool prof = profitable(pk);
       if (!prof) {
 #ifndef PRODUCT
-        if ((TraceSuperWord && Verbose) || _vector_loop_debug) {
+        if (TraceSuperWord && Verbose) {
           tty->print_cr("Unprofitable");
           pk->at(0)->dump();
         }
