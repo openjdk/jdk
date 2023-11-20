@@ -68,10 +68,6 @@ abstract class SHA3 extends DigestBase {
     private byte[] state = new byte[WIDTH];
     private long[] lanes = new long[DM*DM];
 
-    // Number of bytes in the state buffer that has been used in squeezing.
-    // Initialized as -1, becomes 0 when squeezing starts.
-    private int squeezeOffset = -1;
-
     /**
      * Creates a new SHA-3 object.
      */
@@ -101,26 +97,18 @@ abstract class SHA3 extends DigestBase {
        keccak();
     }
 
-    void finishAbsorb() {
-        int numOfPadding =
-                setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
-        if (numOfPadding < 1) {
-            throw new ProviderException("Incorrect pad size: " + numOfPadding);
-        }
-        implCompress(buffer, 0);
-    }
-
     /**
      * Return the digest. Subclasses do not need to reset() themselves,
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
-        if (engineGetDigestLength() == 0) {
-            // this is an XOF, so the digest() call is illegal
-            throw new ProviderException("Calling digest() is not allowed in an XOF");
+        int numOfPadding =
+            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
+        if (numOfPadding < 1) {
+            throw new ProviderException("Incorrect pad size: " + numOfPadding);
         }
-        finishAbsorb();
-        int availableBytes = blockSize;
+        implCompress(buffer, 0);
+        int availableBytes = buffer.length;
         int numBytes = engineGetDigestLength();
         while (numBytes > availableBytes) {
             System.arraycopy(state, 0, out, ofs, availableBytes);
@@ -131,48 +119,12 @@ abstract class SHA3 extends DigestBase {
         System.arraycopy(state, 0, out, ofs, numBytes);
     }
 
-    void implSqueeze(byte[]output, int offset, int numBytes) {
-        if (engineGetDigestLength() != 0) {
-            // this is not an XOF, so the squeeze() call is illegal
-            throw new ProviderException("Squeezing is only allowed in XOF mode");
-        }
-
-        if (squeezeOffset == -1) {
-            finishAbsorb();
-            squeezeOffset = 0;
-        }
-        int availableBytes = blockSize - squeezeOffset;
-        while (numBytes > availableBytes) {
-            System.arraycopy(state, squeezeOffset, output, offset, availableBytes);
-            numBytes -= availableBytes;
-            offset += availableBytes;
-            squeezeOffset = 0;
-            availableBytes = blockSize;
-            keccak();
-        }
-        System.arraycopy(state, squeezeOffset, output, offset, numBytes);
-        squeezeOffset += numBytes;
-        if (squeezeOffset == blockSize) {
-            squeezeOffset = 0;
-            keccak();
-        }
-    }
-
-    byte[] implSqueeze(int numBytes) {
-        byte[] result = new byte[numBytes];
-        implSqueeze(result, 0, numBytes);
-        return result;
-    }
-
-
-
     /**
      * Resets the internal state to start a new hash.
      */
     void implReset() {
         Arrays.fill(state, (byte)0);
         Arrays.fill(lanes, 0L);
-        squeezeOffset = -1;
     }
 
     /**
