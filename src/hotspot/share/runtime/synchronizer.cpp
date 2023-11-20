@@ -84,10 +84,11 @@ size_t MonitorList::max() const {
   return Atomic::load(&_max);
 }
 
-// Walk the in-use list and unlink (at most MonitorDeflationMax) deflated
-// ObjectMonitors. Returns the number of unlinked ObjectMonitors.
+// Walk the in-use list and unlink deflated ObjectMonitors.
+// Returns the number of unlinked ObjectMonitors.
 size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                     elapsedTimer* timer_p,
+                                    size_t deflated_count,
                                     GrowableArray<ObjectMonitor*>* unlinked_list) {
   size_t unlinked_count = 0;
   ObjectMonitor* prev = nullptr;
@@ -100,12 +101,15 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
       // modify the list once per batch. The batch starts at "m".
       size_t unlink_batch = 0;
       ObjectMonitor* next = m;
+      // Look for at most MonitorUnlinkBatch monitors, or the number of
+      // deflated and not unlinked monitors, whatever comes first.
+      size_t unlink_limit = MIN2<size_t>(deflated_count - unlinked_count, MonitorUnlinkBatch);
       do {
         ObjectMonitor* next_next = next->next_om();
         unlinked_count++;
         unlinked_list->append(next);
         next = next_next;
-        if (unlink_batch++ >= (size_t)MonitorUnlinkBatch) {
+        if (unlink_batch++ >= unlink_limit) {
           // Reached the max batch, so bail out of the gathering loop.
           unlink_batch = 0;
           break;
@@ -137,8 +141,9 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
         assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
-      if (unlinked_count >= (size_t)MonitorDeflationMax) {
+      if (unlinked_count >= deflated_count) {
         // Reached the max so bail out on the searching loop.
+        // There should be no more deflated monitors left.
         break;
       }
       m = next;
@@ -1658,7 +1663,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     // Unlink deflated ObjectMonitors from the in-use list.
     ResourceMark rm;
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
-    unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, &delete_list);
+    unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, deflated_count, &delete_list);
     if (current->is_monitor_deflation_thread()) {
       if (ls != nullptr) {
         timer.stop();
