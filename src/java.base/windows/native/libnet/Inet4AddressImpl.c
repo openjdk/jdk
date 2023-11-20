@@ -232,7 +232,7 @@ tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
 
     // set TTL
     if (ttl > 0) {
-        if (setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *)&ttl, sizeof(ttl)) < 0) {
+        if (setsockopt(fd, IPPROTO_IP, IP_TTL, (const char *)&ttl, sizeof(ttl)) == SOCKET_ERROR) {
             NET_ThrowNew(env, WSAGetLastError(), "setsockopt IP_TTL failed");
             closesocket(fd);
             return JNI_FALSE;

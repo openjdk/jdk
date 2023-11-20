@@ -131,7 +131,7 @@ Java_sun_nio_ch_WindowsAsynchronousServerSocketChannelImpl_updateAcceptContext(J
     SOCKET s1 = (SOCKET)jlong_to_ptr(listenSocket);
     SOCKET s2 = (SOCKET)jlong_to_ptr(acceptSocket);
 
-    if (setsockopt(s2, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&s1, sizeof(s1)) < 0) {
+    if (setsockopt(s2, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&s1, sizeof(s1)) == SOCKET_ERROR) {
         JNU_ThrowIOExceptionWithLastError(env, "setsockopt failed");
     }
 }

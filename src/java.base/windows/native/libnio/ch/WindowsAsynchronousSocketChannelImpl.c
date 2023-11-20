@@ -123,7 +123,7 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_updateConnectContext(JNIEnv
     jlong socket)
 {
     SOCKET s = (SOCKET)jlong_to_ptr(socket);
-    if (setsockopt(s, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0) < 0) {
+    if (setsockopt(s, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0) == SOCKET_ERROR) {
         JNU_ThrowIOExceptionWithLastError(env, "setsockopt failed");
     }
 }
