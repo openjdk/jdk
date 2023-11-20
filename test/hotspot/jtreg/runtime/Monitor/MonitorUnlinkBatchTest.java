@@ -38,6 +38,13 @@ import java.util.List;
  */
 
 /*
+ * @test id=legal
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver MonitorUnlinkBatchTest legal
+ */
+
+/*
  * @test id=illegal
  * @requires vm.flagless
  * @library /test/lib
@@ -114,35 +121,39 @@ public class MonitorUnlinkBatchTest {
         String test = args[0];
         switch (test) {
             case "defaults":
-                test(true);
+                test("");
+                break;
+
+            case "legal":
+                // Legal, even if not useful settings
+                test("",
+                     "-XX:MonitorDeflationMax=100000",
+                     "-XX:MonitorUnlinkBatch=100001"
+                     );
                 break;
 
             case "illegal":
                 // Quick tests that should fail on JVM flags verification.
-                test(false,
-                    "-XX:MonitorUnlinkBatch=-1"
+                test("outside the allowed range",
+                     "-XX:MonitorUnlinkBatch=-1"
                 );
-                test(false,
-                    "-XX:MonitorUnlinkBatch=0"
-                );
-                test(false,
-                    "-XX:MonitorDeflationMax=100000",
-                    "-XX:MonitorUnlinkBatch=100001"
+                test("outside the allowed range",
+                     "-XX:MonitorUnlinkBatch=0"
                 );
                 break;
 
             case "aggressive":
                 // The smallest batch possible.
-                test(true,
-                    "-XX:MonitorUnlinkBatch=1"
+                test("",
+                     "-XX:MonitorUnlinkBatch=1"
                 );
                 break;
 
             case "lazy":
                 // The largest batch possible.
-                test(true,
-                    "-XX:MonitorDeflationMax=1000000",
-                    "-XX:MonitorUnlinkBatch=1000000"
+                test("",
+                     "-XX:MonitorDeflationMax=1000000",
+                     "-XX:MonitorUnlinkBatch=1000000"
                 );
                 break;
 
@@ -151,7 +162,7 @@ public class MonitorUnlinkBatchTest {
         }
     }
 
-    public static void test(boolean expectPass, String... args) throws Exception {
+    public static void test(String msg, String... args) throws Exception {
         List<String> opts = new ArrayList<>();
         opts.add("-Xmx128M");
         opts.add("-XX:+UnlockDiagnosticVMOptions");
@@ -161,11 +172,11 @@ public class MonitorUnlinkBatchTest {
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(opts);
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
-        if (expectPass) {
+        if (msg.isEmpty()) {
             oa.shouldHaveExitValue(0);
         } else {
             oa.shouldNotHaveExitValue(0);
-            oa.shouldContain("must be positive, less or equal MonitorDeflationMax");
+            oa.shouldContain(msg);
         }
     }
 

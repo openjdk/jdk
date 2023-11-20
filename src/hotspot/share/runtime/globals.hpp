@@ -734,8 +734,8 @@ const int ObjectAlignmentInBytes = 8;
           range(1024, max_jint)                                             \
                                                                             \
   product(intx, MonitorUnlinkBatch, 500, DIAGNOSTIC,                        \
-          "The maximum number of monitors to unlink in one batch.")         \
-          constraint(MonitorUnlinkBatchConstraintFunc, AfterErgo)           \
+          "The maximum number of monitors to unlink in one batch. ")        \
+          range(1, max_jint)                                                \
                                                                             \
   product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \

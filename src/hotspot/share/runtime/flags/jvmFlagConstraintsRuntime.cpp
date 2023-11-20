@@ -105,16 +105,3 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
 
   return JVMFlag::SUCCESS;
 }
-
-JVMFlag::Error MonitorUnlinkBatchConstraintFunc(intx value, bool verbose) {
-  if (value < 1 || value > MonitorDeflationMax || value > max_jint) {
-    JVMFlag::printError(verbose,
-                        "MonitorUnlinkBatch (" INTX_FORMAT ") must be positive, "
-                        "less or equal MonitorDeflationMax (" INTX_FORMAT "), "
-                        "and less than limit (%d) \n",
-                        value, MonitorDeflationMax, max_jint);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
