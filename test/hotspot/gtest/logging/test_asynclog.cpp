@@ -244,8 +244,9 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
-  if (AsyncLogWriter::instance() == nullptr)
+  if (AsyncLogWriter::instance() == nullptr) {
     return;
+  }
 
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
