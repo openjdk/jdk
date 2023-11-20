@@ -258,7 +258,7 @@ public interface Path
      * FULL STOP) within the file name string. If the file name element is
      * {@code null}, or if the file name string does not contain a period
      * character, or if the last character in the file name string is a period,
-     * or if the first* character in the file name string is the only period,
+     * or if the first character in the file name string is the only period,
      * then the extension is {@linkplain String#isEmpty empty}.
      *
      * @apiNote
