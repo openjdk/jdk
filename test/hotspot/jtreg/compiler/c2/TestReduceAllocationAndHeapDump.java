@@ -76,7 +76,7 @@ class HeapDumper {
     public static Point p = new Point(0);
 
     public static void main(String[] args) throws Exception {
-        for (int i=0; i<5000; i++) {
+        for (int i = 0; i < 5000; i++) {
             testIt(i);
         }
     }
