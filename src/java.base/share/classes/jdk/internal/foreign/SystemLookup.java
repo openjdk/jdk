@@ -75,7 +75,7 @@ public final class SystemLookup implements SymbolLookup {
 
     private static SymbolLookup makeWindowsLookup() {
         @SuppressWarnings("removal")
-        String systemRoot = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        String systemRoot = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public String run() {
                 return System.getenv("SystemRoot");
@@ -86,7 +86,7 @@ public final class SystemLookup implements SymbolLookup {
         Path msvcrt = system32.resolve("msvcrt.dll");
 
         @SuppressWarnings("removal")
-        boolean useUCRT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        boolean useUCRT = AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Boolean run() {
                 return Files.exists(ucrtbase);

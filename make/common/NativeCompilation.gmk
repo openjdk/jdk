@@ -1073,13 +1073,13 @@ define SetupNativeCompilationBody
       ifneq ($$($1_TYPE), STATIC_LIBRARY)
         # Generate debuginfo files.
         ifeq ($(call isTargetOs, windows), true)
-          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb" \
-              "-map:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map"
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
+              "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
           ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).stripped.pdb"
+            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
           endif
-          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb \
-              $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).map
 
         else ifeq ($(call isTargetOs, linux), true)
           $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
@@ -1127,7 +1127,11 @@ define SetupNativeCompilationBody
         $1 += $$($1_DEBUGINFO_FILES)
 
         ifeq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-          $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
+          ifeq ($(call isTargetOs, windows), true)
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).diz
+          else
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
+          endif
           $1 += $$($1_DEBUGINFO_ZIP)
 
           # The dependency on TARGET is needed for debuginfo files

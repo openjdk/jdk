@@ -257,7 +257,7 @@ public:
                   HR_FORMAT_PARAMS(r),
                   p2i(r->top_at_mark_start()),
                   p2i(r->parsable_bottom()),
-                  r->has_surv_rate_group() ? r->age_in_surv_rate_group() : -1);
+                  r->has_surv_rate_group() ? checked_cast<int>(r->age_in_surv_rate_group()) : -1);
     return false;
   }
 };

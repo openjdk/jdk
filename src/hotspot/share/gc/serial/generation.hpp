@@ -331,11 +331,6 @@ class Generation: public CHeapObj<mtGC> {
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
 
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const ;
-
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;

@@ -363,7 +363,7 @@ int LIR_Assembler::emit_unwind_handler() {
     if (LockingMode == LM_MONITOR) {
       __ j(*stub->entry());
     } else {
-      __ unlock_object(x15, x14, x10, *stub->entry());
+      __ unlock_object(x15, x14, x10, x16, *stub->entry());
     }
     __ bind(*stub->continuation());
   }
@@ -1512,6 +1512,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
+  Register temp = op->scratch_opr()->as_register();
   if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -1521,13 +1522,13 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
+    __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
   }
