@@ -384,7 +384,8 @@ Build Platforms</a>. From time to time, this is updated by contributors
 to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should
-be able to build the JDK.</p>
+be able to build the JDK. (Note: The Windows 32-bit x86 port is
+deprecated and may be removed in a future release.)</p>
 <p>On Windows, it is important that you pay attention to the
 instructions in the <a href="#special-considerations">Special
 Considerations</a>.</p>
@@ -395,13 +396,30 @@ Subsystem for Linux (WSL), and MSYS2. (MSYS is no longer supported due
 to an outdated bash; While OpenJDK can be built with MSYS2, support for
 it is still experimental, so build failures and unusual errors are not
 uncommon.)</p>
+<p>Internally in the build system, all paths are represented as
+Unix-style paths, e.g. <code>/cygdrive/c/git/jdk/Makefile</code> rather
+than <code>C:\git\jdk\Makefile</code>. This rule also applies to input
+to the build system, e.g. in arguments to <code>configure</code>. So,
+use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
+<code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
+conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<h4 id="locale-requirements">Locale Requirements</h4>
 <p>Building and testing the JDK requires a well-defined locale to be
 guaranteed to run correctly. On non-Windows operating systems, this is
 achieved using the <code>LC_*</code> variables, which propagate to all
 child processes of the build. Unfortunately, there is no way to set the
-locale for a specific process like this in Windows. The only way is to
-change the user locale setting to <strong>US English</strong>, which
-will affect all applications run by the user.</p>
+locale for a specific process like this in Windows. Instead, changes to
+locale can only be made globally, which will affect all applications run
+by the user. Furthermore, Windows makes a difference between user locale
+and system locale, where the latter determines e.g. the file path
+encoding. Both this locale settings affect building and testing the
+JDK.</p>
+<p>The <strong>recommended</strong> and <strong>supported</strong> way
+of building the JDK on Windows is to set both the system locale and the
+user locale to <strong>US English</strong>. The system setting can be
+changed by going to the Control Panel, choosing "Regional Settings"
+-&gt; "Administrative" and then pressing on the "Change System Locale"
+button.</p>
 <p>Since this is annoying for users who prefer another locale, we strive
 to get the building and testing to work on other locales as well. This
 is on a "best effort" level, so beware! You might get odd results in
@@ -410,15 +428,6 @@ US English are not supported nor recommended.</p>
 <p>It is also imperative to install the US English language pack in
 Visual Studio. For details, see <a
 href="#microsoft-visual-studio">Microsoft Visual Studio</a>.</p>
-<p>Internally in the build system, all paths are represented as
-Unix-style paths, e.g. <code>/cygdrive/c/git/jdk/Makefile</code> rather
-than <code>C:\git\jdk\Makefile</code>. This rule also applies to input
-to the build system, e.g. in arguments to <code>configure</code>. So,
-use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
-<code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
-conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
-a future release.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="https://www.cygwin.com/">Cygwin</a>
 environment is required for building the JDK on Windows. If you have a
