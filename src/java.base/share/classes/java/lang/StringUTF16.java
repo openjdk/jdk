@@ -204,7 +204,7 @@ final class StringUTF16 {
      * latin1 from the copy made in the first pass to the originally allocated latin1 buffer.
      * If it succeeds the return value is latin1, otherwise, the utf16 value is returned.
      * In this unusual case, the result is correct for the snapshot of the value.
-     * The resulting string may be indeterminate if the input array is modified during this
+     * The resulting string contents are unspecified if the input array is modified during this
      * operation, but it is ensured that at least 1 non-latin1 character is present in
      * the non-latin1 buffer.
      *

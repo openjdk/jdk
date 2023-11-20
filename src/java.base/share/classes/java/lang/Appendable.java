@@ -58,8 +58,8 @@ public interface Appendable {
      * instance, if {@code csq} is a {@link java.nio.CharBuffer} then
      * the subsequence to append is defined by the buffer's position and limit.
      * <p>
-     * The contents of this {@code Appendable} are indeterminate if the argument
-     * is modified before the {@code append} method returns or an exception is thrown
+     * The contents of this {@code Appendable} are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
      * when accessing the {@code CharSequence}.
      *
      * @param  csq
@@ -86,8 +86,8 @@ public interface Appendable {
      *     out.append(csq.subSequence(start, end)) </pre>
      *
      * <p>
-     * The contents of this {@code Appendable} are indeterminate if the argument
-     * is modified before the {@code append} method returns or an exception is thrown
+     * The contents of this {@code Appendable} are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
      * when accessing the {@code CharSequence}.
      * @param  csq
      *         The character sequence from which a subsequence will be
