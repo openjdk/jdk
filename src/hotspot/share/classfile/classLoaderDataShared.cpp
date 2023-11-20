@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -145,21 +145,21 @@ static ClassLoaderData* java_system_loader_data_or_null() {
 }
 
 void ClassLoaderDataShared::iterate_symbols(MetaspaceClosure* closure) {
-  assert(DumpSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.iterate_symbols    (null_class_loader_data(), closure);
   _archived_platform_loader_data.iterate_symbols(java_platform_loader_data_or_null(), closure);
   _archived_system_loader_data.iterate_symbols  (java_system_loader_data_or_null(), closure);
 }
 
 void ClassLoaderDataShared::allocate_archived_tables() {
-  assert(DumpSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.allocate    (null_class_loader_data());
   _archived_platform_loader_data.allocate(java_platform_loader_data_or_null());
   _archived_system_loader_data.allocate  (java_system_loader_data_or_null());
 }
 
 void ClassLoaderDataShared::init_archived_tables() {
-  assert(DumpSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   _archived_boot_loader_data.init_archived_entries    (null_class_loader_data());
   _archived_platform_loader_data.init_archived_entries(java_platform_loader_data_or_null());
   _archived_system_loader_data.init_archived_entries  (java_system_loader_data_or_null());
@@ -172,7 +172,7 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_system_loader_data.serialize(f);
   f->do_ptr(&_archived_javabase_moduleEntry);
 
-  if (f->reading() && MetaspaceShared::use_full_module_graph()) {
+  if (f->reading() && CDSConfig::is_loading_full_module_graph()) {
     // Must be done before ClassLoader::create_javabase()
     _archived_boot_loader_data.restore(null_class_loader_data(), true, false);
     ModuleEntryTable::set_javabase_moduleEntry(_archived_javabase_moduleEntry);
@@ -182,25 +182,25 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
 }
 
 void ClassLoaderDataShared::clear_archived_oops() {
-  assert(UseSharedSpaces && !MetaspaceShared::use_full_module_graph(), "must be");
+  assert(!CDSConfig::is_loading_full_module_graph(), "must be");
   _archived_boot_loader_data.clear_archived_oops();
   _archived_platform_loader_data.clear_archived_oops();
   _archived_system_loader_data.clear_archived_oops();
 }
 
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
-  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_loading_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
   return _archived_javabase_moduleEntry->module();
 }
 
 void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_loading_full_module_graph(), "must be");
   _archived_platform_loader_data.restore(loader_data, true, true);
 }
 
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_loading_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
   _full_module_graph_loaded = true;
 }
