@@ -156,18 +156,16 @@ class PhaseNameIter {
 
 class PhaseNameValidator {
  private:
-  CHeapBitMap _mask;
+  CHeapBitMap _phase_name_set;
   bool _valid;
-  bool _set;
   char* _bad;
 
 
  public:
-  PhaseNameValidator(ccstrlist option)
-                    : _mask(PHASE_NUM_TYPES, mtCompiler),
-                      _valid(true),
-                      _set(false),
-                      _bad(nullptr)
+  PhaseNameValidator(ccstrlist option) :
+    _phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+    _valid(true),
+    _bad(nullptr)
   {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
@@ -179,12 +177,10 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        _mask.set_range(0,PHASE_NUM_TYPES);
-        _set = true;
+        _phase_name_set.set_range(0, PHASE_NUM_TYPES);
       } else {
         assert(cpt < PHASE_NUM_TYPES, "out of bounds");
-        _mask.set_bit(cpt);
-        _set = true;
+        _phase_name_set.set_bit(cpt);
       }
     }
   }
@@ -195,9 +191,12 @@ class PhaseNameValidator {
     }
   }
 
-  const BitMap& mask() const { return _mask; }
+  const BitMap& phase_name_set() const {
+    assert(is_valid(), "Use of invalid phase name set");
+    return _phase_name_set;
+  }
   bool is_valid() const { return _valid; }
-  bool is_mask_set() const { return _set; }
+  bool is_phase_name_set_empty() const { return _phase_name_set.is_empty(); }
   const char* what() const { return _bad; }
 };
 

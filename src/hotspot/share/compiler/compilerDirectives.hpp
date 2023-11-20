@@ -130,7 +130,7 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
-  CHeapBitMap _ideal_phase_name_mask;
+  CHeapBitMap _ideal_phase_name_set;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -199,11 +199,11 @@ void set_##name(void* value) {                                      \
   compilerdirectives_c1_string_flags(set_string_function_definition)
 #undef set_string_function_definition
 
-  void set_ideal_phase_mask(const PhaseNameValidator& v) {
-    _ideal_phase_name_mask.set_from(v.mask());
+  void set_ideal_phase_name_set(const PhaseNameValidator& v) {
+    _ideal_phase_name_set.set_from(v.phase_name_set());
   };
   bool should_print_phase(const CompilerPhaseType cpt) const {
-    return _ideal_phase_name_mask.at(cpt);
+    return _ideal_phase_name_set.at(cpt);
   };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }

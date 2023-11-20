@@ -340,7 +340,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
 
           valid = validator.is_valid();
           if (valid) {
-            set->set_ideal_phase_mask(validator);
+            set->set_ideal_phase_name_set(validator);
           } else {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
           }
