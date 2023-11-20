@@ -1993,7 +1993,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_autovectorization(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
