@@ -8499,7 +8499,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
   Register tmp5, Register result, KRegister mask1, KRegister mask2) {
-  Label copy_chars_loop, return_length, done, reset_sp, copy_tail;
+  Label copy_chars_loop, done, reset_sp, copy_tail;
 
   // rsi: src
   // rdi: dst
@@ -8514,7 +8514,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   assert(len != result, "");
 
   // save length for return
-  push(len);
+  movl(result, len);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
     VM_Version::supports_avx512vlbw() &&
@@ -8531,8 +8531,8 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 
     // First check whether a character is compressible ( <= 0xFF).
     // Create mask to test for Unicode chars inside zmm vector
-    movl(result, 0x00FF);
-    evpbroadcastw(tmp2Reg, result, Assembler::AVX_512bit);
+    movl(tmp5, 0x00FF);
+    evpbroadcastw(tmp2Reg, tmp5, Assembler::AVX_512bit);
 
     testl(len, -64);
     jcc(Assembler::zero, post_alignment);
@@ -8547,10 +8547,11 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     jcc(Assembler::zero, post_alignment);
 
     // ~(~0 << len), where len is the # of remaining elements to process
-    movl(result, 0xFFFFFFFF);
-    shlxl(result, result, tmp5);
-    notl(result);
-    kmovdl(mask2, result);
+    movl(len, 0xFFFFFFFF);
+    shlxl(len, len, tmp5);
+    notl(len);
+    kmovdl(mask2, len);
+    movl(len, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
     evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
@@ -8591,16 +8592,16 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     bind(copy_loop_tail);
     // bail out when there is nothing to be done
     testl(tmp5, 0xFFFFFFFF);
-    jcc(Assembler::zero, return_length);
+    jcc(Assembler::zero, done);
 
     movl(len, tmp5);
 
     // ~(~0 << len), where len is the # of remaining elements to process
-    movl(result, 0xFFFFFFFF);
-    shlxl(result, result, len);
-    notl(result);
+    movl(tmp5, 0xFFFFFFFF);
+    shlxl(tmp5, tmp5, len);
+    notl(tmp5);
 
-    kmovdl(mask2, result);
+    kmovdl(mask2, tmp5);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
     evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
@@ -8608,7 +8609,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     jcc(Assembler::carryClear, copy_tail);
 
     evpmovwb(Address(dst, 0), mask2, tmp1Reg, Assembler::AVX_512bit);
-    jmp(return_length);
+    jmp(done);
 
     bind(reset_for_copy_tail);
     lea(src, Address(src, tmp5, Address::times_2));
@@ -8620,21 +8621,20 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   }
 
   if (UseSSE42Intrinsics) {
-    Label copy_32_loop, copy_16, copy_tail_sse, reset_for_copy_tail, reset_for_copy_tail_16;
-
-    movl(result, len);
-
-    movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vectors
+    Label copy_32_loop, copy_16, copy_tail_sse, reset_for_copy_tail;
 
     // vectored compression
-    andl(len, 0xfffffff0);    // vector count (in chars)
-    andl(result, 0x0000000f);    // tail count (in chars)
-    testl(len, len);
-    jcc(Assembler::zero, copy_16);
+    testl(len, 0xfffffff8);
+    jcc(Assembler::zero, copy_tail);
 
-    // compress 16 chars per iter
+    movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vectors
     movdl(tmp1Reg, tmp5);
     pshufd(tmp1Reg, tmp1Reg, 0);   // store Unicode mask in tmp1Reg
+
+    andl(len, 0xfffffff0);
+    jccb(Assembler::zero, copy_16);
+
+    // compress 16 chars per iter
     pxor(tmp4Reg, tmp4Reg);
 
     lea(src, Address(src, len, Address::times_2));
@@ -8647,72 +8647,59 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     movdqu(tmp3Reg, Address(src, len, Address::times_2, 16)); // load next 8 characters
     por(tmp4Reg, tmp3Reg);
     ptest(tmp4Reg, tmp1Reg);       // check for Unicode chars in next vector
-    jcc(Assembler::notZero, reset_for_copy_tail);
+    jccb(Assembler::notZero, reset_for_copy_tail);
     packuswb(tmp2Reg, tmp3Reg);    // only ASCII chars; compress each to 1 byte
     movdqu(Address(dst, len, Address::times_1), tmp2Reg);
     addptr(len, 16);
-    jcc(Assembler::notZero, copy_32_loop);
+    jccb(Assembler::notZero, copy_32_loop);
 
     // compress next vector of 8 chars (if any)
     bind(copy_16);
-    movl(len, result);
-    andl(len, 0xfffffff8);    // vector count (in chars)
-    andl(result, 0x00000007);    // tail count (in chars)
-    testl(len, len);
+    // len = 0
+    testl(result, 0x00000008);     // check if there's a block of 8 chars to compress
     jccb(Assembler::zero, copy_tail_sse);
 
-    movdl(tmp1Reg, tmp5);
-    pshufd(tmp1Reg, tmp1Reg, 0);   // store Unicode mask in tmp1Reg
     pxor(tmp3Reg, tmp3Reg);
 
     movdqu(tmp2Reg, Address(src, 0));
     ptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in vector
-    jccb(Assembler::notZero, reset_for_copy_tail_16);
+    jccb(Assembler::notZero, reset_for_copy_tail);
     packuswb(tmp2Reg, tmp3Reg);    // only LATIN1 chars; compress each to 1 byte
     movq(Address(dst, 0), tmp2Reg);
     addptr(src, 16);
     addptr(dst, 8);
-    jmp(copy_tail_sse);
+    jmpb(copy_tail_sse);
 
     bind(reset_for_copy_tail);
-    lea(src, Address(src, result, Address::times_2));
-    lea(dst, Address(dst, result, Address::times_1));
-    subptr(len, result);
-    jmpb(copy_chars_loop);
-
-    bind(reset_for_copy_tail_16);
-    addl(len, result);
-    lea(src, Address(src, len, Address::times_2));
-    lea(dst, Address(dst, len, Address::times_1));
-    negptr(len);
+    movl(tmp5, result);
+    andl(tmp5, 0x0000000f);
+    lea(src, Address(src, tmp5, Address::times_2));
+    lea(dst, Address(dst, tmp5, Address::times_1));
+    subptr(len, tmp5);
     jmpb(copy_chars_loop);
 
     bind(copy_tail_sse);
     movl(len, result);
+    andl(len, 0x00000007);    // tail count (in chars)
   }
   // compress 1 char per iter
   bind(copy_tail);
   testl(len, len);
-  jccb(Assembler::zero, return_length);
+  jccb(Assembler::zero, done);
   lea(src, Address(src, len, Address::times_2));
   lea(dst, Address(dst, len, Address::times_1));
   negptr(len);
 
   bind(copy_chars_loop);
-  load_unsigned_short(result, Address(src, len, Address::times_2));
-  testl(result, 0xff00);      // check if Unicode char
+  load_unsigned_short(tmp5, Address(src, len, Address::times_2));
+  testl(tmp5, 0xff00);      // check if Unicode char
   jccb(Assembler::notZero, reset_sp);
-  movb(Address(dst, len, Address::times_1), result);  // ASCII char; compress to 1 byte
+  movb(Address(dst, len, Address::times_1), tmp5);  // ASCII char; compress to 1 byte
   increment(len);
-  jcc(Assembler::notZero, copy_chars_loop);
+  jccb(Assembler::notZero, copy_chars_loop);
 
-  // if compression succeeded, return length
-  bind(return_length);
-  pop(result);
-  jmpb(done);
-
+  // add len then return (len will be zero if compress succeeded, otherwise negative)
   bind(reset_sp);
-  pop(result);
   addl(result, len);
 
   bind(done);
