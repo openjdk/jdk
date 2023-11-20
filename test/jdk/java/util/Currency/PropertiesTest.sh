@@ -27,7 +27,6 @@
 #      8157138 8190904
 # @summary tests the capability of replacing the currency data with user
 #     specified currency properties file
-# @requires vm.flagless
 # @build PropertiesTest
 # @run shell/timeout=600 PropertiesTest.sh
 
@@ -77,7 +76,7 @@ failures=0
 
 run() {
     echo ''
-    ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} $* 2>&1
+    ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} $* 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
@@ -111,23 +110,23 @@ echo "Properties location: ${PROPLOCATION}"
 
 # run
 echo ''
-${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest -d dump3
+${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} PropertiesTest -d dump3
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 if [ ! -f dump3 ]; then  echo "file dump3 not created. Test cannot execute.  Failed."; exit 1; fi
 
 # run bug7102969 test
 echo ''
-${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest bug7102969
+${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} PropertiesTest bug7102969
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # run bug8157138 test
 echo ''
-${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest bug8157138
+${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} PropertiesTest bug8157138
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # run bug8190904 test
 echo ''
-${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} PropertiesTest bug8190904
+${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} PropertiesTest bug8190904
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Cleanup
