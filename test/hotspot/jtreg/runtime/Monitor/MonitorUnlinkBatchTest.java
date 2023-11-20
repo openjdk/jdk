@@ -32,35 +32,30 @@ import java.util.List;
  * @test id=defaults
  * @bug 8319048
  * @summary Test the MonitorUnlinkBatch options
- * @requires vm.flagless
  * @library /test/lib
  * @run driver MonitorUnlinkBatchTest defaults
  */
 
 /*
  * @test id=legal
- * @requires vm.flagless
  * @library /test/lib
  * @run driver MonitorUnlinkBatchTest legal
  */
 
 /*
  * @test id=illegal
- * @requires vm.flagless
  * @library /test/lib
  * @run driver MonitorUnlinkBatchTest illegal
  */
 
 /*
  * @test id=aggressive
- * @requires vm.flagless
  * @library /test/lib
  * @run driver MonitorUnlinkBatchTest aggressive
  */
 
 /*
  * @test id=lazy
- * @requires vm.flagless
  * @library /test/lib
  * @run driver MonitorUnlinkBatchTest lazy
  */
