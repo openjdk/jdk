@@ -350,9 +350,6 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
                                                          CardValue* const end_card) {
   using Word = uintptr_t;
 
-  static_assert(clean_card_val() == (CardValue)-1, "inv");
-  constexpr Word clean_word = (Word)CardTable::clean_card_row_val();
-
   CardValue* i_card = start_card;
 
   while (!is_aligned(i_card, sizeof(Word))) {
@@ -368,7 +365,7 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   // Word comparison
   while (i_card + sizeof(Word) <= end_card) {
     Word* i_word = reinterpret_cast<Word*>(i_card);
-    if (*i_word != clean_word) {
+    if (*i_word != (Word)clean_card_row_val()) {
       // Found a dirty card in this word; fall back to per-CardValue comparison.
       break;
     }
