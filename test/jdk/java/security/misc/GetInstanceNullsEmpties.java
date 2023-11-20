@@ -549,20 +549,20 @@ public class GetInstanceNullsEmpties {
         m = getInstance(clazz, STRING, AlgorithmParameterSpec.class);
         run(m, NullPointerException.class, (Object) null, ips);
         run(m, NoSuchAlgorithmException.class, "", ips);
-        run(m, InvalidAlgorithmParameterException.class, "SHAKE256-LEN", null);
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null);
 
         m = getInstance(clazz, STRING, AlgorithmParameterSpec.class, STRING);
         run(m, NullPointerException.class, null, ips, "SUN");
         run(m, NoSuchAlgorithmException.class, "", ips, "SUN");
         run(m, IllegalArgumentException.class, "FOO", ips, null);
         run(m, IllegalArgumentException.class, "FOO", ips, "");
-        run(m, InvalidAlgorithmParameterException.class, "SHAKE256-LEN", null, "SUN");
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null, "SUN");
 
         m = getInstance(clazz, STRING, AlgorithmParameterSpec.class, PROVIDER);
         run(m, NullPointerException.class, null, ips, SUN);
         run(m, NoSuchAlgorithmException.class, "", ips, SUN);
         run(m, IllegalArgumentException.class, "FOO", ips, null);
-        run(m, InvalidAlgorithmParameterException.class, "SHAKE256-LEN", null, SUN);
+        run(m, NoSuchAlgorithmException.class, "SHAKE256-LEN", null, SUN);
     }
 
     private static void testPolicy() throws Exception {
