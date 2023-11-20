@@ -121,6 +121,18 @@ public:
   bool is_trace_memory_slices() const {
     return _trace_mask.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
   }
+  bool is_trace_body() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_BODY);
+  }
+  bool is_trace_dependence_graph() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_DEPENDENCE_GRAPH);
+  }
+  bool is_trace_vector_element_type() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_VECTOR_ELEMENT_TYPE);
+  }
+  bool is_trace_pointer_analysis() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
+  }
 #endif
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -689,7 +701,7 @@ class VPointer : public StackObj {
 #ifndef PRODUCT
   class Tracer {
     friend class VPointer;
-    bool _is_trace_alignment;
+    const VLoop &_vloop;
     static int _depth;
     int _depth_save;
     void print_depth() const;
@@ -706,7 +718,9 @@ class VPointer : public StackObj {
       Depth(int x) { _depth = 0; }
       ~Depth()     { if (_depth > 0) --_depth; }
     };
-    Tracer(bool is_trace_alignment) : _is_trace_alignment(is_trace_alignment) {}
+    Tracer(const VLoop &vloop) : _vloop(vloop) {}
+
+    bool is_trace_pointer_analysis() const { return _vloop.is_trace_pointer_analysis(); }
 
     // tracing functions
     void ctor_1(Node* mem);

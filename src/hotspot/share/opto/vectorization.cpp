@@ -45,7 +45,7 @@ VPointer::VPointer(MemNode* mem, const VLoop& vloop,
 #endif
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer((phase()->C->directive()->VectorizeDebugOption & 2) > 0)
+  , _tracer(_vloop)
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)
@@ -68,7 +68,7 @@ VPointer::VPointer(MemNode* mem, const VLoop& vloop,
     return;
   }
 
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.store_depth();)
+  NOT_PRODUCT(if(_tracer.is_trace_pointer_analysis()) _tracer.store_depth();)
   NOT_PRODUCT(_tracer.ctor_2(adr);)
 
   int i;
@@ -97,7 +97,7 @@ VPointer::VPointer(MemNode* mem, const VLoop& vloop,
     return;
   }
 
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
+  NOT_PRODUCT(if(_tracer.is_trace_pointer_analysis()) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
 
   _base = base;
@@ -115,7 +115,7 @@ VPointer::VPointer(VPointer* p) :
 #endif
   _nstack(p->_nstack), _analyze_only(p->_analyze_only), _stack_idx(p->_stack_idx)
 #ifndef PRODUCT
-  , _tracer(p->_tracer._is_trace_alignment)
+  , _tracer(_vloop)
 #endif
 {}
 
@@ -418,13 +418,13 @@ void VPointer::Tracer::print_depth() const {
 }
 
 void VPointer::Tracer::ctor_1(Node* mem) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print(" %d VPointer::VPointer: start alignment analysis", mem->_idx); mem->dump();
   }
 }
 
 void VPointer::Tracer::ctor_2(Node* adr) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     //store_depth();
     inc_depth();
     print_depth(); tty->print(" %d (adr) VPointer::VPointer: ", adr->_idx); adr->dump();
@@ -434,7 +434,7 @@ void VPointer::Tracer::ctor_2(Node* adr) {
 }
 
 void VPointer::Tracer::ctor_3(Node* adr, int i) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     inc_depth();
     Node* offset = adr->in(AddPNode::Offset);
     print_depth(); tty->print(" %d (offset) VPointer::VPointer: i = %d: ", offset->_idx, i); offset->dump();
@@ -442,14 +442,14 @@ void VPointer::Tracer::ctor_3(Node* adr, int i) {
 }
 
 void VPointer::Tracer::ctor_4(Node* adr, int i) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     inc_depth();
     print_depth(); tty->print(" %d (adr) VPointer::VPointer: i = %d: ", adr->_idx, i); adr->dump();
   }
 }
 
 void VPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     inc_depth();
     if (base == adr) {
       print_depth(); tty->print_cr("  \\ %d (adr) == %d (base) VPointer::VPointer: breaking analysis at i = %d", adr->_idx, base->_idx, i);
@@ -460,33 +460,33 @@ void VPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
 }
 
 void VPointer::Tracer::ctor_6(Node* mem) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     //restore_depth();
     print_depth(); tty->print_cr(" %d (adr) VPointer::VPointer: stop analysis", mem->_idx);
   }
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_1(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print(" %d VPointer::scaled_iv_plus_offset testing node: ", n->_idx);
     n->dump();
   }
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_2(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
   }
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_3(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
   }
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
@@ -494,7 +494,7 @@ void VPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
@@ -502,7 +502,7 @@ void VPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\  %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
@@ -510,7 +510,7 @@ void VPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
@@ -518,32 +518,32 @@ void VPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
 }
 
 void VPointer::Tracer::scaled_iv_plus_offset_8(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: FAILED", n->_idx);
   }
 }
 
 void VPointer::Tracer::scaled_iv_1(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print(" %d VPointer::scaled_iv: testing node: ", n->_idx); n->dump();
   }
 }
 
 void VPointer::Tracer::scaled_iv_2(Node* n, int scale) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED since another _scale has been detected before", n->_idx);
     print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: _scale (%d) != 0", scale);
   }
 }
 
 void VPointer::Tracer::scaled_iv_3(Node* n, int scale) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: is iv, setting _scale = %d", n->_idx, scale);
   }
 }
 
 void VPointer::Tracer::scaled_iv_4(Node* n, int scale) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -551,7 +551,7 @@ void VPointer::Tracer::scaled_iv_4(Node* n, int scale) {
 }
 
 void VPointer::Tracer::scaled_iv_5(Node* n, int scale) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
@@ -559,7 +559,7 @@ void VPointer::Tracer::scaled_iv_5(Node* n, int scale) {
 }
 
 void VPointer::Tracer::scaled_iv_6(Node* n, int scale) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -567,7 +567,7 @@ void VPointer::Tracer::scaled_iv_6(Node* n, int scale) {
 }
 
 void VPointer::Tracer::scaled_iv_7(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_ConvI2L PASSED", n->_idx);
     print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) %d is scaled_iv_plus_offset: ", n->in(1)->_idx);
     inc_depth(); inc_depth();
@@ -577,13 +577,13 @@ void VPointer::Tracer::scaled_iv_7(Node* n) {
 }
 
 void VPointer::Tracer::scaled_iv_8(Node* n, VPointer* tmp) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print(" %d VPointer::scaled_iv: Op_LShiftL, creating tmp VPointer: ", n->_idx); tmp->print();
   }
 }
 
 void VPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
     print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
     n->in(1)->_idx, n->in(2)->_idx, scale, offset);
@@ -601,45 +601,45 @@ void VPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) 
 }
 
 void VPointer::Tracer::scaled_iv_10(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED", n->_idx);
   }
 }
 
 void VPointer::Tracer::offset_plus_k_1(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print(" %d VPointer::offset_plus_k: testing node: ", n->_idx); n->dump();
   }
 }
 
 void VPointer::Tracer::offset_plus_k_2(Node* n, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConI PASSED, setting _offset = %d", n->_idx, _offset);
   }
 }
 
 void VPointer::Tracer::offset_plus_k_3(Node* n, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConL PASSED, setting _offset = %d", n->_idx, _offset);
   }
 }
 
 void VPointer::Tracer::offset_plus_k_4(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
     print_depth(); tty->print_cr("  \\ " JLONG_FORMAT " VPointer::offset_plus_k: Op_ConL FAILED, k is too big", n->get_long());
   }
 }
 
 void VPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: _invar is not null: ", _invar->_idx); _invar->dump();
   }
 }
 
 void VPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -648,7 +648,7 @@ void VPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar
 }
 
 void VPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
@@ -657,7 +657,7 @@ void VPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar
 }
 
 void VPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -666,7 +666,7 @@ void VPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar
 }
 
 void VPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
@@ -674,14 +674,14 @@ void VPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar
 }
 
 void VPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print_cr("  \\ %d VPointer::offset_plus_k: is invariant", n->_idx);
   }
 }
 
 void VPointer::Tracer::offset_plus_k_11(Node* n) {
-  if (_is_trace_alignment) {
+  if (is_trace_pointer_analysis()) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
   }
 }
@@ -1102,8 +1102,7 @@ const char* VLoopBody::construct() {
       // Bailout if the loop has LoadStore, MergeMem or data Proj
       // nodes. Superword optimization does not work with them.
 #ifndef PRODUCT
-      // TODO change trace flag
-      if (TraceSuperWord) {
+      if (_vloop.is_trace_body()) {
         tty->print_cr("VLoopBody::construct: fails because of unhandled node:");
         n->dump();
       }
@@ -1173,7 +1172,7 @@ const char* VLoopBody::construct() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (_vloop.is_trace_body()) {
     print();
   }
 #endif
@@ -1187,7 +1186,6 @@ void VLoopBody::print() const {
   tty->print_cr("\nVLoopBody::print:");
   for (int i = 0; i < _body.length(); i++) {
     Node* n = _body.at(i);
-    tty->print("%d ", i);
     if (n != nullptr) {
       n->dump();
     }
@@ -1223,14 +1221,6 @@ void VLoopDependenceGraph::build() {
     // Get slice in predecessor order (last is first)
     _memory_slices.get_slice(head, tail, slice_nodes);
 
-#ifndef PRODUCT
-    if(TraceSuperWord && Verbose) {
-      tty->print_cr("VLoopDependenceGraph::build: built a new mem slice");
-      for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
-        slice_nodes.at(j)->dump();
-      }
-    }
-#endif
     // Make the slice dependent on the root
     DependenceNode* slice_head = get_node(head);
     make_edge(root(), slice_head);
@@ -1272,7 +1262,7 @@ void VLoopDependenceGraph::build() {
   compute_max_depth();
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if(_vloop.is_trace_dependence_graph()) {
     print();
   }
 #endif
@@ -1307,9 +1297,11 @@ void VLoopDependenceGraph::compute_max_depth() {
     ct++;
   } while (again);
 
-  if (TraceSuperWord && Verbose) {
+#ifndef PRODUCT
+  if (_vloop.is_trace_dependence_graph()) {
     tty->print_cr("\nVLoopDependenceGraph::compute_max_depth iterated: %d times", ct);
   }
+#endif
 }
 
 bool VLoopDependenceGraph::independent(Node* s1, Node* s2) const {
@@ -1452,9 +1444,9 @@ int VLoopDependenceGraph::DependenceNode::out_cnt() {
 void VLoopDependenceGraph::DependenceNode::print() const {
 #ifndef PRODUCT
   if (_node != nullptr) {
-    tty->print("  DependenceNode %4d %-6s (", _node->_idx, _node->Name());
+    tty->print("  %4d %-6s (", _node->_idx, _node->Name());
   } else {
-    tty->print("  DependenceNode sentinel (");
+    tty->print("  sentinel (");
   }
   for (DependenceEdge* p = _in_head; p != nullptr; p = p->next_in()) {
     Node* pred = p->pred()->node();
@@ -1506,9 +1498,11 @@ void VLoopDependenceGraph::PredsIterator::next() {
 }
 
 void VLoopTypes::compute_vector_element_type() {
-  if (TraceSuperWord && Verbose) {
+#ifndef PRODUCT
+  if (_vloop.is_trace_vector_element_type()) {
     tty->print_cr("\nVLoopTypes::compute_vector_element_type:");
   }
+#endif
 
   assert(_velt_type.length() == 0, "must be freshly reset");
   // reserve space
@@ -1600,7 +1594,7 @@ void VLoopTypes::compute_vector_element_type() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord && Verbose) {
+  if (_vloop.is_trace_vector_element_type()) {
     print();
   }
 #endif
