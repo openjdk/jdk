@@ -396,7 +396,6 @@
 #ifdef AIX
 #define AIX_ONLY(code) code
 #define NOT_AIX(code)
-#define AIX_EXTENSION ".a"
 #else
 #define AIX_ONLY(code)
 #define NOT_AIX(code) code

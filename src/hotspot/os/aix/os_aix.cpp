@@ -3062,14 +3062,13 @@ int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
 
 //Returns an alternate path name for the given file,if it doesnt exist.
 //For AIX,this replaces .so with .a.
-void os::Aix::mapAlternateName(char* buffer,const char *extension){
+void os::Aix::mapAlternateName(char* buffer, const char *extension) {
 
-     unsigned long end=strlen(buffer);
-     while(end>0 && buffer[end]!='.')
+     unsigned long end = strlen(buffer);
+     while (end > 0 && buffer[end] != '.')
      {
          end--;
      }
-     buffer[end]='\0';
-     strcat(buffer,extension);
+     buffer[end] = '\0';
+     strcat(buffer, extension);
  }
-

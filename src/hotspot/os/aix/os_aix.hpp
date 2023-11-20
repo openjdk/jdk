@@ -177,8 +177,8 @@ class os::Aix {
 
   // Simulate the library search algorithm of dlopen() (in os::dll_load)
   static int stat64x_via_LIBPATH(const char* path, struct stat64x* stat);
+  // Provide alternate path name,if file does not exist.
   static void mapAlternateName(char* buffer, const char *extension);
-
 };
 
 #endif // OS_AIX_OS_AIX_HPP

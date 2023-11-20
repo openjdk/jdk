@@ -342,9 +342,10 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
     }
    #ifdef AIX
    if (library == nullptr) {
-     os::Aix::mapAlternateName(buffer,AIX_EXTENSION);
-     library=os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
-     if(library!=nullptr) {
+     const char* aix_archive_extension = ".a";
+     os::Aix::mapAlternateName(buffer, aix_archive_extension);
+     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
+     if(library != nullptr) {
        save_library_signature(agent, &buffer[0]);
        return library;
    }
