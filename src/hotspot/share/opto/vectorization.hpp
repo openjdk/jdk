@@ -133,6 +133,9 @@ public:
   bool is_trace_pointer_analysis() const {
     return _trace_mask.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
   }
+  bool is_trace_alignment() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_ALIGNMENT);
+  }
 #endif
 
   // Check if the loop passes some basic preconditions for vectorization.
