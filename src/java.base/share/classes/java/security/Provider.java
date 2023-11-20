@@ -1947,12 +1947,12 @@ public abstract class Provider extends Properties {
                     Constructor<?> con = getImplClass().getConstructor(ctrParamClz);
                     return con.newInstance(ctorParamObj);
                 } catch (NoSuchMethodException nsme) {
-                    // For pre-jdk9 SecureRandom implementations, they only
-                    // have params-less constructors which still works when
-                    // the input ctorParamObj is null.
-                    //
-                    // For other primitives using params, ctorParamObj should not
-                    // be null and nsme is thrown, just like before.
+                    // For old SecureRandom and MessageDigest implementations,
+                    // there are only params-less constructors which should
+                    // still work when the input ctorParamObj is null.
+                    // If ctorParamObj is not null but there is no constructor
+                    // with a params argument, throw iape which will be the
+                    // cause of nsme thrown by Service.newInstance().
                     if (ctorParamObj == null) {
                         try {
                             return newInstanceOf();
@@ -1961,7 +1961,9 @@ public abstract class Provider extends Properties {
                             throw nsme;
                         }
                     } else {
-                        throw nsme;
+                        throw new InvalidAlgorithmParameterException(
+                                "this implementation does not support parameters",
+                                nsme);
                     }
                 }
             }

@@ -171,7 +171,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
      *         {@code MessageDigestSpi} implementation for the
-     *         specified algorithm
+     *         specified algorithm or the implementation requires parameters
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
@@ -229,7 +229,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
      *         implementation for the specified algorithm is not
-     *         available from the specified provider
+     *         available from the specified provider or the implementation
+     *         requires parameters
      *
      * @throws NoSuchProviderException if the specified provider is not
      *         registered in the security provider list
@@ -283,7 +284,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
      *         implementation for the specified algorithm is not available
-     *         from the specified {@code Provider} object
+     *         from the specified {@code Provider} object or the
+     *         implementation requires parameters
      *
      * @throws NullPointerException if {@code algorithm} is {@code null}
      *
