@@ -44,7 +44,7 @@ public class TestReduceAllocationAndHeapDump {
                 dumpDirectory.mkdir();
             }
 
-            String[] dumper_args = {
+            String[] dumperArgs = {
                 "-server",
                 "-XX:CompileThresholdScaling=0.01",
                 "-XX:+HeapDumpAfterFullGC",
@@ -54,7 +54,7 @@ public class TestReduceAllocationAndHeapDump {
                 HeapDumper.class.getName()
             };
 
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(dumper_args);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(dumperArgs);
             Process p = pb.start();
             OutputAnalyzer out = new OutputAnalyzer(p);
 
