@@ -281,16 +281,10 @@ ObjectMonitor::~ObjectMonitor() {
 
 oop ObjectMonitor::object() const {
   check_object_context();
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.resolve();
 }
 
 oop ObjectMonitor::object_peek() const {
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.peek();
 }
 
