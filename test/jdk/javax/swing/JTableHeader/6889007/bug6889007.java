@@ -53,7 +53,6 @@ public class bug6889007 {
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
-            robot.setAutoDelay(100);
 
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
@@ -69,6 +68,7 @@ public class bug6889007 {
                 frame.add(th);
                 frame.pack();
                 frame.setLocationRelativeTo(null);
+                frame.setAlwaysOnTop(true);
                 frame.setVisible(true);
             });
             robot.waitForIdle();
@@ -83,7 +83,7 @@ public class bug6889007 {
             int y = point.y + height/2;
             for(int i = -shift; i < width + 2*shift; i++) {
                 robot.mouseMove(x++, y);
-                robot.waitForIdle();
+                robot.delay(100);
             }
             robot.waitForIdle();
             // 9 is a magic test number
@@ -109,6 +109,8 @@ public class bug6889007 {
             Cursor cursor = Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
             if (oldColumn != -1 && newColumn != -1 &&
                     header.getCursor() != cursor) {
+                System.out.println("oldColumn " + oldColumn + " newColumn " + newColumn +
+                        "header.getCursor " + header.getCursor() + " cursor " + cursor);
                 try {
                     Dimension screenSize =
                                Toolkit.getDefaultToolkit().getScreenSize();
