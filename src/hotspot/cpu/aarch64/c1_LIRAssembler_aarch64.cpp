@@ -2747,24 +2747,24 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ load_klass(tmp, tmp);
         }
 
-        __ ldr(rscratch1, mdo_addr);
-        __ eor(tmp, tmp, rscratch1);
-        __ tst(tmp, TypeEntries::type_klass_mask);
+        __ ldr(rscratch2, mdo_addr);
+        __ eor(tmp, tmp, rscratch2);
+        __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);
         // klass seen before, nothing to do. The unknown bit may have been
         // set already but no need to check.
-        __ br(Assembler::EQ, next);
+        __ cbz(rscratch1, next);
 
         __ tbnz(tmp, exact_log2(TypeEntries::type_unknown), next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          // is_type_none?
-          __ tst(rscratch1, TypeEntries::type_mask);
+          __ cbz(rscratch2, none);
+          __ cmp(rscratch2, (u1)TypeEntries::null_seen);
           __ br(Assembler::EQ, none);
           // There is a chance that the checks above
           // fail if another thread has just set the
           // profiling to this obj's klass
           __ dmb(Assembler::ISHLD);
-          __ eor(tmp, tmp, rscratch1); // get back original value before XOR
+          __ eor(tmp, tmp, rscratch2); // get back original value before XOR
           __ ldr(rscratch2, mdo_addr);
           __ eor(tmp, tmp, rscratch2);
           __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);

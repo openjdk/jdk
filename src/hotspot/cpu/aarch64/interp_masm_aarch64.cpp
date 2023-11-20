@@ -1584,10 +1584,9 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   tbnz(obj, exact_log2(TypeEntries::type_unknown), next);
   // already unknown. Nothing to do anymore.
 
-  // is_type_none?
-  tst(rscratch1, TypeEntries::type_mask);
+  cbz(rscratch1, none);
+  cmp(rscratch1, (u1)TypeEntries::null_seen);
   br(Assembler::EQ, none);
-
   // There is a chance that the checks above
   // fail if another thread has just set the
   // profiling to this obj's klass
