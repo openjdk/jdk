@@ -2544,8 +2544,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   int ioffset_bytes = in_bytes(itableOffsetEntry::interface_offset());
   int ooffset_bytes = in_bytes(itableOffsetEntry::offset_offset());
   int itmentry_off_bytes = in_bytes(itableMethodEntry::method_offset());
-  int vte_size_bytes = vtableEntry::size_in_bytes();
-  const int vte_scale = 3;
+  const int vte_scale = exact_log2(vtableEntry::size_in_bytes());
 
   Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
 
@@ -2553,13 +2552,11 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   add(recv_klass, recv_klass, vtable_start_offset_bytes + ioffset_bytes);
   // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset()
   //                            + sizeof(vtableEntry) * (recv_klass->_vtable_len);
+  // scan_temp = &(itable[0]._interface)
   // temp_itbl_klass = itable[0]._interface;
-  assert(vte_size_bytes == wordSize, "else adjust vte_scale");
   shadd(scan_temp, scan_temp, recv_klass, scan_temp, vte_scale);
   ld(temp_itbl_klass, Address(scan_temp));
   mv(holder_offset, zr);
-  // scan_temp = &(itable[0]._interface)
-  la(scan_temp, Address(scan_temp));
 
   // Initial checks:
   //   - if (holder_klass != resolved_klass), go to "scan for resolved"
