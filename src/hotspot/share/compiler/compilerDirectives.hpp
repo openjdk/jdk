@@ -89,6 +89,7 @@ NOT_PRODUCT(cflags(IGVPrintLevel,       intx, PrintIdealGraphLevel, IGVPrintLeve
     cflags(IncrementalInlineForceCleanup, bool, IncrementalInlineForceCleanup, IncrementalInlineForceCleanup) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #define compilerdirectives_c2_string_flags(cflags) \
+NOT_PRODUCT(cflags(TraceAutovectorization, ccstrlist, "", TraceAutovectorization)) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase))
 #else
   #define compilerdirectives_c2_other_flags(cflags)
@@ -129,6 +130,7 @@ private:
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
   uint64_t _ideal_phase_name_mask;
+  CHeapBitMap _traceautovectorization_mask;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -199,6 +201,8 @@ void set_##name(void* value) {                                      \
 
   void set_ideal_phase_mask(uint64_t mask) { _ideal_phase_name_mask = mask; };
   uint64_t ideal_phase_mask() { return _ideal_phase_name_mask; };
+  void set_traceautovectorization_mask(const CHeapBitMap& mask) { _traceautovectorization_mask.set_from(mask); };
+  const CHeapBitMap& traceautovectorization_mask() { return _traceautovectorization_mask; };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }

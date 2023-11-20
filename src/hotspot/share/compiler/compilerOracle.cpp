@@ -35,6 +35,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceautovectorizationtags.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -765,7 +766,13 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         }
       }
 #ifndef PRODUCT
-      else if (option == CompileCommand::PrintIdealPhase) {
+      else if (option == CompileCommand::TraceAutovectorization) {
+        TraceAutovectorizationTagValidator validator(value);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::PrintIdealPhase) {
         uint64_t mask = 0;
         PhaseNameValidator validator(value, mask);
 

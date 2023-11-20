@@ -32,6 +32,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceautovectorizationtags.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
@@ -297,7 +298,11 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :
+  _inlinematchers(nullptr),
+  _directive(d),
+  _traceautovectorization_mask(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler)
+{
   _ideal_phase_name_mask = 0;
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -430,6 +435,16 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     // Parse PrintIdealPhaseName and create an efficient lookup mask
 #ifndef PRODUCT
 #ifdef COMPILER2
+    if (!_modified[TraceAutovectorizationIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommand::TraceAutovectorization, option)) {
+        TraceAutovectorizationTagValidator validator(option);
+        if (validator.is_valid()) {
+          set.cloned()->set_traceautovectorization_mask(validator.mask());
+        }
+      }
+    }
     if (!_modified[PrintIdealPhaseIndex]) {
       // Parse ccstr and create mask
       ccstrlist option;

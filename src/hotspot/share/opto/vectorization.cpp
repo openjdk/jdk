@@ -691,8 +691,8 @@ bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   reset(lpt, allow_cfg);
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
-    tty->print_cr("VLoop::check_precondition");
+  if (is_trace_precondition()) {
+    tty->print_cr("\nVLoop::check_precondition");
     lpt->dump_head();
   }
 #endif
@@ -704,7 +704,7 @@ bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_precondition()) {
     tty->print_cr("VLoop::check_precondition: failed: %s", return_state);
   }
 #endif
@@ -739,12 +739,11 @@ const char* VLoop::check_preconditions_helper() {
   bool has_cfg = _cl_exit->in(0) != _cl;
   if (has_cfg && !is_allow_cfg()) {
 #ifndef PRODUCT
-    // TODO change trace flag
-    if (TraceSuperWord) {
+    if (is_trace_precondition()) {
       tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
-      tty->print("cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
-      tty->print("cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
-      tty->print("lpt->_head %d", _cl->_idx); _cl->dump();
+      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
       _lpt->dump_head();
     }
 #endif
@@ -778,7 +777,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   if (!success) { return false; }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_loop_analyze()) {
     tty->print_cr("VLoopAnalyzer::analyze");
     lpt->dump_head();
   }
@@ -791,7 +790,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_loop_analyze()) {
     tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
   }
 #endif
@@ -1005,7 +1004,7 @@ void VLoopMemorySlices::analyze() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (_vloop.is_trace_memory_slices()) {
     print();
   }
 #endif
@@ -1021,17 +1020,12 @@ void VLoopMemorySlices::get_slice(Node* head,
   Node* n = tail;
   Node* prev = nullptr;
   while (true) {
-    // TODO enable print here!
-    // NOT_PRODUCT( if(is_trace_mem_slice()) tty->print_cr("VLoopMemorySlices::get_slice: n %d", n->_idx);)
     assert(_vloop.in_body(n), "must be in block");
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
         if (_vloop.in_body(out)) {
           slice.push(out);
-          if (TraceSuperWord && Verbose) {
-            tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", out->_idx);
-          }
         }
       } else {
         // Expect other outputs to be the prev (with some exceptions)
@@ -1048,15 +1042,22 @@ void VLoopMemorySlices::get_slice(Node* head,
         }
       }
     }
-    if (n == head) { return; };
+    if (n == head) { break; };
     slice.push(n);
-    if (TraceSuperWord && Verbose) {
-      tty->print_cr("VLoopMemorySlices::get_slice: added pred(%d)", n->_idx);
-    }
     prev = n;
     assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);
   }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_memory_slices()) {
+    tty->print_cr("\nVLoopMemorySlices::get_slice:");
+    head->dump();
+    for (int j = slice.length() - 1; j >= 0 ; j--) {
+      slice.at(j)->dump();
+    }
+  }
+#endif
 }
 
 bool VLoopMemorySlices::same_memory_slice(MemNode* n1, MemNode* n2) const {
@@ -1068,10 +1069,10 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* n1, MemNode* n2) const {
 void VLoopMemorySlices::print() const {
   tty->print_cr("\nVLoopMemorySlices::print: %s",
                 _heads.length() > 0 ? "" : "NONE");
-    for (int m = 0; m < _heads.length(); m++) {
-      tty->print("%6d ", m);  _heads.at(m)->dump();
-      tty->print("       ");  _tails.at(m)->dump();
-    }
+  for (int m = 0; m < _heads.length(); m++) {
+    tty->print("%6d ", m);  _heads.at(m)->dump();
+    tty->print("       ");  _tails.at(m)->dump();
+  }
 }
 #endif
 

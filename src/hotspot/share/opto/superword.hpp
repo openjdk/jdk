@@ -76,8 +76,8 @@ class SWNodeInfo {
 class SuperWord : public ResourceObj {
  friend class VPointer;
  private:
-  const VLoopAnalyzer  &_vla;
-  Arena*          _arena;
+  const VLoopAnalyzer &_vla;
+  Arena* _arena;
 
   enum consts { top_align = -1, bottom_align = -666 };
 

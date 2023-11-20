@@ -28,6 +28,7 @@
 #include "utilities/pair.hpp"
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/traceautovectorizationtags.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
@@ -46,6 +47,8 @@ protected:
   bool _allow_cfg = false;
   CountedLoopEndNode* _pre_loop_end; // only for main loops
 
+  const CHeapBitMap &_trace_mask;
+
   static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
@@ -56,8 +59,10 @@ protected:
   static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
 
 public:
-  VLoop(PhaseIdealLoop* phase) : _phase(phase),
-                                 _arena(phase->C->comp_arena()) {}
+  VLoop(PhaseIdealLoop* phase) :
+    _phase(phase),
+    _arena(phase->C->comp_arena()),
+    _trace_mask(phase->C->directive()->traceautovectorization_mask()) {}
   NONCOPYABLE(VLoop);
 
 protected:
@@ -105,6 +110,18 @@ public:
   static bool vectors_must_be_aligned() {
    return !Matcher::misaligned_vectors_ok() || AlignVector;
   }
+
+#ifndef PRODUCT
+  bool is_trace_precondition() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_PRECONDITION);
+  }
+  bool is_trace_loop_analyze() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZE);
+  }
+  bool is_trace_memory_slices() const {
+    return _trace_mask.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
+  }
+#endif
 
   // Check if the loop passes some basic preconditions for vectorization.
   // Overwrite previous data.Return indicates if analysis succeeded.

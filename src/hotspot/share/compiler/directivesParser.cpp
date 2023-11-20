@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceautovectorizationtags.hpp"
 #include "runtime/os.hpp"
 #include <string.h>
 
@@ -335,7 +336,16 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
-        } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
+        } else if (strncmp(option_key->name, "TraceAutovectorization", 22) == 0) {
+          TraceAutovectorizationTagValidator validator(s);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_traceautovectorization_mask(validator.mask());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutovectorization: %s", validator.what());
+          }
+	} else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           uint64_t mask = 0;
           PhaseNameValidator validator(s, mask);
 
