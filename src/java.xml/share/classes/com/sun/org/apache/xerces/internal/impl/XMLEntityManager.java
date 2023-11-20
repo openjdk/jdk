@@ -1081,7 +1081,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     private StaxXMLInputSource resolveWithCatalogStAX(CatalogResolver cr, String cFile,
             String publicId, String systemId) {
         InputSource is = resolveWithCatalog(cr, cFile, publicId, systemId);
-//        if (is != null && !is.isEmpty()) {
+        // note that empty source isn't considered resolved
         if (is != null) {
             return new StaxXMLInputSource(new XMLInputSource(is, true), true);
         }
@@ -1099,8 +1099,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                 return cr.resolveEntity(publicId, systemId);
             } catch (CatalogException e) {
                 fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
-                new Object[]{SecuritySupport.sanitizePath(cFile)},
-                XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
+                        new Object[]{SecuritySupport.sanitizePath(cFile)},
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
             }
         }
         return null;
@@ -1442,7 +1442,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             fSecurityManager.debugPrint(fLimitAnalyzer);
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"EntityExpansionLimit",
                     new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex)},
-                                             XMLErrorReporter.SEVERITY_FATAL_ERROR );
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR );
             // is there anything better to do than reset the counter?
             // at least one can envision debugging applications where this might
             // be useful...
