@@ -27,14 +27,14 @@
  * @test
  * @bug 8320255
  * @enablePreview
- * @summary Verify Class::getMainMethod handles expected variations.
+ * @summary Verify Class::findMainMethod handles expected variations.
  */
 
- public class GetMainMethod {
+ public class FindMainMethod {
     private static boolean hasErrors = false;
 
     public static void main(String [] args) {
-        foundMain(GetMainMethod.class);
+        foundMain(FindMainMethod.class);
         noMain(A.class);
         foundMain(B.class);
         foundMain(C.class);
@@ -72,18 +72,18 @@
     }
 
     private static void foundMain(Class<?> root, Class<?> declared) {
-        Method main = root.getMainMethod();
+        Method main = root.findMainMethod();
         test(main != null, "No main found in " + root);
         test(main != null && main.getDeclaringClass() == declared, "Wrong main found for " + root);
     }
 
     private static void noMain(Class<?> root) {
-        Method main = root.getMainMethod();
+        Method main = root.findMainMethod();
         test(main == null, "Main in wrong class from " + root);
     }
 
     private static void oneArg(Class<?> root) {
-        Method main = root.getMainMethod();
+        Method main = root.findMainMethod();
         test(main.getParameterCount() == 1, "Main found with no arguments in " + root);
     }
 
