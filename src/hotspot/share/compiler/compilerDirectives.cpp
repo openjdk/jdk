@@ -435,7 +435,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
         PhaseNameValidator validator(option);
         if (validator.is_valid()) {
-          assert(!validator.is_phase_name_set_empty(), "Phase name set must be non-empty");
+          assert(!validator.phase_name_set().is_empty(), "Phase name set must be non-empty");
           set.cloned()->set_ideal_phase_name_set(validator);
         }
       }

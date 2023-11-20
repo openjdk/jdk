@@ -196,7 +196,6 @@ class PhaseNameValidator {
     return _phase_name_set;
   }
   bool is_valid() const { return _valid; }
-  bool is_phase_name_set_empty() const { return _phase_name_set.is_empty(); }
   const char* what() const { return _bad; }
 };
 
