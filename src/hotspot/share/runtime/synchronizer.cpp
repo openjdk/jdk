@@ -91,8 +91,8 @@ class ObjectMonitorDeflationSafepointer : public StackObj {
   ObjectMonitorDeflationLogging* const _log;
 
 public:
-  ObjectMonitorDeflationSafepointer(ObjectMonitorDeflationLogging* log)
-    : _current(JavaThread::current()), _log(log) {}
+  ObjectMonitorDeflationSafepointer(JavaThread* current, ObjectMonitorDeflationLogging* log)
+    : _current(current), _log(log) {}
 
   void block_for_safepoint(const char* op_name, const char* count_name, size_t counter);
 };
@@ -1690,7 +1690,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   set_is_async_deflation_requested(false);
 
   ObjectMonitorDeflationLogging log;
-  ObjectMonitorDeflationSafepointer safepointer(&log);
+  ObjectMonitorDeflationSafepointer safepointer(current, &log);
 
   log.begin();
 
