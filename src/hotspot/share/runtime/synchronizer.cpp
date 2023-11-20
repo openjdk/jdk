@@ -1091,27 +1091,34 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Visitors ...
 
+// Iterate over all ObjectMonitors.
+template <typename Function>
+void ObjectSynchronizer::monitors_iterate(Function function) {
+  MonitorList::Iterator iter = _in_use_list.iterator();
+  while (iter.has_next()) {
+    ObjectMonitor* monitor = iter.next();
+    function(monitor);
+  }
+}
+
 // Iterate ObjectMonitors owned by any thread and where the owner `filter`
 // returns true.
 template <typename OwnerFilter>
 void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
-  MonitorList::Iterator iter = _in_use_list.iterator();
-  while (iter.has_next()) {
-    ObjectMonitor* mid = iter.next();
-
+  monitors_iterate([&](ObjectMonitor* monitor) {
     // This function is only called at a safepoint or when the
     // target thread is suspended or when the target thread is
     // operating on itself. The current closures in use today are
     // only interested in an owned ObjectMonitor and ownership
     // cannot be dropped under the calling contexts so the
     // ObjectMonitor cannot be async deflated.
-    if (mid->has_owner() && filter(mid->owner_raw())) {
-      assert(!mid->is_being_async_deflated(), "Owned monitors should not be deflating");
-      assert(mid->object_peek() != nullptr, "Owned monitors should not have a dead object");
+    if (monitor->has_owner() && filter(monitor->owner_raw())) {
+      assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
+      assert(monitor->object_peek() != nullptr, "Owned monitors should not have a dead object");
 
-      closure->do_monitor(mid);
+      closure->do_monitor(monitor);
     }
-  }
+  });
 }
 
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
@@ -1616,7 +1623,7 @@ static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
 }
 
 // This function is called by the MonitorDeflationThread to deflate
-// ObjectMonitors. It is also called via do_final_audit_and_print_stats().
+// ObjectMonitors.
 size_t ObjectSynchronizer::deflate_idle_monitors() {
   Thread* current = Thread::current();
   if (current->is_Java_thread()) {
@@ -1645,11 +1652,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   size_t deflated_count = deflate_monitor_list(current, ls, &timer);
   size_t unlinked_count = 0;
   size_t deleted_count = 0;
-  if (deflated_count > 0 || is_final_audit()) {
-    // There are ObjectMonitors that have been deflated or this is the
-    // final audit and all the remaining ObjectMonitors have been
-    // deflated, BUT the MonitorDeflationThread blocked for the final
-    // safepoint during unlinking.
+  if (deflated_count > 0) {
+    // There are ObjectMonitors that have been deflated.
 
     // Unlink deflated ObjectMonitors from the in-use list.
     ResourceMark rm;
@@ -1830,12 +1834,6 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
-    // Do deflations in order to reduce the in-use monitor population
-    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // which is called by ObjectSynchronizer::audit_and_print_stats().
-    while (deflate_idle_monitors() > 0) {
-      ; // empty
-    }
     // The other audit_and_print_stats() call is done at the Debug
     // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
     audit_and_print_stats(true /* on_exit */);
@@ -1884,7 +1882,7 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     // When exiting this log output is at the Info level. When called
     // at a safepoint, this log output is at the Trace level since
     // there can be a lot of it.
-    log_in_use_monitor_details(ls);
+    log_in_use_monitor_details(ls, !on_exit /* log_all */);
   }
 
   ls->flush();
@@ -1964,29 +1962,34 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
 // Log details about ObjectMonitors on the in_use_list. The 'BHL'
 // flags indicate why the entry is in-use, 'object' and 'object type'
 // indicate the associated object and its type.
-void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
-  stringStream ss;
+void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
+    stringStream ss;
     out->print_cr("In-use monitor info:");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
     out->print_cr("==================  ===  ==================  ==================");
-    MonitorList::Iterator iter = _in_use_list.iterator();
-    while (iter.has_next()) {
-      ObjectMonitor* mid = iter.next();
-      const oop obj = mid->object_peek();
-      const markWord mark = mid->header();
-      ResourceMark rm;
-      out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(mid),
-                 mid->is_busy(), mark.hash() != 0, mid->owner() != nullptr,
-                 p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
-      if (mid->is_busy()) {
-        out->print(" (%s)", mid->is_busy_to_string(&ss));
-        ss.reset();
+
+    auto is_interesting = [&](ObjectMonitor* monitor) {
+      return log_all || monitor->has_owner() || monitor->is_busy();
+    };
+
+    monitors_iterate([&](ObjectMonitor* monitor) {
+      if (is_interesting(monitor)) {
+        const oop obj = monitor->object_peek();
+        const markWord mark = monitor->header();
+        ResourceMark rm;
+        out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(monitor),
+                   monitor->is_busy(), mark.hash() != 0, monitor->owner() != nullptr,
+                   p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
+        if (monitor->is_busy()) {
+          out->print(" (%s)", monitor->is_busy_to_string(&ss));
+          ss.reset();
+        }
+        out->cr();
       }
-      out->cr();
-    }
+    });
   }
 
   out->flush();
