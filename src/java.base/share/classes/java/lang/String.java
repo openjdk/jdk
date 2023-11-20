@@ -268,7 +268,7 @@ public final class String
     }
 
     /**
-     * Allocates a new {@code String} so that it represents the sequence ofbb
+     * Allocates a new {@code String} so that it represents the sequence of
      * characters currently contained in the character array argument. The
      * contents of the character array are copied; subsequent modification of
      * the character array does not affect the newly created string.
