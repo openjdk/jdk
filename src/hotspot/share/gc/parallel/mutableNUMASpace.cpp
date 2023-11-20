@@ -707,27 +707,5 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
   char *scan_start = last_page_scanned();
   char* scan_end = MIN2(scan_start + page_size * page_count, range_end);
 
-  os::page_info page_expected, page_found;
-  page_expected.size = page_size;
-  page_expected.lgrp_id = checked_cast<uint>(lgrp_id());
-
-  char *s = scan_start;
-  while (s < scan_end) {
-    char *e = (char*)scan_end;
-    if (e == nullptr) {
-      break;
-    }
-    if (e != scan_end) {
-      assert(e < scan_end, "e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end));
-
-      if ((page_expected.size != page_size || checked_cast<uint>(page_expected.lgrp_id) != lgrp_id())
-          && page_expected.size != 0) {
-        os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
-      }
-      page_expected = page_found;
-    }
-    s = e;
-  }
-
   set_last_page_scanned(scan_end);
 }
