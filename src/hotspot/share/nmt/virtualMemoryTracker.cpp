@@ -32,7 +32,7 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
-VirtualMemorySnapshot VirtualMemorySummary::_snapshot{};
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
 #ifdef ASSERT
 void VirtualMemory::update_peak(size_t size) {
@@ -47,9 +47,6 @@ void VirtualMemory::update_peak(size_t size) {
   }
 }
 #endif // ASSERT
-
-void VirtualMemorySummary::initialize() {
-}
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
   // Only if thread stack is backed by virtual memory
@@ -333,7 +330,6 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
   if (level >= NMT_summary) {
-    VirtualMemorySummary::initialize();
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != nullptr);

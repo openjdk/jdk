@@ -137,7 +137,6 @@ class VirtualMemorySnapshot : public AnyObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-  static void initialize();
 
   static inline void record_reserved_memory(size_t size, MEMFLAGS flag) {
     as_snapshot()->by_type(flag)->reserve_memory(size);
