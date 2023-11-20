@@ -170,7 +170,7 @@ abstract class SHA3 extends DigestBase {
 
     /**
      * The function Keccak as defined in section 5.2 with
-     * rate r = 1600 and capacity c = (digest length x 2).
+     * rate r = 1600 and capacity c.
      */
     private void keccak() {
         // convert the 200-byte state into 25 lanes
