@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                  Register tmp2Reg) {
+void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
+                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg) {
   // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -55,7 +55,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, t0);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, tmp3Reg, t0);
 
   // Load markWord from object into displaced_header.
   ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
@@ -63,7 +63,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(flag, oop);
     lwu(flag, Address(flag, Klass::access_flags_offset()));
-    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
+    test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
     bnez(flag, cont, true /* is_far */);
   }
 
@@ -109,7 +109,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "");
     Label slow;
-    lightweight_lock(oop, disp_hdr, tmp, t0, slow);
+    lightweight_lock(oop, disp_hdr, tmp, tmp3Reg, slow);
 
     // Indicate success on completion.
     mv(flag, zr);
@@ -157,8 +157,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                    Register tmp2Reg) {
+void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
+                                    Register tmp1Reg, Register tmp2Reg) {
   // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -169,7 +169,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, flag);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, t0);
 
   if (LockingMode == LM_LEGACY) {
     // Find the lock address and load the displaced header from the stack.
@@ -1571,7 +1571,7 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   is_double ? fclass_d(t1, src2)
             : fclass_s(t1, src2);
   orr(t0, t0, t1);
-  andi(t0, t0, 0b1100000000); //if src1 or src2 is quiet or signaling NaN then return NaN
+  andi(t0, t0, fclass_mask::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
   beqz(t0, Compare);
   is_double ? fadd_d(dst, src1, src2)
             : fadd_s(dst, src1, src2);
@@ -1651,6 +1651,106 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   fmv_d(dst, src);
 
   bind(done);
+}
+
+// According to Java SE specification, for floating-point signum operations, if
+// on input we have NaN or +/-0.0 value we should return it,
+// otherwise return +/- 1.0 using sign of input.
+// one - gives us a floating-point 1.0 (got from matching rule)
+// bool is_double - specifies single or double precision operations will be used.
+void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_double) {
+  Label done;
+
+  is_double ? fclass_d(t0, dst)
+            : fclass_s(t0, dst);
+
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  andi(t0, t0, fclass_mask::zero | fclass_mask::nan);
+
+  bnez(t0, done);
+
+  // use floating-point 1.0 with a sign of input
+  is_double ? fsgnj_d(dst, one, dst)
+            : fsgnj_s(dst, one, dst);
+
+  bind(done);
+}
+
+void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be compressed.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v8, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // compress the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vcompress_vm(v8, v4, v0);
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v8, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ true);
+}
+
+void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be expanded.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v12, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // expand the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  viota_m(v8, v0);
+  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v12, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,

@@ -244,7 +244,7 @@ private:
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
-  int  _age_index;
+  uint  _age_index;
 
   // NUMA node.
   uint _node_index;
@@ -507,7 +507,7 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() const;
+  uint age_in_surv_rate_group() const;
   bool has_valid_age_in_surv_rate() const;
 
   bool has_surv_rate_group() const;
