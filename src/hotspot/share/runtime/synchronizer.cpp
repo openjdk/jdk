@@ -475,6 +475,7 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       if (lock_stack.can_push()) {
         markWord mark = obj()->mark_acquire();
         while (mark.is_neutral()) {
+          // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
           // Try to swing into 'fast-locked' state.
           assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
           const markWord locked_mark = mark.set_fast_locked();
@@ -535,6 +536,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast-locking does not use the 'lock' argument.
       while (mark.is_fast_locked()) {
+        // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
         const markWord unlocked_mark = mark.set_fast_locked();
         const markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
         if (old_mark == mark) {
