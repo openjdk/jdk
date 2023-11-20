@@ -140,7 +140,7 @@ void ICStub::print() {
 
 void InlineCacheBuffer::initialize() {
   if (_buffer != nullptr) return; // already initialized
-  _buffer = new StubQueue(new ICStubInterface, InlineCacheBufferSize, InlineCacheBuffer_lock, "InlineCacheBuffer");
+  _buffer = new StubQueue(new ICStubInterface, checked_cast<int>(InlineCacheBufferSize), InlineCacheBuffer_lock, "InlineCacheBuffer");
   assert (_buffer != nullptr, "cannot allocate InlineCacheBuffer");
 }
 

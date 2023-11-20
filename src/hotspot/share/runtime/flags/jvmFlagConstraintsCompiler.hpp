@@ -52,7 +52,6 @@
   f(int ,  RTMTotalCountIncrRateConstraintFunc)         \
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \
   f(ccstrlist, ControlIntrinsicConstraintFunc)          \
-  f(int,   InlineCacheBufferSizeConstraintFunc)         \
 COMPILER2_PRESENT(                                      \
   f(intx,  InteriorEntryAlignmentConstraintFunc)        \
   f(intx,  NodeLimitFudgeFactorConstraintFunc)          \

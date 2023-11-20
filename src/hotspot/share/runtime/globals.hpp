@@ -295,9 +295,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
-  product(int, InlineCacheBufferSize, 10*K, EXPERIMENTAL,                   \
+  product(size_t, InlineCacheBufferSize, 10*K, EXPERIMENTAL,                \
           "InlineCacheBuffer size")                                         \
-          constraint(InlineCacheBufferSizeConstraintFunc, AfterErgo)        \
                                                                             \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
