@@ -52,7 +52,7 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord - 1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr, temp, t1);
+  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
   int null_check_offset = -1;
 
   verify_oop(obj);
@@ -118,7 +118,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord - 1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr, temp, t1);
+  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
   Label done;
 
   if (LockingMode != LM_LIGHTWEIGHT) {
