@@ -65,8 +65,8 @@ public class RedirectTimeoutTest {
 
     HttpTestServer h1TestServer, h2TestServer;
     static URI h1Uri, h1RedirectUri, h2Uri, h2RedirectUri, h2WarmupUri, testRedirectURI;
-    private static final long TIMEOUT_MILLIS = 500L;
-    private static final long SLEEP_TIME = 250L;
+    private static final long TIMEOUT_MILLIS = 1500L;
+    private static final long SLEEP_TIME = 750L;
     public static final int ITERATIONS = 4;
     private static final PrintStream out = System.out;
 
@@ -117,8 +117,8 @@ public class RedirectTimeoutTest {
             if (version.equals(HTTP_2))
                 client.send(HttpRequest.newBuilder(h2WarmupUri).HEAD().build(), HttpResponse.BodyHandlers.discarding());
             /*
-                With TIMEOUT_MILLIS set to 500ms and the server's RedirectHandler sleeping for 250ms before responding
-                to each request, 4 iterations will take a guaranteed minimum time of 2000ms which will ensure that any
+                With TIMEOUT_MILLIS set to 1500ms and the server's RedirectHandler sleeping for 750ms before responding
+                to each request, 4 iterations will take a guaranteed minimum time of 3000ms which will ensure that any
                 uncancelled/uncleared timers will fire within the test window.
              */
             for (int i = 0; i < ITERATIONS; i++) {
