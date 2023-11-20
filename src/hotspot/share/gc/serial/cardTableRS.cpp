@@ -106,8 +106,6 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
       // Otherwise, it is possible that the object starting on the dirty
       // card spans the entire card, and that the store happened on a
       // later card.  Figure out where the object ends.
-      assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
-             "Block size and object size mismatch");
       top = top_obj + cast_to_oop(top_obj)->size();
     }
   } else {
