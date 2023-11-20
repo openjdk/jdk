@@ -2082,10 +2082,10 @@ public class BasicTableUI extends TableUI
         TableColumn aColumn;
         int columnWidth;
         if (table.getComponentOrientation().isLeftToRight()) {
-            for(int row = rMin; row <= rMax; row++) {
+            for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
                 cellRect.x = getXPosition(cMin);
-                for(int column = cMin; column <= cMax; column++) {
+                for (int column = cMin; column <= cMax; column++) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
@@ -2096,10 +2096,10 @@ public class BasicTableUI extends TableUI
                 }
             }
         } else {
-            for(int row = rMin; row <= rMax; row++) {
+            for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
                 cellRect.x = getXPosition(cMax);
-                for(int column = cMax; column >= cMin; column--) {
+                for (int column = cMax; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
@@ -2157,7 +2157,7 @@ public class BasicTableUI extends TableUI
             g.drawLine(x2, y1, x2, y2);
         }
 
-        for(int row = rMin; row <= rMax; row++) {
+        for (int row = rMin; row <= rMax; row++) {
             // Render the cell value
             Rectangle r = table.getCellRect(row, draggedColumnIndex, false);
             r.x += distance;

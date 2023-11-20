@@ -586,10 +586,10 @@ public class SynthTableUI extends BasicTableUI
         TableColumn aColumn;
         int columnWidth;
         if (table.getComponentOrientation().isLeftToRight()) {
-            for(int row = rMin; row <= rMax; row++) {
+            for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
                 cellRect.x = getXPosition(cMin);
-                for(int column = cMin; column <= cMax; column++) {
+                for (int column = cMin; column <= cMax; column++) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
@@ -600,7 +600,7 @@ public class SynthTableUI extends BasicTableUI
                 }
             }
         } else {
-            for(int row = rMin; row <= rMax; row++) {
+            for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
                 cellRect.x = getXPosition(cMax);
                 aColumn = cm.getColumn(cMax);
@@ -609,7 +609,7 @@ public class SynthTableUI extends BasicTableUI
                     cellRect.width = columnWidth - columnMargin;
                     paintCell(context, g, cellRect, row, cMax);
                 }
-                for(int column = cMax-1; column >= cMin; column--) {
+                for (int column = cMax-1; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
                     cellRect.width = columnWidth - columnMargin;
@@ -668,7 +668,7 @@ public class SynthTableUI extends BasicTableUI
             synthG.drawLine(context, "Table.grid", g, x2, y1, x2, y2);
         }
 
-        for(int row = rMin; row <= rMax; row++) {
+        for (int row = rMin; row <= rMax; row++) {
             // Render the cell value
             Rectangle r = table.getCellRect(row, draggedColumnIndex, false);
             r.x += distance;
