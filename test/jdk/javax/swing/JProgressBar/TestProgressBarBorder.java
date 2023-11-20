@@ -46,7 +46,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 public class TestProgressBarBorder {
     private static JProgressBar progressBar;
-    private static volatile boolean isImgSame;
+    private static volatile boolean isImgEqual;
     private static BufferedImage borderPaintedImg;
     private static BufferedImage borderNotPaintedImg;
 
@@ -65,9 +65,9 @@ public class TestProgressBarBorder {
             borderPaintedImg = paintToImage(progressBar);
             progressBar.setBorderPainted(false);
             borderNotPaintedImg = paintToImage(progressBar);
-            isImgSame = Util.compareBufferedImages(borderPaintedImg, borderNotPaintedImg);
+            isImgEqual = Util.compareBufferedImages(borderPaintedImg, borderNotPaintedImg);
 
-            if (isImgSame) {
+            if (isImgEqual) {
                 ImageIO.write(borderPaintedImg, "png", new File("borderPaintedImg.png"));
                 ImageIO.write(borderNotPaintedImg, "png", new File("borderNotPaintedImg.png"));
                 throw new RuntimeException("JProgressBar border is painted when border\n" +
@@ -89,7 +89,7 @@ public class TestProgressBarBorder {
 
     private static void createAndShowUI() {
         progressBar = new JProgressBar();
-        progressBar.setSize(100,50);
+        progressBar.setSize(100, 50);
         // set initial value
         progressBar.setValue(0);
         progressBar.setBorderPainted(true);
