@@ -295,27 +295,9 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
 //
 bool SuperWord::SLP_extract() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
-  init(); // initialize data structures
-  assert(_packset.length() == 0, "packset must be empty");
-
-#ifndef PRODUCT
-  if (_do_vector_loop && TraceSuperWord) {
-    tty->print("SuperWord::SLP_extract\n");
-    tty->print("input loop\n");
-    lpt()->dump_head();
-    lpt()->dump();
-    for (uint i = 0; i < lpt()->_body.size(); i++) {
-      lpt()->_body.at(i)->dump();
-    }
-  }
-#endif
-
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  initialize_bb();
-
-  // Attempt vectorization
-  find_adjacent_refs();
+  init(); // initialize data structures
 
   if (align_to_ref() == nullptr) {
     return false; // Did not find memory reference to align vectors
@@ -342,6 +324,8 @@ bool SuperWord::SLP_extract() {
 // following use->def and def->use links.  The align positions are
 // assigned relative to the reference "align_to_ref"
 void SuperWord::find_adjacent_refs() {
+  assert(_packset.length() == 0, "packset must be empty");
+
   // Get list of memory operations
   Node_List memops;
   for (int i = 0; i < body().length(); i++) {
@@ -2603,13 +2587,6 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
   return true;
 }
 
-//------------------------------initialize_bb---------------------------
-// Initialize per node info
-void SuperWord::initialize_bb() {
-  Node* last = body().at(body().length() - 1);
-  grow_node_info(body_idx(last));
-}
-
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
         requires_long_to_int_conversion(n->Opcode())) ||
@@ -2924,6 +2901,8 @@ void SuperWord::init() {
   _race_possible = 0;
   _num_work_vecs = 0;
   _num_reductions = 0;
+  Node* last = body().at(body().length() - 1);
+  grow_node_info(body_idx(last));
 }
 
 //------------------------------print_packset---------------------------

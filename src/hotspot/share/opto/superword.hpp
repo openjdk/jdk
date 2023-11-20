@@ -269,8 +269,6 @@ class SuperWord : public ResourceObj {
   void insert_extracts(Node_List* p);
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
-  // Initialize per node info
-  void initialize_bb();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
