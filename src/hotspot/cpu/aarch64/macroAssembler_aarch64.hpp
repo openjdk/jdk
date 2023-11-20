@@ -1758,8 +1758,7 @@ public:
 
   void poly1305_step_vec(LambdaAccumulator &acc,
                          const FloatRegister s[], const FloatRegister u[],
-                         const FloatRegister zero, Register input_start,
-                         AbstractRegSet<FloatRegister> scratch);
+                         const FloatRegister zero, Register input_start);
   void poly1305_multiply_vec(LambdaAccumulator &acc,
                            const FloatRegister u_v[],
                            AbstractRegSet<FloatRegister> remaining,
