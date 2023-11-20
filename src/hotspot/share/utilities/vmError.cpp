@@ -728,7 +728,6 @@ void VMError::report(outputStream* st, bool _verbose) {
 #ifdef AIX
   // avoid the cache update for malloc/mmap errors
   if (should_report_bug(_id)) {
-    printf("update loaded lib cache !!!!!\n");
     LoadedLibraries::reload();
   }
 #endif
