@@ -4799,7 +4799,7 @@ public final class Class<T> implements java.io.Serializable,
      * <ul>
      * <li>be declared in this class's hierarchy</li>
      * <li>have the name "main"</li>
-     * <li>have a single argument of type {@code String[]} or no argument</li>
+     * <li>have a single argument of type {@code String[]}, {@code String...} or no argument</li>
      * <li>have the return type of void</li>
      * <li>be public, protected or package private</li>
      * <li>not be abstract</li>
@@ -4807,35 +4807,23 @@ public final class Class<T> implements java.io.Serializable,
      *
      * Searching continues until a main method is found or the search is exhausted. The
      * primary search occurs in two phases, once for a main method with a {@code
-     * String[]} argument and failing that, once for a main method with a no arguments.
-     * The search itself uses recursion to first look at methods in this class, then
-     * default methods in this class's interface hierarchy and then repeating these steps
-     * with the class's super class.
+     * String[]} or {@code String...} argument and failing that, once for a main method
+     * with a no arguments. The search itself uses recursion to first look at methods
+     * in this class, then default methods in this class's interface hierarchy and
+     * then repeating these steps with the class's super class.
      *
      * @apiNote The method returned may be declared in this class, a super class
      * or as a default method of an interface that the class or super class
-     * implements. It is not possible to declare a static main method and instance main
+     * implements.
+     * <p>It is not possible to declare a static main method and instance main
      * method with the same signature in the same class. {@jls 8.4.2} states that
      * "It is a compile-time error to declare two methods with override-equivalent
      * signatures in a class."
+     * <p>{@link SecurityException SecurityExceptions} can halt
+     * the search. In this case, a null is returned.
      *
-     * @return the main method or null if none found
-     * @throws  SecurityException
-     *          If a security manager, <i>s</i>, is present and any of the
-     *          following conditions is met:
-     *          <ul>
-     *          <li> the caller's class loader is not the same as the
-     *          class loader of this class and invocation of
-     *          {@link SecurityManager#checkPermission
-     *          s.checkPermission} method with
-     *          {@code RuntimePermission("accessDeclaredMembers")}
-     *          denies access to the declared methods within this class
-     *          <li> the caller's class loader is not the same as or an
-     *          ancestor of the class loader for the current class and
-     *          invocation of {@link SecurityManager#checkPackageAccess
-     *          s.checkPackageAccess()} denies access to the package
-     *          of this class
-     *          </ul>
+     * @return the main method if a method found or null if no method is found
+     *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
      * @jls 8.4.2 Method Signature
@@ -4850,8 +4838,12 @@ public final class Class<T> implements java.io.Serializable,
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            checkMemberAccess(sm, isPreview ? Member.DECLARED : Member.PUBLIC,
-                    Reflection.getCallerClass(), true);
+            try {
+                checkMemberAccess(sm, isPreview ? Member.DECLARED : Member.PUBLIC,
+                        Reflection.getCallerClass(), true);
+            } catch (SecurityException ex) {
+                return null;
+            }
         }
 
         Method mainMethod = findMethod(!isPreview, "main", String[].class);
