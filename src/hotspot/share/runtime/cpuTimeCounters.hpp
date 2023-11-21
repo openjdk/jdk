@@ -49,7 +49,7 @@ public:
   static bool is_gc_counter(CPUTimeType val);
 };
 
-class CPUTimeCounters: public CHeapObj<mtGC> {
+class CPUTimeCounters: public CHeapObj<mtServiceability> {
 private:
   // CPUTimeCounters is a singleton instance.
   CPUTimeCounters();
