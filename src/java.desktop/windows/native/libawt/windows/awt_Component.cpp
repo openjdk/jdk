@@ -6566,17 +6566,33 @@ AwtComponent_GetHWnd(JNIEnv *env, jlong pData)
 static void _GetInsets(void* param) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    std::unique_ptr<GetInsetsStruct> gis(static_cast<GetInsetsStruct *>(param));
-    std::unique_ptr<std::remove_pointer<jobject>::type, std::function<void (jobject)>> self(gis->window, [&env] (jobject self) -> void { env->DeleteGlobalRef(self); });
+    GetInsetsStruct *gis = static_cast<GetInsetsStruct *>(param);
+    jobject self = gis->window;
 
     gis->insets->left = gis->insets->top =
         gis->insets->right = gis->insets->bottom = 0;
 
     PDATA pData;
-    JNI_CHECK_PEER_RETURN(self.get());
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete gis;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete gis;
+            return;
+        }
+    }
     AwtComponent *component = (AwtComponent *) pData;
 
     component->GetInsets(gis->insets);
+
+    env->DeleteGlobalRef(self);
+    delete gis;
 }
 
 /**
