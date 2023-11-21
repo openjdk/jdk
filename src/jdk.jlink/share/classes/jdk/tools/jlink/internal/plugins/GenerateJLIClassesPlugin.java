@@ -63,8 +63,8 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 public final class GenerateJLIClassesPlugin extends AbstractPlugin {
 
-    // Work-around for jmod-less jlinking. jmod archives don't contain these
-    // classes so it isn't an issue for a jmod-full jlink.
+    // Work-around for run-time image based jlinking. jmod archives don't
+    // contain these classes so it isn't an issue for a jmod-full jlink.
     private static final Set<String> GENERATED_JAVA_BASE_CLASSES = Set.of(
             "java/lang/invoke/BoundMethodHandle$Species_D",
             "java/lang/invoke/BoundMethodHandle$Species_DL",
