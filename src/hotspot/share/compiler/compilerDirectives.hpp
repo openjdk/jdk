@@ -199,8 +199,8 @@ void set_##name(void* value) {                                      \
   compilerdirectives_c1_string_flags(set_string_function_definition)
 #undef set_string_function_definition
 
-  void set_ideal_phase_name_set(const PhaseNameValidator& v) {
-    _ideal_phase_name_set.set_from(v.phase_name_set());
+  void set_ideal_phase_name_set(const BitMap& set) {
+    _ideal_phase_name_set.set_from(set);
   };
   bool should_print_phase(const CompilerPhaseType cpt) const {
     return _ideal_phase_name_set.at(cpt);
