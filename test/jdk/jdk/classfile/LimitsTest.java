@@ -79,4 +79,10 @@ class LimitsTest {
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(-1));
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(10));
     }
+
+    @Test
+    void testReadingOutOfBounds() {
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE}), "reading magic only");
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 0, 0, 2}), "reading invalid CP size");
+    }
 }
