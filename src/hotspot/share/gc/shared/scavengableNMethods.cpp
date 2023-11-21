@@ -172,8 +172,35 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   debug_only(verify_unlisted_nmethods(nullptr));
 }
 
-void ScavengableNMethods::prune_nmethods() {
+void ScavengableNMethods::prune_nmethods_not_into_young() {
   nmethods_do_and_prune(nullptr /* No closure */);
+}
+
+void ScavengableNMethods::prune_unlinked_nmethods() {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  debug_only(mark_on_list_nmethods());
+
+  nmethod* prev = nullptr;
+  nmethod* cur = _head;
+  while (cur != nullptr) {
+    ScavengableNMethodsData data = gc_data(cur);
+    debug_only(data.clear_marked());
+    assert(data.on_list(), "else shouldn't be on this list");
+
+    nmethod* const next = data.next();
+
+    if (cur->is_unlinked()) {
+      unlist_nmethod(cur, prev);
+    } else {
+      prev = cur;
+    }
+
+    cur = next;
+  }
+
+  // Check for stray marks.
+  debug_only(verify_unlisted_nmethods(nullptr));
 }
 
 // Walk the list of methods which might contain oops to the java heap.

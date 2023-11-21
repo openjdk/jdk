@@ -1266,6 +1266,8 @@ public:
 
   void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
 
+  void remove_unlinked_nmethods_from_code_root_sets();
+
   // Verification
 
   // Perform any cleanup actions necessary before allowing a verification.

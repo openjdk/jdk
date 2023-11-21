@@ -598,7 +598,11 @@ void GenCollectedHeap::verify_nmethod(nmethod* nm) {
 }
 
 void GenCollectedHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void GenCollectedHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {

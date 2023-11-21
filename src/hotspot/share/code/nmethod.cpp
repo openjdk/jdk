@@ -1444,7 +1444,7 @@ void nmethod::unlink() {
   ClassUnloadingContext::context()->register_unlinked_nmethod(this);
 }
 
-void nmethod::purge(bool free_code_cache_data) {
+void nmethod::purge(bool free_code_cache_data, bool unregister_nmethods) {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1464,7 +1464,10 @@ void nmethod::purge(bool free_code_cache_data) {
     ec = next;
   }
 
-  Universe::heap()->unregister_nmethod(this);
+  if (unregister_nmethods) {
+    Universe::heap()->unregister_nmethod(this);
+  }
+
   CodeCache::unregister_old_nmethod(this);
 
   CodeBlob::purge();
