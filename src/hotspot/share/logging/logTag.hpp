@@ -214,7 +214,8 @@ class outputStream;
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(vtablestubs)
+  LOG_TAG(vtablestubs) \
+  LOG_TAG(zgc)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 
