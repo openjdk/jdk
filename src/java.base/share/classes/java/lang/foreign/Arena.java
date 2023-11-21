@@ -29,6 +29,7 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.ref.CleanerFactory;
 
 import java.lang.foreign.MemorySegment.Scope;
+import java.util.function.Consumer;
 
 /**
  * An arena controls the lifecycle of native memory segments, providing both flexible
@@ -317,8 +318,11 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws WrongThreadException if this arena is confined, and this method is called
      *         from a thread other than the arena's owner thread
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly
+     * @throws RuntimeException if an exception is thrown while executing a custom cleanup action
+     *                          associated with this arena (e.g. as a result of calling
+     *                          {@link MemorySegment#reinterpret(long, Arena, Consumer)} or
+     *                          {@link MemorySegment#reinterpret(Arena, Consumer)}).
      */
     @Override
     void close();
-
 }
