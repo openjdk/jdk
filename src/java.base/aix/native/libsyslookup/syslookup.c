@@ -25,18 +25,16 @@
 
 // Note: the include below is not strictly required, as dependencies will be pulled using linker flags.
 // Adding at least one #include removes unwanted warnings on some platforms.
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <math.h>
 
 // Addresses of functions to referenced using static linking.
 void* funcs[] = {
-    //stdio.h
-    &abs,
+    //string.h
     &strlen,
     &strcat,
     //math.h
+    &abs,
     &fabs,
     &fabsf,
     &fabsl,
