@@ -42,6 +42,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
@@ -86,19 +87,28 @@ void MallocMemorySummary::initialize() {
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
-  if (limit->mode == MallocLimitMode::trigger_fatal) {
-    fatal(FORMATTED);
+  // If we hit the limit during error reporting, we print a message but otherwise ignore it.
+  // We ignore it because we want useful error reports; that is true twice for situations where
+  // the error reporting is result of hitting the malloc limit.
+  if (VMError::is_error_reported()) {
+    // Don't flood output. Also, static is fine here; no need for more complex logic to
+    // prevent concurrency issues.
+    static int stopafter = 30;
+    if (stopafter > 0) {
+      stopafter --;
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
   } else {
-    log_warning(nmt)(FORMATTED);
+    if (limit->mode == MallocLimitMode::trigger_fatal) {
+      fatal(FORMATTED);
+    } else {
+      log_warning(nmt)(FORMATTED);
+    }
   }
 #undef FORMATTED
 
