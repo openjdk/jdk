@@ -3187,8 +3187,7 @@ void AwtWindow::_ModalEnable(void *param) {
     env->DeleteGlobalRef(self);
 }
 
-void AwtWindow::_SetOpacity(void* param)
-{
+void AwtWindow::_SetOpacity(void* param) {
     JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     OpacityStruct *os = static_cast<OpacityStruct *>(param);
@@ -3218,45 +3217,69 @@ void AwtWindow::_SetOpacity(void* param)
     delete os;
 }
 
-void AwtWindow::_SetOpaque(void* param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_SetOpaque(void* param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    OpaqueStruct *os = (OpaqueStruct *)param;
+    OpaqueStruct *os = static_cast<OpaqueStruct *>(param);
     jobject self = os->window;
     BOOL isOpaque = (BOOL)os->isOpaque;
 
-    {
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        AwtWindow *window = (AwtWindow *)pData;
-
-        window->SetTranslucency(window->getOpacity(), isOpaque);
+    PDATA pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete os;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete os;
+            return;
+        }
     }
+    AwtWindow *window = (AwtWindow *) pData;
 
-  ret:
+    window->SetTranslucency(window->getOpacity(), isOpaque);
+
     env->DeleteGlobalRef(self);
     delete os;
 }
 
-void AwtWindow::_UpdateWindow(void* param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_UpdateWindow(void* param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    UpdateWindowStruct *uws = (UpdateWindowStruct *)param;
+    UpdateWindowStruct *uws = static_cast<UpdateWindowStruct *>(param);
     jobject self = uws->window;
     jintArray data = uws->data;
 
-    {
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        AwtWindow *window = (AwtWindow *)pData;
-
-        window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
-                             uws->hBitmap);
+    PDATA pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        if (data != NULL) {
+            env->DeleteGlobalRef(data);
+        }
+        delete uws;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            if (data != NULL) {
+                env->DeleteGlobalRef(data);
+            }
+            delete uws;
+            return;
+        }
     }
+    AwtWindow *window = (AwtWindow *) pData;
 
-  ret:
+    window->UpdateWindow(env, data, (int) uws->width, (int) uws->height,
+                         uws->hBitmap);
+
     env->DeleteGlobalRef(self);
     if (data != NULL) {
         env->DeleteGlobalRef(data);
