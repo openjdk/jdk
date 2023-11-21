@@ -28,7 +28,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"

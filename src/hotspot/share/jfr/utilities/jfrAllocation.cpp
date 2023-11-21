@@ -29,7 +29,6 @@
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"

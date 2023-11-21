@@ -35,7 +35,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/growableArray.hpp"
 
 // returns updated value
