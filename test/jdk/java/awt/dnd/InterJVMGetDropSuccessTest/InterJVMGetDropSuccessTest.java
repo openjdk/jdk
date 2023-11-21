@@ -218,13 +218,16 @@ class Child {
         }
 
         public void dragDropEnd(DragSourceDropEvent dsde) {
+            finished = true;
+            dropSuccess = dsde.getDropSuccess();
             synchronized (Util.SYNC_LOCK) {
-                finished = true;
-                dropSuccess = dsde.getDropSuccess();
                 Util.SYNC_LOCK.notifyAll();
             }
         }
     }
+
+    private boolean success1 = false;
+    private boolean success2 = false;
 
     final Frame frame = new Frame("Source Frame");
     final DragSource dragSource = DragSource.getDefaultDragSource();
@@ -276,16 +279,18 @@ class Child {
                 Thread.sleep(50);
             }
 
-            boolean success1 = false;
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
-                if (!dragSourceListener.isDropFinished()) {
+            }
+
+            EventQueue.invokeAndWait(()-> {
+                 if (!dragSourceListener.isDropFinished()) {
                     throw new RuntimeException("Drop not finished");
                 }
                 success1 = dragSourceListener.getDropSuccess();
                 dragSourceListener.reset();
-            }
+            });
 
 
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
@@ -298,15 +303,18 @@ class Child {
                 Thread.sleep(50);
             }
 
-            boolean success2 = false;
             synchronized (Util.SYNC_LOCK) {
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
+            }
+
+            EventQueue.invokeAndWait(()-> {
                 if (!dragSourceListener.isDropFinished()) {
                     throw new RuntimeException("Drop not finished");
                 }
                 success2 = dragSourceListener.getDropSuccess();
-            }
+                dragSourceListener.reset();
+            });
 
             int retCode = 0;
 
