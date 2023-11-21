@@ -3123,9 +3123,8 @@ void AwtWindow::_SetFocusableWindow(void *param)
     delete sfws;
 }
 
-void AwtWindow::_ModalDisable(void *param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_ModalDisable(void *param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     ModalDisableStruct *mds = static_cast<ModalDisableStruct *>(param);
     jobject self = mds->window;
@@ -3147,7 +3146,7 @@ void AwtWindow::_ModalDisable(void *param)
         }
     }
 
-    window = (AwtWindow *)pData;
+    window = (AwtWindow *) pData;
     windowHWnd = window->GetHWnd();
     if (::IsWindow(windowHWnd)) {
         AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
@@ -3158,31 +3157,32 @@ void AwtWindow::_ModalDisable(void *param)
     delete mds;
 }
 
-void AwtWindow::_ModalEnable(void *param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_ModalEnable(void *param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    jobject self = (jobject)param;
+    jobject self = static_cast<jobject>(param);
 
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
-    {
-        JNI_CHECK_NULL_GOTO(self, "peer", ret);
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        return;
+    } else {
         PDATA pData = JNI_GET_PDATA(self);
         if (pData == NULL) {
             env->DeleteGlobalRef(self);
             return;
         }
-
-        window = (AwtWindow *)pData;
-        windowHWnd = window->GetHWnd();
-        if (::IsWindow(windowHWnd)) {
-            AwtWindow::SetModalBlocker(windowHWnd, NULL);
-        }
     }
 
-  ret:
+    window = (AwtWindow *)pData;
+    windowHWnd = window->GetHWnd();
+    if (::IsWindow(windowHWnd)) {
+        AwtWindow::SetModalBlocker(windowHWnd, NULL);
+    }
+
     env->DeleteGlobalRef(self);
 }
 
