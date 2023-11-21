@@ -179,8 +179,8 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
   // Small optimization: Is the next commit overlapping with the last one? Then we don't need to push.
   if (storage.length() > 0) {
     TrackedRange& range = storage.at(storage.length() - 1);
-    if (overlaps(range, Range{base_addr, size})
-        || adjacent(range, Range{base_addr, size})
+    if ((overlaps(range, Range{base_addr, size})
+         || adjacent(range, Range{base_addr, size}))
         && _stack_storage->get(range.stack_idx).equals(stack)
         && range.flag == flag) {
       range.start = MIN2(base_addr, range.start);

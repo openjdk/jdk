@@ -617,7 +617,6 @@ retry:
       sleep(1);
       goto retry;
     }
-
     // Failed
     log_error_p(gc)("Failed to commit memory (%s)", err.to_string());
     return false;
@@ -662,7 +661,6 @@ size_t ZPhysicalMemoryBacking::commit_default(zoffset offset, size_t length) con
   // Try to commit the whole region
   if (commit_inner(offset, length)) {
     // Success
-    ZNMT::commit(offset, length);
     return length;
   }
 
@@ -674,7 +672,6 @@ size_t ZPhysicalMemoryBacking::commit_default(zoffset offset, size_t length) con
     length = align_down((end - start) / 2, ZGranuleSize);
     if (length < ZGranuleSize) {
       // Done, don't commit more
-      ZNMT::commit(offset, length);
       return start - offset;
     }
 
@@ -707,7 +704,6 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
     log_error(gc)("Failed to uncommit memory (%s)", err.to_string());
     return 0;
   }
-  ZNMT::uncommit(offset, length);
   return length;
 }
 
