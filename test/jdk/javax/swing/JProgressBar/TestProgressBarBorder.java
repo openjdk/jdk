@@ -73,8 +73,8 @@ public class TestProgressBarBorder {
                 ImageIO.write(withBorder, "png", new File("withBorder.png"));
                 ImageIO.write(withoutBorder, "png", new File("withoutBorder.png"));
             } catch (IOException e) {}
-            throw new RuntimeException("JProgressBar border is painted when border\n" +
-                    " painting is set to false");
+            throw new RuntimeException("JProgressBar border is painted when border " +
+                    "painting is set to false");
         }
     }
 
