@@ -579,9 +579,9 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java may fail on Ubuntu 18.04
 with the default NSS version in the system. To run these tests
 correctly, the system property
 <code>jdk.test.lib.artifacts.&lt;NAME&gt;</code> is required on Ubuntu
-18.04 to specify the alternative NSS lib directories. The
+18.04 to specify the alternative NSS lib directory. The
 <code>&lt;NAME&gt;</code> component should be replaced with the name
-element of the appropriate<code>@Artfact</code> class. (See
+element of the appropriate<code>@Artifact</code> class. (See
 <code>test/jdk/sun/security/pkcs11/PKCS11Test.java</code>)</p>
 <p>For example:</p>
 <pre><code>$ make test TEST=&quot;jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java&quot; \
