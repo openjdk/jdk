@@ -401,18 +401,17 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final = nullptr;
-  _entry_bci = InvocationEntryBci;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
-  debug_only(_block_count = -1);
-  debug_only(_blocks = (Block*)-1);
+  DEBUG_ONLY(_entry_bci = UnknownBci);
+  DEBUG_ONLY(_block_count = -1);
+  DEBUG_ONLY(_blocks = (Block*)-1);
 #ifndef PRODUCT
   if (PrintCompilation || PrintOpto) {
     // Make sure I have an inline tree, so I can print messages about it.
-    JVMState* ilt_caller = is_osr_parse() ? caller->caller() : caller;
-    InlineTree::find_subtree_from_root(C->ilt(), ilt_caller, parse_method);
+    InlineTree::find_subtree_from_root(C->ilt(), caller, parse_method);
   }
   _max_switch_depth = 0;
   _est_switch_depth = 0;
@@ -504,11 +503,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   }
 
   if (_flow->failing()) {
-    assert(false, "type flow failed during parsing");
+    assert(false, "type flow analysis failed during parsing");
     C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
-        if (_entry_bci != InvocationEntryBci) {
+        if (is_osr_parse()) {
           tty->print("OSR @%d ", _entry_bci);
         }
         tty->print_cr("type flow bailout: %s", _flow->failure_reason());
