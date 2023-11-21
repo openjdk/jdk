@@ -48,7 +48,7 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
                   p2i(reserved_range.start), p2i(reserved_range.end()),
                   NMTUtil::amount_in_scale(reserved_range.size, scale), scale_name);
     if (reserved_range.start != reserved_range.physical_address) {
-      output->print(" mapped to [" PTR_FORMAT ", " PTR_FORMAT ")", p2i(reserved_range.physical_address), p2i(reserved_range.physical_end()));
+      output->print(" mapped to [" PTR_FORMAT " - " PTR_FORMAT "]", p2i(reserved_range.physical_address), p2i(reserved_range.physical_end()));
     } else {
       // Do nothing
     }
@@ -80,9 +80,12 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
     for (int i = 0; i < committed_ranges.length(); i++) {
       found_committed[i] = false;
     }
+    VirtualMemoryView::sort_regions(reserved_ranges);
+    VirtualMemoryView::merge_reserved(reserved_ranges);
+
     output->print_cr("%s:", _names->at(space_id));
     for (int reserved_range_idx = 0; reserved_range_idx < reserved_ranges.length(); reserved_range_idx++) {
-      output->bol();
+      output->print_cr("");
       TrackedOffsetRange& reserved_range = reserved_ranges.at(reserved_range_idx);
       print_virtual_memory_region(reserved_range);
       for (int committed_range_idx = 0; committed_range_idx < committed_ranges.length();
@@ -110,17 +113,17 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
   TrackedOffsetRange out[2];
   int len;
 
-  RegionStorage& commits = _committed_regions->at(space.id);
-  int orig_len = commits.length();
+  RegionStorage& committed_ranges = _committed_regions->at(space.id);
+  int orig_len = committed_ranges.length();
   for (int i = 0; i < orig_len; i++) {
-    TrackedRange& crng = commits.at(i);
+    TrackedRange& crng = committed_ranges.at(i);
     OverlappingResult o_r = overlap_of(TrackedOffsetRange{crng}, range_to_remove, out, &len);
     if (o_r == OverlappingResult::NoOverlap) {
       continue;
     }
     int stack_idx = crng.stack_idx;
     // Delete old region
-    commits.delete_at(i);
+    committed_ranges.delete_at(i);
     // delete_at replaces the ith elt with the last one, so we need to rewind
     // otherwise we'll skip the previously last element.
     i--;
@@ -128,15 +131,15 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
     orig_len--;
     // And push on the new ones.
     for (int j = 0; j < len; j++) {
-      commits.push(out[j]);
+      committed_ranges.push(out[j]);
       _stack_storage->increment(stack_idx);
     }
     _stack_storage->decrement(stack_idx);
     // We're not breaking, no guarantee that there's exactly 1 region that matches
   }
 
-  sort_regions(commits);
-  merge_committed(commits);
+  sort_regions(committed_ranges);
+  merge_committed(committed_ranges);
 }
 
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,
@@ -262,6 +265,37 @@ void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
             potential_range.start // There's overlap, known because of pre-condition
         && _stack_storage->get(merging_range.stack_idx)
                .equals(_stack_storage->get(potential_range.stack_idx))) {
+      // Merge it
+      merging_range.size = potential_range.end() - merging_range.start;
+    } else {
+      j++;
+      ranges.push(potential_range);
+    }
+  }
+  // Remove all the old elements, only keeping the merged ones.
+  ranges.remove_till(rlen);
+  return;
+}
+
+void VirtualMemoryView::merge_reserved(OffsetRegionStorage& ranges) {
+  // We displace into the array at rlen+j instead of
+  // creating a new array and swapping it out at the end.
+  // This is because of a limitation with GrowableArray
+  int rlen = ranges.length();
+  if (rlen <= 1) return;
+  int j = 0;
+  ranges.push(ranges.at(j));
+  for (int i = 1; i < rlen; i++) {
+    TrackedOffsetRange& merging_range = ranges.at(rlen+j);
+    // Take an explicit copy, this is necessary because
+    // the push might invalidate the reference and then SIGSEGV.
+    const TrackedOffsetRange potential_range = ranges.at(i);
+    if (merging_range.end() >=
+        potential_range.start // There's overlap, known because of pre-condition
+        && _stack_storage->get(merging_range.stack_idx)
+        .equals(_stack_storage->get(potential_range.stack_idx))
+        && merging_range.physical_end() >=
+        potential_range.physical_address) {
       // Merge it
       merging_range.size = potential_range.end() - merging_range.start;
     } else {

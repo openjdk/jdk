@@ -120,6 +120,7 @@ private:
   // 1. Their NativeCallStacks are the same
   // 2. Their starts align correctly
   static void merge_committed(RegionStorage& ranges);
+  static void merge_reserved(OffsetRegionStorage& ranges);
 
   static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
   static void sort_regions(OffsetRegionStorage& storage);
