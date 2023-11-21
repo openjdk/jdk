@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.security.provider;
 
-package jdk.javadoc.internal.tool;
-
-/**
- * The access value kinds.
+/*
+ * The SHAKE128 extendable output function.
  */
-public enum AccessKind {
-    /** Limits access to public entities */
-    PUBLIC,
-    /** Limits access to public and protected entities */
-    PROTECTED,
-    /** Limits access to public, protected and package private entities */
-    PACKAGE,
-    /** No limits */
-    PRIVATE;
+public final class SHAKE128 extends SHA3 {
+    public SHAKE128(int d) {
+        super("SHAKE128", d, (byte) 0x1F, 32);
+    }
+
+    public void update(byte in) {
+        engineUpdate(in);
+    }
+    public void update(byte[] in, int off, int len) {
+        engineUpdate(in, off, len);
+    }
+
+    public byte[] digest() {
+        return engineDigest();
+    }
+
+    public void reset() {
+        engineReset();
+    }
 }

@@ -1871,6 +1871,92 @@ void MacroAssembler::cmpoop(Register src1, jobject src2, Register rscratch) {
 }
 #endif
 
+void MacroAssembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
+  if ((UseAVX > 0) && (dst != src)) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtss2sd(dst, src);
+}
+
+void MacroAssembler::cvtss2sd(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtss2sd(dst, src);
+}
+
+void MacroAssembler::cvtsd2ss(XMMRegister dst, XMMRegister src) {
+  if ((UseAVX > 0) && (dst != src)) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsd2ss(dst, src);
+}
+
+void MacroAssembler::cvtsd2ss(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsd2ss(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdl(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdl(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdl(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdl(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssl(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssl(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssl(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssl(dst, src);
+}
+
+#ifdef _LP64
+void MacroAssembler::cvtsi2sdq(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdq(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdq(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdq(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssq(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssq(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssq(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssq(dst, src);
+}
+#endif  // _LP64
+
 void MacroAssembler::locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch) {
   assert(rscratch != noreg || always_reachable(adr), "missing");
 
