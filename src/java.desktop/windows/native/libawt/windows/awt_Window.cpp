@@ -3137,6 +3137,7 @@ void AwtWindow::_ModalDisable(void *param) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
         delete mds;
+        return;
     } else {
         PDATA pData = JNI_GET_PDATA(self);
         if (pData == NULL) {
@@ -3188,21 +3189,31 @@ void AwtWindow::_ModalEnable(void *param) {
 
 void AwtWindow::_SetOpacity(void* param)
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    OpacityStruct *os = (OpacityStruct *)param;
+    OpacityStruct *os = static_cast<OpacityStruct *>(param);
     jobject self = os->window;
-    BYTE iOpacity = (BYTE)os->iOpacity;
+    BYTE iOpacity = (BYTE) os->iOpacity;
 
-    {
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        AwtWindow *window = (AwtWindow *)pData;
-
-        window->SetTranslucency(iOpacity, window->isOpaque());
+    PDATA pData;
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete os;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete os;
+            return;
+        }
     }
+    AwtWindow *window = (AwtWindow *)pData;
 
-  ret:
+    window->SetTranslucency(iOpacity, window->isOpaque());
+
     env->DeleteGlobalRef(self);
     delete os;
 }
