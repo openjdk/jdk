@@ -39,11 +39,9 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   }
 
   // If this fails, we don't bother aiming for zero-based encoding (base=0 shift>0), since it has no
-  // advantages over movk mode. A single movk is as fast as an lsl.
+  // advantages over movk mode.
 
-  // Allocate for movk mode: we aim for a base address that can be be combined with a 32-bit
-  // narrow Klass ID using a single movk into the third quadrant - addresses with bits only in [32,48).
-  // These are addresses that are 4G-aligned and smaller than 256TB.
+  // Allocate for movk mode: aim for a base address that has only bits set in the third quadrant.
   if (result == nullptr) {
     result = reserve_address_space_for_16bit_move(size, aslr);
   }
