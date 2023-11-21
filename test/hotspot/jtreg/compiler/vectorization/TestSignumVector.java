@@ -66,7 +66,7 @@ public class TestSignumVector {
       dout = new double[ARRLEN];
       Random rnd = new Random(20);
       for(int i = 0 ; i < ARRLEN; i++) {
-          dinp[i] = (double)(i-ARRLEN/2)*rnd.nextDouble();
+          dinp[i] = (i-ARRLEN/2)*rnd.nextDouble();
       }
       for (int i = 0; i < ITERS; i++) {
           test_signum_double(dout , dinp);
@@ -96,7 +96,7 @@ public class TestSignumVector {
       fout = new float[ARRLEN];
       Random rnd = new Random(20);
       for(int i = 0 ; i < ARRLEN; i++) {
-          finp[i] = (i-ARRLEN/2)*(float)rnd.nextDouble();
+          finp[i] = (i-ARRLEN/2)*rnd.nextFloat();
       }
       for (int i = 0; i < ITERS; i++) {
           test_signum_float(fout , finp);

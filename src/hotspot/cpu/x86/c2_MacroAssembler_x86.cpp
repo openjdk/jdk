@@ -1106,54 +1106,57 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
    *                (only useful when signs differ, noop otherwise)
    *  b. NaN: Check if it was the first parameter that had the NaN (with vcmp[UNORD_Q])
    */
+
+  void (MacroAssembler::*vblend)(XMMRegister, XMMRegister, XMMRegister, XMMRegister, int, bool, XMMRegister);
+  void (MacroAssembler::*vmaxmin)(XMMRegister, XMMRegister, XMMRegister, int);
+  void (MacroAssembler::*vcmp)(XMMRegister, XMMRegister, XMMRegister, int, int);
+  XMMRegister mask;
+
   if (!is_double_word && is_min) {
-    XMMRegister mask = a;
-    if (EnableX86ECoreOpts) {
-      vpsrad(tmp, mask, 32, vlen_enc);
-      mask = tmp;
-    }
-    vblendvps(atmp, a, b, mask, vlen_enc, true, btmp);
-    vblendvps(btmp, b, a, mask, vlen_enc, true, tmp);
-    vminps(tmp, atmp, btmp, vlen_enc);
-    vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
+    mask = a;
+    vblend = &MacroAssembler::vblendvps;
+    vmaxmin = &MacroAssembler::vminps;
+    vcmp = &MacroAssembler::vcmpps;
   } else if (!is_double_word && !is_min) {
-    XMMRegister mask = b;
-    if (EnableX86ECoreOpts) {
-      vpsrad(tmp, mask, 32, vlen_enc);
-      mask = tmp;
-    }
-    vblendvps(btmp, b, a, mask, vlen_enc, true, atmp);
-    vblendvps(atmp, a, b, mask, vlen_enc, true, tmp);
-    vmaxps(tmp, atmp, btmp, vlen_enc);
-    vcmpps(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvps(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
+    mask = b;
+    vblend = &MacroAssembler::vblendvps;
+    vmaxmin = &MacroAssembler::vmaxps;
+    vcmp = &MacroAssembler::vcmpps;
   } else if (is_double_word && is_min) {
-    XMMRegister mask = a;
-    if (EnableX86ECoreOpts) {
-      vpxor(tmp, tmp, tmp, vlen_enc);
-      vpcmpgtq(tmp, tmp, mask, vlen_enc);
-      mask = tmp;
-    }
-    vblendvpd(atmp, a, b, mask, vlen_enc, true, btmp);
-    vblendvpd(btmp, b, a, mask, vlen_enc, true, tmp);
-    vminpd(tmp, atmp, btmp, vlen_enc);
-    vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
+    mask = a;
+    vblend = &MacroAssembler::vblendvpd;
+    vmaxmin = &MacroAssembler::vminpd;
+    vcmp = &MacroAssembler::vcmppd;
   } else {
     assert(is_double_word && !is_min, "sanity");
-    XMMRegister mask = b;
-    if (EnableX86ECoreOpts) {
-      vpxor(tmp, tmp, tmp, vlen_enc);
-      vpcmpgtq(tmp, tmp, mask, vlen_enc);
-      mask = tmp;
-    }
-    vblendvpd(btmp, b, a, mask, vlen_enc, true, atmp);
-    vblendvpd(atmp, a, b, mask, vlen_enc, true, tmp);
-    vmaxpd(tmp, atmp, btmp, vlen_enc);
-    vcmppd(btmp, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-    vblendvpd(dst, tmp, atmp, btmp, vlen_enc, true, btmp);
+    mask = b;
+    vblend = &MacroAssembler::vblendvpd;
+    vmaxmin = &MacroAssembler::vmaxpd;
+    vcmp = &MacroAssembler::vcmppd;
   }
+
+  XMMRegister maxmin, scratch;
+  if (dst == btmp) {
+    maxmin = btmp;
+    scratch = tmp;
+  } else {
+    maxmin = tmp;
+    scratch = btmp;
+  }
+
+  if (EnableX86ECoreOpts && !is_double_word) {
+    vpsrad(tmp, mask, 32, vlen_enc);
+    mask = tmp;
+  } else if (EnableX86ECoreOpts && is_double_word) {
+    vpxor(tmp, tmp, tmp, vlen_enc);
+    vpcmpgtq(tmp, tmp, mask, vlen_enc);
+    mask = tmp;
+  }
+  (this->*vblend)(atmp, a, b, mask, vlen_enc, true, btmp);
+  (this->*vblend)(btmp, b, a, mask, vlen_enc, true, tmp);
+  (this->*vmaxmin)(maxmin, atmp, btmp, vlen_enc);
+  (this->*vcmp)(scratch, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
+  (this->*vblend)(dst, tmp, atmp, scratch, vlen_enc, true, scratch);
 }
 
 void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,

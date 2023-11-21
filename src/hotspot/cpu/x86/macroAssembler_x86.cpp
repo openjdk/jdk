@@ -3485,7 +3485,7 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
 void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool fully_masked, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
-  bool dst_available = dst != src1 || dst != src2;
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
   if (EnableX86ECoreOpts && scratch_available && dst_available) {
     XMMRegister full_mask = mask;
     if (!fully_masked) {
@@ -3500,7 +3500,6 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
       vpandn(scratch, full_mask, src1, vector_len); // if mask == 0, src1
     }
     vpor(dst, dst, scratch, vector_len);
-    // CASE dst==src1==src2
   } else {
     Assembler::vblendvps(dst, src1, src2, mask, vector_len);
   }
@@ -3510,7 +3509,7 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
 void MacroAssembler::vblendvpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool fully_masked, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst && (fully_masked || scratch != mask);
-  bool dst_available = dst != src1 || dst != src2;
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
   if (EnableX86ECoreOpts && scratch_available && dst_available) {
     XMMRegister full_mask = mask;
     if (!fully_masked) {

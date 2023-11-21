@@ -4507,9 +4507,16 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
     }
     __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $atmp$$XMMRegister);
     __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
-    __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+
+    if ($dst$$XMMRegister == $btmp$$XMMRegister) {
+      __ vmaxss($btmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmpps($tmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvps($dst$$XMMRegister, $btmp$$XMMRegister, $atmp$$XMMRegister, $tmp$$XMMRegister, vector_len, true, $tmp$$XMMRegister);
+    } else {
+      __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+    }
  %}
   ins_pipe( pipe_slow );
 %}
@@ -4549,9 +4556,16 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
     }
     __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $atmp$$XMMRegister);
     __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
-    __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+
+    if ($dst$$XMMRegister == $btmp$$XMMRegister) {
+      __ vmaxsd($btmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmppd($tmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvpd($dst$$XMMRegister, $btmp$$XMMRegister, $atmp$$XMMRegister, $tmp$$XMMRegister, vector_len, true, $tmp$$XMMRegister);
+    } else {
+      __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4590,9 +4604,16 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
     }
     __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $btmp$$XMMRegister);
     __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
-    __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+
+    if ($dst$$XMMRegister == $btmp$$XMMRegister) {
+      __ vminss($btmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmpps($tmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvps($dst$$XMMRegister, $btmp$$XMMRegister, $atmp$$XMMRegister, $tmp$$XMMRegister, vector_len, true, $tmp$$XMMRegister);
+    } else {
+      __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4632,9 +4653,16 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
     }
     __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, mask, vector_len, true, $btmp$$XMMRegister);
     __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, mask, vector_len, true, $tmp$$XMMRegister);
-    __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+
+    if ($dst$$XMMRegister == $btmp$$XMMRegister) {
+      __ vminsd($btmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmppd($tmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvpd($dst$$XMMRegister, $btmp$$XMMRegister, $atmp$$XMMRegister, $tmp$$XMMRegister, vector_len, true, $tmp$$XMMRegister);
+    } else {
+      __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
+      __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
+      __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len, true, $btmp$$XMMRegister);
+    }
   %}
   ins_pipe( pipe_slow );
 %}

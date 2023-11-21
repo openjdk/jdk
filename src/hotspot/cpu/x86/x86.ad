@@ -7841,8 +7841,8 @@ instruct ablendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vpandn($vtmp$$XMMRegister, $mask$$XMMRegister, $src1$$XMMRegister, vlen_enc);
-    __ vpand($dst$$XMMRegister, $src2$$XMMRegister, $mask$$XMMRegister, vlen_enc);
-    __ vpor($dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+    __ vpand ($dst$$XMMRegister,  $mask$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpor  ($dst$$XMMRegister,  $dst$$XMMRegister,  $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
