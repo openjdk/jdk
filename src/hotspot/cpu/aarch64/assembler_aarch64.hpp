@@ -1088,8 +1088,8 @@ public:
 #undef INSN
 
   // we only provide mrs and msr for the special purpose system
-  // registers where op1 (instr[20:19]) == 11 and, (currently) only
-  // use it for FPSR n.b msr has L (instr[21]) == 0 mrs has L == 1
+  // registers where op1 (instr[20:19]) == 11
+  // n.b msr has L (instr[21]) == 0 mrs has L == 1
 
   void msr(int op1, int CRn, int CRm, int op2, Register rt) {
     starti;

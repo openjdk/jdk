@@ -71,17 +71,9 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  // __sync_lock_test_and_set is a bizarrely named atomic exchange
-  // operation.  Note that some platforms only support this with the
-  // limitation that the only valid value to store is the immediate
-  // constant 1.  There is a test for this in JNI_CreateJavaVM().
-  T result = __sync_lock_test_and_set (dest, exchange_value);
-  // All atomic operations are expected to be full memory barriers
-  // (see atomic.hpp). However, __sync_lock_test_and_set is not
-  // a full memory barrier, but an acquire barrier. Hence, this added
-  // barrier. Some platforms (notably ARM) have peculiarities with
-  // their barrier implementations, delegate it to OrderAccess.
-  OrderAccess::fence();
+  FULL_MEM_BARRIER;
+  T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
   return result;
 }
 
@@ -91,8 +83,9 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  T result = __sync_lock_test_and_set (dest, exchange_value);
-  OrderAccess::fence();
+  FULL_MEM_BARRIER;
+  T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
   return result;
 }
 
