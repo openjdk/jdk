@@ -195,8 +195,8 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * {@return {@code true} if the label should be rendered in plain font}
      *
-     * The method uses a heuristic, to see string form of the label is a substring of the reference.
-     * Thus, for example:
+     * The method uses a heuristic, to see if the string form of the label
+     * is a substring of the reference. Thus, for example:
      *
      * <ul>
      * <li>{@code @see MyClass.MY_CONSTANT MY_CONSTANT}  returns {@code true}
