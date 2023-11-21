@@ -314,7 +314,7 @@ public interface Gatherer<T, A, R> {
      * @param <A> the type of the state of the returned finisher
      * @param <R> the type of the Downstream of the returned finisher
      */
-    static <A,R> BiConsumer<A, Downstream<? super R>> defaultFinisher() {
+    static <A, R> BiConsumer<A, Downstream<? super R>> defaultFinisher() {
         return Gatherers.Value.DEFAULT.finisher();
     }
 
@@ -364,10 +364,10 @@ public interface Gatherer<T, A, R> {
      * Returns a new, sequential, {@code Gatherer} described by the given
      * {@code initializer} and {@code integrator}.
      *
-     * @param initializer the supplier function for the new gatherer
+     * @param initializer the initializer function for the new gatherer
      * @param integrator the integrator function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
-     * @param <A> the type of initializer for the new gatherer
+     * @param <A> the type of state for the new gatherer
      * @param <R> the type of results for the new gatherer
      * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
@@ -387,11 +387,11 @@ public interface Gatherer<T, A, R> {
      * Returns a new, sequential, {@code Gatherer} described by the given
      * {@code initializer}, {@code integrator}, and {@code finisher}.
      *
-     * @param initializer the supplier function for the new gatherer
+     * @param initializer the initializer function for the new gatherer
      * @param integrator the integrator function for the new gatherer
      * @param finisher the finisher function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
-     * @param <A> the type of initializer for the new gatherer
+     * @param <A> the type of state for the new gatherer
      * @param <R> the type of results for the new gatherer
      * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
@@ -454,12 +454,12 @@ public interface Gatherer<T, A, R> {
      * {@code initializer}, {@code integrator}, {@code combiner} and
      * {@code finisher}.
      *
-     * @param initializer the supplier function for the new gatherer
+     * @param initializer the initializer function for the new gatherer
      * @param integrator the integrator function for the new gatherer
      * @param combiner the combiner function for the new gatherer
      * @param finisher the finisher function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
-     * @param <A> the type of initializer for the new gatherer
+     * @param <A> the type of state for the new gatherer
      * @param <R> the type of results for the new gatherer
      * @throws NullPointerException if any argument is {@code null}
      * @return the new {@code Gatherer}
@@ -549,8 +549,8 @@ public interface Gatherer<T, A, R> {
          *
          * @param integrator a lambda to create as Integrator
          * @return the given lambda as an Integrator
-         * @param <A> the type of elements this integrator receives
-         * @param <T> the type of initializer this integrator consumes
+         * @param <A> the type of state used by this integrator
+         * @param <T> the type of elements this integrator receives
          * @param <R> the type of results this integrator can produce
          */
         @ForceInline
@@ -564,8 +564,8 @@ public interface Gatherer<T, A, R> {
          *
          * @param greedy a lambda to create as Integrator.Greedy
          * @return the given lambda as a Greedy Integrator
-         * @param <A> the type of elements this integrator receives
-         * @param <T> the type of initializer this integrator consumes
+         * @param <A> the type of state used by this integrator
+         * @param <T> the type of elements this integrator receives
          * @param <R> the type of results this integrator can produce
          */
         @ForceInline
@@ -581,8 +581,8 @@ public interface Gatherer<T, A, R> {
          * short-circuiting will be <i>initiated</i> by this Integrator, and that
          * information can then be used to optimize evaluation.
          *
-         * @param <A> the type of elements this greedy integrator receives
-         * @param <T> the type of initializer this greedy integrator consumes
+         * @param <A> the type of state used by this integrator
+         * @param <T> the type of elements this greedy integrator receives
          * @param <R> the type of results this greedy integrator can produce
          * @since 22
          */
