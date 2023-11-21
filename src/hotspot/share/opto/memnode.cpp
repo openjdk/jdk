@@ -845,8 +845,11 @@ bool LoadNode::can_remove_control() const {
   return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
-bool LoadNode::cmp( const Node &n ) const
-{ return !Type::cmp( _type, ((LoadNode&)n)._type ); }
+bool LoadNode::cmp( const Node &n ) const {
+  return !Type::cmp( _type, ((LoadNode&)n)._type ) &&
+         _control_dependency == ((LoadNode&)n)._control_dependency &&
+         _mo == ((LoadNode&)n)._mo;
+}
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
   return _type->ideal_reg();
@@ -983,6 +986,14 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   return false;
 }
 
+LoadNode* LoadNode::pin_for_array_load() const {
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type != nullptr && adr_type->isa_aryptr()) {
+    return clone_pinned();
+  }
+  return nullptr;
+}
+
 // Is the value loaded previously stored by an arraycopy? If so return
 // a load node that reads from the source array so we may be able to
 // optimize out the ArrayCopy node later.
@@ -1002,7 +1013,8 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
       return nullptr;
     }
 
-    LoadNode* ld = clone()->as_Load();
+    // load depends on the tests that validate the arraycopy
+    LoadNode* ld = clone_pinned();
     Node* addp = in(MemNode::Address)->clone();
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != nullptr, "need an alloc");
@@ -1044,8 +1056,6 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     ld->set_req(MemNode::Address, addp);
     ld->set_req(0, ctl);
     ld->set_req(MemNode::Memory, mem);
-    // load depends on the tests that validate the arraycopy
-    ld->_control_dependency = UnknownControl;
     return ld;
   }
   return nullptr;
@@ -2497,6 +2507,12 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   }
 
   return this;
+}
+
+LoadNode* LoadNode::clone_pinned() const {
+  LoadNode* ld = clone()->as_Load();
+  ld->_control_dependency = UnknownControl;
+  return ld;
 }
 
 

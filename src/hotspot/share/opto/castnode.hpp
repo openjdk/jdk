@@ -67,6 +67,7 @@ public:
   virtual uint ideal_reg() const = 0;
   virtual bool depends_only_on_test() const { return _dependency == RegularDependency; }
   bool carry_dependency() const { return _dependency != RegularDependency; }
+
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast(int opcode, Node* c, Node* n, const Type* t, DependencyType dependency, const TypeTuple* extra_types);
   static Node* make(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt);
@@ -115,7 +116,7 @@ class CastIINode: public ConstraintCastNode {
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  bool has_range_check() {
+  bool has_range_check() const {
 #ifdef _LP64
     return _range_check_dependency;
 #else
@@ -123,6 +124,8 @@ class CastIINode: public ConstraintCastNode {
     return false;
 #endif
   }
+
+  CastIINode* pin_for_array_load() const;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;

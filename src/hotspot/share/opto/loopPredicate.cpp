@@ -1179,6 +1179,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     return false;
   }
   BoolNode* bol = test->as_Bool();
+  bool range_check_predicate = false;
   if (invar.is_invariant(bol)) {
     // Invariant test
     new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
@@ -1207,6 +1208,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     }
 #endif
   } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
+    range_check_predicate = true;
     // Range check for counted loops
     assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
     const Node*    cmp    = bol->in(1)->as_Cmp();
@@ -1286,7 +1288,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   invar.map_ctrl(if_success_proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con);
+  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con, range_check_predicate);
 
   C->set_major_progress();
   return true;
