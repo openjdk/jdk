@@ -828,8 +828,6 @@ const char* VLoopAnalyzer::analyze_helper() {
 
   _dependence_graph.build();
 
-  // TODO Move stuff from SLP_extract
-
   return VLoopAnalyzer::SUCCESS;
 }
 
@@ -1031,7 +1029,7 @@ void VLoopMemorySlices::get_slice(Node* head,
         // Expect other outputs to be the prev (with some exceptions)
         if (out->is_MergeMem() && !_vloop.in_body(out)) {
           // Either unrolling is causing a memory edge not to disappear,
-          // or need to run igvn.optimize() again before SLP
+          // or need to run igvn.optimize() again before vectorization
         } else if (out->is_memory_phi() && !_vloop.in_body(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
@@ -1196,8 +1194,6 @@ void VLoopBody::print() const {
 void VLoopDependenceGraph::build() {
   assert(_map.length() == 0, "must be freshly reset");
   CountedLoopNode *cl = _vloop.cl();
-  // TODO remove, seems unnecessary
-  assert(cl->is_main_loop(), "SLP should only work on main loops");
 
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _body.body().length(); i++ ) {

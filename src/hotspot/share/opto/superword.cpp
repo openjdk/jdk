@@ -58,7 +58,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
 {
 }
 
-//------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(const VLoop &vloop,
                                    int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
@@ -257,67 +256,60 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
   }
 }
 
-//------------------------------SLP_extract---------------------------
-// Extract the superword level parallelism
-//
-// TODO adjust this explanation here
-//
-// 1) A reverse post-order of nodes in the block is constructed.  By scanning
-//    this list from first to last, all definitions are visited before their uses.
-//
-// 2) A point-to-point dependence graph is constructed between memory references.
-//    This simplifies the upcoming "independence" checker.
-//
-// 3) The maximum depth in the node graph from the beginning of the block
-//    to each node is computed.  This is used to prune the graph search
-//    in the independence checker.
-//
-// 4) For integer types, the necessary bit width is propagated backwards
-//    from stores to allow packed operations on byte, char, and short
-//    integers.  This reverses the promotion to type "int" that javac
-//    did for operations like: char c1,c2,c3;  c1 = c2 + c3.
-//
-// 5) One of the memory references is picked to be an aligned vector reference.
-//    The pre-loop trip count is adjusted to align this reference in the
-//    unrolled body.
-//
-// 6) The initial set of pack pairs is seeded with memory references.
-//
-// 7) The set of pack pairs is extended by following use->def and def->use links.
-//
-// 8) The pairs are combined into vector sized packs.
-//
-// 9) Reorder the memory slices to co-locate members of the memory packs.
-//
-// 10) Generate ideal vector nodes for the final set of packs and where necessary,
-//    inserting scalar promotion, vector creation from multiple scalars, and
-//    extraction of scalar values from vectors.
-//
-bool SuperWord::SLP_extract() {
+bool SuperWord::transform_loop() {
+  const char* state = transform_loop_helper();
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("\nSuperWord::transform_loop:");
+    lpt()->dump_head();
+  }
+#endif
+
+  if (state == SuperWord::SUCCESS) {
+    return true;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("\nSuperWord::transform_loop: failed: %s", state);
+  }
+#endif
+  return false;
+}
+
+const char* SuperWord::transform_loop_helper() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
 
-  init(); // initialize data structures
+  // Initialize data structures.
+  init();
 
-  // Find adjacent loads and stores
-  find_adjacent_refs();
+  // Find adjacent loads and stores pairs.
+  char const* state = find_adjacent_refs();
+  if (state != SuperWord::SUCCESS) { return state; }
 
-  if (align_to_ref() == nullptr) {
-    return false; // Did not find memory reference to align vectors
-  }
-
+  // Extend pairs with non memory ops.
   extend_packlist();
 
-  combine_packs();
+  // Combine pairs into vectors sized packs.
+  state = combine_packs();
+  if (state != SuperWord::SUCCESS) { return state; }
 
+  // Construct the map from nodes to packs.
   construct_my_pack_map();
 
-  filter_packs();
+  // Remove packs that are not implemented or not profitable.
+  state = filter_packs();
+  if (state != SuperWord::SUCCESS) { return state; }
 
   DEBUG_ONLY(verify_packs();)
 
-  schedule();
+  // Adjust the memory graph for the packed operations. And check for cycles.
+  state = schedule();
+  if (state != SuperWord::SUCCESS) { return state; }
 
+  // Convert packs into vector node operations.
   return output();
 }
 
@@ -326,8 +318,8 @@ bool SuperWord::SLP_extract() {
 // This is the initial set of packs that will then be extended by
 // following use->def and def->use links.  The align positions are
 // assigned relative to the reference "align_to_ref"
-void SuperWord::find_adjacent_refs() {
-  assert(_packset.length() == 0, "packset must be empty");
+const char* SuperWord::find_adjacent_refs() {
+  assert(_packset.is_empty(), "packset must be empty");
 
   // Get list of memory operations
   Node_List memops;
@@ -482,6 +474,12 @@ void SuperWord::find_adjacent_refs() {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
   }
+
+  if (_packset.is_empty()) {
+    return SuperWord::FAILURE_NO_ADJACENT_MEM;
+  }
+
+  return SuperWord::SUCCESS;
 }
 
 #ifndef PRODUCT
@@ -957,6 +955,8 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 //------------------------------extend_packlist---------------------------
 // Extend packset by following use->def and def->use links from pack members.
 void SuperWord::extend_packlist() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   bool changed;
   do {
     packset_sort(_packset.length());
@@ -1246,7 +1246,9 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
-void SuperWord::combine_packs() {
+const char* SuperWord::combine_packs() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   bool changed = true;
   // Combine packs regardless max vector size.
   while (changed) {
@@ -1349,16 +1351,24 @@ void SuperWord::combine_packs() {
     }
   }
 
+  if(_packset.is_empty()) {
+    return SuperWord::FAILURE_COMBINE_PACKS;
+  }
+
   if (TraceSuperWord) {
     tty->print_cr("\nAfter combine_packs");
     print_packset();
   }
+
+  return SuperWord::SUCCESS;
 }
 
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_packs).
 void SuperWord::construct_my_pack_map() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     for (uint j = 0; j < p->size(); j++) {
@@ -1378,7 +1388,9 @@ void SuperWord::construct_my_pack_map() {
 
 //------------------------------filter_packs---------------------------
 // Remove packs that are not implemented or not profitable.
-void SuperWord::filter_packs() {
+const char* SuperWord::filter_packs() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   // Remove packs that are not implemented
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* pk = _packset.at(i);
@@ -1420,6 +1432,10 @@ void SuperWord::filter_packs() {
     }
   } while (changed);
 
+  if (_packset.is_empty()) {
+    return SuperWord::FAILURE_FILTER_PACKS;
+  }
+
 #ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nAfter filter_packs");
@@ -1427,6 +1443,8 @@ void SuperWord::filter_packs() {
     tty->cr();
   }
 #endif
+
+  return SuperWord::SUCCESS;
 }
 
 //------------------------------implemented---------------------------
@@ -1875,10 +1893,9 @@ public:
 //     dependencies of the PacksetGraph.
 // (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
 // (4) Use the memops_schedule to re-order the memops in all slices.
-void SuperWord::schedule() {
-  if (_packset.length() == 0) {
-    return; // empty packset
-  }
+const char* SuperWord::schedule() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   ResourceMark rm;
 
   // (1) Build the PacksetGraph.
@@ -1901,7 +1918,7 @@ void SuperWord::schedule() {
       tty->print_cr("removing all packs from packset.");
     }
     _packset.clear();
-    return;
+    return SuperWord::FAILURE_SCHEDULE_CYCLE;
   }
 
 #ifndef PRODUCT
@@ -1913,6 +1930,8 @@ void SuperWord::schedule() {
 
   // (4) Use the memops_schedule to re-order the memops in all slices.
   schedule_reorder_memops(memops_schedule);
+
+  return SuperWord::SUCCESS;
 }
 
 
@@ -2006,13 +2025,12 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
 // there be an unexpected situation (assert fails), then we can only
 // bail out of the compilation, as the graph has already been partially
 // modified. We bail out, and retry without SuperWord.
-bool SuperWord::output() {
+const char* SuperWord::output() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = phase()->C;
-  if (_packset.length() == 0) {
-    return false;
-  }
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -2069,7 +2087,7 @@ bool SuperWord::output() {
         if (val == nullptr) {
           assert(false, "input to vector store was not created");
           C->record_failure(C2Compiler::retry_no_superword());
-          return false; // bailout
+          return SuperWord::FAILURE_OUTPUT_BAILOUT;
         }
 
         Node* ctl = n->in(MemNode::Control);
@@ -2208,14 +2226,14 @@ bool SuperWord::output() {
           if (in1 == nullptr) {
             assert(false, "input in1 to vector operand was not created");
             C->record_failure(C2Compiler::retry_no_superword());
-            return false; // bailout
+            return SuperWord::FAILURE_OUTPUT_BAILOUT;
           }
         }
         Node* in2 = vector_opd(p, 2);
         if (in2 == nullptr) {
           assert(false, "input in2 to vector operand was not created");
           C->record_failure(C2Compiler::retry_no_superword());
-          return false; // bailout
+          return SuperWord::FAILURE_OUTPUT_BAILOUT;
         }
         if (VectorNode::is_invariant_vector(in1) && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
           // Move invariant vector input into second position to avoid register spilling.
@@ -2286,13 +2304,13 @@ bool SuperWord::output() {
       } else {
         assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
         C->record_failure(C2Compiler::retry_no_superword());
-        return false; // bailout
+        return SuperWord::FAILURE_OUTPUT_BAILOUT;
       }
 
       if (vn == nullptr) {
         assert(false, "got null node instead of vector node");
         C->record_failure(C2Compiler::retry_no_superword());
-        return false; // bailout
+        return SuperWord::FAILURE_OUTPUT_BAILOUT;
       }
 
       igvn().register_new_node_with_optimizer(vn);
@@ -2338,7 +2356,7 @@ bool SuperWord::output() {
     }
   }
 
-  return true;
+  return SuperWord::SUCCESS;
 }
 
 //------------------------------vector_opd---------------------------

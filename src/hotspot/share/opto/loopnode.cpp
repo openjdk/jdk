@@ -4648,12 +4648,9 @@ void PhaseIdealLoop::build_and_optimize() {
       IdealLoopTree* lpt = iter.current();
       CountedLoopNode* cl = lpt->_head->isa_CountedLoop();
       if (lpt->is_counted() && cl->is_main_loop()) {
-        bool success = vloop_analyzer.analyze(lpt, false);
-        if (success) {
-          success = sw.SLP_extract();
-        }
-        if (!success) {
-          // Vectorization failed. From now on only unroll the loop.
+        if (!vloop_analyzer.analyze(lpt, false) ||
+            !sw.transform_loop()) {
+          // Analyzer or Vectorization failed. From now on only unroll the loop.
           if (cl->has_passed_slp()) {
             C->set_major_progress();
             cl->set_notpassed_slp();

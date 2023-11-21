@@ -90,10 +90,21 @@ class SuperWord : public ResourceObj {
   // Scratch pads
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
 
+  static constexpr char const* SUCCESS                 = "success";
+  static constexpr char const* FAILURE_NO_ADJACENT_MEM = "no adjacent loads or stores found";
+  static constexpr char const* FAILURE_COMBINE_PACKS   = "empty packset after combine_packs";
+  static constexpr char const* FAILURE_FILTER_PACKS    = "empty packset after filter_packs";
+  static constexpr char const* FAILURE_SCHEDULE_CYCLE  = "schedule found cycle in packset";
+  static constexpr char const* FAILURE_OUTPUT_BAILOUT  = "unexpected bailout in output";
+
  public:
   SuperWord(const VLoopAnalyzer &vla);
 
+  // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);
+
+  // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
+  bool transform_loop();
 
   // VLoopAnalyzer
   const VLoopAnalyzer& vla() const      { return _vla; }
@@ -196,12 +207,10 @@ class SuperWord : public ResourceObj {
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
- public:
   // Extract the superword level parallelism
-  bool SLP_extract();
- private:
+  const char* transform_loop_helper();
   // Find the adjacent memory references and create pack pairs for them.
-  void find_adjacent_refs();
+  const char* find_adjacent_refs();
   // Tracing support
   #ifndef PRODUCT
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
@@ -244,21 +253,21 @@ class SuperWord : public ResourceObj {
   int pack_cost(int ct);
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
-  void combine_packs();
+  const char* combine_packs();
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
-  void filter_packs();
+  const char* filter_packs();
   // Verify that for every pack, all nodes are mutually independent.
   // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs() const;)
   // Adjust the memory graph for the packed operations
-  void schedule();
+  const char* schedule();
   // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
   void schedule_reorder_memops(Node_List &memops_schedule);
 
   // Convert packs into vector node operations
-  bool output();
+  const char* output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
