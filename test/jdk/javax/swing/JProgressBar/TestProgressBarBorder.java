@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8224261
- * @key headful
- * @library ../regtesthelpers
- * @build Util
- * @summary Verifies JProgressBar border is not painted when border
- *          painting is set to false
- * @run main TestProgressBarBorder
- */
-
 import java.io.File;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -44,13 +33,24 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
+/*
+ * @test
+ * @bug 8224261
+ * @key headful
+ * @library ../regtesthelpers
+ * @build Util
+ * @summary Verifies JProgressBar border is not painted when border
+ *          painting is set to false
+ * @run main TestProgressBarBorder
+ */
+
 public class TestProgressBarBorder {
     private static JProgressBar progressBar;
-    private static volatile boolean isImgEqual;
-    private static BufferedImage borderPaintedImg;
-    private static BufferedImage borderNotPaintedImg;
+    private static volatile BufferedImage withBorder = null;
+    private static volatile BufferedImage withoutBorder = null;
 
     public static void main(String[] args) throws Exception {
+        boolean equal;
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             if (!laf.getName().contains("Nimbus") && !laf.getName().contains("GTK")) {
@@ -59,17 +59,16 @@ public class TestProgressBarBorder {
             System.out.println("Testing LAF: " + laf.getName());
             SwingUtilities.invokeAndWait(() -> {
                 setLookAndFeel(laf);
-                createAndShowUI();
+                initProgressBar();
+                progressBar.setBorderPainted(true);
+                withBorder = paintToImage(progressBar);
+                progressBar.setBorderPainted(false);
+                withoutBorder = paintToImage(progressBar);
             });
-
-            borderPaintedImg = paintToImage(progressBar);
-            progressBar.setBorderPainted(false);
-            borderNotPaintedImg = paintToImage(progressBar);
-            isImgEqual = Util.compareBufferedImages(borderPaintedImg, borderNotPaintedImg);
-
-            if (isImgEqual) {
-                ImageIO.write(borderPaintedImg, "png", new File("borderPaintedImg.png"));
-                ImageIO.write(borderNotPaintedImg, "png", new File("borderNotPaintedImg.png"));
+            equal = Util.compareBufferedImages(withBorder, withoutBorder);
+            if (equal) {
+                ImageIO.write(withBorder, "png", new File("withBorder.png"));
+                ImageIO.write(withoutBorder, "png", new File("withoutBorder.png"));
                 throw new RuntimeException("JProgressBar border is painted when border\n" +
                         " painting is set to false");
             }
@@ -87,12 +86,10 @@ public class TestProgressBarBorder {
         }
     }
 
-    private static void createAndShowUI() {
+    private static void initProgressBar() {
         progressBar = new JProgressBar();
         progressBar.setSize(100, 50);
-        // set initial value
         progressBar.setValue(0);
-        progressBar.setBorderPainted(true);
         progressBar.setStringPainted(true);
     }
 
