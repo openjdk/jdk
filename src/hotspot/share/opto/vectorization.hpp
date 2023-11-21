@@ -47,7 +47,7 @@ protected:
   bool _allow_cfg = false;
   CountedLoopEndNode* _pre_loop_end; // only for main loops
 
-  const CHeapBitMap &_trace_mask;
+  const CHeapBitMap &_trace_tags;
 
   static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
@@ -62,7 +62,7 @@ public:
   VLoop(PhaseIdealLoop* phase) :
     _phase(phase),
     _arena(phase->C->comp_arena()),
-    _trace_mask(phase->C->directive()->traceautovectorization_mask()) {}
+    _trace_tags(phase->C->directive()->traceautovectorization_tags()) {}
   NONCOPYABLE(VLoop);
 
 protected:
@@ -108,28 +108,28 @@ public:
 
 #ifndef PRODUCT
   bool is_trace_precondition() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_PRECONDITION);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_PRECONDITION);
   }
   bool is_trace_loop_analyze() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZE);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZE);
   }
   bool is_trace_memory_slices() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
   }
   bool is_trace_body() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_BODY);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_BODY);
   }
   bool is_trace_dependence_graph() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_DEPENDENCE_GRAPH);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_DEPENDENCE_GRAPH);
   }
   bool is_trace_vector_element_type() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_VECTOR_ELEMENT_TYPE);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_VECTOR_ELEMENT_TYPE);
   }
   bool is_trace_pointer_analysis() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
   }
   bool is_trace_alignment() const {
-    return _trace_mask.at(TraceAutovectorizationTag::TAG_ALIGNMENT);
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_ALIGNMENT);
   }
 #endif
 

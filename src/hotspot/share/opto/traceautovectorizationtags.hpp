@@ -120,13 +120,13 @@ class TraceAutovectorizationTagNameIter {
 
 class TraceAutovectorizationTagValidator {
  private:
-  CHeapBitMap _mask;
+  CHeapBitMap _tags;
   bool _valid;
   char* _bad;
 
  public:
   TraceAutovectorizationTagValidator(ccstrlist option) :
-    _mask(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler),
+    _tags(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler),
     _valid(true),
     _bad(nullptr)
   {
@@ -140,10 +140,10 @@ class TraceAutovectorizationTagValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (TAG_ALL == tat) {
-        _mask.set_range(0, TRACEAUTOVECTORIZATION_TAGS_NUM);
+        _tags.set_range(0, TRACEAUTOVECTORIZATION_TAGS_NUM);
       } else {
         assert(tat < TRACEAUTOVECTORIZATION_TAGS_NUM, "out of bounds");
-        _mask.set_bit(tat);
+        _tags.set_bit(tat);
       }
     }
   }
@@ -156,9 +156,9 @@ class TraceAutovectorizationTagValidator {
 
   bool is_valid() const { return _valid; }
   const char* what() const { return _bad; }
-  const CHeapBitMap& mask() const {
-    assert(is_valid(), "only read mask when valid");
-    return _mask;
+  const CHeapBitMap& tags() const {
+    assert(is_valid(), "only read tags when valid");
+    return _tags;
   }
 };
 

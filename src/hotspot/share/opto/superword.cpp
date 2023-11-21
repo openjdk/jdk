@@ -2525,7 +2525,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     igvn().replace_input_of(use, idx, ex);
     igvn()._worklist.push(def);
 
-    assert(false, "TODO is this dead code?");
+    assert(false, "this is dead code as far as we know");
   }
 }
 

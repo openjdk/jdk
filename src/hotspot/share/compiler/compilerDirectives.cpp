@@ -301,7 +301,7 @@ void DirectiveSet::init_control_intrinsic() {
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _inlinematchers(nullptr),
   _directive(d),
-  _traceautovectorization_mask(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler)
+  _traceautovectorization_tags(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler)
 {
   _ideal_phase_name_mask = 0;
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
@@ -441,7 +441,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       if (CompilerOracle::has_option_value(method, CompileCommand::TraceAutovectorization, option)) {
         TraceAutovectorizationTagValidator validator(option);
         if (validator.is_valid()) {
-          set.cloned()->set_traceautovectorization_mask(validator.mask());
+          set.cloned()->set_traceautovectorization_tags(validator.tags());
         }
       }
     }
