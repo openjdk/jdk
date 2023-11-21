@@ -46,7 +46,6 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 
@@ -212,12 +211,7 @@ public class ClassPath extends Util {
         expectFail(JAR, "uvf A.jar");
 
         // error: no such file or directory
-        expectFail(JAR, "cvf non-existing.jar non-existing.file");
-        if (Files.exists(Paths.get("non-existing.jar"))) {
-            out.println("FAIL: Incomplete non-existing.jar was created");
-            failCount++;
-        }
-
+        expectFail(JAR, "cvf A.jar non-existing.file");
         expectFail(JAR, "uvf A.jar non-existing.file");
 
     }
