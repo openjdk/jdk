@@ -74,7 +74,7 @@ public:
   }
 
   static void initialize() {
-    assert(get_instance() == nullptr, "we can only allocate one CPUTimeCounters object");
+    assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
     _instance = new CPUTimeCounters();
   }
 
