@@ -3122,16 +3122,19 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   // Rebuild free set based on adjusted generation sizes.
   _free_set->rebuild(young_cset_regions, old_cset_regions);
 
-  if (mode()->is_generational()) {
+  if (mode()->is_generational() && (ShenandoahGenerationalHumongousReserve > 0)) {
     size_t old_region_span = (first_old_region <= last_old_region)? (last_old_region + 1 - first_old_region): 0;
     size_t allowed_old_gen_span = num_regions() - (ShenandoahGenerationalHumongousReserve * num_regions() / 100);
 
     // Tolerate lower density if total span is small.  Here's the implementation:
-    //   if old_gen spans more than 100% and density < 87.5%, trigger old-defrag
-    //   else if old_gen spans more than 87.5% and density < 75%, trigger old-defrag
-    //   else if old_gen spans more than 75% and density < 62.5%, trigger old-defrag
-    //   else if old_gen spans more than 62.5% and density < 50%, trigger old-defrag
-    //   else if old_gen spans more than 50% and density < 37.5%, trigger old-defrag
+    //   if old_gen spans more than 100% and density < 75%, trigger old-defrag
+    //   else if old_gen spans more than 87.5% and density < 62.5%, trigger old-defrag
+    //   else if old_gen spans more than 75% and density < 50%, trigger old-defrag
+    //   else if old_gen spans more than 62.5% and density < 37.5%, trigger old-defrag
+    //   else if old_gen spans more than 50% and density < 25%, trigger old-defrag
+    //
+    // A previous implementation was more aggressive in triggering, resulting in degraded throughput when
+    // humongous allocation was not required.
 
     ShenandoahGeneration* old_gen = old_generation();
     size_t old_available = old_gen->available();
@@ -3147,12 +3150,12 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     uint eighths = 8;
     for (uint i = 0; i < 5; i++) {
       size_t span_threshold = eighths * allowed_old_gen_span / 8;
-      eighths--;
-      double density_threshold = eighths / 8.0;
+      double density_threshold = (eighths - 2) / 8.0;
       if ((old_region_span >= span_threshold) && (old_density < density_threshold)) {
         old_heuristics()->trigger_old_is_fragmented(old_density, first_old_region, last_old_region);
         break;
       }
+      eighths--;
     }
 
     size_t old_used = old_generation()->used() + old_generation()->get_humongous_waste();
