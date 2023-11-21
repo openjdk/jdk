@@ -765,7 +765,7 @@ public final class Unsafe {
     
     @ForceInline
     private void setUnalignedOffHeapMemory(long offset, long bytes, byte value) {
-        long batchValue = value == 0 ? value : value * 0x101010101010101L;
+        long batchValue = value == 0 ? value : ((long) value & 255L) * 0x101010101010101L;
         int longBatch = (int) (bytes / 8);
         for (int i = 0; i < longBatch; i++) {
             putLong(null, offset, batchValue);
