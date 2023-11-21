@@ -113,7 +113,8 @@ public final class SaveJlinkArgfilesPlugin extends AbstractPlugin {
             }
         }, out);
         if (!haveEntry[0]) {
-            // Add the resource if and only if there isn't one already
+            // Add the resource if and only if there isn't one already.
+            // If there was one already, we already replaced the entry.
             out.add(jdkJlinkSavedEntry);
         }
         return out.build();

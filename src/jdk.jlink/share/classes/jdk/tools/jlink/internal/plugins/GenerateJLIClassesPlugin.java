@@ -170,7 +170,7 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
                         // containedClasses will not contain any generated JLI
                         // classes for the initial link, but will contain all
                         // JLI classes in GENERATED_JAVA_BASE_CLASSES in the
-                        // recursive jmodless jlink case.
+                        // recursive run-time based link case.
                         if (!containedClasses.contains(cn)) {
                             String entryName = "/java.base/" + cn + ".class";
                             ResourcePoolEntry ndata = ResourcePoolEntry.create(entryName, bytes);
