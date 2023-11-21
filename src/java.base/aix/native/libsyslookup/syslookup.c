@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-// Simple dummy function so this library appears as a normal library to tooling.
+// Addresses of functions to referenced using static linking..
 void* funcs[] = {
     //stdio.h
     &abs,
@@ -203,7 +203,3 @@ void* funcs[] = {
     &copysignl,
     &isnan
 };
-
-char* syslookup() {
-  return "syslookup";
-}
