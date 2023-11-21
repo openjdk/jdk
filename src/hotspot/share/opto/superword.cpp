@@ -255,8 +255,6 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
 }
 
 bool SuperWord::transform_loop() {
-  const char* state = transform_loop_helper();
-
 #ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nSuperWord::transform_loop:");
@@ -264,6 +262,7 @@ bool SuperWord::transform_loop() {
   }
 #endif
 
+  const char* state = transform_loop_helper();
   if (state == SuperWord::SUCCESS) {
     return true;
   }
@@ -468,13 +467,13 @@ const char* SuperWord::find_adjacent_refs() {
   } // while (memops.size() != 0
   set_align_to_ref(best_align_to_mem_ref);
 
+  if (_packset.is_empty()) {
+    return SuperWord::FAILURE_NO_ADJACENT_MEM;
+  }
+
   if (TraceSuperWord) {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
-  }
-
-  if (_packset.is_empty()) {
-    return SuperWord::FAILURE_NO_ADJACENT_MEM;
   }
 
   return SuperWord::SUCCESS;
@@ -2340,7 +2339,7 @@ const char* SuperWord::output() {
     if (cl->has_passed_slp()) {
       uint slp_max_unroll_factor = cl->slp_max_unroll();
       if (slp_max_unroll_factor == max_vlen) {
-       if (TraceSuperWordLoopUnrollAnalysis) {
+        if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
         }
         // For atomic unrolled loops which are vector mapped, instigate more unrolling

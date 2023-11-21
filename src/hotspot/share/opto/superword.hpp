@@ -74,7 +74,6 @@ class SWNodeInfo {
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
- friend class VPointer;
  private:
   const VLoopAnalyzer &_vla;
   Arena* _arena;
