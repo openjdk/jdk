@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8289996
  * @summary Test range check hoisting for some scaled iv at array index
  * @library /test/lib /
+ * @requires vm.flagless
  * @requires vm.debug & vm.compiler2.enabled & (os.simpleArch == "x64" | os.arch == "aarch64")
  * @modules jdk.incubator.vector
  * @run main/othervm compiler.rangechecks.TestRangeCheckHoistingScaledIV
