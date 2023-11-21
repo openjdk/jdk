@@ -1016,21 +1016,32 @@ void AwtWindow::FocusedWindowChanged(HWND from, HWND to)
 
 void AwtWindow::_RepositionSecurityWarning(void* param)
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     RepositionSecurityWarningStruct *rsws =
-        (RepositionSecurityWarningStruct *)param;
+        static_cast<RepositionSecurityWarningStruct *>(param);
     jobject self = rsws->window;
 
-    {
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        AwtWindow *window = (AwtWindow *)pData;
-
-        window->RepositionSecurityWarning(env);
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete rsws;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete rsws;
+            return;
+        }
     }
+    AwtWindow *window = (AwtWindow *)pData;
 
-  ret:
+    window->RepositionSecurityWarning(env);
+
     env->DeleteGlobalRef(self);
     delete rsws;
 }
@@ -3118,30 +3129,32 @@ void AwtWindow::_ModalDisable(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    ModalDisableStruct *mds = (ModalDisableStruct *)param;
+    ModalDisableStruct *mds = static_cast<ModalDisableStruct *>(param);
     jobject self = mds->window;
     HWND blockerHWnd = (HWND)mds->blockerHWnd;
 
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
-    {
-        JNI_CHECK_NULL_GOTO(self, "peer", ret);
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete mds;
+    } else {
         PDATA pData = JNI_GET_PDATA(self);
         if (pData == NULL) {
             env->DeleteGlobalRef(self);
             delete mds;
             return;
         }
-
-        window = (AwtWindow *)pData;
-        windowHWnd = window->GetHWnd();
-        if (::IsWindow(windowHWnd)) {
-            AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
-        }
     }
 
-ret:
+    window = (AwtWindow *)pData;
+    windowHWnd = window->GetHWnd();
+    if (::IsWindow(windowHWnd)) {
+        AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
+    }
+
     env->DeleteGlobalRef(self);
 
     delete mds;
