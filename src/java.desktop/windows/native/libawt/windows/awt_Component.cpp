@@ -6409,6 +6409,7 @@ void AwtComponent::_SetParent(void * param) {
             // (only the proxy may be the native focus owner).
             ::SetParent(selfWnd, parentWnd);
         }
+
         env->DeleteGlobalRef(self);
         env->DeleteGlobalRef(parent);
         delete data;
