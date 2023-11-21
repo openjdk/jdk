@@ -360,7 +360,10 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     push_contents(obj);
 
-    _preserved_marks->push_if_necessary(obj, obj_mark);
+    // Save the markWord of promotion-failed objs in _preserved_marks for later
+    // restoration. This way we don't have to walk the young-gen to locate
+    // these promotion-failed objs.
+    _preserved_marks->push_always(obj, obj_mark);
   }  else {
     // We lost, someone else "owns" this object
     guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");
