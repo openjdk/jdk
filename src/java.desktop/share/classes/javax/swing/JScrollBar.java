@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,6 +750,55 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
                 boolean isAdjusting = model.getValueIsAdjusting();
                 fireAdjustmentValueChanged(id, type, value, isAdjusting);
             }
+        }
+    }
+
+
+    /**
+     * Unlike most components, JScrollBar will derive the minimum size from
+     * the preferred size in one axis and a fixed minimum size in the other.
+     * Thus, it overrides {@code JComponent.setMinimumSize} contract
+     * that subsequent calls to getMinimumSize will return the
+     * same value as set in {@code JComponent.setMinimumSize}
+     */
+    public void setMinimumSize(Dimension minimumSize) {
+        super.setMinimumSize(minimumSize);
+    }
+
+    /**
+     * Unlike most components, JScrollBar will derive the maximum size from
+     * the preferred size in one axis and a fixed maximum size in the other.
+     * Thus, it overrides {@code JComponent.setMaximumSize} contract
+     * that subsequent calls to getMaximumSize will return the
+     * same value as set in {@code JComponent.setMaximumSize}
+     */
+    public void setMaximumSize(Dimension maximumSize) {
+        super.setMaximumSize(maximumSize);
+    }
+
+    /**
+     * The scrollbar is flexible along it's scrolling axis and
+     * rigid along the other axis.
+     */
+    public Dimension getMinimumSize() {
+        Dimension pref = getPreferredSize();
+        if (orientation == VERTICAL) {
+            return new Dimension(pref.width, 5);
+        } else {
+            return new Dimension(5, pref.height);
+        }
+    }
+
+    /**
+     * The scrollbar is flexible along it's scrolling axis and
+     * rigid along the other axis.
+     */
+    public Dimension getMaximumSize() {
+        Dimension pref = getPreferredSize();
+        if (getOrientation() == VERTICAL) {
+            return new Dimension(pref.width, Short.MAX_VALUE);
+        } else {
+            return new Dimension(Short.MAX_VALUE, pref.height);
         }
     }
 
