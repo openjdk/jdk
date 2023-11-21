@@ -189,7 +189,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void arraycopy_avx3_special_cases_256(XMMRegister xmm, KRegister mask, Register from,
                                     Register to, Register count, int shift,
-                                    Register index, Register temp, Label& L_entry, Label& L_exit);
+                                    Register index, Register temp, Label& L_exit);
 
   void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
                                              Register to, Register start_index, Register end_index,
@@ -209,8 +209,7 @@ class StubGenerator: public StubCodeGenerator {
                   bool use64byteVector = false);
 
   void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
-                                XMMRegister xmm3, XMMRegister xmm4, bool conjoint, int shift,
-                                 int offset = 0);
+                                XMMRegister xmm3, XMMRegister xmm4, int shift, int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
