@@ -43,6 +43,16 @@
 
 /**
  * @test
+ * @bug 8316653
+ * @requires vm.debug
+ * @summary Test flag with max value
+ *
+ * @run main/othervm -XX:NMethodSizeLimit=2147483647
+ *                   compiler.arguments.TestC1Globals
+ */
+
+/**
+ * @test
  * @bug 8318817
  * @requires vm.debug
  * @requires os.family == "linux"

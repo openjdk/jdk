@@ -653,6 +653,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
   char* end;
   if (!parse_integer<size_t>(line, &end, &s)) {
     jio_snprintf(errorbuf, buf_size, "MemLimit: invalid value");
+    return false;
   }
   bytes_read = (int)(end - line);
 
@@ -666,7 +667,7 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
       bytes_read += 5;
     } else {
       jio_snprintf(errorbuf, buf_size, "MemLimit: invalid option");
-      return true;
+      return false;
     }
   }
   value = v;
@@ -705,9 +706,11 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
   total_bytes_read += skipped;
   if (type == OptionType::Intx) {
     intx value;
-    // Special handling for memlimit
-    bool success = (option == CompileCommand::MemLimit) && parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
-    if (!success) {
+    bool success = false;
+    if (option == CompileCommand::MemLimit) {
+      // Special parsing for MemLimit
+      success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+    } else {
       // Is it a raw number?
       success = sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1;
     }
@@ -733,7 +736,6 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
-      return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
     }
