@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171177
+ * @bug 8171177 8187591
  * @summary Verify that ModuleResolution attribute flags are honored.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -238,6 +238,16 @@ public class IncubatingTest extends ModuleTestBase {
         if (!expected.equals(log)) {
             throw new AssertionError("Unexpected output: " + log);
         }
+
+        //test disable lint incubating
+        new JavacTask(tb)
+                .options("--module-path", classes.toString(),
+                         "-XDrawDiagnostics",
+                         "-Xlint:-incubating",
+                         "-Werror")
+                .outdir(testModuleClasses)
+                .files(findJavaFiles(testModuleSrc))
+                .run(Expect.SUCCESS);
     }
 
     private void copyJavaBase(Path targetDir) throws IOException {

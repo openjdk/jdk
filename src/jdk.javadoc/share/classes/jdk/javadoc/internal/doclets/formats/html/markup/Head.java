@@ -319,6 +319,11 @@ public class Head extends Content {
     }
 
     private void addStylesheets(HtmlTree head) {
+        if (index) {
+            // Add JQuery-UI stylesheet first so its rules can be overridden.
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
+        }
+
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
@@ -331,10 +336,6 @@ public class Head extends Content {
         for (DocPath path : localStylesheets) {
             // Local stylesheets are contained in doc-files, so omit resource-files prefix
             addStylesheet(head, path);
-        }
-
-        if (index) {
-            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
         }
     }
 

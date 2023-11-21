@@ -179,7 +179,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
     case StorageType::STACK:
       if (from_reg.segment_mask() == REG32_MASK) {
         assert(to_reg.stack_size() == 4, "size should match");
-        // TODO: Check if AIX needs 4 Byte offset
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         __ stfs(as_FloatRegister(from_reg), reg2offset(to_reg, out_stk_bias), R1_SP);
       } else {
         assert(to_reg.stack_size() == 8, "size should match");
@@ -204,6 +204,7 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
     case StorageType::FLOAT:
       switch (from_reg.stack_size()) {
         case 8: __ lfd(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         case 4: __ lfs(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
         default: ShouldNotReachHere();
       }

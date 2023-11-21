@@ -2048,6 +2048,23 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1
   beq(trial_klass, tmp1, L);
 }
 
+// Multiply and multiply-accumulate unsigned 64-bit registers.
+void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+  assert_different_registers(prod_lo, prod_hi);
+
+  mul(prod_lo, n, m);
+  mulhu(prod_hi, n, m);
+}
+void MacroAssembler::wide_madd(Register sum_lo, Register sum_hi, Register n,
+                Register m, Register tmp1, Register tmp2) {
+  assert_different_registers(sum_lo, sum_hi);
+  assert_different_registers(sum_hi, tmp2);
+
+  wide_mul(tmp1, tmp2, n, m);
+  cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
+  adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
+}
+
 // Move an oop into a register.
 void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
@@ -4701,7 +4718,7 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - tmp1, tmp2: temporary registers, will be destroyed
 void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
   // Check if we would have space on lock-stack for the object.
   lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
@@ -4735,7 +4752,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1,
 // - tmp1, tmp2: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
 #ifdef ASSERT
   {
