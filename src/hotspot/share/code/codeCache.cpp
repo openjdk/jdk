@@ -1802,6 +1802,7 @@ void CodeCache::log_state(outputStream* st) {
 #ifdef LINUX
 CodeCache::DefaultPerfMapFile::DefaultPerfMapFile() {
   // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // It is used as the default file name.
   jio_snprintf(_name, sizeof(_name), "/tmp/perf-%d.map", os::current_process_id());
 }
 
