@@ -213,17 +213,17 @@ void AwtCanvas::_SetEraseBackground(void *param) {
     PDATA pData;
     if (canvas == NULL) {
         env->ExceptionClear();
-        JNU_ThrowNullPointerException(env, "peer");
-        env->DeleteGlobalRef(canvas);
+        JNU_ThrowNullPointerException(env, "canvas");
         delete sebs;
         return;
-    }
-    pData = JNI_GET_PDATA(canvas);
-    if (pData == NULL) {
-        THROW_NULL_PDATA_IF_NOT_DESTROYED(canvas);
-        env->DeleteGlobalRef(canvas);
-        delete sebs;
-        return;
+    } else {
+        pData = JNI_GET_PDATA(canvas);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(canvas);
+            env->DeleteGlobalRef(canvas);
+            delete sebs;
+            return;
+        }
     }
 
     AwtCanvas *c = (AwtCanvas*) pData;
