@@ -25,8 +25,13 @@
  * @test
  * @bug 8186046
  * @summary Test bootstrap methods throwing an exception
- * @library /lib/testlibrary/bytecode  /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyBSMException
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMException
  */
@@ -64,7 +69,7 @@ public class CondyBSMException {
     }
 
     @Test
-    public void testException() throws Throwable {
+    public void testException() {
         test("Exception", BootstrapMethodError.class, Exception.class);
     }
 
@@ -73,8 +78,7 @@ public class CondyBSMException {
         Throwable caught = null;
         try {
             mh.invoke();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             caught = t;
         }
 
@@ -98,8 +102,7 @@ public class CondyBSMException {
         try {
             Constructor<Throwable> c = type.getDeclaredConstructor(String.class);
             t = c.newInstance(name);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new InternalError();
         }
         throw t;
@@ -110,8 +113,9 @@ public class CondyBSMException {
             return InstructionHelper.ldcDynamicConstant(
                     MethodHandles.lookup(),
                     message, t,
-                    "throwingBsm", methodType(Throwable.class, MethodHandles.Lookup.class, String.class, Class.class),
-                    S -> { });
+                    "throwingBsm",
+                    methodType(Throwable.class, MethodHandles.Lookup.class, String.class, Class.class)
+            );
         } catch (Exception e) {
             throw new Error(e);
         }

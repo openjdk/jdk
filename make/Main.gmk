@@ -405,8 +405,9 @@ JMOD_TARGETS := $(addsuffix -jmod, $(JMOD_MODULES))
 
 define DeclareJmodRecipe
   $1-jmod:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
-	    MODULE=$1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    $(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
+	    -f CreateJmods.gmk MODULE=$1)
 endef
 
 $(foreach m, $(JMOD_MODULES), $(eval $(call DeclareJmodRecipe,$m)))
@@ -851,6 +852,12 @@ $(eval $(call SetupTarget, static-libs-bundles, \
     DEPS := static-libs-image, \
 ))
 
+$(eval $(call SetupTarget, static-libs-graal-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-libs-graal-bundles, \
+    DEPS := static-libs-graal-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -967,11 +974,15 @@ else
   jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
 
   # Declare dependencies between jmod targets.
-  # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
+  # java.base jmod needs jrt-fs.jar and access to the jmods for all non
+  # upgradeable modules and their transitive dependencies.
   # When creating the BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(addsuffix -jmod, $(filter-out java.base, $(sort \
+        $(foreach m, $(filter-out $(call FindAllUpgradeableModules), $(JMOD_MODULES)), \
+          $m $(call FindTransitiveDepsForModules, $m) \
+        ))))
   endif
 
   # If not already set, set the JVM target so that the JVM will be built.
@@ -1042,6 +1053,9 @@ else
 
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
+
+  # jdk.javadoc uses an internal copy of the main license files from java.base.
+  jdk.javadoc-copy: java.base-copy
 
   zip-security: $(filter jdk.crypto%, $(JAVA_TARGETS))
 
@@ -1421,13 +1435,13 @@ ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)
 # are internal only, to support Init.gmk.
 
 print-targets:
-	  @$(ECHO) $(sort $(ALL_TARGETS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_TARGETS))))
 
 print-modules:
-	  @$(ECHO) $(sort $(ALL_MODULES))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_MODULES))))
 
 print-tests:
-	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_NAMED_TESTS))))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)

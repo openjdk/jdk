@@ -31,6 +31,7 @@
 #include "oops/constantPool.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/bytes.hpp"
+#include "utilities/checkedCast.hpp"
 
 u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 

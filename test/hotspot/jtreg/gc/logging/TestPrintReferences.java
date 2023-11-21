@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public class TestPrintReferences {
     }
 
     public static void testRefs() throws Exception {
-        ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder("-Xlog:gc+ref+phases=debug",
-                                                                          "-XX:+UseG1GC",
-                                                                          "-Xmx32M",
-                                                                          GCTest.class.getName());
+        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+ref+phases=debug",
+                                                                                     "-XX:+UseG1GC",
+                                                                                     "-Xmx32M",
+                                                                                     GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         checkRefsLogFormat(output);
@@ -95,13 +95,13 @@ public class TestPrintReferences {
     }
 
     public static void testPhases(boolean parallelRefProcEnabled) throws Exception {
-        ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
-                                                                          "-XX:+UseG1GC",
-                                                                          "-Xmx32M",
-                                                                          "-XX:" + (parallelRefProcEnabled ? "+" : "-") + "ParallelRefProcEnabled",
-                                                                          "-XX:-UseDynamicNumberOfGCThreads",
-                                                                          "-XX:ParallelGCThreads=2",
-                                                                          GCTest.class.getName());
+        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc+phases+ref=debug",
+                                                                                     "-XX:+UseG1GC",
+                                                                                     "-Xmx32M",
+                                                                                     "-XX:" + (parallelRefProcEnabled ? "+" : "-") + "ParallelRefProcEnabled",
+                                                                                     "-XX:-UseDynamicNumberOfGCThreads",
+                                                                                     "-XX:ParallelGCThreads=2",
+                                                                                     GCTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         checkLogFormat(output, parallelRefProcEnabled);

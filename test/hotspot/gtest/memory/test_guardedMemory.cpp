@@ -139,7 +139,7 @@ TEST(GuardedMemory, wrap) {
   if (HasFatalFailure()) {
     return;
   }
-  EXPECT_EQ(0, strcmp(str, str_copy)) << "Not identical copy";
+  EXPECT_STREQ(str, str_copy) << "Not identical copy";
   EXPECT_TRUE(GuardedMemory::free_copy(str_copy)) << "Free copy failed to verify";
 
   void* no_data = NULL;

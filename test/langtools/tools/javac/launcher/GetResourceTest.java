@@ -25,7 +25,7 @@
  * @test
  * @bug 8210009
  * @summary Source Launcher classloader should support getResource and getResourceAsStream
- * @modules jdk.compiler jdk.jdeps
+ * @modules jdk.compiler
  * @library /tools/lib
  * @build toolbox.JavaTask toolbox.ToolBox
  * @run main GetResourceTest
@@ -53,8 +53,8 @@ public class GetResourceTest {
         ToolBox tb = new ToolBox();
         Path file = Paths.get(tb.testSrc).resolve("src").resolve("CLTest.java");
         new JavaTask(tb)
-            .vmOptions("--add-modules", "jdk.jdeps",
-                       "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED")
+            .vmOptions("--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
+                    "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED")
             .className(file.toString()) // implies source file mode
             .run(Task.Expect.SUCCESS)
             .writeAll();

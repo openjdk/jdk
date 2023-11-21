@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * 4142938 4169959 4232154 4293229 8187551
  * @summary Regression tests for MessageFormat and associated classes
  * @library /java/text/testlib
- * @run main MessageRegression
+ * @run junit MessageRegression
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -53,16 +53,17 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
-public class MessageRegression extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new MessageRegression().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class MessageRegression {
 
     /* @bug 4074764
      * Null exception when formatting pattern with MessageFormat
      * with no parameters.
      */
+    @Test
     public void Test4074764() {
         String[] pattern = {"Message without param",
         "Message with param:{0}",
@@ -80,20 +81,20 @@ public class MessageRegression extends IntlTest {
             Object[] params = {new String("BUG"), new Date()};
             String tempBuffer = messageFormatter.format(params);
             if (!tempBuffer.equals("Message with param:BUG"))
-                errln("MessageFormat with one param test failed.");
-            logln("Formatted with one extra param : " + tempBuffer);
+                fail("MessageFormat with one param test failed.");
+            System.out.println("Formatted with one extra param : " + tempBuffer);
 
             //Apply pattern without param and print the result
             messageFormatter.applyPattern(pattern[0]);
             tempBuffer = messageFormatter.format(null);
             if (!tempBuffer.equals("Message without param"))
-                errln("MessageFormat with no param test failed.");
-            logln("Formatted with no params : " + tempBuffer);
+                fail("MessageFormat with no param test failed.");
+            System.out.println("Formatted with no params : " + tempBuffer);
 
              tempBuffer = messageFormatter.format(params);
              if (!tempBuffer.equals("Message without param"))
-                errln("Formatted with arguments > subsitution failed. result = " + tempBuffer.toString());
-             logln("Formatted with extra params : " + tempBuffer);
+                fail("Formatted with arguments > subsitution failed. result = " + tempBuffer.toString());
+             System.out.println("Formatted with extra params : " + tempBuffer);
             //This statement gives an exception while formatting...
             //If we use pattern[1] for the message with param,
             //we get an NullPointerException in MessageFormat.java(617)
@@ -103,28 +104,30 @@ public class MessageRegression extends IntlTest {
             //in applyPattern() when the pattern does not
             //contain any param.
         } catch (Exception foo) {
-            errln("Exception when formatting with no params.");
+            fail("Exception when formatting with no params.");
         }
     }
 
     /* @bug 4058973
      * MessageFormat.toPattern has weird rounding behavior.
      */
+    @Test
     public void Test4058973() {
 
         MessageFormat fmt = new MessageFormat("{0,choice,0#no files|1#one file|1< {0,number,integer} files}");
         String pat = fmt.toPattern();
         if (!pat.equals("{0,choice,0.0#no files|1.0#one file|1.0< {0,number,integer} files}")) {
-            errln("MessageFormat.toPattern failed");
+            fail("MessageFormat.toPattern failed");
         }
     }
     /* @bug 4031438
      * More robust message formats.
      */
+    @Test
     public void Test4031438() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesAsciiDigits(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -134,91 +137,94 @@ public class MessageRegression extends IntlTest {
         MessageFormat messageFormatter = new MessageFormat("");
 
         try {
-            logln("Apply with pattern : " + pattern1);
+            System.out.println("Apply with pattern : " + pattern1);
             messageFormatter.applyPattern(pattern1);
             Object[] params = {7};
             String tempBuffer = messageFormatter.format(params);
             if (!tempBuffer.equals("Impossible {1} has occurred -- status code is 7 and message is {2}."))
-                errln("Tests arguments < substitution failed. Formatted text=" +
+                fail("Tests arguments < substitution failed. Formatted text=" +
                       "<" + tempBuffer + ">");
-            logln("Formatted with 7 : " + tempBuffer);
+            System.out.println("Formatted with 7 : " + tempBuffer);
             ParsePosition status = new ParsePosition(0);
             Object[] objs = messageFormatter.parse(tempBuffer, status);
             if (objs[params.length] != null)
-                errln("Parse failed with more than expected arguments");
+                fail("Parse failed with more than expected arguments");
             for (int i = 0; i < objs.length; i++) {
                 if (objs[i] != null && !objs[i].toString().equals(params[i].toString())) {
-                    errln("Parse failed on object " + objs[i] + " at index : " + i);
+                    fail("Parse failed on object " + objs[i] + " at index : " + i);
                 }
             }
             tempBuffer = messageFormatter.format(null);
             if (!tempBuffer.equals("Impossible {1} has occurred -- status code is {0} and message is {2}."))
-                errln("Tests with no arguments failed");
-            logln("Formatted with null : " + tempBuffer);
-            logln("Apply with pattern : " + pattern2);
+                fail("Tests with no arguments failed");
+            System.out.println("Formatted with null : " + tempBuffer);
+            System.out.println("Apply with pattern : " + pattern2);
             messageFormatter.applyPattern(pattern2);
             tempBuffer = messageFormatter.format(params);
             if (!tempBuffer.equals("Double ' Quotes 7 test and quoted {1} test plus other {2} stuff."))
-                errln("quote format test (w/ params) failed.");
-            logln("Formatted with params : " + tempBuffer);
+                fail("quote format test (w/ params) failed.");
+            System.out.println("Formatted with params : " + tempBuffer);
             tempBuffer = messageFormatter.format(null);
             if (!tempBuffer.equals("Double ' Quotes {0} test and quoted {1} test plus other {2} stuff."))
-                errln("quote format test (w/ null) failed.");
-            logln("Formatted with null : " + tempBuffer);
-            logln("toPattern : " + messageFormatter.toPattern());
+                fail("quote format test (w/ null) failed.");
+            System.out.println("Formatted with null : " + tempBuffer);
+            System.out.println("toPattern : " + messageFormatter.toPattern());
         } catch (Exception foo) {
-            errln("Exception when formatting in bug 4031438. "+foo.getMessage());
+            fail("Exception when formatting in bug 4031438. "+foo.getMessage());
         }
     }
+    @Test
     public void Test4052223()
     {
         ParsePosition pos = new ParsePosition(0);
         if (pos.getErrorIndex() != -1) {
-            errln("ParsePosition.getErrorIndex initialization failed.");
+            fail("ParsePosition.getErrorIndex initialization failed.");
         }
         MessageFormat fmt = new MessageFormat("There are {0} apples growing on the {1} tree.");
         String str = new String("There is one apple growing on the peach tree.");
         Object[] objs = fmt.parse(str, pos);
-        logln("unparsable string , should fail at " + pos.getErrorIndex());
+        System.out.println("unparsable string , should fail at " + pos.getErrorIndex());
         if (pos.getErrorIndex() == -1)
-            errln("Bug 4052223 failed : parsing string " + str);
+            fail("Bug 4052223 failed : parsing string " + str);
         pos.setErrorIndex(4);
         if (pos.getErrorIndex() != 4)
-            errln("setErrorIndex failed, got " + pos.getErrorIndex() + " instead of 4");
+            fail("setErrorIndex failed, got " + pos.getErrorIndex() + " instead of 4");
         ChoiceFormat f = new ChoiceFormat(
             "-1#are negative|0#are no or fraction|1#is one|1.0<is 1+|2#are two|2<are more than 2.");
         pos.setIndex(0); pos.setErrorIndex(-1);
         Number obj = f.parse("are negative", pos);
         if (pos.getErrorIndex() != -1 && obj.doubleValue() == -1.0)
-            errln("Parse with \"are negative\" failed, at " + pos.getErrorIndex());
+            fail("Parse with \"are negative\" failed, at " + pos.getErrorIndex());
         pos.setIndex(0); pos.setErrorIndex(-1);
         obj = f.parse("are no or fraction ", pos);
         if (pos.getErrorIndex() != -1 && obj.doubleValue() == 0.0)
-            errln("Parse with \"are no or fraction\" failed, at " + pos.getErrorIndex());
+            fail("Parse with \"are no or fraction\" failed, at " + pos.getErrorIndex());
         pos.setIndex(0); pos.setErrorIndex(-1);
         obj = f.parse("go postal", pos);
         if (pos.getErrorIndex() == -1 && !Double.isNaN(obj.doubleValue()))
-            errln("Parse with \"go postal\" failed, at " + pos.getErrorIndex());
+            fail("Parse with \"go postal\" failed, at " + pos.getErrorIndex());
     }
     /* @bug 4104976
      * ChoiceFormat.equals(null) throws NullPointerException
      */
+    @Test
     public void Test4104976()
     {
         double[] limits = {1, 20};
         String[] formats = {"xyz", "abc"};
         ChoiceFormat cf = new ChoiceFormat(limits, formats);
         try {
-            log("Compares to null is always false, returned : ");
-            logln(cf.equals(null) ? "TRUE" : "FALSE");
+            System.out.println("Compares to null is always false, returned : ");
+            System.out.println(cf.equals(null) ? "TRUE" : "FALSE");
         } catch (Exception foo) {
-            errln("ChoiceFormat.equals(null) throws exception.");
+            fail("ChoiceFormat.equals(null) throws exception.");
         }
     }
     /* @bug 4106659
      * ChoiceFormat.ctor(double[], String[]) doesn't check
      * whether lengths of input arrays are equal.
      */
+    @Test
     public void Test4106659()
     {
         double[] limits = {1, 2, 3};
@@ -227,10 +233,10 @@ public class MessageRegression extends IntlTest {
         try {
             cf = new ChoiceFormat(limits, formats);
         } catch (Exception foo) {
-            logln("ChoiceFormat constructor should check for the array lengths");
+            System.out.println("ChoiceFormat constructor should check for the array lengths");
             cf = null;
         }
-        if (cf != null) errln(cf.format(5));
+        if (cf != null) fail(cf.format(5));
     }
 
     /* @bug 4106660
@@ -238,6 +244,7 @@ public class MessageRegression extends IntlTest {
      * This is not a bug, added javadoc to emphasize the use of limit
      * array must be in ascending order.
      */
+    @Test
     public void Test4106660()
     {
         double[] limits = {3, 1, 2};
@@ -246,12 +253,13 @@ public class MessageRegression extends IntlTest {
         double d = 5.0;
         String str = cf.format(d);
         if (!str.equals("Two"))
-            errln("format(" + d + ") = " + cf.format(d));
+            fail("format(" + d + ") = " + cf.format(d));
     }
 
     /* @bug 4111739
      * MessageFormat is incorrectly serialized/deserialized.
      */
+    @Test
     public void Test4111739()
     {
         MessageFormat format1 = null;
@@ -264,7 +272,7 @@ public class MessageRegression extends IntlTest {
             baos = new ByteArrayOutputStream();
             ostream = new ObjectOutputStream(baos);
         } catch(IOException e) {
-            errln("Unexpected exception : " + e.getMessage());
+            fail("Unexpected exception : " + e.getMessage());
             return;
         }
 
@@ -278,20 +286,21 @@ public class MessageRegression extends IntlTest {
             istream = new ObjectInputStream(new ByteArrayInputStream(bytes));
             format2 = (MessageFormat)istream.readObject();
         } catch(Exception e) {
-            errln("Unexpected exception : " + e.getMessage());
+            fail("Unexpected exception : " + e.getMessage());
         }
 
         if (!format1.equals(format2)) {
-            errln("MessageFormats before and after serialization are not" +
+            fail("MessageFormats before and after serialization are not" +
                 " equal\nformat1 = " + format1 + "(" + format1.toPattern() + ")\nformat2 = " +
                 format2 + "(" + format2.toPattern() + ")");
         } else {
-            logln("Serialization for MessageFormat is OK.");
+            System.out.println("Serialization for MessageFormat is OK.");
         }
     }
     /* @bug 4114743
      * MessageFormat.applyPattern allows illegal patterns.
      */
+    @Test
     public void Test4114743()
     {
         String originalPattern = "initial pattern";
@@ -299,16 +308,17 @@ public class MessageRegression extends IntlTest {
         try {
             String illegalPattern = "ab { '}' de";
             mf.applyPattern(illegalPattern);
-            errln("illegal pattern: \"" + illegalPattern + "\"");
+            fail("illegal pattern: \"" + illegalPattern + "\"");
         } catch (IllegalArgumentException foo) {
             if (!originalPattern.equals(mf.toPattern()))
-                errln("pattern after: \"" + mf.toPattern() + "\"");
+                fail("pattern after: \"" + mf.toPattern() + "\"");
         }
     }
 
     /* @bug 4116444
      * MessageFormat.parse has different behavior in case of null.
      */
+    @Test
     public void Test4116444()
     {
         String[] patterns = {"", "one", "{0,date,short}"};
@@ -319,25 +329,25 @@ public class MessageRegression extends IntlTest {
             mf.applyPattern(pattern);
             try {
                 Object[] array = mf.parse(null, new ParsePosition(0));
-                logln("pattern: \"" + pattern + "\"");
-                log(" parsedObjects: ");
+                System.out.println("pattern: \"" + pattern + "\"");
+                System.out.println(" parsedObjects: ");
                 if (array != null) {
-                    log("{");
+                    System.out.println("{");
                     for (int j = 0; j < array.length; j++) {
                         if (array[j] != null)
-                            err("\"" + array[j].toString() + "\"");
+                            fail("\"" + array[j].toString() + "\"");
                         else
-                            log("null");
-                        if (j < array.length - 1) log(",");
+                            System.out.println("null");
+                        if (j < array.length - 1) System.out.println(",");
                     }
-                    log("}") ;
+                    System.out.println("}") ;
                 } else {
-                    log("null");
+                    System.out.println("null");
                 }
-                logln("");
+                System.out.println("");
             } catch (Exception e) {
-                errln("pattern: \"" + pattern + "\"");
-                errln("  Exception: " + e.getMessage());
+                fail("pattern: \"" + pattern + "\"");
+                fail("  Exception: " + e.getMessage());
             }
         }
 
@@ -345,6 +355,7 @@ public class MessageRegression extends IntlTest {
     /* @bug 4114739 (FIX and add javadoc)
      * MessageFormat.format has undocumented behavior about empty format objects.
      */
+    @Test
     public void Test4114739()
     {
 
@@ -353,78 +364,82 @@ public class MessageRegression extends IntlTest {
         Object[] objs2 = {};
         Object[] objs3 = {null};
         try {
-            logln("pattern: \"" + mf.toPattern() + "\"");
-            log("format(null) : ");
-            logln("\"" + mf.format(objs1) + "\"");
-            log("format({})   : ");
-            logln("\"" + mf.format(objs2) + "\"");
-            log("format({null}) :");
-            logln("\"" + mf.format(objs3) + "\"");
+            System.out.println("pattern: \"" + mf.toPattern() + "\"");
+            System.out.println("format(null) : ");
+            System.out.println("\"" + mf.format(objs1) + "\"");
+            System.out.println("format({})   : ");
+            System.out.println("\"" + mf.format(objs2) + "\"");
+            System.out.println("format({null}) :");
+            System.out.println("\"" + mf.format(objs3) + "\"");
         } catch (Exception e) {
-            errln("Exception thrown for null argument tests.");
+            fail("Exception thrown for null argument tests.");
         }
     }
 
     /* @bug 4113018
      * MessageFormat.applyPattern works wrong with illegal patterns.
      */
+    @Test
     public void Test4113018()
     {
         String originalPattern = "initial pattern";
         MessageFormat mf = new MessageFormat(originalPattern);
         String illegalPattern = "format: {0, xxxYYY}";
-        logln("pattern before: \"" + mf.toPattern() + "\"");
-        logln("illegal pattern: \"" + illegalPattern + "\"");
+        System.out.println("pattern before: \"" + mf.toPattern() + "\"");
+        System.out.println("illegal pattern: \"" + illegalPattern + "\"");
         try {
             mf.applyPattern(illegalPattern);
-            errln("Should have thrown IllegalArgumentException for pattern : " + illegalPattern);
+            fail("Should have thrown IllegalArgumentException for pattern : " + illegalPattern);
         } catch (IllegalArgumentException e) {
             if (!originalPattern.equals(mf.toPattern()))
-                errln("pattern after: \"" + mf.toPattern() + "\"");
+                fail("pattern after: \"" + mf.toPattern() + "\"");
         }
     }
     /* @bug 4106661
      * ChoiceFormat is silent about the pattern usage in javadoc.
      */
+    @Test
     public void Test4106661()
     {
         ChoiceFormat fmt = new ChoiceFormat(
           "-1#are negative| 0#are no or fraction | 1#is one |1.0<is 1+ |2#are two |2<are more than 2.");
-        logln("Formatter Pattern : " + fmt.toPattern());
+        System.out.println("Formatter Pattern : " + fmt.toPattern());
 
-        logln("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
-        logln("Format with -1.0 : " + fmt.format(-1.0));
-        logln("Format with 0 : " + fmt.format(0));
-        logln("Format with 0.9 : " + fmt.format(0.9));
-        logln("Format with 1.0 : " + fmt.format(1));
-        logln("Format with 1.5 : " + fmt.format(1.5));
-        logln("Format with 2 : " + fmt.format(2));
-        logln("Format with 2.1 : " + fmt.format(2.1));
-        logln("Format with NaN : " + fmt.format(Double.NaN));
-        logln("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
+        System.out.println("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
+        System.out.println("Format with -1.0 : " + fmt.format(-1.0));
+        System.out.println("Format with 0 : " + fmt.format(0));
+        System.out.println("Format with 0.9 : " + fmt.format(0.9));
+        System.out.println("Format with 1.0 : " + fmt.format(1));
+        System.out.println("Format with 1.5 : " + fmt.format(1.5));
+        System.out.println("Format with 2 : " + fmt.format(2));
+        System.out.println("Format with 2.1 : " + fmt.format(2.1));
+        System.out.println("Format with NaN : " + fmt.format(Double.NaN));
+        System.out.println("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
     }
     /* @bug 4094906
      * ChoiceFormat should accept \u221E as eq. to INF.
      */
+    @Test
     public void Test4094906()
     {
         ChoiceFormat fmt = new ChoiceFormat(
           "-\u221E<are negative|0<are no or fraction|1#is one|1.0<is 1+|\u221E<are many.");
         if (!fmt.toPattern().startsWith("-\u221E<are negative|0.0<are no or fraction|1.0#is one|1.0<is 1+|\u221E<are many."))
-            errln("Formatter Pattern : " + fmt.toPattern());
-        logln("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
-        logln("Format with -1.0 : " + fmt.format(-1.0));
-        logln("Format with 0 : " + fmt.format(0));
-        logln("Format with 0.9 : " + fmt.format(0.9));
-        logln("Format with 1.0 : " + fmt.format(1));
-        logln("Format with 1.5 : " + fmt.format(1.5));
-        logln("Format with 2 : " + fmt.format(2));
-        logln("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
+            fail("Formatter Pattern : " + fmt.toPattern());
+        System.out.println("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
+        System.out.println("Format with -1.0 : " + fmt.format(-1.0));
+        System.out.println("Format with 0 : " + fmt.format(0));
+        System.out.println("Format with 0.9 : " + fmt.format(0.9));
+        System.out.println("Format with 1.0 : " + fmt.format(1));
+        System.out.println("Format with 1.5 : " + fmt.format(1.5));
+        System.out.println("Format with 2 : " + fmt.format(2));
+        System.out.println("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
     }
 
     /* @bug 4118592
      * MessageFormat.parse fails with ChoiceFormat.
      */
+    @Test
     public void Test4118592()
     {
         MessageFormat mf = new MessageFormat("");
@@ -435,41 +450,43 @@ public class MessageRegression extends IntlTest {
             mf.applyPattern(prefix + pattern);
             prefix += "x";
             Object[] objs = mf.parse(formatted, new ParsePosition(0));
-            logln(i + ". pattern :\"" + mf.toPattern() + "\"");
-            log(" \"" + formatted + "\" parsed as ");
-            if (objs == null) logln("  null");
-            else logln("  " + objs[0]);
+            System.out.println(i + ". pattern :\"" + mf.toPattern() + "\"");
+            System.out.println(" \"" + formatted + "\" parsed as ");
+            if (objs == null) System.out.println("  null");
+            else System.out.println("  " + objs[0]);
         }
     }
     /* @bug 4118594
      * MessageFormat.parse fails for some patterns.
      */
+    @Test
     public void Test4118594()
     {
         MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
         String forParsing = "x, y, z";
         Object[] objs = mf.parse(forParsing, new ParsePosition(0));
-        logln("pattern: \"" + mf.toPattern() + "\"");
-        logln("text for parsing: \"" + forParsing + "\"");
+        System.out.println("pattern: \"" + mf.toPattern() + "\"");
+        System.out.println("text for parsing: \"" + forParsing + "\"");
         if (!objs[0].toString().equals("z"))
-            errln("argument0: \"" + objs[0] + "\"");
+            fail("argument0: \"" + objs[0] + "\"");
         mf.setLocale(Locale.US);
         mf.applyPattern("{0,number,#.##}, {0,number,#.#}");
         Object[] oldobjs = {3.1415};
         String result = mf.format( oldobjs );
-        logln("pattern: \"" + mf.toPattern() + "\"");
-        logln("text for parsing: \"" + result + "\"");
+        System.out.println("pattern: \"" + mf.toPattern() + "\"");
+        System.out.println("text for parsing: \"" + result + "\"");
         // result now equals "3.14, 3.1"
         if (!result.equals("3.14, 3.1"))
-            errln("result = " + result);
+            fail("result = " + result);
         Object[] newobjs = mf.parse(result, new ParsePosition(0));
         // newobjs now equals {new Double(3.1)}
         if (((Double)newobjs[0]).doubleValue() != 3.1)
-            errln( "newobjs[0] = " + newobjs[0]);
+            fail( "newobjs[0] = " + newobjs[0]);
     }
     /* @bug 4105380
      * When using ChoiceFormat, MessageFormat is not good for I18n.
      */
+    @Test
     public void Test4105380()
     {
         String patternText1 = "The disk \"{1}\" contains {0}.";
@@ -482,27 +499,28 @@ public class MessageRegression extends IntlTest {
         form1.setFormat(1, fileform);
         form2.setFormat(0, fileform);
         Object[] testArgs = {12373L, "MyDisk"};
-        logln(form1.format(testArgs));
-        logln(form2.format(testArgs));
+        System.out.println(form1.format(testArgs));
+        System.out.println(form2.format(testArgs));
     }
     /* @bug 4120552
      * MessageFormat.parse incorrectly sets errorIndex.
      */
+    @Test
     public void Test4120552()
     {
         MessageFormat mf = new MessageFormat("pattern");
         String texts[] = {"pattern", "pat", "1234"};
-        logln("pattern: \"" + mf.toPattern() + "\"");
+        System.out.println("pattern: \"" + mf.toPattern() + "\"");
         for (int i = 0; i < texts.length; i++) {
             ParsePosition pp = new ParsePosition(0);
             Object[] objs = mf.parse(texts[i], pp);
-            log("  text for parsing: \"" + texts[i] + "\"");
+            System.out.println("  text for parsing: \"" + texts[i] + "\"");
             if (objs == null) {
-                logln("  (incorrectly formatted string)");
+                System.out.println("  (incorrectly formatted string)");
                 if (pp.getErrorIndex() == -1)
-                    errln("Incorrect error index: " + pp.getErrorIndex());
+                    fail("Incorrect error index: " + pp.getErrorIndex());
             } else {
-                logln("  (correctly formatted string)");
+                System.out.println("  (correctly formatted string)");
             }
         }
     }
@@ -513,6 +531,7 @@ public class MessageRegression extends IntlTest {
      * This is actually a problem in ChoiceFormat; it doesn't
      * understand single quotes.
      */
+    @Test
     public void Test4142938() {
         String pat = "''Vous'' {0,choice,0#n''|1#}avez s\u00E9lectionne\u00E9 " +
             "{0,choice,0#aucun|1#{0}} client{0,choice,0#s|1#|2#s} " +
@@ -534,12 +553,12 @@ public class MessageRegression extends IntlTest {
             String out = mf.format(new Object[]{i});
             if (SUFFIX[i] == null) {
                 if (!out.equals(PREFIX[i]))
-                    errln("" + i + ": Got \"" + out + "\"; Want \"" + PREFIX[i] + "\"");
+                    fail("" + i + ": Got \"" + out + "\"; Want \"" + PREFIX[i] + "\"");
             }
             else {
                 if (!out.startsWith(PREFIX[i]) ||
                     !out.endsWith(SUFFIX[i]))
-                    errln("" + i + ": Got \"" + out + "\"; Want \"" + PREFIX[i] + "\"...\"" +
+                    fail("" + i + ": Got \"" + out + "\"; Want \"" + PREFIX[i] + "\"...\"" +
                           SUFFIX[i] + "\"");
             }
         }
@@ -553,6 +572,7 @@ public class MessageRegression extends IntlTest {
      * pattern characters '|', '#', '<', and '\u2264'.  Two quotes in a row
      * is a quote literal.
      */
+    @Test
     public void TestChoicePatternQuote() {
         String[] DATA = {
             // Pattern                  0 value           1 value
@@ -566,18 +586,18 @@ public class MessageRegression extends IntlTest {
                 for (int j=0; j<=1; ++j) {
                     String out = cf.format(j);
                     if (!out.equals(DATA[i+1+j]))
-                        errln("Fail: Pattern \"" + DATA[i] + "\" x "+j+" -> " +
+                        fail("Fail: Pattern \"" + DATA[i] + "\" x "+j+" -> " +
                               out + "; want \"" + DATA[i+1+j] + '"');
                 }
                 String pat = cf.toPattern();
                 String pat2 = new ChoiceFormat(pat).toPattern();
                 if (!pat.equals(pat2))
-                    errln("Fail: Pattern \"" + DATA[i] + "\" x toPattern -> \"" + pat + '"');
+                    fail("Fail: Pattern \"" + DATA[i] + "\" x toPattern -> \"" + pat + '"');
                 else
-                    logln("Ok: Pattern \"" + DATA[i] + "\" x toPattern -> \"" + pat + '"');
+                    System.out.println("Ok: Pattern \"" + DATA[i] + "\" x toPattern -> \"" + pat + '"');
             }
             catch (IllegalArgumentException e) {
-                errln("Fail: Pattern \"" + DATA[i] + "\" -> " + e);
+                fail("Fail: Pattern \"" + DATA[i] + "\" -> " + e);
             }
         }
     }
@@ -587,17 +607,18 @@ public class MessageRegression extends IntlTest {
      * MessageFormat.equals(null) throws a NullPointerException.  The JLS states
      * that it should return false.
      */
+    @Test
     public void Test4112104() {
         MessageFormat format = new MessageFormat("");
         try {
             // This should NOT throw an exception
             if (format.equals(null)) {
                 // It also should return false
-                errln("MessageFormat.equals(null) returns false");
+                fail("MessageFormat.equals(null) returns false");
             }
         }
         catch (NullPointerException e) {
-            errln("MessageFormat.equals(null) throws " + e);
+            fail("MessageFormat.equals(null) throws " + e);
         }
     }
 
@@ -605,15 +626,17 @@ public class MessageRegression extends IntlTest {
      * @bug 4169959
      * MessageFormat does not format null objects. CANNOT REPRODUCE THIS BUG.
      */
+    @Test
     public void Test4169959() {
         // This works
-        logln(MessageFormat.format( "This will {0}", "work"));
+        System.out.println(MessageFormat.format( "This will {0}", "work"));
 
         // This fails
-        logln(MessageFormat.format( "This will {0}",
+        System.out.println(MessageFormat.format( "This will {0}",
                                     new Object[]{ null } ) );
     }
 
+    @Test
     public void test4232154() {
         boolean gotException = false;
         try {
@@ -632,6 +655,7 @@ public class MessageRegression extends IntlTest {
         }
     }
 
+    @Test
     public void test4293229() {
         MessageFormat format = new MessageFormat("'''{'0}'' '''{0}'''");
         Object[] args = { null };
@@ -647,6 +671,7 @@ public class MessageRegression extends IntlTest {
      * @bug 8187551
      * test MessageFormat.setFormat() method to throw AIOOBE on invalid index.
      */
+    @Test
     public void test8187551() {
         //invalid cases ("pattern", "invalid format element index")
         String[][] invalidCases = {{"The disk \"{1}\" contains {0}.", "2"},

@@ -463,8 +463,7 @@ public class CredentialsUtil {
             Credentials newTgt = getTGTforRealm(tgtRealm, serviceRealm,
                     asCreds, okAsDelegate);
             if (newTgt == null) {
-                throw new KrbApErrException(Krb5.KRB_AP_ERR_GEN_CRED,
-                        "No service creds");
+                throw new KrbException("No service creds");
             }
             if (DEBUG) {
                 System.out.println(">>> Cross-realm TGT Credentials" +

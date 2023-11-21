@@ -47,11 +47,6 @@ public:
     return live_bytes < mixed_gc_live_threshold_bytes();
   }
 
-  // Determine whether to add the given region to the collection set candidates from
-  // marking or not. Currently, we skip regions whose live bytes are over the threshold.
-  // Regions also need a complete remembered set to be a candidate.
-  static bool should_add(HeapRegion* hr);
-
   // Build and return set of collection set candidates sorted by decreasing gc
   // efficiency.
   static void build(WorkerThreads* workers, uint max_num_regions, G1CollectionSetCandidates* candidates);

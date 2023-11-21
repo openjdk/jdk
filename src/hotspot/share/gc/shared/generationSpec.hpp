@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_GENERATIONSPEC_HPP
 #define SHARE_GC_SHARED_GENERATIONSPEC_HPP
 
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "utilities/align.hpp"
 
 // The specification of a generation.  This class also encapsulates

@@ -94,14 +94,6 @@ class TypeArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
  public:
-  // Find n'th dimensional array
-  virtual ArrayKlass* array_klass(int n, TRAPS);
-  virtual ArrayKlass* array_klass_or_null(int n);
-
-  // Returns the array class with this class as element type
-  virtual ArrayKlass* array_klass(TRAPS);
-  virtual ArrayKlass* array_klass_or_null();
-
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }

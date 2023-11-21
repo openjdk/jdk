@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     /**
-     * Returns whether this is a valid devicie. Device can become
+     * Returns whether this is a valid device. Device can become
      * invalid as a result of device removal event.
      */
     public boolean isValid() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.TimeZone;
  * @author Masayoshi Okutsu
  * @since 1.5
  */
-public class JulianCalendar extends BaseCalendar {
+public final class JulianCalendar extends BaseCalendar {
 
     private static final int BCE = 0;
     private static final int CE = 1;
@@ -44,17 +44,18 @@ public class JulianCalendar extends BaseCalendar {
     };
     private static final int JULIAN_EPOCH = -1;
 
-    private static class Date extends BaseCalendar.Date {
-        protected Date() {
+    static final class Date extends BaseCalendar.Date {
+        Date() {
             super();
             setCache(1, -1L, 365); // January 1, 1 CE (Julian)
         }
 
-        protected Date(TimeZone zone) {
+        Date(TimeZone zone) {
             super(zone);
             setCache(1, -1L, 365); // January 1, 1 CE (Julian)
         }
 
+        @Override
         public Date setEra(Era era) {
             if (era == null) {
                 throw new NullPointerException();
@@ -66,10 +67,11 @@ public class JulianCalendar extends BaseCalendar {
             return this;
         }
 
-        protected void setKnownEra(Era era) {
+        void setKnownEra(Era era) {
             super.setEra(era);
         }
 
+        @Override
         public int getNormalizedYear() {
             if (getEra() == eras[BCE]) {
                 return 1 - getYear();
@@ -81,6 +83,7 @@ public class JulianCalendar extends BaseCalendar {
         // normalized years. This differs from "Calendrical
         // Calculations" in which the numbering is ..., -2, -1, 1, 2,
         // ...
+        @Override
         public void setNormalizedYear(int year) {
             if (year <= 0) {
                 setYear(1 - year);
@@ -91,6 +94,7 @@ public class JulianCalendar extends BaseCalendar {
             }
         }
 
+        @Override
         public String toString() {
             String time = super.toString();
             time = time.substring(time.indexOf('T'));
@@ -114,30 +118,37 @@ public class JulianCalendar extends BaseCalendar {
         setEras(eras);
     }
 
+    @Override
     public String getName() {
         return "julian";
     }
 
+    @Override
     public Date getCalendarDate() {
         return getCalendarDate(System.currentTimeMillis(), newCalendarDate());
     }
 
+    @Override
     public Date getCalendarDate(long millis) {
         return getCalendarDate(millis, newCalendarDate());
     }
 
+    @Override
     public Date getCalendarDate(long millis, CalendarDate date) {
         return (Date) super.getCalendarDate(millis, date);
     }
 
+    @Override
     public Date getCalendarDate(long millis, TimeZone zone) {
         return getCalendarDate(millis, newCalendarDate(zone));
     }
 
+    @Override
     public Date newCalendarDate() {
         return new Date();
     }
 
+    @Override
     public Date newCalendarDate(TimeZone zone) {
         return new Date(zone);
     }
@@ -145,6 +156,7 @@ public class JulianCalendar extends BaseCalendar {
     /**
      * @param jyear normalized Julian year
      */
+    @Override
     public long getFixedDate(int jyear, int month, int dayOfMonth, BaseCalendar.Date cache) {
         boolean isJan1 = month == JANUARY && dayOfMonth == 1;
 
@@ -182,6 +194,7 @@ public class JulianCalendar extends BaseCalendar {
         return days;
     }
 
+    @Override
     public void getCalendarDateFromFixedDate(CalendarDate date, long fixedDate) {
         Date jdate = (Date) date;
         long fd = 4 * (fixedDate - JULIAN_EPOCH) + 1464;
@@ -216,18 +229,18 @@ public class JulianCalendar extends BaseCalendar {
     /**
      * Returns the normalized Julian year number of the given fixed date.
      */
+    @Override
     public int getYearFromFixedDate(long fixedDate) {
-        int year = (int) CalendarUtils.floorDivide(4 * (fixedDate - JULIAN_EPOCH) + 1464, 1461);
-        return year;
+        return (int) CalendarUtils.floorDivide(4 * (fixedDate - JULIAN_EPOCH) + 1464, 1461);
     }
 
+    @Override
     public int getDayOfWeek(CalendarDate date) {
-        // TODO: should replace this with a faster calculation, such
-        // as cache table lookup
-        long fixedDate = getFixedDate(date);
-        return getDayOfWeekFromFixedDate(fixedDate);
+        // TODO: should replace with faster calculation, e.g. cache table lookup
+        return getDayOfWeekFromFixedDate(getFixedDate(date));
     }
 
+    @Override
     boolean isLeapYear(int jyear) {
         return CalendarUtils.isJulianLeapYear(jyear);
     }

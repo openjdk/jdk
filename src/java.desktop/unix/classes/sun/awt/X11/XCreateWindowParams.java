@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class XCreateWindowParams extends HashMap<Object, Object> {
     }
     private void init(Object[] map) {
         if (map.length % 2 != 0) {
-            throw new IllegalArgumentException("Map size should be devisible by two");
+            throw new IllegalArgumentException("Map size should be divisible by two");
         }
         for (int i = 0; i < map.length; i += 2) {
             put(map[i], map[i+1]);

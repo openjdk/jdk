@@ -219,7 +219,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         if (disposer != null) {
             // Note that we're likely calling removePropertyChangeListener()
             // during the course of AppContext.firePropertyChange().
-            // However, EventListenerAggreggate has code to safely modify
+            // However, EventListenerAggregate has code to safely modify
             // the list under such circumstances.
             context.removePropertyChangeListener(AppContext.GUI_DISPOSED,
                                                  disposer);
@@ -2228,7 +2228,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         src = (JComponent)
                             ((BasicSplitPaneDivider)c).getParent();
                     }
-                    if(src != null) {
+                    if(src != null && src.isEnabled()) {
                         JPopupMenu componentPopupMenu = src.getComponentPopupMenu();
                         if(componentPopupMenu != null) {
                             Point pt = src.getPopupLocation(me);

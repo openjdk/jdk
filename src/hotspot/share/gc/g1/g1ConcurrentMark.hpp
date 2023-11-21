@@ -511,7 +511,7 @@ public:
   // running.
   void abort_marking_threads();
 
-  void update_accum_task_vtime(int i, double vtime) {
+  void update_accum_task_vtime(uint i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }
 
@@ -635,8 +635,6 @@ private:
     // The regular clock call is called once the number of visited
     // references reaches this limit
     refs_reached_period           = 1024,
-    // Initial value for the hash seed, used in the work stealing code
-    init_hash_seed                = 17
   };
 
   G1CMObjArrayProcessor       _objArray_processor;
@@ -704,8 +702,6 @@ private:
   double                      _elapsed_time_ms;
   // Termination time of this task
   double                      _termination_time_ms;
-  // When this task got into the termination protocol
-  double                      _termination_start_time_ms;
 
   TruncatedSeq                _marking_step_diff_ms;
 

@@ -34,7 +34,7 @@
  * @test
  * @requires vm.continuations & vm.debug
  * @modules java.base/java.lang:+open
- * @run junit/othervm -XX:+UseHeavyMonitors CarrierThreadWaits
+ * @run junit/othervm -XX:LockingMode=0 CarrierThreadWaits
  */
 
 import java.lang.management.LockInfo;

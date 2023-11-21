@@ -1654,7 +1654,7 @@ class AccessibleHTML implements Accessible {
              *
              * @see #getAccessibleParent
              * @see #getAccessibleChildrenCount
-             * @gsee #getAccessibleChild
+             * @see #getAccessibleChild
              */
             public int getAccessibleIndexInParent() {
                 return elementInfo.getIndexInParent();

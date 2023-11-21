@@ -1,6 +1,6 @@
 
 /*
-* Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ void ThreadIdTable::item_removed() {
 }
 
 double ThreadIdTable::get_load_factor() {
-  return ((double)_items_count) / _current_size;
+  return ((double)_items_count) / (double)_current_size;
 }
 
 size_t ThreadIdTable::table_size() {

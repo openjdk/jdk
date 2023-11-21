@@ -64,6 +64,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -73,7 +74,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
@@ -390,8 +390,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
 
-  _task_queues(new G1CMTaskQueueSet((int) _max_num_tasks)),
-  _terminator((int) _max_num_tasks, _task_queues),
+  _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
+  _terminator(_max_num_tasks, _task_queues),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -436,11 +436,11 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
-  _num_concurrent_workers = ConcGCThreads;
-  _max_concurrent_workers = _num_concurrent_workers;
+  _max_concurrent_workers = ConcGCThreads;
 
   _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
+  _num_concurrent_workers = _concurrent_workers->active_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
@@ -540,8 +540,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
-  _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
+  _first_overflow_barrier_sync.set_n_workers(active_tasks);
+  _second_overflow_barrier_sync.set_n_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -976,17 +976,14 @@ void G1ConcurrentMark::scan_root_regions() {
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
-    _num_concurrent_workers = MIN2(calc_active_marking_workers(),
-                                   // We distribute work on a per-region basis, so starting
-                                   // more threads than that is useless.
-                                   root_regions()->num_root_regions());
-    assert(_num_concurrent_workers <= _max_concurrent_workers,
-           "Maximum number of marking threads exceeded");
+    // Assign one worker to each root-region but subject to the max constraint.
+    const uint num_workers = MIN2(root_regions()->num_root_regions(),
+                                  _max_concurrent_workers);
 
     G1CMRootRegionScanTask task(this);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                        task.name(), _num_concurrent_workers, root_regions()->num_root_regions());
-    _concurrent_workers->run_task(&task, _num_concurrent_workers);
+                        task.name(), num_workers, root_regions()->num_root_regions());
+    _concurrent_workers->run_task(&task, num_workers);
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
@@ -1046,15 +1043,15 @@ void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
 void G1ConcurrentMark::mark_from_roots() {
   _restart_for_overflow = false;
 
-  _num_concurrent_workers = calc_active_marking_workers();
-
-  uint active_workers = MAX2(1U, _num_concurrent_workers);
+  uint active_workers = calc_active_marking_workers();
 
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
   active_workers = _concurrent_workers->set_active_workers(active_workers);
   log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->max_workers());
+
+  _num_concurrent_workers = active_workers;
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
@@ -1352,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
@@ -1698,9 +1694,12 @@ void G1ConcurrentMark::weak_refs_work() {
   // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    CodeCache::UnloadingScope scope(&g1_is_alive);
-    bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(purged_classes);
+    {
+      CodeCache::UnlinkingScope scope(&g1_is_alive);
+      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
+      _g1h->complete_cleaning(unloading_occurred);
+    }
+    CodeCache::flush_unlinked_nmethods();
   }
 }
 
@@ -2163,7 +2162,6 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _calls                         = 0;
   _elapsed_time_ms               = 0.0;
   _termination_time_ms           = 0.0;
-  _termination_start_time_ms     = 0.0;
 
   _mark_stats_cache.reset();
 }
@@ -2320,9 +2318,9 @@ void G1CMTask::drain_local_queue(bool partially) {
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
   // of things to do) or totally (at the very end).
-  size_t target_size;
+  uint target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
+    target_size = GCDrainStackTargetSize;
   } else {
     target_size = 0;
   }
@@ -2762,16 +2760,14 @@ void G1CMTask::do_marking_step(double time_target_ms,
     // Separated the asserts so that we know which one fires.
     assert(_cm->out_of_regions(), "only way to reach here");
     assert(_task_queue->size() == 0, "only way to reach here");
-    _termination_start_time_ms = os::elapsedVTime() * 1000.0;
+    double termination_start_time_ms = os::elapsedTime() * 1000.0;
 
     // The G1CMTask class also extends the TerminatorTerminator class,
     // hence its should_exit_termination() method will also decide
     // whether to exit the termination protocol or not.
     bool finished = (is_serial ||
                      _cm->terminator()->offer_termination(this));
-    double termination_end_time_ms = os::elapsedVTime() * 1000.0;
-    _termination_time_ms +=
-      termination_end_time_ms - _termination_start_time_ms;
+    _termination_time_ms += (os::elapsedTime() * 1000.0 - termination_start_time_ms);
 
     if (finished) {
       // We're all done.
@@ -2889,7 +2885,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _step_times_ms(),
   _elapsed_time_ms(0.0),
   _termination_time_ms(0.0),
-  _termination_start_time_ms(0.0),
   _marking_step_diff_ms()
 {
   guarantee(task_queue != nullptr, "invariant");

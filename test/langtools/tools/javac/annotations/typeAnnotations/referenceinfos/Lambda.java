@@ -26,14 +26,19 @@
  * @bug 8008077 8029721 8042451 8043974
  * @summary Test population of reference info for lambda expressions
  *          javac crash for annotated parameter type of lambda in a field
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java Lambda.java
  * @run main Driver Lambda
  * @author Werner Dietl
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+import static jdk.internal.classfile.TypeAnnotation.TargetType.*;
 
 public class Lambda {
 

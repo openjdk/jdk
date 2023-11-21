@@ -26,16 +26,25 @@ package jdk.internal.classfile.constantpool;
 
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a constant pool entry for a dynamic call site.
+ * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
  */
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
         permits AbstractPoolEntry.InvokeDynamicEntryImpl {
+
+    /**
+     * {@return a symbolic descriptor for the call site's invocation type}
+     */
+    default MethodTypeDesc typeSymbol() {
+        return Util.methodTypeSymbol(nameAndType());
+    }
 
     /**
      * {@return a symbolic descriptor for the dynamic call site}
@@ -43,7 +52,7 @@ public sealed interface InvokeDynamicEntry
     default DynamicCallSiteDesc asSymbol() {
         return DynamicCallSiteDesc.of(bootstrap().bootstrapMethod().asSymbol(),
                                       name().stringValue(),
-                                      Util.methodTypeSymbol(nameAndType()),
+                                      typeSymbol(),
                                       bootstrap().arguments().stream()
                                                  .map(LoadableConstantEntry::constantValue)
                                                  .toArray(ConstantDesc[]::new));

@@ -28,7 +28,7 @@
 
 #define ShortenBranches true
 
-const int StackAlignmentInBytes = 16;
+const int StackAlignmentInBytes = 8;
 
 // All faults on s390x give the address only on page granularity.
 // Set Pdsegfault_address to minimum one page address.

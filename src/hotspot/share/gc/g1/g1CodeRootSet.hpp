@@ -27,43 +27,37 @@
 
 #include "code/codeCache.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/resizeableResourceHash.hpp"
 
+class G1CodeRootSetHashTable;
 class HeapRegion;
 class nmethod;
 
 // Implements storage for a set of code roots.
-// This class is not thread safe, locks are needed.
+// This class is thread safe.
 class G1CodeRootSet {
-  friend class G1CodeRootSetTest;
-  friend class G1CodeRootSetTest_g1_code_cache_rem_set_vm_Test;
-
- private:
-  const static size_t SmallSize = 32;
-  const static size_t Threshold = 24;
-  const static size_t LargeSize = 512;
-
-  using Table = ResizeableResourceHashtable<nmethod*, nmethod*, AnyObj::C_HEAP, mtGC>;
-  Table* _table;
+  G1CodeRootSetHashTable* _table;
   DEBUG_ONLY(mutable bool _is_iterating;)
 
  public:
-  G1CodeRootSet() : _table(nullptr) DEBUG_ONLY(COMMA _is_iterating(false)) {}
+  G1CodeRootSet();
   ~G1CodeRootSet();
 
   void add(nmethod* method);
   bool remove(nmethod* method);
   bool contains(nmethod* method);
   void clear();
+
+  // Prepare for MT iteration. Must be called before nmethods_do.
+  void reset_table_scanner();
   void nmethods_do(CodeBlobClosure* blk) const;
 
-  // Remove all nmethods which no longer contain pointers into our "owner" region
+  // Remove all nmethods which no longer contain pointers into our "owner" region.
   void clean(HeapRegion* owner);
 
   bool is_empty() { return length() == 0;}
 
   // Length in elements
-  size_t length() const { return _table == nullptr ? 0 : _table->number_of_entries(); }
+  size_t length() const;
 
   // Memory size in bytes taken by this set.
   size_t mem_size();

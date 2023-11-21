@@ -1,0 +1,4 @@
+T8314632.java:12:45: compiler.err.pattern.dominated
+T8314632.java:20:45: compiler.err.pattern.dominated
+T8314632.java:36:29: compiler.err.pattern.dominated
+3 errors

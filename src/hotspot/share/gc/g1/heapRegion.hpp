@@ -244,7 +244,7 @@ private:
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
-  int  _age_index;
+  uint  _age_index;
 
   // NUMA node.
   uint _node_index;
@@ -289,16 +289,15 @@ public:
   // there's clearing to be done ourselves. We also always mangle the space.
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
-  static int    LogOfHRGrainBytes;
-  static int    LogCardsPerRegion;
+  static uint   LogOfHRGrainBytes;
+  static uint   LogCardsPerRegion;
 
   static size_t GrainBytes;
   static size_t GrainWords;
   static size_t CardsPerRegion;
 
   static size_t align_up_to_region_byte_size(size_t sz) {
-    return (sz + (size_t) GrainBytes - 1) &
-                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+    return align_up(sz, GrainBytes);
   }
 
   // Returns whether a field is in the same region as the obj it points to.
@@ -508,7 +507,7 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() const;
+  uint age_in_surv_rate_group() const;
   bool has_valid_age_in_surv_rate() const;
 
   bool has_surv_rate_group() const;
@@ -545,7 +544,6 @@ public:
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_code_root(nmethod* nm);
-  void add_code_root_locked(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in

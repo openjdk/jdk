@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestSoftMaxHeapSize {
     public static void main(String[] args) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",
@@ -49,7 +49,7 @@ public class TestSoftMaxHeapSize {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",
@@ -60,7 +60,7 @@ public class TestSoftMaxHeapSize {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     "-Xms4m",
                     "-Xmx128m",

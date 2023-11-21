@@ -752,7 +752,7 @@
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
- * <td style="text-align:center" rowspan="3">yes</td>
+ * <td style="text-align:center" rowspan="4">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
@@ -808,6 +808,40 @@
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">9</td>
  * </tr>
+ * <tr>
+ * <td id="DTD">{@systemProperty jdk.xml.dtd.support}<a href="#Note7">[7]</a></td>
+ * <td>Instructs the parser to handle DTDs in accordance with the setting of this property.
+ * The options are:
+ * <ul>
+ * <li><p>
+ * {@code allow} -- indicates that the parser shall continue processing DTDs;
+ * </li>
+ * <li><p>
+ * {@code ignore} -- indicates that the parser shall skip DTDs;
+ * </li>
+ * <li><p>
+ * {@code deny} -- indicates that the parser shall reject DTDs as an error.
+ * The parser shall report the error in accordance with its relevant specification.
+ * </li>
+ * </ul>
+ * </td>
+ * <td style="text-align:center">String</td>
+ * <td>
+ * {@code allow, ignore, and deny}. Values are case-insensitive.
+ * </td>
+ * <td style="text-align:center">allow</td>
+ * <td style="text-align:center">No</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#DOM">DOM</a><br>
+ *     <a href="#SAX">SAX</a><br>
+ *     <a href="#StAX">StAX</a><br>
+ *     <a href="#Validation">Validation</a><br>
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 1</a></td>
+ * <td style="text-align:center">22</td>
+ * </tr>
  * </tbody>
  * </table>
  * <p id="Note1">
@@ -838,6 +872,19 @@
  * are as shown in the table <a href="#Processor">Processors</a>.
  * <p id="Note6">
  * <b>[6]</b> Indicates the initial release the property is introduced.
+ * <p id="Note7">
+ * <b>[7]</b> The {@code jdk.xml.dtd.support} property complements the two existing
+ * DTD-related properties, {@code disallow-doctype-decl}(fully qualified name:
+ * {@code http://apache.org/xml/features/disallow-doctype-decl}) and supportDTD
+ * ({@code javax.xml.stream.supportDTD}), by providing a uniformed support for the
+ * processors listed and a system property that can be used in the
+ * <a href="#Conf_CF">JAXP Configuration File</a>. When {@code disallow-doctype-decl} is
+ * set on the DOM or SAX factory, or supportDTD on StAX factory, the {@code jdk.xml.dtd.support}
+ * property will have no effect.
+ * <p>
+ * These three properties control whether DTDs as a whole shall be processed. When
+ * they are set to deny or ignore, other properties that regulate a part or an
+ * aspect of DTD shall have no effect.
  *
  * <h3 id="IN_Legacy">Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.

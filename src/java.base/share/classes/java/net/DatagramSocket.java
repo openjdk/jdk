@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,7 +656,6 @@ public class DatagramSocket implements java.io.Closeable {
      * @see        java.net.DatagramPacket
      * @see        SecurityManager#checkMulticast(InetAddress)
      * @see        SecurityManager#checkConnect
-     * @revised 1.4
      */
     public void send(DatagramPacket p) throws IOException  {
         delegate().send(p);
@@ -708,7 +707,6 @@ public class DatagramSocket implements java.io.Closeable {
      *             and the channel is in non-blocking mode.
      * @see        java.net.DatagramPacket
      * @see        java.net.DatagramSocket
-     * @revised 1.4
      */
     public void receive(DatagramPacket p) throws IOException {
         delegate().receive(p);
@@ -1082,8 +1080,6 @@ public class DatagramSocket implements java.io.Closeable {
      *
      * <p> If this socket has an associated channel then the channel is closed
      * as well.
-     *
-     * @revised 1.4
      */
     public void close() {
         delegate().close();

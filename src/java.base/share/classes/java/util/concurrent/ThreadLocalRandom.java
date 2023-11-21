@@ -39,14 +39,10 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
-import java.math.BigInteger;
 import java.security.AccessControlContext;
-import java.util.Map;
 import java.util.Random;
-import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -367,11 +363,6 @@ public final class ThreadLocalRandom extends Random {
      * The increment of seeder per new instance.
      */
     private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
-
-    // IllegalArgumentException messages
-    static final String BAD_BOUND = "bound must be positive";
-    static final String BAD_RANGE = "bound must be greater than origin";
-    static final String BAD_SIZE  = "size must be non-negative";
 
     // Unsafe mechanics
     private static final Unsafe U = Unsafe.getUnsafe();

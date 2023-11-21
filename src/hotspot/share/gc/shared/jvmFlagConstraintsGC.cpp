@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,11 +156,11 @@ JVMFlag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
   if (value > MaxMetaspaceFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MinMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
-                        "less than or equal to MaxMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                        "MinMetaspaceFreeRatio (%u) must be "
+                        "less than or equal to MaxMetaspaceFreeRatio (%u)\n",
                         value, MaxMetaspaceFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -168,11 +168,11 @@ JVMFlag::Error MinMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
   }
 }
 
-JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uint value, bool verbose) {
   if (value < MinMetaspaceFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MaxMetaspaceFreeRatio (" UINTX_FORMAT ") must be "
-                        "greater than or equal to MinMetaspaceFreeRatio (" UINTX_FORMAT ")\n",
+                        "MaxMetaspaceFreeRatio (%u) must be "
+                        "greater than or equal to MinMetaspaceFreeRatio (%u)\n",
                         value, MinMetaspaceFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {

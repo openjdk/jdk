@@ -26,7 +26,13 @@ package jdk.xml.internal;
 
 
 import com.sun.org.apache.xerces.internal.util.SecurityManager;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import javax.xml.stream.XMLInputFactory;
 import jdk.xml.internal.JdkProperty.State;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import org.xml.sax.SAXException;
@@ -37,52 +43,93 @@ import org.xml.sax.SAXException;
  */
 public final class XMLSecurityManager {
 
+    public static final String DTD_KEY = JdkConstants.DTD_PROPNAME;
+
+    // Xerces Feature
+    public static final String DISALLOW_DTD = "http://apache.org/xml/features/disallow-doctype-decl";
+    public static final String LOAD_EXTERNAL_DTD = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
+
+    // StAX feature
+    public static final String ZEPHYR_PROPERTY_PREFIX = "http://java.sun.com/xml/stream/properties/" ;
+    public static final String IGNORE_EXTERNAL_DTD = ZEPHYR_PROPERTY_PREFIX + "ignore-external-dtd";
+
+    // Valid values for the DTD property
+    public static final String DTD_ALLOW = "allow";
+    public static final String DTD_IGNORE = "ignore";
+    public static final String DTD_DENY = "deny";
+    static final Map<String, Integer> DTD_MAP;
+    // Source Level JDK 8
+    static {
+        Map<String, Integer> map = new HashMap<>();
+        map.put(DTD_ALLOW, 0);
+        map.put(DTD_IGNORE, 1);
+        map.put(DTD_DENY, 2);
+        DTD_MAP = Collections.unmodifiableMap(map);
+    }
+
+    // Value converter for properties of type Boolean
+    private static final BooleanMapper BOOLMAPPER = new BooleanMapper();
+
+    // Value converter for properties of type Integer
+    private static final IntegerMapper INTMAPPER = new IntegerMapper();
+
+    // DTD value map
+    private static final StringMapper DTDMAPPER = new StringMapper(DTD_MAP);
+
     /**
      * Limits managed by the security manager
      */
     @SuppressWarnings("deprecation")
     public static enum Limit {
         ENTITY_EXPANSION_LIMIT("EntityExpansionLimit", JdkConstants.JDK_ENTITY_EXPANSION_LIMIT,
-            JdkConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000, Processor.PARSER),
+            JdkConstants.SP_ENTITY_EXPANSION_LIMIT, JdkConstants.ENTITY_EXPANSION_LIMIT, 0, 64000, Processor.PARSER, INTMAPPER),
         MAX_OCCUR_NODE_LIMIT("MaxOccurLimit", JdkConstants.JDK_MAX_OCCUR_LIMIT,
-            JdkConstants.SP_MAX_OCCUR_LIMIT, 0, 5000, Processor.PARSER),
+            JdkConstants.SP_MAX_OCCUR_LIMIT, JdkConstants.MAX_OCCUR_LIMIT, 0, 5000, Processor.PARSER, INTMAPPER),
         ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit", JdkConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
-            JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000, Processor.PARSER),
+            JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.ELEMENT_ATTRIBUTE_LIMIT, 0, 10000, Processor.PARSER, INTMAPPER),
         TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit", JdkConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000, Processor.PARSER),
+            JdkConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, null, 0, 50000000, Processor.PARSER, INTMAPPER),
         GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0, Processor.PARSER),
+            JdkConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, null, 0, 0, Processor.PARSER, INTMAPPER),
         PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", JdkConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
-            JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000, Processor.PARSER),
+            JdkConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, null, 0, 1000000, Processor.PARSER, INTMAPPER),
         MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", JdkConstants.JDK_MAX_ELEMENT_DEPTH,
-            JdkConstants.SP_MAX_ELEMENT_DEPTH, 0, 0, Processor.PARSER),
+            JdkConstants.SP_MAX_ELEMENT_DEPTH, null, 0, 0, Processor.PARSER, INTMAPPER),
         MAX_NAME_LIMIT("MaxXMLNameLimit", JdkConstants.JDK_XML_NAME_LIMIT,
-            JdkConstants.SP_XML_NAME_LIMIT, 1000, 1000, Processor.PARSER),
+            JdkConstants.SP_XML_NAME_LIMIT, null, 1000, 1000, Processor.PARSER, INTMAPPER),
         ENTITY_REPLACEMENT_LIMIT("EntityReplacementLimit", JdkConstants.JDK_ENTITY_REPLACEMENT_LIMIT,
-            JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, 0, 3000000, Processor.PARSER),
+            JdkConstants.SP_ENTITY_REPLACEMENT_LIMIT, null, 0, 3000000, Processor.PARSER, INTMAPPER),
         XPATH_GROUP_LIMIT("XPathGroupLimit", JdkConstants.XPATH_GROUP_LIMIT,
-            JdkConstants.XPATH_GROUP_LIMIT, 10, 10, Processor.XPATH),
+            JdkConstants.XPATH_GROUP_LIMIT, null, 10, 10, Processor.XPATH, INTMAPPER),
         XPATH_OP_LIMIT("XPathExprOpLimit", JdkConstants.XPATH_OP_LIMIT,
-            JdkConstants.XPATH_OP_LIMIT, 100, 100, Processor.XPATH),
+            JdkConstants.XPATH_OP_LIMIT, null, 100, 100, Processor.XPATH, INTMAPPER),
         XPATH_TOTALOP_LIMIT("XPathTotalOpLimit", JdkConstants.XPATH_TOTALOP_LIMIT,
-            JdkConstants.XPATH_TOTALOP_LIMIT, 10000, 10000, Processor.XPATH)
+            JdkConstants.XPATH_TOTALOP_LIMIT, null, 10000, 10000, Processor.XPATH, INTMAPPER),
+        DTD("DTDProperty", JdkConstants.DTD_PROPNAME, JdkConstants.DTD_PROPNAME, null,
+                JdkConstants.ALLOW, JdkConstants.ALLOW, Processor.PARSER, DTDMAPPER),
+        XERCES_DISALLOW_DTD("disallowDTD", DISALLOW_DTD, null, null, 0, 0, Processor.PARSER, BOOLMAPPER),
+        STAX_SUPPORT_DTD("supportDTD", XMLInputFactory.SUPPORT_DTD, null, null, 1, 1, Processor.PARSER, BOOLMAPPER),
         ;
 
         final String key;
         final String apiProperty;
         final String systemProperty;
+        final String spOld;
         final int defaultValue;
         final int secureValue;
         final Processor processor;
+        final ValueMapper mapper;
 
-        Limit(String key, String apiProperty, String systemProperty, int value,
-                int secureValue, Processor processor) {
+        Limit(String key, String apiProperty, String systemProperty, String spOld, int value,
+                int secureValue, Processor processor, ValueMapper mapper) {
             this.key = key;
             this.apiProperty = apiProperty;
             this.systemProperty = systemProperty;
+            this.spOld = spOld;
             this.defaultValue = value;
             this.secureValue = secureValue;
             this.processor = processor;
+            this.mapper = mapper;
         }
 
         /**
@@ -129,6 +176,11 @@ public final class XMLSecurityManager {
             return systemProperty;
         }
 
+        // returns legacy System Property
+        public String spOld() {
+            return spOld;
+        }
+
         public int defaultValue() {
             return defaultValue;
         }
@@ -140,29 +192,9 @@ public final class XMLSecurityManager {
         int secureValue() {
             return secureValue;
         }
-    }
 
-    /**
-     * Map old property names with the new ones
-     */
-    public static enum NameMap {
-
-        ENTITY_EXPANSION_LIMIT(JdkConstants.SP_ENTITY_EXPANSION_LIMIT, JdkConstants.ENTITY_EXPANSION_LIMIT),
-        MAX_OCCUR_NODE_LIMIT(JdkConstants.SP_MAX_OCCUR_LIMIT, JdkConstants.MAX_OCCUR_LIMIT),
-        ELEMENT_ATTRIBUTE_LIMIT(JdkConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, JdkConstants.ELEMENT_ATTRIBUTE_LIMIT);
-        final String newName;
-        final String oldName;
-
-        NameMap(String newName, String oldName) {
-            this.newName = newName;
-            this.oldName = oldName;
-        }
-
-        String getOldName(String newName) {
-            if (newName.equals(this.newName)) {
-                return oldName;
-            }
-            return null;
+        public ValueMapper mapper() {
+            return mapper;
         }
     }
 
@@ -170,6 +202,7 @@ public final class XMLSecurityManager {
      * Supported processors
      */
     public static enum Processor {
+        ANY,
         PARSER,
         XPATH,
     }
@@ -230,7 +263,8 @@ public final class XMLSecurityManager {
                 states[limit.ordinal()] = State.DEFAULT;
             }
         }
-        //read system properties or jaxp.properties
+
+        //read system properties or the config file (jaxp.properties by default)
         readSystemProperties();
     }
 
@@ -284,13 +318,20 @@ public final class XMLSecurityManager {
      *              if otherwise.
      */
     public boolean setLimit(String propertyName, State state, Object value) {
-        int index = getIndex(propertyName);
-        if (index > -1) {
+        // special property to return entity count info
+        if (ImplPropMap.ENTITYCOUNT.is(propertyName)) {
+            printEntityCountInfo = (String)value;
+            return true;
+        }
+
+        Limit limit = getEnumValue(propertyName);
+        if (limit != null) {
             State pState = state;
-            if (index != indexEntityCountInfo && state == State.APIPROPERTY) {
-                pState = (Limit.values()[index]).getState(propertyName);
+            if (state == State.APIPROPERTY) {
+                // ordinal is the index of the value array
+                pState = (Limit.values()[limit.ordinal()]).getState(propertyName);
             }
-            setLimit(index, pState, value);
+            setLimit(limit, pState, value);
             return true;
         }
         return false;
@@ -308,27 +349,19 @@ public final class XMLSecurityManager {
     }
 
     /**
-     * Set the value of a property by its index
+     * Sets the value of a property by its enum name
      *
-     * @param index the index of the property
+     * @param limit the limit
      * @param state the state of the property
      * @param value the value of the property
      */
-    public void setLimit(int index, State state, Object value) {
-        if (index == indexEntityCountInfo) {
-            printEntityCountInfo = (String)value;
-        } else {
-            int temp;
-            if (value instanceof Integer) {
-                temp = (Integer)value;
-            } else {
-                temp = Integer.parseInt((String) value);
-                if (temp < 0) {
-                    temp = 0;
-                }
-            }
-            setLimit(index, state, temp);
+    public void setLimit(Limit limit, State state, Object value) {
+        int intValue = limit.mapper().toInt(value);
+        if (intValue < 0) {
+            intValue = 0;
         }
+
+        setLimit(limit.ordinal(), state, intValue);
     }
 
     /**
@@ -384,7 +417,7 @@ public final class XMLSecurityManager {
      * @return value of a property
      */
     public String getLimitValueAsString(Limit limit) {
-        return Integer.toString(values[limit.ordinal()]);
+        return limit.mapper().toString(values[limit.ordinal()]);
     }
 
     /**
@@ -398,7 +431,8 @@ public final class XMLSecurityManager {
             return printEntityCountInfo;
         }
 
-        return Integer.toString(values[index]);
+        Limit limit = Limit.values()[index];
+        return limit.mapper().toString(values[index]);
     }
 
     /**
@@ -419,6 +453,22 @@ public final class XMLSecurityManager {
      */
     public String getStateLiteral(Limit limit) {
         return states[limit.ordinal()].literal();
+    }
+
+    /**
+     * Returns the enum value by its property name.
+     *
+     * @param propertyName property name
+     * @return the enum value if found; null otherwise
+     */
+    public Limit getEnumValue(String propertyName) {
+        for (Limit limit : Limit.values()) {
+            if (limit.is(propertyName)) {
+                return limit;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -523,11 +573,35 @@ public final class XMLSecurityManager {
 
     /**
      * Indicate if a property is set explicitly
-     * @param index
-     * @return
+     * @param limit the limit
+     * @return true if the limit is set, false otherwise
      */
-    public boolean isSet(int index) {
-        return isSet[index];
+    public boolean isSet(Limit limit) {
+        return isSet[limit.ordinal()];
+    }
+
+    /**
+     * Checks whether the specified {@link Limit} is set and the value is
+     * as specified.
+     *
+     * @param limit the {@link Limit}
+     * @param value the value
+     * @return true if the {@code Limit} is set and the values match
+     */
+    public boolean is(Limit limit, int value) {
+        return getLimit(limit) == value;
+    }
+
+    /**
+     * Checks whether the specified {@link Limit} is set and the value is
+     * 1 (true for a property of boolean type).
+     *
+     * @param limit the {@link Limit}
+     *
+     * @return true if the {@code Limit} is set and the value is 1
+     */
+    public boolean is(Limit limit) {
+        return getLimit(limit) == 1;
     }
 
     public boolean printEntityCountInfo() {
@@ -537,13 +611,18 @@ public final class XMLSecurityManager {
     /**
      * Read system properties, or the configuration file
      */
-    private void readSystemProperties() {
+    public void readSystemProperties() {
         for (Limit limit : Limit.values()) {
-            // attempts to read both the current and old system propery
-            if (!getSystemProperty(limit, limit.systemProperty())
-                    && (!getOldSystemProperty(limit))) {
-                //if system property is not found, try the config file
-                getPropertyConfig(limit, limit.systemProperty());
+            if (State.SYSTEMPROPERTY.compareTo(states[limit.ordinal()]) >= 0 &&
+                    limit.systemProperty() != null) {
+                // attempts to read both the current and old system propery
+                if (!getSystemProperty(limit, limit.systemProperty())
+                        && (!getSystemProperty(limit, limit.spOld()))) {
+                    //if system property is not found, try the config file
+                    if (State.JAXPDOTPROPERTIES.compareTo(states[limit.ordinal()]) >= 0) {
+                        getPropertyConfig(limit, limit.systemProperty());
+                    }
+                }
             }
         }
     }
@@ -572,11 +651,12 @@ public final class XMLSecurityManager {
      * @param sysPropertyName the name of system property
      */
     private boolean getSystemProperty(Limit limit, String sysPropertyName) {
+        if (sysPropertyName == null) return false;
+
         try {
             String value = SecuritySupport.getSystemProperty(sysPropertyName);
             if (value != null && !value.equals("")) {
-                values[limit.ordinal()] = Integer.parseInt(value);
-                states[limit.ordinal()] = State.SYSTEMPROPERTY;
+                setLimit(limit, State.SYSTEMPROPERTY, value);
                 return true;
             }
         } catch (NumberFormatException e) {
@@ -584,25 +664,6 @@ public final class XMLSecurityManager {
             throw new NumberFormatException("Invalid setting for system property: " + limit.systemProperty());
         }
         return false;
-    }
-
-    /**
-     * Reads the legacy system property.
-     * @param limit a limit object
-     * @return true if found, false otherwise
-     */
-    private boolean getOldSystemProperty(Limit limit) {
-        boolean found = false;
-        for (NameMap nameMap : NameMap.values()) {
-            String oldName = nameMap.getOldName(limit.systemProperty());
-            if (oldName != null) {
-                if (getSystemProperty(limit, oldName)) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        return found;
     }
 
     /**
@@ -616,8 +677,7 @@ public final class XMLSecurityManager {
         try {
             String value = SecuritySupport.readConfig(sysPropertyName);
             if (value != null && !value.equals("")) {
-                values[limit.ordinal()] = Integer.parseInt(value);
-                states[limit.ordinal()] = State.JAXPDOTPROPERTIES;
+                setLimit(limit, State.JAXPDOTPROPERTIES, value);
                 return true;
             }
         } catch (NumberFormatException e) {
@@ -657,5 +717,162 @@ public final class XMLSecurityManager {
             }
             return securityManager;
         }
+    }
+
+    /**
+     * Represents a mapper for properties of type String. The input is expected
+     * to be a String or Object. If there is a map, the mappings are between the
+     * keys and values within the map.
+     */
+    public static class StringMapper extends ValueMapper {
+        private final Map<String, Integer> map;
+        private final Map<Integer, String> reverseMap;
+
+        public StringMapper(Map<String, Integer> map) {
+            this.map = map;
+            if (map != null) {
+                reverseMap = map.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+            } else {
+                reverseMap = null;
+            }
+        }
+
+        /**
+         * Finds the mapping int value with the specified property value. This
+         * method will try to convert the provided value to an integer if no
+         * mapping is found.
+         * @param value the property value
+         * @return the mapping int value if found, null otherwise
+         */
+        @Override
+        public int toInt(Object value) {
+            Objects.requireNonNull(value);
+            Integer iVal;
+            if (map != null) {
+                iVal = map.get(((String)value).toLowerCase());
+                iVal = (iVal == null) ? 0 : iVal;
+            } else {
+                try {
+                    iVal = (int)Double.parseDouble((String)value);
+                } catch (NumberFormatException e) {
+                    // Note: this is the currently expected behavior. It may be
+                    // appropriate for the setter to catch it.
+                    throw new NumberFormatException("Invalid setting " + value
+                            + " for a property of Integer type.");
+                }
+            }
+            return iVal;
+        }
+
+        @Override
+        public String toObject(int value) {
+            if (reverseMap != null) {
+                return reverseMap.get(value);
+            }
+            return Integer.toString(value);
+        }
+
+        @Override
+        public String toString(int value) {
+            return toObject(value);
+        }
+    }
+
+    /**
+     * Represents a mapper for properties of type Integer. The input is expected
+     * to be either an Integer or String.
+     */
+    public static class IntegerMapper extends ValueMapper {
+        @Override
+        public int toInt(Object value) {
+            Objects.requireNonNull(value);
+
+            Integer iVal;
+            if (value instanceof Integer) {
+                iVal = (Integer)value;
+            } else {
+                try {
+                    iVal = Integer.parseInt((String)value);
+                } catch (NumberFormatException e) {
+                    // Note: this is the currently expected behavior. It may be
+                    // appropriate for the setter to catch it.
+                    throw new NumberFormatException("Invalid setting " + value
+                            + " for a property of Integer type.");
+                }
+            }
+
+            return iVal;
+        }
+
+        @Override
+        public Integer toObject(int value) {
+            return value;
+        }
+
+        @Override
+        public String toString(int value) {
+            return Integer.toString(value);
+        }
+    }
+
+    /**
+     * Represents a mapper for properties of type Boolean. The input is expected
+     * to be either a Boolean or String.
+     */
+    public static class BooleanMapper extends ValueMapper {
+        @Override
+        public int toInt(Object value) {
+            Objects.requireNonNull(value);
+
+            Boolean bVal;
+            if (value instanceof Boolean) {
+                bVal = (Boolean)value;
+            } else {
+                bVal = ((String)value).equalsIgnoreCase("true");
+            }
+
+            return bVal ? 1 : 0;
+        }
+
+        @Override
+        public Boolean toObject(int value) {
+            return value != 0;
+        }
+
+        @Override
+        public String toString(int value) {
+            return Boolean.toString(value != 0);
+        }
+    }
+
+    /**
+     * Represents a mapper of property values between int and other types, such as
+     * Boolean, String, and Object.
+     */
+    public static abstract class ValueMapper {
+        // converts to an int value from that of the specified type
+        public abstract int toInt(Object value);
+        // converts the int value back to the original type
+        public abstract Object toObject(int value);
+        // converts the int value of a property to a String representation
+        public abstract String toString(int value);
+
+    }
+
+    /**
+     * Represents a mapper of property values between int and other types, such as
+     * Boolean, String, and Object.
+     *
+     * @param <T> the value type to be mapped with an int value
+     */
+    public abstract class ValueMapper1<T> {
+        // converts to an int value from that of the specified type
+        public abstract int toInt(T value);
+        // converts the int value back to the original type
+        public abstract T toObject(int value);
+        // converts the int value of a property to a String representation
+        public abstract String toString(int value);
+
     }
 }

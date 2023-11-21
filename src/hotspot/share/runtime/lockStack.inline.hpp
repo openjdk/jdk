@@ -47,10 +47,14 @@ inline bool LockStack::can_push() const {
 }
 
 inline bool LockStack::is_owning_thread() const {
-  JavaThread* thread = JavaThread::current();
-  bool is_owning = &thread->lock_stack() == this;
-  assert(is_owning == (get_thread() == thread), "is_owning sanity");
-  return is_owning;
+  Thread* current = Thread::current();
+  if (current->is_Java_thread()) {
+    JavaThread* thread = JavaThread::cast(current);
+    bool is_owning = &thread->lock_stack() == this;
+    assert(is_owning == (get_thread() == thread), "is_owning sanity");
+    return is_owning;
+  }
+  return false;
 }
 
 inline void LockStack::push(oop o) {
@@ -100,16 +104,10 @@ inline void LockStack::remove(oop o) {
 
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
-  if (!SafepointSynchronize::is_at_safepoint() && !is_owning_thread()) {
-    // When a foreign thread inspects this thread's lock-stack, it may see
-    // bad references here when a concurrent collector has not gotten
-    // to processing the lock-stack, yet. Call StackWaterMark::start_processing()
-    // to ensure that all references are valid.
-    StackWatermark* watermark = StackWatermarkSet::get(get_thread(), StackWatermarkKind::gc);
-    if (watermark != nullptr) {
-      watermark->start_processing();
-    }
-  }
+
+  // Can't poke around in thread oops without having started stack watermark processing.
+  assert(StackWatermarkSet::processing_started(get_thread()), "Processing must have started!");
+
   int end = to_index(_top);
   for (int i = end - 1; i >= 0; i--) {
     if (_base[i] == o) {

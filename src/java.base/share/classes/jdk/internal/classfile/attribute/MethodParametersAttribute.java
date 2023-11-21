@@ -37,6 +37,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * appear on methods, and records optional information about the method's
  * parameters.  Delivered as a {@link jdk.internal.classfile.MethodElement} when
  * traversing the elements of a {@link jdk.internal.classfile.MethodModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface MethodParametersAttribute
         extends Attribute<MethodParametersAttribute>, MethodElement

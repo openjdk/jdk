@@ -319,13 +319,10 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
   int ret = WriteableFlags::set_flag(op->arg(0), op->arg(1), JVMFlagOrigin::ATTACH_ON_DEMAND, err_msg);
   if (ret != JVMFlag::SUCCESS) {
     if (ret == JVMFlag::NON_WRITABLE) {
-      // if the flag is not manageable try to change it through
-      // the platform dependent implementation
-      return AttachListener::pd_set_flag(op, out);
+      out->print_cr("flag '%s' cannot be changed", op->arg(0));
     } else {
       out->print_cr("%s", err_msg.buffer());
     }
-
     return JNI_ERR;
   }
   return JNI_OK;

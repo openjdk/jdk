@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1723,7 +1723,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * applies some validity checks, changes them only if they are
      * clearly unreasonable, then sets them into the new Paper.
      * Subclasses are expected to override this method to make more
-     * informed decisons.
+     * informed decisions.
      */
     protected void validatePaper(Paper origPaper, Paper newPaper) {
         if (origPaper == null || newPaper == null) {
