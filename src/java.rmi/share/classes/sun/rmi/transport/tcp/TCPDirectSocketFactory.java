@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@
 package sun.rmi.transport.tcp;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.ServerSocket;
 import java.rmi.server.RMISocketFactory;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * RMIDirectSocketFactory creates a direct socket connection to the
@@ -35,9 +40,23 @@ import java.rmi.server.RMISocketFactory;
  */
 public class TCPDirectSocketFactory extends RMISocketFactory {
 
+    public static final int DEFAULT_CONNECT_TIMEOUT = 60 * 1000; // default 1 minute
+
     public Socket createSocket(String host, int port) throws IOException
     {
-        return new Socket(host, port);
+        @SuppressWarnings("removal")
+        int timeout =
+            AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+                Integer.getInteger("sun.rmi.transport.tcp.initialConnectTimeout", DEFAULT_CONNECT_TIMEOUT).intValue());
+        if (timeout == 0) {
+            return new Socket(host, port);
+        } else {
+            SocketAddress address = host != null ? new InetSocketAddress(host, port) :
+                                                   new InetSocketAddress(InetAddress.getByName(null), port);
+            Socket s = new Socket();
+            s.connect(address, timeout);
+            return s;
+        }
     }
 
     public ServerSocket createServerSocket(int port) throws IOException
