@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-// Addresses of functions to referenced using static linking..
+// Addresses of functions to referenced using static linking.
 void* funcs[] = {
     //stdio.h
     &abs,
