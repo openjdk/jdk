@@ -2580,8 +2580,10 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   switch(byte_no) {
     case f1_byte:
       __ add(Rtemp, Rcache, in_bytes(ResolvedMethodEntry::bytecode1_offset()));
+      break;
     case f2_byte:
       __ add(Rtemp, Rcache, in_bytes(ResolvedMethodEntry::bytecode2_offset()));
+      break;
   }
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
   __ ldrb(Rtemp, Rtemp);
