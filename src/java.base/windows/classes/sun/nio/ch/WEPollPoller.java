@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,16 +46,13 @@ class WEPollPoller extends Poller {
 
     @Override
     void implRegister(int fdVal) throws IOException {
-        // re-arm
-        int err = WEPoll.ctl(handle, EPOLL_CTL_MOD, fdVal, (event | EPOLLONESHOT));
-        if (err == ENOENT)
-            err = WEPoll.ctl(handle, EPOLL_CTL_ADD, fdVal, (event | EPOLLONESHOT));
+        int err = WEPoll.ctl(handle, EPOLL_CTL_ADD, fdVal, (event | EPOLLONESHOT));
         if (err != 0)
             throw new IOException("epoll_ctl failed: " + err);
     }
 
     @Override
-    void implDeregister(int fdVal) {
+    void implDeregister(int fdVal, boolean polled) {
         WEPoll.ctl(handle, EPOLL_CTL_DEL, fdVal, 0);
     }
 
