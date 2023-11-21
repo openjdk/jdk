@@ -56,7 +56,6 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"

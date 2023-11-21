@@ -49,7 +49,6 @@
 
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
-PerfCounter* StringDedup::Processor::_concurrent_dedup_thread_cpu_time = nullptr;
 StringDedup::StorageUse* volatile StringDedup::Processor::_storage_for_requests = nullptr;
 StringDedup::StorageUse* StringDedup::Processor::_storage_for_processing = nullptr;
 
@@ -70,9 +69,7 @@ void StringDedup::Processor::initialize() {
   _processor = new Processor();
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
-    CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-    instance->create_counter(CPUTimeGroups::conc_dedup);
-    _concurrent_dedup_thread_cpu_time = instance->get_counter(CPUTimeGroups::conc_dedup);
+    CPUTimeCounters::get_instance()->create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
   }
 }
 
@@ -198,7 +195,7 @@ void StringDedup::Processor::run(JavaThread* thread) {
     _cur_stat.report_active_end();
     log_statistics();
     if (UsePerfData && os::is_thread_cpu_time_supported()) {
-      ThreadTotalCPUTimeClosure tttc(_concurrent_dedup_thread_cpu_time);
+      ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::conc_dedup);
       tttc.do_thread(thread);
     }
   }

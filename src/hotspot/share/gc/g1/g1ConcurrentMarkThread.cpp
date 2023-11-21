@@ -39,6 +39,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
@@ -346,7 +347,7 @@ void G1ConcurrentMarkThread::update_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  ThreadTotalCPUTimeClosure tttc(CPUTimeCounters::get_instance(), CPUTimeGroups::gc_conc_mark);
+  ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_mark);
   tttc.do_thread(this);
   _cm->threads_do(&tttc);
 }

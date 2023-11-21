@@ -38,7 +38,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -121,8 +120,6 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
-  // Initialize CPUTimeCounters object, which must be done before creation of the heap.
-  CPUTimeCounters::initialize();
   initial_stubs_init();
   jint status = universe_init();  // dependent on codeCache_init and
                                   // initial_stubs_init and metaspace_init.

@@ -184,8 +184,7 @@ void G1PrimaryConcurrentRefineThread::track_usage() {
   G1ConcurrentRefineThread::track_usage();
   // The primary thread is responsible for updating the CPU time for all workers.
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    CPUTimeCounters* counters = CPUTimeCounters::get_instance();
-    ThreadTotalCPUTimeClosure tttc(counters, CPUTimeGroups::gc_conc_refine);
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
     cr()->threads_do(&tttc);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,13 +27,15 @@
 #ifndef SHARE_RUNTIME_CPUTIMECOUNTERS_HPP
 #define SHARE_RUNTIME_CPUTIMECOUNTERS_HPP
 
+
+#include "memory/iterator.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 
 class CPUTimeGroups : public AllStatic {
 public:
-  enum CPUTimeType {
-    total,
+  enum class CPUTimeType {
+    gc_total,
     gc_parallel_workers,
     gc_conc_mark,
     gc_conc_refine,
@@ -49,24 +51,25 @@ public:
 
 class CPUTimeCounters: public CHeapObj<mtGC> {
 private:
-  // We want CPUTimeCounters to be a singleton instance accessed by the vm thread.
+  // CPUTimeCounters is a singleton instance.
   CPUTimeCounters();
   static CPUTimeCounters* _instance;
 
   // An array of PerfCounters which correspond to the various counters we want
   // to track. Indexed by the enum value `CPUTimeType`.
-  PerfCounter* _cpu_time_counters[CPUTimeGroups::COUNT];
+  PerfCounter* _cpu_time_counters[static_cast<int>(CPUTimeGroups::CPUTimeType::COUNT)];
 
   // A long which atomically tracks how much CPU time has been spent doing GC
   // since the last time we called `publish_total_cpu_time()`.
   // It is incremented using Atomic::add() to prevent race conditions, and
-  // is added to the `total` CPUTimeGroup at the end of GC.
-  volatile jlong _total_cpu_time_diff;
+  // is added to the `gc_total` CPUTimeType at the end of GC.
+  volatile jlong _gc_total_cpu_time_diff;
 
   void create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name);
 
 public:
   static CPUTimeCounters* get_instance() {
+    assert(_instance != nullptr, "no instance found");
     return _instance;
   }
 
@@ -79,11 +82,9 @@ public:
   CPUTimeCounters(const CPUTimeCounters& copy) = delete;
   void operator=(const CPUTimeCounters& copy) = delete;
 
-  ~CPUTimeCounters();
-
   // Methods to modify and update counter for total CPU time spent doing GC.
-  void inc_total_cpu_time(jlong diff);
-  void publish_total_cpu_time();
+  void inc_gc_total_cpu_time(jlong diff);
+  void publish_gc_total_cpu_time();
 
   void create_counter(CPUTimeGroups::CPUTimeType name);
   PerfCounter* get_counter(CPUTimeGroups::CPUTimeType name);
@@ -93,18 +94,12 @@ public:
 // hsperfdata counter.
 class ThreadTotalCPUTimeClosure: public ThreadClosure {
  private:
-  jlong _total;
-  PerfCounter* _counter;
-  CPUTimeCounters* _gc_counters;
-  bool _update_gc_counters;
+  jlong _gc_total;
+  CPUTimeGroups::CPUTimeType _name;
 
  public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _total(0), _counter(counter), _gc_counters(CPUTimeCounters::get_instance()), _update_gc_counters(false) {}
-
-  ThreadTotalCPUTimeClosure(CPUTimeCounters* counters, CPUTimeGroups::CPUTimeType name) :
-      _total(0), _counter(counters->get_counter(name)), _gc_counters(counters),
-      _update_gc_counters(CPUTimeGroups::is_gc_counter(name)) {}
+  ThreadTotalCPUTimeClosure(CPUTimeGroups::CPUTimeType name) :
+      _gc_total(0), _name(name) {}
 
   ~ThreadTotalCPUTimeClosure();
 

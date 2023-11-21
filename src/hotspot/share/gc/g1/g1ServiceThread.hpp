@@ -122,7 +122,7 @@ class G1ServiceThread: public ConcurrentGCThread {
   void schedule(G1ServiceTask* task, jlong delay, bool notify);
 
   // Update the perf data counter for service thread.
-  void update_thread_cpu_time(G1ServiceTask* task);
+  void update_thread_cpu_time();
 
 public:
   G1ServiceThread();

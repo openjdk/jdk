@@ -30,24 +30,23 @@
 
 const char* CPUTimeGroups::to_string(CPUTimeType val) {
   switch (val) {
-    case total:
+    case CPUTimeType::gc_total:
       return "total_gc_cpu_time";
-    case gc_parallel_workers:
+    case CPUTimeType::gc_parallel_workers:
       return "gc_parallel_workers";
-    case gc_conc_mark:
+    case CPUTimeType::gc_conc_mark:
       return "gc_conc_mark";
-    case gc_conc_refine:
+    case CPUTimeType::gc_conc_refine:
       return "gc_conc_refine";
-    case gc_service:
+    case CPUTimeType::gc_service:
       return "gc_service";
-    case vm:
+    case CPUTimeType::vm:
       return "vm";
-    case conc_dedup:
+    case CPUTimeType::conc_dedup:
       return "conc_dedup";
-    case COUNT:
-      return "Illegal counter";
+    default:
+      ShouldNotReachHere();
   };
-  ShouldNotReachHere();
 }
 
 bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
@@ -66,36 +65,36 @@ bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
   ShouldNotReachHere();
 }
 
-CPUTimeCounters*         CPUTimeCounters::_instance          = nullptr;
+CPUTimeCounters* CPUTimeCounters::_instance = nullptr;
 
 CPUTimeCounters::CPUTimeCounters() :
     _cpu_time_counters(),
-    _total_cpu_time_diff(0) {
-  create_counter(SUN_THREADS, CPUTimeGroups::total);
+    _gc_total_cpu_time_diff(0) {
+  create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
 }
 
-void CPUTimeCounters::inc_total_cpu_time(jlong diff) {
-  Atomic::add(&_total_cpu_time_diff, diff);
+void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
+  Atomic::add(&_gc_total_cpu_time_diff, diff);
 }
 
-void CPUTimeCounters::publish_total_cpu_time() {
+void CPUTimeCounters::publish_gc_total_cpu_time() {
   // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
   // to set the value to zero after we obtain the new CPU time difference.
   jlong old_value;
-  jlong fetched_value = Atomic::load(&_total_cpu_time_diff);
+  jlong fetched_value = Atomic::load(&_gc_total_cpu_time_diff);
   jlong new_value = 0;
   do {
     old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&_total_cpu_time_diff, old_value, new_value);
+    fetched_value = Atomic::cmpxchg(&_gc_total_cpu_time_diff, old_value, new_value);
   } while (old_value != fetched_value);
-  get_counter(CPUTimeGroups::total)->inc(fetched_value);
+  get_counter(CPUTimeGroups::CPUTimeType::gc_total)->inc(fetched_value);
 }
 
 void CPUTimeCounters::create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name) {
   if (UsePerfData) {
     EXCEPTION_MARK;
     if (os::is_thread_cpu_time_supported()) {
-      _cpu_time_counters[name] =
+      _cpu_time_counters[static_cast<int>(name)] =
                   PerfDataManager::create_counter(ns, CPUTimeGroups::to_string(name),
                                                   PerfData::U_Ticks, CHECK);
     }
@@ -107,14 +106,16 @@ void CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType group) {
 }
 
 PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
-  return _cpu_time_counters[name];
+  return _cpu_time_counters[static_cast<int>(name)];
 }
 
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
-    jlong net_cpu_time = _total - _counter->get_value();
-    _counter->inc(net_cpu_time);
-    if (_update_gc_counters) {
-      _gc_counters->inc_total_cpu_time(net_cpu_time);
+    CPUTimeCounters* instance = CPUTimeCounters::get_instance();
+    PerfCounter* counter = instance->get_counter(_name);
+    jlong net_cpu_time = _gc_total - counter->get_value();
+    counter->inc(net_cpu_time);
+    if (CPUTimeGroups::is_gc_counter(_name)) {
+      instance->inc_gc_total_cpu_time(net_cpu_time);
     }
 }
 
@@ -123,7 +124,7 @@ void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
     // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
     // must ensure the thread exists and has not terminated.
     assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _total += os::thread_cpu_time(thread);
+    _gc_total += os::thread_cpu_time(thread);
 }
 
 
