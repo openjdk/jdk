@@ -124,20 +124,20 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
 
       // Unlink the found batch.
       if (prev == nullptr) {
-        // The batch is not preceded by another monitor. There is a chance the batch starts at head.
-        // Optimistically assume no inserts happened, and try to remove the entire batch from the head.
+        // The current batch is the first batch, so there is a chance that it starts at head.
+        // Optimistically assume no inserts happened, and try to unlink the entire batch from the head.
         ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, m, next);
         if (prev_head != m) {
           // Something must have updated the head. Figure out the actual prev for this batch.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
             prev = n;
           }
-          assert(prev != nullptr, "Should have found the batch head");
+          assert(prev != nullptr, "Should have found the prev for the current batch");
           prev->set_next_om(next);
         }
       } else {
-        // The batch is preceded by another monitor. This guarantees the current batch does not
-        // start at head. Remove the entire batch without updating the head.
+        // The current batch is preceded by another batch. This guarantees the current batch
+        // does not start at head. Unlink the entire current batch without updating the head.
         assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
