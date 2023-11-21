@@ -43,12 +43,16 @@
 /*
   Remaining issues:
   1. No virtual memory allocation sites statistics
-  2. Depends on move semantics, need to split out these into separate PRs for GrowableArray
   3. No baselining
   4. Reporting not part of Reporter class but part of VirtualMemoryView
   5. Insufficient amount of unit tests
   6. Need to fix includes, copyright stmts etc
-  7. NativeCallStack is broken for debug+summary mode
+
+  I've started on splitting up reserving and mapping, but haven't confirmed that it works.
+
+  I've gotten some input on just how large these mappings can be: Approx. 16 million mappings at once.
+  Perhaps we can introduce an alignment+maximum size for this in order to solve the problem? We can then statically allocate the mapping area and get
+  O(1) mapping info.
 */
 
 class VirtualMemoryView {
@@ -120,7 +124,7 @@ private:
   // 1. Their NativeCallStacks are the same
   // 2. Their starts align correctly
   static void merge_committed(RegionStorage& ranges);
-  static void merge_reserved(OffsetRegionStorage& ranges);
+  static void merge_mapped(OffsetRegionStorage& ranges);
 
   static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
   static void sort_regions(OffsetRegionStorage& storage);
@@ -140,7 +144,8 @@ private:
   static OverlappingResult overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                       TrackedOffsetRange* out, int* len);
 
-  static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* _reserved_regions;
+  static RegionStorage* _reserved_regions;
+  static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* _mapped_regions;
   static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
@@ -148,7 +153,10 @@ private:
     template<typename Func>
     void for_each(Func f) {
       for (int i = 0; i < _reserved_regions->length(); i++) {
-        OffsetRegionStorage& outer = _reserved_regions->at(i);
+        f(&_reserved_regions->at(i).stack_idx);
+      }
+      for (int i = 0; i < _mapped_regions->length(); i++) {
+        OffsetRegionStorage& outer = _mapped_regions->at(i);
         for (int j = 0; j < outer.length(); j++) {
           f(&outer.at(i).stack_idx);
         }
@@ -164,10 +172,17 @@ private:
 
   static NativeCallStackStorage<IndexIterator>* _stack_storage;
   static bool _is_detailed_mode;
+
+private:
+  static void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
+  static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
 public:
   static void initialize(bool is_detailed_mode);
 
   static PhysicalMemorySpace register_space(const char* descriptive_name);
+
+  static void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
+  static void release_memory(address base_addr, size_t size);
 
   static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);

@@ -177,6 +177,24 @@ class MemTracker : AllStatic {
     ThreadCritical tc;
     return VMV::register_space(descriptive_name);
   }
+
+  static inline void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (base_addr != nullptr) {
+      ThreadCritical tc;
+      VMV::reserve_memory(base_addr, size, flag, stack);
+    }
+  }
+  static inline void release_memory(address base_addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (base_addr != nullptr) {
+      ThreadCritical tc;
+      VMV::release_memory(base_addr, size);
+    }
+  }
+
   static inline void add_view_into_space(const VMV::PhysicalMemorySpace space, address base_addr, size_t size, address offset,
                                          MEMFLAGS flag, const NativeCallStack& stack) {
     assert_post_init();

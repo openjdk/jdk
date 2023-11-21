@@ -34,7 +34,7 @@
 VirtualMemoryView::PhysicalMemorySpace ZNMT::_space{};
 
 void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  MemTracker::add_view_into_space(ZNMT::_space, (address)start, size, (address)start, mtJavaHeap, CALLER_PC);
+  MemTracker::reserve_memory((address)start, size, mtJavaHeap, CALLER_PC);
 }
 void ZNMT::commit(zoffset offset, size_t size) {
   MemTracker::commit_memory_into_space(ZNMT::_space, (address)offset, size, CALLER_PC);
