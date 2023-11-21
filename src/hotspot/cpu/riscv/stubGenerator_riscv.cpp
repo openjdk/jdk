@@ -2709,7 +2709,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ slli(needle_len, needle_len, BitsPerByte * wordSize / 2);
-    __ orr(haystack_len, haystack_len, needle_len); // restore needle_len(3right_2_bits)
+    __ orr(haystack_len, haystack_len, needle_len); // restore needle_len(32bits)
     __ sub(result, result, 1); // array index from 0, so result -= 1
 
     __ bind(L_HAS_ZERO_LOOP);
