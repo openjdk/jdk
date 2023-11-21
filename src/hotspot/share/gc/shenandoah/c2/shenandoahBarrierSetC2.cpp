@@ -1104,7 +1104,7 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
       return nullptr;
     }
 
-    return n->as_If()->dominated_by(prev_dom, phase->is_IterGVN());
+    return n->as_If()->dominated_by(prev_dom, phase->is_IterGVN(), false);
   }
 
   return nullptr;

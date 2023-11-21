@@ -539,7 +539,7 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
 
 //------------------------------adjust_check-----------------------------------
 // Adjust (widen) a prior range check
-static void adjust_check(Node* proj, Node* range, Node* index,
+static void adjust_check(IfProjNode* proj, Node* range, Node* index,
                          int flip, jint off_lo, PhaseIterGVN* igvn) {
   PhaseGVN *gvn = igvn;
   // Break apart the old check
@@ -547,25 +547,29 @@ static void adjust_check(Node* proj, Node* range, Node* index,
   Node *bol = iff->in(1);
   if( bol->is_top() ) return;   // In case a partially dead range check appears
   // bail (or bomb[ASSERT/DEBUG]) if NOT projection-->IfNode-->BoolNode
-  DEBUG_ONLY( if( !bol->is_Bool() ) { proj->dump(3); fatal("Expect projection-->IfNode-->BoolNode"); } )
-  if( !bol->is_Bool() ) return;
+  DEBUG_ONLY( if (!bol->is_Bool()) { proj->dump(3); fatal("Expect projection-->IfNode-->BoolNode"); } )
+  if (!bol->is_Bool()) return;
 
   Node *cmp = bol->in(1);
   // Compute a new check
   Node *new_add = gvn->intcon(off_lo);
-  if( index ) {
-    new_add = off_lo ? gvn->transform(new AddINode( index, new_add )) : index;
+  if (index) {
+    new_add = off_lo ? gvn->transform(new AddINode(index, new_add)) : index;
   }
   Node *new_cmp = (flip == 1)
-    ? new CmpUNode( new_add, range )
-    : new CmpUNode( range, new_add );
+    ? new CmpUNode(new_add, range)
+    : new CmpUNode(range, new_add);
   new_cmp = gvn->transform(new_cmp);
   // See if no need to adjust the existing check
-  if( new_cmp == cmp ) return;
+  if (new_cmp == cmp) return;
   // Else, adjust existing check
-  Node *new_bol = gvn->transform( new BoolNode( new_cmp, bol->as_Bool()->_test._test ) );
-  igvn->rehash_node_delayed( iff );
-  iff->set_req_X( 1, new_bol, igvn );
+  Node *new_bol = gvn->transform( new BoolNode(new_cmp, bol->as_Bool()->_test._test));
+  igvn->rehash_node_delayed(iff);
+  iff->set_req_X(1, new_bol, igvn);
+  // Loads and range check Cast nodes that are control dependent on this range check now also depend on a dominating
+  // range check and can't float if the range check they are control dependent on is replaced by some dominating range
+  // check: pin them.
+  proj->pin_array_loads(igvn);
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -1418,7 +1422,7 @@ static Node *remove_useless_bool(IfNode *iff, PhaseGVN *phase) {
 static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff);
 
 struct RangeCheck {
-  Node* ctl;
+  IfProjNode* ctl;
   jint off;
 };
 
@@ -1486,14 +1490,14 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (prev_dom != nullptr) {
     // Replace dominated IfNode
-    return dominated_by(prev_dom, igvn);
+    return dominated_by(prev_dom, igvn, false);
   }
 
   return simple_subsuming(igvn);
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool range_check_smearing) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
@@ -1505,15 +1509,6 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
   // Need opcode to decide which way 'this' test goes
   int prev_op = prev_dom->Opcode();
   Node *top = igvn->C->top(); // Shortcut to top
-
-  // Loop predicates may have depending checks which should not
-  // be skipped. For example, range check predicate has two checks
-  // for lower and upper bounds.
-  ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
-  if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != nullptr ||
-      unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != nullptr) {
-    prev_dom = idom;
-  }
 
   // Now walk the current IfNode's projections.
   // Loop ends when 'this' has no more uses.
@@ -1537,6 +1532,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
         // For control producers.
         // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
+        if (range_check_smearing && data_target != top) {
+          // Loads and range check Cast nodes that are control dependent on this range check depend on multiple
+          // dominating range checks and can't float even if the range check they'll be control dependent on once this
+          // function returns is replaced by a dominating range check: pin them.
+          Node* clone = s->pin_for_array_access();
+          if (clone != nullptr) {
+            clone = igvn->transform(clone);
+            igvn->replace_node(s, clone);
+          }
+        }
       } else {
         // Find the control input matching this def-use edge.
         // For Regions it may not be in slot 0.
@@ -1781,6 +1786,22 @@ bool IfNode::is_zero_trip_guard() const {
   return false;
 }
 
+void IfProjNode::pin_array_loads(PhaseIterGVN* igvn) {
+  for (DUIterator i = outs(); has_out(i); i++) {
+    Node* u = out(i);
+    if (!u->depends_only_on_test()) {
+      continue;
+    }
+    Node* clone = u->pin_for_array_access();
+    if (clone != nullptr) {
+      clone = igvn->transform(clone);
+      assert(clone != u, "shouldn't common");
+      igvn->replace_node(u, clone);
+      --i;
+    }
+  }
+}
+
 #ifndef PRODUCT
 //------------------------------dump_spec--------------------------------------
 void IfNode::dump_spec(outputStream *st) const {
@@ -1910,7 +1931,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           off_lo = MIN2(off_lo,offset2);
           off_hi = MAX2(off_hi,offset2);
           // Record top NRC range checks
-          prev_checks[nb_checks%NRC].ctl = prev_dom;
+          prev_checks[nb_checks%NRC].ctl = prev_dom->as_IfProj();
           prev_checks[nb_checks%NRC].off = offset2;
           nb_checks++;
         }
@@ -1926,6 +1947,11 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // interpreter, widening a check can make us speculatively enter
       // the interpreter.  If we see range-check deopt's, do not widen!
       if (!phase->C->allow_range_check_smearing())  return nullptr;
+
+      if (can_reshape && !phase->C->post_loop_opts_phase()) {
+        phase->C->record_for_post_loop_opts_igvn(this);
+        return nullptr;
+      }
 
       // Didn't find prior covering check, so cannot remove anything.
       if (nb_checks == 0) {
@@ -2000,6 +2026,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Test is now covered by prior checks, dominate it out
         prev_dom = rc0.ctl;
       }
+      return dominated_by(prev_dom, igvn, true);
     }
   } else {
     prev_dom = search_identical(4, igvn);
@@ -2010,7 +2037,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Replace dominated IfNode
-  return dominated_by(prev_dom, igvn);
+  return dominated_by(prev_dom, igvn, false);
 }
 
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)

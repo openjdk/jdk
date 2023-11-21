@@ -1135,7 +1135,11 @@ public:
   template <typename Callback, typename Check>
   void visit_uses(Callback callback, Check is_boundary) const;
 
-//----------------- Code Generation
+  virtual Node* pin_for_array_access() const {
+    return nullptr;
+  }
+
+  //----------------- Code Generation
 
   // Ideal register class for Matching.  Zero means unmatched instruction
   // (these are cloned instead of converted to machine nodes).
