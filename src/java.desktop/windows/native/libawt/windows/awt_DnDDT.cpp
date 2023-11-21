@@ -27,6 +27,7 @@
 #include <shellapi.h>
 #include <memory.h>
 
+// Don't want to pull in the redefined allocation functions
 #include "awt_ole.h"
 #include "awt_DataTransferer.h"
 #include "java_awt_dnd_DnDConstants.h"
