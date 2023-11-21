@@ -36,7 +36,7 @@ package jdk.internal.event;
 public class SelectionEvent extends Event {
 
     public int count;
-    
+
     /**
      * Actually commit a selection event.  The implementation
      * of this method is generated automatically if jfr is enabled.
