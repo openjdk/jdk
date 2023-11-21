@@ -1336,21 +1336,32 @@ ret:
     }
 }
 
-void AwtFrame::_SetState(void *param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtFrame::_SetState(void *param) {
+    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetStateStruct *sss = (SetStateStruct *)param;
+    SetStateStruct *sss = static_cast<SetStateStruct *>(param);
     jobject self = sss->frame;
     jint state = sss->state;
 
-    AwtFrame *f = NULL;
+    AwtFrame *f = nullptr;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    f = (AwtFrame *)pData;
-    HWND hwnd;
-    hwnd = f->GetHWnd();
+    if (self == NULL) {
+        env->ExceptionClear();
+        JNU_ThrowNullPointerException(env, "self");
+        delete sss;
+        return;
+    } else {
+        pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            THROW_NULL_PDATA_IF_NOT_DESTROYED(self);
+            env->DeleteGlobalRef(self);
+            delete sss;
+            return;
+        }
+    }
+    f = (AwtFrame *) pData;
+    HWND hwnd = f->GetHWnd();
     if (::IsWindow(hwnd)) {
         DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));
 
@@ -1405,7 +1416,7 @@ void AwtFrame::_SetState(void *param)
             f->setZoomed(zoom);
         }
     }
-ret:
+
     env->DeleteGlobalRef(self);
 
     delete sss;
