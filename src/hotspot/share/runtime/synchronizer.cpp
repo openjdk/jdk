@@ -572,7 +572,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
       } else {
         while (mark.is_fast_locked()) {
           // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
-          const markWord unlocked_mark = mark.set_fast_locked();
+          const markWord unlocked_mark = mark.set_unlocked();
           const markWord old_mark = object->cas_set_mark(unlocked_mark, mark);
           if (old_mark == mark) {
             size_t recursions = lock_stack.remove(object) - 1;

@@ -4557,8 +4557,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     generate_slow_guard(test_monitor, slow_region);
   } else {
     Node *unlocked_val      = _gvn.MakeConX(markWord::unlocked_value);
-    Node *chk_unlocked      = _gvn.transform(new CmpXNode( lmasked_header, unlocked_val));
-    Node *test_not_unlocked = _gvn.transform(new BoolNode( chk_unlocked, BoolTest::ne));
+    Node *chk_unlocked      = _gvn.transform(new CmpXNode(lmasked_header, unlocked_val));
+    Node *test_not_unlocked = _gvn.transform(new BoolNode(chk_unlocked, BoolTest::ne));
 
     generate_slow_guard(test_not_unlocked, slow_region);
   }
