@@ -34,24 +34,24 @@
 VirtualMemoryView::PhysicalMemorySpace ZNMT::_space{};
 
 void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  log_info(zgc, nmt)("Reserving " PTR_FORMAT " of size " SIZE_FORMAT, untype(start), size);
+  log_info(zgc, nmt)("Reserving " PTR_FORMAT " of size " SIZE_FORMAT, p2i((address)start), size);
   MemTracker::reserve_memory((address)start, size, mtJavaHeap, CALLER_PC);
 }
 void ZNMT::commit(zoffset offset, size_t size) {
-  log_info(zgc, nmt)("Committing " PTR_FORMAT " of size " SIZE_FORMAT, untype(offset), size);
+  log_info(zgc, nmt)("Committing " PTR_FORMAT " of size " SIZE_FORMAT, p2i((address)offset), size);
   MemTracker::commit_memory_into_space(ZNMT::_space, (address)offset, size, CALLER_PC);
 }
 void ZNMT::uncommit(zoffset offset, size_t size) {
-  log_info(zgc, nmt)("Uncommitting " PTR_FORMAT " of size " SIZE_FORMAT, untype(offset), size);
+  log_info(zgc, nmt)("Uncommitting " PTR_FORMAT " of size " SIZE_FORMAT, p2i((address)untype(offset)), size);
   MemTracker::uncommit_memory_into_space(ZNMT::_space, (address)offset, size);
 }
 void ZNMT::map(zaddress_unsafe addr, size_t size, zoffset offset) {
   log_info(zgc, nmt)("Mapping " PTR_FORMAT " of size " SIZE_FORMAT " to offset " PTR_FORMAT,
-                     addr, size, offset);
+                     p2i((address)addr), size, p2i((address)offset));
   MemTracker::add_view_into_space(ZNMT::_space, (address)addr, size, (address)offset, mtJavaHeap, CALLER_PC);
 }
 void ZNMT::unmap(zaddress_unsafe addr, size_t size) {
-  log_info(zgc, nmt)("Unmapping " PTR_FORMAT " of size " SIZE_FORMAT, addr, size);
+  log_info(zgc, nmt)("Unmapping " PTR_FORMAT " of size " SIZE_FORMAT, p2i((address)addr), size);
   MemTracker::remove_view_into_space(ZNMT::_space, (address)addr, size);
 }
 void ZNMT::init() {
