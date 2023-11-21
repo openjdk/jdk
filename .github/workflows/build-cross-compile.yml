@@ -100,6 +100,10 @@ jobs:
         with:
           platform: linux-x64
 
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
         # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install toolchain and dependencies'
         run: |
@@ -155,6 +159,7 @@ jobs:
           --with-conf-name=linux-${{ matrix.target-cpu }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --enable-debug
           --disable-precompiled-headers
