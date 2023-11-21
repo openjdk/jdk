@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/symbolTable.hpp"
@@ -36,7 +37,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
@@ -1069,7 +1069,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
       klass->class_loader_data(), new_size, nullptr, CHECK);
 
   // original_ordering might be empty if this class has no methods of its own
-  if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
+  if (JvmtiExport::can_maintain_original_method_order() || CDSConfig::is_dumping_archive()) {
     merged_ordering = MetadataFactory::new_array<int>(
         klass->class_loader_data(), new_size, CHECK);
   }

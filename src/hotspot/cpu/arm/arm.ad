@@ -9438,8 +9438,9 @@ instruct storeV16(memoryvld mem, vecX src) %{
 
 // Replicate scalar to packed byte values in Double register
 instruct Repl8B_reg(vecD dst, iRegI src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   ins_cost(DEFAULT_COST*4);
   effect(TEMP tmp);
   size(16);
@@ -9460,8 +9461,9 @@ instruct Repl8B_reg(vecD dst, iRegI src, iRegI tmp) %{
 
 // Replicate scalar to packed byte values in Double register
 instruct Repl8B_reg_simd(vecD dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.8 $dst,$src\t" %}
@@ -9475,8 +9477,9 @@ instruct Repl8B_reg_simd(vecD dst, iRegI src) %{
 
 // Replicate scalar to packed byte values in Double register pair
 instruct Repl16B_reg(vecX dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16);
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.8 $dst.Q,$src\t" %}
@@ -9490,8 +9493,9 @@ instruct Repl16B_reg(vecX dst, iRegI src) %{
 
 // Replicate scalar constant to packed byte values in Double register
 instruct Repl8B_immI(vecD dst, immI src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   ins_cost(DEFAULT_COST*2);
   effect(TEMP tmp);
   size(12);
@@ -9505,8 +9509,9 @@ instruct Repl8B_immI(vecD dst, immI src, iRegI tmp) %{
 // Replicate scalar constant to packed byte values in Double register
 // TODO: support negative constants with MVNI?
 instruct Repl8B_immU8(vecD dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.U8  $dst,$src" %}
@@ -9520,8 +9525,9 @@ instruct Repl8B_immU8(vecD dst, immU8 src) %{
 
 // Replicate scalar constant to packed byte values in Double register pair
 instruct Repl16B_immU8(vecX dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateB src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.U8  $dst.Q,$src" %}
@@ -9535,8 +9541,9 @@ instruct Repl16B_immU8(vecX dst, immU8 src) %{
 
 // Replicate scalar to packed short/char values into Double register
 instruct Repl4S_reg(vecD dst, iRegI src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   ins_cost(DEFAULT_COST*3);
   effect(TEMP tmp);
   size(12);
@@ -9555,8 +9562,9 @@ instruct Repl4S_reg(vecD dst, iRegI src, iRegI tmp) %{
 
 // Replicate scalar to packed byte values in Double register
 instruct Repl4S_reg_simd(vecD dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.16 $dst,$src\t" %}
@@ -9570,8 +9578,9 @@ instruct Repl4S_reg_simd(vecD dst, iRegI src) %{
 
 // Replicate scalar to packed byte values in Double register pair
 instruct Repl8S_reg(vecX dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.16 $dst.Q,$src\t" %}
@@ -9586,8 +9595,9 @@ instruct Repl8S_reg(vecX dst, iRegI src) %{
 
 // Replicate scalar constant to packed short/char values in Double register
 instruct Repl4S_immI(vecD dst, immI src, iRegP tmp) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   effect(TEMP tmp);
   size(12);
   ins_cost(DEFAULT_COST*4); // FIXME
@@ -9600,8 +9610,9 @@ instruct Repl4S_immI(vecD dst, immI src, iRegP tmp) %{
 
 // Replicate scalar constant to packed byte values in Double register
 instruct Repl4S_immU8(vecD dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.U16  $dst,$src" %}
@@ -9615,8 +9626,9 @@ instruct Repl4S_immU8(vecD dst, immU8 src) %{
 
 // Replicate scalar constant to packed byte values in Double register pair
 instruct Repl8S_immU8(vecX dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateS src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.U16  $dst.Q,$src" %}
@@ -9630,8 +9642,9 @@ instruct Repl8S_immU8(vecX dst, immU8 src) %{
 
 // Replicate scalar to packed int values in Double register
 instruct Repl2I_reg(vecD dst, iRegI src) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "FMDRR    $dst,$src,$src\t" %}
@@ -9643,8 +9656,9 @@ instruct Repl2I_reg(vecD dst, iRegI src) %{
 
 // Replicate scalar to packed int values in Double register pair
 instruct Repl4I_reg(vecX dst, iRegI src) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   ins_cost(DEFAULT_COST*2);
   size(8);
 
@@ -9661,8 +9675,9 @@ instruct Repl4I_reg(vecX dst, iRegI src) %{
 
 // Replicate scalar to packed int values in Double register
 instruct Repl2I_reg_simd(vecD dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.32 $dst.D,$src\t" %}
@@ -9676,8 +9691,9 @@ instruct Repl2I_reg_simd(vecD dst, iRegI src) %{
 
 // Replicate scalar to packed int values in Double register pair
 instruct Repl4I_reg_simd(vecX dst, iRegI src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VDUP.32 $dst.Q,$src\t" %}
@@ -9692,8 +9708,9 @@ instruct Repl4I_reg_simd(vecX dst, iRegI src) %{
 
 // Replicate scalar zero constant to packed int values in Double register
 instruct Repl2I_immI(vecD dst, immI src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   effect(TEMP tmp);
   size(12);
   ins_cost(DEFAULT_COST*4); // FIXME
@@ -9706,8 +9723,9 @@ instruct Repl2I_immI(vecD dst, immI src, iRegI tmp) %{
 
 // Replicate scalar constant to packed byte values in Double register
 instruct Repl2I_immU8(vecD dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.I32  $dst.D,$src" %}
@@ -9721,8 +9739,9 @@ instruct Repl2I_immU8(vecD dst, immU8 src) %{
 
 // Replicate scalar constant to packed byte values in Double register pair
 instruct Repl4I_immU8(vecX dst, immU8 src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateI src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "VMOV.I32  $dst.Q,$src" %}
@@ -9736,8 +9755,9 @@ instruct Repl4I_immU8(vecX dst, immU8 src) %{
 
 // Replicate scalar to packed byte values in Double register pair
 instruct Repl2L_reg(vecX dst, iRegL src) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateL src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   size(8);
   ins_cost(DEFAULT_COST*2); // FIXME
 
@@ -9754,8 +9774,9 @@ instruct Repl2L_reg(vecX dst, iRegL src) %{
 
 // Replicate scalar to packed float values in Double register
 instruct Repl2F_regI(vecD dst, iRegI src) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   size(4);
 
   format %{ "FMDRR    $dst.D,$src,$src\t" %}
@@ -9767,8 +9788,9 @@ instruct Repl2F_regI(vecD dst, iRegI src) %{
 
 // Replicate scalar to packed float values in Double register
 instruct Repl2F_reg_vfp(vecD dst, regF src) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   size(4*2);
   ins_cost(DEFAULT_COST*2); // FIXME
 
@@ -9781,8 +9803,9 @@ instruct Repl2F_reg_vfp(vecD dst, regF src) %{
 
 // Replicate scalar to packed float values in Double register
 instruct Repl2F_reg_simd(vecD dst, regF src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
 
@@ -9796,8 +9819,9 @@ instruct Repl2F_reg_simd(vecD dst, regF src) %{
 
 // Replicate scalar to packed float values in Double register pair
 instruct Repl4F_reg(vecX dst, regF src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   effect(TEMP tmp);
   size(4*3);
   ins_cost(DEFAULT_COST*3); // FIXME
@@ -9816,8 +9840,9 @@ instruct Repl4F_reg(vecX dst, regF src, iRegI tmp) %{
 
 // Replicate scalar to packed float values in Double register pair
 instruct Repl4F_reg_simd(vecX dst, regF src) %{
-  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd());
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length_in_bytes() == 16 && VM_Version::has_simd() &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
 
@@ -9831,8 +9856,9 @@ instruct Repl4F_reg_simd(vecX dst, regF src) %{
 
 // Replicate scalar zero constant to packed float values in Double register
 instruct Repl2F_immI(vecD dst, immF src, iRegI tmp) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateF src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   effect(TEMP tmp);
   size(12);
   ins_cost(DEFAULT_COST*4); // FIXME
@@ -9845,8 +9871,9 @@ instruct Repl2F_immI(vecD dst, immF src, iRegI tmp) %{
 
 // Replicate scalar to packed double float values in Double register pair
 instruct Repl2D_reg(vecX dst, regD src) %{
-  predicate(n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateD src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (Replicate src));
   size(4*2);
   ins_cost(DEFAULT_COST*2); // FIXME
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4147269 4266783 4726030
  * @summary Make sure that validation is adequate in non-lenient mode.
- * @library /java/text/testlib
+ * @run junit/othervm NonLenientTest
  */
 
 import java.util.Date;
@@ -35,22 +35,22 @@ import java.util.TimeZone;
 
 import static java.util.Calendar.*;
 
-public class NonLenientTest extends IntlTest {
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 
-    public static void main(String[] args) throws Exception {
-        Locale reservedLocale = Locale.getDefault();
-        TimeZone reservedTimeZone = TimeZone.getDefault();
-        try {
-            Locale.setDefault(Locale.US);
-            TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
-            new NonLenientTest().run(args);
-        } finally {
-            // restore the reserved locale and time zone
-            Locale.setDefault(reservedLocale);
-            TimeZone.setDefault(reservedTimeZone);
-        }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class NonLenientTest {
+
+    // Change JVM default Locale and TimeZone
+    @BeforeAll
+    static void initAll() {
+        Locale.setDefault(Locale.US);
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
     }
 
+
+    @Test
     public void TestValidationInNonLenient() {
         Koyomi cal = getNonLenient();
 
@@ -122,6 +122,7 @@ public class NonLenientTest extends IntlTest {
     /**
      * 4266783: java.util.GregorianCalendar: incorrect validation in non-lenient
      */
+    @Test
     public void Test4266783() {
         Koyomi cal = getNonLenient();
         // 2003/1 has up to 5 weeks.
@@ -135,6 +136,7 @@ public class NonLenientTest extends IntlTest {
     /**
      * 4726030: GregorianCalendar doesn't check invalid dates in non-lenient
      */
+    @Test
     public void Test4726030() {
         Koyomi cal = getNonLenient();
         // Default year is 1970 in GregorianCalendar which isn't a leap year.
@@ -146,6 +148,7 @@ public class NonLenientTest extends IntlTest {
     /**
      * 4147269: java.util.GregorianCalendar.computeTime() works wrong when lenient is false
      */
+    @Test
     public void Test4147269() {
         Koyomi calendar = getNonLenient();
         Date date = (new GregorianCalendar(1996, 0, 3)).getTime();
@@ -157,7 +160,7 @@ public class NonLenientTest extends IntlTest {
             calendar.set(field, value);
             try {
                 calendar.computeTime(); // call method under test
-                errln("Test failed with field " + Koyomi.getFieldName(field)
+                fail("Test failed with field " + Koyomi.getFieldName(field)
                         + "\n\tdate before:  " + date
                         + "\n\tdate after:   " + calendar.getTime()
                         + "\n\tvalue: " + value + "  (max = " + max + ")");
@@ -172,7 +175,7 @@ public class NonLenientTest extends IntlTest {
             calendar.set(field, value);
             try {
                 calendar.computeTime(); // call method under test
-                errln("Test failed with field " + Koyomi.getFieldName(field)
+                fail("Test failed with field " + Koyomi.getFieldName(field)
                         + "\n\tdate before:  " + date
                         + "\n\tdate after:   " + calendar.getTime()
                         + "\n\tvalue: " + value + "  (min = " + min + ")");
@@ -187,7 +190,7 @@ public class NonLenientTest extends IntlTest {
 
         try {
             cal.complete();
-            errln(desc + " should throw IllegalArgumentException in non-lenient.");
+            fail(desc + " should throw IllegalArgumentException in non-lenient.");
         } catch (IllegalArgumentException e) {
         }
 
@@ -198,14 +201,14 @@ public class NonLenientTest extends IntlTest {
         int[] afterFields = cal.getFields();
         for (int i = 0; i < FIELD_COUNT; i++) {
             if (cal.isSet(i) && originalFields[i] != afterFields[i]) {
-                errln("    complete() modified fields[" + Koyomi.getFieldName(i) + "] got "
+                fail("    complete() modified fields[" + Koyomi.getFieldName(i) + "] got "
                         + afterFields[i] + ", expected " + originalFields[i]);
             }
         }
         // In non-lenient, set state of fields shouldn't be modified.
         int afterSetFields = cal.getSetStateFields();
         if (setFields != afterSetFields) {
-            errln("    complate() modified set states: before 0x" + toHex(setFields)
+            fail("    complate() modified set states: before 0x" + toHex(setFields)
                     + ", after 0x" + toHex(afterSetFields));
         }
     }

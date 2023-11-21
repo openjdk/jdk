@@ -52,28 +52,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶︓﹕：]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\:：﹕︓ ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰">[؉‰]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄]</parseLenient>
-			<parseLenient sample="£">[£₤￡]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰">[‰ ؉]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 			<parseLenient sample="¥">[¥￥]</parseLenient>
 			<parseLenient sample="₩">[₩￦]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫⹁、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ⹁ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫⹁︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ⹁ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -2899,7 +2899,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Dumont d’Urville</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy</exemplarCity>
+				<exemplarCity>St. Barthélemy</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokan</exemplarCity>
@@ -3005,6 +3005,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>Curaçao</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>Asunción</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>Réunion</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>São Tomé</exemplarCity>
 			</zone>
 		</timeZoneNames>
 	</dates>
@@ -4339,6 +4351,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<symbol>JP¥</symbol>
 				<symbol alt="narrow">¥</symbol>
 			</currency>
+			<currency type="KGS">
+				<symbol alt="narrow">⃀</symbol>
+			</currency>
 			<currency type="KHR">
 				<symbol alt="narrow">៛</symbol>
 			</currency>
@@ -4767,6 +4782,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>y{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>r{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>q{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>da{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -4796,6 +4817,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>R{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>Q{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
@@ -5437,6 +5464,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kn</displayName>
 				<unitPattern count="other">{0} kn</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<displayName>Bft</displayName>
+				<unitPattern count="other">B {0}</unitPattern>
+			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
 				<unitPattern count="other">{0}°</unitPattern>
@@ -5670,6 +5701,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabelPattern type="compatibility">{0} — compatibility</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — enclosed</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — extended</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} facing left</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} facing right</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} — historic</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — miscellaneous</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — other</characterLabelPattern>
@@ -5781,47 +5814,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="12">slanted</styleName>
 		<styleName type="slnt" subtype="24">extra-slanted</styleName>
 		<styleName type="wdth" subtype="50">ultracondensed</styleName>
-		<styleName type="wdth" subtype="50" alt="compressed">ultracompressed</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow">ultranarrow</styleName>
 		<styleName type="wdth" subtype="62.5">extra-condensed</styleName>
-		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
 		<styleName type="wdth" subtype="75">condensed</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
-		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
 		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
-		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
-		<styleName type="wdth" subtype="87.5" alt="narrow">seminarrow</styleName>
 		<styleName type="wdth" subtype="100">normal</styleName>
 		<styleName type="wdth" subtype="112.5">semiexpanded</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
-		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
 		<styleName type="wdth" subtype="125">expanded</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
-		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
 		<styleName type="wdth" subtype="150">extra-expanded</styleName>
-		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
-		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
 		<styleName type="wdth" subtype="200">ultraexpanded</styleName>
-		<styleName type="wdth" subtype="200" alt="extended">ultraextended</styleName>
-		<styleName type="wdth" subtype="200" alt="wide">ultrawide</styleName>
 		<styleName type="wght" subtype="100">thin</styleName>
 		<styleName type="wght" subtype="200">extra-light</styleName>
-		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
 		<styleName type="wght" subtype="300">light</styleName>
 		<styleName type="wght" subtype="350">semilight</styleName>
 		<styleName type="wght" subtype="380">book</styleName>
 		<styleName type="wght" subtype="400">regular</styleName>
 		<styleName type="wght" subtype="500">medium</styleName>
 		<styleName type="wght" subtype="600">semibold</styleName>
-		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
 		<styleName type="wght" subtype="700">bold</styleName>
 		<styleName type="wght" subtype="800">extra-bold</styleName>
 		<styleName type="wght" subtype="900">black</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
 		<styleName type="wght" subtype="950">extra-black</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
 		<featureName type="afrc">vertical fractions</featureName>
 		<featureName type="cpsp">capital spacing</featureName>
 		<featureName type="dlig">optional ligatures</featureName>
@@ -5837,6 +5849,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
+		<parameterDefault parameter="formality">formal</parameterDefault>
+		<parameterDefault parameter="length">medium</parameterDefault>
+		<nativeSpaceReplacement xml:space="preserve"> </nativeSpaceReplacement>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>

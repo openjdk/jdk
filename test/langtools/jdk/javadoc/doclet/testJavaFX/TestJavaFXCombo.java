@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,7 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="getExample()">
                                 <h3>getExample</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">getExample</span>()</div>
                                 <div class="block">Gets the value of the <code>example</code> property.</div>
                                 <dl class="notes">
@@ -163,6 +164,7 @@ public class TestJavaFXCombo extends JavadocTester {
                                 <dd>the value of the <code>example</code> property</dd>
                                 #SEE#
                                 </dl>
+                                </div>
                                 </section>
                                 """
                                 .replace("#DESC#", getPropertyDescription(fk, pk))
@@ -176,12 +178,14 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="getExample()">
                                 <h3>getExample</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">getExample</span>()</div>
                                 <div class="block">Getter method description. More getter method description.</div>
                                 <dl class="notes">
                                 <dt>Returns:</dt>
                                 <dd>the <code>example</code> property</dd>
                                 </dl>
+                                </div>
                                 </section>
                                     """);
         }
@@ -199,6 +203,7 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="setExample(boolean)">
                                 <h3>setExample</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setExample</span><wbr><span class="parameters">(boolean&nbsp;b)</span></div>
                                 <div class="block">Sets the value of the <code>example</code> property.</div>
                                 <dl class="notes">
@@ -208,6 +213,7 @@ public class TestJavaFXCombo extends JavadocTester {
                                 <dd><code>b</code> - the value for the <code>example</code> property</dd>
                                 #SEE#
                                 </dl>
+                                </div>
                                 </section>
                                 """
                                 .replace("#DESC#", getPropertyDescription(fk, pk))
@@ -220,12 +226,14 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="setExample(boolean)">
                                 <h3>setExample</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setExample</span><wbr><span class="parameters">(boolean&nbsp;b)</span></div>
                                 <div class="block">Setter method description. More setter method description.</div>
                                 <dl class="notes">
                                 <dt>Parameters:</dt>
                                 <dd><code>b</code> - the new value for the property</dd>
                                 </dl>
+                                </div>
                                 </section>
                                 """);
         }
@@ -242,6 +250,7 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="exampleProperty()">
                                 <h3>exampleProperty</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="BooleanProperty.html" title="class in p">BooleanProperty</a></span>&nbsp;<span class="element-name">exampleProperty</span>()</div>
                                 #PCOMM#
                                 <dl class="notes">
@@ -249,6 +258,7 @@ public class TestJavaFXCombo extends JavadocTester {
                                 <dd>the <code>example</code> property</dd>
                                 #SEE#
                                 </dl>
+                                </div>
                                 </section>
                                 """
                                 .replace("#PCOMM#", getPropertyMethodComment(fk, pk))
@@ -262,6 +272,7 @@ public class TestJavaFXCombo extends JavadocTester {
                             """
                                 <section class="detail" id="exampleProperty()">
                                 <h3>exampleProperty</h3>
+                                <div class="horizontal-scroll">
                                 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="BooleanProperty.html" title="class in p">BooleanProperty</a></span>&nbsp;<span class="element-name">exampleProperty</span>()</div>
                                 <div class="block">Property method description. More property method description.</div>
                                 <dl class="notes">
@@ -269,6 +280,7 @@ public class TestJavaFXCombo extends JavadocTester {
                                 <dd>the <code>example</code> property</dd>
                                 #SEE#
                                 </dl>
+                                </div>
                                 </section>
                                 """
                                 .replace("#SEE#", (fk == Kind.COMMENT ? "" : getSee(null, gk, sk)))

@@ -136,9 +136,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_index_at_bcp(Register index, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
@@ -147,8 +144,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load cpool->resolved_klass_at(index).
   void load_resolved_klass_at_offset(Register cpool, Register index, Register klass, Register temp);
-
-  void load_resolved_method_at_index(int byte_no, Register method, Register cache);
 
   void pop_ptr(Register r = x10);
   void pop_i(Register r = x10);
@@ -302,6 +297,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
 #ifdef ASSERT
   void verify_access_flags(Register access_flags, uint32_t flag,

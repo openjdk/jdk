@@ -72,7 +72,7 @@ public class PackageWriter extends HtmlDocletWriter {
     /**
      * The HTML element for the section tag being written.
      */
-    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription);
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -128,10 +128,12 @@ public class PackageWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content packageContent = getContentHeader();
-
-        addPackageSignature(packageContent);
-        buildPackageDescription(packageContent);
-        buildPackageTags(packageContent);
+        packageContent.add(new HtmlTree(TagName.HR));
+        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        addPackageSignature(div);
+        buildPackageDescription(div);
+        buildPackageTags(div);
+        packageContent.add(div);
         buildSummary(packageContent);
 
         addPackageContent(packageContent);
@@ -177,10 +179,9 @@ public class PackageWriter extends HtmlDocletWriter {
      *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
-        if (options.noComment()) {
-            return;
+        if (!options.noComment()) {
+            addPackageDescription(packageContent);
         }
-        addPackageDescription(packageContent);
     }
 
     /**
@@ -189,10 +190,9 @@ public class PackageWriter extends HtmlDocletWriter {
      * @param packageContent the content to which the package tags will be added
      */
     protected void buildPackageTags(Content packageContent) {
-        if (options.noComment()) {
-            return;
+        if (!options.noComment()) {
+            addPackageTags(packageContent);
         }
-        addPackageTags(packageContent);
     }
 
     protected Content getPackageHeader() {
@@ -422,7 +422,6 @@ public class PackageWriter extends HtmlDocletWriter {
     }
 
     protected void addPackageSignature(Content packageContent) {
-        packageContent.add(new HtmlTree(TagName.HR));
         packageContent.add(Signatures.getPackageSignature(packageElement, this));
     }
 
@@ -455,5 +454,10 @@ public class PackageWriter extends HtmlDocletWriter {
         return configuration.packages.stream()
                 .filter(p -> p != packageElement && filter.test(p))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean isIndexable() {
+        return true;
     }
 }

@@ -2048,6 +2048,23 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1
   beq(trial_klass, tmp1, L);
 }
 
+// Multiply and multiply-accumulate unsigned 64-bit registers.
+void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+  assert_different_registers(prod_lo, prod_hi);
+
+  mul(prod_lo, n, m);
+  mulhu(prod_hi, n, m);
+}
+void MacroAssembler::wide_madd(Register sum_lo, Register sum_hi, Register n,
+                Register m, Register tmp1, Register tmp2) {
+  assert_different_registers(sum_lo, sum_hi);
+  assert_different_registers(sum_hi, tmp2);
+
+  wide_mul(tmp1, tmp2, n, m);
+  cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
+  adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
+}
+
 // Move an oop into a register.
 void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
@@ -2386,7 +2403,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 }
 
 int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java idiv and irem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2402,15 +2419,24 @@ int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
 
   int idivl_offset = offset();
   if (!want_remainder) {
-    divw(result, rs1, rs2);
+    if (is_signed) {
+      divw(result, rs1, rs2);
+    } else {
+      divuw(result, rs1, rs2);
+    }
   } else {
-    remw(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      remw(result, rs1, rs2);
+    } else {
+      remuw(result, rs1, rs2);
+    }
   }
   return idivl_offset;
 }
 
 int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java ldiv and lrem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2425,9 +2451,18 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
 
   int idivq_offset = offset();
   if (!want_remainder) {
-    div(result, rs1, rs2);
+    if (is_signed) {
+      div(result, rs1, rs2);
+    } else {
+      divu(result, rs1, rs2);
+    }
   } else {
-    rem(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      rem(result, rs1, rs2);
+    } else {
+      remu(result, rs1, rs2);
+    }
   }
   return idivq_offset;
 }
@@ -4228,7 +4263,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, 0b1100000000);                                                           \
+  andi(tmp, tmp, fclass_mask::nan);                                                       \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \
@@ -4404,8 +4439,8 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
   }
 }
 
-void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
-{
+void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
+                             Register tmp, bool is_signed) {
   if (src1 == src2) {
     mv(dst, zr);
     return;
@@ -4424,12 +4459,33 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   }
 
   // installs 1 if gt else 0
-  slt(dst, right, left);
+  if (is_signed) {
+    slt(dst, right, left);
+  } else {
+    sltu(dst, right, left);
+  }
   bnez(dst, done);
-  slt(dst, left, right);
+  if (is_signed) {
+    slt(dst, left, right);
+  } else {
+    sltu(dst, left, right);
+  }
   // dst = -1 if lt; else if eq , dst = 0
   neg(dst, dst);
   bind(done);
+}
+
+void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
+{
+  cmp_x2i(dst, src1, src2, tmp);
+}
+
+void MacroAssembler::cmp_ul2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
+}
+
+void MacroAssembler::cmp_uw2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -4638,13 +4694,19 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   }
 }
 
-void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp) {
+void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   assert(bit_pos < 64, "invalid bit range");
   if (UseZbs) {
     bexti(Rd, Rs, bit_pos);
     return;
   }
-  andi(Rd, Rs, 1UL << bit_pos, tmp);
+  int64_t imm = (int64_t)(1UL << bit_pos);
+  if (is_simm12(imm)) {
+    and_imm12(Rd, Rs, imm);
+  } else {
+    srli(Rd, Rs, bit_pos);
+    and_imm12(Rd, Rd, 1);
+  }
 }
 
 // Implements lightweight-locking.
@@ -4656,7 +4718,7 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Regist
 //  - tmp1, tmp2: temporary registers, will be destroyed
 void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
   // Check if we would have space on lock-stack for the object.
   lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
@@ -4690,7 +4752,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1,
 // - tmp1, tmp2: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
 #ifdef ASSERT
   {

@@ -115,7 +115,6 @@ Monitor* Notification_lock            = nullptr;
 Monitor* PeriodicTask_lock            = nullptr;
 Monitor* RedefineClasses_lock         = nullptr;
 Mutex*   Verify_lock                  = nullptr;
-Monitor* Zip_lock                     = nullptr;
 
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = nullptr;
@@ -139,6 +138,7 @@ Mutex*   ThreadIdTableCreate_lock     = nullptr;
 Mutex*   SharedDecoder_lock           = nullptr;
 Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
+Mutex*   NMTCompilationCostHistory_lock = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -294,7 +294,7 @@ void mutex_init() {
 #if INCLUDE_JFR
   MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
-  MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , stackwatermark-1);
+  MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
 #endif
 
@@ -304,11 +304,12 @@ void mutex_init() {
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
   MUTEX_DEFN(CodeHeapStateAnalytics_lock     , PaddedMutex  , safepoint);
-  MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, nosafepoint-3); // Holds ConcurrentHashTableResize_lock
+  MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, service-2); // Holds ConcurrentHashTableResize_lock
   MUTEX_DEFN(ThreadIdTableCreate_lock        , PaddedMutex  , safepoint);
   MUTEX_DEFN(SharedDecoder_lock              , PaddedMutex  , tty-1);
   MUTEX_DEFN(DCmdFactory_lock                , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
+  MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
@@ -322,7 +323,6 @@ void mutex_init() {
   MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(Zip_lock                        , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
 
 #if INCLUDE_JVMCI
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock

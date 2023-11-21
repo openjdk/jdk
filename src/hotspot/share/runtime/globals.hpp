@@ -1220,15 +1220,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, UseCounterDecay, true,                                      \
-          "Adjust recompilation counters")                                  \
-                                                                            \
   develop(intx, CounterHalfLifeTime,    30,                                 \
           "Half-life time of invocation counters (in seconds)")             \
-                                                                            \
-  develop(intx, CounterDecayMinIntervalLength,   500,                       \
-          "The minimum interval (in milliseconds) between invocation of "   \
-          "CounterDecay")                                                   \
                                                                             \
   product(bool, AlwaysCompileLoopMethods, false,                            \
           "When using recompilation, never interpret methods "              \
@@ -1978,11 +1971,11 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LIGHTWEIGHT,                                 \
+  product(int, LockingMode, LM_LEGACY,                                      \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
-          "1: monitors & legacy stack-locking (LM_LEGACY), "                \
-          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
+          "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
+          "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \

@@ -431,6 +431,7 @@ public:
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
+  bool is_zero_trip_guard() const;
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.

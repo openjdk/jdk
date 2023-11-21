@@ -124,11 +124,10 @@ class Type_Array : public AnyObj {
   uint   _max;
   const Type **_types;
   void grow( uint i );          // Grow array node to fit
-  const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
-  { return (i<_max) ? _types[i] : (Type*)nullptr; }
-  friend class PhaseValues;
 public:
   Type_Array(Arena *a) : _a(a), _max(0), _types(0) {}
+  const Type *operator[] ( uint i ) const // Lookup, or null for not mapped
+  { return (i<_max) ? _types[i] : (Type*)nullptr; }
   const Type *fast_lookup(uint i) const{assert(i<_max,"oob");return _types[i];}
   // Extend the mapping: index i maps to Type *n.
   void map( uint i, const Type *n ) { if( i>=_max ) grow(i); _types[i] = n; }
@@ -529,8 +528,9 @@ public:
   }
 
   // Add users of 'n' to worklist
-  void add_users_to_worklist0( Node *n );
-  void add_users_to_worklist ( Node *n );
+  static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+  static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+  void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.
   void replace_node( Node *old, Node *nn ) {
@@ -547,7 +547,7 @@ public:
   }
 
   // Replace ith edge of "n" with "in"
-  void replace_input_of(Node* n, int i, Node* in) {
+  void replace_input_of(Node* n, uint i, Node* in) {
     rehash_node_delayed(n);
     n->set_req_X(i, in, this);
   }
@@ -559,13 +559,13 @@ public:
   }
 
   // Delete ith edge of "n"
-  void delete_input_of(Node* n, int i) {
+  void delete_input_of(Node* n, uint i) {
     rehash_node_delayed(n);
     n->del_req(i);
   }
 
   // Delete precedence edge i of "n"
-  void delete_precedence_of(Node* n, int i) {
+  void delete_precedence_of(Node* n, uint i) {
     rehash_node_delayed(n);
     n->rm_prec(i);
   }

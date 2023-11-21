@@ -435,10 +435,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="islamic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="GyMd">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="Md">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1001,9 +1033,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixels per centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dots per centimetre</displayName>
-				<unitPattern count="one">{0} dot per centimetre</unitPattern>
-				<unitPattern count="other">{0} dots per centimetre</unitPattern>
+				<displayName draft="provisional">dots per centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot per centimetre</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dots per centimetre</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="other">{0} earth radii</unitPattern>
@@ -1254,10 +1286,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} sec</unitPattern>
 				<unitPattern count="other">{0} secs</unitPattern>
 			</unit>
-			<unit type="graphics-dot">
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dots</unitPattern>
-			</unit>
 			<unit type="length-meter">
 				<displayName>metres</displayName>
 			</unit>
@@ -1352,12 +1380,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-dram">
 				<displayName>dram</displayName>
-				<unitPattern count="one">{0} dram</unitPattern>
-				<unitPattern count="other">{0} drams</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<unitPattern count="one">{0} jigger</unitPattern>
-				<unitPattern count="other">{0} jiggers</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
 				<unitPattern count="one">{0} pinches</unitPattern>

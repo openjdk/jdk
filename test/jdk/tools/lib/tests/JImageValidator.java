@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import jdk.internal.classfile.ClassHierarchyResolver;
 
 import jdk.internal.classfile.Classfile;
 import jdk.internal.jimage.BasicImageReader;
@@ -222,7 +223,10 @@ public class JImageValidator {
     }
 
     public static void readClass(byte[] clazz) throws IOException{
-        var errors = Classfile.of().parse(clazz).verify(null);
+        var errors = Classfile.of().parse(clazz).verify(
+                //resolution of all classes as interfaces cancels assignability verification
+                cls -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface(),
+                null);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

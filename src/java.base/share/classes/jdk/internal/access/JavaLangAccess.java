@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
@@ -45,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -273,7 +273,7 @@ public interface JavaLangAccess {
      * Ensure that the given module has native access. If not, warn or
      * throw exception depending on the configuration.
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -419,19 +419,16 @@ public interface JavaLangAccess {
    /**
     * Get the coder for the supplied character.
     */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringConcatCoder(char value);
 
    /**
     * Update lengthCoder for StringBuilder.
     */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
 
     /**
      * Prepend StringBuilder content.
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    */
    long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
 
     /**
@@ -574,4 +571,14 @@ public interface JavaLangAccess {
      * explicitly set otherwise <qualified-class-name> @<id>
      */
     String getLoaderNameID(ClassLoader loader);
+
+    /**
+     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     */
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+
+    /**
+     * Are the string bytes compatible with the given charset?
+     */
+    boolean bytesCompatible(String string, Charset charset);
 }
