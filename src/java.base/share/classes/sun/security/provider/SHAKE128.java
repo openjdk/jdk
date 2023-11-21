@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.security.provider;
 
 /*
- *******************************************************************************
- * Copyright (C) 2009, International Business Machines Corporation and         *
- * others. All Rights Reserved.                                                *
- *******************************************************************************
+ * The SHAKE128 extendable output function.
  */
-package sun.util.locale;
-
-public class LocaleSyntaxException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
-
-    private final int index;
-
-    public LocaleSyntaxException(String msg) {
-        this(msg, 0);
+public final class SHAKE128 extends SHA3 {
+    public SHAKE128(int d) {
+        super("SHAKE128", d, (byte) 0x1F, 32);
     }
 
-    public LocaleSyntaxException(String msg, int errorIndex) {
-        super(msg);
-        index = errorIndex;
+    public void update(byte in) {
+        engineUpdate(in);
+    }
+    public void update(byte[] in, int off, int len) {
+        engineUpdate(in, off, len);
     }
 
-    public int getErrorIndex() {
-        return index;
+    public byte[] digest() {
+        return engineDigest();
+    }
+
+    public void reset() {
+        engineReset();
     }
 }

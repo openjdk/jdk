@@ -5519,7 +5519,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(0 == _access_flags.as_int(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // verify == true means it's a 'remote' class (i.e., non-boot class)
     // Verification decision is based on BytecodeVerificationRemote flag
     // for those classes.
@@ -5850,7 +5850,7 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
   // use an illegal char such as ';' because that causes serialization issues
   // and issues with hidden classes that create their own hidden classes.
   char addr_buf[20];
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // We want stable names for the archived hidden classes (only for static
     // archive for now). Spaces under default_SharedBaseAddress() will be
     // occupied by the archive at run time, so we know that no dynamically

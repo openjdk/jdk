@@ -244,7 +244,7 @@ static char* compute_shared_base(size_t cds_max) {
 }
 
 void MetaspaceShared::initialize_for_static_dump() {
-  assert(DumpSharedSpaces, "should be called for dump time only");
+  assert(CDSConfig::is_dumping_static_archive(), "sanity");
   log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
