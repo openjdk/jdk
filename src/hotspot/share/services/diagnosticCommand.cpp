@@ -846,7 +846,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
   _filename("filename", "Name of the map file", "STRING", false)
 {
-  _dcmdparser.add_dcmd_option(&_filename);
+  _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
