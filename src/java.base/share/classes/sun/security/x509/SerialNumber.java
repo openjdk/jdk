@@ -100,9 +100,7 @@ public class SerialNumber {
     /**
      * Return the SerialNumber as user readable string.
      */
-    public String toString() {
-        return "SerialNumber: [" + Debug.toHexString(serialNum) + ']';
-    }
+    public String toString() { return "Serial number: " + serialNum.toString(16); }
 
     /**
      * Encode the SerialNumber in DER form to the stream.
