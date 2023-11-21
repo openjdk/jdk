@@ -82,8 +82,6 @@ void SuperWord::unrolling_analysis(const VLoop &vloop,
   for (uint i = 0; i < lpt->_body.size(); i++) {
     Node* n = lpt->_body.at(i);
     if (n == cl->incr() ||
-      // TODO is this ok to remove it?
-      //is_marked_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||

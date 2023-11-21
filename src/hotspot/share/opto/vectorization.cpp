@@ -800,8 +800,6 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
 const char* VLoopAnalyzer::analyze_helper() {
   // skip any loop that has not been assigned max unroll by analysis
   if (SuperWordLoopUnrollAnalysis && _cl->slp_max_unroll() == 0) {
-    // TODO: why does this happen? Maybe follow up RFE.
-    //       Eventually this has to go anyway though.
     return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
   }
 

@@ -96,14 +96,9 @@ public:
   };
 
   bool in_body(const Node* n) const {
-    // TODO refactor to allow cfg. See counter example with
-    // nodes on backedge but backedge has no additional outputs
+    // We only accept any nodes which have the loop head as their ctrl.
     const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
     return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
-    // if (n == nullptr || n->outcnt() == 0) { return false; }
-    // const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
-    // assert((ctrl == _cl) == (_phase->get_loop((Node*)ctrl) == _lpt), "WIP");
-    // return _phase->get_loop((Node*)ctrl) == _lpt;
   }
 
   // Do we have to enforce strict alignment criteria on this platform?
@@ -514,10 +509,8 @@ public:
     return vt1 == vt2;
   }
 
-  // TODO rename?
   int vector_width(Node* n) const {
     BasicType bt = velt_basic_type(n);
-    // TODO we should eventually remove iv_stride from here!
     return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
   }
 
