@@ -119,7 +119,7 @@ public abstract class SelectorImpl
     protected abstract int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException;
 
-    private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
+    private int implLockAndDoSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
         synchronized (this) {
@@ -129,21 +129,27 @@ public abstract class SelectorImpl
             inSelect = true;
             try {
                 synchronized (publicSelectedKeys) {
-                    if (!SelectionEvent.enabled()) {
-                        return doSelect(action, timeout);
-                    }
-                    long start = SelectionEvent.timestamp();
-                    int n = doSelect(action, timeout);
-                    long duration = SelectionEvent.timestamp() - start;
-                    if (SelectionEvent.shouldCommit(duration)) {
-                        SelectionEvent.commit(start, duration, n);
-                    }
-                    return n;
+                    return doSelect(action, timeout);
                 }
             } finally {
                 inSelect = false;
             }
         }
+    }
+
+    private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
+        if (!SelectionEvent.enabled()) {
+            return implLockAndDoSelect(action, timeout);
+        }
+        long start = SelectionEvent.timestamp();
+        int n = implLockAndDoSelect(action, timeout);
+        long duration = SelectionEvent.timestamp() - start;
+        if (SelectionEvent.shouldCommit(duration)) {
+            SelectionEvent.commit(start, duration, n);
+        }
+        return n;
     }
 
     @Override

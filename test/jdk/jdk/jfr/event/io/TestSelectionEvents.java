@@ -65,9 +65,8 @@ public class TestSelectionEvents {
                 ssc.bind(new InetSocketAddress(lb, 0));
 
                 try (SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
-                    SocketChannel sc2 = ssc.accept()) {
-
-                    Selector sel = Selector.open();
+                    SocketChannel sc2 = ssc.accept();
+                    Selector sel = Selector.open()) {
 
                     // register for read events, channel should not be selected
                     sc1.configureBlocking(false);
