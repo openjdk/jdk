@@ -606,6 +606,7 @@ void CompilerConfig::ergo_initialize() {
     IncrementalInline = false;
     IncrementalInlineMH = false;
     IncrementalInlineVirtual = false;
+    StressIncrementalInlining = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {
