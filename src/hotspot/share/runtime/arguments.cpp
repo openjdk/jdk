@@ -529,6 +529,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+  { "UseCounterDecay",              JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
 
 #ifdef LINUX
   { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
@@ -3908,12 +3909,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
-  }
-  if (CountCompiledCalls) {
-    if (UseCounterDecay) {
-      warning("UseCounterDecay disabled because CountCalls is set");
-      UseCounterDecay = false;
-    }
   }
 #endif // PRODUCT
 
