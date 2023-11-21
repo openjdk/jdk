@@ -191,7 +191,8 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK.
+build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
+removed in a future release.)
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -209,8 +210,32 @@ rule also applies to input to the build system, e.g. in arguments to
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the
 section on [Fixpath](#fixpath).
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+#### Locale Requirements
+
+Building and testing the JDK requires a well-defined locale to be guaranteed to
+run correctly. On non-Windows operating systems, this is achieved using the
+`LC_*` variables, which propagate to all child processes of the build.
+Unfortunately, there is no way to set the locale for a specific process like
+this in Windows. Instead, changes to locale can only be made globally, which
+will affect all applications run by the user. Furthermore, Windows makes a
+difference between user locale and system locale, where the latter determines
+e.g. the file path encoding. Both this locale settings affect building and
+testing the JDK.
+
+The **recommended** and **supported** way of building the JDK on Windows is to
+set both the system locale and the user locale to **US English**. The system
+setting can be changed by going to the Control Panel, choosing "Regional
+Settings" -> "Administrative" and then pressing on the "Change System Locale"
+button.
+
+Since this is annoying for users who prefer another locale, we strive to get
+the building and testing to work on other locales as well. This is on a "best
+effort" level, so beware! You might get odd results in both building and
+testing. If you do, remember that locales other than US English are not
+supported nor recommended.
+
+It is also imperative to install the US English language pack in Visual Studio.
+For details, see [Microsoft Visual Studio](#microsoft-visual-studio).
 
 #### Cygwin
 
@@ -435,6 +460,32 @@ setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2022`.
 
 If you have Visual Studio installed but `configure` fails to detect it, it may
 be because of [spaces in path](#spaces-in-path).
+
+You must install the US English locale, otherwise the build system might not be
+able to interact properly with the compiler. You can add additional language
+packs when installing Visual Studio.
+
+If you have already installed Visual Studio without the US English language
+pack, you can modify the installation to add this. You can either do this via a
+GUI like this:
+
+* Click on "Visual Studio Installer" in Start menu.
+* Click "Modify".
+* Select the tab "Language packs".
+* Choose "English".
+* Click "Modify".
+
+or you can run it on the command line. For this to work, you need to start
+`cmd.exe` using "Run as Administrator". Then execute the following line: (note
+that the " characters are essential)
+
+```
+"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.BuildTools --addProductLang en-us -p
+```
+
+`VisualStudio.16.Release` represent VS 2019, so adjust the version number
+accordingly. If you have not installed the `BuildTools`, but e.g.
+`Professional`, adjust the product ID accordingly.
 
 ### IBM XL C/C++
 
