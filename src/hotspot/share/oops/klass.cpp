@@ -195,6 +195,10 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
+Klass::Klass() : _kind(UnknownKlassKind) {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
+}
+
 // "Normal" instantiation is preceded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
