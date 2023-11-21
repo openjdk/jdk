@@ -52,25 +52,18 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved
 JNIEXPORT jint JNICALL
 Java_FilteredFieldsTest_getJVMTIFieldCount(JNIEnv *env, jclass cls, jclass clazz) {
     if (jvmti == NULL) {
-        printf("JVMTI agent was not properly loaded\n");
-        fflush(0);
-        return -1;
+        env->FatalError("JVMTI agent was not properly loaded");
     }
 
     jint fcount = 0;
     jfieldID *fields = nullptr;
 
-    jvmtiError err = jvmti->GetClassFields(clazz, &fcount, &fields);
-    if (err != JVMTI_ERROR_NONE) {
-        printf("GetClassFields returned error: %s (%d)\n", TranslateError(err), err);
-        fflush(0);
-        return -1;
-    }
+    check_jvmti_status(env, jvmti->GetClassFields(clazz, &fcount, &fields), "GetClassFields failed");
 
     printf("GetClassFields returned %d fields:\n", (int)fcount);
     for (int i = 0; i < fcount; i++) {
         char *name;
-        err = jvmti->GetFieldName(clazz, fields[i], &name, nullptr, nullptr);
+        jvmtiError err = jvmti->GetFieldName(clazz, fields[i], &name, nullptr, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("GetFieldName(%d) returned error: %s (%d)\n",
                    i, TranslateError(err), err);

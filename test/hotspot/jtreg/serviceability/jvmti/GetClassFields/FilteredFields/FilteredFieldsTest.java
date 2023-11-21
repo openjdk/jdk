@@ -23,6 +23,9 @@
 
 /*
  * @test
+ * @bug 8318626
+ * @summary Verifies JVMTI GetClassFields function filters out fields
+ *          the same way Class.getDeclaredFields() does.
  *
  * @run main/othervm/native -agentlib:FilteredFieldsTest FilteredFieldsTest
  */
