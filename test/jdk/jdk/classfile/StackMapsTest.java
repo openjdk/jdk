@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @summary Testing ClassFile stack maps generator.
- * @bug 8305990
+ * @summary Testing Classfile stack maps generator.
+ * @bug 8305990 8320222
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -261,5 +261,45 @@ class StackMapsTest {
 
         //then verify transformed bytecode
         assertEmpty(cc.parse(transformedBytes).verify(null));
+    }
+
+    @Test
+    void testInvalidStack() throws Exception {
+        //stack size mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       ClassFile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0d);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
+        //stack content mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       ClassFile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0f);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
     }
 }

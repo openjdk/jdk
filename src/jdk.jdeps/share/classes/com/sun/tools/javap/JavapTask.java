@@ -860,6 +860,19 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
+                if (className.indexOf('.') > 0) {
+                    //search for classes with a named package in the JDK modules specifed by --system option first
+                    try {
+                        for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
+                            for (Location systemModule: locations) {
+                                fo = fileManager.getJavaFileForInput(systemModule, className, JavaFileObject.Kind.CLASS);
+                                if (fo != null) return fo;
+                            }
+                        }
+                    } catch (UnsupportedOperationException e) {
+                        //skip when listLocationsForModules is not supported
+                    }
+                }
                 fo = fileManager.getJavaFileForInput(StandardLocation.PLATFORM_CLASS_PATH, className, JavaFileObject.Kind.CLASS);
                 if (fo == null)
                     fo = fileManager.getJavaFileForInput(StandardLocation.CLASS_PATH, className, JavaFileObject.Kind.CLASS);
