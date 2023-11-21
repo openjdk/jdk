@@ -299,6 +299,9 @@ bool SuperWord::SLP_extract() {
 
   init(); // initialize data structures
 
+  // Find adjacent loads and stores
+  find_adjacent_refs();
+
   if (align_to_ref() == nullptr) {
     return false; // Did not find memory reference to align vectors
   }
