@@ -265,6 +265,14 @@ ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
   }
 }
 
+Handle ObjectMergeValue::value() const {
+  if (_selected != nullptr) {
+    return _selected->value();
+  } else {
+    return Handle();
+  }
+}
+
 void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
   _selector = read_from(stream);
   _merge_pointer = read_from(stream);

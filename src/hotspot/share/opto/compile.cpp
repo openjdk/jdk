@@ -839,7 +839,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
+  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining) {
     if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
       _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
       FLAG_SET_ERGO(StressSeed, _stress_seed);
@@ -2262,7 +2262,7 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline) {
+    if (AlwaysIncrementalInline || StressIncrementalInlining) {
       inline_incrementally(igvn);
     }
 
