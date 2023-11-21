@@ -33,10 +33,23 @@
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
 
+#if defined(__clang_major__)
+#define FULL_COMPILER_ATOMIC_SUPPORT
+#elif (__GNUC__ > 13) || ((__GNUC__ == 13) && (__GNUC_MINOR__ >= 2))
+#define FULL_COMPILER_ATOMIC_SUPPORT
+#endif
+
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
   D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+    // If we add add and fetch for sub word and are using older compiler
+    // it must be added here due to not using lib atomic.
+    STATIC_ASSERT(byte_size >= 4);
+#endif
+
     if (order != memory_order_relaxed) {
       FULL_MEM_BARRIER;
     }
@@ -55,12 +68,65 @@ struct Atomic::PlatformAdd {
   }
 };
 
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+template<>
+template<typename T>
+inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
+                                                T compare_value,
+                                                T exchange_value,
+                                                atomic_memory_order order) const {
+  STATIC_ASSERT(1 == sizeof(T));
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+
+  uint32_t volatile* aligned_dst = (uint32_t volatile*)(((uintptr_t)dest) & (~((uintptr_t)0x3)));
+  int shift = 8 * (((uintptr_t)dest) - ((uintptr_t)aligned_dst)); // 0, 8, 16, 24
+
+  uint64_t mask = 0xfful << shift; // 0x00000000..FF..
+  uint64_t remask = ~mask;         // 0xFFFFFFFF..00..
+
+  uint64_t w_cv = ((uint64_t)(unsigned char)compare_value) << shift;  // widen to 64-bit 0x00000000..CC..
+  uint64_t w_ev = ((uint64_t)(unsigned char)exchange_value) << shift; // widen to 64-bit 0x00000000..EE..
+
+  uint64_t old_value;
+  uint64_t rc_temp;
+
+  __asm__ __volatile__ (
+    "1:  lr.w      %0, %2      \n\t"
+    "    and       %1, %0, %5  \n\t" // ignore unrelated bytes and widen to 64-bit 0x00000000..XX..
+    "    bne       %1, %3, 2f  \n\t" // compare 64-bit w_cv
+    "    and       %1, %0, %6  \n\t" // remove old byte
+    "    or        %1, %1, %4  \n\t" // add new byte
+    "    sc.w      %1, %1, %2  \n\t" // store new word
+    "    bnez      %1, 1b      \n\t"
+    "2:                        \n\t"
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*aligned_dst)
+    : /*%3*/"r" (w_cv), /*%4*/"r" (w_ev), /*%5*/"r" (mask), /*%6*/"r" (remask)
+    : "memory" );
+
+  if (order != memory_order_relaxed) {
+    FULL_MEM_BARRIER;
+  }
+
+  return (T)((old_value & mask) >> shift);
+}
+#endif
+
 template<size_t byte_size>
 template<typename T>
 inline T Atomic::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                      T exchange_value,
                                                      atomic_memory_order order) const {
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+  // If we add xchg for sub word and are using older compiler
+  // it must be added here due to not using lib atomic.
+  STATIC_ASSERT(byte_size >= 4);
+#endif
+
   STATIC_ASSERT(byte_size == sizeof(T));
+
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
@@ -80,6 +146,11 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
                                                         T compare_value,
                                                         T exchange_value,
                                                         atomic_memory_order order) const {
+
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
+  STATIC_ASSERT(byte_size >= 4);
+#endif
+
   STATIC_ASSERT(byte_size == sizeof(T));
   T value = compare_value;
   if (order != memory_order_relaxed) {
@@ -147,5 +218,7 @@ struct Atomic::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
   template <typename T>
   void operator()(volatile T* p, T v) const { release_store(p, v); OrderAccess::fence(); }
 };
+
+#undef FULL_COMPILER_ATOMIC_SUPPORT
 
 #endif // OS_CPU_LINUX_RISCV_ATOMIC_LINUX_RISCV_HPP
