@@ -254,10 +254,23 @@ public abstract sealed class MemorySessionImpl
         }
 
         static void cleanup(ResourceCleanup first) {
+            RuntimeException pendingException = null;
             ResourceCleanup current = first;
             while (current != null) {
-                current.cleanup();
+                try {
+                    current.cleanup();
+                } catch (RuntimeException ex) {
+                    if (pendingException == null) {
+                        pendingException = ex;
+                    } else if (ex != pendingException) {
+                        // note: self-suppression is not supported
+                        pendingException.addSuppressed(ex);
+                    }
+                }
                 current = current.next;
+            }
+            if (pendingException != null) {
+                throw pendingException;
             }
         }
 
