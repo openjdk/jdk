@@ -40,21 +40,20 @@ import java.security.PrivilegedAction;
  */
 public class TCPDirectSocketFactory extends RMISocketFactory {
 
-    public static final int DEFAULT_CONNECT_TIMEOUT = 60 * 1000; // default 1 minute
+    @SuppressWarnings("removal")
+    private static final int connectTimeout =    // default 1 minute
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.transport.tcp.initialConnectTimeout", 60 * 1000).intValue());
 
     public Socket createSocket(String host, int port) throws IOException
     {
-        @SuppressWarnings("removal")
-        int timeout =
-            AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
-                Integer.getInteger("sun.rmi.transport.tcp.initialConnectTimeout", DEFAULT_CONNECT_TIMEOUT).intValue());
-        if (timeout == 0) {
+        if (connectTimeout == 0) {
             return new Socket(host, port);
         } else {
             SocketAddress address = host != null ? new InetSocketAddress(host, port) :
                                                    new InetSocketAddress(InetAddress.getByName(null), port);
             Socket s = new Socket();
-            s.connect(address, timeout);
+            s.connect(address, connectTimeout);
             return s;
         }
     }
