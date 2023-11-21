@@ -172,7 +172,6 @@ int GenericWaitBarrier::Cell::signal_if_needed(int max) {
 void GenericWaitBarrier::Cell::disarm(int32_t expected_tag) {
   int32_t waiters;
 
-  SpinYield sp;
   while (true) {
     int64_t state = Atomic::load_acquire(&_state);
     int32_t tag = decode_tag(state);
@@ -188,13 +187,13 @@ void GenericWaitBarrier::Cell::disarm(int32_t expected_tag) {
       // Successfully disarmed.
       break;
     }
-    sp.wait();
   }
 
   // Wake up waiters, if we have at least one.
   // Allow other threads to assist with wakeups, if possible.
   if (waiters > 0) {
     Atomic::release_store(&_outstanding_wakeups, waiters);
+    SpinYield sp;
     while (signal_if_needed(INT_MAX) > 0) {
       sp.wait();
     }
