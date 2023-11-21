@@ -889,25 +889,28 @@ public class ForkJoinPool extends AbstractExecutorService {
      * control (for good reason). Similarly for relying on fields
      * being placed in size-sorted declaration order.
      *
-     * For class ForkJoinPool, it is usually more effective to order
-     * fields such that the most commonly accessed fields are unlikely
-     * to share cache lines with adjacent objects under JVM layout
-     * rules. For class WorkQueue, an embedded @Contended region
-     * segregates fields most heavily updated by owners from those
-     * most commonly read by stealers or other management.  Initial
-     * sizing and resizing of WorkQueue arrays is an even more
-     * delicate tradeoff because the best strategy systematically
-     * varies across garbage collectors. Small arrays are better for
-     * locality and reduce GC scan time, but large arrays reduce both
-     * direct false-sharing and indirect cases due to GC bookkeeping
-     * (cardmarks etc), and reduce the number of resizes, which are
-     * not especially fast because they require atomic transfers.
-     * Currently, arrays are initialized to be fairly small but early
-     * resizes rapidly increase size by more than a factor of two
-     * until very large.  (Maintenance note: any changes in fields,
-     * queues, or their uses, or JVM layout policies, must be
-     * accompanied by re-evaluation of these placement and sizing
-     * decisions.)
+     * We isolate the ForkJoinPool.ctl field that otherwise causes the
+     * most false-sharing misses with respect to other fields. Also,
+     * ForkJoinPool fields are ordered such that fields less prone to
+     * contention effects are first, offsetting those that otherwise
+     * would be, while also reducing total footprint vs using
+     * multiple @Contended regions, which tends to slow down
+     * less-contended applications. For class WorkQueue, an
+     * embedded @Contended region segregates fields most heavily
+     * updated by owners from those most commonly read by stealers or
+     * other management.  Initial sizing and resizing of WorkQueue
+     * arrays is an even more delicate tradeoff because the best
+     * strategy systematically varies across garbage collectors. Small
+     * arrays are better for locality and reduce GC scan time, but
+     * large arrays reduce both direct false-sharing and indirect
+     * cases due to GC bookkeeping (cardmarks etc), and reduce the
+     * number of resizes, which are not especially fast because they
+     * require atomic transfers.  Currently, arrays are initialized to
+     * be fairly small but early resizes rapidly increase size by more
+     * than a factor of two until very large.  (Maintenance note: any
+     * changes in fields, queues, or their uses, or JVM layout
+     * policies, must be accompanied by re-evaluation of these
+     * placement and sizing decisions.)
      *
      * Style notes
      * ===========
@@ -1679,9 +1682,11 @@ public class ForkJoinPool extends AbstractExecutorService {
     final long config;                   // static configuration bits
     volatile long stealCount;            // collects worker nsteals
     volatile long threadIds;             // for worker thread names
-    volatile long ctl;                   // main pool control
-    int parallelism;                     // target number of workers
     volatile int runState;               // versioned, lockable
+    @jdk.internal.vm.annotation.Contended("fjpctl") // segregate
+    volatile long ctl;                   // main pool control
+    @jdk.internal.vm.annotation.Contended("fjpctl") // colocate
+    int parallelism;                     // target number of workers
 
     // Support for atomic operations
     private static final Unsafe U;
@@ -2003,11 +2008,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                     swept = (phaseSum == (phaseSum = sum));
                 }
-                else if (compareAndSetCtl(c, c) &&        // confirm
-                         casRunState(e, (e & SHUTDOWN) != 0 ? e | STOP : e)) {
-                    if ((e & SHUTDOWN) != 0)              // enable termination
-                        interruptAll();
+                else if ((e & SHUTDOWN) == 0)
                     return true;
+                else if (compareAndSetCtl(c, c) && casRunState(e, e | STOP)) {
+                    interruptAll();                       // confirmed
+                    return true;                          // enable termination
                 }
                 else
                     break;                                // restart
@@ -2097,33 +2102,35 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return current phase, with IDLE set if worker should exit
      */
     private int awaitWork(WorkQueue w, int p) {
-        if ((p & IDLE) != 0 || w == null)       // already terminating
-            return p;
-        int nextPhase = p + (IDLE << 1);
-        long pc = ctl, qc = (nextPhase & LMASK) | ((pc - RC_UNIT) & UMASK);
+        int idlePhase, nextPhase;
+        if ((idlePhase = p | IDLE) == p || w == null)
+            return p;                           // already terminating
+        long pc = ctl, qc = (((nextPhase = p + (IDLE << 1)) & LMASK) |
+                             ((pc - RC_UNIT) & UMASK));
         w.stackPred = (int)pc;                  // set ctl stack link
-        w.phase = p | IDLE;                     // try to inactivate
+        w.phase = idlePhase;                    // try to inactivate
         if (!compareAndSetCtl(pc, qc))          // contended enque
             return w.phase = p;                 // back out
         WorkQueue[] qs = queues;                // recheck queues
         int n = (qs == null) ? 0 : qs.length;
-        for (int l = n, r = nextPhase; l > 0; --l, ++r) {
+        for (int l = -n, r = nextPhase; l < n; ++l, ++r) {
             WorkQueue q; ForkJoinTask<?>[] a; int cap;
+            U.loadFence();
             if ((q = qs[r & SMASK & (n - 1)]) != null && (a = q.array) != null &&
                 (cap = a.length) > 0 && a[q.base & (cap - 1)] != null &&
                 qc == ctl && qc == compareAndExchangeCtl(qc, pc))
                 return p = w.phase = nextPhase; // self-signal
+            Thread.onSpinWait();                // reduce memory traffic
             if ((p = w.phase) == nextPhase)
                 return p;                       // interleave signal checks
-            Thread.onSpinWait();                // reduce memory traffic
         }
         long deadline = 0L;                     // timeout if trimmable
         if ((qc & RC_MASK) <= 0L && quiescent() && // all idle and w is ctl top
             (nextPhase & SMASK) == ((int)(qc = ctl) & SMASK)) {
-            int nt = (short)(qc >>> TC_SHIFT), np = parallelism;
-            long delay = keepAlive;
-            if (np != nt)                       // scale if not at target
-                delay = Math.max(TIMEOUT_SLOP, delay / Math.max(2, np));
+            int nt = (short)(qc >>> TC_SHIFT);
+            long delay = keepAlive;             // scale if not at target
+            if (nt != (nt = Math.max(nt, parallelism)) && nt > 0)
+                delay = Math.max(TIMEOUT_SLOP, delay / nt);
             if ((deadline = delay + System.currentTimeMillis()) == 0L)
                 deadline = 1L;                  // avoid zero
         }
@@ -3098,7 +3105,15 @@ public class ForkJoinPool extends AbstractExecutorService {
     public <T> T invoke(ForkJoinTask<T> task) {
         Objects.requireNonNull(task);
         poolSubmit(true, task);
-        return task.join();
+        try {
+            return task.join();
+        } catch (RuntimeException rex) {
+            throw rex;
+        } catch (Error eex) {
+            throw eex;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
