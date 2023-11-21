@@ -190,7 +190,7 @@ public class JlinkTask {
         }, "--ignore-signing-information"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.runImageSingleHop = false;
-        }, "--unlock-run-image"),
+        }, true, "--unlock-run-image"),
     };
 
 
