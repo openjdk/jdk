@@ -22,6 +22,8 @@
  */
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -45,33 +47,34 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
  */
 
 public class TestProgressBarBorder {
-    private static JProgressBar progressBar;
-    private static volatile BufferedImage withBorder = null;
-    private static volatile BufferedImage withoutBorder = null;
-
-    public static void main(String[] args) throws Exception {
-        boolean equal;
+    public static void main(String[] args) throws InvocationTargetException,
+            InterruptedException {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             if (!laf.getName().contains("Nimbus") && !laf.getName().contains("GTK")) {
                 continue;
             }
             System.out.println("Testing LAF: " + laf.getName());
-            SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(laf);
-                initProgressBar();
-                progressBar.setBorderPainted(true);
-                withBorder = paintToImage(progressBar);
-                progressBar.setBorderPainted(false);
-                withoutBorder = paintToImage(progressBar);
-            });
-            equal = Util.compareBufferedImages(withBorder, withoutBorder);
-            if (equal) {
+            SwingUtilities.invokeAndWait(() -> test(laf));
+        }
+    }
+
+    private static void test(UIManager.LookAndFeelInfo laf) {
+        setLookAndFeel(laf);
+        JProgressBar progressBar = createProgressBar();
+        progressBar.setBorderPainted(true);
+        BufferedImage withBorder = paintToImage(progressBar);
+        progressBar.setBorderPainted(false);
+        BufferedImage withoutBorder = paintToImage(progressBar);
+
+        boolean equal = Util.compareBufferedImages(withBorder, withoutBorder);
+        if (equal) {
+            try {
                 ImageIO.write(withBorder, "png", new File("withBorder.png"));
                 ImageIO.write(withoutBorder, "png", new File("withoutBorder.png"));
-                throw new RuntimeException("JProgressBar border is painted when border\n" +
-                        " painting is set to false");
-            }
+            } catch (IOException e) {}
+            throw new RuntimeException("JProgressBar border is painted when border\n" +
+                    " painting is set to false");
         }
     }
 
@@ -86,11 +89,12 @@ public class TestProgressBarBorder {
         }
     }
 
-    private static void initProgressBar() {
-        progressBar = new JProgressBar();
+    private static JProgressBar createProgressBar() {
+        JProgressBar progressBar = new JProgressBar();
         progressBar.setSize(100, 50);
         progressBar.setValue(0);
         progressBar.setStringPainted(true);
+        return progressBar;
     }
 
     private static BufferedImage paintToImage(JComponent content) {
