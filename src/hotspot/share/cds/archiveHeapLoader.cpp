@@ -190,7 +190,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
 #ifndef PRODUCT
   ResourceMark rm;
   ResourceBitMap checkBm = HeapShared::calculate_oopmap(region);
-  assert(bm.is_same(checkBm), "sanity");
+  assert(bm.is_same(checkBm), "sanity"); // Leading zeroes removed, will not be the same
 #endif
 
   if (UseCompressedOops) {

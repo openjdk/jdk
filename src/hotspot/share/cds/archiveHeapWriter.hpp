@@ -140,6 +140,7 @@ private:
 
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
+  static GrowableArrayCHeap<int, mtClassShared>* _source_objs_order;
 
   typedef ResourceHashtable<size_t, oop,
       36137, // prime number
@@ -210,6 +211,10 @@ private:
   template <typename T> static void relocate_root_at(oop requested_roots, int index, CHeapBitMap* oopmap);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
+
+  static int compare_objs_by_oop_fields(int* a, int* b);
+  static void sort_source_objs();
+
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
   static void add_source_obj(oop src_obj);
