@@ -293,7 +293,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL); // ASGASG memcmp()
   case vmIntrinsics::_arraySort:                return inline_array_sort();
   case vmIntrinsics::_arrayPartition:           return inline_array_partition();
 
