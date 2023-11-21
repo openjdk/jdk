@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Color;
 import java.awt.ComponentOrientation;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -37,6 +36,7 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import javax.imageio.ImageIO;
 
@@ -57,62 +57,68 @@ import java.util.List;
 public class JTableRightAlignmentTest {
     static JFrame frame;
     static CustomTable table;
-    static boolean passed = true;
     static String failureString;
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         Robot robot = new Robot();
-        try {
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("Test JTable");
-
-                JPanel panel = new JPanel(new GridBagLayout());
-                frame.setContentPane(panel);
-                table = new CustomTable();
-                panel.add(new JScrollPane(table.table),
-                        new GridBagConstraints(0, 0, -1, -1, 1.0, 1.0,
-                                GridBagConstraints.PAGE_START, GridBagConstraints.BOTH,
-                                new Insets(2, 2, 2, 2), 0, 0));
-                frame.pack();
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-                frame.setVisible(true);
-            });
-
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing LAF : " + laf.getClassName());
             robot.waitForIdle();
-            robot.delay(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                int maxHeight = (int) (((double) table.table.getTableHeader().getHeight())
-                        + ((double) table.table.getHeight()));
-                int yPos = table.table.getTableHeader().getLocationOnScreen().y;
-                int xPos = table.table.getLocationOnScreen().x + table.table.getWidth() -
-                        table.table.getTableHeader().getColumnModel()
-                                .getColumn(2)
-                                .getWidth() - 1;
-                Color expectedRGB = robot.getPixelColor(xPos, yPos);
-                for (int y = yPos; y < yPos + maxHeight; y++) {
-                    if (expectedRGB.getRGB() != robot.getPixelColor(xPos, y).getRGB()) {
-                        BufferedImage failImage = robot.createScreenCapture(
-                                new Rectangle(xPos, yPos, 3, maxHeight));
-                        saveImage(failImage, "failureImage.png");
-                        passed = false;
-                        failureString = "Test Failed at <" + xPos + ", " + y + ">";
-                        break;
+            robot.delay(100);
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    frame = new JFrame("Test JTable");
+                    JPanel panel = new JPanel(new GridBagLayout());
+                    frame.setContentPane(panel);
+                    table = new CustomTable();
+                    panel.add(new JScrollPane(table.table),
+                            new GridBagConstraints(0, 0, -1, -1, 1.0, 1.0,
+                                    GridBagConstraints.PAGE_START, GridBagConstraints.BOTH,
+                                    new Insets(2, 2, 2, 2), 0, 0));
+                    frame.pack();
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    frame.applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+                    frame.setVisible(true);
+                });
+
+                robot.waitForIdle();
+                robot.delay(1000);
+                SwingUtilities.invokeAndWait(() -> {
+                    int allColumnWidths = 0;
+                    for (int i = 0; i < table.table.getColumnCount(); i++) {
+                        allColumnWidths += table.table.getTableHeader().getColumnModel()
+                                .getColumn(i)
+                                .getWidth();
                     }
+                    BufferedImage bufferedImage = robot.createScreenCapture(
+                            new Rectangle(table.table.getLocationOnScreen().x,
+                                    table.table.getLocationOnScreen().y,
+                                    table.table.getWidth() - allColumnWidths,
+                                    table.table.getHeight()));
+                    int expectedRGB = bufferedImage.getRGB(0, 0);
+                    for (int x = 0; x < bufferedImage.getWidth(); x++) {
+                        for (int y = 0; y < bufferedImage.getHeight(); y++) {
+                            if (expectedRGB != bufferedImage.getRGB(x, y)) {
+                                saveImage(bufferedImage, "failureImage.png");
+                                failureString = "Test Failed at <" + x + ", " + y + ">";
+                                break;
+                            }
+                        }
+                    }
+                });
+                if (failureString != null) {
+                    throw new RuntimeException(failureString);
+                } else {
+                    System.out.println("Test Passed!");
                 }
-            });
-            if (!passed) {
-                throw new RuntimeException(failureString);
-            } else {
-                System.out.println("Test Passed!");
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                });
             }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
         }
     }
 
@@ -121,6 +127,17 @@ public class JTableRightAlignmentTest {
             ImageIO.write(image, "png", new File(fileName));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 }
@@ -141,25 +158,25 @@ class CustomTable {
             "Last name",
             "Salary",
     };
-    List data = new ArrayList();
+    List<CustomTable.Record> data = new ArrayList();
     JTable table;
 
     public CustomTable() {
-        data.add(new CustomTable.Data("First1", "Last1", 10000f));
-        data.add(new CustomTable.Data("First2", "Last2", 10000f));
-        data.add(new CustomTable.Data("First3", "Last3", 10000f));
+        data.add(new CustomTable.Record("First1", "Last1", 10000f));
+        data.add(new CustomTable.Record("First2", "Last2", 10000f));
+        data.add(new CustomTable.Record("First3", "Last3", 10000f));
         table = new JTable(new CustomTable.Model());
         table.getColumnModel().getColumn(COL_FIRSTNAME).setMaxWidth(90);
         table.getColumnModel().getColumn(COL_LASTNAME).setMaxWidth(90);
         table.getColumnModel().getColumn(COL_SALARY).setMaxWidth(90);
     }
 
-    class Data {
+    static class Record {
         String firstname;
         String lastname;
         float salary;
 
-        public Data(String firstname, String lastname, float salary) {
+        public Record(String firstname, String lastname, float salary) {
             this.firstname = firstname;
             this.lastname = lastname;
             this.salary = salary;
@@ -177,7 +194,7 @@ class CustomTable {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            CustomTable.Data item = (CustomTable.Data) data.get(rowIndex);
+            CustomTable.Record item = data.get(rowIndex);
             switch (columnIndex) {
                 case COL_FIRSTNAME:
                     return item.firstname;

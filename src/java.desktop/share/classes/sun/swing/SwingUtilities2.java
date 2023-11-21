@@ -2337,4 +2337,37 @@ public class SwingUtilities2 {
         var oldTx = oldGC != null ? oldGC.getDefaultTransform() : null;
         return !Objects.equals(newTx, oldTx);
     }
+
+    public static int getXPosInRightToLeft(JTable table, int column) {
+        int x = 0;
+        TableColumnModel cm = table.getColumnModel();
+
+        if (column < 0) {
+            if (!table.getComponentOrientation().isLeftToRight()) {
+                x = getWidthInRightToLeft(table);
+            }
+        }
+        else if (column >= cm.getColumnCount()) {
+            if (table.getComponentOrientation().isLeftToRight()) {
+                x = table.getWidth();
+            }
+        }
+        else {
+            for (int i = 0; i < column; i++) {
+                x += cm.getColumn(i).getWidth();
+            }
+            if (!table.getComponentOrientation().isLeftToRight()) {
+                x = getWidthInRightToLeft(table) - x - cm.getColumn(column).getWidth();
+            }
+        }
+        return x;
+    }
+
+    public static int getWidthInRightToLeft(JTable table) {
+        if ((table != null) &&
+                (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
+            return table.getWidth();
+        }
+        return table.getParent().getWidth();
+    }
 }

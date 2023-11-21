@@ -2026,9 +2026,9 @@ public class BasicTableUI extends TableUI
         Rectangle damagedArea = minCell.union( maxCell );
 
         if (table.getComponentOrientation().isLeftToRight()) {
-            damagedArea.x = getXPosition(cMin);
+            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMin);
         } else {
-            damagedArea.x = getXPosition(cMax);
+            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
         }
 
         if (table.getShowHorizontalLines()) {
@@ -2084,7 +2084,6 @@ public class BasicTableUI extends TableUI
         if (table.getComponentOrientation().isLeftToRight()) {
             for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMin, false);
-                cellRect.x = getXPosition(cMin);
                 for (int column = cMin; column <= cMax; column++) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
@@ -2097,8 +2096,8 @@ public class BasicTableUI extends TableUI
             }
         } else {
             for (int row = rMin; row <= rMax; row++) {
-                cellRect = table.getCellRect(row, cMin, false);
-                cellRect.x = getXPosition(cMax);
+                cellRect = table.getCellRect(row, cMax, false);
+                cellRect.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
                 for (int column = cMax; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
@@ -2289,38 +2288,5 @@ public class BasicTableUI extends TableUI
             return COPY;
         }
 
-    }
-
-    private int getXPosition(int column) {
-        int x = 0;
-        TableColumnModel cm = table.getColumnModel();
-
-        if (column < 0) {
-            if (!table.getComponentOrientation().isLeftToRight()) {
-                x = getWidthInRightToLeft();
-            }
-        }
-        else if (column >= cm.getColumnCount()) {
-            if (table.getComponentOrientation().isLeftToRight()) {
-                x = table.getWidth();
-            }
-        }
-        else {
-            for (int i = 0; i < column; i++) {
-                x += cm.getColumn(i).getWidth();
-            }
-            if (!table.getComponentOrientation().isLeftToRight()) {
-                x = getWidthInRightToLeft() - x - cm.getColumn(column).getWidth();
-            }
-        }
-        return x;
-    }
-
-    private int getWidthInRightToLeft() {
-        if ((table != null) &&
-                (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
-            return table.getWidth();
-        }
-        return table.getParent().getWidth();
     }
 }  // End of Class BasicTableUI
