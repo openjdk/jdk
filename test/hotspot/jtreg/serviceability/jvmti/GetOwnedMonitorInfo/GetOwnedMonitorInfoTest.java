@@ -46,19 +46,37 @@ public class GetOwnedMonitorInfoTest {
         }
     }
 
+    private static native void jniMonitorEnter(Object obj);
     private static native int check();
     private static native boolean hasEventPosted();
 
-    public static void main(String[] args) throws Exception {
-        runTest(true);
-        runTest(false);
+    private static void jniMonitorEnterAndLetObjectDie() {
+        // The monitor iterator used GetOwnedMonitorInfo used to
+        // assert when an owned monitor with a dead object was found.
+        // Inject this situation into this test that performs other
+        // GetOwnedMonitorInfo testing.
+        Object obj = new Object() { public String toString() {return "";} };
+        jniMonitorEnter(obj);
+        obj = null;
+        System.gc();
     }
 
-    public static void runTest(boolean isVirtual) throws Exception {
+    public static void main(String[] args) throws Exception {
+        runTest(true, true);
+        runTest(true, false);
+        runTest(false, true);
+        runTest(false, false);
+    }
+
+    public static void runTest(boolean isVirtual, boolean jni) throws Exception {
         var threadFactory = isVirtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory();
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
         Thread t1 = threadFactory.newThread(() -> {
+            if (jni) {
+                jniMonitorEnterAndLetObjectDie();
+            }
+
             synchronized (lock) {
                 System.out.println("Thread in sync section: "
                                    + Thread.currentThread().getName());

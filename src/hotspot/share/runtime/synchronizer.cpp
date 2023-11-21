@@ -1083,7 +1083,6 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
     // ObjectMonitor cannot be async deflated.
     if (monitor->has_owner() && filter(monitor->owner_raw())) {
       assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
-      assert(monitor->object_peek() != nullptr, "Owned monitors should not have a dead object");
 
       closure->do_monitor(monitor);
     }

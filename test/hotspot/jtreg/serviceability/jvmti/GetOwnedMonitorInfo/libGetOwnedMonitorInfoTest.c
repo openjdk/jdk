@@ -264,6 +264,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
+JNIEXPORT void JNICALL
+Java_GetOwnedMonitorInfoTest_jniMonitorEnter(JNIEnv* env, jclass cls, jobject obj) {
+    if ((*env)->MonitorEnter(env, obj) != 0) {
+        fprintf(stderr, "MonitorEnter failed");
+    }
+}
+
 JNIEXPORT jint JNICALL
 Java_GetOwnedMonitorInfoTest_check(JNIEnv *env, jclass cls) {
     return status;
