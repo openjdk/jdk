@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 4290640 4785473
+ * @requires vm.flagless
+ * @library /test/lib
  * @build package1.Class1 package2.Class2 package1.package3.Class3 Assert
  * @run main/othervm Assert
  * @summary Test the assertion facility
@@ -31,11 +33,16 @@
  * @key randomness
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 import package1.*;
 import package2.*;
 import package1.package3.*;
-import java.io.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+
+import static jdk.test.lib.process.ProcessTools.*;
 
 public class Assert {
 
@@ -56,7 +63,7 @@ public class Assert {
      * off at class load time. Once the class is loaded its assertion status
      * does not change.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
 
         // Switch values: 0=don't touch, 1=off, 2 = on
         int[] switches = new int[7];
@@ -77,28 +84,17 @@ public class Assert {
                 }
 
                 // Spawn new VM and load classes
-                String command = System.getProperty("java.home") +
-                    File.separator + "bin" + File.separator + "java Assert";
-
-                StringBuffer commandString = new StringBuffer(command);
+                List<String> commands = new ArrayList<>();
+                commands.add("Assert");
                 for(int j=0; j<7; j++)
-                    commandString.append(" "+switches[j]);
-
-                Process p = null;
-                p = Runtime.getRuntime().exec(commandString.toString());
-
+                    commands.add(Integer.toString(switches[j]));
+                OutputAnalyzer outputAnalyzer = executeCommand(createLimitedTestJavaProcessBuilder(commands));
                 if (debug) { // See output of test VMs
-                    BufferedReader blah = new BufferedReader(
-                                          new InputStreamReader(p.getInputStream()));
-                    String outString = blah.readLine();
-                    while (outString != null) {
-                        System.out.println("from BufferedReader:"+outString);
-                        outString = blah.readLine();
-                    }
+                    outputAnalyzer.asLines()
+                                  .stream()
+                                  .forEach(s -> System.out.println(s));
                 }
-
-                p.waitFor();
-                int result = p.exitValue();
+                int result = outputAnalyzer.getExitValue();
                 if (debug) { // See which switch configs failed
                     if (result == 0) {
                         for(int k=6; k>=0; k--)
