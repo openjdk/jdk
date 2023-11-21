@@ -1014,8 +1014,7 @@ void AwtWindow::FocusedWindowChanged(HWND from, HWND to)
     }
 }
 
-void AwtWindow::_RepositionSecurityWarning(void* param)
-{
+void AwtWindow::_RepositionSecurityWarning(void* param) {
     JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     RepositionSecurityWarningStruct *rsws =
@@ -1023,7 +1022,6 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
     jobject self = rsws->window;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
@@ -1038,7 +1036,7 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
             return;
         }
     }
-    AwtWindow *window = (AwtWindow *)pData;
+    AwtWindow *window = (AwtWindow *) pData;
 
     window->RepositionSecurityWarning(env);
 
