@@ -64,7 +64,9 @@ public class SendUrgentData {
         boolean inline = false;
         if (args.length > 0 && args[0].equals("-server")) {
             System.out.println(serverThread.getAddress());
-            Thread.currentThread().suspend();
+            while (true) {
+                Thread.sleep(60_000);
+            }
         } else {
             if (args.length > 0 && args[0].equals("-client")) {
                 host = args[1];

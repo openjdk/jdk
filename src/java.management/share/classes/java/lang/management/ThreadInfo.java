@@ -533,8 +533,7 @@ public class ThreadInfo {
 
     /**
      * Tests if the thread associated with this {@code ThreadInfo}
-     * is suspended.  This method returns {@code true} if
-     * {@link Thread#suspend} has been called.
+     * is suspended.
      *
      * @return {@code true} if the thread is suspended;
      *         {@code false} otherwise.

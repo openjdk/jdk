@@ -274,64 +274,6 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::suspend from current thread.
-     */
-    @Test
-    void testSuspend1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::suspend);
-        });
-    }
-
-    /**
-     * Test Thread::suspend from another thread.
-     */
-    @Test
-    void testSuspend2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.suspend());
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
-     * Test Thread::resume from current thread.
-     */
-    @Test
-    void testResume1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::resume);
-        });
-    }
-
-    /**
-     * Test Thread::resume from another thread.
-     */
-    @Test
-    void testResume2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.resume());
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
      * Test Thread.join before thread starts, platform thread invokes join.
      */
     @Test
