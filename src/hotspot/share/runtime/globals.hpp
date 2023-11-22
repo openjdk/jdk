@@ -667,8 +667,8 @@ const int ObjectAlignmentInBytes = 8;
           "Print JVM warnings to output stream")                            \
                                                                             \
   product(bool, RegisterFinalizersAtInit, true,                             \
-          "Register finalizable objects at end of Object.<init> or "        \
-          "after allocation")                                               \
+          "(Deprecated) Register finalizable objects at end of "            \
+          "Object.<init> or after allocation")                              \
                                                                             \
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
@@ -1224,15 +1224,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, UseCounterDecay, true,                                      \
-          "Adjust recompilation counters")                                  \
-                                                                            \
   develop(intx, CounterHalfLifeTime,    30,                                 \
           "Half-life time of invocation counters (in seconds)")             \
-                                                                            \
-  develop(intx, CounterDecayMinIntervalLength,   500,                       \
-          "The minimum interval (in milliseconds) between invocation of "   \
-          "CounterDecay")                                                   \
                                                                             \
   product(bool, AlwaysCompileLoopMethods, false,                            \
           "When using recompilation, never interpret methods "              \

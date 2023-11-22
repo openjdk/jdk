@@ -236,20 +236,6 @@ void MutableNUMASpace::update() {
                SpaceDecorator::Clear,
                SpaceDecorator::DontMangle);
   }
-
-  scan_pages(NUMAPageScanRate);
-}
-
-// Scan pages. Free pages that have smaller size or wrong placement.
-void MutableNUMASpace::scan_pages(size_t page_count)
-{
-  size_t pages_per_chunk = page_count / lgrp_spaces()->length();
-  if (pages_per_chunk > 0) {
-    for (int i = 0; i < lgrp_spaces()->length(); i++) {
-      LGRPSpace *ls = lgrp_spaces()->at(i);
-      ls->scan_pages(page_size(), pages_per_chunk);
-    }
-  }
 }
 
 // Accumulate statistics about the allocation rate of each lgrp.
@@ -690,44 +676,4 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
   space_stats()->_unbiased_space = pointer_delta(start, space()->bottom(), sizeof(char)) +
                                    pointer_delta(space()->end(), end, sizeof(char));
 
-}
-
-// Scan page_count pages and verify if they have the right size and right placement.
-// If invalid pages are found they are freed in hope that subsequent reallocation
-// will be more successful.
-void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count)
-{
-  char* range_start = (char*)align_up(space()->bottom(), page_size);
-  char* range_end = (char*)align_down(space()->end(), page_size);
-
-  if (range_start > last_page_scanned() || last_page_scanned() >= range_end) {
-    set_last_page_scanned(range_start);
-  }
-
-  char *scan_start = last_page_scanned();
-  char* scan_end = MIN2(scan_start + page_size * page_count, range_end);
-
-  os::page_info page_expected, page_found;
-  page_expected.size = page_size;
-  page_expected.lgrp_id = checked_cast<uint>(lgrp_id());
-
-  char *s = scan_start;
-  while (s < scan_end) {
-    char *e = os::scan_pages(s, (char*)scan_end, &page_expected, &page_found);
-    if (e == nullptr) {
-      break;
-    }
-    if (e != scan_end) {
-      assert(e < scan_end, "e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end));
-
-      if ((page_expected.size != page_size || checked_cast<uint>(page_expected.lgrp_id) != lgrp_id())
-          && page_expected.size != 0) {
-        os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
-      }
-      page_expected = page_found;
-    }
-    s = e;
-  }
-
-  set_last_page_scanned(scan_end);
 }

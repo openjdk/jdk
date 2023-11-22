@@ -70,8 +70,6 @@ class riscv {
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
 
-  static address _method_entry_barrier;
-
   static bool _completed;
 
  public:
@@ -146,10 +144,6 @@ class riscv {
 
   static address large_byte_array_inflate() {
     return _large_byte_array_inflate;
-  }
-
-  static address method_entry_barrier() {
-    return _method_entry_barrier;
   }
 
   static bool complete() {

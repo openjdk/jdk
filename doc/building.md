@@ -154,7 +154,7 @@ support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
 machines with and without support for branch protection in hardware. Branch
 Protection is only supported for Linux targets.
 
-### Building on 32-bit arm
+### Building on 32-bit ARM
 
 This is not recommended. Instead, see the section on [Cross-compiling](
 #cross-compiling).
@@ -518,7 +518,7 @@ heuristics has a high likelihood to fail. If the boot JDK is not automatically
 detected, or the wrong JDK is picked, use `--with-boot-jdk` to point to the JDK
 to use.
 
-### Getting JDK binaries
+### Getting JDK Binaries
 
 An overview of common ways to download and install prebuilt JDK binaries can be
 found on https://openjdk.org/install. An alternative is to download the [Oracle
@@ -1026,7 +1026,7 @@ The default mode "auto" will try for `hardened` signing if the debug level is
 If hardened isn't possible, then `debug` signing is chosen if it works. If
 nothing works, the codesign build step is disabled.
 
-## Cross-compiling
+## Cross-Compiling
 
 Cross-compiling means using one platform (the *build* platform) to generate
 output that can ran on another platform (the *target* platform).
@@ -1213,7 +1213,7 @@ built JDK, for your *target* system.
 Copy these folders to your *target* system. Then you can run e.g.
 `images/jdk/bin/java -version`.
 
-### Cross compiling the easy way
+### Cross-Compiling the Easy Way
 
 Setting up a proper cross-compilation environment can be a lot of work.
 Fortunately there are ways that more or less automate this process. Here are
@@ -1225,7 +1225,7 @@ solution only work for gcc.
 The devkit method is regularly used for testing by Oracle, and the debootstrap
 method is regularly used in GitHub Actions testing.
 
-#### Using OpenJDK devkits
+#### Using OpenJDK Devkits
 
 The JDK build system provides out-of-the box support for creating and using so
 called devkits. A `devkit` is basically a collection of a cross-compiling
@@ -1388,7 +1388,7 @@ Architectures that are known to successfully cross-compile like this are:
 | sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
 | riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
-### Considerations for specific targets
+### Considerations for Specific Targets
 
 #### Building for ARM32
 
@@ -1526,7 +1526,7 @@ things down.
 You can experiment by disabling pre-compiled headers using
 `--disable-precompiled-headers`.
 
-### Icecc / icecream
+### Icecc / Icecream
 
 [icecc/icecream](https://github.com/icecc/icecream) is a simple way to setup a
 distributed compiler network. If you have multiple machines available for
@@ -1536,7 +1536,7 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using the javac server
+### Using the javac Server
 
 To speed up compilation of Java code, especially during incremental
 compilations, the javac server is automatically enabled in the configuration
@@ -2274,7 +2274,7 @@ our rules and guidelines to be able to accept your contribution.
 The official place to start is the [OpenJDK Developers’ Guide](
 https://openjdk.org/guide/).
 
-## Editing this document
+## Editing This Document
 
 If you want to contribute changes to this document, edit `doc/building.md` and
 then run `make update-build-docs` to generate the same changes in
