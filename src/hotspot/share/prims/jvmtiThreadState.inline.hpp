@@ -89,15 +89,12 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
     return nullptr;
   }
 
-#ifdef ASSERT
   // Make sure we don't see an incomplete state. An incomplete state can cause
   // a duplicate JvmtiThreadState being created below and bound to the 'thread'
   // incorrectly, which leads to stale JavaThread* from the JvmtiThreadState
   // after the thread exits.
-  if (state != nullptr) {
-    assert(state->get_thread_oop() != nullptr, "incomplete state");
-  }
-#endif
+  assert(state == nullptr || state->get_thread_oop() != nullptr,
+         "incomplete state");
 
   if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
     thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
