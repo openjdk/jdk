@@ -209,19 +209,19 @@ public:
     return -1;
   }
 
-  template<typename T, typename F>
-  int find(T* token, F f) const {
+  template<typename F>
+  int find_if(F f) const {
     for (int i = 0; i < _len; i++) {
-      if (f(token, _data[i])) return i;
+      if (f(_data[i])) return i;
     }
     return -1;
   }
 
-  template<typename T, typename F>
-  int find_from_end(T* token, F f) const {
+  template<typename F>
+  int find_from_end_if(F f) const {
     // start at the end of the array
     for (int i = _len-1; i >= 0; i--) {
-      if (f(token, _data[i])) return i;
+      if (f(_data[i])) return i;
     }
     return -1;
   }

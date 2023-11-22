@@ -144,11 +144,6 @@ bool DCmdArgIter::next(TRAPS) {
   return _key_len != 0;
 }
 
-bool DCmdInfo::by_name(void* cmd_name, DCmdInfo* const& info) {
-  if (info == nullptr) return false;
-  return strcmp((const char*)cmd_name, info->name()) == 0;
-}
-
 void DCmdParser::add_dcmd_option(GenDCmdArgument* arg) {
   assert(arg != nullptr, "Sanity");
   if (_options == nullptr) {

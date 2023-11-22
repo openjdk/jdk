@@ -163,7 +163,7 @@ GrowableElement* GrowableCache::at(int index) {
 }
 
 int GrowableCache::find(GrowableElement* e) {
-  return _elements->find(e, GrowableCache::equals);
+  return _elements->find_if([&](GrowableElement* other_e) { return e->equals(other_e); });
 }
 
 // append a copy of the element to the end of the collection

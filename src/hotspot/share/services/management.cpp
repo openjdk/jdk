@@ -2004,7 +2004,11 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
         THROW_MSG(vmSymbols::java_lang_NullPointerException(),
                 "Command name cannot be null.");
     }
-    int pos = info_list->find((void*)cmd_name,DCmdInfo::by_name);
+    auto name_predicate = [&](DCmdInfo* info) {
+        if (info == nullptr) return false;
+        return strcmp((const char*)cmd_name, info->name()) == 0;
+    };
+    int pos = info_list->find_if(name_predicate);
     if (pos == -1) {
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
              "Unknown diagnostic command");

@@ -575,9 +575,6 @@ class PerfDataList : public CHeapObj<mtInternal> {
 
     PerfDataArray* _set;
 
-    // method to search for a instrumentation object by name
-    static bool by_name(void* name, PerfData* const& pd);
-
   protected:
     // we expose the implementation here to facilitate the clone
     // method.

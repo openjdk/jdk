@@ -83,7 +83,10 @@ bool match_oop_entry(oop *op, const UnhandledOopEntry& e) {
 void UnhandledOops::allow_unhandled_oop(oop* op) {
   assert (CheckUnhandledOops, "should only be called with checking option");
 
-  int i = _oop_list->find_from_end(op, match_oop_entry);
+  auto predicate = [&](const UnhandledOopEntry& e) {
+    return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
+  };
+  int i = _oop_list->find_from_end_if(predicate);
   assert(i!=-1, "safe for gc oop not in unhandled_oop_list");
 
   UnhandledOopEntry entry = _oop_list->at(i);
@@ -104,8 +107,10 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
     tty->print_cr("u " INTPTR_FORMAT, p2i(op));
   }
   _level--;
-
-  int i = _oop_list->find_from_end(op, match_oop_entry);
+  auto predicate = [&](const UnhandledOopEntry& e) {
+    return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
+  };
+  int i = _oop_list->find_from_end_if(predicate);
   assert(i!=-1, "oop not in unhandled_oop_list");
   _oop_list->remove_at(i);
 }

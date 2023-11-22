@@ -501,17 +501,13 @@ PerfDataList::~PerfDataList() {
 
 }
 
-bool PerfDataList::by_name(void* name, PerfData* const& pd) {
-
-  if (pd == nullptr)
-    return false;
-
-  return strcmp((const char*)name, pd->name()) == 0;
-}
-
 PerfData* PerfDataList::find_by_name(const char* name) {
-
-  int i = _set->find((void*)name, PerfDataList::by_name);
+  auto name_predicate = [&](PerfData* pd) {
+    if (pd == nullptr)
+      return false;
+    return strcmp((const char*)name, pd->name()) == 0;
+  };
+  int i = _set->find_if(name_predicate);
 
   if (i >= 0 && i <= _set->length())
     return _set->at(i);
