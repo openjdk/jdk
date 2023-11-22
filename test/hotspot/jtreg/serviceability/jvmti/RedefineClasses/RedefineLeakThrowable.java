@@ -48,7 +48,7 @@
  * @modules java.instrument
  *          java.compiler
  * @run main RedefineClassHelper
- * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=20m -XX:MaxMetaspaceSize=20m RedefineLeakThrowable
+ * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=28m -XX:MaxMetaspaceSize=28m RedefineLeakThrowable
  */
 
 class Tester {
@@ -76,7 +76,7 @@ public class RedefineLeakThrowable {
 
 
     public static void main(String argv[]) throws Exception {
-        for (int i = 0; i < 800; i++) {
+        for (int i = 0; i < 1000; i++) {
             RedefineClassHelper.redefineClass(Tester.class, NEW_TESTER);
         }
     }
