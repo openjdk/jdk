@@ -49,7 +49,7 @@ x86</a></li>
 <li><a href="#building-on-aarch64" id="toc-building-on-aarch64">Building
 on aarch64</a></li>
 <li><a href="#building-on-32-bit-arm"
-id="toc-building-on-32-bit-arm">Building on 32-bit arm</a></li>
+id="toc-building-on-32-bit-arm">Building on 32-bit ARM</a></li>
 </ul></li>
 <li><a href="#operating-system-requirements"
 id="toc-operating-system-requirements">Operating System Requirements</a>
@@ -74,7 +74,7 @@ id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
 JDK Requirements</a>
 <ul>
 <li><a href="#getting-jdk-binaries"
-id="toc-getting-jdk-binaries">Getting JDK binaries</a></li>
+id="toc-getting-jdk-binaries">Getting JDK Binaries</a></li>
 </ul></li>
 <li><a href="#external-library-requirements"
 id="toc-external-library-requirements">External Library Requirements</a>
@@ -116,31 +116,25 @@ Tests</a></li>
 <li><a href="#macos-1" id="toc-macos-1">macOS</a></li>
 </ul></li>
 <li><a href="#cross-compiling"
-id="toc-cross-compiling">Cross-compiling</a>
+id="toc-cross-compiling">Cross-Compiling</a>
 <ul>
-<li><a href="#cross-compiling-the-easy-way-with-openjdk-devkits"
-id="toc-cross-compiling-the-easy-way-with-openjdk-devkits">Cross
-compiling the easy way with OpenJDK devkits</a></li>
-<li><a href="#boot-jdk-and-build-jdk"
-id="toc-boot-jdk-and-build-jdk">Boot JDK and Build JDK</a></li>
 <li><a href="#specifying-the-target-platform"
 id="toc-specifying-the-target-platform">Specifying the Target
 Platform</a></li>
+<li><a href="#boot-jdk-and-build-jdk"
+id="toc-boot-jdk-and-build-jdk">Boot JDK and Build JDK</a></li>
 <li><a href="#toolchain-considerations"
 id="toc-toolchain-considerations">Toolchain Considerations</a></li>
 <li><a href="#native-libraries" id="toc-native-libraries">Native
 Libraries</a></li>
-<li><a href="#cross-compiling-with-debian-sysroots"
-id="toc-cross-compiling-with-debian-sysroots">Cross compiling with
-Debian sysroots</a></li>
-<li><a href="#building-for-armaarch64"
-id="toc-building-for-armaarch64">Building for ARM/aarch64</a></li>
-<li><a href="#building-for-risc-v" id="toc-building-for-risc-v">Building
-for RISC-V</a></li>
-<li><a href="#building-for-musl" id="toc-building-for-musl">Building for
-musl</a></li>
 <li><a href="#verifying-the-build"
 id="toc-verifying-the-build">Verifying the Build</a></li>
+<li><a href="#cross-compiling-the-easy-way"
+id="toc-cross-compiling-the-easy-way">Cross-Compiling the Easy
+Way</a></li>
+<li><a href="#considerations-for-specific-targets"
+id="toc-considerations-for-specific-targets">Considerations for Specific
+Targets</a></li>
 </ul></li>
 <li><a href="#build-performance" id="toc-build-performance">Build
 Performance</a>
@@ -152,9 +146,9 @@ Checking</a></li>
 <li><a href="#precompiled-headers"
 id="toc-precompiled-headers">Precompiled Headers</a></li>
 <li><a href="#icecc-icecream" id="toc-icecc-icecream">Icecc /
-icecream</a></li>
+Icecream</a></li>
 <li><a href="#using-the-javac-server"
-id="toc-using-the-javac-server">Using the javac server</a></li>
+id="toc-using-the-javac-server">Using the javac Server</a></li>
 <li><a href="#building-the-right-target"
 id="toc-building-the-right-target">Building the Right Target</a></li>
 </ul></li>
@@ -208,19 +202,19 @@ Itself</a></li>
 <li><a href="#contributing-to-the-jdk"
 id="toc-contributing-to-the-jdk">Contributing to the JDK</a></li>
 <li><a href="#editing-this-document"
-id="toc-editing-this-document">Editing this document</a></li>
+id="toc-editing-this-document">Editing This Document</a></li>
 </ul>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the
 Impatient)</h2>
-<p>If you are eager to try out building the JDK, these simple steps
-works most of the time. They assume that you have installed Git (and
-Cygwin if running on Windows) and cloned the top-level JDK repository
-that you want to build.</p>
+<p>If you are eager to try out building the JDK, these simple steps work
+most of the time. They assume that you have installed Git (and Cygwin,
+MSYS2 or WSL if running on Windows), and want to clone the main-line JDK
+repository.</p>
 <ol type="1">
 <li><p><a href="#getting-the-source-code">Get the complete source
 code</a>:<br />
-<code>git clone https://git.openjdk.org/jdk/</code></p></li>
+<code>git clone https://git.openjdk.org/jdk</code></p></li>
 <li><p><a href="#running-configure">Run configure</a>:<br />
 <code>bash configure</code></p>
 <p>If <code>configure</code> fails due to missing dependencies (to
@@ -236,8 +230,8 @@ again.</p></li>
 <code>make images</code></p></li>
 <li><p>Verify your newly built JDK:<br />
 <code>./build/*/images/jdk/bin/java -version</code></p></li>
-<li><p><a href="##running-tests">Run basic tests</a>:<br />
-<code>make run-test-tier1</code></p></li>
+<li><p><a href="#running-tests">Run basic tests</a>:<br />
+<code>make test-tier1</code></p></li>
 </ol>
 <p>If any of these steps failed, or if you want to know more about build
 requirements or build functionality, please continue reading this
@@ -248,17 +242,25 @@ amount of technical expertise, a fair number of dependencies on external
 software, and reasonably powerful hardware.</p>
 <p>If you just want to use the JDK and not build it yourself, this
 document is not for you. See for instance <a
-href="http://openjdk.org/install">OpenJDK installation</a> for some
+href="https://openjdk.org/install">OpenJDK installation</a> for some
 methods of installing a prebuilt JDK.</p>
 <h2 id="getting-the-source-code">Getting the Source Code</h2>
-<p>Make sure you are getting the correct version. As of JDK 10, the
-source is no longer split into separate repositories so you only need to
-clone one single repository. At the <a
+<p>Make sure you are getting the correct version. At the <a
 href="https://git.openjdk.org/">OpenJDK Git site</a> you can see a list
-of all available repositories. If you want to build an older version,
-e.g. JDK 11, it is recommended that you get the <code>jdk11u</code>
-repo, which contains incremental updates, instead of the
-<code>jdk11</code> repo, which was frozen at JDK 11 GA.</p>
+of all available repositories. Commonly used repositories are:</p>
+<ul>
+<li><p>The <a href="https://openjdk.org/projects/jdk">JDK Project</a>
+(the main-line currently in development):
+https://git.openjdk.org/jdk</p></li>
+<li><p>The <a href="https://openjdk.org/projects/jdk-updates/">JDK
+Updates Project</a>, which has one repository per update release, e.g.
+https://git.openjdk.org/jdk17u for JDK 17.</p></li>
+</ul>
+<p>If you want to build an older version, e.g. JDK 17, it is strongly
+recommended that you use the JDK Updates repository, e.g. the
+<code>jdk17u</code>, which contains incremental updates, instead of the
+JDK Project repository <code>jdk17</code>, which was frozen at JDK 17
+GA.</p>
 <p>If you are new to Git, a good place to start is the book <a
 href="https://git-scm.com/book/en/v2">Pro Git</a>. The rest of this
 document assumes a working knowledge of Git.</p>
@@ -339,7 +341,7 @@ requires C++ compiler support (GCC 9.1.0+ or Clang 10+). The resulting
 build can be run on both machines with and without support for branch
 protection in hardware. Branch Protection is only supported for Linux
 targets.</p>
-<h3 id="building-on-32-bit-arm">Building on 32-bit arm</h3>
+<h3 id="building-on-32-bit-arm">Building on 32-bit ARM</h3>
 <p>This is not recommended. Instead, see the section on <a
 href="#cross-compiling">Cross-compiling</a>.</p>
 <h2 id="operating-system-requirements">Operating System
@@ -362,16 +364,20 @@ to date at the time of writing.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Linux</td>
-<td>Oracle Enterprise Linux 6.4 / 7.6</td>
+<td>Linux/x64</td>
+<td>Oracle Enterprise Linux 6.4 / 8.x</td>
 </tr>
 <tr class="even">
-<td>macOS</td>
-<td>macOS 13 (Ventura)</td>
+<td>Linux/aarch64</td>
+<td>Oracle Enterprise Linux 7.6 / 8.x</td>
 </tr>
 <tr class="odd">
+<td>macOS</td>
+<td>macOS 13.x (Ventura)</td>
+</tr>
+<tr class="even">
 <td>Windows</td>
-<td>Windows Server 2012 R2</td>
+<td>Windows Server 2016</td>
 </tr>
 </tbody>
 </table>
@@ -384,17 +390,17 @@ Build Platforms</a>. From time to time, this is updated by contributors
 to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should
-be able to build the JDK.</p>
+be able to build the JDK. (Note: The Windows 32-bit x86 port is
+deprecated and may be removed in a future release.)</p>
 <p>On Windows, it is important that you pay attention to the
 instructions in the <a href="#special-considerations">Special
 Considerations</a>.</p>
 <p>Windows is the only non-POSIX OS supported by the JDK, and as such,
 requires some extra care. A POSIX support layer is required to build on
-Windows. Currently, the only supported such layers are Cygwin, Windows
-Subsystem for Linux (WSL), and MSYS2. (MSYS is no longer supported due
-to an outdated bash; While OpenJDK can be built with MSYS2, support for
-it is still experimental, so build failures and unusual errors are not
-uncommon.)</p>
+Windows. Currently, the supported such layers are Cygwin, MSYS2 and
+Windows Subsystem for Linux (WSL). Of these, Cygwin is the one that has
+received the most real-world testing and is likely to cause least
+trouble.</p>
 <p>Internally in the build system, all paths are represented as
 Unix-style paths, e.g. <code>/cygdrive/c/git/jdk/Makefile</code> rather
 than <code>C:\git\jdk\Makefile</code>. This rule also applies to input
@@ -402,12 +408,35 @@ to the build system, e.g. in arguments to <code>configure</code>. So,
 use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
 <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
 conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
-a future release.</p>
+<h4 id="locale-requirements">Locale Requirements</h4>
+<p>Building and testing the JDK requires a well-defined locale to be
+guaranteed to run correctly. On non-Windows operating systems, this is
+achieved using the <code>LC_*</code> variables, which propagate to all
+child processes of the build. Unfortunately, there is no way to set the
+locale for a specific process like this in Windows. Instead, changes to
+locale can only be made globally, which will affect all applications run
+by the user. Furthermore, Windows makes a difference between user locale
+and system locale, where the latter determines e.g. the file path
+encoding. Both this locale settings affect building and testing the
+JDK.</p>
+<p>The <strong>recommended</strong> and <strong>supported</strong> way
+of building the JDK on Windows is to set both the system locale and the
+user locale to <strong>US English</strong>. The system setting can be
+changed by going to the Control Panel, choosing "Regional Settings"
+-&gt; "Administrative" and then pressing on the "Change System Locale"
+button.</p>
+<p>Since this is annoying for users who prefer another locale, we strive
+to get the building and testing to work on other locales as well. This
+is on a "best effort" level, so beware! You might get odd results in
+both building and testing. If you do, remember that locales other than
+US English are not supported nor recommended.</p>
+<p>It is also imperative to install the US English language pack in
+Visual Studio. For details, see <a
+href="#microsoft-visual-studio">Microsoft Visual Studio</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
-<p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment
-is required for building the JDK on Windows. If you have a 64-bit OS, we
-strongly recommend using the 64-bit version of Cygwin.</p>
+<p>Install <a href="https://www.cygwin.com/">Cygwin</a> as instructed on
+the home page. It is strongly recommended to use the 64-bit version of
+Cygwin.</p>
 <p><strong>Note:</strong> Cygwin has a model of continuously updating
 all packages without any easy way to install or revert to a specific
 version of a package. This means that whenever you add or update a
@@ -435,13 +464,31 @@ href="https://cygwin.com/faq/faq.html#faq.using.bloda">"BLODA" list</a>
 and the section on <a
 href="https://cygwin.com/faq/faq.html#faq.using.fixing-fork-failures">fork()
 failures</a>.</p>
+<h4 id="msys2">MSYS2</h4>
+<p>Install <a href="https://www.msys2.org/">MSYS2</a> as instructed on
+the home page.</p>
+<p>Apart from the basic MSYS2 installation, the following packages must
+also be installed:</p>
+<ul>
+<li><code>autoconf</code></li>
+<li><code>tar</code></li>
+<li><code>make</code></li>
+<li><code>zip</code></li>
+<li><code>unzip</code></li>
+</ul>
+<p>You can install these packages using the following command line:</p>
+<pre><code>pacman -S autoconf tar make zip unzip</code></pre>
 <h4 id="windows-subsystem-for-linux-wsl">Windows Subsystem for Linux
 (WSL)</h4>
-<p>Windows 10 1809 or newer is supported due to a dependency on the
-wslpath utility and support for environment variable sharing through
-WSLENV. Version 1803 can work but intermittent build failures have been
-observed.</p>
-<p>It's possible to build both Windows and Linux binaries from WSL. To
+<p>WSL comes in two flavors, WSL1 and WSL2. These are drastically
+different under the hood. WSL1 runs the binaries natively by translating
+Linux kernel calls into Windows kernel calls, while WSL2 runs Linux in a
+virtual machine. Both solutions have their pros and cons, and you might
+need to test both before deciding which works best for you. Both WSL1
+and WSL2 are supported, but to varying degrees.</p>
+<p>To use WSL for building the JDK, you will need Windows 10 version
+1809 or later, and you will need to install an Ubuntu guest.</p>
+<p>It is possible to build both Windows and Linux binaries from WSL. To
 build Windows binaries, you must use a Windows boot JDK (located in a
 Windows-accessible directory). To build Linux binaries, you must use a
 Linux boot JDK. The default behavior is to build for Windows. To build
@@ -494,10 +541,7 @@ versions of AIX are supported.</p>
 compiled to be able to run on the target platform. In theory, toolchain
 and operating system should be independent factors, but in practice
 there's more or less a one-to-one correlation between target operating
-system and toolchain. There are ongoing efforts to loosen this strict
-coupling between compiler and operating system (see <a
-href="https://bugs.openjdk.org/browse/JDK-8288293">JDK-8288293</a>) but
-it will likely be a very long time before this goal can be realized.</p>
+system and toolchain.</p>
 <table>
 <thead>
 <tr class="header">
@@ -552,16 +596,13 @@ to compile successfully without issues.</p>
 </tr>
 </tbody>
 </table>
-<p>All compilers are expected to be able to compile to the C99 language
-standard, as some C99 features are used in the source code. Microsoft
-Visual Studio doesn't fully support C99 so in practice shared code is
-limited to using C99 features that it does support.</p>
+<p>All compilers are expected to be able to handle the C11 language
+standard for C, and C++14 for C++.</p>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 5.0. Older versions will
-generate a warning by <code>configure</code> and are unlikely to
-work.</p>
-<p>The JDK is currently known to be able to compile with at least
-version 13.2 of gcc.</p>
+<p>The minimum accepted version of gcc is 6.0. Older versions will not
+be accepted by <code>configure</code>.</p>
+<p>The JDK is currently known to compile successfully with gcc version
+13.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not
@@ -581,11 +622,11 @@ options:</p>
 <li>Use <code>xcode-select -s</code> before running
 <code>configure</code>, e.g.
 <code>xcode-select -s /Applications/Xcode13.1.app</code>. The drawback
-is that the setting is system wide and you may have to revert it after
-an OpenJDK build.</li>
+is that the setting is system wide and you may have to revert it after a
+JDK build.</li>
 <li>Use configure option <code>--with-xcode-path</code>, e.g.
 <code>configure --with-xcode-path=/Applications/Xcode13.1.app</code>
-This allows using a specific Xcode version for an OpenJDK build,
+This allows using a specific Xcode version for a JDK build,
 independently of the active Xcode version by
 <code>xcode-select</code>.</li>
 </ul>
@@ -609,6 +650,27 @@ a specific version to be used by setting
 <p>If you have Visual Studio installed but <code>configure</code> fails
 to detect it, it may be because of <a href="#spaces-in-path">spaces in
 path</a>.</p>
+<p>You must install the US English locale, otherwise the build system
+might not be able to interact properly with the compiler. You can add
+additional language packs when installing Visual Studio.</p>
+<p>If you have already installed Visual Studio without the US English
+language pack, you can modify the installation to add this. You can
+either do this via a GUI like this:</p>
+<ul>
+<li>Click on "Visual Studio Installer" in Start menu.</li>
+<li>Click "Modify".</li>
+<li>Select the tab "Language packs".</li>
+<li>Choose "English".</li>
+<li>Click "Modify".</li>
+</ul>
+<p>or you can run it on the command line. For this to work, you need to
+start <code>cmd.exe</code> using "Run as Administrator". Then execute
+the following line: (note that the " characters are essential)</p>
+<pre><code>&quot;C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe&quot; modify --channelId VisualStudio.16.Release --productId Microsoft.VisualStudio.Product.BuildTools --addProductLang en-us -p</code></pre>
+<p><code>VisualStudio.16.Release</code> represent VS 2019, so adjust the
+version number accordingly. If you have not installed the
+<code>BuildTools</code>, but e.g. <code>Professional</code>, adjust the
+product ID accordingly.</p>
 <h3 id="ibm-xl-cc">IBM XL C/C++</h3>
 <p>Please consult the AIX section of the <a
 href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported
@@ -623,24 +685,26 @@ already exists another JDK for that platform that is usable as boot
 JDK.</p>
 <p>The rule of thumb is that the boot JDK for building JDK major version
 <em>N</em> should be a JDK of major version <em>N-1</em>, so for
-building JDK 9 a JDK 8 would be suitable as boot JDK. However, the JDK
+building JDK 18 a JDK 17 would be suitable as boot JDK. However, the JDK
 should be able to "build itself", so an up-to-date build of the current
 JDK source is an acceptable alternative. If you are following the
 <em>N-1</em> rule, make sure you've got the latest update version, since
-JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
+e.g. JDK 8 GA might not be able to build JDK 9 on all platforms.</p>
 <p>Early in the release cycle, version <em>N-1</em> may not yet have
 been released. In that case, the preferred boot JDK will be version
 <em>N-2</em> until version <em>N-1</em> is available.</p>
-<p>If the boot JDK is not automatically detected, or the wrong JDK is
+<p>The <code>configure</code> scripts tries to locate a suitable boot
+JDK automatically, but due to the lack of standard installation
+locations on most platforms, this heuristics has a high likelihood to
+fail. If the boot JDK is not automatically detected, or the wrong JDK is
 picked, use <code>--with-boot-jdk</code> to point to the JDK to use.</p>
-<h3 id="getting-jdk-binaries">Getting JDK binaries</h3>
-<p>JDK binaries for Linux, Windows and macOS can be downloaded from <a
-href="http://jdk.java.net">jdk.java.net</a>. An alternative is to
-download the <a
-href="http://www.oracle.com/technetwork/java/javase/downloads">Oracle
-JDK</a>. Another is the <a href="https://adoptopenjdk.net/">Adopt
-OpenJDK Project</a>, which publishes experimental prebuilt binaries for
-various platforms.</p>
+<h3 id="getting-jdk-binaries">Getting JDK Binaries</h3>
+<p>An overview of common ways to download and install prebuilt JDK
+binaries can be found on https://openjdk.org/install. An alternative is
+to download the <a
+href="https://www.oracle.com/java/technologies/downloads">Oracle
+JDK</a>. Another is <a href="https://adoptium.net/">Adoptium</a>, which
+publishes prebuilt binaries for various platforms.</p>
 <p>On Linux you can also get a JDK from the Linux distribution. On
 apt-based distros (like Debian and Ubuntu),
 <code>sudo apt-get install openjdk-&lt;VERSION&gt;-jdk</code> is
@@ -656,23 +720,22 @@ used.</p>
 need to provide the path to it. There are two forms of the
 <code>configure</code> arguments to point to an external library:
 <code>--with-&lt;LIB&gt;=&lt;path&gt;</code> or
-<code>--with-&lt;LIB&gt;-include=&lt;path to include&gt; --with-&lt;LIB&gt;-lib=&lt;path to lib&gt;</code>.
-The first variant is more concise, but require the include files and
+<code>--with-&lt;LIB&gt;-include=&lt;path to include&gt; --with-&lt;LIB&gt;-lib=&lt;path to lib&gt;</code>.</p>
+<p>The first variant is more concise, but require the include files and
 library files to reside in a default hierarchy under this directory. In
-most cases, it works fine.</p>
-<p>As a fallback, the second version allows you to point to the include
-directory and the lib directory separately.</p>
+most cases, it works fine. As a fallback, the second version allows you
+to point to the include directory and the lib directory separately.</p>
 <h3 id="freetype">FreeType</h3>
-<p>FreeType2 from <a href="http://www.freetype.org/">The FreeType
+<p>FreeType2 from <a href="https://www.freetype.org/">The FreeType
 Project</a> is not required on any platform. The exception is on
 Unix-based platforms when configuring such that the build artifacts will
 reference a system installed library, rather than bundling the JDK's own
 copy.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libfreetype6-dev</code>.</li>
+<code>sudo apt-get install libfreetype6-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     freetype-devel</code>.</li>
+<code>sudo yum install freetype-devel</code>.</li>
 <li>To install on Alpine Linux, try running
 <code>sudo apk add freetype-dev</code>.</li>
 <li>To install on macOS, try running
@@ -682,42 +745,42 @@ copy.</p>
 <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform FreeType files.</p>
 <h3 id="fontconfig">Fontconfig</h3>
-<p>Fontconfig from <a href="http://fontconfig.org">freedesktop.org
+<p>Fontconfig from <a href="https://fontconfig.org">freedesktop.org
 Fontconfig</a> is required on all platforms except Windows and
 macOS.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libfontconfig-dev</code>.</li>
+<code>sudo apt-get install libfontconfig-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     fontconfig-devel</code>.</li>
+<code>sudo yum install fontconfig-devel</code>.</li>
 </ul>
 <p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
 <code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform Fontconfig files.</p>
 <h3 id="cups">CUPS</h3>
-<p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a>
+<p>CUPS, <a href="https://www.cups.org">Common UNIX Printing System</a>
 header files are required on all platforms, except Windows. Often these
 files are provided by your operating system.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libcups2-dev</code>.</li>
+<code>sudo apt-get install libcups2-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     cups-devel</code>.</li>
+<code>sudo yum install cups-devel</code>.</li>
 <li>To install on Alpine Linux, try running
 <code>sudo apk add cups-dev</code>.</li>
 </ul>
 <p>Use <code>--with-cups=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your CUPS files.</p>
 <h3 id="x11">X11</h3>
-<p>Certain <a href="http://www.x.org/">X11</a> libraries and include
+<p>Certain <a href="https://www.x.org/">X11</a> libraries and include
 files are required on Linux.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
+<code>sudo apt-get install libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel</code>.</li>
+<code>sudo yum install libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel</code>.</li>
 <li>To install on Alpine Linux, try running
-<code>sudo apk add libx11-dev     libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
+<code>sudo apk add libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev libxt-dev</code>.</li>
 </ul>
 <p>Use <code>--with-x=&lt;path&gt;</code> if <code>configure</code> does
 not properly locate your X11 files.</p>
@@ -727,23 +790,23 @@ Architecture</a> is required on Linux. At least version 0.9.1 of ALSA is
 required.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libasound2-dev</code>.</li>
+<code>sudo apt-get install libasound2-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     alsa-lib-devel</code>.</li>
+<code>sudo yum install alsa-lib-devel</code>.</li>
 <li>To install on Alpine Linux, try running
 <code>sudo apk add alsa-lib-dev</code>.</li>
 </ul>
 <p>Use <code>--with-alsa=&lt;path&gt;</code> if <code>configure</code>
 does not properly locate your ALSA files.</p>
 <h3 id="libffi">libffi</h3>
-<p>libffi, the <a href="http://sourceware.org/libffi">Portable Foreign
+<p>libffi, the <a href="https://sourceware.org/libffi">Portable Foreign
 Function Interface Library</a> is required when building the Zero
 version of Hotspot.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     libffi-dev</code>.</li>
+<code>sudo apt-get install libffi-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     libffi-devel</code>.</li>
+<code>sudo yum install libffi-devel</code>.</li>
 <li>To install on Alpine Linux, try running
 <code>sudo apk add libffi-dev</code>.</li>
 </ul>
@@ -751,28 +814,29 @@ version of Hotspot.</p>
 does not properly locate your libffi files.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
 <h3 id="autoconf">Autoconf</h3>
-<p>The JDK requires <a
-href="http://www.gnu.org/software/autoconf">Autoconf</a> on all
+<p>The JDK build requires <a
+href="https://www.gnu.org/software/autoconf">Autoconf</a> on all
 platforms. At least version 2.69 is required.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
-<code>sudo apt-get install     autoconf</code>.</li>
+<code>sudo apt-get install autoconf</code>.</li>
 <li>To install on an rpm-based Linux, try running
-<code>sudo yum install     autoconf</code>.</li>
+<code>sudo yum install autoconf</code>.</li>
 <li>To install on Alpine Linux, try running
 <code>sudo apk add autoconf</code>.</li>
 <li>To install on macOS, try running
 <code>brew install autoconf</code>.</li>
 <li>To install on Windows, try running
-<code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q     -P autoconf</code>.</li>
+<code>&lt;path to Cygwin setup&gt;/setup-x86_64 -q -P autoconf</code>.</li>
 </ul>
 <p>If <code>configure</code> has problems locating your installation of
 autoconf, you can specify it using the <code>AUTOCONF</code> environment
 variable, like this:</p>
 <pre><code>AUTOCONF=&lt;path to autoconf&gt; configure ...</code></pre>
 <h3 id="gnu-make">GNU Make</h3>
-<p>The JDK requires <a href="http://www.gnu.org/software/make">GNU
-Make</a>. No other flavors of make are supported.</p>
+<p>The JDK build requires <a
+href="https://www.gnu.org/software/make">GNU Make</a>. No other flavors
+of make are supported.</p>
 <p>At least version 3.81 of GNU Make must be used. For distributions
 supporting GNU Make 4.0 or above, we strongly recommend it. GNU Make 4.0
 contains useful functionality to handle parallel building (supported by
@@ -792,8 +856,9 @@ issues, but if you have a very old <code>make</code>, or a non-GNU Make
 <code>configure</code>, use the <code>MAKE</code> configure variable,
 e.g. <code>configure MAKE=/opt/gnu/make</code>.</p>
 <h3 id="gnu-bash">GNU Bash</h3>
-<p>The JDK requires <a href="http://www.gnu.org/software/bash">GNU
-Bash</a>. No other shells are supported.</p>
+<p>The JDK build requires <a
+href="https://www.gnu.org/software/bash">GNU Bash</a>. No other shells
+are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
 <h2 id="running-configure">Running Configure</h2>
 <p>To build the JDK, you need a "configuration", which consists of a
@@ -1020,7 +1085,7 @@ configuration</li>
 make targets and make control variables.</p>
 <p>It is possible to build just a single module, a single phase, or a
 single phase of a single module, by creating make targets according to
-these followin patterns. A phase can be either of <code>gensrc</code>,
+these following patterns. A phase can be either of <code>gensrc</code>,
 <code>gendata</code>, <code>copy</code>, <code>java</code>,
 <code>launchers</code>, or <code>libs</code>. See <a
 href="#using-fine-grained-make-targets">Using Fine-Grained Make
@@ -1078,8 +1143,11 @@ details.</p>
 <ul>
 <li><code>TEST</code></li>
 <li><code>TEST_JOBS</code></li>
+<li><code>TEST_OPTS</code></li>
+<li><code>TEST_VM_OPTS</code></li>
 <li><code>JTREG</code></li>
 <li><code>GTEST</code></li>
+<li><code>MICRO</code></li>
 </ul>
 <h4 id="advanced-make-control-variables">Advanced Make Control
 Variables</h4>
@@ -1097,9 +1165,9 @@ System</a> for details.</p>
 </ul>
 <h2 id="running-tests">Running Tests</h2>
 <p>Most of the JDK tests are using the <a
-href="http://openjdk.org/jtreg">JTReg</a> test framework. Make sure that
-your configuration knows where to find your installation of JTReg. If
-this is not picked up automatically, use the
+href="https://openjdk.org/jtreg">JTReg</a> test framework. Make sure
+that your configuration knows where to find your installation of JTReg.
+If this is not picked up automatically, use the
 <code>--with-jtreg=&lt;path to jtreg home&gt;</code> option to point to
 the JTReg framework. Note that this option should point to the JTReg
 home, i.e. the top directory, containing <code>lib/jtreg.jar</code>
@@ -1117,20 +1185,21 @@ be specified via <code>--with-gtest</code>. The minimum supported
 version of Google Test is 1.14.0, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a
-href="https://github.com/google/googletest/releases/tag/v1.14.0">here</a></li>
-<li>or by checking out <code>v1.14.0</code> tag of
-<code>googletest</code> project:
+href="https://github.com/google/googletest/releases/tag/v1.14.0">here</a>,
+or</li>
+<li>by checking out <code>v1.14.0</code> tag of <code>googletest</code>
+project:
 <code>git clone -b v1.14.0 https://github.com/google/googletest</code></li>
 </ul>
 <p>To execute the most basic tests (tier 1), use:</p>
-<pre><code>make run-test-tier1</code></pre>
+<pre><code>make test-tier1</code></pre>
 <p>For more details on how to run tests, please see <strong>Testing the
 JDK</strong> (<a href="testing.html">html</a>, <a
 href="testing.md">markdown</a>).</p>
 <h2 id="signing">Signing</h2>
 <h3 id="macos-1">macOS</h3>
 <p>Modern versions of macOS require applications to be signed and
-notarizied before distribution. See Apple's documentation for more
+notarized before distribution. See Apple's documentation for more
 background on what this means and how it works. To help support this,
 the JDK build can be configured to automatically sign all native
 binaries, and the JDK bundle, with all the options needed for successful
@@ -1147,7 +1216,7 @@ the special entitlement <code>com.apple.security.get-task-allow</code>
 to each binary. This entitlement is required to be able to dump core
 files from a process. Note that adding this entitlement makes the build
 invalid for notarization, so it is only added when signing in
-<code>debug</code> mode. To explicitly enable this kind of adhoc
+<code>debug</code> mode. To explicitly enable this kind of ad hoc
 signing, use configure parameter
 <code>--with-macosx-codesign=debug</code>. It will be enabled by default
 in most cases.</p>
@@ -1157,14 +1226,14 @@ operations done by the JDK build using the configure parameter
 on the architecture. For macOS on x64, it (at least at the time of this
 writing) results in completely unsigned binaries that should still work
 fine for development and debugging purposes. On aarch64, the Xcode
-linker will apply a default "adhoc" signing, without any entitlements.
+linker will apply a default "ad hoc" signing, without any entitlements.
 Such a build does not allow dumping core files.</p>
 <p>The default mode "auto" will try for <code>hardened</code> signing if
 the debug level is <code>release</code> and either the default identity
 or the specified identity is valid. If hardened isn't possible, then
 <code>debug</code> signing is chosen if it works. If nothing works, the
 codesign build step is disabled.</p>
-<h2 id="cross-compiling">Cross-compiling</h2>
+<h2 id="cross-compiling">Cross-Compiling</h2>
 <p>Cross-compiling means using one platform (the <em>build</em>
 platform) to generate output that can ran on another platform (the
 <em>target</em> platform).</p>
@@ -1188,16 +1257,167 @@ OS, on a 64-bit machine, consider using
 <code>--with-target-bits=32</code> instead of doing a full-blown
 cross-compilation. (While this surely is possible, it's a lot more work
 and will take much longer to build.)</p>
-<h3 id="cross-compiling-the-easy-way-with-openjdk-devkits">Cross
-compiling the easy way with OpenJDK devkits</h3>
-<p>The OpenJDK build system provides out-of-the box support for creating
-and using so called devkits. A <code>devkit</code> is basically a
-collection of a cross-compiling toolchain and a sysroot environment
-which can easily be used together with the <code>--with-devkit</code>
-configure option to cross compile the OpenJDK. On Linux/x86_64, the
-following command:</p>
+<p>Setting up a cross-compilation environment by hand is time-consuming
+and error prone. It is highly recommended that you use one of the
+automated methods described in <a
+href="#cross-compiling-the-easy-way">Cross compiling the easy
+way</a>.</p>
+<h3 id="specifying-the-target-platform">Specifying the Target
+Platform</h3>
+<p>You <em>must</em> specify the target platform when cross-compiling.
+Doing so will also automatically turn the build into a cross-compiling
+mode. The simplest way to do this is to use the
+<code>--openjdk-target</code> argument, e.g.
+<code>--openjdk-target=arm-linux-gnueabihf</code>. or
+<code>--openjdk-target=aarch64-oe-linux</code>. This will automatically
+set the <code>--host</code> and <code>--target</code> options for
+autoconf, which can otherwise be confusing. (In autoconf terminology,
+the "target" is known as "host", and "target" is used for building a
+Canadian cross-compiler.)</p>
+<p>If <code>--build</code> has not been explicitly passed to configure,
+<code>--openjdk-target</code> will autodetect the build platform and
+internally set the flag automatically, otherwise the platform that was
+explicitly passed to <code>--build</code> will be used instead.</p>
+<h3 id="boot-jdk-and-build-jdk">Boot JDK and Build JDK</h3>
+<p>When cross-compiling, make sure you use a boot JDK that runs on the
+<em>build</em> system, and not on the <em>target</em> system.</p>
+<p>To be able to build, we need a "Build JDK", which is a JDK built from
+the current sources (that is, the same as the end result of the entire
+build process), but able to run on the <em>build</em> system, and not
+the <em>target</em> system. (In contrast, the Boot JDK should be from an
+older release, e.g. JDK 8 when building JDK 9.)</p>
+<p>The build process will create a minimal Build JDK for you, as part of
+building. To speed up the build, you can use
+<code>--with-build-jdk</code> to <code>configure</code> to point to a
+pre-built Build JDK. Please note that the build result is unpredictable,
+and can possibly break in subtle ways, if the Build JDK does not
+<strong>exactly</strong> match the current sources.</p>
+<h3 id="toolchain-considerations">Toolchain Considerations</h3>
+<p>You will need two copies of your toolchain, one which generates
+output that can run on the target system (the normal, or
+<em>target</em>, toolchain), and one that generates output that can run
+on the build system (the <em>build</em> toolchain).</p>
+<p>If you are cross-compiling using gcc, it is recommended to use the
+gcc standard where you prefix cross-compiling tools with the target
+denominator. If you follow this standard, <code>configure</code> is
+likely to pick up the toolchain correctly.</p>
+<p>The <em>build</em> toolchain will be auto-detected just the same way
+the normal <em>build</em>/<em>target</em> toolchain will be
+auto-detected when not cross-compiling. If this is not what you want, or
+if the auto-detection fails, you can specify a devkit containing the
+<em>build</em> toolchain using <code>--with-build-devkit</code> to
+<code>configure</code>, or by giving <code>BUILD_CC</code> and
+<code>BUILD_CXX</code> arguments.</p>
+<p>It is often helpful to locate the cross-compilation tools, headers
+and libraries in a separate directory, outside the normal path, and
+point out that directory to <code>configure</code>. Do this by setting
+the sysroot (<code>--with-sysroot</code>) and appending the directory
+when searching for cross-compilations tools
+(<code>--with-toolchain-path</code>). As a compact form, you can also
+use <code>--with-devkit</code> to point to a single directory, if it is
+correctly setup. (See <code>make/autoconf/basics.m4</code> for
+details.)</p>
+<h3 id="native-libraries">Native Libraries</h3>
+<p>You will need copies of external native libraries for the
+<em>target</em> system present on the <em>build</em> machine while
+building.</p>
+<p>Take care not to replace the <em>build</em> system's version of these
+libraries by mistake, as that can render the <em>build</em> machine
+unusable.</p>
+<p>Make sure that the libraries you point to (ALSA, X11, etc) are for
+the <em>target</em> platform, not the <em>build</em> platform.</p>
+<h4 id="alsa-1">ALSA</h4>
+<p>You will need alsa libraries suitable for your <em>target</em>
+system. In most cases, using Debian's pre-built libraries work fine.</p>
+<p>Note that alsa is needed even if you only want to build a headless
+JDK.</p>
+<ul>
+<li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
+Package Search</a>, search for the <code>libasound2</code> and
+<code>libasound2-dev</code> packages for your <em>target</em> system,
+and download them to /tmp.</p></li>
+<li><p>Install the libraries into the cross-compilation toolchain. For
+instance:</p>
+<pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
+dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
+dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
+<li><p>If alsa is not properly detected by <code>configure</code>, you
+can specify it by <code>--with-alsa</code>.</p></li>
+</ul>
+<h4 id="x11-1">X11</h4>
+<p>You will need X11 libraries suitable for your <em>target</em> system.
+In most cases, using Debian's pre-built libraries work fine.</p>
+<p>Note that X11 is needed even if you only want to build a headless
+JDK.</p>
+<ul>
+<li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
+Package Search</a>, search for the following packages for your
+<em>target</em> system, and download them to /tmp/target-x11:</p>
+<ul>
+<li><code>libxi</code></li>
+<li><code>libxi-dev</code></li>
+<li><code>x11proto-core-dev</code></li>
+<li><code>x11proto-input-dev</code></li>
+<li><code>x11proto-kb-dev</code></li>
+<li><code>x11proto-render-dev</code></li>
+<li><code>x11proto-xext-dev</code></li>
+<li><code>libice-dev</code></li>
+<li><code>libxrender</code></li>
+<li><code>libxrender-dev</code></li>
+<li><code>libxrandr-dev</code></li>
+<li><code>libsm-dev</code></li>
+<li><code>libxt-dev</code></li>
+<li><code>libx11</code></li>
+<li><code>libx11-dev</code></li>
+<li><code>libxtst</code></li>
+<li><code>libxtst-dev</code></li>
+<li><code>libxext</code></li>
+<li><code>libxext-dev</code></li>
+</ul></li>
+<li><p>Install the libraries into the cross-compilation toolchain. For
+instance:</p>
+<pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
+mkdir X11R6
+cd X11R6
+for deb in /tmp/target-x11/*.deb ; do dpkg-deb -x $deb . ; done
+mv usr/* .
+cd lib
+cp arm-linux-gnueabihf/* .</code></pre>
+<p>You can ignore the following messages, since these libraries are not
+needed to successfully complete a full JDK build.</p>
+<pre><code>cp: cannot stat `arm-linux-gnueabihf/libICE.so&#39;: No such file or directory
+cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
+cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
+<li><p>If the X11 libraries are not properly detected by
+<code>configure</code>, you can point them out by
+<code>--with-x</code>.</p></li>
+</ul>
+<h3 id="verifying-the-build">Verifying the Build</h3>
+<p>The build will end up in a directory named like
+<code>build/linux-arm-normal-server-release</code>.</p>
+<p>Inside this build output directory, the <code>images/jdk</code> will
+contain the newly built JDK, for your <em>target</em> system.</p>
+<p>Copy these folders to your <em>target</em> system. Then you can run
+e.g. <code>images/jdk/bin/java -version</code>.</p>
+<h3 id="cross-compiling-the-easy-way">Cross-Compiling the Easy Way</h3>
+<p>Setting up a proper cross-compilation environment can be a lot of
+work. Fortunately there are ways that more or less automate this
+process. Here are two recommended methods, using the "devkits" that can
+be generated by the JDK build system, or by using the
+<code>debootstrap</code> command in Debian. The former works on all
+Linux distributions, the latter only on Debian and derivatives. Both
+solution only work for gcc.</p>
+<p>The devkit method is regularly used for testing by Oracle, and the
+debootstrap method is regularly used in GitHub Actions testing.</p>
+<h4 id="using-openjdk-devkits">Using OpenJDK Devkits</h4>
+<p>The JDK build system provides out-of-the box support for creating and
+using so called devkits. A <code>devkit</code> is basically a collection
+of a cross-compiling toolchain and a sysroot environment which can
+easily be used together with the <code>--with-devkit</code> configure
+option to cross compile the JDK. On Linux/x86_64, the following
+command:</p>
 <pre><code>bash configure --with-devkit=&lt;devkit-path&gt; --openjdk-target=ppc64-linux-gnu &amp;&amp; make</code></pre>
-<p>will configure and build OpenJDK for Linux/ppc64 assuming that
+<p>will configure and build the JDK for Linux/ppc64 assuming that
 <code>&lt;devkit-path&gt;</code> points to a Linux/x86_64 to Linux/ppc64
 devkit.</p>
 <p>Devkits can be created from the <code>make/devkit</code> directory by
@@ -1253,147 +1473,16 @@ platforms. Because they contain the full build dependencies for a system
 well-known, reliable and reproducible build environments. You can for
 example create and use a devkit with GCC 7.3 and a Fedora 12 sysroot
 environment (with glibc 2.11) on Ubuntu 14.04 (which doesn't have GCC
-7.3 by default) to produce OpenJDK binaries which will run on all Linux
+7.3 by default) to produce JDK binaries which will run on all Linux
 systems with runtime libraries newer than the ones from Fedora 12 (e.g.
 Ubuntu 16.04, SLES 11 or RHEL 6).</p>
-<h3 id="boot-jdk-and-build-jdk">Boot JDK and Build JDK</h3>
-<p>When cross-compiling, make sure you use a boot JDK that runs on the
-<em>build</em> system, and not on the <em>target</em> system.</p>
-<p>To be able to build, we need a "Build JDK", which is a JDK built from
-the current sources (that is, the same as the end result of the entire
-build process), but able to run on the <em>build</em> system, and not
-the <em>target</em> system. (In contrast, the Boot JDK should be from an
-older release, e.g. JDK 8 when building JDK 9.)</p>
-<p>The build process will create a minimal Build JDK for you, as part of
-building. To speed up the build, you can use
-<code>--with-build-jdk</code> to <code>configure</code> to point to a
-pre-built Build JDK. Please note that the build result is unpredictable,
-and can possibly break in subtle ways, if the Build JDK does not
-<strong>exactly</strong> match the current sources.</p>
-<h3 id="specifying-the-target-platform">Specifying the Target
-Platform</h3>
-<p>You <em>must</em> specify the target platform when cross-compiling.
-Doing so will also automatically turn the build into a cross-compiling
-mode. The simplest way to do this is to use the
-<code>--openjdk-target</code> argument, e.g.
-<code>--openjdk-target=arm-linux-gnueabihf</code>. or
-<code>--openjdk-target=aarch64-oe-linux</code>. This will automatically
-set the <code>--host</code> and <code>--target</code> options for
-autoconf, which can otherwise be confusing. (In autoconf terminology,
-the "target" is known as "host", and "target" is used for building a
-Canadian cross-compiler.)</p>
-<p>If <code>--build</code> has not been explicitly passed to configure,
-<code>--openjdk-target</code> will autodetect the build platform and
-internally set the flag automatically, otherwise the platform that was
-explicitly passed to <code>--build</code> will be used instead.</p>
-<h3 id="toolchain-considerations">Toolchain Considerations</h3>
-<p>You will need two copies of your toolchain, one which generates
-output that can run on the target system (the normal, or
-<em>target</em>, toolchain), and one that generates output that can run
-on the build system (the <em>build</em> toolchain). Note that
-cross-compiling is only supported for gcc at the time being. The gcc
-standard is to prefix cross-compiling toolchains with the target
-denominator. If you follow this standard, <code>configure</code> is
-likely to pick up the toolchain correctly.</p>
-<p>The <em>build</em> toolchain will be autodetected just the same way
-the normal <em>build</em>/<em>target</em> toolchain will be autodetected
-when not cross-compiling. If this is not what you want, or if the
-autodetection fails, you can specify a devkit containing the
-<em>build</em> toolchain using <code>--with-build-devkit</code> to
-<code>configure</code>, or by giving <code>BUILD_CC</code> and
-<code>BUILD_CXX</code> arguments.</p>
-<p>It is often helpful to locate the cross-compilation tools, headers
-and libraries in a separate directory, outside the normal path, and
-point out that directory to <code>configure</code>. Do this by setting
-the sysroot (<code>--with-sysroot</code>) and appending the directory
-when searching for cross-compilations tools
-(<code>--with-toolchain-path</code>). As a compact form, you can also
-use <code>--with-devkit</code> to point to a single directory, if it is
-correctly setup. (See <code>basics.m4</code> for details.)</p>
-<h3 id="native-libraries">Native Libraries</h3>
-<p>You will need copies of external native libraries for the
-<em>target</em> system, present on the <em>build</em> machine while
-building.</p>
-<p>Take care not to replace the <em>build</em> system's version of these
-libraries by mistake, since that can render the <em>build</em> machine
-unusable.</p>
-<p>Make sure that the libraries you point to (ALSA, X11, etc) are for
-the <em>target</em>, not the <em>build</em>, platform.</p>
-<h4 id="alsa-1">ALSA</h4>
-<p>You will need alsa libraries suitable for your <em>target</em>
-system. For most cases, using Debian's pre-built libraries work
-fine.</p>
-<p>Note that alsa is needed even if you only want to build a headless
-JDK.</p>
-<ul>
-<li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
-Package Search</a> and search for the <code>libasound2</code> and
-<code>libasound2-dev</code> packages for your <em>target</em> system.
-Download them to /tmp.</p></li>
-<li><p>Install the libraries into the cross-compilation toolchain. For
-instance:</p>
-<pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc
-dpkg-deb -x /tmp/libasound2_1.0.25-4_armhf.deb .
-dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
-<li><p>If alsa is not properly detected by <code>configure</code>, you
-can point it out by <code>--with-alsa</code>.</p></li>
-</ul>
-<h4 id="x11-1">X11</h4>
-<p>You will need X11 libraries suitable for your <em>target</em> system.
-For most cases, using Debian's pre-built libraries work fine.</p>
-<p>Note that X11 is needed even if you only want to build a headless
-JDK.</p>
-<ul>
-<li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
-Package Search</a>, search for the following packages for your
-<em>target</em> system, and download them to /tmp/target-x11:</p>
-<ul>
-<li>libxi</li>
-<li>libxi-dev</li>
-<li>x11proto-core-dev</li>
-<li>x11proto-input-dev</li>
-<li>x11proto-kb-dev</li>
-<li>x11proto-render-dev</li>
-<li>x11proto-xext-dev</li>
-<li>libice-dev</li>
-<li>libxrender</li>
-<li>libxrender-dev</li>
-<li>libxrandr-dev</li>
-<li>libsm-dev</li>
-<li>libxt-dev</li>
-<li>libx11</li>
-<li>libx11-dev</li>
-<li>libxtst</li>
-<li>libxtst-dev</li>
-<li>libxext</li>
-<li>libxext-dev</li>
-</ul></li>
-<li><p>Install the libraries into the cross-compilation toolchain. For
-instance:</p>
-<pre><code>cd /tools/gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux/arm-linux-gnueabihf/libc/usr
-mkdir X11R6
-cd X11R6
-for deb in /tmp/target-x11/*.deb ; do dpkg-deb -x $deb . ; done
-mv usr/* .
-cd lib
-cp arm-linux-gnueabihf/* .</code></pre>
-<p>You can ignore the following messages. These libraries are not needed
-to successfully complete a full JDK build.</p>
-<pre><code>cp: cannot stat `arm-linux-gnueabihf/libICE.so&#39;: No such file or directory
-cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
-cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
-<li><p>If the X11 libraries are not properly detected by
-<code>configure</code>, you can point them out by
-<code>--with-x</code>.</p></li>
-</ul>
-<h3 id="cross-compiling-with-debian-sysroots">Cross compiling with
-Debian sysroots</h3>
-<p>Fortunately, you can create sysroots for foreign architectures with
-tools provided by your OS. On Debian/Ubuntu systems, one could use
-<code>debootstrap</code> to create the <em>target</em> system chroot,
-which would have the native libraries and headers specific to that
-<em>target</em> system. After that, we can use the cross-compiler on the
-<em>build</em> system, pointing into chroot to get the build
+<h4 id="using-debian-debootstrap">Using Debian debootstrap</h4>
+<p>On Debian (or a derivative like Ubuntu), you can create sysroots for
+foreign architectures with tools provided by the OS. You can use
+<code>debootstrap</code> to create a <em>target</em> system chroot
+directory, which would have the native libraries and headers specific to
+that <em>target</em> system. After that, you can use the cross-compiler
+on the <em>build</em> system, pointing into the chroot to get the build
 dependencies right. This allows building for foreign architectures with
 native compilation speed.</p>
 <p>For example, cross-compiling to AArch64 from x86_64 could be done
@@ -1410,10 +1499,10 @@ like this:</p>
   --resolve-deps \
   buster \
   ~/sysroot-arm64 \
-  http://httpredir.debian.org/debian/
-# If the target architecture is `riscv64`,
-# the path should be `debian-ports` instead of `debian`.</code></pre></li>
-<li><p>To create a Ubuntu-based chroot:</p>
+  https://httpredir.debian.org/debian/</code></pre>
+<p>If the target architecture is <code>riscv64</code>, the path should
+be <code>debian-ports</code> instead of <code>debian</code>.</p></li>
+<li><p>To create an Ubuntu-based chroot:</p>
 <pre><code>sudo debootstrap \
   --arch=arm64 \
   --verbose \
@@ -1422,8 +1511,9 @@ like this:</p>
   --resolve-deps \
   jammy \
   ~/sysroot-arm64 \
-  http://ports.ubuntu.com/ubuntu-ports/
-# symlinks is in the universe repository</code></pre></li>
+  http://ports.ubuntu.com/ubuntu-ports/</code></pre>
+<p>Note that <code>symlinks</code> is in the universe
+repository.</p></li>
 <li><p>Make sure the symlinks inside the newly created chroot point to
 proper locations:</p>
 <pre><code>sudo chroot ~/sysroot-arm64 symlinks -cr .</code></pre></li>
@@ -1570,18 +1660,21 @@ are:</p>
 </tr>
 </tbody>
 </table>
-<h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
+<h3 id="considerations-for-specific-targets">Considerations for Specific
+Targets</h3>
+<h4 id="building-for-arm32">Building for ARM32</h4>
 <p>A common cross-compilation target is the ARM CPU. When building for
-ARM, it is useful to set the ABI profile. A number of pre-defined ABI
-profiles are available using <code>--with-abi-profile</code>:
-arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt.
-Note that soft-float ABIs are no longer properly supported by the
-JDK.</p>
-<h3 id="building-for-risc-v">Building for RISC-V</h3>
+ARM, it is recommended to set the ABI profile. A number of pre-defined
+ABI profiles are available using <code>--with-abi-profile</code>:
+<code>arm-vfp-sflt</code>, <code>arm-vfp-hflt</code>,
+<code>arm-sflt</code>, <code>armv5-vfp-sflt</code> and
+<code>armv6-vfp-hflt</code>. Note that soft-float ABIs are no longer
+properly supported by the JDK.</p>
+<h4 id="building-for-risc-v">Building for RISC-V</h4>
 <p>The RISC-V community provides a basic <a
 href="https://github.com/riscv-collab/riscv-gnu-toolchain">GNU compiler
-toolchain</a>, but the <a href="#External-Library-Requirements">external
-libraries</a> required by OpenJDK complicate the building process. The
+toolchain</a>, but the <a href="#external-library-requirements">external
+libraries</a> required by the JDK complicate the building process. The
 placeholder <code>&lt;toolchain-installed-path&gt;</code> shown below is
 the path where you want to install the toolchain.</p>
 <ul>
@@ -1598,7 +1691,7 @@ cd libffi
 ./configure --host=riscv64-unknown-linux-gnu --prefix=&lt;toolchain-installed-path&gt;/sysroot/usr
 make
 make install</code></pre></li>
-<li><p>Configure and build OpenJDK:</p>
+<li><p>Configure and build the JDK:</p>
 <pre><code>bash configure \
   --with-boot-jdk=$BOOT_JDK \
   --openjdk-target=riscv64-linux-gnu \
@@ -1607,12 +1700,13 @@ make install</code></pre></li>
   --with-extra-path=&lt;toolchain-installed-path&gt;/bin
 make images</code></pre></li>
 </ul>
-<h3 id="building-for-musl">Building for musl</h3>
+<h4 id="building-for-musl">Building for musl</h4>
 <p>Just like it's possible to cross-compile for a different CPU, it's
-possible to cross-compile for musl libc on a glibc-based <em>build</em>
-system. A devkit suitable for most target CPU architectures can be
-obtained from <a href="https://musl.cc">musl.cc</a>. After installing
-the required packages in the sysroot, configure the build with
+possible to cross-compile for <code>musl</code> libc on a glibc-based
+<em>build</em> system. A devkit suitable for most target CPU
+architectures can be obtained from <a
+href="https://musl.cc">musl.cc</a>. After installing the required
+packages in the sysroot, configure the build with
 <code>--openjdk-target</code>:</p>
 <pre><code>sh ./configure --with-jvm-variants=server \
 --with-boot-jdk=$BOOT_JDK \
@@ -1621,13 +1715,6 @@ the required packages in the sysroot, configure the build with
 --with-devkit=$DEVKIT \
 --with-sysroot=$SYSROOT</code></pre>
 <p>and run <code>make</code> normally.</p>
-<h3 id="verifying-the-build">Verifying the Build</h3>
-<p>The build will end up in a directory named like
-<code>build/linux-arm-normal-server-release</code>.</p>
-<p>Inside this build output directory, the <code>images/jdk</code> will
-contain the newly built JDK, for your <em>target</em> system.</p>
-<p>Copy these folders to your <em>target</em> system. Then you can run
-e.g. <code>images/jdk/bin/java -version</code>.</p>
 <h2 id="build-performance">Build Performance</h2>
 <p>Building the JDK requires a lot of horsepower. Some of the build
 tools can be adjusted to utilize more or less of resources such as
@@ -1675,25 +1762,25 @@ code from on-the-fly checking.</p>
 <h3 id="ccache">Ccache</h3>
 <p>The JDK build supports building with ccache when using gcc or clang.
 Using ccache can radically speed up compilation of native code if you
-often rebuild the same sources. Your milage may vary however, so we
+often rebuild the same sources. Your mileage may vary however, so we
 recommend evaluating it for yourself. To enable it, make sure it's on
 the path and configure with <code>--enable-ccache</code>.</p>
 <h3 id="precompiled-headers">Precompiled Headers</h3>
-<p>By default, the Hotspot build uses preccompiled headers (PCH) on the
+<p>By default, the Hotspot build uses pre-compiled headers (PCH) on the
 toolchains were it is properly supported (clang, gcc, and Visual
 Studio). Normally, this speeds up the build process, but in some
 circumstances, it can actually slow things down.</p>
-<p>You can experiment by disabling precompiled headers using
+<p>You can experiment by disabling pre-compiled headers using
 <code>--disable-precompiled-headers</code>.</p>
-<h3 id="icecc-icecream">Icecc / icecream</h3>
-<p><a href="http://github.com/icecc/icecream">icecc/icecream</a> is a
+<h3 id="icecc-icecream">Icecc / Icecream</h3>
+<p><a href="https://github.com/icecc/icecream">icecc/icecream</a> is a
 simple way to setup a distributed compiler network. If you have multiple
 machines available for building the JDK, you can drastically cut
 individual build times by utilizing it.</p>
 <p>To use, setup an icecc network, and install icecc on the build
 machine. Then run <code>configure</code> using
 <code>--enable-icecc</code>.</p>
-<h3 id="using-the-javac-server">Using the javac server</h3>
+<h3 id="using-the-javac-server">Using the javac Server</h3>
 <p>To speed up compilation of Java code, especially during incremental
 compilations, the javac server is automatically enabled in the
 configuration step by default. To explicitly enable or disable the javac
@@ -1722,19 +1809,19 @@ end. It looks like this:</p>
 
 === Output from failing command(s) repeated here ===
 * For target hotspot_variant-server_libjvm_objs_psMemoryPool.o:
-/localhome/git/jdk-sandbox/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: &#39;failhere&#39; does not name a type
+/src/jdk/hotspot/src/share/vm/services/psMemoryPool.cpp:1:1: error: &#39;failhere&#39; does not name a type
    ... (rest of output omitted)
 
-* All command lines available in /localhome/git/jdk-sandbox/build/linux-x64/make-support/failure-logs.
+* All command lines available in /src/jdk/build/linux-x64/make-support/failure-logs.
 === End of repeated output ===
 
 === Make failed targets repeated here ===
-lib/CompileJvm.gmk:207: recipe for target &#39;/localhome/git/jdk-sandbox/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o&#39; failed
+lib/CompileJvm.gmk:207: recipe for target &#39;/src/jdk/build/linux-x64/hotspot/variant-server/libjvm/objs/psMemoryPool.o&#39; failed
 make/Main.gmk:263: recipe for target &#39;hotspot-server-libs&#39; failed
 === End of repeated output ===
 
-Hint: Try searching the build log for the name of the first failed target.
-Hint: If caused by a warning, try configure --disable-warnings-as-errors.</code></pre>
+HELP: Try searching the build log for the name of the first failed target.
+HELP: Run &#39;make doctor&#39; to diagnose build problems.</code></pre>
 <p>Let's break it down! First, the selected configuration, and the
 top-level target you entered on the command line that caused the failure
 is printed.</p>
@@ -1796,6 +1883,49 @@ with your build environment. But even if you have previously built the
 JDK with success, and it now fails, your build environment might have
 changed (perhaps due to OS upgrades or similar). But most likely, such
 failures are due to problems with the incremental rebuild.</p>
+<h4 id="running-make-doctor">Running "make doctor"</h4>
+<p>The build system comes with a built-in problem diagnosing system. If
+you encounter unexpected build failures, you are highly encouraged to
+run <code>make doctor</code>. The build system will check for common
+sources of build problems and suggest suitable actions to take to fix
+those problems.</p>
+<p>These checks are not done during normal build time since they are
+either too expensive performance-wise to perform, or since they are not
+conclusive and just an indication about a potential problem.</p>
+<p>The output from <code>make doctor</code> can look like this:</p>
+<pre><code>&quot;make doctor&quot; will help you analyze your build environment. It can highlight
+certain well-known problems, but it can never find all possible errors.
+
+* Verifying that configure has picked up git...
+
+* Checking for warnings from configure...
+ ---
+The following warnings were produced. Repeated here for convenience:
+WARNING: pandoc is version 3.1.9, not the recommended version 2.19.2
+ ---
+! Inspect the warnings, fix any problems, and re-run configure
+
+* Checking for left-over core files...
+Found these potential core files. They might interfere with the build process:
+ ---
+src/hotspot/core.1337
+ ---
+! Remove left-over core files
+
+* Checking for untracked files with illegal names...
+
+* If all else fails, try removing the entire build directory and re-creating
+the same configuration using:
+ ---
+configure_command_line=$(make print-configuration)
+make dist-clean
+bash configure $configure_command_line
+ ---
+
+* The build README (doc/building.md) is a great source of information,
+especially the chapter &quot;Fixing Unexpected Build Failures&quot;. Check it out!
+
+* If you still need assistance please contact build-dev@openjdk.org.</code></pre>
 <h4 id="problems-with-the-build-environment">Problems with the Build
 Environment</h4>
 <p>Make sure your configuration is correct. Re-run
@@ -1890,7 +2020,7 @@ href="mailto:build-dev@openjdk.org">build-dev@openjdk.org</a>. Please
 include the relevant parts of the configure and/or build log.</p>
 <p>If you need general help or advice about developing for the JDK, you
 can also contact the Adoption Group. See the section on <a
-href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more
+href="#contributing-to-the-jdk">Contributing to OpenJDK</a> for more
 information.</p>
 <h2 id="reproducible-builds">Reproducible Builds</h2>
 <p>Build reproducibility is the property of getting exactly the same
@@ -1901,9 +2031,9 @@ others. Please see <a
 href="https://reproducible-builds.org">Reproducible Builds</a> for more
 information about the background and reasons for reproducible
 builds.</p>
-<p>Currently, it is not possible to build OpenJDK fully reproducibly,
+<p>Currently, it is not possible to build the JDK fully reproducibly,
 but getting there is an ongoing effort.</p>
-<p>An absolute prerequisite for building reproducible is to speficy a
+<p>An absolute prerequisite for building reproducible is to specify a
 fixed build time, since time stamps are embedded in many file formats.
 This is done by setting the <code>SOURCE_DATE_EPOCH</code> environment
 variable, which is an <a
@@ -1917,7 +2047,7 @@ configuration, and used by <code>make</code>. Setting
 <code>SOURCE_DATE_EPOCH</code> before running <code>make</code> will
 have no effect on the build.</p>
 <p>You must also make sure your build does not rely on
-<code>configure</code>'s default adhoc version strings. Default adhoc
+<code>configure</code>'s default ad hoc version strings. Default ad hoc
 version strings <code>OPT</code> segment include user name and source
 directory. You can either override just the <code>OPT</code> segment
 using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you
@@ -1928,7 +2058,7 @@ way:</p>
 <pre><code>export SOURCE_DATE_EPOCH=946684800
 bash configure --with-version-opt=adhoc
 make</code></pre>
-<p>Note that regardless if you specify a source date for
+<p>Note that regardless of whether you specify a source date for
 <code>configure</code> or not, the JDK build system will set
 <code>SOURCE_DATE_EPOCH</code> for all build tools when building. If
 <code>--with-source-date</code> has the value <code>current</code>
@@ -1940,7 +2070,8 @@ individually adjusted by <code>configure</code> arguments. If any of
 these are given, they will override the value derived from
 <code>SOURCE_DATE_EPOCH</code>. These arguments are:</p>
 <ul>
-<li><p><code>--with-source-date</code></p>
+<li><code>--with-source-date</code></li>
+</ul>
 <p>This option controls how the JDK build sets
 <code>SOURCE_DATE_EPOCH</code> when building. It can be set to a value
 describing a date, either an epoch based timestamp as an integer, or a
@@ -1957,39 +2088,43 @@ timestamp.</p>
 <p>When <code>SOURCE_DATE_EPOCH</code> is set, the default value for
 <code>--with-source-date</code> will be the value given by
 <code>SOURCE_DATE_EPOCH</code>. Otherwise, the default value is
-<code>current</code>.</p></li>
-<li><p><code>--with-hotspot-build-time</code></p>
+<code>current</code>.</p>
+<ul>
+<li><code>--with-hotspot-build-time</code></li>
+</ul>
 <p>This option controls the build time string that will be included in
-the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>).
-When the source date is fixed (e.g. by setting
+the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>). If
+the source date is fixed (e.g. by setting
 <code>SOURCE_DATE_EPOCH</code>), the default value for
 <code>--with-hotspot-build-time</code> will be an ISO 8601
 representation of that time stamp. Otherwise the default value will be
-the current time when building hotspot.</p></li>
-<li><p><code>--with-copyright-year</code></p>
+the current time when building hotspot.</p>
+<ul>
+<li><code>--with-copyright-year</code></li>
+</ul>
 <p>This option controls the copyright year in some generated text files.
 When the source date is fixed (e.g. by setting
 <code>SOURCE_DATE_EPOCH</code>), the default value for
 <code>--with-copyright-year</code> will be the year of that time stamp.
 Otherwise the default is the current year at the time of running
 configure. This can be overridden by
-<code>--with-copyright-year=&lt;year&gt;</code>.</p></li>
-<li><p><code>--enable-reproducible-build</code></p>
-<p>This option controls some additional behavior needed to make the
-build reproducible. When the source date is fixed (e.g. by setting
+<code>--with-copyright-year=&lt;year&gt;</code>.</p>
+<ul>
+<li><code>--enable-reproducible-build</code></li>
+</ul>
+<p>This option controls additional behavior needed to make the build
+reproducible. When the source date is fixed (e.g. by setting
 <code>SOURCE_DATE_EPOCH</code>), this flag will be turned on by default.
 Otherwise, the value is determined by heuristics. If it is explicitly
-turned off, the build might not be reproducible.</p></li>
-</ul>
+turned off, the build might not be reproducible.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions
 for Advanced Users</h2>
 <h3 id="bash-completion">Bash Completion</h3>
-<p>The <code>configure</code> and <code>make</code> commands tries to
-play nice with bash command-line completion (using
-<code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use
-this functionality, make sure you enable completion in your
-<code>~/.bashrc</code> (see instructions for bash in your operating
-system).</p>
+<p>The <code>configure</code> and <code>make</code> commands try to play
+nice with bash command-line completion (using <code>&lt;tab&gt;</code>
+or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make
+sure you enable completion in your <code>~/.bashrc</code> (see
+instructions for bash in your operating system).</p>
 <p>Make completion will work out of the box, and will complete valid
 make targets. For instance, typing <code>make jdk-i&lt;tab&gt;</code>
 will complete to <code>make jdk-image</code>.</p>
@@ -2098,10 +2233,8 @@ Check</h4>
 rebuilds, the dependency check made by make can take up a significant
 portion of the time spent on the rebuild. In such cases, it can be
 useful to bypass the dependency check in make.</p>
-<blockquote>
-<p><strong>Note that if used incorrectly, this can lead to a broken
-build!</strong></p>
-</blockquote>
+<p><strong>Note that if used incorrectly, this method can lead to a
+broken build!</strong></p>
 <p>To achieve this, append <code>-only</code> to the build target. For
 instance, <code>make jdk.jdwp.agent-java-only</code> will <em>only</em>
 build the <code>java</code> phase of the <code>jdk.jdwp.agent</code>
@@ -2113,17 +2246,16 @@ milliseconds.</p>
 <code>-only</code> make target.</p>
 <h4 id="rebuilding-part-of-java.base-jdk_filter">Rebuilding Part of
 java.base (JDK_FILTER)</h4>
-<p>If you are modifying files in <code>java.base</code>, which is the by
-far largest module in the JDK, then you need to rebuild all those files
-whenever a single file has changed. (This inefficiency will hopefully be
-addressed in JDK 10.)</p>
-<p>As a hack, you can use the make control variable
-<code>JDK_FILTER</code> to specify a pattern that will be used to limit
-the set of files being recompiled. For instance,
-<code>make java.base JDK_FILTER=javax/crypto</code> (or, to combine
-methods, <code>make java.base-java-only JDK_FILTER=javax/crypto</code>)
-will limit the compilation to files in the <code>javax.crypto</code>
-package.</p>
+<p>In older versions of the JDK, inefficiencies when building
+<code>java.base</code> (by far the largest module in the JDK) could be
+overcome by using the make control variable <code>JDK_FILTER</code>.
+This is not needed anymore for performance reasons, but the
+functionality is still present.</p>
+<p>To use this, set the make control variable <code>JDK_FILTER</code> to
+specify a pattern that will be used to limit the set of files being
+recompiled. For instance,
+<code>make java.base JDK_FILTER=javax/crypto</code> will limit the
+compilation to files in the <code>javax.crypto</code> package.</p>
 <h2 id="understanding-the-build-system">Understanding the Build
 System</h2>
 <p>This section will give you a more technical description on the
@@ -2187,10 +2319,46 @@ experience issues related to this mismatch when running on Windows.</p>
 <p>In the JDK build, we always use Unix paths internally, and only just
 before calling a tool that does not understand Unix paths do we convert
 them to Windows paths.</p>
-<p>This conversion is done by the <code>fixpath</code> tool, which is a
-small wrapper that modifies unix-style paths to Windows-style paths in
-command lines. Fixpath is compiled automatically by
-<code>configure</code>.</p>
+<p>This conversion is done by the <code>fixpath.sh</code> tool, which is
+a small wrapper that modifies Unix-style paths to Windows-style paths.
+The fixpath tool is called with the first argument as a sub-command
+describing the action it should take. Available actions are
+<code>import</code>, <code>exec</code>, <code>print</code> and
+<code>verify</code>.</p>
+<ul>
+<li><p><code>import</code> is called at configure time to convert a path
+given by the user and that might be in Windows format to Unix path,
+which is used internally.</p></li>
+<li><p><code>exec</code> is called at build time. This will take the
+command line provided, complete with arguments, converting the paths in
+the command line, and then execute the command.</p></li>
+<li><p><code>print</code> is called at build time, in the rare cases
+where a path might be needed in Windows format, but not as an argument
+to a command to execute.</p></li>
+<li><p><code>verify</code> is called at configure time to check that a
+path is correctly specified and reachable by Windows.</p></li>
+</ul>
+<p>The fixpath tool uses a somewhat complex heuristic to infer which
+part of the command line arguments refer to paths, and converts those.
+In some circumstances, these heuristics can fail.</p>
+<p>If you are having strange build issues related to path conversion,
+you might need to debug how fixpath treats your paths. Here are some
+ways to do this.</p>
+<p>One way is to define the environment variable
+<code>DEBUG_FIXPATH</code>, e.g. <code>DEBUG_FIXPATH=1 make jdk</code>.
+When set, any call to <code>fixpath exec</code> will result in an output
+like this:</p>
+<pre><code>fixpath: debug: input: ls /mnt/c/windows
+fixpath: debug: output: ls c:\windows</code></pre>
+<p>You can also call fixpath yourself manually with your paths to see
+how they are translated. For this, use <code>print</code> and
+<code>import</code>. For example:</p>
+<pre><code>$ bash make/scripts/fixpath.sh print /mnt/c/windows
+c:\windows
+$ bash make/scripts/fixpath.sh import &quot;c:\\windows&quot;
+/mnt/c/windows</code></pre>
+<p>Remember that backslash is used as an escape character in the shell,
+and needs to be doubled when used in Windows paths.</p>
 <h3 id="native-debug-symbols">Native Debug Symbols</h3>
 <p>Native libraries and executables can have debug symbol (and other
 debug information) associated with them. How this works is very much
@@ -2220,8 +2388,8 @@ solution. Binaries built with <code>internal</code> is suitable for use
 by developers, since they facilitate debugging, but should be stripped
 before distributed to end users.</p>
 <h3 id="autoconf-details">Autoconf Details</h3>
-<p>The <code>configure</code> script is based on the autoconf framework,
-but in some details deviate from a normal autoconf
+<p>The <code>configure</code> script is using the autoconf framework,
+but it has grown to deviate quite a lot from a traditional autoconf
 <code>configure</code> script.</p>
 <p>The <code>configure</code> script in the top level directory of the
 JDK is just a thin wrapper that calls
@@ -2236,9 +2404,6 @@ functionality, the generated script is called.</p>
 changed, and will trigger a regeneration of the generated script if
 needed. You can also manually request such an update by
 <code>bash configure autogen</code>.</p>
-<p>In previous versions of the JDK, the generated script was checked in
-at <code>make/autoconf/generated-configure.sh</code>. This is no longer
-the case.</p>
 <h3 id="developing-the-build-system-itself">Developing the Build System
 Itself</h3>
 <p>This section contains a few remarks about how to develop for the
@@ -2280,7 +2445,7 @@ set of variable=value assignments, like this:</p>
 check <code>$BUILD/build-trace-time.log</code>. Use <code>JOBS=1</code>
 to avoid parallelism.</p>
 <p>Please check that you adhere to the <a
-href="http://openjdk.org/groups/build/doc/code-conventions.html">Code
+href="https://openjdk.org/groups/build/doc/code-conventions.html">Code
 Conventions for the Build System</a> before submitting patches.</p>
 <h2 id="contributing-to-the-jdk">Contributing to the JDK</h2>
 <p>So, now you've built your JDK, and made your first patch, and want to
@@ -2291,7 +2456,7 @@ must ask you to follow our rules and guidelines to be able to accept
 your contribution.</p>
 <p>The official place to start is the <a
 href="https://openjdk.org/guide/">OpenJDK Developers’ Guide</a>.</p>
-<h2 id="editing-this-document">Editing this document</h2>
+<h2 id="editing-this-document">Editing This Document</h2>
 <p>If you want to contribute changes to this document, edit
 <code>doc/building.md</code> and then run
 <code>make update-build-docs</code> to generate the same changes in

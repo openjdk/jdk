@@ -1556,14 +1556,17 @@ public:
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list,
+                              ObjectMonitorDeflationSafepointer* safepointer) {
   NativeHeapTrimmer::SuspendMark sm("monitor deletion");
-  size_t count = 0;
+  size_t deleted_count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;
-    count++;
+    deleted_count++;
+    // A JavaThread must check for a safepoint/handshake and honor it.
+    safepointer->block_for_safepoint("deletion", "deleted_count", deleted_count);
   }
-  return count;
+  return deleted_count;
 }
 
 class ObjectMonitorDeflationLogging: public StackObj {
@@ -1607,25 +1610,6 @@ public:
   void after_handshake() {
     if (_stream != nullptr) {
       _stream->print_cr("after handshaking: in_use_list stats: ceiling="
-                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                        ceiling(), count(), max());
-      _timer.start();
-    }
-  }
-
-  void before_blocked(size_t unlinked_count) {
-    if (_stream != NULL) {
-      _timer.stop();
-      _stream->print_cr("before setting blocked: unlinked_count=" SIZE_FORMAT
-                        ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                        SIZE_FORMAT ", max=" SIZE_FORMAT,
-                        unlinked_count, ceiling(), count(), max());
-    }
-  }
-
-  void after_blocked() {
-    if (_stream != NULL) {
-      _stream->print_cr("after setting blocked: in_use_list stats: ceiling="
                         SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
                         ceiling(), count(), max());
       _timer.start();
@@ -1722,19 +1706,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     // After the handshake, safely free the ObjectMonitors that were
     // deflated and unlinked in this cycle.
 
-    log.before_blocked(unlinked_count);
-
-    // Mark the calling JavaThread blocked (safepoint safe) while we free
-    // the ObjectMonitors so we don't delay safepoints whilst doing that.
-    ThreadBlockInVM tbivm(current);
-
-    log.after_blocked();
-
     // Delete the unlinked ObjectMonitors.
-    deleted_count = delete_monitors(&delete_list);
+    deleted_count = delete_monitors(&delete_list, &safepointer);
     assert(unlinked_count == deleted_count, "must be");
-
-    // ThreadBlockInVM is destroyed here
   }
 
   log.end(deflated_count, unlinked_count);
