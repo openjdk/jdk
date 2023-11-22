@@ -58,8 +58,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vla) :
 {
 }
 
-void SuperWord::unrolling_analysis(const VLoop &vloop,
-                                   int &local_loop_unroll_factor) {
+void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
   CountedLoopNode* cl   = vloop.cl();
   Node* cl_exit         = vloop.cl_exit();

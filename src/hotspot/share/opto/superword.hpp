@@ -28,12 +28,10 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
+
+// ----------------- SuperWord Auto-Vectorizer --------------
 //
-//                  S U P E R W O R D   T R A N S F O R M
-//
-// SuperWords are short, fixed length vectors.
-//
-// Algorithm from:
+// Algorithm based on:
 //
 // Exploiting SuperWord Level Parallelism with
 //   Multimedia Instruction Sets
@@ -46,6 +44,25 @@
 //   ACM SIGPLAN Notices
 //   Proceedings of ACM PLDI '00,  Volume 35 Issue 5
 //
+// ---------------------- Definitions -----------------------
+//
+// Definitions:
+//
+// ILP (Instruction Level Parallelism):
+//   Parallel or simultaneous execution of multiple operations.
+//   The average number of operations run per CPU cycle.
+//
+// SIMD instructions (Single Input Multiple Data instructions):
+//   Instructions that perform a single operation (e.g. add / mul)
+//   on multiple data inputs (e.g. vector add / mul).
+//   Using SIMD instructions can be a way to increase ILP.
+//
+// SLP (SuperWord Level Parallelism):
+//   ILP by the use of (short) SIMD instructions, where a piece
+//   of a program with scalar operations was analyzed for operations
+//   that can be packed into SIMD instructions, and hence executed
+//   in parallel.
+//
 // Definition 3.1 A Pack is an n-tuple, <s1, ...,sn>, where
 // s1,...,sn are independent isomorphic statements in a basic
 // block.
@@ -55,12 +72,15 @@
 // Definition 3.3 A Pair is a Pack of size two, where the
 // first statement is considered the left element, and the
 // second statement is considered the right element.
+//
+// -------------------- Algorithm Summary -------------------
+//
+// As designed by the paper cited above, the SuperWord algorithm can
+// be applied to any basic block, not just loop nests. However, the
+// implementation here is only applied to innermost loops.
+//
+// TODO
 
-class VPointer;
-
-// ========================= SuperWord =====================
-
-// -----------------------------SWNodeInfo---------------------------------
 // Per node info needed by SuperWord
 class SWNodeInfo {
  public:
@@ -71,7 +91,6 @@ class SWNodeInfo {
   static const SWNodeInfo initial;
 };
 
-// -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  private:
@@ -206,7 +225,7 @@ class SuperWord : public ResourceObj {
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
 
-  // Extract the superword level parallelism
+  // Attempt to run the SuperWord algorithm on the loop. Return true if we succeed.
   const char* transform_loop_helper();
   // Find the adjacent memory references and create pack pairs for them.
   const char* find_adjacent_refs();

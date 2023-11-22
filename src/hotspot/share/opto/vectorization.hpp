@@ -141,7 +141,8 @@ protected:
   const char* check_preconditions_helper();
 };
 
-// Find the reductions in the loop and mark them.
+// Submodule of VLoopAnalyzer.
+// Identify and mark all reductions in the loop.
 class VLoopReductions : public StackObj {
 private:
   typedef const Pair<const Node*, int> PathEnd;
@@ -217,6 +218,7 @@ public:
   void mark_reductions();
 };
 
+// Submodule of VLoopAnalyzer.
 // Find the memory slices in the loop.
 class VLoopMemorySlices : public StackObj {
 private:
@@ -251,6 +253,7 @@ public:
   DEBUG_ONLY(void print() const;)
 };
 
+// Submodule of VLoopAnalyzer.
 // Find all nodes in the body, and create a mapping node->_idx to a body_idx.
 // This mapping is used so that subsequent datastructures sizes only grow with
 // the body size, and not the number of all nodes in the compilation.
@@ -293,8 +296,26 @@ private:
   }
 };
 
-// Represents the dependence graph, constructed from the data dependencies
-// and memory dependencies.
+// Submodule of VLoopAnalyzer.
+// We construct a dependence graph for the loop body, based on:
+// 1) data dependencies:
+//    The edges of the C2 IR nodes that represent data inputs.
+// 2) memory dependencies:
+//    We must respect Store->Store, Store->Load, and Load->Store order.
+//    We do not have to respect the order if:
+//    2.1) two memory operations are in different memory slices or
+//    2.2) we can prove that the memory regions will never overlap.
+//
+// The graph can be queried in the following ways:
+// 1) PredsIterator:
+//    Given some node in the body, iterate over all its predecessors
+//    in the dependence graph.
+// 2) independent(s1, s2):
+//    Check if there is a path s1->s2 or s2->s1. If not, then s1 and s2
+//    can be executed in parallel (e.g. in a vector operation).
+// 3) mutually_independent:
+//    Check if all nodes in a list are mutually independent. If so, then
+//    they can be executed in parallel (e.g. in a vector operation).
 class VLoopDependenceGraph : public StackObj {
 private:
   class DependenceEdge;
@@ -411,6 +432,8 @@ private:
   };
 
 public:
+  // Given some node in the body, iterate over all its predecessors
+  // in the dependence graph.
   class PredsIterator {
   private:
     Node*           _n;
@@ -449,12 +472,21 @@ private:
   void compute_max_depth();
 };
 
-// Compute necessary vector element type for expressions
-// This propagates backwards a narrower integer type when the
-// upper bits of the value are not needed.
-// Example:  char a,b,c;  a = b + c;
-// Normally the type of the add is integer, but for packed character
-// operations the type of the add needs to be char.
+// Submodule of VLoopAnalyzer.
+// Compute the vector element type for every node in the loop body.
+// We need to do this to be able to vectorize the narrower integer
+// types (byte, char, short). In the C2 IR, their operations are
+// done with full int type with 4 byte precision (e.g. AddI, MulI).
+// Example:  char a,b,c;  a = (char)(b + c);
+// However, if we can prove the the upper bits are only truncated,
+// and the lower bits for the narrower type computed correctly, we
+// can compute the operations in the narrower type directly (e.g we
+// perform the AddI or MulI with 1 or 2 bytes). This allows us to
+// fit more operations in a vector, and can remove the otherwise
+// required conversion (int <-> narrower type).
+// We compute the types backwards (use-to-def): If all use nodes
+// only require the lower bits, then the def node can do the operation
+// only with the lower bits, and we propagate the narrower type to it.
 class VLoopTypes : public StackObj {
 private:
   const VLoop& _vloop;
@@ -531,7 +563,7 @@ private:
 
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
-// as possible.
+// as possible, though some submodules do require other submodules.
 class VLoopAnalyzer : public VLoop {
 protected:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
@@ -550,8 +582,10 @@ public:
     _reductions(*this),
     _memory_slices(*this),
     _body(*this),
-    _types(*this, _body),
-    _dependence_graph(*this, _memory_slices, _body) {};
+    _types(*this, _body), // types requires: body
+    _dependence_graph(*this, _memory_slices, _body) // dependence_graph requires: memory_slices and body
+  {
+  };
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
