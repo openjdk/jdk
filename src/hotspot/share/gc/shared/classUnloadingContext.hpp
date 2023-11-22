@@ -65,8 +65,8 @@ class DefaultClassUnloadingContext : public ClassUnloadingContext {
 
   uint _num_nmethod_unlink_workers;
 
-  using NmethodSet = GrowableArrayCHeap<nmethod*, mtGC>;
-  NmethodSet** _unlinked_nmethods;
+  using NMethodSet = GrowableArrayCHeap<nmethod*, mtGC>;
+  NMethodSet** _unlinked_nmethods;
 
   bool _lock_codeblob_free_separately;
 
