@@ -5666,20 +5666,6 @@ operand indIndex(iRegP reg, iRegL lreg)
   %}
 %}
 
-operand indOffI(iRegP reg, immIOffset off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
 operand indOffI1(iRegP reg, immIOffset1 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5737,20 +5723,6 @@ operand indOffI8(iRegP reg, immIOffset8 off)
 %}
 
 operand indOffI16(iRegP reg, immIOffset16 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indOffL(iRegP reg, immLoffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -5909,7 +5881,7 @@ operand indIndexN(iRegN reg, iRegL lreg)
   %}
 %}
 
-operand indOffIN(iRegN reg, immIOffset off)
+operand indOffIN1(iRegN reg, immIOffset1 off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5924,7 +5896,7 @@ operand indOffIN(iRegN reg, immIOffset off)
   %}
 %}
 
-operand indOffLN(iRegN reg, immLoffset off)
+operand indOffLN1(iRegN reg, immLoffset1 off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5939,6 +5911,95 @@ operand indOffLN(iRegN reg, immLoffset off)
   %}
 %}
 
+operand indOffIN2(iRegN reg, immIOffset2 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffLN2(iRegN reg, immLoffset2 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffIN4(iRegN reg, immIOffset4 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffLN4(iRegN reg, immLoffset4 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffIN8(iRegN reg, immIOffset8 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffLN8(iRegN reg, immLoffset8 off)
+%{
+  predicate(CompressedOops::shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
 
 
 // AArch64 opto stubs need to write to the pc slot in the thread anchor
@@ -6189,21 +6250,22 @@ opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 // instruction defs. we can turn a memory op into an Address
 
 opclass memory1(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI1, indOffL1,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN1, indOffLN1);
 
 opclass memory2(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI2, indOffL2,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN2, indOffLN2);
 
 opclass memory4(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI4, indOffL4,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN4, indOffLN4);
 
 opclass memory8(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN8, indOffLN8);
 
 // All of the memory operands. For the pipeline description.
 opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex,
                indOffI1, indOffL1, indOffI2, indOffL2, indOffI4, indOffL4, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN,
+               indOffIN1, indOffLN1, indOffIN2, indOffLN2, indOffIN4, indOffLN4, indOffIN8, indOffLN8);
 
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
