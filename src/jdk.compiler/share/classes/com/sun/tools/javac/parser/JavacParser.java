@@ -206,9 +206,9 @@ public class JavacParser implements Parser {
         this.source = parser.source;
         this.preview = parser.preview;
         this.allowStringFolding = parser.allowStringFolding;
-        this.keepDocComments = false;
+        this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
-        this.docComments = null;
+        this.docComments = parser.docComments;
         this.errorTree = F.Erroneous();
         this.endPosTable = newEndPosTable(false);
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
@@ -3916,7 +3916,7 @@ public class JavacParser implements Parser {
             defs.append(pd);
         }
 
-        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
+        boolean firstTypeDecl = true;   // have we seen a class, enum, or interface declaration yet?
         boolean isImplicitClass = false;
         OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
@@ -3990,7 +3990,7 @@ public class JavacParser implements Parser {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
-                            speculative.topLevelMethodOrFieldDeclaration(finalMods);
+                            speculative.topLevelMethodOrFieldDeclaration(finalMods, null);
                     if (speculativeResult.head.hasTag(METHODDEF) ||
                         speculativeResult.head.hasTag(VARDEF)) {
                         isTopLevelMethodOrField = true;
@@ -3999,7 +3999,7 @@ public class JavacParser implements Parser {
 
                 if (isTopLevelMethodOrField) {
                     checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
-                    defs.appendList(topLevelMethodOrFieldDeclaration(mods));
+                    defs.appendList(topLevelMethodOrFieldDeclaration(mods, docComment));
                     isImplicitClass = true;
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
@@ -4735,10 +4735,9 @@ public class JavacParser implements Parser {
          return List.of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
     }
 
-    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods) throws AssertionError {
-        int topPos = token.pos;
+    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods, Comment dc) throws AssertionError {
         int pos = token.pos;
-        Comment dc = token.docComment();
+        dc = dc == null ? token.docComment() : dc;
         List<JCTypeParameter> typarams = typeParametersOpt();
 
         // if there are type parameters but no modifiers, save the start
