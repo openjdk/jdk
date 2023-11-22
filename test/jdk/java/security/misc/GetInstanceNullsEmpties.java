@@ -29,7 +29,6 @@ import javax.security.auth.login.*;
 import java.lang.reflect.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.IntegerParameterSpec;
-import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 
 /*

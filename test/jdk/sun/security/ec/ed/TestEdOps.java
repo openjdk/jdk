@@ -40,8 +40,6 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-import sun.security.provider.SHAKE256;
-
 public class TestEdOps {
 
     public static void main(String[] args) throws Exception {
