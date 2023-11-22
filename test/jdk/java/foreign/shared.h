@@ -34,6 +34,9 @@
 #else
 #define EXPORT
 #endif
+#ifdef _AIX
+#pragma align (natural)
+#endif
 
 struct S_I { int p0; };
 struct S_F { float p0; };
@@ -120,3 +123,7 @@ struct S_PPF { void* p0; void* p1; float p2; };
 struct S_PPD { void* p0; void* p1; double p2; };
 struct S_PPP { void* p0; void* p1; void* p2; };
 struct S_FFFF { float p0; float p1; float p2; float p3; };
+
+#ifdef _AIX
+#pragma align (reset)
+#endif
