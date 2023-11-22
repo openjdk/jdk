@@ -79,7 +79,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
     void objectValidityTest() {
 
         for (Locale target: availloc) {
-            // pure JRE implementation
+            // pure FALLBACK implementation
             ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK)).getLocaleData().getBreakIteratorInfo(target);
             String[] classNames = rb.getStringArray("BreakIteratorClasses");
             boolean fbSupportsLocale = fallbackimplloc.contains(target);
