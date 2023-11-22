@@ -340,7 +340,7 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
       AIX_ONLY(save_library_signature(agent, &buffer[0]);)
       return library;
     }
-    #ifdef AIX
+#ifdef AIX
     if (library == nullptr) {
       const char* aix_archive_extension = ".a";
       os::Aix::mapAlternateName(buffer, aix_archive_extension);
@@ -350,7 +350,7 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
         return library;
       }
     }
-    #endif
+#endif
     if (vm_exit_on_error) {
       vm_exit(agent, " on the library path, with error: ", missing_module_error_msg);
     }
