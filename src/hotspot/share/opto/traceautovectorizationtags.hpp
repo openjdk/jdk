@@ -136,8 +136,14 @@ class TraceAutovectorizationTagValidator {
     _bad(nullptr)
   {
     for (TraceAutovectorizationTagNameIter iter(option); *iter != nullptr && _valid; ++iter) {
-
-      TraceAutovectorizationTag tat = find_tag(*iter);
+      char const* tag_name = *iter;
+      bool set_bit = true;
+      // Check for "TAG" or "-TAG"
+      if (strncmp("-", tag_name, strlen("-")) == 0) {
+        tag_name++;
+        set_bit = false;
+      }
+      TraceAutovectorizationTag tat = find_tag(tag_name);
       if (TRACEAUTOVECTORIZATION_TAGS_NONE == tat) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
@@ -147,20 +153,20 @@ class TraceAutovectorizationTagValidator {
       } else if (TAG_ALL == tat) {
         _tags.set_range(0, TRACEAUTOVECTORIZATION_TAGS_NUM);
       } else if (TAG_SW_ALL == tat) {
-        _tags.set_bit(TAG_SW_ADJACENT_MEMOPS);
-        _tags.set_bit(TAG_SW_ALIGNMENT);
-        _tags.set_bit(TAG_SW_REJECTIONS);
-        _tags.set_bit(TAG_SW_PACKSET);
-        _tags.set_bit(TAG_SW_INFO);
-        _tags.set_bit(TAG_SW_ALL);
+        _tags.at_put(TAG_SW_ADJACENT_MEMOPS, set_bit);
+        _tags.at_put(TAG_SW_ALIGNMENT, set_bit);
+        _tags.at_put(TAG_SW_REJECTIONS, set_bit);
+        _tags.at_put(TAG_SW_PACKSET, set_bit);
+        _tags.at_put(TAG_SW_INFO, set_bit);
+        _tags.at_put(TAG_SW_ALL, set_bit);
       } else if (TAG_SW_INFO == tat) {
-        _tags.set_bit(TAG_SW_ADJACENT_MEMOPS);
-        _tags.set_bit(TAG_SW_REJECTIONS);
-        _tags.set_bit(TAG_SW_PACKSET);
-        _tags.set_bit(TAG_SW_INFO);
+        _tags.at_put(TAG_SW_ADJACENT_MEMOPS, set_bit);
+        _tags.at_put(TAG_SW_REJECTIONS, set_bit);
+        _tags.at_put(TAG_SW_PACKSET, set_bit);
+        _tags.at_put(TAG_SW_INFO, set_bit);
       } else {
         assert(tat < TRACEAUTOVECTORIZATION_TAGS_NUM, "out of bounds");
-        _tags.set_bit(tat);
+        _tags.at_put(tat, set_bit);
       }
     }
   }
