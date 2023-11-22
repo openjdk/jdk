@@ -78,8 +78,6 @@ public class TypeAnnosOnConstructorsTest extends TestRunner {
     public void testAnnoOnConstructors(Path base) throws Exception {
         Path src = base.resolve("src");
         Path y = src.resolve("Y.java");
-        Path yWrapper = src.resolve("YWrapper.java");
-
         Path classes = base.resolve("classes");
 
         Files.createDirectories(classes);
@@ -98,12 +96,6 @@ public class TypeAnnosOnConstructorsTest extends TestRunner {
                 @Target(ElementType.TYPE_USE)
                 @Retention(RetentionPolicy.RUNTIME)
                 @interface TA {}
-                """,
-                """
-                class YWrapper {
-                    // just to make the compiler load the class file for class Y above
-                    Y y;
-                }
                 """);
 
         // we need to compile Y first
@@ -116,7 +108,7 @@ public class TypeAnnosOnConstructorsTest extends TestRunner {
         new JavacTask(tb)
                 .classpath(classes, classDir)
                 .options("-processor", SimpleProcessor.class.getName())
-                .files(yWrapper)
+                .classes("Y")
                 .outdir(classes)
                 .run(Task.Expect.SUCCESS);
     }
