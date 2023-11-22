@@ -194,14 +194,6 @@ class GenerationBlockSizeClosure : public SpaceClosure {
   GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
 };
 
-size_t Generation::block_size(const HeapWord* p) const {
-  GenerationBlockSizeClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  assert(blk.size > 0, "seems reasonable");
-  return blk.size;
-}
-
 class GenerationBlockIsObjClosure : public SpaceClosure {
  public:
   const HeapWord* _p;

@@ -31,17 +31,16 @@ import static sun.nio.ch.KQueue.*;
  * Poller implementation based on the kqueue facility.
  */
 class KQueuePoller extends Poller {
-    private static final int MAX_EVENTS_TO_POLL = 512;
-
     private final int kqfd;
     private final int filter;
+    private final int maxEvents;
     private final long address;
 
-    KQueuePoller(boolean read) throws IOException {
-        super(read);
+    KQueuePoller(boolean subPoller, boolean read) throws IOException {
         this.kqfd = KQueue.create();
         this.filter = (read) ? EVFILT_READ : EVFILT_WRITE;
-        this.address = KQueue.allocatePollArray(MAX_EVENTS_TO_POLL);
+        this.maxEvents = (subPoller) ? 64 : 512;
+        this.address = KQueue.allocatePollArray(maxEvents);
     }
 
     @Override
@@ -63,7 +62,7 @@ class KQueuePoller extends Poller {
 
     @Override
     int poll(int timeout) throws IOException {
-        int n = KQueue.poll(kqfd, address, MAX_EVENTS_TO_POLL, timeout);
+        int n = KQueue.poll(kqfd, address, maxEvents, timeout);
         int i = 0;
         while (i < n) {
             long keventAddress = KQueue.getEvent(address, i);

@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -173,7 +174,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
 }
 
 void DumpRegion::commit_to(char* newtop) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   char* base = _rs->base();
   size_t need_committed_size = newtop - base;
   size_t has_committed_size = _vs->committed_size();

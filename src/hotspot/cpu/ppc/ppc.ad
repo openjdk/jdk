@@ -13455,8 +13455,9 @@ instruct repl56(iRegLdst dst) %{
 %}
 
 instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   expand %{
     moveReg(dst, src);
     repl56(dst);
@@ -13466,8 +13467,9 @@ instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #0 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13477,8 +13479,9 @@ instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #-1 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13488,8 +13491,9 @@ instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   expand %{
     iRegLdst tmpL;
@@ -13504,8 +13508,9 @@ instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl16B_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate16B" %}
   size(4);
@@ -13516,8 +13521,9 @@ instruct repl16B_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
   size(4);
@@ -13528,8 +13534,9 @@ instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   expand %{
     moveReg(dst, src);
     repl48(dst);
@@ -13538,8 +13545,9 @@ instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, #0 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13549,8 +13557,9 @@ instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, -1 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13560,8 +13569,9 @@ instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   expand %{
     iRegLdst tmpL;
@@ -13576,8 +13586,9 @@ instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl8S_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate8S" %}
   size(4);
@@ -13588,8 +13599,9 @@ instruct repl8S_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLEQV      $dst, $src \t// replicate8S" %}
   size(4);
@@ -13600,8 +13612,9 @@ instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
   expand %{
     moveReg(dst, src);
@@ -13610,8 +13623,9 @@ instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, #0 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13621,8 +13635,9 @@ instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, -1 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13632,8 +13647,9 @@ instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
 
   expand %{
@@ -13648,8 +13664,9 @@ instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl4I_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4I" %}
   size(4);
@@ -13660,8 +13677,9 @@ instruct repl4I_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLEQV      $dst, $dst, $dst \t// replicate4I" %}
   size(4);
@@ -13673,8 +13691,9 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
 
 // Move float to int register via stack, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
   expand %{
     stackSlotL tmpS;
@@ -13688,8 +13707,9 @@ instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
 
 // Replicate scalar constant to packed float values in Double register
 instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(5 * DEFAULT_COST);
 
   format %{ "LD      $dst, offset, $constanttablebase\t// load replicated float $src $src from table, postalloc expanded" %}
@@ -13698,8 +13718,9 @@ instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
 
 // Replicate scalar zero constant to packed float values in Double register
 instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
   ins_encode %{
@@ -14215,8 +14236,9 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 %}
 
 instruct repl4F_reg_Ex(vecX dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(DEFAULT_COST);
   expand %{
     vecX tmpV;
@@ -14228,8 +14250,9 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
 %}
 
 instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   effect(TEMP tmp);
   ins_cost(10 * DEFAULT_COST);
 
@@ -14237,8 +14260,9 @@ instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
 %}
 
 instruct repl4F_immF0(vecX dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4F" %}
   ins_encode %{
@@ -14248,8 +14272,9 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
 %}
 
 instruct repl2D_reg_Ex(vecX dst, regD src) %{
-  match(Set dst (ReplicateD src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXPERMDI      $dst, $src, $src, 0 \t// Splat doubleword" %}
   size(4);
@@ -14260,8 +14285,9 @@ instruct repl2D_reg_Ex(vecX dst, regD src) %{
 %}
 
 instruct repl2D_immD0(vecX dst, immD_0 zero) %{
-  match(Set dst (ReplicateD zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2D" %}
   size(4);
@@ -14306,7 +14332,8 @@ instruct xxpermdi(vecX dst, vecX src1, vecX src2, immI8 zero) %{
 %}
 
 instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
-  match(Set dst (ReplicateL src));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2);
   expand %{
     vecX tmpV;
@@ -14317,8 +14344,9 @@ instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
 %}
 
 instruct repl2L_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateL zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2L" %}
   size(4);
@@ -14329,8 +14357,9 @@ instruct repl2L_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateL src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLEQV      $dst, $src \t// replicate2L" %}
   size(4);
