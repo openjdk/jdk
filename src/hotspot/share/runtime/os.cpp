@@ -1809,7 +1809,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
+  char* result = SimulateFullAdressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
@@ -1817,7 +1817,6 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
     log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
                  SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
   }
-
   return result;
 }
 

@@ -64,6 +64,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             } else {
                 output.shouldContain(tryReserveForUnscaled);
             }
+            output.shouldContain("Trying to reserve at an EOR-compatible address");
             output.shouldNotContain(tryReserveForZeroBased);
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isPPC()) {
