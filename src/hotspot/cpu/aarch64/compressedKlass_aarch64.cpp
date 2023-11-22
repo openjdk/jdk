@@ -57,7 +57,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
       0x7800, 0x7c00, 0x7e00, 0x7f00, 0x7f80, 0x7fc0, 0x7fe0, 0x7ff0, 0x7ff8,
       0x7ffc, 0x7ffe, 0x7fff
   };
-  static constexpr int num_immediates = sizeof(immediates) / sizeof(num_immediates[0]);
+  static constexpr int num_immediates = sizeof(immediates) / sizeof(immediates[0]);
   const int start_index = aslr ? os::random() : 0;
   constexpr int max_tries = 64;
   for (int ntry = 0; result == nullptr && ntry < max_tries; ntry ++) {
