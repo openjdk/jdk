@@ -63,15 +63,30 @@
 //   that can be packed into SIMD instructions, and hence executed
 //   in parallel.
 //
-// Definition 3.1 A Pack is an n-tuple, <s1, ...,sn>, where
-// s1,...,sn are independent isomorphic statements in a basic
-// block.
+// Isomorphic:
+//   Adjective for operations which are of the same form. They
+//   perform the same operations on the same structure of inputs.
+//   SIMD instructions execute the same operations on every
+//   element, with the inputs all having the same structure.
+//   Hence, packed operations must be isomorphic.
 //
-// Definition 3.2 A PackSet is a set of Packs.
+// Independent:
+//   Adjective for operations which can be executed in parallel
+//   without changing the semantics of the program. SIMD instructions
+//   execute all their packed operations in parallel. Hence packed
+//   operations must be independent.
 //
-// Definition 3.3 A Pair is a Pack of size two, where the
-// first statement is considered the left element, and the
-// second statement is considered the right element.
+// Pack (definition 3.1):
+//   A pack is an n-tuple, <s1, ...,sn>, where, s1,...,sn are
+//   independent isomorphic operations (in a basic block).
+//
+// Packset (definition 3.2):
+//   A packset is a set of packs.
+//
+// Pair (definition 3.3):
+//   A pair is a pack of size two, where the first operation is
+//   considered the left element, and the second operation is
+//   considered the right element.
 //
 // -------------------- Algorithm Summary -------------------
 //
@@ -80,6 +95,11 @@
 // implementation here is only applied to innermost loops.
 //
 // TODO
+//
+// Steps:
+//  1)
+//
+//
 
 // Per node info needed by SuperWord
 class SWNodeInfo {
