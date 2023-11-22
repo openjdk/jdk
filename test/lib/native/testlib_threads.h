@@ -89,6 +89,7 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
     if (result != 0) {
         fatal("failed to create thread", result);
     }
+    pthread_attr_destroy(&attr);
     result = pthread_join(thread, NULL);
     if (result != 0) {
         fatal("failed to join thread", result);
