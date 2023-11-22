@@ -1686,6 +1686,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 #ifdef ASSERT
     __ andi(tmp, tmp, TypeEntries::type_mask);
     __ verify_klass_ptr(tmp);
+#endif
   }
 }
 
