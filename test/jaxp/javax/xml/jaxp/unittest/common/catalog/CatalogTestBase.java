@@ -296,7 +296,7 @@ public class CatalogTestBase extends TestBase {
     public void testSchema2(String filename, String xsd, Properties fsp, PropertyState state,
         Properties config, Properties[] sysProp, Properties[] apiProp, CustomCatalog cc,
         boolean expectError, String error) throws Exception {
-        testSchema1(filename, xsd, fsp, state, config, sysProp, apiProp, cc, expectError,  error);
+        testSchema1(filename, xsd, fsp, state, config, sysProp, apiProp, cc, expectError, error);
     }
 
 //    @Test(dataProvider = "validationOrTransform")

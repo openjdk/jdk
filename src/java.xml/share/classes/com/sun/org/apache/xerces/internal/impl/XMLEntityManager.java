@@ -1028,9 +1028,9 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         // Step 1: custom resolver, either StAX or Entity
         if (fStaxEntityResolver != null) {
             staxInputSource = fStaxEntityResolver.resolveEntity(ri);
-        } else if(fEntityResolver != null){
+        } else if (fEntityResolver != null) {
             xmlInputSource = fEntityResolver.resolveEntity(ri);
-            if(xmlInputSource != null){
+            if (xmlInputSource != null) {
                 //wrap it in StaxXMLInputSource
                 fISCreatedByResolver = true;
                 staxInputSource = new StaxXMLInputSource(xmlInputSource, fISCreatedByResolver);
