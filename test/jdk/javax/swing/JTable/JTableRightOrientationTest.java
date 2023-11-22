@@ -51,28 +51,26 @@ import java.util.List;
  * @bug 5108458
  * @summary Test to check Right alignment of JTable data
  * (Fix affects all L&F, test verifies only Metal L&F)
- * @run main JTableRightAlignmentTest
+ * @run main JTableRightOrientationTest
  */
 
-public class JTableRightAlignmentTest {
+public class JTableRightOrientationTest {
     static JFrame frame;
-    static CustomTable table;
+    static CustomTable customTableObj;
     static String failureString;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
-            robot.waitForIdle();
-            robot.delay(100);
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             try {
                 SwingUtilities.invokeAndWait(() -> {
                     frame = new JFrame("Test JTable");
                     JPanel panel = new JPanel(new GridBagLayout());
                     frame.setContentPane(panel);
-                    table = new CustomTable();
-                    panel.add(new JScrollPane(table.table),
+                    customTableObj = new CustomTable();
+                    panel.add(new JScrollPane(customTableObj.table),
                             new GridBagConstraints(0, 0, -1, -1, 1.0, 1.0,
                                     GridBagConstraints.PAGE_START, GridBagConstraints.BOTH,
                                     new Insets(2, 2, 2, 2), 0, 0));
@@ -86,16 +84,16 @@ public class JTableRightAlignmentTest {
                 robot.delay(1000);
                 SwingUtilities.invokeAndWait(() -> {
                     int allColumnWidths = 0;
-                    for (int i = 0; i < table.table.getColumnCount(); i++) {
-                        allColumnWidths += table.table.getTableHeader().getColumnModel()
+                    for (int i = 0; i < customTableObj.table.getColumnCount(); i++) {
+                        allColumnWidths += customTableObj.table.getTableHeader().getColumnModel()
                                 .getColumn(i)
                                 .getWidth();
                     }
                     BufferedImage bufferedImage = robot.createScreenCapture(
-                            new Rectangle(table.table.getLocationOnScreen().x,
-                                    table.table.getLocationOnScreen().y,
-                                    table.table.getWidth() - allColumnWidths,
-                                    table.table.getHeight()));
+                            new Rectangle(customTableObj.table.getLocationOnScreen().x,
+                                    customTableObj.table.getLocationOnScreen().y,
+                                    customTableObj.table.getWidth() - allColumnWidths,
+                                    customTableObj.table.getHeight()));
                     int expectedRGB = bufferedImage.getRGB(0, 0);
                     for (int x = 0; x < bufferedImage.getWidth(); x++) {
                         for (int y = 0; y < bufferedImage.getHeight(); y++) {
@@ -119,6 +117,8 @@ public class JTableRightAlignmentTest {
                     }
                 });
             }
+            robot.waitForIdle();
+            robot.delay(200);
         }
     }
 
@@ -158,30 +158,20 @@ class CustomTable {
             "Last name",
             "Salary",
     };
-    List<CustomTable.Record> data = new ArrayList();
+    List<CustomTable.Data> data = new ArrayList<>();
     JTable table;
 
     public CustomTable() {
-        data.add(new CustomTable.Record("First1", "Last1", 10000f));
-        data.add(new CustomTable.Record("First2", "Last2", 10000f));
-        data.add(new CustomTable.Record("First3", "Last3", 10000f));
+        data.add(new CustomTable.Data("First1", "Last1", 10000f));
+        data.add(new CustomTable.Data("First2", "Last2", 10000f));
+        data.add(new CustomTable.Data("First3", "Last3", 10000f));
         table = new JTable(new CustomTable.Model());
         table.getColumnModel().getColumn(COL_FIRSTNAME).setMaxWidth(90);
         table.getColumnModel().getColumn(COL_LASTNAME).setMaxWidth(90);
         table.getColumnModel().getColumn(COL_SALARY).setMaxWidth(90);
     }
 
-    static class Record {
-        String firstname;
-        String lastname;
-        float salary;
-
-        public Record(String firstname, String lastname, float salary) {
-            this.firstname = firstname;
-            this.lastname = lastname;
-            this.salary = salary;
-        }
-    }
+    record Data(String firstName, String lastName, float salary) {}
 
     class Model extends AbstractTableModel {
 
@@ -194,14 +184,14 @@ class CustomTable {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            CustomTable.Record item = data.get(rowIndex);
+            CustomTable.Data item = data.get(rowIndex);
             switch (columnIndex) {
                 case COL_FIRSTNAME:
-                    return item.firstname;
+                    return item.firstName;
                 case COL_LASTNAME:
-                    return item.lastname;
+                    return item.lastName;
                 case COL_SALARY:
-                    return Float.valueOf(item.salary);
+                    return item.salary;
             }
             return null;
         }

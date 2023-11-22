@@ -56,8 +56,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import sun.swing.SwingUtilities2;
-
 /**
  * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JTable}.
@@ -524,12 +522,6 @@ public class SynthTableUI extends BasicTableUI
         Rectangle maxCell = table.getCellRect(rMax, cMax, true);
         Rectangle damagedArea = minCell.union( maxCell );
 
-        if (table.getComponentOrientation().isLeftToRight()) {
-            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMin);
-        } else {
-            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
-        }
-
         SynthGraphicsUtils synthG = context.getStyle().getGraphicsUtils(
                      context);
 
@@ -603,7 +595,6 @@ public class SynthTableUI extends BasicTableUI
         } else {
             for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMax, false);
-                cellRect.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
                 for (int column = cMax; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();

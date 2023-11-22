@@ -2025,12 +2025,6 @@ public class BasicTableUI extends TableUI
         Rectangle maxCell = table.getCellRect(rMax, cMax, true);
         Rectangle damagedArea = minCell.union( maxCell );
 
-        if (table.getComponentOrientation().isLeftToRight()) {
-            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMin);
-        } else {
-            damagedArea.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
-        }
-
         if (table.getShowHorizontalLines()) {
             int tableWidth = damagedArea.x + damagedArea.width;
             int y = damagedArea.y;
@@ -2097,7 +2091,6 @@ public class BasicTableUI extends TableUI
         } else {
             for (int row = rMin; row <= rMax; row++) {
                 cellRect = table.getCellRect(row, cMax, false);
-                cellRect.x = SwingUtilities2.getXPosInRightToLeft(table, cMax);
                 for (int column = cMax; column >= cMin; column--) {
                     aColumn = cm.getColumn(column);
                     columnWidth = aColumn.getWidth();
