@@ -71,11 +71,6 @@ void UnhandledOops::register_unhandled_oop(oop* op) {
   _oop_list->push(entry);
 }
 
-
-bool match_oop_entry(oop *op, const UnhandledOopEntry& e) {
-  return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
-}
-
 // Mark unhandled oop as okay for GC - the containing struct has an oops_do and
 // for some reason the oop has to be on the stack.
 // May not be called for the current thread, as in the case of
@@ -83,10 +78,9 @@ bool match_oop_entry(oop *op, const UnhandledOopEntry& e) {
 void UnhandledOops::allow_unhandled_oop(oop* op) {
   assert (CheckUnhandledOops, "should only be called with checking option");
 
-  auto predicate = [&](const UnhandledOopEntry& e) {
-    return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
-  };
-  int i = _oop_list->find_from_end_if(predicate);
+  int i = _oop_list->find_from_end_if([&](const UnhandledOopEntry& e) {
+    return e.match_oop_entry(op);
+  });
   assert(i!=-1, "safe for gc oop not in unhandled_oop_list");
 
   UnhandledOopEntry entry = _oop_list->at(i);
@@ -107,10 +101,10 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
     tty->print_cr("u " INTPTR_FORMAT, p2i(op));
   }
   _level--;
-  auto predicate = [&](const UnhandledOopEntry& e) {
-    return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
-  };
-  int i = _oop_list->find_from_end_if(predicate);
+
+  int i = _oop_list->find_from_end_if([&](const UnhandledOopEntry& e) {
+    return e.match_oop_entry(op);
+  });
   assert(i!=-1, "oop not in unhandled_oop_list");
   _oop_list->remove_at(i);
 }
