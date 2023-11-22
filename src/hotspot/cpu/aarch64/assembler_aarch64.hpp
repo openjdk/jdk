@@ -3851,25 +3851,16 @@ protected:
   }
 
 public:
-  // Unsigned unpack and extend half of vector - high half
-  void sve_uunpkhi(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
-    _sve_xunpk(/* is_unsigned */ true, /* is_high */ true, Zd, T, Zn);
+#define INSN(NAME, is_unsigned, is_high)                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {      \
+    _sve_xunpk(is_unsigned, is_high, Zd, T, Zn);                          \
   }
 
-  // Unsigned unpack and extend half of vector - low half
-  void sve_uunpklo(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
-    _sve_xunpk(/* is_unsigned */ true, /* is_high */ false, Zd, T, Zn);
-  }
-
-  // Signed unpack and extend half of vector - high half
-  void sve_sunpkhi(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
-    _sve_xunpk(/* is_unsigned */ false, /* is_high */ true, Zd, T, Zn);
-  }
-
-  // Signed unpack and extend half of vector - low half
-  void sve_sunpklo(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
-    _sve_xunpk(/* is_unsigned */ false, /* is_high */ false, Zd, T, Zn);
-  }
+  INSN(sve_uunpkhi, true,  true ); // Unsigned unpack and extend half of vector - high half
+  INSN(sve_uunpklo, true,  false); // Unsigned unpack and extend half of vector - low half
+  INSN(sve_sunpkhi, false, true ); // Signed unpack and extend half of vector - high half
+  INSN(sve_sunpklo, false, false); // Signed unpack and extend half of vector - low half
+#undef INSN
 
 // SVE unpack predicate elements
 #define INSN(NAME, op) \
