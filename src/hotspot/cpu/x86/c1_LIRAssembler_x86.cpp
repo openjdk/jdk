@@ -3631,11 +3631,17 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
 #ifdef ASSERT
   if (obj == tmp) {
-    LP64_ONLY(assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());)
-    NOT_LP64(assert_different_registers(obj, mdo_addr.base(), mdo_addr.index());)
+#ifdef _LP64
+    assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, mdo_addr.base(), mdo_addr.index());
+#endif
   } else {
-    LP64_ONLY(assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());)
-    NOT_LP64(assert_different_registers(obj, tmp, mdo_addr.base(), mdo_addr.index());)
+#ifdef _LP64
+    assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, tmp, mdo_addr.base(), mdo_addr.index());
+#endif
   }
 #endif
   if (do_null) {
