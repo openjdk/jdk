@@ -83,11 +83,8 @@ class MutableNUMASpace : public MutableSpace {
 
     SpaceStats _space_stats;
 
-    char* _last_page_scanned;
-    char* last_page_scanned()            { return _last_page_scanned; }
-    void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(uint l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
+    LGRPSpace(uint l, size_t alignment) : _lgrp_id(l), _allocation_failed(false) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
@@ -125,7 +122,6 @@ class MutableNUMASpace : public MutableSpace {
     void clear_space_stats()                        { _space_stats = SpaceStats(); }
 
     void accumulate_statistics(size_t page_size);
-    void scan_pages(size_t page_size, size_t page_count);
   };
 
   GrowableArray<LGRPSpace*>* _lgrp_spaces;
@@ -156,8 +152,6 @@ class MutableNUMASpace : public MutableSpace {
   size_t default_chunk_size();
   // Adapt the chunk size to follow the allocation rate.
   size_t adaptive_chunk_size(int i, size_t limit);
-  // Scan and free invalid pages.
-  void scan_pages(size_t page_count);
   // Return the bottom_region and the top_region. Align them to page_size() boundary.
   // |------------------new_region---------------------------------|
   // |----bottom_region--|---intersection---|------top_region------|
