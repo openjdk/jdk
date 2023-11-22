@@ -194,8 +194,14 @@ class PhaseNameValidator {
     assert(is_valid(), "Use of invalid phase name set");
     return _phase_name_set;
   }
-  bool is_valid() const { return _valid; }
-  const char* what() const { return _bad; }
+
+  bool is_valid() const {
+    return _valid;
+  }
+
+  const char* what() const {
+    return _bad;
+  }
 };
 
 #endif // SHARE_OPTO_PHASETYPE_HPP
