@@ -116,7 +116,7 @@ public final class EventControl {
             for (String frame : filter) {
                 int index = frame.indexOf("::");
                 String clazz = null;
-                String method  = null;
+                String method = null;
                 boolean valid = false;
                 if (index != -1) {
                     clazz = frame.substring(0, index);
