@@ -694,6 +694,7 @@ bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
   if (is_trace_precondition()) {
     tty->print_cr("\nVLoop::check_precondition");
     lpt->dump_head();
+    lpt->head()->dump();
   }
 #endif
 
@@ -779,6 +780,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   if (is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyzer::analyze");
     lpt->dump_head();
+    cl()->dump();
   }
 #endif
 

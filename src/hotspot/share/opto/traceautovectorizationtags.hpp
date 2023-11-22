@@ -33,9 +33,14 @@
   flags(MEMORY_SLICES,        "comment about memory slices") \
   flags(BODY,                 "comment about body") \
   flags(DEPENDENCE_GRAPH,     "comment about dependence graph") \
-  flags(VECTOR_ELEMENT_TYPE,  "comment about vector element type") \
+  flags(TYPES,                "comment about vector element type") \
   flags(POINTER_ANALYSIS,     "comment about pointer analysis") \
+  flags(SW_ADJACENT_MEMOPS,   "comment about superword find_adjacent_refs") \
   flags(SW_ALIGNMENT,         "comment about superword alignment") \
+  flags(SW_REJECTIONS,        "comment about superword rejections") \
+  flags(SW_PACKSET,           "comment about superword packset") \
+  flags(SW_INFO,              "comment about superword all") \
+  flags(SW_ALL,               "comment about superword all") \
   flags(ALL,                  "Trace everything")
 
 #define table_entry(name, description) TAG_##name,
@@ -141,6 +146,18 @@ class TraceAutovectorizationTagValidator {
         _valid = false;
       } else if (TAG_ALL == tat) {
         _tags.set_range(0, TRACEAUTOVECTORIZATION_TAGS_NUM);
+      } else if (TAG_SW_ALL == tat) {
+        _tags.set_bit(TAG_SW_ADJACENT_MEMOPS);
+        _tags.set_bit(TAG_SW_ALIGNMENT);
+        _tags.set_bit(TAG_SW_REJECTIONS);
+        _tags.set_bit(TAG_SW_PACKSET);
+        _tags.set_bit(TAG_SW_INFO);
+        _tags.set_bit(TAG_SW_ALL);
+      } else if (TAG_SW_INFO == tat) {
+        _tags.set_bit(TAG_SW_ADJACENT_MEMOPS);
+        _tags.set_bit(TAG_SW_REJECTIONS);
+        _tags.set_bit(TAG_SW_PACKSET);
+        _tags.set_bit(TAG_SW_INFO);
       } else {
         assert(tat < TRACEAUTOVECTORIZATION_TAGS_NUM, "out of bounds");
         _tags.set_bit(tat);

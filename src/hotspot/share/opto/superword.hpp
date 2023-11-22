@@ -277,8 +277,26 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization
-  bool is_trace_superword_alignment() {
+  bool is_trace_superword_adjacent_memops() const {
+    return vla().is_trace_superword_adjacent_memops();
+  }
+  bool is_trace_superword_alignment() const {
     return vla().is_trace_superword_alignment();
+  }
+  bool is_trace_superword_rejections() const {
+    return vla().is_trace_superword_rejections();
+  }
+  bool is_trace_superword_packset() const {
+    return vla().is_trace_superword_packset();
+  }
+  bool is_trace_superword_all() const {
+    return vla().is_trace_superword_all();
+  }
+  bool is_trace_superword_info() const {
+    return vla().is_trace_superword_info();
+  }
+  bool is_trace_superword_any() const {
+    return vla().is_trace_superword_any();
   }
 #endif
 

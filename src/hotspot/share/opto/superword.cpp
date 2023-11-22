@@ -255,9 +255,10 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
 
 bool SuperWord::transform_loop() {
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_superword_any()) {
     tty->print_cr("\nSuperWord::transform_loop:");
     lpt()->dump_head();
+    cl()->dump();
   }
 #endif
 
@@ -267,7 +268,7 @@ bool SuperWord::transform_loop() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_superword_any()) {
     tty->print_cr("\nSuperWord::transform_loop: failed: %s", state);
   }
 #endif
@@ -331,9 +332,11 @@ const char* SuperWord::find_adjacent_refs() {
       }
     }
   }
-  if (TraceSuperWord) {
+#ifndef PRODUCT
+  if (is_trace_superword_adjacent_memops()) {
     tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
   }
+#endif
 
   Node_List align_to_refs;
   int max_idx;
@@ -426,9 +429,11 @@ const char* SuperWord::find_adjacent_refs() {
         }
         best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
         if (best_align_to_mem_ref == nullptr) {
-          if (TraceSuperWord) {
+#ifndef PRODUCT
+          if (is_trace_superword_adjacent_memops()) {
             tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == nullptr");
           }
+#endif
           // best_align_to_mem_ref will be used for adjusting the pre-loop limit in
           // SuperWord::align_initial_loop_index. Find one with the biggest vector size,
           // smallest data size and smallest iv offset from memory ops from remaining packs.
@@ -470,17 +475,19 @@ const char* SuperWord::find_adjacent_refs() {
     return SuperWord::FAILURE_NO_ADJACENT_MEM;
   }
 
-  if (TraceSuperWord) {
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
   }
+#endif
 
   return SuperWord::SUCCESS;
 }
 
 #ifndef PRODUCT
 void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment) {
-  if (TraceSuperWord) {
+  if (is_trace_superword_adjacent_memops()) {
     tty->print("SuperWord::find_adjacent_refs best_align_to_mem_ref = %d, best_iv_adjustment = %d",
        best_align_to_mem_ref->_idx, best_iv_adjustment);
        best_align_to_mem_ref->dump();
@@ -613,7 +620,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   }
 
 #ifdef ASSERT
-  if (TraceSuperWord && Verbose) {
+  if (is_trace_superword_all()) {
     tty->print_cr("\nVector memops after find_align_to_ref");
     for (uint i = 0; i < memops.size(); i++) {
       MemNode* s = memops.at(i)->as_Mem();
@@ -625,8 +632,8 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   idx = max_idx;
   if (max_ct > 0) {
 #ifdef ASSERT
-    if (TraceSuperWord) {
-      tty->print("\nVector align to node: ");
+    if (is_trace_superword_adjacent_memops()) {
+      tty->print("SuperWord::find_align_to_ref: ");
       memops.at(max_idx)->as_Mem()->dump();
     }
 #endif
@@ -781,7 +788,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_superword_alignment()) {
     tty->print("SuperWord::get_iv_adjustment: n = %d, noffset = %d iv_adjust = %d elt_size = %d scale = %d iv_stride = %d vect_size %d: ",
       mem_ref->_idx, offset, iv_adjustment, elt_size, scale, iv_stride(), vw);
     mem_ref->dump();
@@ -971,10 +978,12 @@ void SuperWord::extend_packlist() {
     }
   }
 
-  if (TraceSuperWord) {
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter extend_packlist");
     print_packset();
   }
+#endif
 }
 
 //------------------------------adjust_alignment_for_type_conversion---------------------------------
@@ -1297,7 +1306,7 @@ const char* SuperWord::combine_packs() {
       if (!is_power_of_2(psize)) {
         // We currently only support power-of-2 sizes for vectors.
 #ifndef PRODUCT
-        if (TraceSuperWord) {
+        if (is_trace_superword_rejections()) {
           tty->cr();
           tty->print_cr("WARNING: Removed pack[%d] with size that is not a power of 2:", i);
           print_pack(p1);
@@ -1347,7 +1356,7 @@ const char* SuperWord::combine_packs() {
       if (!is_marked_reduction(p->at(0)) &&
           !vla().dependence_graph().mutually_independent(p)) {
 #ifndef PRODUCT
-        if (TraceSuperWord) {
+        if (is_trace_superword_rejections()) {
           tty->cr();
           tty->print_cr("WARNING: Found dependency at distance greater than 1.");
           tty->print_cr("In pack[%d]", i);
@@ -1371,10 +1380,12 @@ const char* SuperWord::combine_packs() {
     return SuperWord::FAILURE_COMBINE_PACKS;
   }
 
-  if (TraceSuperWord) {
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter combine_packs");
     print_packset();
   }
+#endif
 
   return SuperWord::SUCCESS;
 }
@@ -1413,7 +1424,7 @@ const char* SuperWord::filter_packs() {
     bool impl = implemented(pk);
     if (!impl) {
 #ifndef PRODUCT
-      if (TraceSuperWord && Verbose) {
+      if (is_trace_superword_rejections()) {
         tty->print_cr("Unimplemented");
         pk->at(0)->dump();
       }
@@ -1437,7 +1448,7 @@ const char* SuperWord::filter_packs() {
       bool prof = profitable(pk);
       if (!prof) {
 #ifndef PRODUCT
-        if (TraceSuperWord && Verbose) {
+        if (is_trace_superword_rejections()) {
           tty->print_cr("Unprofitable");
           pk->at(0)->dump();
         }
@@ -1453,7 +1464,7 @@ const char* SuperWord::filter_packs() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter filter_packs");
     print_packset();
     tty->cr();
@@ -1928,17 +1939,19 @@ const char* SuperWord::schedule() {
   // introduced a cycle. The SuperWord paper mentions the need for this
   // in "3.7 Scheduling".
   if (!graph.schedule_success()) {
-    if (TraceSuperWord) {
+#ifndef PRODUCT
+    if (is_trace_superword_rejections()) {
       tty->print_cr("SuperWord::schedule found cycle in PacksetGraph:");
       graph.print(true, false);
       tty->print_cr("removing all packs from packset.");
     }
+#endif
     _packset.clear();
     return SuperWord::FAILURE_SCHEDULE_CYCLE;
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord) {
+  if (is_trace_superword_info()) {
     tty->print_cr("SuperWord::schedule: memops_schedule:");
     memops_schedule.dump();
   }
