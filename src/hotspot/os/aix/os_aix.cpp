@@ -3060,7 +3060,7 @@ int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
   return ret;
 }
 
-//Returns an alternate path name for the given file,if it doesnt exist.
+//Replaces provided path with alternate path for the given file,if it doesnt exist.
 //For AIX,this replaces .so with .a.
 void os::Aix::mapAlternateName(char* buffer, const char *extension) {
 
