@@ -356,7 +356,7 @@ public final class String
         }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(codePoints, offset, count);
-            this.coder = (val.length == count) ? LATIN1 : UTF16;
+            this.coder = StringUTF16.coderFromArrayLen(val, count);
             this.value = val;
             return;
         }
@@ -4842,7 +4842,7 @@ public final class String
             // only try to compress val if some characters were deleted.
             if (COMPACT_STRINGS && asb.maybeLatin1) {
                 this.value = StringUTF16.compress(val, 0, length);
-                this.coder = (this.value.length == length) ? LATIN1 : UTF16;
+                this.coder = StringUTF16.coderFromArrayLen(this.value, length);
                 return;
             }
             this.coder = UTF16;

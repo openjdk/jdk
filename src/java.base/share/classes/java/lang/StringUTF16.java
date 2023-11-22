@@ -843,7 +843,7 @@ final class StringUTF16 {
                 !StringLatin1.canEncode(oldChar) &&
                 StringLatin1.canEncode(newChar)) {
                 byte[] res = StringUTF16.compress(buf, 0, len);
-                byte coder = (res.length == len) ? LATIN1 : UTF16;
+                byte coder = StringUTF16.coderFromArrayLen(res, len);
                 return new String(res, coder);
             }
             return new String(buf, UTF16);
@@ -960,7 +960,7 @@ final class StringUTF16 {
         if (String.COMPACT_STRINGS && replLat1 && !targLat1) {
             // combination 6
             byte[] res = StringUTF16.compress(result, 0, resultLen);
-            byte coder = (res.length == resultLen) ? LATIN1 : UTF16;
+            byte coder = StringUTF16.coderFromArrayLen(res, resultLen);
             return new String(res, coder);    // combination 6
         }
         return new String(result, UTF16);
@@ -1356,7 +1356,7 @@ final class StringUTF16 {
         }
         if (String.COMPACT_STRINGS) {
             byte[] res = StringUTF16.compress(val, index, len);
-            byte coder = (res.length == len) ? LATIN1 : UTF16;
+            byte coder = StringUTF16.coderFromArrayLen(res, len);
             return new String(res, coder);
         }
         int last = index + len;
