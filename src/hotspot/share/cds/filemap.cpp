@@ -1762,6 +1762,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
   r->set_mapped_base(base);
 
   if (VerifySharedSpaces && !r->check_region_crc()) {
+    r->set_mapped_base(nullptr);
     return false;
   }
 
@@ -1820,6 +1821,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   }
 
   if (VerifySharedSpaces && !r->check_region_crc()) {
+    r->set_mapped_base(nullptr);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1843,6 +1845,7 @@ char* FileMapInfo::map_bitmap_region() {
 
   r->set_mapped_base(bitmap_base);
   if (VerifySharedSpaces && !r->check_region_crc()) {
+    r->set_mapped_base(nullptr);
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -2128,6 +2131,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   r->set_mapped_base(base);
   if (VerifySharedSpaces && !r->check_region_crc()) {
+    r->set_mapped_base(nullptr);
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
     return false;
