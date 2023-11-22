@@ -24,12 +24,15 @@
 /*
  * @test
  * @summary Test merging of committed virtual memory and that we track it correctly
+ * @comment needs to be executed with -Xint (or, alternatively, -Xcomp -Xbatch) since it relies on comparing
+ *          NMT call stacks, and we must make sure that all functions on the stack that NMT sees are either compiled
+ *          from the get-go or stay always interpreted.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitMerge
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitMerge
  *
  */
 

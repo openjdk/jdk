@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/recorder/service/jfrMemorySizer.hpp"
@@ -150,7 +151,7 @@ bool JfrOptionSet::allow_retransforms() {
 }
 
 bool JfrOptionSet::allow_event_retransforms() {
-  return allow_retransforms() && (DumpSharedSpaces || can_retransform());
+  return allow_retransforms() && (CDSConfig::is_dumping_static_archive() || can_retransform());
 }
 
 // default options for the dcmd parser

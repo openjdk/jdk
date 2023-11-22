@@ -135,20 +135,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">11 ᠊ᠷ ᠰᠠᠷ᠎ᠠ</month>
 							<month type="12">12 ᠊ᠷ ᠰᠠᠷ᠎ᠠ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">I</month>
-							<month type="2">II</month>
-							<month type="3">III</month>
-							<month type="4">IV</month>
-							<month type="5">V</month>
-							<month type="6">VI</month>
-							<month type="7">VII</month>
-							<month type="8">VIII</month>
-							<month type="9">IX</month>
-							<month type="10">X</month>
-							<month type="11">XI</month>
-							<month type="12">XII</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ᠨᠢᠭᠡᠳᠥᠭᠡᠷ ᠰᠠᠷ᠎ᠠ</month>
 							<month type="2">ᠬᠣᠶᠠᠳᠣᠭᠠᠷ ᠰᠠᠷ ᠠ</month>
@@ -192,9 +178,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">X</month>
 							<month type="11">XI</month>
 							<month type="12">XII</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="4">ᠳᠥᠷᠪᠡᠳᠥᠭᠡᠷ ᠰᠠᠷ᠎ᠠ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -247,15 +230,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">ᠪᠠ</day>
 							<day type="sat">ᠪᠢᠮ</day>
 						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">ᠨᠢᠮ᠎ᠠ</day>
-							<day type="mon">ᠳᠠᠸᠠ</day>
-							<day type="tue">ᠮᠢᠠᠠᠮᠠᠷ</day>
-							<day type="wed">ᡀᠠᠭᠪᠠ</day>
-							<day type="thu">ᠫᠦᠷᠪᠦ</day>
-							<day type="fri">ᠪᠠᠰᠠᠩ</day>
-							<day type="sat">ᠪᠢᠮᠪᠠ</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -265,12 +239,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">2 ᠣᠯᠠᠷᠢᠯ</quarter>
 							<quarter type="3">3 ᠣᠯᠠᠷᠢᠯ</quarter>
 							<quarter type="4">4 ᠣᠯᠠᠷᠢᠯ</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">I</quarter>
-							<quarter type="2">II</quarter>
-							<quarter type="3">III</quarter>
-							<quarter type="4">IV</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1 ᠊ᠷ ᠣᠯᠠᠷᠢᠯ</quarter>
@@ -291,12 +259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2">II</quarter>
 							<quarter type="3">III</quarter>
 							<quarter type="4">IV</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">1 ᠊ᠷ ᠣᠯᠠᠷᠢᠯ</quarter>
-							<quarter type="2">2 ᠊ᠷ ᠣᠯᠠᠷᠢᠯ</quarter>
-							<quarter type="3">3 ᠊ᠷ ᠣᠯᠠᠷᠢᠯ</quarter>
-							<quarter type="4">4 ᠊ᠷ ᠣᠯᠠᠷᠢᠯ</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -320,13 +282,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y ᠣᠨ ᠎᠎᠎ᠤ MMMM᠎᠎ᠢᠢᠨd. EEEE ᠋ᠭᠠᠷᠠᠭ</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y ᠋ᠣᠨ ᠤMMMM᠎᠎ ᠤᠩ d</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -338,7 +298,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y.MM.dd</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -346,13 +305,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss (zzzz)</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss (z)</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -365,34 +322,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year">
 				<displayName>ᠵᠢᠯ</displayName>
 			</field>
-			<field type="year-short">
-				<displayName>ᠵᠢᠯ</displayName>
-			</field>
-			<field type="year-narrow">
-				<displayName>ᠵᠢᠯ</displayName>
-			</field>
 			<field type="quarter">
 				<displayName>ᠣᠯᠠᠷᠢᠯ</displayName>
 			</field>
-			<field type="quarter-short">
-				<displayName>ᠣᠯᠠᠷᠢᠯ</displayName>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>ᠣᠯᠠᠷᠢᠯ</displayName>
-			</field>
 			<field type="month">
-				<displayName>ᠰᠠᠷ ᠠ</displayName>
-			</field>
-			<field type="month-short">
 				<displayName>ᠰᠠᠷ ᠠ</displayName>
 			</field>
 			<field type="month-narrow">
 				<displayName>ᠰᠡᠷ ᠠ</displayName>
 			</field>
 			<field type="week">
-				<displayName>ᠳᠣᠯᠣᠭ᠎ᠠ ᠬᠣᠨᠣᠭ</displayName>
-			</field>
-			<field type="week-short">
 				<displayName>ᠳᠣᠯᠣᠭ᠎ᠠ ᠬᠣᠨᠣᠭ</displayName>
 			</field>
 			<field type="week-narrow">
@@ -403,12 +342,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">ᠥᠴᠥᠬᠡᠳᠥᠷ</relative>
 				<relative type="0">ᠥᠨᠥᠳᠥᠷ</relative>
 				<relative type="1">ᠮᠠᠷᠭᠠᠰᠢ</relative>
-			</field>
-			<field type="day-short">
-				<displayName>ᠡᠳᠥᠷ</displayName>
-			</field>
-			<field type="day-narrow">
-				<displayName>ᠡᠳᠥᠷ</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>ᠭᠠᠷᠠᠭ</displayName>
@@ -422,25 +355,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-short">
 				<displayName>ᠴ</displayName>
 			</field>
-			<field type="hour-narrow">
-				<displayName>ᠴ</displayName>
-			</field>
 			<field type="minute">
 				<displayName>ᠮᠢᠨᠥ᠋ᠲ᠋ᠠ</displayName>
 			</field>
 			<field type="minute-short">
 				<displayName>ᠮᠢᠨ</displayName>
 			</field>
-			<field type="minute-narrow">
-				<displayName>ᠮᠢᠨ</displayName>
-			</field>
 			<field type="second">
 				<displayName>ᠰᠸᠻᠥ᠋ᠨ᠋ᠳᠡ</displayName>
 			</field>
 			<field type="second-short">
-				<displayName>ᠰᠧᠻ</displayName>
-			</field>
-			<field type="second-narrow">
 				<displayName>ᠰᠧᠻ</displayName>
 			</field>
 			<field type="zone">
