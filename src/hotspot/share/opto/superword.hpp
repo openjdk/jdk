@@ -94,12 +94,87 @@
 // be applied to any basic block, not just loop nests. However, the
 // implementation here is only applied to innermost loops.
 //
-// TODO
+// These are the steps of the SuperWord auto-vectorizer:
 //
-// Steps:
-//  1)
+// 1)  PhaseIdealLoop::insert_pre_post_loops
+//     Split the CountedLoop into pre-main-post loops. The pre-loop
+//     ensures alignment for the main-loop, the main-loop is strip-
+//     mined (occasionally safepoints) and is the candidate for
+//     vectorization. The post-loop executes the remaining iterations.
 //
+// 2)  VLoop::check_preconditions
+//     For vectorization loops must have a certain form, for example
+//     no control flow other than the loop exit check.
 //
+// 3)  SuperWord::unrolling_analysis
+//     We check if there are any forbidden nodes in the loop. If not,
+//     then we determine the optimal unrolling factor, such that we
+//     do not unroll unnecessarily, but still can fill the maximal
+//     vector length. This depends on the types used in the loop.
+//
+// 4)  PhaseIdealLoop::do_unroll
+//     We unroll until the desired unroll factor is reached. This
+//     is supposed to increase the parallelism in the loop body,
+//     as there are now many iterations merged together which can
+//     hopefully be packed into SIMD vector operations.
+//
+// 5)  VLoopAnalyzer::analyze
+//     In preparation for auto-vectorization, the loop body is analyzed.
+//     We find reductions and the memory slices. We determine the type
+//     of every node, and construct a dependence graph. The resulting
+//     data structures are then available to the auto-vectorizer.
+//
+// 6)  SuperWord::transform_loop
+//     We try to (partially) vectorize the loop. We do this as follows:
+//
+//     a) find_adjacent_refs:
+//        We find pairs independent isomorphic adjacent memory operations.
+//
+//     b) extend_packlist:
+//        We iteratively extend these "seed" pairs to their inputs and
+//        outputs (non-memory operations), hopefully extending to all
+//        operations that can be parallelized.
+//
+//     c) combine_packs:
+//        We combine the pairs into vector sized packs, hopefully filling
+//        the maximal vector size.
+//
+//     d) filter_packs:
+//        We filter the packs, checking if the operations are implemented
+//        in the backend, and checking if the inputs and outputs to the
+//        packs are also vectorizable.
+//
+//     e) schedule:
+//        We construct the PacksetGraph, based on the dependence graph
+//        and the packset. We schedule it to a linear order. If there
+//        are cycles in the graph, this is not possible and we bailout.
+//
+//        If the schedule succeeds, we know that vectorization will be
+//        successful. We can now start making changes to the graph.
+//
+//     f) schedule_reorder_memops:
+//        We adjust the memory graph of each memory slice according to
+//        the linear order of the schedule.
+//
+//     g) align_initial_loop_index:
+//        We adjust the pre-loop limit so that the main-loop is aligned.
+//
+//     h) output:
+//        For each pack, we replace the scalar operations with a vector
+//        operation.
+//
+// 9)  PhaseIdealLoop::insert_vector_post_loop
+//     Before the main-loop is super-unrolled,  we first make a clone
+//     of it and call it the vector-post-loop, or vectorized drain-loop.
+//     The super-unrolled main-loop might have quite a large stride,
+//     and after its last iteration, there may still be many iterations
+//     left. To avoid doing all of them in the post-loop, we execute
+//     as many as possible with this vectorized drain-loop.
+//
+// 10) PhaseIdealLoop::do_unroll
+//     We further unroll the vectorized main-loop (i.e. super-unroll).
+//     The goal is to saturate the CPU pipeline with vector instructions,
+//     and to reduce the overhead of the loop exit check.
 
 // Per node info needed by SuperWord
 class SWNodeInfo {
