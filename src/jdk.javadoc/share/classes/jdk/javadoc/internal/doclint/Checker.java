@@ -102,6 +102,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
 import jdk.javadoc.internal.doclint.HtmlTag.ElemKind;
 import static jdk.javadoc.internal.doclint.Messages.Group.*;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 
 /**
@@ -192,7 +193,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()
+                        && !Utils.isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -1275,7 +1277,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isNormalClass(TreePath p) {
         return switch (p.getLeaf().getKind()) {
             case ENUM, RECORD -> false;
-            case CLASS -> true;
+            case CLASS -> !Utils.isImplicitlyDeclaredClass(p.getLeaf());
             default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
         };
     }
