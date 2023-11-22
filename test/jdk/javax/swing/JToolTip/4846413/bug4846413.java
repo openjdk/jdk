@@ -69,11 +69,11 @@ public class bug4846413 {
             SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
             robot.waitForIdle();
-	    robot.delay(1000);
+            robot.delay(1000);
 
             Point movePoint = getButtonPoint();
             robot.mouseMove(movePoint.x, movePoint.y);
-	    if (System.getProperty("os.name").contains("OS X")) {
+            if (System.getProperty("os.name").contains("OS X")) {
                 String version = System.getProperty("os.version", "");
                 if (version.startsWith("14.")) {
                     robot.mouseMove(movePoint.x, movePoint.y);
@@ -87,7 +87,7 @@ public class bug4846413 {
             }
 
             SwingUtilities.invokeAndWait(() -> checkToolTip());
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
@@ -106,7 +106,7 @@ public class bug4846413 {
                             new Rectangle(0, 0, (int)screenSize.getWidth(),
                                                 (int)screenSize.getHeight()));
                 ImageIO.write(img, "png", new File("screen.png"));
-	    } catch (Exception e) {}
+            } catch (Exception e) {}
             throw new RuntimeException("Tooltip has not been found!");
         }
 
