@@ -155,7 +155,6 @@ public class TestSecurityProviderServiceEvent {
             Events.assertField(e, "provider").equal(workingProv);
             Events.assertField(e, "type").equal(type);
             Events.assertField(e, "algorithm").equal(alg);
-            System.out.println(e);
             Events.assertTopFrame(e, clazz, method);
         }
         if (!secondaryEventOK) {
