@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8320001
- * @summary compiler crash while adding type annotations to constructor's return type
+ * @summary javac crashes while adding type annotations to the return type of a constructor
  * @library /tools/lib /tools/javac/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
