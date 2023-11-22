@@ -60,51 +60,54 @@ public class TestFileChooserSingleDirectorySelection {
         System.setProperty("sun.java2d.uiScale", "1.0");
         robot = new Robot();
         robot.setAutoDelay(100);
-
-        try {
-            // create test directory
-            String tmpDir = System.getProperty("java.io.tmpdir");
-
-            // Create a test directory that contains only folders
-            testDir = new File(tmpDir, "testDir");
-            if (!testDir.exists()) {
-                testDir.mkdir();
-            }
-            testDir.deleteOnExit();
-
-            // create sub directories inside test directory
-            SubDirs = new File[5];
-            for (int i = 0; i < 5; ++i) {
-                SubDirs[i] = new File(testDir, "subDir_" + (i+1));
-                SubDirs[i].mkdir();
-                SubDirs[i].deleteOnExit();
-            }
-
-            // Create a test directory that contains only files
-            testFile = new File(tmpDir, "testFile");
-            if (!testFile.exists()) {
-                testFile.mkdir();
-            }
-            testFile.deleteOnExit();
-
-            // create temporary files inside testFile
-            subFiles = new File[5];
-            for (int i = 0; i < 5; ++i) {
-                subFiles[i] = File.createTempFile("subFiles_" + (i+1),
-                        ".txt", new File(testFile.getAbsolutePath()));
-                subFiles[i].deleteOnExit();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        createFoldersOnlyDir();
+        createFilesOnlyDir();
+        populateDirs();
+        populateFiles();
         for (UIManager.LookAndFeelInfo laf :
-                        UIManager.getInstalledLookAndFeels()) {
+                UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             checkFileOnlyTest(laf);
             checkDirectoriesOnlyTest(laf);
             checkFilesAndDirectoriesTest(laf);
             System.out.println("Passed");
+        }
+    }
+
+    private static void createFoldersOnlyDir() {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        testDir = new File(tmpDir, "testDir");
+        if (!testDir.exists()) {
+            testDir.mkdir();
+        }
+        testDir.deleteOnExit();
+    }
+
+    private static void populateDirs() {
+        SubDirs = new File[10];
+        for (int i = 0; i < 10; ++i) {
+            SubDirs[i] = new File(testDir, "subDir_" + (i+1));
+            SubDirs[i].mkdir();
+            SubDirs[i].deleteOnExit();
+        }
+    }
+
+    private static void createFilesOnlyDir() {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        testFile = new File(tmpDir, "testFile");
+        if (!testFile.exists()) {
+            testFile.mkdir();
+        }
+        testFile.deleteOnExit();
+    }
+
+    private static void populateFiles() throws Exception {
+        subFiles = new File[10];
+        for (int i = 0; i < 10; ++i) {
+            subFiles[i] = File.createTempFile("subFiles_" + (i+1),
+                    ".txt", new File(testFile.getAbsolutePath()));
+            subFiles[i].deleteOnExit();
         }
     }
 
@@ -229,6 +232,7 @@ public class TestFileChooserSingleDirectorySelection {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
+        robot.waitForIdle();
     }
 
     private static void checkResult(UIManager.LookAndFeelInfo laf) {
