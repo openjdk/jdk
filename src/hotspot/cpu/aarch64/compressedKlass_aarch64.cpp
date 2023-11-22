@@ -71,7 +71,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
            "Invalid immediate %d " UINT64_FORMAT, index, immediate);
     result = os::attempt_reserve_memory_at((char*)immediate, size, false);
     if (result == nullptr) {
-      log_trace(metaspace, map)("Failed to attach at " PTR_FORMAT, immediate);
+      log_trace(metaspace, map)("Failed to attach at " UINT64_FORMAT_X, immediate);
     }
   }
   if (result == nullptr) {
