@@ -47,8 +47,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
  */
 
 public class TestProgressBarBorder {
-    public static void main(String[] args) throws InvocationTargetException,
-            InterruptedException {
+    public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             if (!laf.getName().contains("Nimbus") && !laf.getName().contains("GTK")) {
@@ -72,7 +71,8 @@ public class TestProgressBarBorder {
             try {
                 ImageIO.write(withBorder, "png", new File("withBorder.png"));
                 ImageIO.write(withoutBorder, "png", new File("withoutBorder.png"));
-            } catch (IOException e) {}
+            } catch (IOException ignored) {}
+
             throw new RuntimeException("JProgressBar border is painted when border " +
                     "painting is set to false");
         }
