@@ -128,8 +128,8 @@ public:
   bool is_trace_pointer_analysis() const {
     return _trace_tags.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
   }
-  bool is_trace_alignment() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_ALIGNMENT);
+  bool is_trace_superword_alignment() const {
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ALIGNMENT);
   }
 #endif
 

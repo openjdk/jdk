@@ -1004,7 +1004,12 @@ bool SuperWord::follow_use_defs(Node_List* p) {
 
   if (s1->is_Load()) return false;
 
-  NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d", s1->_idx, alignment(s1));)
+#ifndef PRODUCT
+  if(is_trace_superword_alignment()) {
+    tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d",
+                  s1->_idx, alignment(s1));
+  }
+#endif
   bool changed = false;
   int start = s1->is_Store() ? MemNode::ValueIn   : 1;
   int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
@@ -1026,7 +1031,12 @@ bool SuperWord::follow_use_defs(Node_List* p) {
         pair->push(t1);
         pair->push(t2);
         _packset.append(pair);
-        NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)", t1->_idx, t2->_idx, align);)
+#ifndef PRODUCT
+        if(is_trace_superword_alignment()) {
+          tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)",
+                        t1->_idx, t2->_idx, align);
+        }
+#endif
         set_alignment(t1, t2, align);
         changed = true;
       }
@@ -1048,7 +1058,12 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   if (s1->is_Store()) return false;
 
   int align = alignment(s1);
-  NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_def_uses: s1 %d, align %d", s1->_idx, align);)
+#ifndef PRODUCT
+  if(is_trace_superword_alignment()) {
+    tty->print_cr("SuperWord::follow_def_uses: s1 %d, align %d",
+                  s1->_idx, align);
+  }
+#endif
   int savings = -1;
   int num_s1_uses = 0;
   Node* u1 = nullptr;
@@ -1090,7 +1105,12 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     pair->push(u1);
     pair->push(u2);
     _packset.append(pair);
-    NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)", u1->_idx, u2->_idx, align);)
+#ifndef PRODUCT
+    if(is_trace_superword_alignment()) {
+      tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)",
+                    u1->_idx, u2->_idx, align);
+    }
+#endif
     set_alignment(u1, u2, align);
     changed = true;
   }
@@ -2657,18 +2677,18 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
 // Alignment within a vector memory reference
 int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
 #ifndef PRODUCT
-  if (is_trace_alignment()) {
+  if (is_trace_superword_alignment()) {
     tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
   }
 #endif
   VPointer p(s, vla());
   if (!p.valid()) {
-    NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
+    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
     return bottom_align;
   }
   int vw = get_vw_bytes_special(s);
   if (vw < 2) {
-    NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
+    NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: vector_width_in_bytes < 2, return bottom_align");)
     return bottom_align; // No vectors for this type
   }
   int offset  = p.offset_in_bytes();
@@ -2676,7 +2696,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   int off_rem = offset % vw;
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
 #ifndef PRODUCT
-  if (is_trace_alignment()) {
+  if (is_trace_superword_alignment()) {
     tty->print_cr("SuperWord::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
   }
 #endif

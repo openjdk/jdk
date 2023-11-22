@@ -277,8 +277,8 @@ class SuperWord : public ResourceObj {
 
 #ifndef PRODUCT
   // TraceAutoVectorization
-  bool is_trace_alignment() {
-    return vla().is_trace_alignment();
+  bool is_trace_superword_alignment() {
+    return vla().is_trace_superword_alignment();
   }
 #endif
 

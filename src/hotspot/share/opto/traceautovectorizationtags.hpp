@@ -35,7 +35,7 @@
   flags(DEPENDENCE_GRAPH,     "comment about dependence graph") \
   flags(VECTOR_ELEMENT_TYPE,  "comment about vector element type") \
   flags(POINTER_ANALYSIS,     "comment about pointer analysis") \
-  flags(ALIGNMENT,            "comment about alignment") \
+  flags(SW_ALIGNMENT,         "comment about superword alignment") \
   flags(ALL,                  "Trace everything")
 
 #define table_entry(name, description) TAG_##name,
