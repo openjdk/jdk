@@ -3012,12 +3012,6 @@ size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   return i;
 }
 
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
-}
-
-
 int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;
   long retval = -1;
