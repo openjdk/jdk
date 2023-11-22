@@ -52,6 +52,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#undef aarch64
 #include <capstone.h>
 
 #include "hsdis.h"
