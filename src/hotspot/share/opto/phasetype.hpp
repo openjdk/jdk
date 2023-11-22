@@ -160,7 +160,6 @@ class PhaseNameValidator {
   bool _valid;
   char* _bad;
 
-
  public:
   PhaseNameValidator(ccstrlist option) :
     _phase_name_set(PHASE_NUM_TYPES, mtCompiler),

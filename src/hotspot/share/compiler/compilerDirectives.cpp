@@ -430,11 +430,11 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     compilerdirectives_c1_flags(init_default_cc)
 #undef init_default_cc
 
-    // Parse PrintIdealPhaseName and create an efficient lookup mask
+    // Parse PrintIdealPhaseName and create a lookup set
 #ifndef PRODUCT
 #ifdef COMPILER2
     if (!_modified[PrintIdealPhaseIndex]) {
-      // Parse ccstr and create mask
+      // Parse ccstr and create set
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
         PhaseNameValidator validator(option);
