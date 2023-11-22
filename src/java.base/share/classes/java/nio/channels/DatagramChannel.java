@@ -645,6 +645,13 @@ public abstract class DatagramChannel
     /**
      * {@inheritDoc}
      * <p>
+     * If the channel's socket was bound to the wildcard address and is
+     * {@link #isConnected connected}, then the address returned
+     * may be the local address selected as source address for
+     * outgoing datagrams sent on the socket instead of the wildcard address.
+     * When {@link #disconnect} is called, the bound address reverts
+     * to the wildcard address.
+     * <p>
      * If there is a security manager set, its {@code checkConnect} method is
      * called with the local address and {@code -1} as its arguments to see
      * if the operation is allowed. If the operation is not allowed,
@@ -655,12 +662,7 @@ public abstract class DatagramChannel
      * @return  The {@code SocketAddress} that the socket is bound to, or the
      *          {@code SocketAddress} representing the loopback address if
      *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound. If {@link #connect(SocketAddress)
-     *          connect} is called, and the socket was bound to the wildcard
-     *          address, then for the duration when the socket is connected,
-     *          the address returned may be the local address selected as 
-     *          source address for outgoing datagrams sent on the
-     *          channel instead of the wildcard address.
+     *          channel's socket is not bound.
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
