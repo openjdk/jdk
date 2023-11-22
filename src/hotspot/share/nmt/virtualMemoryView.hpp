@@ -42,7 +42,6 @@
 
 /*
   Remaining issues:
-  1. No virtual memory allocation sites statistics
   3. No baselining
   4. Reporting not part of Reporter class but part of VirtualMemoryView
   5. Insufficient amount of unit tests
@@ -197,10 +196,6 @@ public:
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
 
-  // Record reserved and committed memory for
-  // snapshotting in summary mode.
-  static void record_reserved_memory();
-  static void record_committed_memory();
 };
 
 #endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP
