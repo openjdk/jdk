@@ -776,7 +776,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   if (!success) { return false; }
 
 #ifndef PRODUCT
-  if (is_trace_loop_analyze()) {
+  if (is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyzer::analyze");
     lpt->dump_head();
   }
@@ -789,7 +789,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   }
 
 #ifndef PRODUCT
-  if (is_trace_loop_analyze()) {
+  if (is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
   }
 #endif

@@ -29,7 +29,7 @@
 
 #define COMPILER_TRACEAUTOVECTORIZATION_TAGS(flags) \
   flags(PRECONDITION,         "comment about precondition") \
-  flags(LOOP_ANALYZE,         "comment about loop analyze") \
+  flags(LOOP_ANALYZER,        "comment about loop analyzer") \
   flags(MEMORY_SLICES,        "comment about memory slices") \
   flags(BODY,                 "comment about body") \
   flags(DEPENDENCE_GRAPH,     "comment about dependence graph") \

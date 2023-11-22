@@ -110,8 +110,8 @@ public:
   bool is_trace_precondition() const {
     return _trace_tags.at(TraceAutovectorizationTag::TAG_PRECONDITION);
   }
-  bool is_trace_loop_analyze() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZE);
+  bool is_trace_loop_analyzer() const {
+    return _trace_tags.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZER);
   }
   bool is_trace_memory_slices() const {
     return _trace_tags.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
