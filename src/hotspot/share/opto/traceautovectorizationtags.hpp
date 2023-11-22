@@ -28,20 +28,20 @@
 #include "utilities/bitMap.inline.hpp"
 
 #define COMPILER_TRACEAUTOVECTORIZATION_TAGS(flags) \
-  flags(PRECONDITION,         "comment about precondition") \
-  flags(LOOP_ANALYZER,        "comment about loop analyzer") \
-  flags(MEMORY_SLICES,        "comment about memory slices") \
-  flags(BODY,                 "comment about body") \
-  flags(DEPENDENCE_GRAPH,     "comment about dependence graph") \
-  flags(TYPES,                "comment about vector element type") \
-  flags(POINTER_ANALYSIS,     "comment about pointer analysis") \
-  flags(SW_ADJACENT_MEMOPS,   "comment about superword find_adjacent_refs") \
-  flags(SW_ALIGNMENT,         "comment about superword alignment") \
-  flags(SW_REJECTIONS,        "comment about superword rejections") \
-  flags(SW_PACKSET,           "comment about superword packset") \
-  flags(SW_INFO,              "comment about superword all") \
-  flags(SW_ALL,               "comment about superword all") \
-  flags(ALL,                  "Trace everything")
+  flags(PRECONDITION,         "Trace VLoop::check_preconditions") \
+  flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::analyze") \
+  flags(MEMORY_SLICES,        "Trace VLoopMemorySlices::analyze") \
+  flags(BODY,                 "Trace VLoopBody::construct") \
+  flags(DEPENDENCE_GRAPH,     "Trace VLoopDependenceGraph::build") \
+  flags(TYPES,                "Trace VLoopTypes::compute_vector_element_type") \
+  flags(POINTER_ANALYSIS,     "Trace VPointer") \
+  flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
+  flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
+  flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
+  flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
+  flags(SW_INFO,              "Trace SuperWord info") \
+  flags(SW_ALL,               "Trace SuperWord all (verbose)") \
+  flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) TAG_##name,
 enum TraceAutovectorizationTag {
