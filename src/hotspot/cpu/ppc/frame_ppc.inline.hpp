@@ -143,7 +143,6 @@ inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   return (intptr_t*) &(get_ijava_state()->mdx);
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 inline BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return (BasicObjectLock*) get_ijava_state()->monitors;
 }

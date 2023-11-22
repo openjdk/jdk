@@ -1933,7 +1933,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register 
   }
 }
 
-// Add a InterpMonitorElem to stack (see frame_sparc.hpp).
+// Add a monitor (see frame_ppc.hpp).
 void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Register Rtemp1, Register Rtemp2) {
 
   // Very-local scratch registers.
