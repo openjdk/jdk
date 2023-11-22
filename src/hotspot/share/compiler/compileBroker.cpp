@@ -943,16 +943,10 @@ void CompileBroker::init_compiler_threads() {
   char name_buffer[256];
 
   for (int i = 0; i < _c2_count; i++) {
-    jobject thread_handle = nullptr;
-    // Create all j.l.Thread objects for C1 and C2 threads here, but only one
-    // for JVMCI compiler which can create further ones on demand.
-    bool create = !UseDynamicNumberOfCompilerThreads || i == 0;
-    if (create JVMCI_ONLY(|| !UseJVMCICompiler || UseJVMCINativeLibrary)) {
-      // Create a name for our thread.
-      os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
-      Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-      thread_handle = JNIHandles::make_global(thread_oop);
-    }
+    // Create a name for our thread.
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
+    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
+    jobject thread_handle = JNIHandles::make_global(thread_oop);
     _compiler2_objects[i] = thread_handle;
     _compiler2_logs[i] = nullptr;
 
@@ -1030,7 +1024,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
     for (int i = old_c2_count; i < new_c2_count; i++) {
 #if INCLUDE_JVMCI
-      if (UseJVMCICompiler && !UseJVMCINativeLibrary) {
+      if (UseJVMCICompiler && !UseJVMCINativeLibrary && _compiler2_objects[i] == nullptr) {
         // Native compiler threads as used in C1/C2 can reuse the j.l.Thread objects as their
         // existence is completely hidden from the rest of the VM (and those compiler threads can't
         // call Java code to do the creation anyway).
@@ -1066,7 +1060,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         _compiler2_objects[i] = thread_handle;
       }
 #endif
-      assert(compiler2_object(i) != nullptr, "Thread oop must exist");
+      guarantee(compiler2_object(i) != nullptr, "Thread oop must exist");
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == nullptr) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
