@@ -32,6 +32,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
@@ -219,10 +220,10 @@ public class TestLayouts {
     @Test
     public void testSequenceLayoutWithZeroLength() {
         SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
-        assertEquals(layout.toString(), "[0:i4]");
+        assertEquals(layout.toString().toLowerCase(Locale.ROOT), "[0:i4]");
 
         SequenceLayout nested = MemoryLayout.sequenceLayout(0, layout);
-        assertEquals(nested.toString(), "[0:[0:i4]]");
+        assertEquals(nested.toString().toLowerCase(Locale.ROOT), "[0:[0:i4]]");
 
         SequenceLayout layout2 = MemoryLayout.sequenceLayout(0, JAVA_INT);
         assertEquals(layout, layout2);

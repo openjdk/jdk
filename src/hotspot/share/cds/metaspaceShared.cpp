@@ -97,7 +97,6 @@ void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
-bool MetaspaceShared::_use_full_module_graph = true;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
@@ -142,11 +141,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-#ifdef _LP64
-  return CompressedKlassPointers::is_valid_base((address)shared_base);
-#else
-  return true;
-#endif
+  // We check user input for SharedBaseAddress at dump time. We must weed out values
+  // we already know to be invalid later.
+
+  // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
+  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
+  // start as base.
+  //
+  // Therefore, "shared_base" must be later usable as encoding base.
+  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -245,7 +249,7 @@ static char* compute_shared_base(size_t cds_max) {
 }
 
 void MetaspaceShared::initialize_for_static_dump() {
-  assert(DumpSharedSpaces, "should be called for dump time only");
+  assert(CDSConfig::is_dumping_static_archive(), "sanity");
   log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
@@ -782,11 +786,11 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     StringTable::allocate_shared_strings_array(CHECK);
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       log_info(cds)("archivedBootLayer not available, disabling full module graph");
-      disable_full_module_graph();
+      CDSConfig::disable_dumping_full_module_graph();
     }
     HeapShared::init_for_dumping(CHECK);
     ArchiveHeapWriter::init();
-    if (use_full_module_graph()) {
+    if (CDSConfig::is_dumping_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
     }
   }
@@ -1171,7 +1175,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         }
 #endif // _LP64
     log_info(cds)("initial optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("initial full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("initial full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
   } else {
     unmap_archive(static_mapinfo);
     unmap_archive(dynamic_mapinfo);
@@ -1258,12 +1262,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   if (base_address != nullptr) {
     assert(is_aligned(base_address, archive_space_alignment),
            "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
-#ifdef _LP64
-    if (Metaspace::using_class_space()) {
-      assert(CompressedKlassPointers::is_valid_base(base_address),
-             "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
-    }
-#endif
   }
 
   if (!Metaspace::using_class_space()) {
@@ -1349,7 +1347,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), archive_space_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
-    assert(CompressedKlassPointers::is_valid_base((address)total_space_rs.base()), "Sanity");
 
     // Now split up the space into ccs and cds archive. For simplicity, just leave
     //  the gap reserved at the end of the archive space. Do not do real splitting.
@@ -1543,29 +1540,6 @@ bool MetaspaceShared::remap_shared_readonly_as_readwrite() {
     _remapped_readwrite = true;
   }
   return true;
-}
-
-bool MetaspaceShared::use_full_module_graph() {
-#if INCLUDE_CDS_JAVA_HEAP
-  if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
-    return true;
-  }
-#endif
-  bool result = _use_optimized_module_handling && _use_full_module_graph;
-  if (DumpSharedSpaces) {
-    result &= HeapShared::can_write();
-  } else if (UseSharedSpaces) {
-    result &= ArchiveHeapLoader::can_use();
-  } else {
-    result = false;
-  }
-
-  if (result && UseSharedSpaces) {
-    // Classes used by the archived full module graph are loaded in JVMTI early phase.
-    assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
-           "CDS should be disabled if early class hooks are enabled");
-  }
-  return result;
 }
 
 void MetaspaceShared::print_on(outputStream* st) {

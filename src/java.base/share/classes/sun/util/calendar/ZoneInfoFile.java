@@ -210,7 +210,7 @@ public final class ZoneInfoFile {
 
     private static String versionId;
     private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
-    private static Map<String, String> aliases = new HashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
 
     private static byte[][] ruleArray;
     private static String[] regions;
@@ -219,7 +219,7 @@ public final class ZoneInfoFile {
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
-    private static String[][] oldMappings = new String[][] {
+    private static final String[][] oldMappings = new String[][] {
         { "ACT", "Australia/Darwin" },
         { "AET", "Australia/Sydney" },
         { "AGT", "America/Argentina/Buenos_Aires" },

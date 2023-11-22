@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <!-- Catalog for testing the CATALOG property
+    -->
+
+    <group id="dtds" prefer = "system" xml:base = "dtds/">
+        <systemSuffix systemIdSuffix="test.dtd" uri="test.dtd"/>
+        <system systemId="file:/externalParameterEntity" uri="paramEntity.dtd"/>
+        <system systemId="XSLDTD.dtd" uri="XSLDTD.dtd"/>
+        
+    </group>
+
+    <group id="xsds" prefer = "system" xml:base = "xsds/">
+        <system systemId="XSDImport_person.xsd" uri="XSDImport_person.xsd"/>
+        <system systemId="XSDImport_product.xsd" uri="XSDImport_product.xsd"/>
+        <system systemId="XSDInclude_person.xsd" uri="XSDInclude_person.xsd"/>
+        <system systemId="XSDInclude_product.xsd" uri="XSDInclude_product.xsd"/>
+        <!-- file:/path/val_test.xsd -->
+        <systemSuffix systemIdSuffix="val_test.xsd" uri="val_test.xsd"/>
+    </group>
+
+    <group id="xi" prefer = "system" xml:base = "xinclude/">
+
+        <system systemId="XI_red.dtd" uri="XI_red.dtd"/>
+        <system systemId="XI_simple.xml" uri="XI_simple.xml"/>
+        <system systemId="XI_test2.xml" uri="XI_test2.xml"/>
+        <system systemId="XI_utf8.xml" uri="XI_utf8.xml"/>
+    </group>
+    <!-- additional catalogs can be added a NextCatalog besides registering
+         through the Feature.FILES (javax.xml.catalog.files) property -->
+    <!-- nextCatalog catalog="pathto/AnotherCatalog.xml"/-->
+</catalog>

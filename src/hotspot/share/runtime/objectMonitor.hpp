@@ -364,7 +364,6 @@ private:
   // Deflation support
   bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
-  void      release_object() { _object.release(_oop_storage); }
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP
