@@ -49,7 +49,7 @@ x86</a></li>
 <li><a href="#building-on-aarch64" id="toc-building-on-aarch64">Building
 on aarch64</a></li>
 <li><a href="#building-on-32-bit-arm"
-id="toc-building-on-32-bit-arm">Building on 32-bit arm</a></li>
+id="toc-building-on-32-bit-arm">Building on 32-bit ARM</a></li>
 </ul></li>
 <li><a href="#operating-system-requirements"
 id="toc-operating-system-requirements">Operating System Requirements</a>
@@ -74,7 +74,7 @@ id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
 JDK Requirements</a>
 <ul>
 <li><a href="#getting-jdk-binaries"
-id="toc-getting-jdk-binaries">Getting JDK binaries</a></li>
+id="toc-getting-jdk-binaries">Getting JDK Binaries</a></li>
 </ul></li>
 <li><a href="#external-library-requirements"
 id="toc-external-library-requirements">External Library Requirements</a>
@@ -116,7 +116,7 @@ Tests</a></li>
 <li><a href="#macos-1" id="toc-macos-1">macOS</a></li>
 </ul></li>
 <li><a href="#cross-compiling"
-id="toc-cross-compiling">Cross-compiling</a>
+id="toc-cross-compiling">Cross-Compiling</a>
 <ul>
 <li><a href="#specifying-the-target-platform"
 id="toc-specifying-the-target-platform">Specifying the Target
@@ -130,11 +130,11 @@ Libraries</a></li>
 <li><a href="#verifying-the-build"
 id="toc-verifying-the-build">Verifying the Build</a></li>
 <li><a href="#cross-compiling-the-easy-way"
-id="toc-cross-compiling-the-easy-way">Cross compiling the easy
-way</a></li>
+id="toc-cross-compiling-the-easy-way">Cross-Compiling the Easy
+Way</a></li>
 <li><a href="#considerations-for-specific-targets"
-id="toc-considerations-for-specific-targets">Considerations for specific
-targets</a></li>
+id="toc-considerations-for-specific-targets">Considerations for Specific
+Targets</a></li>
 </ul></li>
 <li><a href="#build-performance" id="toc-build-performance">Build
 Performance</a>
@@ -146,9 +146,9 @@ Checking</a></li>
 <li><a href="#precompiled-headers"
 id="toc-precompiled-headers">Precompiled Headers</a></li>
 <li><a href="#icecc-icecream" id="toc-icecc-icecream">Icecc /
-icecream</a></li>
+Icecream</a></li>
 <li><a href="#using-the-javac-server"
-id="toc-using-the-javac-server">Using the javac server</a></li>
+id="toc-using-the-javac-server">Using the javac Server</a></li>
 <li><a href="#building-the-right-target"
 id="toc-building-the-right-target">Building the Right Target</a></li>
 </ul></li>
@@ -202,7 +202,7 @@ Itself</a></li>
 <li><a href="#contributing-to-the-jdk"
 id="toc-contributing-to-the-jdk">Contributing to the JDK</a></li>
 <li><a href="#editing-this-document"
-id="toc-editing-this-document">Editing this document</a></li>
+id="toc-editing-this-document">Editing This Document</a></li>
 </ul>
 </nav>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the
@@ -341,7 +341,7 @@ requires C++ compiler support (GCC 9.1.0+ or Clang 10+). The resulting
 build can be run on both machines with and without support for branch
 protection in hardware. Branch Protection is only supported for Linux
 targets.</p>
-<h3 id="building-on-32-bit-arm">Building on 32-bit arm</h3>
+<h3 id="building-on-32-bit-arm">Building on 32-bit ARM</h3>
 <p>This is not recommended. Instead, see the section on <a
 href="#cross-compiling">Cross-compiling</a>.</p>
 <h2 id="operating-system-requirements">Operating System
@@ -698,7 +698,7 @@ JDK automatically, but due to the lack of standard installation
 locations on most platforms, this heuristics has a high likelihood to
 fail. If the boot JDK is not automatically detected, or the wrong JDK is
 picked, use <code>--with-boot-jdk</code> to point to the JDK to use.</p>
-<h3 id="getting-jdk-binaries">Getting JDK binaries</h3>
+<h3 id="getting-jdk-binaries">Getting JDK Binaries</h3>
 <p>An overview of common ways to download and install prebuilt JDK
 binaries can be found on https://openjdk.org/install. An alternative is
 to download the <a
@@ -1233,7 +1233,7 @@ the debug level is <code>release</code> and either the default identity
 or the specified identity is valid. If hardened isn't possible, then
 <code>debug</code> signing is chosen if it works. If nothing works, the
 codesign build step is disabled.</p>
-<h2 id="cross-compiling">Cross-compiling</h2>
+<h2 id="cross-compiling">Cross-Compiling</h2>
 <p>Cross-compiling means using one platform (the <em>build</em>
 platform) to generate output that can ran on another platform (the
 <em>target</em> platform).</p>
@@ -1399,7 +1399,7 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 contain the newly built JDK, for your <em>target</em> system.</p>
 <p>Copy these folders to your <em>target</em> system. Then you can run
 e.g. <code>images/jdk/bin/java -version</code>.</p>
-<h3 id="cross-compiling-the-easy-way">Cross compiling the easy way</h3>
+<h3 id="cross-compiling-the-easy-way">Cross-Compiling the Easy Way</h3>
 <p>Setting up a proper cross-compilation environment can be a lot of
 work. Fortunately there are ways that more or less automate this
 process. Here are two recommended methods, using the "devkits" that can
@@ -1409,7 +1409,7 @@ Linux distributions, the latter only on Debian and derivatives. Both
 solution only work for gcc.</p>
 <p>The devkit method is regularly used for testing by Oracle, and the
 debootstrap method is regularly used in GitHub Actions testing.</p>
-<h4 id="using-openjdk-devkits">Using OpenJDK devkits</h4>
+<h4 id="using-openjdk-devkits">Using OpenJDK Devkits</h4>
 <p>The JDK build system provides out-of-the box support for creating and
 using so called devkits. A <code>devkit</code> is basically a collection
 of a cross-compiling toolchain and a sysroot environment which can
@@ -1660,8 +1660,8 @@ are:</p>
 </tr>
 </tbody>
 </table>
-<h3 id="considerations-for-specific-targets">Considerations for specific
-targets</h3>
+<h3 id="considerations-for-specific-targets">Considerations for Specific
+Targets</h3>
 <h4 id="building-for-arm32">Building for ARM32</h4>
 <p>A common cross-compilation target is the ARM CPU. When building for
 ARM, it is recommended to set the ABI profile. A number of pre-defined
@@ -1772,7 +1772,7 @@ Studio). Normally, this speeds up the build process, but in some
 circumstances, it can actually slow things down.</p>
 <p>You can experiment by disabling pre-compiled headers using
 <code>--disable-precompiled-headers</code>.</p>
-<h3 id="icecc-icecream">Icecc / icecream</h3>
+<h3 id="icecc-icecream">Icecc / Icecream</h3>
 <p><a href="https://github.com/icecc/icecream">icecc/icecream</a> is a
 simple way to setup a distributed compiler network. If you have multiple
 machines available for building the JDK, you can drastically cut
@@ -1780,7 +1780,7 @@ individual build times by utilizing it.</p>
 <p>To use, setup an icecc network, and install icecc on the build
 machine. Then run <code>configure</code> using
 <code>--enable-icecc</code>.</p>
-<h3 id="using-the-javac-server">Using the javac server</h3>
+<h3 id="using-the-javac-server">Using the javac Server</h3>
 <p>To speed up compilation of Java code, especially during incremental
 compilations, the javac server is automatically enabled in the
 configuration step by default. To explicitly enable or disable the javac
@@ -2456,7 +2456,7 @@ must ask you to follow our rules and guidelines to be able to accept
 your contribution.</p>
 <p>The official place to start is the <a
 href="https://openjdk.org/guide/">OpenJDK Developers’ Guide</a>.</p>
-<h2 id="editing-this-document">Editing this document</h2>
+<h2 id="editing-this-document">Editing This Document</h2>
 <p>If you want to contribute changes to this document, edit
 <code>doc/building.md</code> and then run
 <code>make update-build-docs</code> to generate the same changes in
