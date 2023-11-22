@@ -112,7 +112,7 @@ PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
     CPUTimeCounters* instance = CPUTimeCounters::get_instance();
     PerfCounter* counter = instance->get_counter(_name);
-    jlong net_cpu_time = _gc_total - counter->get_value();
+    jlong net_cpu_time = _total - counter->get_value();
     counter->inc(net_cpu_time);
     if (CPUTimeGroups::is_gc_counter(_name)) {
       instance->inc_gc_total_cpu_time(net_cpu_time);
@@ -124,7 +124,7 @@ void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
     // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
     // must ensure the thread exists and has not terminated.
     assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _gc_total += os::thread_cpu_time(thread);
+    _total += os::thread_cpu_time(thread);
 }
 
 

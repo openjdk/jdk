@@ -94,12 +94,12 @@ public:
 // hsperfdata counter.
 class ThreadTotalCPUTimeClosure: public ThreadClosure {
  private:
-  jlong _gc_total;
+  jlong _total;
   CPUTimeGroups::CPUTimeType _name;
 
  public:
   ThreadTotalCPUTimeClosure(CPUTimeGroups::CPUTimeType name) :
-      _gc_total(0), _name(name) {}
+      _total(0), _name(name) {}
 
   ~ThreadTotalCPUTimeClosure();
 

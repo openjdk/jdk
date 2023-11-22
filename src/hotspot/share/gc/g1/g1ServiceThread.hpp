@@ -27,7 +27,6 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/perfData.hpp"
 
 class G1ServiceTaskQueue;
 class G1ServiceThread;

@@ -27,7 +27,6 @@
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
 
 class JavaThread;

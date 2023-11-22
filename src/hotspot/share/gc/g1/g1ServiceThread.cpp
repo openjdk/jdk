@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "logging/log.hpp"
 #include "runtime/cpuTimeCounters.hpp"

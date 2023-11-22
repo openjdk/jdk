@@ -35,7 +35,6 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"

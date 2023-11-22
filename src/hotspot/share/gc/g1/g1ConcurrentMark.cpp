@@ -68,7 +68,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"

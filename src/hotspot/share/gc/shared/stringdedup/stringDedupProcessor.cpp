@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -42,7 +41,6 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -67,10 +65,7 @@ StringDedup::Processor::Processor() : _thread(nullptr) {}
 
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    EXCEPTION_MARK;
-    CPUTimeCounters::get_instance()->create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
-  }
+  CPUTimeCounters::get_instance()->create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
 }
 
 void StringDedup::Processor::wait_for_requests() const {
