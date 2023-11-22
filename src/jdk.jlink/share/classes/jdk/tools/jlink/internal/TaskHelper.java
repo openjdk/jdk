@@ -46,10 +46,12 @@ import java.util.stream.Stream;
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
+import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
+import jdk.tools.jlink.internal.plugins.ExcludePlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
@@ -407,13 +409,37 @@ public final class TaskHelper {
         }
 
         private PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
-                                                      Platform targetPlatform)
+                                                      Platform targetPlatform, JlinkConfiguration config)
                 throws IOException, BadArgs {
             if (output != null) {
                 if (Files.exists(output)) {
                     throw new IllegalArgumentException(PluginsResourceBundle.
                             getMessage("err.dir.already.exits", output));
                 }
+            }
+
+            // if we perform a run-time based link, add the exclude resource plugin
+            // so as to exclude SystemModules$* classes as well as generated
+            // BoundMethodHandle$Species* classes.
+
+            if (!config.useModulePath()) {
+                System.out.println("Adding exclude resources for run-image link");
+                Plugin excludeResourcePlugin = null;
+                for (Plugin p: pluginToMaps.keySet()) {
+                    if (p instanceof ExcludePlugin) {
+                        excludeResourcePlugin = p;
+                        break;
+                    }
+                }
+                List<Map<String, String>> excludeResConfig = null;
+                if (excludeResourcePlugin == null) {
+                    excludeResourcePlugin = PluginRepository.getPlugin("exclude-resources", ModuleLayer.boot());
+                    excludeResConfig = new ArrayList<>();
+                    pluginToMaps.put(excludeResourcePlugin, excludeResConfig);
+                }
+                excludeResConfig = pluginToMaps.get(excludeResourcePlugin);
+                excludeResConfig.add(Map.of("exclude-resources", "glob:/java.base/jdk/internal/module/SystemModules$**.class"));
+                excludeResConfig.add(Map.of("exclude-resources", "regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class"));
             }
 
             List<Plugin> pluginsList = new ArrayList<>();
@@ -708,9 +734,9 @@ public final class TaskHelper {
     }
 
     public PluginsConfiguration getPluginsConfig(Path output, Map<String, String> launchers,
-                                                 Platform targetPlatform)
+                                                 Platform targetPlatform, JlinkConfiguration config)
             throws IOException, BadArgs {
-        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform);
+        return pluginOptions.getPluginsConfig(output, launchers, targetPlatform, config);
     }
 
     public void showVersion(boolean full) {

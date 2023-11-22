@@ -427,7 +427,7 @@ public class JlinkTask {
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
             taskHelper.getPluginsConfig(options.output, options.launchers,
-                    imageProvider.targetPlatform));
+                    imageProvider.targetPlatform, config));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
