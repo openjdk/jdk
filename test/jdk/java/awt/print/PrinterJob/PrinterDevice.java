@@ -26,7 +26,7 @@
  * @bug 4276227
  * @summary Checks that the PrinterGraphics is for a Printer GraphicsDevice.
  * Test doesn't run unless there's a printer on the system.
- * @author prr
+ * @key printer
  * @run main/othervm PrinterDevice
  */
 

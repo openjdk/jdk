@@ -25,6 +25,7 @@
  * @test
  * @bug 4509958
  * @summary Tests that the empty areas aren't drawn.
+ * @key printer
  * @run main EmptyFill
  */
 

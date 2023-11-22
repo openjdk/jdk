@@ -25,6 +25,7 @@
  * @test 1.1 01/05/17
  * @bug 4459889
  * @summary No NullPointerException should occur.
+ * @key printer
  * @run main RemoveListener
 */
 import javax.print.*;

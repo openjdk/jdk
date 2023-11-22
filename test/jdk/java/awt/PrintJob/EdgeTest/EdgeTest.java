@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4092755
+ * @key printer
  * @summary Verifies that (0, 0) is the upper-left corner of the page, not
  *          the upper-left corner adjusted for the margins.
  * @author dpm
