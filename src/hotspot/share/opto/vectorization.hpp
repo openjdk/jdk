@@ -134,7 +134,7 @@ public:
 #endif
 
   // Check if the loop passes some basic preconditions for vectorization.
-  // Overwrite previous data.Return indicates if analysis succeeded.
+  // Overwrite previous data. Return indicates if analysis succeeded.
   bool check_preconditions(IdealLoopTree* lpt, bool allow_cfg);
 
 protected:
@@ -555,7 +555,7 @@ public:
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
-  // Overwrite previous data.Return indicates if analysis succeeded.
+  // Overwrite previous data. Return indicates if analysis succeeded.
   bool analyze(IdealLoopTree* lpt,
                bool allow_cfg);
 
@@ -636,6 +636,7 @@ class VPointer : public StackObj {
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
+  NONCOPYABLE(VPointer);
 
  public:
   bool valid()  { return _adr != nullptr; }

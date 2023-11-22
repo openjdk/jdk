@@ -712,7 +712,6 @@ bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
 }
 
 const char* VLoop::check_preconditions_helper() {
-
   // Only accept vector width that is power of 2
   int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
   if (vector_width < 2 || !is_power_of_2(vector_width)) {
