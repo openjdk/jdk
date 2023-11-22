@@ -141,17 +141,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dumptime. We must weed out values
-  // we know will be invalid at runtime.
+  // We check user input for SharedBaseAddress at dump time. We must weed out values
+  // we already know to be invalid later.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
-  // be the encoding base, since the pre-computed narrow Klass IDs in the headers of
-  // archived objects refer to the mapping start as base.
+  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
+  // start as base.
   //
-  // Therefore, "shared_base" must be usable as encoding base. The only platform not
-  // accepting arbitrary immediates as encoding base is aarch64. Here, we require the
-  // base to be 32-bit aligned since such immediates can be used with 16-bit moves.
-  return AARCH64_ONLY(is_aligned(shared_base, nth_bit(32))) NOT_AARCH64(true);
+  // Therefore, "shared_base" must be later usable as encoding base.
+  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -250,7 +249,7 @@ static char* compute_shared_base(size_t cds_max) {
 }
 
 void MetaspaceShared::initialize_for_static_dump() {
-  assert(DumpSharedSpaces, "should be called for dump time only");
+  assert(CDSConfig::is_dumping_static_archive(), "sanity");
   log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
