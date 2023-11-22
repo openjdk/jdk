@@ -43,6 +43,6 @@ public class CC20P1305ByteBuffer extends ByteBufferBase {
 
     @Setup
     public void setup() throws Exception {
-        init("ChaCha20-Poly1305/None/NoPadding", 256);
+        init("ChaCha20-Poly1305/None/NoPadding", keyLength);
     }
 }

@@ -42,7 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 public abstract class BenchBase extends CryptoBase {
     // Defined by the test
     String algorithm;
-    int keyLength;
+    int keyLength = 256;
 
     // Default data sizes for full tests
     @Param({"1024", "1500", "4096", "16384"})

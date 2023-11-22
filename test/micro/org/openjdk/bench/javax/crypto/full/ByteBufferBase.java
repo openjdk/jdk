@@ -43,7 +43,7 @@ import java.nio.ByteBuffer;
 public abstract class ByteBufferBase extends CryptoBase {
     // Defined by the test
     String algorithm;
-    int keyLength;
+    int keyLength = 256;
 
     @Param({"1024", "1500", "4096", "16384"})
     int dataSize;
