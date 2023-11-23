@@ -7174,7 +7174,7 @@ instruct compareAndSwapP(rRegI res,
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8() && n->as_LoadStore()->barrier_data() == 0);
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -7197,7 +7197,6 @@ instruct compareAndSwapL(rRegI res,
                          rax_RegL oldval, rRegL newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -7358,7 +7357,6 @@ instruct compareAndExchangeL(
                          rax_RegL oldval, rRegL newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set oldval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
   effect(KILL cr);
 
@@ -7392,7 +7390,7 @@ instruct compareAndExchangeP(
                          rax_RegP oldval, rRegP newval,
                          rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8() && n->as_LoadStore()->barrier_data() == 0);
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (CompareAndExchangeP mem_ptr (Binary oldval newval)));
   effect(KILL cr);
 
