@@ -48,6 +48,7 @@ import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.plugins.AddOptionsPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
@@ -430,9 +431,22 @@ public final class TaskHelper {
                         break;
                     }
                 }
+                // Certain system module classes get generated and SystemModulesMap replaced by the
+                // SystemModulesPlugin. Filter previously generated classes so the
+                // set of classes match the set of the packaged modules link.
                 String systemModulesPattern = "regex:/java\\.base/jdk/internal/module/SystemModules\\$.*\\.class";
+                // The default OpenJDK build generates JLI Species classes so they
+                // would be in the run-time image we derive from if we don't filter
+                // them. This filter corresponds to the set of classes part of the
+                // jmods.
                 String speciesPattern = "regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class";
-                String additionalPatterns = systemModulesPattern + "," + speciesPattern;
+                // The AddResourcePlugin (used by AddOptionsPlugin)
+                String addOptionsGlob = "glob:" + AddOptionsPlugin.OPTS_FILE;
+                String saveJlinkOptsGlob = "glob:/jdk.jlink/" + JlinkTask.OPTIONS_RESOURCE;
+                String additionalPatterns = systemModulesPattern + "," +
+                                            speciesPattern + "," +
+                                            addOptionsGlob + "," +
+                                            saveJlinkOptsGlob;
                 List<Map<String, String>> excludeResConfig = null;
                 if (excludeResourcePlugin == null) {
                     // no existing 'exclude-resources' setting

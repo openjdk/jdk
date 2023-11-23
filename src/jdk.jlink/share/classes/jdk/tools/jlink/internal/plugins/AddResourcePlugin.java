@@ -27,6 +27,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.Function;
 
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -71,13 +72,7 @@ abstract class AddResourcePlugin extends AbstractPlugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
-        in.transformAndCopy(e -> {
-            if (path.equals(e.path())) {
-                // Overwrite potentially existing entry
-                return null;
-            }
-            return e;
-        }, out);
+        in.transformAndCopy(Function.identity(), out);
         out.add(ResourcePoolEntry.create(path,
                                          value.getBytes(StandardCharsets.UTF_8)));
         return out.build();

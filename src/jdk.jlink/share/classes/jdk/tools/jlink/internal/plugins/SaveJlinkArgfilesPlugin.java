@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.tools.jlink.plugin.PluginException;
@@ -92,31 +93,15 @@ public final class SaveJlinkArgfilesPlugin extends AbstractPlugin {
 
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
+        in.transformAndCopy(Function.identity(), out);
         if (!in.moduleView().findModule("jdk.jlink").isPresent()) {
             throw new PluginException("--save-jlink-argfiles requires jdk.jlink to be in the output image");
         }
-        final String jdkJlinkResource = "/jdk.jlink/" + OPTIONS_RESOURCE;
         byte[] savedOptions = argfiles.stream()
-                .collect(Collectors.joining("\n"))
-                .getBytes(StandardCharsets.UTF_8);
-        final ResourcePoolEntry jdkJlinkSavedEntry = ResourcePoolEntry.create("/jdk.jlink/" + OPTIONS_RESOURCE,
-                savedOptions);
-        final boolean[] haveEntry = new boolean[] { false };
-        in.transformAndCopy(e -> {
-            if (jdkJlinkResource.equals(e.path())) {
-                // override new options if present. The jmod-less plugin might
-                // have the resource already in the base image
-                haveEntry[0] = true;
-                return jdkJlinkSavedEntry;
-            } else {
-                return e;
-            }
-        }, out);
-        if (!haveEntry[0]) {
-            // Add the resource if and only if there isn't one already.
-            // If there was one already, we already replaced the entry.
-            out.add(jdkJlinkSavedEntry);
-        }
+                                      .collect(Collectors.joining("\n"))
+                                      .getBytes(StandardCharsets.UTF_8);
+        out.add(ResourcePoolEntry.create("/jdk.jlink/" + OPTIONS_RESOURCE,
+                                         savedOptions));
         return out.build();
     }
 }
