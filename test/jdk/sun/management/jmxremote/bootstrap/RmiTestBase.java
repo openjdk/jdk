@@ -141,7 +141,7 @@ public class RmiTestBase {
 
         grantFilesAccess(propertyFiles, AccessControl.OWNER);
 
-        return Collections.unmodifiableList(files);
+        return Collections.unmodifiableList(propertyFiles);
     }
 
     /**

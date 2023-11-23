@@ -58,7 +58,7 @@ import java.util.Set;
  *
  * @library /test/lib
  *
- * @run main/timeout=300 RmiBootstrapTest .*_test.*.in
+ * @run main/othervm/timeout=300 RmiBootstrapTest .*_test.*.in
  * */
 
 /*
@@ -69,7 +69,7 @@ import java.util.Set;
  *
  * @library /test/lib
  *
- * @run main/timeout=300 RmiBootstrapTest .*_ssltest.*.in
+ * @run main/othervm/timeout=300 RmiBootstrapTest .*_ssltest.*.in
  * */
 
 /**
