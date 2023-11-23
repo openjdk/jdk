@@ -46,9 +46,9 @@ public class MonitorWithDeadObjectDumpThreadsAfterDetachTest {
         MonitorWithDeadObjectHelper.createMonitorWithDeadObjectNoJoin();
 
         // After createMonitorWithDeadObjectNoJoin has been called, there's an
-        // "owned" monitor with a
-        // dead object. The thread dumping code didn't tolerate such a monitor,
-        // so run a thread dump and make sure that it doesn't crash/assert.
+        // "owned" monitor with a dead object. The thread dumping code used to
+        // not tolerate such a monitor and would assert. Run a thread dump
+        // and make sure that it doesn't crash/assert.
         dumpThreadsWithLockedMonitors();
 
         MonitorWithDeadObjectHelper.joinTestThread();
@@ -59,9 +59,9 @@ public class MonitorWithDeadObjectDumpThreadsAfterDetachTest {
         MonitorWithDeadObjectHelper.joinTestThread();
 
         // After createMonitorWithDeadObjectNoJoin has been called, there's an
-        // "owned" monitor with a
-        // dead object. The thread dumping code didn't tolerate such a monitor,
-        // so run a thread dump and make sure that it doesn't crash/assert.
+        // "owned" monitor with a dead object. The thread dumping code used to
+        // not tolerate such a monitor and would assert. Run a thread dump
+        // and make sure that it doesn't crash/assert.
         dumpThreadsWithLockedMonitors();
     }
 
