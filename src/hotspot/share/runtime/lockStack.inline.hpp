@@ -141,7 +141,10 @@ inline size_t LockStack::remove(oop o) {
   int inserted = 0;
   for (int i = 0; i < end; i++) {
     if (_base[i] != o) {
-      _base[inserted++] = _base[i];
+      if (inserted != i) {
+        _base[inserted] = _base[i];
+      }
+      inserted++;
     }
   }
 
