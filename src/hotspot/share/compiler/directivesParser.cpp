@@ -337,7 +337,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
         } else if (strncmp(option_key->name, "TraceAutovectorization", 22) == 0) {
-          TraceAutovectorizationTagValidator validator(s);
+          TraceAutovectorizationTagValidator validator(s, false);
 
           valid = validator.is_valid();
           if (valid) {

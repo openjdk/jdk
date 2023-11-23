@@ -63,16 +63,6 @@ static const char* tag_names[] = {
 #undef array_of_labels
 };
 
-class TraceAutovectorizationTagHelper {
-  public:
-  static const char* to_name(TraceAutovectorizationTag tat) {
-    return tag_names[tat];
-  }
-  static const char* to_description(TraceAutovectorizationTag tat) {
-    return tag_descriptions[tat];
-  }
-};
-
 static TraceAutovectorizationTag find_tag(const char* str) {
   for (int i = 0; i < TRACEAUTOVECTORIZATION_TAGS_NUM; i++) {
     if (strcmp(tag_names[i], str) == 0) {
@@ -128,15 +118,23 @@ class TraceAutovectorizationTagValidator {
   CHeapBitMap _tags;
   bool _valid;
   char* _bad;
+  bool _is_print_usage;
 
  public:
-  TraceAutovectorizationTagValidator(ccstrlist option) :
+  TraceAutovectorizationTagValidator(ccstrlist option, bool is_print_usage) :
     _tags(TRACEAUTOVECTORIZATION_TAGS_NUM, mtCompiler),
     _valid(true),
-    _bad(nullptr)
+    _bad(nullptr),
+    _is_print_usage(is_print_usage)
   {
     for (TraceAutovectorizationTagNameIter iter(option); *iter != nullptr && _valid; ++iter) {
       char const* tag_name = *iter;
+      if (strcmp("help", tag_name) == 0) {
+        if (_is_print_usage) {
+          print_help();
+        }
+        continue;
+      }
       bool set_bit = true;
       // Check for "TAG" or "-TAG"
       if (strncmp("-", tag_name, strlen("-")) == 0) {
@@ -145,9 +143,11 @@ class TraceAutovectorizationTagValidator {
       }
       TraceAutovectorizationTag tat = find_tag(tag_name);
       if (TRACEAUTOVECTORIZATION_TAGS_NONE == tat) {
-        const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
+        // cap len to a value we know is enough for all tags
+        const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nulls.
+        // strncpy always writes len characters. If the source string is
+        // shorter, the function fills the remaining bytes with nulls.
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (TAG_ALL == tat) {
@@ -182,6 +182,17 @@ class TraceAutovectorizationTagValidator {
   const CHeapBitMap& tags() const {
     assert(is_valid(), "only read tags when valid");
     return _tags;
+  }
+
+  static void print_help() {
+    tty->cr();
+    tty->print_cr("Usage for CompileCommand TraceAutoVectorization:");
+    tty->print_cr("  -XX:CompileCommand=TraceAutoVectorization,<package.class::method>,<tags>");
+    tty->print_cr("  %-22s %s", "tags", "descriptions");
+    for (int i = 0; i < TRACEAUTOVECTORIZATION_TAGS_NUM; i++) {
+      tty->print_cr("  %-22s %s", tag_names[i], tag_descriptions[i]);
+    }
+    tty->cr();
   }
 };
 

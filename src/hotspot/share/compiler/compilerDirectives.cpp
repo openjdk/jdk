@@ -439,7 +439,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       // Parse ccstr and create mask
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::TraceAutovectorization, option)) {
-        TraceAutovectorizationTagValidator validator(option);
+        TraceAutovectorizationTagValidator validator(option, false);
         if (validator.is_valid()) {
           set.cloned()->set_traceautovectorization_tags(validator.tags());
         }
