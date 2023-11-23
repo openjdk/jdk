@@ -345,7 +345,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           } else {
             error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutovectorization: %s", validator.what());
           }
-	} else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
+        } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           uint64_t mask = 0;
           PhaseNameValidator validator(s, mask);
 
