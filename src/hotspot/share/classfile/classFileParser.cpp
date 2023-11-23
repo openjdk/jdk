@@ -5576,6 +5576,7 @@ ClassFileParser::~ClassFileParser() {
   }
 
   if (_methods != nullptr) {
+    // Free methods
     InstanceKlass::deallocate_methods(_loader_data, _methods);
   }
 
