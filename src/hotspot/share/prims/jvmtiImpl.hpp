@@ -66,9 +66,9 @@ class JvmtiBreakpoints;
 class GrowableElement : public CHeapObj<mtInternal> {
 public:
   virtual ~GrowableElement() {}
-  virtual address getCacheValue()                =0;
-  virtual bool equals(const GrowableElement* e)  =0;
-  virtual GrowableElement *clone()               =0;
+  virtual address getCacheValue()                     =0;
+  virtual bool equals(const GrowableElement* e) const =0;
+  virtual GrowableElement* clone()                    =0;
 };
 
 class GrowableCache {
@@ -104,7 +104,7 @@ public:
   // get the value of the index element in the collection
   GrowableElement* at(int index);
   // find the index of the element, -1 if it doesn't exist
-  int find(GrowableElement* e);
+  int find(const GrowableElement* e) const;
   // append a copy of the element to the end of the collection, notify listener
   void append(GrowableElement* e);
   // remove the element at index, notify listener
@@ -165,7 +165,7 @@ public:
   JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
-  bool equals(JvmtiBreakpoint& bp);
+  bool equals(const JvmtiBreakpoint& bp) const;
   void copy(JvmtiBreakpoint& bp);
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
@@ -177,7 +177,7 @@ public:
 
   // GrowableElement implementation
   address getCacheValue()         { return getBcp(); }
-  bool equals(const GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
+  bool equals(const GrowableElement* e) const { return equals((const JvmtiBreakpoint&) *e); }
 
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();

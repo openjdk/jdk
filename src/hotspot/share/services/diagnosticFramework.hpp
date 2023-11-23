@@ -140,6 +140,7 @@ public:
   : _name(name), _description(description), _impact(impact), _permission(permission),
     _num_arguments(num_arguments), _is_enabled(enabled) {}
   const char* name() const          { return _name; }
+  bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
   const JavaPermission& permission() const { return _permission; }

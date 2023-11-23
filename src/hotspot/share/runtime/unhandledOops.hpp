@@ -53,6 +53,11 @@ class UnhandledOopEntry : public CHeapObj<mtThread> {
  private:
   oop* _oop_ptr;
   bool _ok_for_gc;
+
+  bool match_oop_entry(oop* op) const {
+    return _oop_ptr == op;
+  }
+
  public:
   oop* oop_ptr() { return _oop_ptr; }
   UnhandledOopEntry() : _oop_ptr(nullptr), _ok_for_gc(false) {}
