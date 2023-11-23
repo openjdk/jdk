@@ -51,7 +51,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
                 "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
-                "-XX:+SimulateFullAdressSpace", // So that no resevation attempt will succeed
+                "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

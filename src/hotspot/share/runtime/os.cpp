@@ -1810,7 +1810,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
-  char* result = SimulateFullAdressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
@@ -1986,7 +1986,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     const unsigned candidate_offset = points[i];
     char* const candidate = lo_att + candidate_offset * alignment_adjusted;
     assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = SimulateFullAdressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
     if (!result) {
       log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
     }
