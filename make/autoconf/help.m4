@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
     capstone)
       PKGHANDLER_COMMAND="sudo apt-get install libcapstone-dev" ;;
+    sleef)
+      PKGHANDLER_COMMAND="sudo apt-get install libsleef-dev" ;;
   esac
 }
 
@@ -161,6 +163,8 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXrandr-devel libXi-devel" ;;
     ccache)
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
+    sleef)
+      PKGHANDLER_COMMAND="sudo yum install sleef-devel" ;;
   esac
 }
 
