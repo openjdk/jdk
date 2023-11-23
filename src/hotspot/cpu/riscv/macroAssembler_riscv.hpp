@@ -820,7 +820,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(Rd, (int32_t)distance + 0x800);                                                        \
+      _auipc(Rd, (int32_t)distance + 0x800);                                                       \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -877,7 +877,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      _auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -938,7 +938,7 @@ public:
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      _auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -983,7 +983,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                      \
+      _auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -1062,28 +1062,18 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range;
-  }
-
-  // Emit a direct call/jump if the entry address will always be in range,
-  // otherwise a far call/jump.
+  // Emit a far call/jump. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr.
   // The address must be inside the code cache.
   // Supported entry.rspec():
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  // In the case of a far call/jump, the entry address is put in the tmp register.
-  // The tmp register is invalidated.
-  void far_call(Address entry, Register tmp = t0);
-  void far_jump(Address entry, Register tmp = t0);
+  void far_call(const Address &entry, Register tmp = t0);
+  void far_jump(const Address &entry, Register tmp = t0);
 
   static int far_branch_size() {
-    if (far_branches()) {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
-    } else {
-      return 4;
-    }
   }
 
   void load_byte_map_base(Register reg);
@@ -1095,7 +1085,7 @@ public:
     sd(zr, Address(t0));
   }
 
-  void la_patchable(Register reg1, const Address &dest, int32_t &offset);
+  void auipc(Register reg, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
     mv(t1, call_site);
@@ -1430,6 +1420,8 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {
@@ -1469,7 +1461,7 @@ private:
       InternalAddress target(const_addr.target());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        la_patchable(dest, target, offset);
+        auipc(dest, target, offset);
         ld(dest, Address(dest, offset));
       });
     }

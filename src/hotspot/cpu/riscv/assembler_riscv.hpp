@@ -908,7 +908,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   }
 
   INSN(_lui,  0b0110111);
-  INSN(auipc, 0b0010111);
+  INSN(_auipc, 0b0010111);
 
 #undef INSN
 
