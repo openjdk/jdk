@@ -5576,8 +5576,7 @@ ClassFileParser::~ClassFileParser() {
   }
 
   if (_methods != nullptr) {
-    // Free methods - those methods are not fully wired and miss the method holder
-    InstanceKlass::deallocate_methods(_loader_data, _methods, false);
+    InstanceKlass::deallocate_methods(_loader_data, _methods);
   }
 
   // beware of the Universe::empty_blah_array!!

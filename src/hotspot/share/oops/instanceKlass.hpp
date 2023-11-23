@@ -992,8 +992,7 @@ public:
   // instanceKlasses and the metadata they point to.
   void deallocate_contents(ClassLoaderData* loader_data);
   static void deallocate_methods(ClassLoaderData* loader_data,
-                                 Array<Method*>* methods,
-                                 bool with_method_holders = true);
+                                 Array<Method*>* methods);
   void static deallocate_interfaces(ClassLoaderData* loader_data,
                                     const Klass* super_klass,
                                     Array<InstanceKlass*>* local_interfaces,
