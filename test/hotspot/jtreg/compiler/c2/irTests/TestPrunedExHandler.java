@@ -142,4 +142,61 @@ public class TestPrunedExHandler {
         }
     }
 
+    @Test
+    @IR(counts = {IRNode.UNREACHED_TRAP, "1"})
+    public static void testThrowBeforeProfiling(boolean shouldThrow) {
+        try {
+            outOfLine(shouldThrow);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Run(test = "testThrowBeforeProfiling", mode = RunMode.STANDALONE)
+    public static void runThrowBeforeProfiling(RunInfo info) {
+        testThrowBeforeProfiling(true);
+        // this exception should not be profiled, as MDO has not been created yet
+
+        for (int i = 0; i < 20_000; i++) { // tier 4
+            testThrowBeforeProfiling(false);
+        }
+        // should have trap
+    }
+
+    @Test
+    @IR(counts = {IRNode.UNREACHED_TRAP, "0"})
+    public static void testInterpreterProfiling(boolean takeBranch, boolean shouldThrow) {
+        if (takeBranch) {
+            System.out.println("testInterpreterProfiling: branch taken");
+        }
+
+        try {
+            outOfLine(shouldThrow);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Run(test = "testInterpreterProfiling", mode = RunMode.STANDALONE)
+    public static void runInterpreterProfiling(RunInfo info) {
+        for (int i = 0; i < 20_000; i++) { // tier 4
+            testInterpreterProfiling(false, false);
+        }
+        TestFramework.assertCompiledByC2(info.getTest());
+        // should have no trap at this point
+
+        testInterpreterProfiling(true, false); // take branch -> deopt due to unstable if
+        TestFramework.assertDeoptimizedByC2(info.getTest());
+
+        // continue in the interpreter:
+        testInterpreterProfiling(false, false);
+        // throw exception in the interpreter, test interpreter profiling:
+        testInterpreterProfiling(false, true);
+
+        for (int i = 0; i < 20_000; i++) { // tier 4 again
+            testInterpreterProfiling(false, false);
+        }
+        // should have no trap
+    }
+
 }
