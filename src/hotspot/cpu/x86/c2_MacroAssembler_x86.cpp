@@ -1095,7 +1095,7 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   bool is_double_word = is_double_word_type(elem_bt);
 
   /* Note on 'non-obvious' assembly sequence:
-   * 
+   *
    * While there are vminps/vmaxps instructions, there are two important differences between hardware
    * and Java on how they handle floats:
    *  a. -0.0 and +0.0 are considered equal (vminps/vmaxps will return second parameter when inputs are equal)
