@@ -6610,8 +6610,8 @@ void MacroAssembler::poly1305_field_multiply(LambdaAccumulator &acc,
 void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
                                            const FloatRegister u[],
                                            const FloatRegister s[],
-                                           const FloatRegister r[], const FloatRegister rr[]) {
-
+                                           const FloatRegister r[],
+                                           const FloatRegister rr[]) {
   // Five limbs of r and rr (5·r) are packed as 32-bit integers into
   // two 128-bit vectors.
 
@@ -6673,6 +6673,15 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u4[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u4[3]");
   };
+}
+
+void MacroAssembler::poly1305_field_multiply
+  (LambdaAccumulator &acc,
+   const FloatRegister u[],
+   const FloatRegister s[],
+   const FloatRegister r[],
+   const FloatRegister rr[],
+   AbstractRegSet<FloatRegister> scratch) {
 }
 
 void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {

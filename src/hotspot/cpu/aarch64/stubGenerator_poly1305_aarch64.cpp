@@ -27,23 +27,23 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
-template <typename T>
+template <typename RegType>
 class Regs {
 public:
-  T _regs[5];
-  Regs(RegSetIterator<T> &it, int n) {
+  RegType _regs[5];
+  Regs(RegSetIterator<RegType> &it, int n) {
     for (int i = 0; i < n; i++) {
       _regs[i] = *it++;
     }
   }
-  Regs(T R0, T R1, T R2) {
+  Regs(RegType R0, RegType R1, RegType R2) {
     _regs[0] = R0, _regs[1] = R1, _regs[2] = R2;
   }
 
-  T operator[](int n) { return _regs[n]; }
-  T *operator *() { return _regs; }
+  RegType operator[](int n) { return _regs[n]; }
+  RegType *operator *() { return _regs; }
 
-  operator T*() { return _regs; }
+  operator RegType*() { return _regs; }
 };
 
 class RegPairs {
@@ -94,36 +94,59 @@ address generate_poly1305_processBlocks2() {
   // Un is the current checksum
   RegPairs u0(regs, 3), u1(regs, 3);
 
-  // Load the initial state
-  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
-
   Register RR2 = *regs++;
   __ lsl(RR2, R[2], 26);
   __ add(RR2, RR2, RR2, __ LSL, 2);
 
+  int BLOCKS_PER_ITERATION = 6;
+
   // Just one block?
   Label SMALL;
-  __ subs(zr, length, POLY1305_BLOCK_LENGTH * 8);
-  __ br(__ LE, SMALL);
-
-  // We're going to use R**4
   {
+    Label LARGE;
+    __ subs(zr, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+    __ br(__ GT, LARGE);
+
+    // Load the initial state
+    __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+    __ b(SMALL);
+
+    __ bind(LARGE);
+  }
+
+  __ m_print52(R[2], R[1], R[0], "\n\nR\n");
+
+  // We're going to use R**6
+  {
+    CoreRegs u0_lo(u0[0]._lo, u0[1]._lo, u0[2]._lo);
     CoreRegs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
     poo = __ pc();
 
+    __ poly1305_field_multiply(u0, R, R, RR2, regs);
+    // u0_lo = R**2
+
+    __ m_print52(u0_lo[2], u0_lo[1], u0_lo[0], "\n\nR**2\n");
+
+    __ poly1305_field_multiply(u1, u0_lo, R, RR2, regs);
+    // u1_lo = R**3
+
+    __ copy_3_regs(R, u1_lo);
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
     __ poly1305_field_multiply(u1, R, R, RR2, regs);
+    //u1_lo = R**6
     __ copy_3_regs(R, u1_lo);
 
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
-    __ poly1305_field_multiply(u1, R, R, RR2, regs);
-    __ copy_3_regs(R, u1_lo);
-
-    __ lsl(RR2, R[2], 26);
-    __ add(RR2, RR2, RR2, __ LSL, 2);
+    __ m_print52(R[2], R[1], R[0], "\n\nR**6\n");
   }
+
+  // Load the initial state
+  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
 
   // u0 contains the initial state. Clear the others.
   for (int i = 0; i < 3; i++) {
@@ -154,17 +177,18 @@ address generate_poly1305_processBlocks2() {
 
   for (int i = 0; i < 5; i++) {
     __ movi(v_u0[i], __ T16B, 0);
+    __ movi(v_u1[i], __ T16B, 0);
   }
 
   __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
   __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
   __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
   __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
+  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "v[4]");
+  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "v[5]");
 
   {
     Label DONE, LOOP;
-
-    int BLOCKS_PER_ITERATION = 4;
 
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
     __ br(Assembler::LT, DONE);
@@ -185,12 +209,12 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
       __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
-      __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), v_s0, r_v, rr_v);
+      __ poly1305_multiply_vec(gen[2], v_u0, v_s0, r_v, rr_v);
       __ poly1305_reduce_vec(gen[2], v_u0, zero, vregs.remaining());
 
-      // __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
-      // __ poly1305_multiply_vec(gen[3], v_u1, vregs.remaining(), v_s1, r_v, rr_v);
-      // __ poly1305_reduce_vec(gen[3], v_u1, zero, vregs.remaining());
+      __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
+      __ poly1305_multiply_vec(gen[3], v_u1, v_s1, r_v, rr_v);
+      __ poly1305_reduce_vec(gen[3], v_u1, zero, vregs.remaining());
 
       LambdaAccumulator::Iterator it[COLS];
       int len[COLS];
@@ -227,6 +251,8 @@ address generate_poly1305_processBlocks2() {
       __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
       __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "u[2]");
       __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "u[3]");
+      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "u[4]");
+      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "u[5]");
 
       for (int col = 0; col < COLS; col++) {
         assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
@@ -240,7 +266,7 @@ address generate_poly1305_processBlocks2() {
     __ bind(DONE);
   }
 
-  // Last four parallel blocks
+  // Last six parallel blocks
   {
     // Load R**1
     __ pack_26(R[0], R[1], R[2], r_start);
@@ -268,7 +294,19 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_add(S0, u1);
     __ poly1305_field_multiply(u0, S0, R, RR2, regs);
 
-    __ subw(length, length, POLY1305_BLOCK_LENGTH * 4);
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u1, 0, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u1, 1, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
   }
 
   // Maybe some last blocks

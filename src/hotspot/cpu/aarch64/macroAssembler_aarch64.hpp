@@ -1731,9 +1731,11 @@ public:
                          Register RR2, RegSetIterator<Register> scratch);
   // Multiply mod 2**130-5
   void poly1305_field_multiply(LambdaAccumulator &acc,
-                         const RegPair u[], const Register s[], const Register r[],
-                         Register RR2, RegSetIterator<Register> scratch);
-  void poly1305_field_multiply(const RegPair u[], const Register s[], const Register r[],
+                               const RegPair u[], const Register s[],
+                               const Register r[],
+                               Register RR2, RegSetIterator<Register> scratch);
+  void poly1305_field_multiply(const RegPair u[], const Register s[],
+                               const Register r[],
                                Register RR2, RegSetIterator<Register> scratch) {
     LambdaAccumulator acc;
     poly1305_field_multiply(acc, u, s, r, RR2, scratch);
@@ -1766,9 +1768,17 @@ public:
                            const FloatRegister r_v[],
                            const FloatRegister rr_v[]);
   void poly1305_reduce_vec(LambdaAccumulator &acc,
-                           const FloatRegister u[], const FloatRegister upper_bits,
+                           const FloatRegister u[],
+                           const FloatRegister upper_bits,
                            AbstractRegSet<FloatRegister> scratch);
-  void poly1305_load(LambdaAccumulator &acc, const Register s[], const Register input_start);
+  void poly1305_field_multiply (LambdaAccumulator &acc,
+                                const FloatRegister u[],
+                                const FloatRegister s[],
+                                const FloatRegister r[],
+                                const FloatRegister rr[],
+                                AbstractRegSet<FloatRegister> scratch);
+  void poly1305_load(LambdaAccumulator &acc, const Register s[],
+                     const Register input_start);
   void poly1305_load(const Register s[], const Register input_start) {
     LambdaAccumulator acc;
     poly1305_load(acc, s, input_start);
