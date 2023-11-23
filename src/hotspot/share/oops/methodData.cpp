@@ -967,8 +967,8 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   }
 
   if (ProfileExceptionHandlers && method()->has_exception_handler()) {
-    int num_ex_handlers = method()->exception_table_length();
-    object_size += num_ex_handlers * single_ex_handler_data_size();
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
   }
 
   return object_size;
@@ -1292,14 +1292,14 @@ void MethodData::initialize() {
     _parameters_type_data_di = no_parameters;
   }
 
-  _ex_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+  _exception_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
   if (ProfileExceptionHandlers && method()->has_exception_handler()) {
-    int num_ex_handlers = method()->exception_table_length();
-    object_size += num_ex_handlers * single_ex_handler_data_size();
-    ExceptionTableElement* ex_handlers = method()->exception_table_start();
-    for (int i = 0; i < num_ex_handlers; i++) {
-      DataLayout *dp = ex_handler_data_at(i);
-      dp->initialize(DataLayout::bit_data_tag, ex_handlers[i].handler_pc, single_ex_handler_data_cell_count());
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+    ExceptionTableElement* exception_handlers = method()->exception_table_start();
+    for (int i = 0; i < num_exception_handlers; i++) {
+      DataLayout *dp = exception_handler_data_at(i);
+      dp->initialize(DataLayout::bit_data_tag, exception_handlers[i].handler_pc, single_exception_handler_data_cell_count());
     }
   }
 
@@ -1397,24 +1397,24 @@ ProfileData* MethodData::bci_to_data(int bci) {
   return bci_to_extra_data(bci, nullptr, false);
 }
 
-DataLayout* MethodData::ex_handler_bci_to_data_helper(int bci) {
+DataLayout* MethodData::exception_handler_bci_to_data_helper(int bci) {
   assert(ProfileExceptionHandlers, "not profiling");
-  for (int i = 0; i < num_ex_handler_data(); i++) {
-    DataLayout* ex_handler_data = ex_handler_data_at(i);
-    if (ex_handler_data->bci() == bci) {
-      return ex_handler_data;
+  for (int i = 0; i < num_exception_handler_data(); i++) {
+    DataLayout* exception_handler_data = exception_handler_data_at(i);
+    if (exception_handler_data->bci() == bci) {
+      return exception_handler_data;
     }
   }
   return nullptr;
 }
 
-BitData* MethodData::ex_handler_bci_to_data_or_null(int bci) {
-  DataLayout* data = ex_handler_bci_to_data_helper(bci);
+BitData* MethodData::exception_handler_bci_to_data_or_null(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
   return data != nullptr ? new BitData(data) : nullptr;
 }
 
-BitData MethodData::ex_handler_bci_to_data(int bci) {
-  DataLayout* data = ex_handler_bci_to_data_helper(bci);
+BitData MethodData::exception_handler_bci_to_data(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
   assert(data != nullptr, "invalid bci");
   return BitData(data);
 }

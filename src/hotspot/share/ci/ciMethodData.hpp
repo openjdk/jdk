@@ -381,7 +381,7 @@ private:
 
   // layout of _data
   int _parameters_data_offset;
-  int _ex_handlers_data_offset;
+  int _exception_handlers_data_offset;
 
   // Cached hint for data_layout_before()
   int _hint_di;
@@ -412,8 +412,8 @@ private:
   // Accessors
   int data_size() const { return _data_size; }
   int extra_data_size() const { return _extra_data_size; }
-  int parameter_data_size() const { return _ex_handlers_data_offset - _parameters_data_offset; }
-  int ex_handler_data_size() const { return dp_to_di((address) ex_handler_data_limit()) - _ex_handlers_data_offset; }
+  int parameter_data_size() const { return _exception_handlers_data_offset - _parameters_data_offset; }
+  int exception_handler_data_size() const { return dp_to_di((address) exception_handler_data_limit()) - _exception_handlers_data_offset; }
   intptr_t * data() const { return _data; }
 
   MethodData* get_MethodData() const {
@@ -529,15 +529,15 @@ public:
   // pointers to sections in extra data
   DataLayout* args_data_limit() const  { return parameters_data_base(); }
   DataLayout* parameters_data_base() const { return data_layout_at(_parameters_data_offset); }
-  DataLayout* parameters_data_limit() const { return ex_handler_data_base(); }
-  DataLayout* ex_handler_data_base() const { return data_layout_at(_ex_handlers_data_offset); }
-  DataLayout* ex_handler_data_limit() const { return extra_data_limit(); }
+  DataLayout* parameters_data_limit() const { return exception_handler_data_base(); }
+  DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handlers_data_offset); }
+  DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
 
   // Get the data at an arbitrary bci, or null if there is none. If m
   // is not null look for a SpeculativeTrapData if any first.
   ciProfileData* bci_to_data(int bci, ciMethod* m = nullptr);
 
-  ciBitData ex_handler_bci_to_data(int bci);
+  ciBitData exception_handler_bci_to_data(int bci);
 
   uint overflow_trap_count() const {
     return _orig.overflow_trap_count();

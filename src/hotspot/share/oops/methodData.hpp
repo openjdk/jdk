@@ -492,10 +492,10 @@ protected:
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
       null_seen_flag              = DataLayout::first_flag + 0,
-      ex_handler_entered_flag     = null_seen_flag + 1
+      exception_handler_entered_flag     = null_seen_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = ex_handler_entered_flag + 1
+    , exception_seen_flag         = exception_handler_entered_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -527,8 +527,8 @@ public:
 #endif
 
   // true if a ex handler block at this bci was entered
-  bool ex_handler_entered() { return flag_at(ex_handler_entered_flag); }
-  void set_ex_handler_entered() { set_flag_at(ex_handler_entered_flag); }
+  bool exception_handler_entered() { return flag_at(exception_handler_entered_flag); }
+  void set_exception_handler_entered() { set_flag_at(exception_handler_entered_flag); }
 
   // Code generation support
   static u1 null_seen_byte_constant() {
@@ -2069,7 +2069,7 @@ private:
   int _parameters_type_data_di;
 
   // data index of exception handler profiling data
-  int _ex_handler_data_di;
+  int _exception_handler_data_di;
 
   // Beginning of the data entries
   // See comment in ciMethodData::load_data
@@ -2087,20 +2087,20 @@ private:
     return (DataLayout*) (((address)_data) + data_index);
   }
 
-  static int single_ex_handler_data_cell_count() {
+  static int single_exception_handler_data_cell_count() {
     return BitData::static_cell_count();
   }
 
-  static int single_ex_handler_data_size() {
-    return DataLayout::compute_size_in_bytes(single_ex_handler_data_cell_count());
+  static int single_exception_handler_data_size() {
+    return DataLayout::compute_size_in_bytes(single_exception_handler_data_cell_count());
   }
 
-  DataLayout* ex_handler_data_at(int ex_handler_index) const {
-    return data_layout_at(_ex_handler_data_di + (ex_handler_index * single_ex_handler_data_size()));
+  DataLayout* exception_handler_data_at(int exception_handler_index) const {
+    return data_layout_at(_exception_handler_data_di + (exception_handler_index * single_exception_handler_data_size()));
   }
 
-  int num_ex_handler_data() const {
-    return ex_handlers_data_size() / single_ex_handler_data_size();
+  int num_exception_handler_data() const {
+    return exception_handlers_data_size() / single_exception_handler_data_size();
   }
 
   // Initialize an individual data segment.  Returns the size of
@@ -2168,7 +2168,7 @@ private:
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
 
-  DataLayout* ex_handler_bci_to_data_helper(int bci);
+  DataLayout* exception_handler_bci_to_data_helper(int bci);
 
 public:
   void clean_extra_data(CleanExtraDataClosure* cl);
@@ -2309,8 +2309,8 @@ public:
     return pointer_delta_as_int((address) parameters_data_limit(), (address) parameters_data_base());
   }
 
-  int ex_handlers_data_size() const {
-    return pointer_delta_as_int((address) ex_handler_data_limit(), (address) ex_handler_data_base());
+  int exception_handlers_data_size() const {
+    return pointer_delta_as_int((address) exception_handler_data_limit(), (address) exception_handler_data_base());
   }
 
   // Accessors
@@ -2363,8 +2363,8 @@ public:
     return bci_to_extra_data(bci, nullptr, true);
   }
 
-  BitData* ex_handler_bci_to_data_or_null(int bci);
-  BitData ex_handler_bci_to_data(int bci);
+  BitData* exception_handler_bci_to_data_or_null(int bci);
+  BitData exception_handler_bci_to_data(int bci);
 
   // Add a handful of extra data records, for trap tracking.
   // Only valid after 'set_size' is called at the end of MethodData::initialize
@@ -2378,10 +2378,10 @@ public:
   }
   DataLayout* parameters_data_limit() const {
     assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
-    return ex_handler_data_base();
+    return exception_handler_data_base();
   }
-  DataLayout* ex_handler_data_base() const { return data_layout_at(_ex_handler_data_di); }
-  DataLayout* ex_handler_data_limit() const { return extra_data_limit(); }
+  DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handler_data_di); }
+  DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
 
   int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
   static DataLayout* next_extra(DataLayout* dp);
@@ -2431,11 +2431,11 @@ public:
 
   int parameters_type_data_di() const {
     assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
-    return _parameters_type_data_di != no_parameters ? _parameters_type_data_di : ex_handlers_data_di();
+    return _parameters_type_data_di != no_parameters ? _parameters_type_data_di : exception_handlers_data_di();
   }
 
-  int ex_handlers_data_di() const {
-    return _ex_handler_data_di;
+  int exception_handlers_data_di() const {
+    return _exception_handler_data_di;
   }
 
   // Support for code generation

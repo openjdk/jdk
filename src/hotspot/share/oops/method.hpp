@@ -309,7 +309,7 @@ class Method : public Metadata {
   }
 
   // mark an exception handler as entered (used to prune dead catch blocks in C2)
-  void set_ex_handler_entered(int handler_bci);
+  void set_exception_handler_entered(int handler_bci);
 
   MethodCounters* method_counters() const {
     return _method_counters;

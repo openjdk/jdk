@@ -648,12 +648,12 @@ bool Method::init_method_counters(MethodCounters* counters) {
   return Atomic::replace_if_null(&_method_counters, counters);
 }
 
-void Method::set_ex_handler_entered(int handler_bci) {
+void Method::set_exception_handler_entered(int handler_bci) {
   if (ProfileExceptionHandlers) {
     MethodData* mdo = method_data();
     if (mdo != nullptr) {
-      BitData handler_data = mdo->ex_handler_bci_to_data(handler_bci);
-      handler_data.set_ex_handler_entered();
+      BitData handler_data = mdo->exception_handler_bci_to_data(handler_bci);
+      handler_data.set_exception_handler_entered();
     }
   }
 }

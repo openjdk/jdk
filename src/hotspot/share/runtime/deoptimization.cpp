@@ -2445,13 +2445,13 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     }
 
     if (ProfileExceptionHandlers && trap_mdo != nullptr) {
-      BitData* ex_handler_data = trap_mdo->ex_handler_bci_to_data_or_null(trap_bci);
-      if (ex_handler_data != nullptr) {
+      BitData* exception_handler_data = trap_mdo->exception_handler_bci_to_data_or_null(trap_bci);
+      if (exception_handler_data != nullptr) {
         // uncommon trap at the start of an exception handler.
         // C2 generates these for un-entered exception handlers.
         // mark the handler as entered to avoid generating
         // another uncommon trap the next time the handler is compiled
-        ex_handler_data->set_ex_handler_entered();
+        exception_handler_data->set_exception_handler_entered();
       }
     }
 

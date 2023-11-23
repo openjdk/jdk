@@ -43,7 +43,7 @@ ciMethodData::ciMethodData(MethodData* md)
 : ciMetadata(md),
   _data_size(0), _extra_data_size(0), _data(nullptr),
   _parameters_data_offset(0),
-  _ex_handlers_data_offset(0),
+  _exception_handlers_data_offset(0),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di(first_di()),
@@ -142,9 +142,9 @@ void ciMethodData::load_remaining_extra_data() {
   // skip parameter data copying. Already done in 'load_data'
 
   // copy exception handler data
-  Copy::disjoint_words_atomic((HeapWord*) mdo->ex_handler_data_base(),
-                              (HeapWord*) ex_handler_data_base(),
-                              ex_handler_data_size() / HeapWordSize);
+  Copy::disjoint_words_atomic((HeapWord*) mdo->exception_handler_data_base(),
+                              (HeapWord*) exception_handler_data_base(),
+                              exception_handler_data_size() / HeapWordSize);
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
@@ -213,7 +213,7 @@ bool ciMethodData::load_data() {
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
   // args_data_limit = param_data_base
-  // param_data_limit = ex_handler_data_base
+  // param_data_limit = exception_handler_data_base
   // extra_data_limit = extra_data_limit
 
 #ifndef ZERO
@@ -234,7 +234,7 @@ bool ciMethodData::load_data() {
                               _data_size / HeapWordSize);
   // Copy offsets. This is used below
   _parameters_data_offset = mdo->parameters_type_data_di();
-  _ex_handlers_data_offset = mdo->ex_handlers_data_di();
+  _exception_handlers_data_offset = mdo->exception_handlers_data_di();
 
   int parameters_data_size = mdo->parameters_size_in_bytes();
   if (parameters_data_size > 0) {
@@ -259,7 +259,7 @@ bool ciMethodData::load_data() {
     parameters->translate_from(mdo->parameters_type_data());
   }
 
-  assert((DataLayout*) ((address)_data + total_size - parameters_data_size - ex_handler_data_size()) == args_data_limit(),
+  assert((DataLayout*) ((address)_data + total_size - parameters_data_size - exception_handler_data_size()) == args_data_limit(),
       "sanity - parameter data starts after the argument data of the single ArgInfoData entry");
   load_remaining_extra_data();
 
@@ -463,10 +463,10 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
   return nullptr;
 }
 
-ciBitData ciMethodData::ex_handler_bci_to_data(int bci) {
+ciBitData ciMethodData::exception_handler_bci_to_data(int bci) {
   assert(ProfileExceptionHandlers, "not profiling");
   assert(_data != nullptr, "must be initialized");
-  for (DataLayout* data = ex_handler_data_base(); data < ex_handler_data_limit(); data = next_extra_data_layout(data)) {
+  for (DataLayout* data = exception_handler_data_base(); data < exception_handler_data_limit(); data = next_extra_data_layout(data)) {
     assert(data != nullptr, "out of bounds?");
     if (data->bci() == bci) {
       return ciBitData(data);
