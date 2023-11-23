@@ -423,7 +423,6 @@ public final class TaskHelper {
             // BoundMethodHandle$Species* classes.
 
             if (!config.useModulePath()) {
-                System.out.println("Adding exclude resources for run-image link");
                 Plugin excludeResourcePlugin = null;
                 for (Plugin p: pluginToMaps.keySet()) {
                     if (p instanceof ExcludePlugin) {
@@ -431,15 +430,24 @@ public final class TaskHelper {
                         break;
                     }
                 }
+                String systemModulesPattern = "regex:/java\\.base/jdk/internal/module/SystemModules\\$.*\\.class";
+                String speciesPattern = "regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class";
+                String additionalPatterns = systemModulesPattern + "," + speciesPattern;
                 List<Map<String, String>> excludeResConfig = null;
                 if (excludeResourcePlugin == null) {
+                    // no existing 'exclude-resources' setting
                     excludeResourcePlugin = PluginRepository.getPlugin("exclude-resources", ModuleLayer.boot());
                     excludeResConfig = new ArrayList<>();
+                    excludeResConfig.add(Map.of("exclude-resources", additionalPatterns));
                     pluginToMaps.put(excludeResourcePlugin, excludeResConfig);
+                } else {
+                    excludeResConfig = pluginToMaps.get(excludeResourcePlugin);
+                    // currently last exclude-resources wins
+                    Map<String, String> lastConfig = excludeResConfig.get(excludeResConfig.size() - 1);
+                    String existingPattern = lastConfig.get("exclude-resources");
+                    lastConfig.put("exclude-resources", existingPattern + "," + additionalPatterns);
+                    excludeResConfig.set(excludeResConfig.size() - 1, lastConfig);
                 }
-                excludeResConfig = pluginToMaps.get(excludeResourcePlugin);
-                excludeResConfig.add(Map.of("exclude-resources", "glob:/java.base/jdk/internal/module/SystemModules$**.class"));
-                excludeResConfig.add(Map.of("exclude-resources", "regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class"));
             }
 
             List<Plugin> pluginsList = new ArrayList<>();
