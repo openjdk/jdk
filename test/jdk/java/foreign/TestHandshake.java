@@ -105,6 +105,7 @@ public class TestHandshake {
                     if (!failed.get()) {
                         // ignore - this means segment was alive, but was closed while we were accessing it
                         // next isAlive test should fail
+                        assertFalse(segment.scope().isAlive());
                         failed.set(true);
                     } else {
                         // rethrow!
