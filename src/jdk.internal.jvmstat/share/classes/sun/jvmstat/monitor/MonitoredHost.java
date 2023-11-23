@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.jvmstat.monitor.event.HostListener;
  * @see HostListener
  */
 public abstract class MonitoredHost {
-    private static Map<HostIdentifier, MonitoredHost> monitoredHosts =
+    private static final Map<HostIdentifier, MonitoredHost> monitoredHosts =
                 new HashMap<HostIdentifier, MonitoredHost>();
 
     /*
@@ -137,7 +137,9 @@ public abstract class MonitoredHost {
     /*
      * Load the MonitoredHostServices
      */
-    private static ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
+    // not thread safe, access MUST be guarded through synchronization on "monitoredHosts"
+    // field
+    private static final ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
         ServiceLoader.load(MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
 
     /**
@@ -155,32 +157,51 @@ public abstract class MonitoredHost {
         MonitoredHost mh = null;
 
         synchronized(monitoredHosts) {
-            mh = monitoredHosts.get(hostId);
+            mh = getCachedMonitoredHost(hostId);
             if (mh != null) {
-                if (mh.isErrored()) {
-                    monitoredHosts.remove(hostId);
-                } else {
-                    return mh;
-                }
+                return mh;
             }
         }
 
         hostId = resolveHostId(hostId);
 
-        for (MonitoredHostService mhs : monitoredHostServiceLoader) {
-            if (mhs.getScheme().equals(hostId.getScheme())) {
-                mh = mhs.getMonitoredHost(hostId);
-            }
-        }
-
-        if (mh == null) {
-            throw new IllegalArgumentException("Could not find MonitoredHost for scheme: " + hostId.getScheme());
-        }
-
         synchronized(monitoredHosts) {
+            // re-check the internal cache before attempting to find a Service
+            // capable of returning a MonitoredHost from this HostIdentifier
+            mh = getCachedMonitoredHost(hostId);
+            if (mh != null) {
+                return mh;
+            }
+            for (MonitoredHostService mhs : monitoredHostServiceLoader) {
+                if (mhs.getScheme().equals(hostId.getScheme())) {
+                    mh = mhs.getMonitoredHost(hostId);
+                    break;
+                }
+            }
+            if (mh == null) {
+                throw new IllegalArgumentException("Could not find MonitoredHost for scheme: " + hostId.getScheme());
+            }
+            // add it to the internal cache
             monitoredHosts.put(mh.hostId, mh);
         }
 
+        return mh;
+    }
+
+    // from an internal cache returns a MonitoredHost, if present, for the HostIdentifier.
+    // Else returns null. The thread calling this method must hold the monitor lock on
+    // "monitoredHosts" field
+    private static MonitoredHost getCachedMonitoredHost(final HostIdentifier hostId) {
+        assert Thread.holdsLock(monitoredHosts) : "called without holding a lock";
+        MonitoredHost mh = monitoredHosts.get(hostId);
+        if (mh == null) {
+            return null;
+        }
+        // remove any errored MonitorHost from the cache
+        if (mh.isErrored()) {
+            monitoredHosts.remove(hostId);
+            return null;
+        }
         return mh;
     }
 
