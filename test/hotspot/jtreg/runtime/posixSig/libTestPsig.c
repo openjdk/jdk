@@ -28,17 +28,34 @@
 #include <errno.h>
 #include <string.h>
 
+void(*psig_handler) (int, siginfo_t *, ucontext_t *) = 0;
+
 static void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
     printf( " HANDLER (1) " );
+    /* call the previous signal handler in the chain to avoid unhandled
+     * illegal Opcode (SIGILL) event, which would result in endles recursion
+     */
+    if (psig_handler) {
+        psig_handler(sig, info, context);
+    }
 }
 
 JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass klass, jint val) {
-    struct sigaction act;
+    struct sigaction act, oact;
     act.sa_handler = (void (*)())sig_handler;
     sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    int retval = sigaction(val, &act, 0);
+    act.sa_flags = SA_SIGINFO;
+    int retval = sigaction(val, &act, &oact);
     if (retval != 0) {
         printf("ERROR: failed to set %d signal handler error=%s\n", val, strerror(errno));
+    }
+    /* store the previous signal handler in the global psig_handler variable to be able
+     * to continue the signal chain
+     */
+    if (oact.sa_handler != SIG_DFL &&
+        oact.sa_handler != SIG_ERR &&
+        oact.sa_handler != SIG_IGN &&
+        oact.sa_handler != NULL) {
+        psig_handler = (void(*) (int, siginfo_t *, ucontext_t *))oact.sa_handler;
     }
 }
