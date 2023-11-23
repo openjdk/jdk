@@ -568,7 +568,9 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
         // Recursively unlocked.
         return;
       } else if (mark.is_fast_locked() && lock_stack.is_recursive(object)) {
-        // This lock is recursive but unstructured exit. Just inflate the lock.
+        // This lock is recursive but is not at the top of the lock stack so we're
+        // doing an unstructured exit. We have to fall thru to inflation below and
+        // let ObjectMonitor::exit() do the unlock.
       } else {
         while (mark.is_fast_locked()) {
           // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
