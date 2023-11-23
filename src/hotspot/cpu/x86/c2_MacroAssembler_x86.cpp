@@ -1158,11 +1158,11 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
     vpcmpgtq(tmp, tmp, mask, vlen_enc);
     mask = tmp;
   }
-  (this->*vblend)(atmp, a, b, mask, vlen_enc, true, btmp);
-  (this->*vblend)(btmp, b, a, mask, vlen_enc, true, tmp);
+  (this->*vblend)(atmp, a, b, mask, vlen_enc, false, btmp);
+  (this->*vblend)(btmp, b, a, mask, vlen_enc, false, tmp);
   (this->*vmaxmin)(maxmin, atmp, btmp, vlen_enc);
   (this->*vcmp)(scratch, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
-  (this->*vblend)(dst, tmp, atmp, scratch, vlen_enc, true, scratch);
+  (this->*vblend)(dst, maxmin, atmp, scratch, vlen_enc, false, scratch);
 }
 
 void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
