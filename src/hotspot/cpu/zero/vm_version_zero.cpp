@@ -137,13 +137,6 @@ void VM_Version::initialize() {
 #ifdef ASSERT
   UNSUPPORTED_OPTION(CountCompiledCalls);
 #endif
-}
-
-void VM_Version::initialize_cpu_information(void) {
-  // do nothing if cpu info has been initialized
-  if (_initialized) {
-    return;
-  }
 
 #ifndef SUPPORTS_NATIVE_CX8
   // Supports 8-byte cmpxchg with compiler built-ins.
@@ -152,6 +145,14 @@ void VM_Version::initialize_cpu_information(void) {
   // the support unconditionally.
   _supports_cx8 = true;
 #endif
+}
+
+void VM_Version::initialize_cpu_information(void) {
+  // do nothing if cpu info has been initialized
+  if (_initialized) {
+    return;
+  }
+
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;

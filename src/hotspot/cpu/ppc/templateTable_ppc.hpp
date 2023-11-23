@@ -27,7 +27,7 @@
 #define CPU_PPC_TEMPLATETABLE_PPC_HPP
 
   static void prepare_invoke(Register Rcache, Register Rret_addr, Register Rrecv, Register Rscratch);
-  static void invokevfinal_helper(Register Rcache, Register Rscratch1, Register Rscratch2, Register Rscratch3);
+  static void invokevfinal_helper(Register Rcache, Register Rscratch1, Register Rscratch2, Register Rscratch3, Register Rscratch4);
   static void generate_vtable_call(Register Rrecv_klass, Register Rindex, Register Rret, Register Rtemp);
   static void invokeinterface_object_method(Register Rrecv_klass, Register Rret, Register Rflags, Register Rcache, Register Rtemp, Register Rtemp2);
 
