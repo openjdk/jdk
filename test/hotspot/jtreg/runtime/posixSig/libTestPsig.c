@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <string.h>
 
-void(*psig_handler) (int, siginfo_t *, ucontext_t *) = 0;
+void(*psig_handler) (int, siginfo_t *, void *) = 0;
 
 static void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
     printf( " HANDLER (1) " );
@@ -56,6 +56,6 @@ JNIEXPORT void JNICALL Java_TestPosixSig_changeSigActionFor(JNIEnv *env, jclass 
         oact.sa_handler != SIG_ERR &&
         oact.sa_handler != SIG_IGN &&
         oact.sa_handler != NULL) {
-        psig_handler = (void(*) (int, siginfo_t *, ucontext_t *))oact.sa_handler;
+        psig_handler = oact.sa_sigaction;
     }
 }
