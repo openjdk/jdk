@@ -54,6 +54,7 @@ import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludePlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
+import jdk.tools.jlink.internal.plugins.SystemModulesPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
 
@@ -419,16 +420,21 @@ public final class TaskHelper {
                 }
             }
 
-            // if we perform a run-time based link, add the exclude resource plugin
-            // so as to exclude SystemModules$* classes as well as generated
-            // BoundMethodHandle$Species* classes.
-
+            // if we perform a run-time based link, add relevant exclude
+            // patterns, so sa to match the packaged-modules-based link
             if (!config.useModulePath()) {
+                Plugin systemModulesPlugin = null;
                 Plugin excludeResourcePlugin = null;
+                Plugin addOptionsPlugin = null;
                 for (Plugin p: pluginToMaps.keySet()) {
                     if (p instanceof ExcludePlugin) {
                         excludeResourcePlugin = p;
-                        break;
+                    }
+                    if (p instanceof SystemModulesPlugin) {
+                        systemModulesPlugin = p;
+                    }
+                    if (p instanceof AddOptionsPlugin) {
+                        addOptionsPlugin = p;
                     }
                 }
                 // Certain system module classes get generated and SystemModulesMap replaced by the
@@ -461,6 +467,27 @@ public final class TaskHelper {
                     String existingPattern = lastConfig.get("exclude-resources");
                     lastConfig.put("exclude-resources", existingPattern + "," + additionalPatterns);
                     excludeResConfig.set(excludeResConfig.size() - 1, lastConfig);
+                }
+                // If the system modules plug-in is disabled, we add the
+                // -Djdk.system.module.finder.disableFastPath property as the
+                // SystemModulesMap class isn't guaranteed to be correct for the
+                // current module set.
+                if (systemModulesPlugin == null) {
+                    String disableFastPath = "-Djdk.system.module.finder.disableFastPath=true";
+                    if (addOptionsPlugin != null) {
+                        // Retrieve existing options and add the needed
+                        // property
+                        List<Map<String, String>> addOptsConfig = pluginToMaps.get(addOptionsPlugin);
+                        Map<String, String> lastOpt = addOptsConfig.get(addOptsConfig.size() - 1);
+                        String existingOpt = lastOpt.get("add-options");
+                        lastOpt.put("add-options", disableFastPath + " " + existingOpt);
+                        addOptsConfig.set(addOptsConfig.size() - 1, lastOpt);
+                    } else {
+                        addOptionsPlugin = PluginRepository.getPlugin("add-options", ModuleLayer.boot());
+                        List<Map<String, String>> addOptsConfig = new ArrayList<>();
+                        addOptsConfig.add(Map.of("add-options", disableFastPath));
+                        pluginToMaps.put(addOptionsPlugin, addOptsConfig);
+                    }
                 }
             }
 
