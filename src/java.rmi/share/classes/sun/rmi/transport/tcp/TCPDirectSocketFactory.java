@@ -47,7 +47,8 @@ public class TCPDirectSocketFactory extends RMISocketFactory {
 
     public Socket createSocket(String host, int port) throws IOException
     {
-        if (connectTimeout == 0) {
+        // Guard against passing a negative value, Socket would always throw IllegalArgumentException.
+        if (connectTimeout <= 0) {
             return new Socket(host, port);
         } else {
             SocketAddress address = host != null ? new InetSocketAddress(host, port) :
