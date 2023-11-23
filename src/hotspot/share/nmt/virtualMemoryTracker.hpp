@@ -95,7 +95,7 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public AnyObj {
+class VirtualMemorySnapshot {
   friend class VirtualMemorySummary;
 
  private:
