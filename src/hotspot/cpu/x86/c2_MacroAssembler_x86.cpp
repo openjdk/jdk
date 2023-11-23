@@ -1095,7 +1095,7 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   bool is_double_word = is_double_word_type(elem_bt);
 
   /* Note on 'non-obvious' assembly sequence:
-   *
+   * 
    * While there are vminps/vmaxps instructions, there are two important differences between hardware
    * and Java on how they handle floats:
    *  a. -0.0 and +0.0 are considered equal (vminps/vmaxps will return second parameter when inputs are equal)
@@ -1105,6 +1105,12 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
    *  a. -0.0/+0.0: Bias negative (positive) numbers to second parameter before vminps (vmaxps)
    *                (only useful when signs differ, noop otherwise)
    *  b. NaN: Check if it was the first parameter that had the NaN (with vcmp[UNORD_Q])
+
+   *  Following pseudo code describes the algorithm for max[FD] (Min algorithm is on similar lines):
+   *   btmp = (b < +0.0) ? a : b
+   *   atmp = (b < +0.0) ? b : a
+   *   Tmp  = Max_Float(atmp , btmp)
+   *   Res  = (atmp == NaN) ? atmp : Tmp
    */
 
   void (MacroAssembler::*vblend)(XMMRegister, XMMRegister, XMMRegister, XMMRegister, int, bool, XMMRegister);
@@ -5355,18 +5361,18 @@ void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegist
   if (opcode == Op_SignumVD) {
     vsubpd(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvpd(dst, one, dst, src, vec_enc, false, xtmp1);
+    vblendvpd(dst, one, dst, src, vec_enc, true, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvpd(dst, dst, src, xtmp1, vec_enc, true, xtmp1);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc, false, xtmp1);
   } else {
     assert(opcode == Op_SignumVF, "");
     vsubps(dst, zero, one, vec_enc);
     // if src < 0 ? -1 : 1
-    vblendvps(dst, one, dst, src, vec_enc, false, xtmp1);
+    vblendvps(dst, one, dst, src, vec_enc, true, xtmp1);
     // if src == NaN, -0.0 or 0.0 return src.
     vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
-    vblendvps(dst, dst, src, xtmp1, vec_enc, true, xtmp1);
+    vblendvps(dst, dst, src, xtmp1, vec_enc, false, xtmp1);
   }
 }
 
