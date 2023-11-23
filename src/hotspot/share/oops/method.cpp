@@ -2264,12 +2264,8 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 }
 
 void Method::clear_jmethod_id() {
-  if (constMethod() != nullptr && constants() != nullptr && method_holder() == nullptr) {
-    // The method has not been fully initialized and has no link to its holder
-    // jmethodIDs are kept in the cache in the holder and so, without the holder there is no associated jmethodID
-    // The holder is resolved via const_method()->constants()->pool_holder()  so we must check all parts for nullptr
-    return;
-  }
+  // This should only be called when there is a reachable method_holder containing the jmethodIDs
+  assert(constMethod() != nullptr && constants() != nullptr && method_holder() != nullptr, "invariant");
   // Being at a safepoint prevents racing against other class redefinitions
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   // The jmethodID is not stored in the Method instance, we need to look it up first

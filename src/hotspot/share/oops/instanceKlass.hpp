@@ -1080,6 +1080,12 @@ public:
   bool idnum_can_increment() const      { return has_been_redefined(); }
   inline jmethodID* methods_jmethod_ids_acquire() const;
   inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
+  // Used to explicitly clear jmethodIDs for the contained methods
+  // This is required for JDK-8313816 but should not be used otherwise!
+  //   - We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+  //     do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+  //     is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+  static void clear_jmethod_ids(InstanceKlass* klass);
 
   // Lock during initialization
 public:
