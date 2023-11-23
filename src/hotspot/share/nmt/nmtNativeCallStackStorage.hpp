@@ -39,10 +39,20 @@ private:
   bool is_detailed_mode;
 
 public:
-  struct StackIndex {
-    int chunk; int index;
-    StackIndex(int chunk, int index) :
-      chunk(chunk), index(index) {}
+  struct alignas(uint32_t) StackIndex {
+    // 2 bytes to index, 2 bytes to chunk
+    // 65535 chunks is absolutely sufficient.
+    alignas(uint32_t) uint8_t compressed[4];
+    StackIndex(uint32_t chunk, uint32_t index) {
+      ::new (&compressed[0]) uint32_t(chunk);
+      ::new (&compressed[2]) uint32_t(index);
+    }
+    uint32_t chunk() {
+      return *((uint32_t*)&compressed[0]);
+    }
+    uint32_t index() {
+      return *((uint32_t*)&compressed[2]);
+    }
   };
 
   StackIndex push(const NativeCallStack& stack) {
@@ -66,7 +76,7 @@ public:
   }
 
   const NativeCallStack& get(StackIndex si) {
-    return stack_chunks.at(si.chunk)->stacks[si.index];
+    return stack_chunks.at(si.chunk())->stacks[si.index()];
   }
 
   NativeCallStackStorage(bool is_detailed_mode)
