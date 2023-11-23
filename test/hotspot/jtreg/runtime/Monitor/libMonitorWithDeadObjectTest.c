@@ -27,16 +27,14 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define die(x) do { printf("%s:%s\n",x , __func__); perror(x); exit(EXIT_FAILURE); } while (0)
-
-#ifndef _Included_MonitorWithDeadObjectHelper
-#define _Included_MonitorWithDeadObjectHelper
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static JavaVM* jvm;
 static pthread_t attacher;
+
+#define die(x) do { printf("%s:%s\n",x , __func__); perror(x); exit(EXIT_FAILURE); } while (0)
 
 static void check_exception(JNIEnv* env, const char* msg) {
   if ((*env)->ExceptionCheck(env)) {
@@ -153,7 +151,7 @@ static void* create_monitor_with_dead_object_and_dump_threads_in_thread() {
   return NULL;
 }
 
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObject(JNIEnv* env, jclass jc) {
+JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObject(JNIEnv* env, jclass jc) {
     pthread_attr_t attr;
     void* ret;
 
@@ -164,7 +162,7 @@ JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObj
     if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObjectNoJoin(JNIEnv* env, jclass jc) {
+JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObjectNoJoin(JNIEnv* env, jclass jc) {
     pthread_attr_t attr;
     void* ret;
 
@@ -174,7 +172,7 @@ JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObj
     if (pthread_create(&attacher, &attr, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
 }
 
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObjectDumpThreadsBeforeDetach(JNIEnv* env, jclass jc) {
+JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObjectDumpThreadsBeforeDetach(JNIEnv* env, jclass jc) {
     pthread_attr_t attr;
     void* ret;
 
@@ -185,12 +183,11 @@ JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_createMonitorWithDeadObj
     if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectHelper_joinTestThread(JNIEnv* env, jclass jc) {
+JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_joinTestThread(JNIEnv* env, jclass jc) {
     void* ret;
     if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
 #ifdef __cplusplus
 }
-#endif
 #endif
