@@ -209,12 +209,12 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
       __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
-      __ poly1305_multiply_vec(gen[2], v_u0, v_s0, r_v, rr_v);
-      __ poly1305_reduce_vec(gen[2], v_u0, zero, vregs.remaining());
+      __ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
+                                 vregs.remaining());
 
       __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
-      __ poly1305_multiply_vec(gen[3], v_u1, v_s1, r_v, rr_v);
-      __ poly1305_reduce_vec(gen[3], v_u1, zero, vregs.remaining());
+      __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
+                                 vregs.remaining());
 
       LambdaAccumulator::Iterator it[COLS];
       int len[COLS];

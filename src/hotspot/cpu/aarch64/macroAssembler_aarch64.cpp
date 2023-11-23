@@ -6675,15 +6675,6 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   };
 }
 
-void MacroAssembler::poly1305_field_multiply
-  (LambdaAccumulator &acc,
-   const FloatRegister u[],
-   const FloatRegister s[],
-   const FloatRegister r[],
-   const FloatRegister rr[],
-   AbstractRegSet<FloatRegister> scratch) {
-}
-
 void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
   ubfx(rscratch1, s, lsb, 26);
   mov(d, S, 0, rscratch1);

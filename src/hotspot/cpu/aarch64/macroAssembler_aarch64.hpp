@@ -1776,7 +1776,12 @@ public:
                                 const FloatRegister s[],
                                 const FloatRegister r[],
                                 const FloatRegister rr[],
-                                AbstractRegSet<FloatRegister> scratch);
+                                const FloatRegister zero,
+                                AbstractRegSet<FloatRegister> scratch) {
+    poly1305_multiply_vec(acc, u, s, r, rr);
+    poly1305_reduce_vec(acc, u, zero, scratch);
+  }
+
   void poly1305_load(LambdaAccumulator &acc, const Register s[],
                      const Register input_start);
   void poly1305_load(const Register s[], const Register input_start) {
