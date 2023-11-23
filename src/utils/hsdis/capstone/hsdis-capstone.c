@@ -52,6 +52,11 @@
 #include <inttypes.h>
 #include <string.h>
 
+/* Undefine macro to avoid generating invalid C code.
+   Capstone refactored cs_detail for AArch64 architecture
+   from `cs_arm64 arm64` to `cs_aarch64 aarch64`
+   and that causes invalid macro expansion.
+*/
 #undef aarch64
 #include <capstone.h>
 
