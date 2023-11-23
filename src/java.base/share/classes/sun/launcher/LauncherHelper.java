@@ -71,6 +71,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -893,7 +894,7 @@ public final class LauncherHelper {
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
         try {
-            mainMethod = mainClass.findMainMethod();
+            mainMethod = MethodFinder.findMainMethod(mainClass);
 
             if (mainMethod == null) {
                 // invalid main or not FX application, abort with an error
