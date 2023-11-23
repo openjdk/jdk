@@ -27,17 +27,17 @@
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
+import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 class VerifierSelfTest {
 
@@ -87,5 +87,64 @@ class VerifierSelfTest {
             System.out.println(output);
             throw new AssertionError("failed method not dumped to output");
         }
+    }
+
+    @Test
+    void testParserVerifier() {
+        record PatchBuilder<B extends ClassfileBuilder>(B b) {
+            public <A extends Attribute> PatchBuilder<B> patch(A a) {
+                class CloneAttribute extends CustomAttribute<CloneAttribute> {
+                    CloneAttribute() {
+                        super(new AttributeMapper<CloneAttribute>(){
+                            @Override
+                            public String name() {
+                                return a.attributeName();
+                            }
+
+                            @Override
+                            public CloneAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                                throw new UnsupportedOperationException();
+                            }
+
+                            @Override
+                            public void writeAttribute(BufWriter buf, CloneAttribute attr) {
+                                int start = buf.size();
+                                a.attributeMapper().writeAttribute(buf, a);
+                                buf.writeU1(0);
+                                buf.patchInt(start + 2, 4, buf.size() - start - 6);
+                            }
+
+                            @Override
+                            public AttributeMapper.AttributeStability stability() {
+                                return a.attributeMapper().stability();
+                            }
+                        });
+                    }
+                }
+                b.with(a);
+                b.with(new CloneAttribute());
+                return this;
+            }
+        }
+
+        var cc = Classfile.of();
+        var cd_test = ClassDesc.of("TestParserVerifier");
+        var clm = cc.parse(cc.build(cd_test, clb -> new PatchBuilder<>(clb)
+                .patch(DeprecatedAttribute.of())
+                .patch(SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))))
+                .b().withField("f", cd_test, fb -> new PatchBuilder<>(fb)
+                            .patch(DeprecatedAttribute.of())
+                            .patch(SignatureAttribute.of(Signature.of(cd_test))))
+
+        ));
+
+        assertLinesMatch("""
+        Wrong Deprecated attribute length in class
+        Duplicate Signature attribute in class
+        Wrong Signature attribute length in class
+        Wrong Deprecated attribute length in field f
+        Duplicate Signature attribute in field f
+        Wrong Signature attribute length in field f
+        """.lines().toList(), clm.verify(null).stream().map(VerifyError::getMessage).toList());
     }
 }
