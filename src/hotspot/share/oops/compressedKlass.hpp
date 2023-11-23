@@ -62,11 +62,6 @@ class CompressedKlassPointers : public AllStatic {
 
 public:
 
-  // Given an address p, return true if p can be used as an encoding base.
-  //  (Some platforms have restrictions of what constitutes a valid base
-  //   address).
-  static bool is_valid_base(address p);
-
   // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
   // archived heap objects.

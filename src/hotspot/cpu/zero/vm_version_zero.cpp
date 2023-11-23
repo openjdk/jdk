@@ -137,6 +137,12 @@ void VM_Version::initialize() {
 #ifdef ASSERT
   UNSUPPORTED_OPTION(CountCompiledCalls);
 #endif
+
+  // Supports 8-byte cmpxchg with compiler built-ins.
+  // These built-ins are supposed to be implemented on
+  // all platforms (even if not natively), so we claim
+  // the support unconditionally.
+  _supports_cx8 = true;
 }
 
 void VM_Version::initialize_cpu_information(void) {

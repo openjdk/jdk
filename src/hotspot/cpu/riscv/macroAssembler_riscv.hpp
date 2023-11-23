@@ -1200,6 +1200,9 @@ public:
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
+  void wide_madd(Register sum_lo, Register sum_hi, Register n,
+                 Register m, Register tmp1, Register tmp2);
   void cad(Register dst, Register src1, Register src2, Register carry);
   void cadc(Register dst, Register src1, Register src2, Register carry);
   void adc(Register dst, Register src1, Register src2, Register carry);

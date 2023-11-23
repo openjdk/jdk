@@ -1656,7 +1656,6 @@ private:
 
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address  dst, int32_t imm64);
-  void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
