@@ -27,22 +27,23 @@
 
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
+template <typename T>
 class Regs {
 public:
-  Register _regs[5];
-  Regs(RegSetIterator<Register> &it, int n) {
+  T _regs[5];
+  Regs(RegSetIterator<T> &it, int n) {
     for (int i = 0; i < n; i++) {
       _regs[i] = *it++;
     }
   }
-  Regs(Register R0, Register R1, Register R2) {
+  Regs(T R0, T R1, T R2) {
     _regs[0] = R0, _regs[1] = R1, _regs[2] = R2;
   }
 
-  Register operator[](int n) { return _regs[n]; }
-  Register *operator *() { return _regs; }
+  T operator[](int n) { return _regs[n]; }
+  T *operator *() { return _regs; }
 
-  operator Register*() { return _regs; }
+  operator T*() { return _regs; }
 };
 
 class RegPairs {
@@ -57,6 +58,8 @@ public:
   operator RegPair*() { return _reg_pairs; }
 };
 
+typedef Regs<Register> CoreRegs;
+typedef Regs<FloatRegister> VectorRegs;
 
 address generate_poly1305_processBlocks2() {
   static constexpr int POLY1305_BLOCK_LENGTH = 16;
@@ -82,11 +85,11 @@ address generate_poly1305_processBlocks2() {
   const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
 
   // Rn is the key, packed into three registers
-  Regs R(regs, 3);
+  CoreRegs R(regs, 3);
   __ pack_26(R[0], R[1], R[2], r_start);
 
   // Sn is to be the sum of Un and the next block of data
-  Regs S0(regs, 3), S1(regs, 3);
+  CoreRegs S0(regs, 3), S1(regs, 3);
 
   // Un is the current checksum
   RegPairs u0(regs, 3), u1(regs, 3);
@@ -105,7 +108,7 @@ address generate_poly1305_processBlocks2() {
 
   // We're going to use R**4
   {
-    Regs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
+    CoreRegs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
 
     poo = __ pc();
 
@@ -128,41 +131,37 @@ address generate_poly1305_processBlocks2() {
     __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
   }
 
-  const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  const FloatRegister v_s0[] = {*vregs++, *vregs++, *vregs++};
-
-  const FloatRegister v_u1[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  const FloatRegister v_s1[] = {*vregs++, *vregs++, *vregs++};
+  VectorRegs v_u0(vregs, 5);
+  VectorRegs v_s0(vregs, 3);
+  VectorRegs v_u1(vregs, 5);
+  VectorRegs v_s1(vregs, 3);
 
   const FloatRegister zero = *vregs++;
-  const FloatRegister r_v[] = {*vregs++, *vregs++};
-  const FloatRegister rr_v[] = {*vregs++, *vregs++};
 
-  // if (use_vec) {
-    __ movi(zero, __ T16B, 0);
+  __ movi(zero, __ T16B, 0);
 
-    __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+  // rr_v = r_v * 5
+  VectorRegs r_v(vregs, 2);
+  VectorRegs rr_v(vregs, 2);
+  __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+  {
+    FloatRegister vtmp = *vregs;
+    __ shl(vtmp, __ T4S, r_v[0], 2);
+    __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
+    __ shl(vtmp, __ T4S, r_v[1], 2);
+    __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
+  }
 
-    // rr_v = r_v * 5
-    { FloatRegister vtmp = *vregs;
-      __ shl(vtmp, __ T4S, r_v[0], 2);
-      __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
-      __ shl(vtmp, __ T4S, r_v[1], 2);
-      __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
-    }
+  for (int i = 0; i < 5; i++) {
+    __ movi(v_u0[i], __ T16B, 0);
+  }
 
-    for (int i = 0; i < 5; i++) {
-      __ movi(v_u0[i], __ T16B, 0);
-    }
-  //   __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
-  // }
+  __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
+  __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
+  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
+  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
 
-    __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
-    __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
-    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
-
-    {
+  {
     Label DONE, LOOP;
 
     int BLOCKS_PER_ITERATION = 4;
