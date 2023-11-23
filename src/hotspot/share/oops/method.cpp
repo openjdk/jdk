@@ -2264,13 +2264,13 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 }
 
 void Method::clear_jmethod_id() {
-  // Being at a safepoint prevents racing against other class redefinitions
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   if (method_holder() == nullptr) {
     // the method has not been fully initialized and has no link to its holder
     // jmethodIDs are kept in the cache in the holder and so, without the holder there is no associated jmethodID
     return;
   }
+  // Being at a safepoint prevents racing against other class redefinitions
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   // The jmethodID is not stored in the Method instance, we need to look it up first
   jmethodID methodid = find_jmethod_id_or_null();
   // We need to make sure that jmethodID actually resolves to this method
