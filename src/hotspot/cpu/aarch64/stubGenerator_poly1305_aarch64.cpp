@@ -64,10 +64,6 @@ typedef Regs<FloatRegister> VectorRegs;
 address generate_poly1305_processBlocks2() {
   static constexpr int POLY1305_BLOCK_LENGTH = 16;
 
-  address consts = __ pc();
-  __ emit_int64(5);
-  __ emit_int64(5);
-
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
   address start = __ pc();

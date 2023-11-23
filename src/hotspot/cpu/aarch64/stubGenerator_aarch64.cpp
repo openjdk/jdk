@@ -8678,10 +8678,10 @@ typedef uint32_t u32;
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
     if (UsePoly1305Intrinsics) {
-      if (getenv("FOO_BAR_BAZ") == NULL) {
+      if (getenv("OLD_POLY1305") == NULL) {
         StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks2();
       } else {
-        StubRoutines::_poly1305_processBlocks= generate_poly1305_processBlocks();
+        StubRoutines::_poly1305_processBlocks= generate_poly1305_processBlocks1();
       }
     }
 
