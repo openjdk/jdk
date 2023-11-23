@@ -499,20 +499,20 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
 
       markWord mark = obj()->mark_acquire();
       while (mark.is_neutral()) {
-          // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
-          // Try to swing into 'fast-locked' state.
-          assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
-          const markWord locked_mark = mark.set_fast_locked();
-          const markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
-          if (old_mark == mark) {
-            // Successfully fast-locked, push object to lock-stack and return.
-            lock_stack.push(obj());
-            return;
-          }
-          mark = old_mark;
+        // Retry until a lock state change has been observed.  cas_set_mark() may collide with non lock bits modifications.
+        // Try to swing into 'fast-locked' state.
+        assert(!lock_stack.contains(obj()), "thread must not already hold the lock");
+        const markWord locked_mark = mark.set_fast_locked();
+        const markWord old_mark = obj()->cas_set_mark(locked_mark, mark);
+        if (old_mark == mark) {
+          // Successfully fast-locked, push object to lock-stack and return.
+          lock_stack.push(obj());
+          return;
         }
+        mark = old_mark;
+      }
 
-        if (mark.is_fast_locked() && lock_stack.try_recursive_enter(obj())) {
+      if (mark.is_fast_locked() && lock_stack.try_recursive_enter(obj())) {
         // Recursive lock successful.
         return;
       }
