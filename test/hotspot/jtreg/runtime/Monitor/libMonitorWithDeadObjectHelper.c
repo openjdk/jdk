@@ -94,7 +94,7 @@ static void thread_dump_with_locked_monitors(JNIEnv* env) {
   jmethodID dumpAllThreadsMethod = (*env)->GetMethodID(env, ThreadMXBeanClass, "dumpAllThreads", "(ZZ)[Ljava/lang/management/ThreadInfo;");
   check(env, dumpAllThreadsMethod, "No dumpAllThreads method");
 
-  // The 'lockedMonitors == true' is what triggers the collection of the monitor with the dead object.
+  // The 'lockedMonitors == true' is what causes the monitor with a dead object to be examined.
   jobject array = (*env)->CallObjectMethod(env, threadBean, dumpAllThreadsMethod, JNI_TRUE /* lockedMonitors */, JNI_FALSE /* lockedSynchronizers*/);
   check(env, array, "Calling dumpAllThreads(true, false)");
 }
