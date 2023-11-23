@@ -83,7 +83,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
         } else if (prevState != OPEN) {
             throw alreadyAcquired(prevState);
         }
-        SCOPED_MEMORY_ACCESS.closeScope(this);
+        SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 
     /**

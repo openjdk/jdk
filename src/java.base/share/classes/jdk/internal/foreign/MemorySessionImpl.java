@@ -60,7 +60,7 @@ public abstract sealed class MemorySessionImpl
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
-    public static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
+    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
     static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
     // This is the session of all zero-length memory segments
     public static final MemorySessionImpl GLOBAL_SESSION = new GlobalSession();
