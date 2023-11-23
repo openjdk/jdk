@@ -32,16 +32,21 @@
 class NativeCallStackStorage : public CHeapObj<mtNMT> {
 private:
   static constexpr const int static_chunk_size = 256;
+  static constexpr const uint16_t is_in_emergency = 65535;
+  static constexpr const uint32_t emergency_chunk = 65535 - 1;
+
   struct NCSChunk : public CHeapObj<mtNMT> {
     NativeCallStack stacks[static_chunk_size];
   };
   GrowableArrayCHeap<NCSChunk*, mtNMT> stack_chunks;
+
+  // If we actually run out of possible NCSChunks we need an escape hatch to not crash the VM.
+  GrowableArrayCHeap<NativeCallStack, mtNMT> emergency;
   bool is_detailed_mode;
 
 public:
   struct alignas(uint32_t) StackIndex {
     // 2 bytes to index, 2 bytes to chunk
-    // 65535 chunks is absolutely sufficient.
     alignas(uint32_t) uint8_t compressed[4];
     StackIndex(uint32_t chunk, uint32_t index) {
       ::new (&compressed[0]) uint32_t(chunk);
@@ -56,9 +61,8 @@ public:
   };
 
   StackIndex push(const NativeCallStack& stack) {
+    // Not in detailed mode, so not tracking stacks.
     if (!is_detailed_mode) {
-      NCSChunk* chunk = stack_chunks.at(0);
-      chunk->stacks[0] = NativeCallStack{};
       return StackIndex(0,0);
     }
     unsigned int index = stack.calculate_hash() % static_chunk_size;
@@ -73,19 +77,34 @@ public:
         return StackIndex(i, index);
       }
     }
+    int old_len = stack_chunks.length();
+    assert(old_len != emergency_chunk, "should never happen");
+    if (old_len == emergency_chunk) {
+      // We have run out of chunks in StackIndex.
+      // Just push it to the emergency array.
+      int chunk = emergency_chunk + 1;
+      int index = emergency.length();
+      emergency.push(stack);
+      return StackIndex(chunk, index);
+    }
+
     NCSChunk* new_chunk = new NCSChunk();
     new_chunk->stacks[index] = stack;
     stack_chunks.push(new_chunk);
-    int chunk = stack_chunks.length()-1;
+    int chunk = old_len;
     return StackIndex(chunk, index);
   }
 
   const NativeCallStack& get(StackIndex si) {
+    if (si.chunk() == is_in_emergency) {
+      return emergency.at(si.index());
+    }
     return stack_chunks.at(si.chunk())->stacks[si.index()];
   }
 
   NativeCallStackStorage(bool is_detailed_mode)
   : stack_chunks{1},
+    emergency(0),
     is_detailed_mode(is_detailed_mode) {
     NCSChunk* chunk = new NCSChunk();
     stack_chunks.at_put(0, chunk);
