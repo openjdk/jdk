@@ -26,6 +26,7 @@
  * @summary Test the various CPU-specific reservation schemes
  * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
  * @requires vm.flagless
+ * @requires os.family != "windows"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -40,6 +41,10 @@ import jtreg.SkippedException;
 import java.io.IOException;
 
 public class CompressedCPUSpecificClassSpaceReservation {
+    // Note: windows: On windows, we currently have the issue that os::reserve_memory_aligned relies on
+    // os::attempt_reserve_memory_at because VirtualAlloc cannot be unmapped in parts; this precludes use of
+    // +SimulateFullAddressSpace (VM won't be able to reserve heap). Therefore we exclude the test for windows
+    // for now.
 
     private static void do_test(boolean CDS) throws IOException {
         // We start the VM with -XX:+SimulateFullAdressSpace, which means the JVM will go through all motions
@@ -50,7 +55,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
-                "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
+                "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -108,6 +113,14 @@ public class CompressedCPUSpecificClassSpaceReservation {
         } else {
             throw new RuntimeException("Unexpected platform");
         }
+
+        // In all cases we should have managed to map successfully eventually
+        if (CDS) {
+            output.shouldContain("CDS archive(s) mapped at:");
+        } else {
+            output.shouldContain("CDS archive(s) not mapped");
+        }
+        output.shouldContain("Compressed class space mapped at:");
     }
 
     public static void main(String[] args) throws Exception {
