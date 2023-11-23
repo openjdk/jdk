@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +25,7 @@
  * @test
  * @bug 8313816
  * @summary Test that a sequence of method retransformation and stacktrace capture while the old method
- *          version is still on stack does not lead to a crash when that's method jmethodID is used as
+ *          version is still on stack does not lead to a crash when that method's jmethodID is used as
  *          an argument for JVMTI functions.
  * @requires vm.jvmti
  * @requires vm.flagless
