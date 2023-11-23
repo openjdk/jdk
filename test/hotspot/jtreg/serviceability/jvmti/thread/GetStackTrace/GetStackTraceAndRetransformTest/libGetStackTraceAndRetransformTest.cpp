@@ -48,12 +48,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_GetStackTraceAndRetransformTest_initialize(JNIEnv *env, jclass cls, jclass tgt) {
   // we need to force jmethodids to be created for the methods we are going to retransform
-  env->GetStaticMethodID(tgt, "retransformAndStacktrace", "()V");
+  env->GetStaticMethodID(tgt, "redefineAndStacktrace", "()V");
   env->GetStaticMethodID(tgt, "stacktrace", "()V");
 }
 
 JNIEXPORT void JNICALL
-Java_GetStackTraceAndRetransformTest_capture(JNIEnv *env, jclass cls, jthread thread) {
+Java_Transformable_capture(JNIEnv *env, jclass cls, jthread thread) {
   jint count;
   const int MAX_NUMBER_OF_FRAMES = 32;
   jvmtiFrameInfo frames[MAX_NUMBER_OF_FRAMES];
