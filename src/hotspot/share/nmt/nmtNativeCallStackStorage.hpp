@@ -65,13 +65,18 @@ public:
     for (int i = 0; i < stack_chunks.length(); i++) {
       NCSChunk* chunk = stack_chunks.at(i);
       NativeCallStack& found_stack = chunk->stacks[index];
+      if (found_stack.is_empty()) {
+        chunk->stacks[index] = stack;
+        return StackIndex(i, index);
+      }
       if (found_stack.equals(stack)) {
         return StackIndex(i, index);
       }
     }
-    stack_chunks.push(new NCSChunk());
+    NCSChunk* new_chunk = new NCSChunk();
+    new_chunk->stacks[index] = stack;
+    stack_chunks.push(new_chunk);
     int chunk = stack_chunks.length()-1;
-    stack_chunks.at(chunk)->stacks[index] = stack;
     return StackIndex(chunk, index);
   }
 
