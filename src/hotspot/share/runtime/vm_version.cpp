@@ -30,7 +30,7 @@
 
 void VM_Version_init() {
   VM_Version::initialize();
-  guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations in required in this release");
+  guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations is required");
   if (log_is_enabled(Info, os, cpu)) {
     char buf[1024];
     ResourceMark rm;
