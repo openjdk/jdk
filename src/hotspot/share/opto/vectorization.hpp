@@ -279,7 +279,9 @@ public:
 
   bool same_memory_slice(MemNode* n1, MemNode* n2) const;
 
-  DEBUG_ONLY(void print() const;)
+#ifndef PRODUCT
+  void print() const;
+#endif
 };
 
 // Submodule of VLoopAnalyzer.
@@ -309,7 +311,10 @@ public:
   }
 
   const char* construct();
-  DEBUG_ONLY(void print() const;)
+
+#ifndef PRODUCT
+  void print() const;
+#endif
 
   int body_idx(const Node* n) const {
     assert(_vloop.in_body(n), "must be in loop_body");
