@@ -4419,6 +4419,214 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+#ifdef COMPILER2
+
+static const int64_t right_2_bits = right_n_bits(2);
+static const int64_t right_3_bits = right_n_bits(3);
+
+  // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
+  // are represented as long[5], with BITS_PER_LIMB = 26.
+  // Pack five 26-bit limbs into three 64-bit registers.
+  void poly1305_pack_26(Register dest0, Register dest1, Register dest2, Register src, Register tmp1, Register tmp2) {
+    assert_different_registers(dest0, dest1, dest2, src, tmp1, tmp2);
+
+    // The goal is to have 128-bit value in dest2:dest1:dest0
+    __ ld(dest0, Address(src, 0));    // 26 bits in dest0
+
+    __ ld(tmp1, Address(src, sizeof(jlong)));
+    __ slli(tmp1, tmp1, 26);
+    __ add(dest0, dest0, tmp1);       // 52 bits in dest0
+
+    __ ld(tmp2, Address(src, 2 * sizeof(jlong)));
+    __ slli(tmp1, tmp2, 52);
+    __ add(dest0, dest0, tmp1);       // dest0 is full
+
+    __ srli(dest1, tmp2, 12);         // 14-bit in dest1
+
+    __ ld(tmp1, Address(src, 3 * sizeof(jlong)));
+    __ slli(tmp1, tmp1, 14);
+    __ add(dest1, dest1, tmp1);       // 40-bit in dest1
+
+    __ ld(tmp1, Address(src, 4 * sizeof(jlong)));
+    __ slli(tmp2, tmp1, 40);
+    __ add(dest1, dest1, tmp2);       // dest1 is full
+
+    if (dest2->is_valid()) {
+      __ srli(tmp1, tmp1, 24);
+      __ mv(dest2, tmp1);               // 2 bits in dest2
+    } else {
+#ifdef ASSERT
+      Label OK;
+      __ srli(tmp1, tmp1, 24);
+      __ beq(zr, tmp1, OK);           // 2 bits
+      __ stop("high bits of Poly1305 integer should be zero");
+      __ should_not_reach_here();
+      __ bind(OK);
+#endif
+    }
+  }
+
+  // As above, but return only a 128-bit integer, packed into two
+  // 64-bit registers.
+  void poly1305_pack_26(Register dest0, Register dest1, Register src, Register tmp1, Register tmp2) {
+    poly1305_pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
+  }
+
+  // U_2:U_1:U_0: += (U_2 >> 2) * 5
+  void poly1305_reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
+    assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
+
+    // First, U_2:U_1:U_0 += (U_2 >> 2)
+    __ srli(tmp1, U_2, 2);
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
+    __ andi(U_2, U_2, right_2_bits); // Clear U_2 except for the lowest two bits
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ add(U_2, U_2, tmp2);
+
+    // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
+    __ slli(tmp1, tmp1, 2);
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ add(U_2, U_2, tmp2);
+  }
+
+  // Poly1305, RFC 7539
+  // void com.sun.crypto.provider.Poly1305.processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
+
+  // Arguments:
+  //    c_rarg0:   input_start -- where the input is stored
+  //    c_rarg1:   length
+  //    c_rarg2:   acc_start -- where the output will be stored
+  //    c_rarg3:   r_start -- where the randomly generated 128-bit key is stored
+
+  // See https://loup-vaillant.fr/tutorials/poly1305-design for a
+  // description of the tricks used to simplify and accelerate this
+  // computation.
+
+  address generate_poly1305_processBlocks() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+    address start = __ pc();
+    __ enter();
+    Label here;
+
+    RegSet saved_regs = RegSet::range(x18, x21);
+    RegSetIterator<Register> regs = (RegSet::range(x14, x31) - RegSet::range(x22, x27)).begin();
+    __ push_reg(saved_regs, sp);
+
+    // Arguments
+    const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
+
+    // R_n is the 128-bit randomly-generated key, packed into two
+    // registers. The caller passes this key to us as long[5], with
+    // BITS_PER_LIMB = 26.
+    const Register R_0 = *regs, R_1 = *++regs;
+    poly1305_pack_26(R_0, R_1, r_start, t1, t2);
+
+    // RR_n is (R_n >> 2) * 5
+    const Register RR_0 = *++regs, RR_1 = *++regs;
+    __ srli(t1, R_0, 2);
+    __ shadd(RR_0, t1, t1, t2, 2);
+    __ srli(t1, R_1, 2);
+    __ shadd(RR_1, t1, t1, t2, 2);
+
+    // U_n is the current checksum
+    const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+    poly1305_pack_26(U_0, U_1, U_2, acc_start, t1, t2);
+
+    static constexpr int BLOCK_LENGTH = 16;
+    Label DONE, LOOP;
+
+    __ mv(t1, BLOCK_LENGTH);
+    __ blt(length, t1, DONE); {
+      __ bind(LOOP);
+
+      // S_n is to be the sum of U_n and the next block of data
+      const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+      __ ld(S_0, Address(input_start, 0));
+      __ ld(S_1, Address(input_start, wordSize));
+
+      __ cad(S_0, S_0, U_0, t1); // Add U_0 to S_0 with carry output to t1
+      __ cadc(S_1, S_1, U_1, t1); // Add U_1 with carry to S_1 with carry output to t1
+      __ add(S_2, U_2, t1);
+
+      __ addi(S_2, S_2, 1);
+
+      const Register U_0HI = *++regs, U_1HI = *++regs;
+
+      // NB: this logic depends on some of the special properties of
+      // Poly1305 keys. In particular, because we know that the top
+      // four bits of R_0 and R_1 are zero, we can add together
+      // partial products without any risk of needing to propagate a
+      // carry out.
+      __ wide_mul(U_0, U_0HI, S_0, R_0);
+      __ wide_madd(U_0, U_0HI, S_1, RR_1, t1, t2);
+      __ wide_madd(U_0, U_0HI, S_2, RR_0, t1, t2);
+
+      __ wide_mul(U_1, U_1HI, S_0, R_1);
+      __ wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
+      __ wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
+
+      __ andi(U_2, R_0, right_2_bits);
+      __ mul(U_2, S_2, U_2);
+
+      // Partial reduction mod 2**130 - 5
+      __ cad(U_1, U_1, U_0HI, t1); // Add U_0HI to U_1 with carry output to t1
+      __ adc(U_2, U_2, U_1HI, t1);
+      // Sum is now in U_2:U_1:U_0.
+
+      // U_2:U_1:U_0: += (U_2 >> 2) * 5
+      poly1305_reduce(U_2, U_1, U_0, t1, t2);
+
+      __ sub(length, length, BLOCK_LENGTH);
+      __ addi(input_start, input_start, BLOCK_LENGTH);
+      __ mv(t1, BLOCK_LENGTH);
+      __ bge(length, t1, LOOP);
+    }
+
+    // Further reduce modulo 2^130 - 5
+    poly1305_reduce(U_2, U_1, U_0, t1, t2);
+
+    // Unpack the sum into five 26-bit limbs and write to memory.
+    // First 26 bits is the first limb
+    __ slli(t1, U_0, 38); // Take lowest 26 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start)); // First 26-bit limb
+
+    // 27-52 bits of U_0 is the second limb
+    __ slli(t1, U_0, 12); // Take next 27-52 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
+
+    // Getting 53-64 bits of U_0 and 1-14 bits of U_1 in one register
+    __ srli(t1, U_0, 52);
+    __ slli(t2, U_1, 50);
+    __ srli(t2, t2, 38);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
+
+    // Storing 15-40 bits of U_1
+    __ slli(t1, U_1, 24); // Already used up 14 bits
+    __ srli(t1, t1, 38); // Clear all other bits from t1
+    __ sd(t1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
+
+    // Storing 41-64 bits of U_1 and first three bits from U_2 in one register
+    __ srli(t1, U_1, 40);
+    __ andi(t2, U_2, right_3_bits);
+    __ slli(t2, t2, 24);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
+
+    __ bind(DONE);
+    __ pop_reg(saved_regs, sp);
+    __ leave(); // Required for proper stackwalking
+    __ ret();
+
+    return start;
+  }
+
+#endif // COMPILER2
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -4605,7 +4813,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::riscv::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
@@ -4638,6 +4846,10 @@ class StubGenerator: public StubCodeGenerator {
       StubCodeMark mark(this, "StubRoutines", "montgomerySquare");
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       StubRoutines::_montgomerySquare = g.generate_square();
+    }
+
+    if (UsePoly1305Intrinsics) {
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
     if (UseRVVForBigIntegerShiftIntrinsics) {
