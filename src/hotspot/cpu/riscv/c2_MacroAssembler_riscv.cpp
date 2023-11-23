@@ -1676,6 +1676,32 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
+// j.l.Float.float16ToFloat
+void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
+  Label nan_case, done;
+
+  // check whether it's a NaN.
+  mv(t0, 0x7c00);
+  andr(tmp, src, t0);
+  beq(t0, tmp, nan_case);
+
+  // non-NaN cases, just use built-in instructions.
+  fmv_h_x(dst, src);
+  fcvt_s_h(dst, dst);
+  j(done);
+
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  bind(nan_case);
+  mv(tmp, 0x7f800000);
+  // sign-bit was already set via sign-extension if necessary.
+  slli(t0, src, 13);
+  orr(tmp, t0, tmp);
+  fmv_w_x(dst, tmp);
+
+  bind(done);
+}
+
 void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
   Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
   // intrinsic is enabled when MaxVectorSize >= 16
