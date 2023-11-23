@@ -2264,7 +2264,7 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 }
 
 void Method::clear_jmethod_id() {
-  if (const_method() != nullptr && constants() != nullptr && method_holder() == nullptr) {
+  if (constMethod() != nullptr && constants() != nullptr && method_holder() == nullptr) {
     // The method has not been fully initialized and has no link to its holder
     // jmethodIDs are kept in the cache in the holder and so, without the holder there is no associated jmethodID
     // The holder is resolved via const_method()->constants()->pool_holder()  so we must check all parts for nullptr
