@@ -33,7 +33,7 @@ class NativeCallStackStorage : public CHeapObj<mtNMT> {
 private:
   static constexpr const int static_chunk_size = 8192;
   struct NCSChunk : public CHeapObj<mtNMT> {
-    NativeCallStack stacks[8192];
+    NativeCallStack stacks[static_chunk_size];
   };
   GrowableArrayCHeap<NCSChunk*, mtNMT> stack_chunks;
   bool is_detailed_mode;
