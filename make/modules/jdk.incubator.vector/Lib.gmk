@@ -39,7 +39,7 @@ ifeq ($(call isTargetOs, linux windows)+$(call isTargetCpu, x86_64)+$(INCLUDE_CO
   TARGETS += $(BUILD_LIBJSVML)
 endif
 
-ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2)+$(LIBSLEEF_FOUND), true+true+true+yes)
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2)+$(ENABLE_LIBSLEEF), true+true+true+true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBVMATH, \
       NAME := vmath, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBVMATH_CFLAGS) -fvisibility=default, \

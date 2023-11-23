@@ -88,6 +88,14 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   else
     NEEDS_LIB_FFI=false
   fi
+
+  # Check if sleef is needed
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    NEEDS_LIB_SLEEF=true
+  else
+    # All other instances do not need sleef
+    NEEDS_LIB_SLEEF=false
+  fi
 ])
 
 ################################################################################
