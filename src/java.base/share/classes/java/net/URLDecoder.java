@@ -155,7 +155,6 @@ public class URLDecoder {
      * World Wide Web Consortium Recommendation</a> states that
      * UTF-8 should be used. Not doing so may introduce
      * incompatibilities.</em>
-     * <p>
      *
      * @param s the {@code String} to decode
      * @param charset the given charset
