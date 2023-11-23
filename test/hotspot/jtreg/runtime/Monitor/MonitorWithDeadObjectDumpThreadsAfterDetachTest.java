@@ -23,50 +23,50 @@
  */
 
 /*
- * @test IterateMonitorWithDeadObjectTest
- * @summary This locks a monitor, GCs the object, and iterate and perform
- *          various iteration and operations over this monitor.
- * @requires os.family == "linux"
+ * @test MonitorWithDeadObjectDumpThreadsAfterDetachTest
+ * @summary This test checks that ObjectMonitors with dead objects don't
+            cause asserts, crashes, or failures when dumping threads
+            after the owning thread has been detached.
+ * @requires os.family != "windows"
  * @library /testlibrary /test/lib
- * @build IterateMonitorWithDeadObjectTest
- * @run main/native IterateMonitorWithDeadObjectTest
+ * @modules jdk.management
+ * @run main/native MonitorWithDeadObjectDumpThreadsAfterDetachTest
  */
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-public class IterateMonitorWithDeadObjectTest {
-    public static native void runTestAndDetachThread();
-    public static native void joinTestThread();
-
+public class MonitorWithDeadObjectDumpThreadsAfterDetachTest {
     public static void dumpThreadsWithLockedMonitors() {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
         threadBean.dumpAllThreads(true, false);
     }
 
-    static {
-        System.loadLibrary("IterateMonitorWithDeadObjectTest");
-    }
+    public static void testBeforeJoin() {
+        MonitorWithDeadObjectHelper.createMonitorWithDeadObjectNoJoin();
 
-    public static void main(String[] args) throws Exception {
-        // Run the part of the test that causes the problematic monitor:
-        // - Create an object
-        // - Call MonitorEnter on the object to create a monitor
-        // - Drop the last reference to the object
-        // - GC to clear the weak reference to the object in the monitor
-        // - Detach the thread - provoke previous bug
-        // - Leave the thread un-joined
-        runTestAndDetachThread();
-
-        System.out.println("Dumping threads with locked monitors");
-
-        // After testIt has been called, there's an "owned" monitor with a
+        // After createMonitorWithDeadObjectNoJoin has been called, there's an
+        // "owned" monitor with a
         // dead object. The thread dumping code didn't tolerate such a monitor,
         // so run a thread dump and make sure that it doesn't crash/assert.
         dumpThreadsWithLockedMonitors();
 
-        System.out.println("Dumping threads with locked monitors done");
+        MonitorWithDeadObjectHelper.joinTestThread();
+    }
 
-        joinTestThread();
+    public static void testAfterJoin() {
+        MonitorWithDeadObjectHelper.createMonitorWithDeadObjectNoJoin();
+        MonitorWithDeadObjectHelper.joinTestThread();
+
+        // After createMonitorWithDeadObjectNoJoin has been called, there's an
+        // "owned" monitor with a
+        // dead object. The thread dumping code didn't tolerate such a monitor,
+        // so run a thread dump and make sure that it doesn't crash/assert.
+        dumpThreadsWithLockedMonitors();
+    }
+
+    public static void main(String[] args) throws Exception {
+        testBeforeJoin();
+        testAfterJoin();
     }
 }

@@ -51,12 +51,15 @@ public class GetOwnedMonitorInfoTest {
     private static native boolean hasEventPosted();
 
     private static void jniMonitorEnterAndLetObjectDie() {
-        // The monitor iterator used GetOwnedMonitorInfo used to
+        // The monitor iterator used by GetOwnedMonitorInfo used to
         // assert when an owned monitor with a dead object was found.
         // Inject this situation into this test that performs other
         // GetOwnedMonitorInfo testing.
         Object obj = new Object() { public String toString() {return "";} };
         jniMonitorEnter(obj);
+        if (!Thread.holdsLock(obj)) {
+            throw new RuntimeException("The object is not locked");
+        }
         obj = null;
         System.gc();
     }
