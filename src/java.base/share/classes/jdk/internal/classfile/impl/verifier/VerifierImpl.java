@@ -110,22 +110,24 @@ public final class VerifierImpl {
 
     public static List<VerifyError> verify(ClassModel classModel, ClassHierarchyResolver classHierarchyResolver, Consumer<String> logger) {
         var klass = new VerificationWrapper(classModel);
-        if (!is_eligible_for_verification(klass)) {
-            return List.of();
-        }
         log_info(logger, "Start class verification for: %s", klass.thisClassName());
         try {
-            if (klass.majorVersion() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-                var errors = new VerifierImpl(klass, classHierarchyResolver, logger).verify_class();
-                if (!errors.isEmpty() && klass.majorVersion() < NOFAILOVER_MAJOR_VERSION) {
-                    log_info(logger, "Fail over class verification to old verifier for: %s", klass.thisClassName());
-                    return inference_verify(klass);
+            var errors = new ArrayList<VerifyError>();
+            errors.addAll(ParserVerifier.verify(classModel, logger));
+            if (is_eligible_for_verification(klass)) {
+                if (klass.majorVersion() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+                    var verifierErrors = new VerifierImpl(klass, classHierarchyResolver, logger).verify_class();
+                    if (!verifierErrors.isEmpty() && klass.majorVersion() < NOFAILOVER_MAJOR_VERSION) {
+                        log_info(logger, "Fail over class verification to old verifier for: %s", klass.thisClassName());
+                        errors.addAll(inference_verify(klass));
+                    } else {
+                        errors.addAll(verifierErrors);
+                    }
                 } else {
-                    return errors;
+                    errors.addAll(inference_verify(klass));
                 }
-            } else {
-                return inference_verify(klass);
             }
+            return errors;
         } finally {
             log_info(logger, "End class verification for: %s", klass.thisClassName());
         }
