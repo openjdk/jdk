@@ -38,10 +38,10 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   //       D           C          B           A
   //
   // A "good" base is, in this order:
-  // 1) only bits in A; this would be an address < 2KB, which is unrealistic on normal Linux boxes since
+  // 1) only bits in A; this would be an address < 4KB, which is unrealistic on normal Linux boxes since
   //    the typical default for vm.mmap_min_address is 64KB. We ignore that.
-  // 2) only bits in B: a 12-bit-aligned address below 4GB. 12 bit = 2KB, but mmap reserves at
-  //    page boundaries, smallest page size is 4KB, so we can ignore the 12-bit alignment.
+  // 2) only bits in B: a 12-bit-aligned address below 4GB. 12 bit = 4KB, but since mmap reserves at
+  //    page boundaries, we can ignore the alignment.
   // 3) only bits in C: a 4GB-aligned address that is lower than 16TB.
   // 4) only bits in D: a 16TB-aligned address.
 
