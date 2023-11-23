@@ -365,20 +365,42 @@ public class Events {
         return false;
     }
 
+    public static void assertTopFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {
+        assertTopFrame(event, expectedClass.getName(), expectedMethodName);
+    }
+
+    public static void assertTopFrame(RecordedEvent event, String expectedClass, String expectedMethodName) {
+        RecordedStackTrace stackTrace = event.getStackTrace();
+        Asserts.assertNotNull(stackTrace, "Missing stack trace");
+        RecordedFrame topFrame =  stackTrace.getFrames().get(0);
+        if (isFrame(topFrame, expectedClass, expectedMethodName)) {
+            return;
+        }
+        String expected = expectedClass + "::" + expectedMethodName;
+        Asserts.fail("Expected top frame " + expected + ". Found " + topFrame);
+    }
+
     public static void assertFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {
         RecordedStackTrace stackTrace = event.getStackTrace();
         Asserts.assertNotNull(stackTrace, "Missing stack trace");
         for (RecordedFrame frame : stackTrace.getFrames()) {
-            if (frame.isJavaFrame()) {
-                RecordedMethod method = frame.getMethod();
-                RecordedClass type = method.getType();
-                if (expectedClass.getName().equals(type.getName())) {
-                    if (expectedMethodName.equals(method.getName())) {
-                        return;
-                    }
-                }
+            if (isFrame(frame, expectedClass.getName(), expectedMethodName)) {
+                return;
             }
         }
         Asserts.fail("Expected " + expectedClass.getName() + "::"+ expectedMethodName + " in stack trace");
+    }
+
+    private static boolean isFrame(RecordedFrame frame, String expectedClass, String expectedMethodName) {
+        if (frame.isJavaFrame()) {
+            RecordedMethod method = frame.getMethod();
+            RecordedClass type = method.getType();
+            if (expectedClass.equals(type.getName())) {
+                if (expectedMethodName.equals(method.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

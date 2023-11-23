@@ -586,12 +586,15 @@ PKCS11 tests. Improper NSS version may lead to unexpected failures which
 are hard to diagnose. For example,
 sun/security/pkcs11/Secmod/AddTrustedCert.java may fail on Ubuntu 18.04
 with the default NSS version in the system. To run these tests
-correctly, the system property <code>test.nss.lib.paths</code> is
-required on Ubuntu 18.04 to specify the alternative NSS lib
-directories.</p>
+correctly, the system property
+<code>jdk.test.lib.artifacts.&lt;NAME&gt;</code> is required on Ubuntu
+18.04 to specify the alternative NSS lib directory. The
+<code>&lt;NAME&gt;</code> component should be replaced with the name
+element of the appropriate <code>@Artifact</code> class. (See
+<code>test/jdk/sun/security/pkcs11/PKCS11Test.java</code>)</p>
 <p>For example:</p>
 <pre><code>$ make test TEST=&quot;jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java&quot; \
-    JTREG=&quot;JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs&quot;</code></pre>
+    JTREG=&quot;JAVA_OPTIONS=-Djdk.test.lib.artifacts.nsslib-linux_aarch64=/path/to/NSS-libs&quot;</code></pre>
 <p>For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.</p>
 <h3 id="client-ui-tests">Client UI Tests</h3>
