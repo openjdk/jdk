@@ -124,7 +124,7 @@ inline bool LockStack::try_recursive_exit(oop o) {
 
   int end = to_index(_top);
   if (end <= 1 || _base[end - 1] != o ||  _base[end - 2] != o) {
-    // The two topmost oop does not match o.
+    // The two topmost oops do not match o.
     return false;
   }
 
