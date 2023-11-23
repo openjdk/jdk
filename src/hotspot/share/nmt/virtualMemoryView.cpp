@@ -38,7 +38,7 @@ VirtualMemoryView::RegionStorage* VirtualMemoryView::_reserved_regions = nullptr
 GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::OffsetRegionStorage, mtNMT>* VirtualMemoryView::_mapped_regions = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::RegionStorage, mtNMT>* VirtualMemoryView::_committed_regions = nullptr;
-NativeCallStackStorage<VirtualMemoryView::IndexIterator>* VirtualMemoryView::_stack_storage = nullptr;
+NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 
 void VirtualMemoryView::report(outputStream* output, size_t scale) {
@@ -143,7 +143,7 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
     if (o_r == OverlappingResult::NoOverlap) {
       continue;
     }
-    int stack_idx = crng.stack_idx;
+    NativeCallStackStorage::StackIndex stack_idx = crng.stack_idx;
     // Delete old region
     storage.delete_at(i);
     // delete_at replaces the ith elt with the last one, so we need to rewind
@@ -154,9 +154,7 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
     // And push on the new ones.
     for (int j = 0; j < len; j++) {
       storage.push(out[j]);
-      _stack_storage->increment(stack_idx);
     }
-    _stack_storage->decrement(stack_idx);
     // We're not breaking, no guarantee that there's exactly 1 region that matches
   }
 
@@ -188,7 +186,7 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
       return;
     }
   }
-  int idx = _stack_storage->push(stack);
+  NativeCallStackStorage::StackIndex idx = _stack_storage->push(stack);
   storage.push(TrackedRange{base_addr, size, idx, flag});
 
   sort_regions(storage);
@@ -217,16 +215,13 @@ void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
     bool has_overlap =
         OverlappingResult::NoOverlap != overlap_of(range, range_to_remove, out, &len);
     if (has_overlap) {
-      int stack_idx = range.stack_idx;
+      NativeCallStackStorage::StackIndex stack_idx = range.stack_idx;
       // Delete old region.
       range_array.delete_at(i);
       // Replace with the remaining ones
       for (int j = 0; j < len; j++) {
-        _stack_storage->increment(stack_idx);
         range_array.push(out[j]);
       }
-      // Decrement after incrementing to avoid triggering resizing
-      _stack_storage->decrement(stack_idx);
     }
   }
 }
@@ -237,7 +232,7 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
                                                   MEMFLAGS flag, const NativeCallStack& stack) {
   // This method is a bit tricky because we need to care about preserving the offsets of any already existing view
   // that overlaps with the view being added.
-  int stack_idx = _stack_storage->push(stack);
+  NativeCallStackStorage::StackIndex stack_idx = _stack_storage->push(stack);
   OffsetRegionStorage& rngs = _mapped_regions->at(space.id);
   // We need to find overlapping regions and split on them, because the offsets may differ.
   for (int i = 0; i < rngs.length(); i++) {
@@ -285,7 +280,7 @@ void VirtualMemoryView::initialize(bool is_detailed_mode) {
   _reserved_regions = new RegionStorage{};
   _mapped_regions = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
   _committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{5};
-  _stack_storage = new NativeCallStackStorage<IndexIterator>{is_detailed_mode ? NativeCallStackStorage<IndexIterator>::static_stack_size : 1, is_detailed_mode};
+  _stack_storage = new NativeCallStackStorage{is_detailed_mode};
   _names = new GrowableArrayCHeap<const char*, mtNMT>{5};
   _is_detailed_mode = is_detailed_mode;
 }

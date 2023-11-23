@@ -79,15 +79,15 @@ public:
   };
   // Add tracking information
   struct TrackedRange : public Range { // Currently unused, but can be used by the old API and all committed memory
-    int stack_idx; // From whence did this happen?
+    NativeCallStackStorage::StackIndex stack_idx; // From whence did this happen?
     MEMFLAGS flag; // What flag does it have? Guaranteed to be mtNone for committed range.
-    TrackedRange(address start = 0, size_t size = 0, int stack_idx = -1, MEMFLAGS flag = mtNone) :
+    TrackedRange(address start = 0, size_t size = 0, NativeCallStackStorage::StackIndex stack_idx = {-1,-1}, MEMFLAGS flag = mtNone) :
       Range(start, size), stack_idx(stack_idx), flag(flag) {}
   };
   // Give it the possibility of being offset
   struct TrackedOffsetRange : public TrackedRange {
     address physical_address;
-    TrackedOffsetRange(address start = 0, size_t size = 0, address physical_address = 0, int stack_idx = -1, MEMFLAGS flag = mtNone)
+    TrackedOffsetRange(address start = 0, size_t size = 0, address physical_address = 0, NativeCallStackStorage::StackIndex stack_idx = {-1,-1}, MEMFLAGS flag = mtNone)
       :  TrackedRange(start, size, stack_idx, flag),
       physical_address(physical_address) {}
     explicit TrackedOffsetRange(TrackedRange& rng)
@@ -169,7 +169,7 @@ private:
     }
   };
 
-  static NativeCallStackStorage<IndexIterator>* _stack_storage;
+  static NativeCallStackStorage* _stack_storage;
   static bool _is_detailed_mode;
 
 private:
