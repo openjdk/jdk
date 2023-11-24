@@ -99,6 +99,65 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
+void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
+  ubfx(rscratch1, s, lsb, 26);
+  mov(d, S, 0, rscratch1);
+}
+void MacroAssembler::expand26(Register d, Register r) {
+  lsr(d, r, 26);
+  lsl(d, d, 32);
+  bfxil(d, r, 0, 26);
+}
+
+void MacroAssembler::split26(const FloatRegister d[], Register s) {
+  ubfx(rscratch1, s, 0, 26);
+  mov(d[0], D, 0, rscratch1);
+  lsr(rscratch1, s, 26);
+  mov(d[1], D, 0, rscratch1);
+}
+
+void MacroAssembler::copy_3_to_5_regs(const FloatRegister d[],
+                                 const Register s0, const Register s1, const Register s2) {
+  split26(&d[0], s0);
+  split26(&d[2], s1);
+  mov(d[4], D, 0, s2);
+}
+
+void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
+                                 const Register s0, const Register s1, const Register s2) {
+  expand26(rscratch2, s0);
+  mov(d[0], D, 0, rscratch2);
+  expand26(rscratch2, s1);
+  mov(d[0], D, 1, rscratch2);
+  mov(d[1], D, 0, s2);
+}
+
+void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {
+  for (int i = 0; i < 3; i++) {
+    mov(dest[i], src[i]);
+  }
+}
+
+void MacroAssembler::add_3_reg_pairs(const RegPair dest[], const RegPair src[]) {
+  for (int i = 0; i < 3; i++) {
+    adds(dest[i]._lo, dest[i]._lo, src[i]._lo);
+    adc(dest[i]._hi, dest[i]._hi, src[i]._hi);
+  }
+}
+
+void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
+  add(dest[0], dest[0], src[0]._lo);
+  add(dest[1], dest[1], src[1]._lo);
+  add(dest[2], dest[2], src[2]._lo);
+}
+
+// Poly1305 Generator functions
+//
+
+// All of these take an AsmGenerator as their first parameter. They do
+// not generate any code, but instead add to the AsmGenerator such
+// that, when AsmGenerator.gen() is called later, code is generated.
+
 #define _ acc << [=]()
 // Widening multiply s * r -> u
 void MacroAssembler::poly1305_multiply(AsmGenerator &acc,
@@ -137,35 +196,35 @@ void MacroAssembler::poly1305_reduce(AsmGenerator &acc, const RegPair u[], const
 
   // Add the high part (i.e. everything from bits 52 up) of u1 to u2
   _ { shifted_add128(u[2], u[1], 52); };
-  _ { clear_above(u[1], 52); };                             // u[1] < 0x10000000000000 (i.e. 52 bits)
+  _ { clear_above(u[1], 52); };                       // u[1] < 0x10000000000000 (i.e. 52 bits)
 
   // Add the high part of u0 to u1
   _ { shifted_add128(u[1], u[0], 52); };
-  _ { clear_above(u[0], 52); };                             // u[0] < 0x10000000000000 (i.e. 52 bits)
-                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
+  _ { clear_above(u[0], 52); };                       // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                      // u[1] < 0x200000000000000 (i.e. 57 bits)
 
   // Then multiply the high part of u2 by 5 and add it back to u1:u0
   _ { extr(rscratch1, u[2]._hi, u[2]._lo, 26);
         ubfx(rscratch1, rscratch1, 0, 52);
-        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(rscratch1, rscratch1, rscratch1, LSL, 2); // rscratch1 *= 5
         add(u[0]._lo, u[0]._lo, rscratch1); };
 
   _ { lsr(rscratch1, u[2]._hi, (26+52) % 64);
-        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(rscratch1, rscratch1, rscratch1, LSL, 2); // rscratch1 *= 5
         add(u[1]._lo, u[1]._lo, rscratch1); };
-  _ { clear_above(u[2], 26); };                             // u[2] < 0x4000000 (i.e. 26 bits)
-                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
-                                                     // u[0] < 0x20000000000000 (i.e. 53 bits)
+  _ { clear_above(u[2], 26); };                       // u[2] < 0x4000000 (i.e. 26 bits)
+                                                      // u[1] < 0x200000000000000 (i.e. 57 bits)
+                                                      // u[0] < 0x20000000000000 (i.e. 53 bits)
 
   // u[1] -> u[2]
-  _ { add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52); };        // u[2] < 0x8000000 (i.e. 27 bits)
-  _ { bfc(u[1]._lo, 52, 64-52); };                          // u[1] < 0x10000000000000 (i.e. 52 bits)
+  _ { add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52); };  // u[2] < 0x8000000 (i.e. 27 bits)
+  _ { bfc(u[1]._lo, 52, 64-52); };                    // u[1] < 0x10000000000000 (i.e. 52 bits)
 
   // u[0] -> u1
   _ { add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52); };
-  _ { bfc(u[0]._lo, 52, 64-52); };                          // u[0] < 0x10000000000000 (i.e. 52 bits)
-                                                     // u[1] < 0x20000000000000 (i.e. 53 bits)
-                                                     // u[2] < 0x4000000 (i.e. 27 bits)
+  _ { bfc(u[0]._lo, 52, 64-52); };                    // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                      // u[1] < 0x20000000000000 (i.e. 53 bits)
+                                                      // u[2] < 0x4000000 (i.e. 27 bits)
 }
 
 void MacroAssembler::poly1305_field_multiply(AsmGenerator &acc,
@@ -220,39 +279,6 @@ void MacroAssembler::poly1305_multiply_vec(AsmGenerator &acc,
   _ { umlal2(u[2], T2D, s[1], rr[1], 0); };
   _ { umlal(u[3], T2D, s[2], rr[1], 0); };
   _ { umlal(u[4], T2D, s[0],  r[1], 0); };
-}
-
-void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
-  ubfx(rscratch1, s, lsb, 26);
-  mov(d, S, 0, rscratch1);
-}
-void MacroAssembler::expand26(Register d, Register r) {
-  lsr(d, r, 26);
-  lsl(d, d, 32);
-  bfxil(d, r, 0, 26);
-}
-
-void MacroAssembler::split26(const FloatRegister d[], Register s) {
-  ubfx(rscratch1, s, 0, 26);
-  mov(d[0], D, 0, rscratch1);
-  lsr(rscratch1, s, 26);
-  mov(d[1], D, 0, rscratch1);
-}
-
-void MacroAssembler::copy_3_to_5_regs(const FloatRegister d[],
-                                 const Register s0, const Register s1, const Register s2) {
-  split26(&d[0], s0);
-  split26(&d[2], s1);
-  mov(d[4], D, 0, s2);
-}
-
-void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
-                                 const Register s0, const Register s1, const Register s2) {
-  expand26(rscratch2, s0);
-  mov(d[0], D, 0, rscratch2);
-  expand26(rscratch2, s1);
-  mov(d[0], D, 1, rscratch2);
-  mov(d[1], D, 0, s2);
 }
 
 void MacroAssembler::poly1305_step_vec(AsmGenerator &acc,
@@ -365,26 +391,9 @@ void MacroAssembler::poly1305_step(AsmGenerator &acc,
   _ { poly1305_add(s, u); };
 }
 
-void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {
-  for (int i = 0; i < 3; i++) {
-    mov(dest[i], src[i]);
-  }
-}
-
-void MacroAssembler::add_3_reg_pairs(const RegPair dest[], const RegPair src[]) {
-  for (int i = 0; i < 3; i++) {
-    adds(dest[i]._lo, dest[i]._lo, src[i]._lo);
-    adc(dest[i]._hi, dest[i]._hi, src[i]._hi);
-  }
-}
-
-void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
-  add(dest[0], dest[0], src[0]._lo);
-  add(dest[1], dest[1], src[1]._lo);
-  add(dest[2], dest[2], src[2]._lo);
-}
-
 void MacroAssembler::poly1305_add(AsmGenerator &acc,
                                   const Register dest[], const RegPair src[]) {
   _ { poly1305_add(dest, src); };
 }
+
+#undef _
