@@ -5024,12 +5024,11 @@ public class Attr extends JCTree.Visitor {
 
     public void visitStringTemplate(JCStringTemplate tree) {
         JCExpression processor = tree.processor;
-        Type resultType = syms.stringTemplateType;
-
-        if (processor != null) {
-            resultType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
-            resultType = chk.checkProcessorType(processor, resultType, env);
-        }
+        Type processorType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
+        chk.checkProcessorType(processor, processorType, env);
+        Type processMethodType = getProcessMethodType(tree, processorType);
+        tree.processMethodType = processMethodType;
+        Type resultType = processMethodType.getReturnType();
 
         Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
 
@@ -5039,8 +5038,14 @@ public class Attr extends JCTree.Visitor {
 
         tree.type = resultType;
         result = resultType;
-
         check(tree, resultType, KindSelector.VAL, resultInfo);
+    }
+
+    private Type getProcessMethodType(JCStringTemplate tree, Type processorType) {
+        MethodSymbol processSymbol = rs.resolveInternalMethod(tree.pos(),
+                env, types.skipTypeVars(processorType, false),
+                names.process, List.of(syms.stringTemplateType), List.nil());
+        return types.memberType(processorType, processSymbol);
     }
 
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {

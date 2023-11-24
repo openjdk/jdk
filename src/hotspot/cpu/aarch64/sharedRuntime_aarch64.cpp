@@ -801,9 +801,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
 static int c_calling_convention_priv(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on AArch64");
 
 // We return the amount of VMRegImpl stack slots we need to reserve for all
 // the arguments NOT counting out_preserve_stack_slots.
@@ -897,10 +895,9 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed)
 {
-  int result = c_calling_convention_priv(sig_bt, regs, regs2, total_args_passed);
+  int result = c_calling_convention_priv(sig_bt, regs, total_args_passed);
   guarantee(result >= 0, "Unsupported arguments configuration");
   return result;
 }
@@ -1457,7 +1454,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, nullptr, total_c_args);
+  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, total_c_args);
 
   if (out_arg_slots < 0) {
     return nullptr;

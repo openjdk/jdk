@@ -502,6 +502,21 @@ public abstract class UNIXToolkit extends SunToolkit
                 @Override
                 public void windowLostFocus(WindowEvent e) {
                     Window window = e.getWindow();
+                    Window oppositeWindow = e.getOppositeWindow();
+
+                    // The focus can move between the window calling the popup,
+                    // and the popup window itself.
+                    // We only dismiss the popup in other cases.
+                    if (oppositeWindow != null) {
+                        if (window == oppositeWindow.getParent() ) {
+                            addWaylandWindowFocusListenerToWindow(oppositeWindow);
+                            return;
+                        }
+                        if (window.getParent() == oppositeWindow) {
+                            return;
+                        }
+                    }
+
                     window.removeWindowFocusListener(this);
 
                     // AWT
@@ -516,18 +531,22 @@ public abstract class UNIXToolkit extends SunToolkit
         }
     }
 
+    private static void addWaylandWindowFocusListenerToWindow(Window window) {
+        if (!Arrays
+                .asList(window.getWindowFocusListeners())
+                .contains(waylandWindowFocusListener)
+        ) {
+            window.addWindowFocusListener(waylandWindowFocusListener);
+        }
+    }
+
     @Override
     public void dismissPopupOnFocusLostIfNeeded(Window invoker) {
-        if (!isOnWayland()
-                || invoker == null
-                || Arrays
-                    .asList(invoker.getWindowFocusListeners())
-                    .contains(waylandWindowFocusListener)
-        ) {
+        if (!isOnWayland() || invoker == null) {
             return;
         }
 
-        invoker.addWindowFocusListener(waylandWindowFocusListener);
+        addWaylandWindowFocusListenerToWindow(invoker);
     }
 
     @Override
@@ -537,5 +556,8 @@ public abstract class UNIXToolkit extends SunToolkit
         }
 
         invoker.removeWindowFocusListener(waylandWindowFocusListener);
+        for (Window ownedWindow : invoker.getOwnedWindows()) {
+            ownedWindow.removeWindowFocusListener(waylandWindowFocusListener);
+        }
     }
 }

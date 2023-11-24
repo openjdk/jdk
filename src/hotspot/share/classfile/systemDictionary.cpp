@@ -140,7 +140,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_loading_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop system_loader = get_system_class_loader_impl(CHECK);
       assert(_java_system_loader.resolve() == system_loader, "must be");
@@ -153,7 +153,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_loading_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
       assert(_java_platform_loader.resolve() == platform_loader, "must be");
@@ -414,7 +414,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   assert(super_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(super_name), "invalid superclass name");
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Special processing for handling UNREGISTERED shared classes.
     InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
                            super_name, is_superclass);
@@ -878,7 +878,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
  InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-  if (!DumpSharedSpaces) {
+  if (!CDSConfig::is_dumping_static_archive()) {
     k = SystemDictionaryShared::lookup_from_stream(class_name,
                                                    class_loader,
                                                    cl_info.protection_domain(),

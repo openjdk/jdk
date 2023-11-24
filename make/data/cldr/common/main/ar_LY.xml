@@ -53,6 +53,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
