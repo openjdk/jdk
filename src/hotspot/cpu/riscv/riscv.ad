@@ -934,6 +934,26 @@ reg_class v11_reg(
     V11, V11_H, V11_J, V11_K
 );
 
+// class for vector register v12
+reg_class v12_reg(
+    V12, V12_H, V12_J, V12_K
+);
+
+// class for vector register v13
+reg_class v13_reg(
+    V13, V13_H, V13_J, V13_K
+);
+
+// class for vector register v14
+reg_class v14_reg(
+    V14, V14_H, V14_J, V14_K
+);
+
+// class for vector register v15
+reg_class v15_reg(
+    V15, V15_H, V15_J, V15_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1888,17 +1908,14 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
+    case Op_ExpandBits:        // fall through
+    case Op_CompressBits:      // fall through
+      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
-    case Op_CountPositives:
-      return UseRVV;
-
-    case Op_CompressBits:
-      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
-      return UseRVV;
-
+    case Op_CountPositives:    // fall through
     case Op_EncodeISOArray:
-      return UseRVV && SpecialEncodeISOArray;
+      return UseRVV;
 
     case Op_PopCountI:
     case Op_PopCountL:
@@ -3505,6 +3522,46 @@ operand vReg_V10()
 operand vReg_V11()
 %{
   constraint(ALLOC_IN_RC(v11_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V14()
+%{
+  constraint(ALLOC_IN_RC(v14_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V15()
+%{
+  constraint(ALLOC_IN_RC(v15_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -8588,7 +8645,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, fRegF src) %{
 
   ins_cost(XFER_COST);
 
-  format %{ "fmv.x.w  $dst, $src\t#@MoveL2D_reg_stack" %}
+  format %{ "fmv.x.w  $dst, $src\t#@MoveF2I_reg_reg" %}
 
   ins_encode %{
     __ fmv_x_w(as_Register($dst$$reg), as_FloatRegister($src$$reg));
@@ -8642,7 +8699,7 @@ instruct MoveL2D_reg_reg(fRegD dst, iRegL src) %{
 
   ins_cost(XFER_COST);
 
-  format %{ "fmv.d.x  $dst, $src\t#@MoveD2L_reg_reg" %}
+  format %{ "fmv.d.x  $dst, $src\t#@MoveL2D_reg_reg" %}
 
   ins_encode %{
     __ fmv_d_x(as_FloatRegister($dst$$reg), as_Register($src$$reg));
@@ -8663,7 +8720,8 @@ instruct cmpF3_reg_reg(iRegINoSp dst, fRegF op1, fRegF op2)
   format %{ "flt.s  $dst, $op2, $op1\t#@cmpF3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.s  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpF3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8683,7 +8741,8 @@ instruct cmpD3_reg_reg(iRegINoSp dst, fRegD op1, fRegD op2)
   format %{ "flt.d  $dst, $op2, $op1\t#@cmpD3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.d  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpD3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8701,8 +8760,9 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   ins_cost(ALU_COST * 3 + BRANCH_COST);
   format %{ "slt   $dst, $op2, $op1\t#@cmpL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
-            "slt  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpL3_reg_reg"
+            "slt   $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8720,7 +8780,8 @@ instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpUL3_reg_reg"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8738,7 +8799,8 @@ instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
   format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
             "sltu  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpU3_reg_reg"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
@@ -8883,12 +8945,12 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
   format %{
-    "ble $src1, $src2, Lsrc1.\t#@minI_rReg\n\t"
+    "ble $src1, $src2, Lsrc1\t#@minI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@minI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
@@ -8915,9 +8977,9 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     "bge $src1, $src2, Lsrc1\t#@maxI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@maxI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
@@ -10344,16 +10406,16 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

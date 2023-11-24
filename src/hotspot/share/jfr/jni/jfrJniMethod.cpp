@@ -36,6 +36,8 @@
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
+#include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
@@ -239,8 +241,8 @@ JVM_ENTRY_NO_ENV(jlong, jfr_class_id(JNIEnv* env, jclass jvm, jclass jc))
   return JfrTraceId::load(jc);
 JVM_END
 
-JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip))
-  return JfrStackTraceRepository::record(thread, skip);
+JVM_ENTRY_NO_ENV(jlong, jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip, jlong stack_filter_id))
+  return JfrStackTraceRepository::record(thread, skip, stack_filter_id);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jclass jvm, jint tag_set, jint level, jstring message))
@@ -396,4 +398,12 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
   EventDataLoss::commit(bytes, min_jlong);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_register_stack_filter(JNIEnv* env,  jclass jvm, jobjectArray classes, jobjectArray methods))
+  return JfrStackFilterRegistry::add(classes, methods, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_unregister_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
+  JfrStackFilterRegistry::remove(id);
 JVM_END

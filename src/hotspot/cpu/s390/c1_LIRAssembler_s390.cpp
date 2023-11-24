@@ -2670,7 +2670,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   Register addr = op->addr()->as_pointer_register();
   Register t1_cmp = Z_R1_scratch;
   if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register new_value_lo = op->new_value()->as_register_lo();
     __ z_lgr(t1_cmp, cmp_value_lo);

@@ -291,6 +291,9 @@ address StubGenerator::generate_chacha20Block_avx() {
   // registers.  That length should be returned through %rax.
   __ mov64(rax, outlen);
 
+  if (outlen == 256) {
+    __ vzeroupper();
+  }
   __ leave();
   __ ret(0);
   return start;
@@ -460,6 +463,7 @@ address StubGenerator::generate_chacha20Block_avx512() {
   // and that length should be returned through %rax.
   __ mov64(rax, 1024);
 
+  __ vzeroupper();
   __ leave();
   __ ret(0);
   return start;
