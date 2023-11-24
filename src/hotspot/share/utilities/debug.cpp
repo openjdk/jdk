@@ -182,59 +182,6 @@ void print52(u64 x2, u64 x1, u64 x0, const char *s) {
   printf("\n");
 }
 
-void print26_(u64 x2, u64 x1, u64 x0, const char *s) {
-  print26(x2, x1 >> 32, x1 & 0xffffffff, x0 >> 32, x0 & 0xffffffff, s);
-}
-
-void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0, const char *s) {
-  if (strcmp(s, "** ARGH ?") == 0) {
-    asm("nop");
-    return;
-  }
-
-  printf("      %06lx ", x4);
-  printf("%06lx ", x3);
-  printf("%06lx ", x2);
-  printf("%06lx ", x1);
-  printf("%06lx\n", x0);
-  // x1 += x0 >> 26; x0 %= 1 <<26;
-  // x4 += x3 >> 26; x3 %= 1 <<26;
-  // x2 += x1 >> 26; x1 %= 1 <<26;
-  // x0 += 5 * (x4 >> 26); x4 %= 1 <<26;
-  // x3 += x2 >> 26; x2 %= 1 <<26;
-  // x1 += x0 >> 26; x0 %= 1 <<26;
-  // x4 += x3 >> 26; x3 %= 1 <<26;
-
-  if (strcmp(s, "s[2]") == 0) {
-    asm("nop");
-  }
-
-  u128 sum = 0;
-  sum = sum
-    + x0
-    + ((u128)x1 << 26)
-    + ((u128)x2 << 52)
-    + ((u128)x3 << 78)
-    + ((u128)x4 << 104);
-
-  if (s) {
-    printf("%s: ", s);
-  }
-  u64 top = x4 >> 24; printf("0x%lx:", top);
-  print128(sum);
-  printf("\n");
-}
-
-void print_foo(u64 x0, u64 x1) {
-  u128 sum = ((u128)x1 << 64) + x0;
-
-  setbuf(stdout, NULL);
-  for (int i = 26 * 4; i >= 0; i -= 26) {
-    printf("0x%05x ", (unsigned int)(sum >> i) & ~(-1u<<26));
-  }
-  printf("\n");
-}
-
 bool vreg_is_equal(uint64_t v4,
                    uint64_t v3,
                    uint64_t v2,

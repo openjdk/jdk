@@ -44,7 +44,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "kernelGenerator_aarch64.hpp"
-#include "macroAssembler_aarch64_poly1305.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -71,102 +70,6 @@
 #endif
 
 // Poly1305:
-
-void MacroAssembler::m_print52(FloatRegister v0, FloatRegister v1, FloatRegister v2, bool hi, const char *s) {
-#ifdef DEBUG_POLY1305
-  enter();
-  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  umov(c_rarg0, v0, D, hi);
-  umov(c_rarg1, v1, D, hi);
-  umov(c_rarg2, v2, D, hi);
-  mov(rscratch1, ExternalAddress(CAST_FROM_FN_PTR(address, ::print52)));
-  blr(rscratch1);
-  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  leave();
-#endif // DEBUG_POLY1305
-}
-
-
-void MacroAssembler::m_print52(Register t0, Register t1, Register t2, const char *s) {
-#ifdef DEBUG_POLY1305
-  enter();
-  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-
-  sub(sp, sp, 4*wordSize);
-  str(t0, Address(sp, 0));
-  str(t1, Address(sp, wordSize));
-  str(t2, Address(sp, 2*wordSize));
-  ldr(c_rarg0, Address(sp, 0));
-  ldr(c_rarg1, Address(sp, wordSize));
-  ldr(c_rarg2, Address(sp, 2*wordSize));
-  add(sp, sp, 4*wordSize);
-  mov(c_rarg3, (uintptr_t)s);
-
-  mov(rscratch1, ExternalAddress(CAST_FROM_FN_PTR(address, ::print52)));
-  blr(rscratch1);
-  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  leave();
-#endif // DEBUG_POLY1305
-}
-
-
-void MacroAssembler::m_print26(SIMD_RegVariant variant,
-                               FloatRegister v0, FloatRegister v1, FloatRegister v2,
-                               FloatRegister v3, FloatRegister v4,
-                               int index, const char *s) {
-#ifdef DEBUG_POLY1305
-  setbuf(stdout, NULL);
-  setbuf(stderr, NULL);
-  enter();
-  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  umov(c_rarg0, v0, variant, index);
-  umov(c_rarg1, v1, variant, index);
-  umov(c_rarg2, v2, variant, index);
-  umov(c_rarg3, v3, variant, index);
-  umov(c_rarg4, v4, variant, index);
-  mov(c_rarg5, (uintptr_t)s);
-  mov(rscratch1, ExternalAddress((address)::print26));
-  blr(rscratch1);
-  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  leave();
-#endif // DEBUG_POLY1305
-}
-
-void MacroAssembler::m_print26(SIMD_RegVariant variant,
-                               const FloatRegister v[],
-                               const int indexes[], const char *s) {
-#ifdef DEBUG_POLY1305
-  setbuf(stdout, NULL);
-  setbuf(stderr, NULL);
-  enter();
-  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  for (int i = 0; i < 5; i++) {
-    umov(as_Register(c_rarg0->encoding() + i), v[i], variant, indexes[i]);
-  }
-  mov(c_rarg5, (uintptr_t)s);
-  mov(rscratch1, ExternalAddress((address)::print26));
-  blr(rscratch1);
-  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  leave();
-#endif // DEBUG_POLY1305
-}
-
-void MacroAssembler::m_print26(SIMD_RegVariant variant,
-                               FloatRegister v0, FloatRegister v1, FloatRegister v2,
-                               int index, const char *s) {
-#ifdef DEBUG_POLY1305
-  enter();
-  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  umov(c_rarg0, v0, variant, index);
-  umov(c_rarg1, v1, variant, index);
-  umov(c_rarg2, v2, variant, index);
-  mov(c_rarg3, (uintptr_t)s);
-  mov(rscratch1, ExternalAddress((address)::print26_));
-  blr(rscratch1);
-  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
-  leave();
-#endif // DEBUG_POLY1305
-}
 
 void MacroAssembler::pack_26(Register dest0, Register dest1, Register dest2, Register src) {
   ldp(dest0, rscratch1, Address(src, 0));
@@ -286,51 +189,29 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   _ { umull2(u[3], T2D, s[1], r[0], 0); };
   _ { umull(u[4], T2D, s[2], r[0], 0); };
 
-  _ {
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u0[2]");
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u0[3]");
-  };
-
   _ { umlal(u[0], T2D, s[2], rr[0], 1); };
   _ { umlal(u[1], T2D, s[0],  r[0], 1); };
   _ { umlal2(u[2], T2D, s[0],  r[0], 1); };
   _ { umlal(u[3], T2D, s[1],  r[0], 1); };
   _ { umlal2(u[4], T2D, s[1],  r[0], 1); };
-  _ {
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u1[2]");
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u1[3]");
-  };
 
   _ { umlal2(u[0], T2D, s[1], rr[0], 2); };
   _ { umlal(u[1], T2D, s[2], rr[0], 2); };
   _ { umlal(u[2], T2D, s[0],  r[0], 2); };
   _ { umlal2(u[3], T2D, s[0],  r[0], 2); };
   _ { umlal(u[4], T2D, s[1],  r[0], 2); };
-  _ {
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u2[2]");
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u2[3]");
-  };
-
 
   _ { umlal(u[0], T2D, s[1], rr[0], 3); };
   _ { umlal2(u[1], T2D, s[1], rr[0], 3); };
   _ { umlal(u[2], T2D, s[2], rr[0], 3); };
   _ { umlal(u[3], T2D, s[0],  r[0], 3); };
   _ { umlal2(u[4], T2D, s[0],  r[0], 3); };
-  _ {
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u3[2]");
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u3[3]");
-  };
 
   _ { umlal2(u[0], T2D, s[0], rr[1], 0); };
   _ { umlal(u[1], T2D, s[1], rr[1], 0); };
   _ { umlal2(u[2], T2D, s[1], rr[1], 0); };
   _ { umlal(u[3], T2D, s[2], rr[1], 0); };
   _ { umlal(u[4], T2D, s[0],  r[1], 0); };
-  _ {
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u4[2]");
-    m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u4[3]");
-  };
 }
 
 void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
@@ -369,10 +250,6 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
 void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister zero, Register input_start) {
-  _ {
-    m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
-  };
-
   FloatRegister scratch1 = u[2], scratch2 = u[3];
 
   _ {
@@ -415,14 +292,6 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
       ext(scratch1, T16B, s[i], s[i], 8);
       zip1(s[i], T4S, s[i], scratch1);
     };
-
-  _ {
-    int indexes1[] = { 0, 1, 0, 1, 0 };
-    FloatRegister v[] = { s[2], s[1], s[1], s[0], s[0] };
-    m_print26(S, v, indexes1, "s[2]");
-    int indexes2[] = { 2, 3, 2, 3, 2 };
-    m_print26(S, v, indexes2, "s[3]");
-  };
 }
 
 void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
@@ -442,6 +311,7 @@ void MacroAssembler::poly1305_reduce_step(LambdaAccumulator &acc,
     Assembler::add(d, T2D, d, scratch); };
   _ { sli(s, T2D, zero, 26); };
 }
+
 void MacroAssembler::poly1305_reduce_vec(LambdaAccumulator &acc,
                                          const FloatRegister u[],
                                          const FloatRegister zero,

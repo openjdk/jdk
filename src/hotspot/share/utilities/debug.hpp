@@ -294,13 +294,4 @@ void report_java_out_of_memory(const char* message);
 extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
 extern "C" bool dbg_is_good_oop(oopDesc* o);
 
-extern "C" {
-  void print128(__uint128_t n);
-  void print52(unsigned long hi, unsigned long mid, unsigned long lo, const char *s = nullptr);
-  void print26(unsigned long x4, unsigned long x3, unsigned long x2, unsigned long x1, unsigned long x0,
-               const char *s = nullptr);
-  void print26_(unsigned long x2, unsigned long x1, unsigned long x0,
-               const char *s = nullptr);
-  extern int should_print;
-}
 #endif // SHARE_UTILITIES_DEBUG_HPP

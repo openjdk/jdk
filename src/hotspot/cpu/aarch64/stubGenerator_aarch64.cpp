@@ -7143,11 +7143,6 @@ typedef uint32_t u32;
         const u64 x2 = s2 * (r0 & 3); // ...recover 2 bits
         // Dead: s0, s1, s2
 
-        DEBUG_ONLY(printf("X: "));
-        DEBUG_ONLY(print128(x2); printf("");)
-        DEBUG_ONLY(print128(x1); printf("");)
-        DEBUG_ONLY(print128(x0); printf("\n");)
-
         // partial reduction modulo 2^130 - 5
         u128 tmp3 = x2 + (x1 >> 64);
         // Dead: x2
@@ -7373,8 +7368,6 @@ address generate_poly1305_processBlocks2() {
     __ bind(LARGE);
   }
 
-  __ m_print52(R[2], R[1], R[0], "\n\nR\n");
-
   // We're going to use R**6
   {
     CoreRegs u0_lo(u0[0]._lo, u0[1]._lo, u0[2]._lo);
@@ -7384,8 +7377,6 @@ address generate_poly1305_processBlocks2() {
 
     __ poly1305_field_multiply(u0, R, R, RR2, regs);
     // u0_lo = R**2
-
-    __ m_print52(u0_lo[2], u0_lo[1], u0_lo[0], "\n\nR**2\n");
 
     __ poly1305_field_multiply(u1, u0_lo, R, RR2, regs);
     // u1_lo = R**3
@@ -7400,8 +7391,6 @@ address generate_poly1305_processBlocks2() {
 
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
-
-    __ m_print52(R[2], R[1], R[0], "\n\nR**6\n");
   }
 
   // Load the initial state
@@ -7438,13 +7427,6 @@ address generate_poly1305_processBlocks2() {
     __ movi(v_u0[i], __ T16B, 0);
     __ movi(v_u1[i], __ T16B, 0);
   }
-
-  __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
-  __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
-  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
-  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "v[4]");
-  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "v[5]");
 
   {
     Label DONE, LOOP;
@@ -7499,19 +7481,6 @@ address generate_poly1305_processBlocks2() {
           }
         }
       }
-
-      // for (int col = 0; col < COLS; col++) {
-      //   for (int i = 0; i < len[col]; i++) {
-      //     (it[col]++)();
-      //   }
-      // }
-
-      __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
-      __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "u[2]");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "u[3]");
-      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "u[4]");
-      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "u[5]");
 
       for (int col = 0; col < COLS; col++) {
         assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");

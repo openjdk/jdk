@@ -1709,16 +1709,6 @@ public:
 
   // Poly1305
 
-  void m_print52(FloatRegister v0, FloatRegister v1, FloatRegister v2, bool hi, const char *s = nullptr);
-  void m_print52(Register t0, Register t1, Register t2, const char *s = nullptr);
-  void m_print26(SIMD_RegVariant variant, FloatRegister v0, FloatRegister v1, FloatRegister v2,
-                 FloatRegister v3, FloatRegister v4, int index, const char *s = nullptr);
-  void m_print26(SIMD_RegVariant variant, FloatRegister v0, FloatRegister v1, FloatRegister v2,
-                 int index, const char *s = nullptr);
-  void m_print26(SIMD_RegVariant variant,
-                 const FloatRegister v[],
-                 const int indexes[], const char *s);
-
   void pack_26(Register dest0, Register dest1, Register dest2, Register src);
   void wide_mul(RegPair prod, Register n, Register m);
   void wide_madd(RegPair sum, Register n, Register m);
