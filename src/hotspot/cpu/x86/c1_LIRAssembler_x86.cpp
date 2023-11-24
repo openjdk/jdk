@@ -1929,7 +1929,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  if (LP64_ONLY(false &&) op->code() == lir_cas_long && VM_Version::supports_cx8()) {
+  if (LP64_ONLY(false &&) op->code() == lir_cas_long) {
     assert(op->cmp_value()->as_register_lo() == rax, "wrong register");
     assert(op->cmp_value()->as_register_hi() == rdx, "wrong register");
     assert(op->new_value()->as_register_lo() == rbx, "wrong register");

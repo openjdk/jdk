@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,32 @@
  * questions.
  */
 
-package compiler.vectorapi.reshape;
-
-import compiler.vectorapi.reshape.tests.TestVectorCast;
-import compiler.vectorapi.reshape.utils.TestCastMethods;
-import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
-
 /*
  * @test
- * @bug 8278623
- * @key randomness
- * @modules jdk.incubator.vector
- * @modules java.base/jdk.internal.misc
- * @summary Test that vector cast intrinsics work as intended on avx512bw.
- * @requires vm.cpu.features ~= ".*avx512bw.*"
- * @library /test/lib /
- * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastAVX512BW
+ * @bug 8318913
+ * @summary Verify no error is when compiling a class whose permitted types are not exported
+ * @modules jdk.compiler
+ * @compile/fail/ref=NonExportedPermittedTypes.out -XDrawDiagnostics NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release 21 -XDrawDiagnostics NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release ${jdk.version} -XDrawDiagnostics NonExportedPermittedTypes.java
  */
-public class TestVectorCastAVX512BW {
-    public static void main(String[] args) {
-        VectorReshapeHelper.runMainHelper(
-                TestVectorCast.class,
-                TestCastMethods.AVX512BW_CAST_TESTS.stream(),
-                "-XX:UseAVX=3");
-    }
-}
 
+
+import java.lang.constant.ConstantDesc;
+
+public class NonExportedPermittedTypes {
+
+    public void test1(ConstantDesc cd) {
+        switch (cd) {
+            case String s -> {}
+        }
+    }
+
+    public void test2(ConstantDesc cd) {
+        switch (cd) {
+            case String s -> {}
+            default -> {}
+        }
+    }
+
+}
