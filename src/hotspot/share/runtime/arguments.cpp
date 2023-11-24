@@ -1480,6 +1480,24 @@ void Arguments::set_use_compressed_oops() {
   // to use UseCompressedOops are InitialHeapSize and MinHeapSize.
   size_t max_heap_size = MAX3(MaxHeapSize, InitialHeapSize, MinHeapSize);
 
+  double ratio = max_heap_size / (double) max_heap_for_compressed_oops();
+  if (ratio > 1 && ratio < 1.02) {
+    // User set max heap within 2% of the compressed oops limit. Assume they intended or at least
+    // would benefit from a small reduction to allow enabling compressed oops. This is easily done by
+    // accident, for example setting -Xmx32G is a tiny amount over the limit.
+    warning("Heap size lowered from %lu to %lu to accommodate Compressed Oops", max_heap_size, max_heap_for_compressed_oops());
+    max_heap_size = max_heap_for_compressed_oops();
+    if (!FLAG_IS_DEFAULT(MaxHeapSize) && MaxHeapSize > max_heap_size) {
+      FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
+    }
+    if (!FLAG_IS_DEFAULT(InitialHeapSize) && InitialHeapSize > max_heap_size) {
+      FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
+    }
+    if (!FLAG_IS_DEFAULT(MinHeapSize) && MinHeapSize > max_heap_size) {
+      FLAG_SET_ERGO(MinHeapSize, max_heap_size);
+    }
+  }
+
   if (max_heap_size <= max_heap_for_compressed_oops()) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(UseCompressedOops, true);
