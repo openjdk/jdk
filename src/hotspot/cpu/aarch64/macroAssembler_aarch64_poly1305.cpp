@@ -28,48 +28,9 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "ci/ciEnv.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/disassembler.hpp"
-#include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetAssembler.hpp"
-#include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/tlab_globals.hpp"
-#include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/interpreter.hpp"
-#include "jvm.h"
-#include "kernelGenerator_aarch64.hpp"
+#include "macroAssembler_aarch64.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
-#include "nativeInst_aarch64.hpp"
-#include "oops/accessDecorators.hpp"
-#include "oops/compressedKlass.inline.hpp"
-#include "oops/compressedOops.inline.hpp"
-#include "oops/klass.inline.hpp"
-#include "runtime/continuation.hpp"
-#include "runtime/icache.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/powerOfTwo.hpp"
-#ifdef COMPILER1
-#include "c1/c1_LIRAssembler.hpp"
-#endif
-#ifdef COMPILER2
-#include "oops/oop.hpp"
-#include "opto/compile.hpp"
-#include "opto/node.hpp"
-#include "opto/output.hpp"
-#endif
-
-// Poly1305:
 
 void MacroAssembler::pack_26(Register dest0, Register dest1, Register dest2, Register src) {
   ldp(dest0, rscratch1, Address(src, 0));
@@ -89,6 +50,53 @@ void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
   wide_mul(RegPair(rscratch1, rscratch2), n, m);
   adds(sum._lo, sum._lo, rscratch1);
   adc(sum._hi, sum._hi, rscratch2);
+}
+
+void MacroAssembler::poly1305_transfer(const RegPair u0[],
+                                       const FloatRegister s[], int index,
+                                       FloatRegister vscratch) {
+  shl(vscratch, T2D, s[1], 26);
+  Assembler::add(vscratch, T2D, s[0], vscratch);
+  umov(u0[0]._lo, vscratch, D, index);
+
+  shl(vscratch, T2D, s[3], 26);
+  Assembler::add(vscratch, T2D, s[2], vscratch);
+  umov(u0[1]._lo, vscratch, D, index);
+
+  umov(u0[2]._lo, s[4], D, index);
+}
+
+// Compute d += s >> shift
+void MacroAssembler::shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
+                                    Register scratch) {
+  extr(scratch, s._hi, s._lo, shift);
+  adds(d._lo, d._lo, scratch);
+  lsr(scratch, s._hi, shift);
+  adc(d._hi, d._hi, scratch);
+}
+
+void MacroAssembler::clear_above(const RegPair d, int shift) {
+  bfc(d._lo, shift, 64-shift);
+  mov(d._hi, 0);
+}
+
+void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
+  // Fully reduce modulo 2^130 - 5
+  adds(u[0]._lo, u[0]._lo, u[1]._lo, LSL, 52);
+  lsr(u[1]._lo, u[1]._lo, 12);
+  lsl(rscratch1, u[2]._lo, 40);
+  adcs(u[1]._lo, u[1]._lo, rscratch1);
+  lsr(u[2]._lo, u[2]._lo, 24);
+  adc(u[2]._lo, u[2]._lo, zr);
+
+  // Subtract 2^130 - 5
+  // = 0x3_ffffffffffffffff_fffffffffffffffb
+  mov(rscratch1, 0xfffffffffffffffb); subs(dest[0], u[0]._lo, rscratch1);
+  mov(rscratch1, 0xffffffffffffffff); sbcs(dest[1], u[1]._lo, rscratch1);
+  mov(rscratch1, 0x3);                sbcs(dest[2], u[2]._lo, rscratch1);
+  csel(dest[0], dest[0], u[0]._lo, HS);
+  csel(dest[1], dest[1], u[1]._lo, HS);
+  csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
 #define _ acc << [=]()
@@ -337,53 +345,6 @@ void MacroAssembler::poly1305_reduce_vec(AsmGenerator &acc,
   poly1305_reduce_step(acc, u[3], u[2], zero, vtmp2);
   poly1305_reduce_step(acc, u[1], u[0], zero, vtmp2);
   poly1305_reduce_step(acc, u[4], u[3], zero, vtmp2);
-}
-
-void MacroAssembler::poly1305_transfer(const RegPair u0[],
-                                       const FloatRegister s[], int index,
-                                       FloatRegister vscratch) {
-  shl(vscratch, T2D, s[1], 26);
-  Assembler::add(vscratch, T2D, s[0], vscratch);
-  umov(u0[0]._lo, vscratch, D, index);
-
-  shl(vscratch, T2D, s[3], 26);
-  Assembler::add(vscratch, T2D, s[2], vscratch);
-  umov(u0[1]._lo, vscratch, D, index);
-
-  umov(u0[2]._lo, s[4], D, index);
-}
-
-// Compute d += s >> shift
-void MacroAssembler::shifted_add128(const RegPair d, const RegPair s, unsigned int shift,
-                                    Register scratch) {
-  extr(scratch, s._hi, s._lo, shift);
-  adds(d._lo, d._lo, scratch);
-  lsr(scratch, s._hi, shift);
-  adc(d._hi, d._hi, scratch);
-}
-
-void MacroAssembler::clear_above(const RegPair d, int shift) {
-  bfc(d._lo, shift, 64-shift);
-  mov(d._hi, 0);
-}
-
-void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
-  // Fully reduce modulo 2^130 - 5
-  adds(u[0]._lo, u[0]._lo, u[1]._lo, LSL, 52);
-  lsr(u[1]._lo, u[1]._lo, 12);
-  lsl(rscratch1, u[2]._lo, 40);
-  adcs(u[1]._lo, u[1]._lo, rscratch1);
-  lsr(u[2]._lo, u[2]._lo, 24);
-  adc(u[2]._lo, u[2]._lo, zr);
-
-  // Subtract 2^130 - 5
-  // = 0x3_ffffffffffffffff_fffffffffffffffb
-  mov(rscratch1, 0xfffffffffffffffb); subs(dest[0], u[0]._lo, rscratch1);
-  mov(rscratch1, 0xffffffffffffffff); sbcs(dest[1], u[1]._lo, rscratch1);
-  mov(rscratch1, 0x3);                sbcs(dest[2], u[2]._lo, rscratch1);
-  csel(dest[0], dest[0], u[0]._lo, HS);
-  csel(dest[1], dest[1], u[1]._lo, HS);
-  csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
 void MacroAssembler::poly1305_load(AsmGenerator &acc,

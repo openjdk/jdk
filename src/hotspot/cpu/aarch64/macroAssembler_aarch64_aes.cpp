@@ -27,7 +27,6 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "kernelGenerator_aarch64.hpp"
 #include "macroAssembler_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/stubRoutines.hpp"
