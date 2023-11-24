@@ -7202,139 +7202,6 @@ typedef uint32_t u32;
     return start;
   }
 
-  // void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
-  //   __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
-  //   __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
-  //   __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
-  //   __ orr(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
-
-  //   __ orr(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
-  //   __ orr(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
-  //   __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
-  //   __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
-
-  //   __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
-  // }
-
-  // void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
-  //   __ mul(prod_lo, n, m);
-  //   __ umulh(prod_hi, n, m);
-  // }
-  // void wide_madd(Register sum_lo, Register sum_hi, Register n, Register m) {
-  //   wide_mul(rscratch1, rscratch2, n, m);
-  //   __ adds(sum_lo, sum_lo, rscratch1);
-  //   __ adc(sum_hi, sum_hi, rscratch2);
-  // }
-
-  // address generate_poly1305_processBlocks1() {
-  //   __ align(CodeEntryAlignment);
-  //   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
-  //   address start = __ pc();
-  //   Label here;
-  //   __ enter();
-  //   RegSet callee_saved = RegSet::range(r19, r28);
-  //   __ push(callee_saved, sp);
-
-  //   RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
-
-  //   // Arguments
-  //   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
-
-  //   // R_n is the randomly-generated key, packed into three registers
-  //   const Register R_0 = *++regs, R_1 = *++regs, R_2 = *++regs;
-  //   pack_26(R_0, R_1, R_2, r_start);
-
-  //   // RR_n is (R_n >> 2) * 5
-  //   const Register RR_0 = *++regs, RR_1 = *++regs;
-  //   __ lsr(RR_0, R_0, 2);
-  //   __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
-  //   __ lsr(RR_1, R_1, 2);
-  //   __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
-
-  //   // U_n is the current checksum
-  //   const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
-  //   pack_26(U_0, U_1, U_2, acc_start);
-
-  //   static constexpr int BLOCK_LENGTH = 16;
-  //   Label DONE, LOOP;
-
-  //   __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-  //   __ br(Assembler::LT, DONE); {
-  //     __ bind(LOOP);
-
-  //     // S_n is to be the sum of U_n and the next block of data
-  //     const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
-  //     __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
-  //     __ adds(S_0, U_0, S_0);
-  //     __ adcs(S_1, U_1, S_1);
-  //     __ adc(S_2, U_2, zr);
-  //     __ add(S_2, S_2, 1);
-
-  //     const Register U_0HI = *++regs, U_1HI = *++regs;
-
-  //     wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
-  //     wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
-  //     __ andr(U_2, R_0, 3);
-  //     __ mul(U_2, S_2, U_2);
-
-  //     // Recycle registers S_0, S_1, S_2
-  //     regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
-
-  //     // Partial reduction mod 2**130 - 5
-  //     __ adds(U_1, U_0HI, U_1);
-  //     __ adc(U_2, U_1HI, U_2);
-  //     // Sum now in U_2:U_1, U_0.
-  //     // Dead: U_0HI, U_1HI.
-  //     regs = (regs.remaining() + U_0HI + U_1HI).begin();
-
-  //     // U_2:U_1:U_0 += (U_1HI >> 2)
-  //     __ lsr(rscratch1, U_2, 2);
-  //     __ andr(U_2, U_2, (u8)3);
-  //     __ adds(U_0, U_0, rscratch1);
-  //     __ adcs(U_1, U_1, zr);
-  //     __ adc(U_2, U_2, zr);
-
-  //     // U_1HI:U_0HI, U_0 += (U_1HI >> 2) << 2
-  //     __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
-  //     __ adcs(U_1, U_1, zr);
-  //     __ adc(U_2, U_2, zr);
-
-  //     __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
-  //     __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-  //     __ br(~ Assembler::LT, LOOP);
-  //   }
-
-  //   // Fully reduce modulo 2^130 - 5
-  //   __ lsr(rscratch1, U_2, 2);
-  //   __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
-  //   __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
-  //   __ adcs(U_1, U_1, zr);
-  //   __ andr(U_2, U_2, (u1)3);
-  //   __ adc(U_2, U_2, zr);
-
-  //   __ ubfiz(rscratch1, U_0, 0, 26);
-  //   __ ubfx(rscratch2, U_0, 26, 26);
-  //   __ stp(rscratch1, rscratch2, Address(acc_start));
-  //   __ ubfx(rscratch1, U_0, 52, 12);
-  //   __ bfi(rscratch1, U_1, 12, 14);
-  //   __ ubfx(rscratch2, U_1, 14, 26);
-  //   __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
-  //   __ ubfx(rscratch1, U_1, 40, 24);
-  //   __ bfi(rscratch1, U_2, 24, 2);
-  //   __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
-
-  //   __ bind(DONE);
-  //   __ pop(callee_saved, sp);
-  //   __ leave();
-  //   __ ret(lr);
-
-  //   return start;
-  // }
-
-#define INCLUDE_GEN2
-  #include "stubGenerator_poly1305_aarch64.cpp"
-#undef INCLUDE_GEN2
-
   address generate_poly1305_processBlocks1() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
@@ -7420,6 +7287,325 @@ typedef uint32_t u32;
 
     return start;
   }
+
+typedef AbstractRegSet<FloatRegister> vRegSet;
+
+template <typename RegType>
+class Regs {
+public:
+  RegType _regs[5];
+  Regs(RegSetIterator<RegType> &it, int n) {
+    for (int i = 0; i < n; i++) {
+      _regs[i] = *it++;
+    }
+  }
+  Regs(RegType R0, RegType R1, RegType R2) {
+    _regs[0] = R0, _regs[1] = R1, _regs[2] = R2;
+  }
+
+  RegType operator[](int n) { return _regs[n]; }
+  RegType *operator *() { return _regs; }
+
+  operator RegType*() { return _regs; }
+};
+
+class RegPairs {
+public:
+  RegPair _reg_pairs[3];
+  RegPairs(RegSetIterator<Register> &it, int n) {
+    for (int i = 0; i < n; i++) {
+      RegPair r(*it++, *it++);
+      _reg_pairs[i] = r;
+    }
+  }
+  operator RegPair*() { return _reg_pairs; }
+};
+
+typedef Regs<Register> CoreRegs;
+typedef Regs<FloatRegister> VectorRegs;
+
+address generate_poly1305_processBlocks2() {
+  static constexpr int POLY1305_BLOCK_LENGTH = 16;
+
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
+  address start = __ pc();
+  Label here;
+
+  // __ set_last_Java_frame(sp, rfp, lr, rscratch1);
+  __ enter();
+  RegSet callee_saved = RegSet::range(r19, r28);
+  __ push(callee_saved, sp);
+
+  auto regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
+
+  // Arguments
+  const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
+
+  // Rn is the key, packed into three registers
+  CoreRegs R(regs, 3);
+  __ pack_26(R[0], R[1], R[2], r_start);
+
+  // Sn is to be the sum of Un and the next block of data
+  CoreRegs S0(regs, 3), S1(regs, 3);
+
+  // Un is the current checksum
+  RegPairs u0(regs, 3), u1(regs, 3);
+
+  Register RR2 = *regs++;
+  __ lsl(RR2, R[2], 26);
+  __ add(RR2, RR2, RR2, __ LSL, 2);
+
+  int BLOCKS_PER_ITERATION = 6;
+
+  // Just one block?
+  Label SMALL;
+  {
+    Label LARGE;
+    __ subs(zr, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+    __ br(__ GT, LARGE);
+
+    // Load the initial state
+    __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+    __ b(SMALL);
+
+    __ bind(LARGE);
+  }
+
+  __ m_print52(R[2], R[1], R[0], "\n\nR\n");
+
+  // We're going to use R**6
+  {
+    CoreRegs u0_lo(u0[0]._lo, u0[1]._lo, u0[2]._lo);
+    CoreRegs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
+
+    poo = __ pc();
+
+    __ poly1305_field_multiply(u0, R, R, RR2, regs);
+    // u0_lo = R**2
+
+    __ m_print52(u0_lo[2], u0_lo[1], u0_lo[0], "\n\nR**2\n");
+
+    __ poly1305_field_multiply(u1, u0_lo, R, RR2, regs);
+    // u1_lo = R**3
+
+    __ copy_3_regs(R, u1_lo);
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    __ poly1305_field_multiply(u1, R, R, RR2, regs);
+    //u1_lo = R**6
+    __ copy_3_regs(R, u1_lo);
+
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    __ m_print52(R[2], R[1], R[0], "\n\nR**6\n");
+  }
+
+  // Load the initial state
+  __ pack_26(u0[0]._lo, u0[1]._lo, u0[2]._lo, acc_start);
+
+  // u0 contains the initial state. Clear the others.
+  for (int i = 0; i < 3; i++) {
+    __ mov(u0[i]._hi, 0);
+    __ mov(u1[i]._lo, 0); __ mov(u1[i]._hi, 0);
+  }
+
+  VectorRegs v_u0(vregs, 5);
+  VectorRegs v_s0(vregs, 3);
+  VectorRegs v_u1(vregs, 5);
+  VectorRegs v_s1(vregs, 3);
+
+  const FloatRegister zero = *vregs++;
+
+  __ movi(zero, __ T16B, 0);
+
+  // rr_v = r_v * 5
+  VectorRegs r_v(vregs, 2);
+  VectorRegs rr_v(vregs, 2);
+  __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
+  {
+    FloatRegister vtmp = *vregs;
+    __ shl(vtmp, __ T4S, r_v[0], 2);
+    __ addv(rr_v[0], __ T4S, r_v[0], vtmp);
+    __ shl(vtmp, __ T4S, r_v[1], 2);
+    __ addv(rr_v[1], __ T4S, r_v[1], vtmp);
+  }
+
+  for (int i = 0; i < 5; i++) {
+    __ movi(v_u0[i], __ T16B, 0);
+    __ movi(v_u1[i], __ T16B, 0);
+  }
+
+  __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
+  __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
+  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
+  __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
+  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "v[4]");
+  __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "v[5]");
+
+  {
+    Label DONE, LOOP;
+
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+    __ br(Assembler::LT, DONE);
+
+    __ align(OptoLoopAlignment);
+    __ bind(LOOP);
+    {
+      // __ poly1305_load(S0, input_start);
+      // __ poly1305_load(S1, input_start);
+
+      constexpr int COLS = 4;
+      LambdaAccumulator gen[COLS];
+
+      __ poly1305_step(gen[0], S0, u0, input_start);
+      __ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
+
+      __ poly1305_step(gen[1], S1, u1, input_start);
+      __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
+
+      __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
+      __ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
+                                 vregs.remaining());
+
+      __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
+      __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
+                                 vregs.remaining());
+
+      LambdaAccumulator::Iterator it[COLS];
+      int len[COLS];
+
+      int l_max = INT_MIN;
+      for (int col = 0; col < COLS; col++) {
+        it[col] = gen[col].iterator();
+        len[col] = gen[col].length();
+        l_max = MAX2(l_max, len[col]);
+      }
+
+      int err[COLS];
+      for (int col = 0; col < COLS; col++) {
+        err[col] = 0;
+      }
+
+      for (int i = 0; i < l_max; i++) {
+        for (int col = 0; col < COLS; col++) {
+          err[col] -= len[col];
+          if (err[col] < 0) {
+            err[col] += l_max;
+            (it[col]++)();
+          }
+        }
+      }
+
+      // for (int col = 0; col < COLS; col++) {
+      //   for (int i = 0; i < len[col]; i++) {
+      //     (it[col]++)();
+      //   }
+      // }
+
+      __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
+      __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "u[2]");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "u[3]");
+      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 0, "u[4]");
+      __ m_print26(__ D, v_u1[4], v_u1[3], v_u1[2], v_u1[1], v_u1[0], 1, "u[5]");
+
+      for (int col = 0; col < COLS; col++) {
+        assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+      }
+    }
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
+    __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION * 2);
+    __ br(Assembler::GE, LOOP);
+
+    __ bind(DONE);
+  }
+
+  // Last six parallel blocks
+  {
+    // Load R**1
+    __ pack_26(R[0], R[1], R[2], r_start);
+    __ lsl(RR2, R[2], 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u0, 0, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u0, 1, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u1, 0, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ poly1305_load(S0, input_start);
+    __ poly1305_add(S0, u0);
+    __ poly1305_transfer(u1, v_u1, 1, *vregs);
+    __ poly1305_add(S0, u1);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
+  }
+
+  // Maybe some last blocks
+  __ bind(SMALL);
+  {
+    Label DONE, LOOP;
+
+    __ bind(LOOP);
+    __ subsw(length, length, POLY1305_BLOCK_LENGTH);
+    __ br(__ LT, DONE);
+
+    __ poly1305_step(S0, u0, input_start);
+    __ poly1305_field_multiply(u0, S0, R, RR2, regs);
+
+    __ b(LOOP);
+    __ bind(DONE);
+  }
+  __ poly1305_fully_reduce(S0, u0);
+
+  // And store it all back
+  __ ubfiz(rscratch1, S0[0], 0, 26);
+  __ ubfx(rscratch2, S0[0], 26, 26);
+  __ stp(rscratch1, rscratch2, Address(acc_start));
+
+  __ ubfx(rscratch1, S0[0], 52, 12);
+  __ bfi(rscratch1, S0[1], 12, 14);
+  __ ubfx(rscratch2, S0[1], 14, 26);
+  __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+
+  __ extr(rscratch1, S0[2], S0[1], 40);
+  __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+  __ pop(callee_saved, sp);
+  // __ reset_last_Java_frame(true);
+  __ leave();
+  __ ret(lr);
+
+  return start;
+}
+
 
 #if INCLUDE_JFR
 
