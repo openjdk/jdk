@@ -23,14 +23,32 @@
  */
 
 /*
- * @test
  * @summary This test checks that ObjectMonitors with dead objects don't
             cause asserts, crashes, or failures when various sub-systems
             in the JVM find them.
  * @requires os.family != "windows"
  * @library /testlibrary /test/lib
  * @modules jdk.management
- * @run main/native MonitorWithDeadObjectTest
+ */
+
+/*
+ * @test id=DetachThread
+ * @run main/othervm/native MonitorWithDeadObjectTest 0
+ */
+
+/*
+ * @test id=DumpThreadsBeforeDetach
+ * @run main/othervm/native MonitorWithDeadObjectTest 1
+ */
+
+/*
+ * @test id=DumpThreadsAfterDetachBeforeJoin
+ * @run main/othervm/native MonitorWithDeadObjectTest 2
+ */
+
+/*
+ * @test id=DumpThreadsAfterDetachAfterJoin
+ * @run main/othervm/native MonitorWithDeadObjectTest 3
  */
 
 import java.lang.management.ManagementFactory;
@@ -89,9 +107,13 @@ public class MonitorWithDeadObjectTest {
     }
 
     public static void main(String[] args) throws Exception {
-        testDetachThread();
-        testDumpThreadsBeforeDetach();
-        testDumpThreadsAfterDetachBeforeJoin();
-        testDumpThreadsAfterDetachAfterJoin();
+        int test = Integer.parseInt(args[0]);
+        switch (test) {
+            case 0: testDetachThread(); break;
+            case 1: testDumpThreadsBeforeDetach(); break;
+            case 2: testDumpThreadsAfterDetachBeforeJoin(); break;
+            case 3: testDumpThreadsAfterDetachAfterJoin(); break;
+            default: throw new RuntimeException("Unknown test");
+        };
     }
 }
