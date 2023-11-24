@@ -39,15 +39,14 @@ public class Poly1305IntrinsicFuzzTest {
                 //Note: it might be useful to increase this number during development of new Poly1305 intrinsics
                 final int repeat = 1000;
                 for (int i = 0; i < repeat; i++) {
-                        run(i);
+                        run();
                 }
                 System.out.println("Fuzz Success");
         }
 
-        public static void run(int i) throws Exception {
+        public static void run() throws Exception {
                 Random rnd = new Random();
-                long seed = -4486256158368186964l;
-
+                long seed = rnd.nextLong();
                 rnd.setSeed(seed);
 
                 byte[] key = new byte[32];
