@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,30 @@
 
 /*
  * @test
- * @bug 8277106
- * @summary Verify no error is when compiling a class whose supertype is not exported.
+ * @bug 8318913
+ * @summary Verify no error is when compiling a class whose permitted types are not exported
  * @modules jdk.compiler
- *          jdk.jfr
- * @compile --release 17 NonExportedSuperTypes.java
- * @compile --release ${jdk.version} NonExportedSuperTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out -XDrawDiagnostics NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release 21 -XDrawDiagnostics NonExportedPermittedTypes.java
+ * @compile/fail/ref=NonExportedPermittedTypes.out --release ${jdk.version} -XDrawDiagnostics NonExportedPermittedTypes.java
  */
 
-import jdk.jfr.Event;
 
-public class NonExportedSuperTypes {
+import java.lang.constant.ConstantDesc;
 
-    public void evt(Event evt) {
-        evt.toString();
+public class NonExportedPermittedTypes {
+
+    public void test1(ConstantDesc cd) {
+        switch (cd) {
+            case String s -> {}
+        }
+    }
+
+    public void test2(ConstantDesc cd) {
+        switch (cd) {
+            case String s -> {}
+            default -> {}
+        }
     }
 
 }
