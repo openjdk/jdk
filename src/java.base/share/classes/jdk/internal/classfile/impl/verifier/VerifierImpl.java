@@ -113,7 +113,7 @@ public final class VerifierImpl {
         log_info(logger, "Start class verification for: %s", klass.thisClassName());
         try {
             var errors = new ArrayList<VerifyError>();
-            errors.addAll(ParserVerifier.verify(classModel, logger));
+            errors.addAll(new ParserVerifier(classModel).verify());
             if (is_eligible_for_verification(klass)) {
                 if (klass.majorVersion() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
                     var verifierErrors = new VerifierImpl(klass, classHierarchyResolver, logger).verify_class();
@@ -283,7 +283,7 @@ public final class VerifierImpl {
 
     void verify_method(VerificationWrapper.MethodWrapper m, List<VerifyError> errorsCollector) {
         try {
-            verify_method(m, m.maxLocals(), m.maxStack(), m.stackMapTableRawData());
+            verify_method(m);
         } catch (VerifyError err) {
             errorsCollector.add(err);
         } catch (Error | Exception e) {
@@ -293,9 +293,14 @@ public final class VerifierImpl {
     }
 
     @SuppressWarnings("fallthrough")
-    void verify_method(VerificationWrapper.MethodWrapper m, int max_locals, int max_stack, byte[] stackmap_data) {
+    void verify_method(VerificationWrapper.MethodWrapper m) {
         _method = m;
         log_info(_logger, "Verifying method %s%s", m.name(), m.descriptor());
+        byte[] codeArray = m.codeArray();
+        if (codeArray == null) verifyError("Missing Code attribute");
+        int max_locals = m.maxLocals();
+        int max_stack = m.maxStack();
+        byte[] stackmap_data = m.stackMapTableRawData();
         var cp = m.constantPool();
         if (!VerificationSignature.isValidMethodSignature(m.descriptor())) verifyError("Invalid method signature");
         VerificationFrame current_frame = new VerificationFrame(max_locals, max_stack, this);
@@ -305,7 +310,7 @@ public final class VerifierImpl {
         if (code_length < 1 || code_length > MAX_CODE_SIZE) {
             verifyError(String.format("Invalid method Code length %d", code_length));
         }
-        var code = ByteBuffer.wrap(_method.codeArray(), 0, _method.codeLength());
+        var code = ByteBuffer.wrap(codeArray, 0, _method.codeLength());
         byte[] code_data = generate_code_data(code, code_length);
         int ex_minmax[] = new int[] {code_length, -1};
         verify_exception_handler_table(code_length, code_data, ex_minmax);
@@ -1819,16 +1824,16 @@ public final class VerifierImpl {
 
     void verifyError(String msg) {
         dumpMethod();
-        throw new VerifyError(String.format("%s at %s.%s%s @%d %s", msg, _klass.thisClassName(), _method.name(), _method.descriptor(), bci, errorContext));
+        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext));
     }
 
     void verifyError(String msg, VerificationFrame from, VerificationFrame target) {
         dumpMethod();
-        throw new VerifyError(String.format("%s at %s.%s%s @%d %s%n  while assigning %s%n  to %s", msg, _klass.thisClassName(), _method.name(), _method.descriptor(), bci, errorContext, from, target));
+        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s%n  while assigning %s%n  to %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext, from, target));
     }
 
     void classError(String msg) {
         dumpMethod();
-        throw new ClassFormatError(String.format("%s at %s.%s%s", msg, _klass.thisClassName(), _method.name(), _method.descriptor()));
+        throw new ClassFormatError(String.format("%s in %s::%s(%s)", msg, _klass.thisClassName(), _method.name(), _method.parameters()));
     }
 }

@@ -24,20 +24,26 @@
 /*
  * @test
  * @summary Testing Classfile Verifier.
+ * @enablePreview
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
+import static java.lang.constant.ConstantDescs.*;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class VerifierSelfTest {
 
@@ -89,62 +95,100 @@ class VerifierSelfTest {
         }
     }
 
+    private static class CloneAttribute extends CustomAttribute<CloneAttribute> {
+        CloneAttribute(Attribute a) {
+            super(new AttributeMapper<CloneAttribute>(){
+                @Override
+                public String name() {
+                    return a.attributeName();
+                }
+
+                @Override
+                public CloneAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void writeAttribute(BufWriter buf, CloneAttribute attr) {
+                    int start = buf.size();
+                    a.attributeMapper().writeAttribute(buf, a);
+                    buf.writeU1(0); //writes additional byte to the attribute payload
+                    buf.patchInt(start + 2, 4, buf.size() - start - 6);
+                }
+
+                @Override
+                public AttributeMapper.AttributeStability stability() {
+                    return a.attributeMapper().stability();
+                }
+            });
+        }
+    }
+
+    private static <B extends ClassfileBuilder> B patch(B b, Attribute... attrs) {
+        for (var a : attrs) {
+            b.with(a).with(new CloneAttribute(a));
+        }
+        return b;
+    }
+
+    private static List<Attribute<?>> patch(Attribute... attrs) {
+        var lst = new ArrayList<Attribute<?>>(attrs.length * 2);
+        for (var a : attrs) {
+            lst.add(a);
+            lst.add(new CloneAttribute(a));
+        }
+        return lst;
+    }
+
     @Test
     void testParserVerifier() {
-        record PatchBuilder<B extends ClassfileBuilder>(B b) {
-            public <A extends Attribute> PatchBuilder<B> patch(A a) {
-                class CloneAttribute extends CustomAttribute<CloneAttribute> {
-                    CloneAttribute() {
-                        super(new AttributeMapper<CloneAttribute>(){
-                            @Override
-                            public String name() {
-                                return a.attributeName();
-                            }
-
-                            @Override
-                            public CloneAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
-                                throw new UnsupportedOperationException();
-                            }
-
-                            @Override
-                            public void writeAttribute(BufWriter buf, CloneAttribute attr) {
-                                int start = buf.size();
-                                a.attributeMapper().writeAttribute(buf, a);
-                                buf.writeU1(0);
-                                buf.patchInt(start + 2, 4, buf.size() - start - 6);
-                            }
-
-                            @Override
-                            public AttributeMapper.AttributeStability stability() {
-                                return a.attributeMapper().stability();
-                            }
-                        });
-                    }
-                }
-                b.with(a);
-                b.with(new CloneAttribute());
-                return this;
-            }
-        }
 
         var cc = Classfile.of();
         var cd_test = ClassDesc.of("TestParserVerifier");
-        var clm = cc.parse(cc.build(cd_test, clb -> new PatchBuilder<>(clb)
-                .patch(DeprecatedAttribute.of())
-                .patch(SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))))
-                .b().withField("f", cd_test, fb -> new PatchBuilder<>(fb)
-                            .patch(DeprecatedAttribute.of())
-                            .patch(SignatureAttribute.of(Signature.of(cd_test))))
+        var clm = cc.parse(cc.build(cd_test, clb -> patch(clb,
+                DeprecatedAttribute.of(),
+                RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
+                        SignatureAttribute.of(Signature.of(CD_String))))),
+                SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))))
+                    .withField("f", CD_String, fb -> patch(fb,
+                            ConstantValueAttribute.of(""),
+                            DeprecatedAttribute.of(),
+                            SignatureAttribute.of(Signature.of(CD_String))))
+                    .withMethod("m", MTD_void, 0, mb -> patch(mb,
+                            DeprecatedAttribute.of(),
+                            SignatureAttribute.of(MethodSignature.of(MTD_void)))
+                            .withCode(cob -> cob.return_()))
 
         ));
+        var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
+        var expected = """
+                Wrong Deprecated attribute length in class TestParserVerifier
+                Multiple Record attributes in class TestParserVerifier
+                Wrong Record attribute length in class TestParserVerifier
+                Multiple Signature attributes in class TestParserVerifier
+                Wrong Signature attribute length in class TestParserVerifier
+                Multiple ConstantValue attributes in field TestParserVerifier.f
+                Wrong ConstantValue attribute length in field TestParserVerifier.f
+                Wrong Deprecated attribute length in field TestParserVerifier.f
+                Multiple Signature attributes in field TestParserVerifier.f
+                Wrong Signature attribute length in field TestParserVerifier.f
+                Wrong Deprecated attribute length in method TestParserVerifier::m()
+                Multiple Signature attributes in method TestParserVerifier::m()
+                Wrong Signature attribute length in method TestParserVerifier::m()
+                Multiple Signature attributes in Record component c of class TestParserVerifier
+                Wrong Signature attribute length in Record component c of class TestParserVerifier
+                Multiple Signature attributes in Record component c of class TestParserVerifier
+                Wrong Signature attribute length in Record component c of class TestParserVerifier
+                """.lines().filter(exp -> !found.remove(exp)).toList();
+        if (!found.isEmpty() || !expected.isEmpty()) {
+            fail(STR."""
 
-        assertLinesMatch("""
-        Wrong Deprecated attribute length in class
-        Duplicate Signature attribute in class
-        Wrong Signature attribute length in class
-        Wrong Deprecated attribute length in field f
-        Duplicate Signature attribute in field f
-        Wrong Signature attribute length in field f
-        """.lines().toList(), clm.verify(null).stream().map(VerifyError::getMessage).toList());
+                 Expected:
+                   \{ expected.stream().collect(Collectors.joining("\n  ")) }
+
+                 Found:
+                   \{ found.stream().collect(Collectors.joining("\n  ")) }
+                 """);
+        }
     }
 }

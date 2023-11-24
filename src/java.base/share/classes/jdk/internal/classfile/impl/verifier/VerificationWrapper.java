@@ -25,6 +25,7 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.constant.ClassDesc;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,6 +34,7 @@ import jdk.internal.classfile.constantpool.DynamicConstantPoolEntry;
 import jdk.internal.classfile.constantpool.MemberRefEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import java.lang.reflect.AccessFlag;
+import java.util.stream.Collectors;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.MethodModel;
@@ -127,6 +129,10 @@ public final class VerificationWrapper {
 
         String descriptor() {
             return m.methodType().stringValue();
+        }
+
+        String parameters() {
+            return m.methodTypeSymbol().parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","));
         }
 
         int codeLength() {

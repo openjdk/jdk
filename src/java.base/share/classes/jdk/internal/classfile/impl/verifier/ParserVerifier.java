@@ -24,10 +24,12 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributedElement;
 import jdk.internal.classfile.ClassModel;
@@ -42,30 +44,36 @@ import jdk.internal.classfile.impl.BoundAttribute;
 /**
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/classFileParser.cpp">hotspot/share/classfile/classFileParser.cpp</a>
  */
-public class ParserVerifier {
+public record ParserVerifier(ClassModel classModel) {
 
-    static List<VerifyError> verify(ClassModel classModel, Consumer<String> logger) {
+    List<VerifyError> verify() {
         var errors = new ArrayList<VerifyError>();
         verifyAttributes(classModel, errors);
         return errors;
     }
 
-    private static void verifyAttributes(ClassfileElement cfe, List<VerifyError> errors) {
+    private void verifyAttributes(ClassfileElement cfe, List<VerifyError> errors) {
         if (cfe instanceof AttributedElement ae) {
             var attrNames = new HashSet<String>();
             for (var a : ae.attributes()) {
                 if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
-                    errors.add(new VerifyError("Duplicate %s attribute in %s".formatted(a.attributeName(), toString(ae))));
+                    errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
                 }
                 verifyAttribute(ae, a, errors);
             }
         }
-        if (cfe instanceof CompoundElement<?> comp) {
-            for (var e : comp) verifyAttributes(e, errors);
+        switch (cfe) {
+            case CompoundElement<?> comp -> {
+                for (var e : comp) verifyAttributes(e, errors);
+            }
+            case RecordAttribute ra -> {
+                for(var rc : ra.components()) verifyAttributes(rc, errors);
+            }
+            default -> {}
         }
     }
 
-    private static void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
+    private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
         int payLoad = ((BoundAttribute)a).payloadLen();
         if (payLoad != switch (a) {
             case BootstrapMethodsAttribute bma -> {
@@ -104,14 +112,24 @@ public class ParserVerifier {
 
     }
 
-    private static String toString(AttributedElement ae) {
+    private String className() {
+        return classModel.thisClass().asSymbol().displayName();
+    }
+
+    private String toString(AttributedElement ae) {
         return switch (ae) {
-            case ClassModel m -> "class";
-            case CodeModel m -> "CodeAttribute of " + toString(m.parent().get());
-            case FieldModel m -> "field " + m.fieldName().stringValue();
-            case MethodModel m -> "method " + m.methodName().stringValue() + m.methodTypeSymbol().displayDescriptor();
-            case RecordComponentInfo i -> "record component " + i.name().stringValue();
-            default -> ae.toString();
+            case CodeModel m -> "Code attribute for " + toString(m.parent().get());
+            case FieldModel m -> "field %s.%s".formatted(
+                    className(),
+                    m.fieldName().stringValue());
+            case MethodModel m -> "method %s::%s(%s)".formatted(
+                    className(),
+                    m.methodName().stringValue(),
+                    m.methodTypeSymbol().parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(",")));
+            case RecordComponentInfo i -> "Record component %s of class %s".formatted(
+                    i.name().stringValue(),
+                    className());
+            default -> "class " + className();
         };
     }
 }
