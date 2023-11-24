@@ -93,10 +93,6 @@ class MutableNUMASpace : public MutableSpace {
       delete _alloc_rate;
     }
 
-    static bool equals(void* lgrp_id_value, LGRPSpace* p) {
-      return *(uint*)lgrp_id_value == p->lgrp_id();
-    }
-
     // Report a failed allocation.
     void set_allocation_failed() { _allocation_failed = true;  }
 
@@ -157,6 +153,8 @@ class MutableNUMASpace : public MutableSpace {
   // |----bottom_region--|---intersection---|------top_region------|
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
+
+  int lgrp_space_index(int lgrp_id) const;
 
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
