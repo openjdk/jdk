@@ -154,24 +154,20 @@ public abstract class MonitoredHost {
      */
     public static MonitoredHost getMonitoredHost(HostIdentifier hostId)
                   throws MonitorException {
-        MonitoredHost mh = null;
 
         synchronized(monitoredHosts) {
-            mh = getCachedMonitoredHost(hostId);
+            MonitoredHost mh = monitoredHosts.get(hostId);
+            // remove any errored MonitorHost from the cache
+            if (mh != null && mh.isErrored()) {
+                monitoredHosts.remove(hostId);
+                mh = null;
+            }
             if (mh != null) {
                 return mh;
             }
-        }
-
-        hostId = resolveHostId(hostId);
-
-        synchronized(monitoredHosts) {
-            // re-check the internal cache before attempting to find a Service
-            // capable of returning a MonitoredHost from this HostIdentifier
-            mh = getCachedMonitoredHost(hostId);
-            if (mh != null) {
-                return mh;
-            }
+            // not found in cache, now try to find a MonitoredHostService
+            // which can get a MonitoredHost for the hostId
+            hostId = resolveHostId(hostId);
             for (MonitoredHostService mhs : monitoredHostServiceLoader) {
                 if (mhs.getScheme().equals(hostId.getScheme())) {
                     mh = mhs.getMonitoredHost(hostId);
@@ -179,30 +175,13 @@ public abstract class MonitoredHost {
                 }
             }
             if (mh == null) {
-                throw new IllegalArgumentException("Could not find MonitoredHost for scheme: " + hostId.getScheme());
+                throw new IllegalArgumentException("Could not find MonitoredHost for scheme: "
+                        + hostId.getScheme());
             }
             // add it to the internal cache
             monitoredHosts.put(mh.hostId, mh);
+            return mh;
         }
-
-        return mh;
-    }
-
-    // from an internal cache returns a MonitoredHost, if present, for the HostIdentifier.
-    // Else returns null. The thread calling this method must hold the monitor lock on
-    // "monitoredHosts" field
-    private static MonitoredHost getCachedMonitoredHost(final HostIdentifier hostId) {
-        assert Thread.holdsLock(monitoredHosts) : "called without holding a lock";
-        MonitoredHost mh = monitoredHosts.get(hostId);
-        if (mh == null) {
-            return null;
-        }
-        // remove any errored MonitorHost from the cache
-        if (mh.isErrored()) {
-            monitoredHosts.remove(hostId);
-            return null;
-        }
-        return mh;
     }
 
     /**
