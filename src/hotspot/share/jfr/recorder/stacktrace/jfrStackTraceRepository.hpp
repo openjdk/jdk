@@ -67,10 +67,10 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   traceid add_trace(const JfrStackTrace& stacktrace);
   static traceid add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace);
   static traceid add(const JfrStackTrace& stacktrace);
-  traceid record(JavaThread* current_thread, int skip, JfrStackFrame* frames, u4 max_frames);
+  traceid record(JavaThread* current_thread, int skip, int64_t stack_filter_id, JfrStackFrame* frames, u4 max_frames);
 
  public:
-  static traceid record(Thread* current_thread, int skip = 0);
+  static traceid record(Thread* current_thread, int skip = 0, int64_t stack_filter_id = -1);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_HPP

@@ -272,7 +272,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
           return false; // might have been reached
         }
         assert(!invoke_bc.has_index_u4(code), "sanity");
-        int method_index = invoke_bc.get_index_u2_cpcache(code);
+        int method_index = invoke_bc.get_index_u2(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
         return (resolved_method == nullptr);
@@ -380,7 +380,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
-        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->cache()->resolved_method_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }
