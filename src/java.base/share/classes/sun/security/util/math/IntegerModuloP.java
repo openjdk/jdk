@@ -413,5 +413,4 @@ public interface IntegerModuloP {
             }
         }
     }
-
 }

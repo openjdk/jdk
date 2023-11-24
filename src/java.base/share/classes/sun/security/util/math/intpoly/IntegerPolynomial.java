@@ -668,10 +668,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     protected class MutableElement extends Element
         implements MutableIntegerModuloP {
 
-        @Override
-        public String toString() {
-            return asBigInteger().toString(16);
-        }
         protected MutableElement(long[] limbs, int numAdds) {
             super(limbs, numAdds);
         }
@@ -842,11 +838,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     }
 
     class ImmutableElement extends Element implements ImmutableIntegerModuloP {
-
-        @Override
-        public String toString() {
-            return asBigInteger().toString(16);
-        }
 
         protected ImmutableElement(BigInteger v) {
             super(v);

@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.Key;
 import java.security.InvalidKeyException;
@@ -225,16 +224,6 @@ final class Poly1305 {
         return tag;
     }
 
-    private static final String ENV_NAME = "APH_FOO_BAX";
-
-    private static final String BLAH = System.getenv(ENV_NAME);
-
-    static {
-        if (BLAH == null) {
-            System.out.println(ENV_NAME + " not set");
-        }
-    }
-
     /**
      * Process a single block of data.  This should only be called
      * when the block array is complete.  That may not necessarily
@@ -242,35 +231,8 @@ final class Poly1305 {
      */
     private void processBlock(ByteBuffer buf, int len) {
         n.setValue(buf, len, (byte)0x01);
-        if (printing) {
-            System.out.println("n = " + n.asBigInteger().toString(16));
-        }
         a.setSum(n);                    // a += (n | 0x01)
         a.setProduct(r);                // a = (a * r) % p
-    }
-
-    private void processBlock1(byte[] block, int offset, int length) {
-        Objects.checkFromIndexSize(offset, length, block.length);
-        n.setValue(block, offset, length, (byte)0x01);
-        if (printing) {
-            System.out.println("a0 = " + a.asBigInteger().toString(16));
-            System.out.println("n = " + n.asBigInteger().toString(16));
-        }
-        a.setSum(n);                    // a += (n | 0x01)
-        if (printing) {
-            System.out.println("a = " + a.asBigInteger().toString(16));
-        }
-        a.setProduct(r);                // a = (a * r) % p
-        if (printing) {
-            System.out.println("r = " + r.asBigInteger().toString(16));
-            System.out.println("x = " + a.asBigInteger().toString(16));
-            System.out.print("limbs = ");
-            long[] limbs = a.getLimbs();
-            for (int i = limbs.length - 1; i >= 0; --i) {
-                System.out.print(Long.toString(limbs[i], 16) + ":");
-            }
-            System.out.println();
-        }
     }
 
     private void processBlock(byte[] block, int offset, int length) {
@@ -280,93 +242,16 @@ final class Poly1305 {
         a.setProduct(r);                // a = (a * r) % p
     }
 
-    static final boolean printing = ("yes".equals(BLAH));
-
-    static void maybePrint(int cols, String name, IntegerModuloP[] a) {
-        if (printing) {
-            for (int i = 0; i < cols; i++)  System.out.printf("%s[%d] = %33.33s ", name, i, a[i]);
-            System.out.println();
-        }
-    }
-
     // This is an intrinsified method. The unused parameters aLimbs and rLimbs are used by the intrinsic.
     // They correspond to this.a and this.r respectively
     @ForceInline
     @IntrinsicCandidate
     private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs) {
-        final int cols = 4, max_cols = 4;
-
-        if (length >= BLOCK_LENGTH * cols) {
-            IntegerModuloP rPrime = ipl1305.get1();
-            for (int i = 0; i < cols; i++) {
-                rPrime = rPrime.multiply(r);
-            }
-            IntegerModuloP[] A = new IntegerModuloP[4];
-             A[0] = a.mutable();
-            for (int i = 1; i < cols; i++)
-                A[i] = ipl1305.get0();
-
-            var N = new MutableIntegerModuloP[4];
-            for (int i = 0; i < cols; i++)
-                N[i] = ipl1305.get1().mutable();
-
-            if (printing) {
-                System.out.printf("init:\n    A[0] = %33.33s  r = %33.33s \n", A[0], r);
-                System.out.printf("  r**N = %33.33s \n", rPrime);
-            }
-
-            while (length >= BLOCK_LENGTH * cols * 2) {
-
-                for (int i = 0; i < cols; i++) {
-                    N[i].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                    offset += BLOCK_LENGTH;
-                    length -= BLOCK_LENGTH;
-                }
-
-                var S = new IntegerModuloP[max_cols];
-                for (int i = 0; i < cols; i++) {
-                    S[i] = A[i].add(N[i]);
-                    A[i] = S[i].multiply(rPrime);
-                }
-
-                maybePrint(cols, "N", N);
-                maybePrint(cols, "S", S);
-                maybePrint(cols, "A", A);
-
-            }
-
-            {
-                var sum = ipl1305.get0();
-
-                for (int i = 0; i < cols; i++) {
-
-                    N[i].setValue(input, offset, BLOCK_LENGTH, (byte) 0x01);
-                    offset += BLOCK_LENGTH;
-                    length -= BLOCK_LENGTH;
-
-                    sum = sum.add(A[i]);
-                    sum = sum.add(N[i]);
-                    sum = sum.multiply(r);
-                    if (printing)
-                        System.out.printf("    sum = %33.33s  \n", sum);
-                }
-
-                a.setValue(sum);
-
-                if (printing) {
-                    maybePrint(cols, "N", N);
-                    maybePrint(cols, "A", A);
-                    System.out.println("");
-                }
-            }
-        }
-
         while (length >= BLOCK_LENGTH) {
             processBlock(input, offset, BLOCK_LENGTH);
             offset += BLOCK_LENGTH;
             length -= BLOCK_LENGTH;
         }
-        System.out.print("");
     }
 
     private void processMultipleBlocks(ByteBuffer buf, int blockMultipleLength) {
