@@ -79,7 +79,7 @@ public class HugeArenaTracking {
 
     wb.NMTFreeArena(arena1);
 
-    // Repeat report at GB level. Peak should be 0 now. Current usage is 1KB, since arena2 is left, but that
+    // Repeat report at GB level. Reserved should be 0 now. Current usage is 1KB, since arena2 is left, but that
     // is below GB scale threshold, so should show up as 0.
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[] { "scale=G" },

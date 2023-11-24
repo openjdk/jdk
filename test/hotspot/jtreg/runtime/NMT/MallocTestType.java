@@ -56,7 +56,7 @@ public class MallocTestType {
                          "(malloc=512KB #1) (peak=768KB #2)"});
 
     // Free the memory allocated by NMTAllocTest
-    wb.NMTFree(memAlloc1);                           // current 0K #0 peak +768K #2
+    wb.NMTFree(memAlloc1); // current 0K #0 peak +768K #2
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[]{"Test (reserved=0KB, committed=0KB)",

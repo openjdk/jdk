@@ -795,30 +795,43 @@ public final class OutputAnalyzer {
     }
 
     private void searchLinesForMultiLinePattern(String[] haystack, String[] needles, boolean verbose) {
-        int needleIdx = 0;
-        int haystackIdx = 0;
-        boolean started = false;
-        boolean found = false;
-        while (needleIdx < needles.length && haystackIdx < haystack.length && (started == false || found == true)) {
-            if (verbose) {
-                System.out.println("" + haystackIdx + ":" + haystack[haystackIdx]);
-            }
-            found = haystack[haystackIdx].contains(needles[needleIdx]);
-            if (found) {
-                if (verbose) {
-                    System.out.println("Matches pattern " + needleIdx + " (\"" + haystack[haystackIdx] + "\")");
-                }
-                started = true;
-                needleIdx++;
-            }
-            haystackIdx++;
+
+        if (needles.length == 0) {
+            return;
         }
-        if (needleIdx < needles.length) {
-            String err = "First unmatched: \"" + needles[needleIdx] + "\"";
-            if (!verbose) { // don't print twice
-                reportDiagnosticSummary();
+
+        int firstNeedlePos = 0;
+        for (int i = 0; i < haystack.length; i++) {
+            if (verbose) {
+                System.out.println("" + i + ":" + haystack[i]);
             }
-            throw new RuntimeException(err);
+            if (haystack[i].contains(needles[0])) {
+                if (verbose) {
+                    System.out.println("Matches pattern 0 (\"" + needles[0] + "\")");
+                }
+                firstNeedlePos = i;
+                break;
+            }
+        }
+
+        for (int i = 1; i < needles.length; i++) {
+            int haystackPos = firstNeedlePos + i;
+            if (haystackPos < haystack.length) {
+                if (verbose) {
+                    System.out.println("" + haystackPos + ":" + haystack[haystackPos]);
+                }
+                if (haystack[haystackPos].contains(needles[i])) {
+                    if (verbose) {
+                        System.out.println("Matches pattern " + i  + "(\"" + needles[i] + "\")");
+                    }
+                } else {
+                    String err = "First unmatched pattern: " + i + " (\"" + needles[i] + "\")";
+                    if (!verbose) { // don't print twice
+                        reportDiagnosticSummary();
+                    }
+                    throw new RuntimeException(err);
+                }
+            }
         }
     }
 

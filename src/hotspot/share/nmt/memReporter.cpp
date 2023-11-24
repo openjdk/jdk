@@ -210,78 +210,79 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     committed_amount += _malloc_snapshot->malloc_overhead();
   }
 
-  // We omit printing altogether if:
-  // - the current reserved value falls below scale
-  // - none of the historic peaks (malloc, mmap committed, arena) raised above scale either
+  // Omit printing if the current reserved value as well as all historical peaks (malloc, mmap committed, arena)
+  // fall below scale threshold
   const size_t pk_vm = virtual_memory->peak_size();
   const size_t pk_malloc = malloc_memory->malloc_peak_size();
   const size_t pk_arena = malloc_memory->arena_peak_size();
 
-  if (amount_in_current_scale(MAX4(reserved_amount, pk_vm, pk_malloc, pk_arena)) > 0) {
-    outputStream* out   = output();
-    const char*   scale = current_scale();
-    out->print("-%26s (", NMTUtil::flag_to_name(flag));
-    print_total(reserved_amount, committed_amount);
-#if INCLUDE_CDS
-    if (flag == mtClassShared) {
-        size_t read_only_bytes = FileMapInfo::readonly_total();
-      output()->print(", readonly=" SIZE_FORMAT "%s",
-                      amount_in_current_scale(read_only_bytes), scale);
-    }
-#endif
-    out->print_cr(")");
-
-    if (flag == mtClass) {
-      // report class count
-      out->print_cr("%27s (classes #" SIZE_FORMAT ")",
-        " ", (_instance_class_count + _array_class_count));
-      out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
-        " ", _instance_class_count, _array_class_count);
-    } else if (flag == mtThread) {
-      if (ThreadStackTracker::track_as_vm()) {
-        const VirtualMemory* thread_stack_usage =
-         _vm_snapshot->by_type(mtThreadStack);
-        // report thread count
-        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
-        out->print("%27s (stack: ", " ");
-        print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
-      } else {
-        MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
-        const char* scale = current_scale();
-        // report thread count
-        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
-        out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
-          amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
-      }
-      out->print_cr(")");
-    }
-
-     // report malloc'd memory
-    if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
-      print_malloc_line(malloc_memory->malloc_counter());
-    }
-
-    if (amount_in_current_scale(MAX2(virtual_memory->reserved(), pk_vm)) > 0) {
-      print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed(), virtual_memory->peak_size());
-    }
-
-    if (amount_in_current_scale(MAX2(malloc_memory->arena_size(), pk_arena)) > 0) {
-      print_arena_line(malloc_memory->arena_counter());
-    }
-
-    if (flag == mtNMT &&
-      amount_in_current_scale(_malloc_snapshot->malloc_overhead()) > 0) {
-      out->print_cr("%27s (tracking overhead=" SIZE_FORMAT "%s)", " ",
-        amount_in_current_scale(_malloc_snapshot->malloc_overhead()), scale);
-    } else if (flag == mtClass) {
-      // Metadata information
-      report_metadata(Metaspace::NonClassType);
-      if (Metaspace::using_class_space()) {
-        report_metadata(Metaspace::ClassType);
-      }
-    }
-    out->print_cr(" ");
+  if (amount_in_current_scale(MAX4(reserved_amount, pk_vm, pk_malloc, pk_arena)) == 0) {
+    return;
   }
+
+  outputStream* out   = output();
+  const char*   scale = current_scale();
+  out->print("-%26s (", NMTUtil::flag_to_name(flag));
+  print_total(reserved_amount, committed_amount);
+#if INCLUDE_CDS
+  if (flag == mtClassShared) {
+      size_t read_only_bytes = FileMapInfo::readonly_total();
+    output()->print(", readonly=" SIZE_FORMAT "%s",
+                    amount_in_current_scale(read_only_bytes), scale);
+  }
+#endif
+  out->print_cr(")");
+
+  if (flag == mtClass) {
+    // report class count
+    out->print_cr("%27s (classes #" SIZE_FORMAT ")",
+      " ", (_instance_class_count + _array_class_count));
+    out->print_cr("%27s (  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
+      " ", _instance_class_count, _array_class_count);
+  } else if (flag == mtThread) {
+    if (ThreadStackTracker::track_as_vm()) {
+      const VirtualMemory* thread_stack_usage =
+       _vm_snapshot->by_type(mtThreadStack);
+      // report thread count
+      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+      out->print("%27s (stack: ", " ");
+      print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
+    } else {
+      MallocMemory* thread_stack_memory = _malloc_snapshot->by_type(mtThreadStack);
+      const char* scale = current_scale();
+      // report thread count
+      out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
+      out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
+        amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
+    }
+    out->print_cr(")");
+  }
+
+   // report malloc'd memory
+  if (amount_in_current_scale(MAX2(malloc_memory->malloc_size(), pk_malloc)) > 0) {
+    print_malloc_line(malloc_memory->malloc_counter());
+  }
+
+  if (amount_in_current_scale(MAX2(virtual_memory->reserved(), pk_vm)) > 0) {
+    print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed(), virtual_memory->peak_size());
+  }
+
+  if (amount_in_current_scale(MAX2(malloc_memory->arena_size(), pk_arena)) > 0) {
+    print_arena_line(malloc_memory->arena_counter());
+  }
+
+  if (flag == mtNMT &&
+    amount_in_current_scale(_malloc_snapshot->malloc_overhead()) > 0) {
+    out->print_cr("%27s (tracking overhead=" SIZE_FORMAT "%s)", " ",
+      amount_in_current_scale(_malloc_snapshot->malloc_overhead()), scale);
+  } else if (flag == mtClass) {
+    // Metadata information
+    report_metadata(Metaspace::NonClassType);
+    if (Metaspace::using_class_space()) {
+      report_metadata(Metaspace::ClassType);
+    }
+  }
+  out->print_cr(" ");
 }
 
 void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
@@ -331,8 +332,7 @@ int MemDetailReporter::report_malloc_sites() {
   const MallocSite* malloc_site;
   int num_omitted = 0;
   while ((malloc_site = malloc_itr.next()) != nullptr) {
-    // Omit printing if neither the current nor the historic peak malloc amount raises above
-    // reporting scale threshold.
+    // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
     if (amount_in_current_scale(MAX2(malloc_site->size(), malloc_site->peak_size())) == 0) {
       num_omitted ++;
       continue;
@@ -363,8 +363,8 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
     if (virtual_memory_site->reserved() == 0) {
       continue;
     }
-    // Omit printing if neither the current nor the historic peak malloc amount raises above
-    // reporting scale threshold.
+    // Omit printing if the current value and the historic peak value both fall below the
+    // reporting scale threshold
     if (amount_in_current_scale(MAX2(virtual_memory_site->reserved(),
                                      virtual_memory_site->peak_size())) == 0) {
       num_omitted++;
