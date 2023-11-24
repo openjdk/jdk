@@ -4220,6 +4220,13 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
+// This nulls out jmethodIDs for all methods in 'klass'
+// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
+// during class unloading.
+// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
 void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
   Array<Method*>* method_refs = klass->methods();
   for (int k = 0; k < method_refs->length(); k++) {
