@@ -99,19 +99,19 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor. Batch up the unlinkable monitors, so we can
       // modify the list once per batch. The batch starts at "m".
-      size_t unlink_batch = 0;
+      size_t unlinked_batch = 0;
       ObjectMonitor* next = m;
       // Look for at most MonitorUnlinkBatch monitors, or the number of
       // deflated and not unlinked monitors, whatever comes first.
-      size_t unlink_limit = MIN2<size_t>(deflated_count - unlinked_count, MonitorUnlinkBatch);
+      assert(deflated_count >= unlinked_count, "Sanity: underflow");
+      size_t unlinked_batch_limit = MIN2<size_t>(deflated_count - unlinked_count, MonitorUnlinkBatch);
       do {
         ObjectMonitor* next_next = next->next_om();
-        unlinked_count++;
+        unlinked_batch++;
         unlinked_list->append(next);
         next = next_next;
-        if (unlink_batch++ >= unlink_limit) {
+        if (unlinked_batch >= unlinked_batch_limit) {
           // Reached the max batch, so bail out of the gathering loop.
-          unlink_batch = 0;
           break;
         }
         if (prev == nullptr && Atomic::load(&_head) != m) {
@@ -141,8 +141,10 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
         assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
+
+      unlinked_count += unlinked_batch;
       if (unlinked_count >= deflated_count) {
-        // Reached the max so bail out on the searching loop.
+        // Reached the max so bail out of the searching loop.
         // There should be no more deflated monitors left.
         break;
       }
