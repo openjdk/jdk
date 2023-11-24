@@ -229,8 +229,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Md" draft="contributed">M-d</dateFormatItem>
-						<dateFormatItem id="MEd" draft="contributed">M-dE</dateFormatItem>
 						<dateFormatItem id="MMM" draft="contributed">M月</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
@@ -317,7 +315,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="concentr-karat">
-				<displayName>开</displayName>
 				<unitPattern count="other">{0}开</unitPattern>
 			</unit>
 			<unit type="length-picometer">
@@ -337,10 +334,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="other" draft="unconfirmed">{0}光年</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName>开氏度</displayName>
-				<unitPattern count="other">{0}°K</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

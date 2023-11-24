@@ -64,6 +64,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils.DamerauLevenshteinDistance;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Multi-function entry point for the doc check utility.
@@ -410,8 +411,8 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
         return false;
     }
 
-    public boolean isGroupEnabled(Messages.Group group, Env.AccessKind accessKind) {
-        return env.messages.isEnabled(group, accessKind);
+    public boolean isGroupEnabled(Messages.Group group, AccessLevel accessLevel) {
+        return env.messages.isEnabled(group, accessLevel);
     }
 
     private String localize(String code, Object... args) {

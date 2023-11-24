@@ -394,6 +394,7 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 }
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
   NOT_PRODUCT(++pc_nmethod_stats.pc_desc_adds);
   // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {
@@ -2705,9 +2706,6 @@ void nmethod::decode2(outputStream* ost) const {
   const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
                                                                   AbstractDisassembler::show_block_comment());
 #endif
-
-  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
 
   st->cr();
   this->print(st);
