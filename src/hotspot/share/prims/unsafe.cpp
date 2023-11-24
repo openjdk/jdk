@@ -421,6 +421,9 @@ UNSAFE_ENTRY(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject s
 
     {
       GuardUnsafeAccess guard(thread);
+      // Transitioning to native state below checks NSV, but doesn't actually do a safepoint poll.
+      // So, this is safe to ignore, as no async exception handshake can actually be installed.
+      PauseNoSafepointVerifier pnsv(&nsv);
       // Transition to native state. Since the source and destination are both in native memory
       // the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
       ThreadToNativeFromVM ttn(thread);
