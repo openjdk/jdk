@@ -38,9 +38,9 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @summary verify that sun.jvmstat.monitor.MonitoredHost.getMonitoredHost() doesn't
  *          unexpectedly throw an exception when invoked by concurrent threads
  *
- * @run main/othervm GetMonitoredHost
+ * @run main/othervm ConcurrentGetMonitoredHost
  */
-public class GetMonitoredHost {
+public class ConcurrentGetMonitoredHost {
 
     /*
      * Launches multiple concurrent threads and invokes MonitoredHost.getMonitoredHost()
