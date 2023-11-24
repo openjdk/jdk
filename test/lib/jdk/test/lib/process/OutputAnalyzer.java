@@ -50,6 +50,19 @@ public final class OutputAnalyzer {
      * @param process Process to analyze
      * @param cs The charset used to convert stdout/stderr from bytes to chars
      *           or null for the default charset.
+     * @param shouldLogProgress should it log the progress to stdout
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, Charset cs, boolean shouldLogProgress) throws IOException {
+        buffer = OutputBuffer.of(process, cs, shouldLogProgress);
+    }
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process
+     *
+     * @param process Process to analyze
+     * @param cs The charset used to convert stdout/stderr from bytes to chars
+     *           or null for the default charset.
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process, Charset cs) throws IOException {
