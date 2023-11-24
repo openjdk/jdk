@@ -38,18 +38,19 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -388,7 +389,7 @@ enum {
 
 // Supports I/O operations for a dump
 // Base class for dump and parallel dump
-class AbstractDumpWriter : public ResourceObj {
+class AbstractDumpWriter : public CHeapObj<mtInternal> {
  protected:
   enum {
     io_buffer_max_size = 1*M,
@@ -934,7 +935,7 @@ u4 DumperSupport::instance_size(Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
   u4 size = 0;
 
-  for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
+  for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       size += sig2size(fld.signature());
     }
@@ -946,7 +947,7 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
   field_count = 0;
   u4 size = 0;
 
-  for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
+  for (JavaFieldStream fldc(ik); !fldc.done(); fldc.next()) {
     if (fldc.access_flags().is_static()) {
       field_count++;
       size += sig2size(fldc.signature());
@@ -980,7 +981,7 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors and raw values
-  for (FieldStream fld(ik, true, true); !fld.eos(); fld.next()) {
+  for (JavaFieldStream fld(ik); !fld.done(); fld.next()) {
     if (fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
 
@@ -1014,7 +1015,7 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
 void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o) {
   InstanceKlass* ik = InstanceKlass::cast(o->klass());
 
-  for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
+  for (HierarchicalFieldStream<JavaFieldStream> fld(ik); !fld.done(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
       dump_field_value(writer, sig->char_at(0), o, fld.offset());
@@ -1026,7 +1027,7 @@ void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o) {
 u2 DumperSupport::get_instance_fields_count(InstanceKlass* ik) {
   u2 field_count = 0;
 
-  for (FieldStream fldc(ik, true, true); !fldc.eos(); fldc.next()) {
+  for (JavaFieldStream fldc(ik); !fldc.done(); fldc.next()) {
     if (!fldc.access_flags().is_static()) field_count++;
   }
 
@@ -1038,7 +1039,7 @@ void DumperSupport::dump_instance_field_descriptors(AbstractDumpWriter* writer, 
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // dump the field descriptors
-  for (FieldStream fld(ik, true, true); !fld.eos(); fld.next()) {
+  for (JavaFieldStream fld(ik); !fld.done(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
 
@@ -1385,7 +1386,6 @@ class JNILocalsDumper : public OopClosure {
   void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
-
 void JNILocalsDumper::do_oop(oop* obj_p) {
   // ignore null handles
   oop o = *obj_p;
@@ -1450,6 +1450,310 @@ class StickyClassDumper : public KlassClosure {
     }
   }
 };
+
+// Support class used to generate HPROF_GC_ROOT_JAVA_FRAME records.
+
+class JavaStackRefDumper : public StackObj {
+private:
+  AbstractDumpWriter* _writer;
+  u4 _thread_serial_num;
+  int _frame_num;
+  AbstractDumpWriter* writer() const { return _writer; }
+public:
+  JavaStackRefDumper(AbstractDumpWriter* writer, u4 thread_serial_num)
+      : _writer(writer), _thread_serial_num(thread_serial_num), _frame_num(-1) // default - empty stack
+  {
+  }
+
+  void set_frame_number(int n) { _frame_num = n; }
+
+  void dump_java_stack_refs(StackValueCollection* values);
+};
+
+void JavaStackRefDumper::dump_java_stack_refs(StackValueCollection* values) {
+  for (int index = 0; index < values->size(); index++) {
+    if (values->at(index)->type() == T_OBJECT) {
+      oop o = values->obj_at(index)();
+      if (o != nullptr) {
+        u4 size = 1 + sizeof(address) + 4 + 4;
+        writer()->start_sub_record(HPROF_GC_ROOT_JAVA_FRAME, size);
+        writer()->write_objectID(o);
+        writer()->write_u4(_thread_serial_num);
+        writer()->write_u4((u4)_frame_num);
+        writer()->end_sub_record();
+      }
+    }
+  }
+}
+
+// Class to collect, store and dump thread-related data:
+// - HPROF_TRACE and HPROF_FRAME records;
+// - HPROF_GC_ROOT_THREAD_OBJ/HPROF_GC_ROOT_JAVA_FRAME/HPROF_GC_ROOT_JNI_LOCAL subrecords.
+class ThreadDumper : public CHeapObj<mtInternal> {
+public:
+  enum class ThreadType { Platform, MountedVirtual, UnmountedVirtual };
+
+private:
+  ThreadType _thread_type;
+  JavaThread* _java_thread;
+  oop _thread_oop;
+
+  GrowableArray<StackFrameInfo*>* _frames;
+  // non-null if the thread is OOM thread
+  Method* _oome_constructor;
+  int _thread_serial_num;
+  int _start_frame_serial_num;
+
+  vframe* get_top_frame() const;
+
+public:
+  static bool should_dump_pthread(JavaThread* thread) {
+    return thread->threadObj() != nullptr && !thread->is_exiting() && !thread->is_hidden_from_external_view();
+  }
+
+  static bool should_dump_vthread(oop vt) {
+    return java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::NEW
+        && java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
+  }
+
+  ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
+
+  // affects frame_count
+  void add_oom_frame(Method* oome_constructor) {
+    assert(_start_frame_serial_num == 0, "add_oom_frame cannot be called after init_serial_nums");
+    _oome_constructor = oome_constructor;
+  }
+
+  void init_serial_nums(volatile int* thread_counter, volatile int* frame_counter) {
+    assert(_start_frame_serial_num == 0, "already initialized");
+    _thread_serial_num = Atomic::fetch_then_add(thread_counter, 1);
+    _start_frame_serial_num = Atomic::fetch_then_add(frame_counter, frame_count());
+  }
+
+  bool oom_thread() const {
+    return _oome_constructor != nullptr;
+  }
+
+  int frame_count() const {
+    return _frames->length() + (oom_thread() ? 1 : 0);
+  }
+
+  u4 thread_serial_num() const {
+    return (u4)_thread_serial_num;
+  }
+
+  u4 stack_trace_serial_num() const {
+    return (u4)(_thread_serial_num + STACK_TRACE_ID);
+  }
+
+  // writes HPROF_TRACE and HPROF_FRAME records
+  // returns number of dumped frames
+  void dump_stack_traces(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map);
+
+  // writes HPROF_GC_ROOT_THREAD_OBJ subrecord
+  void dump_thread_obj(AbstractDumpWriter* writer);
+
+  // Walk the stack of the thread.
+  // Dumps a HPROF_GC_ROOT_JAVA_FRAME subrecord for each local
+  // Dumps a HPROF_GC_ROOT_JNI_LOCAL subrecord for each JNI local
+  void dump_stack_refs(AbstractDumpWriter* writer);
+
+};
+
+ThreadDumper::ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop)
+    : _thread_type(thread_type), _java_thread(java_thread), _thread_oop(thread_oop),
+      _oome_constructor(nullptr),
+      _thread_serial_num(0), _start_frame_serial_num(0)
+{
+  // sanity checks
+  if (_thread_type == ThreadType::UnmountedVirtual) {
+    assert(_java_thread == nullptr, "sanity");
+    assert(_thread_oop != nullptr, "sanity");
+  } else {
+    assert(_java_thread != nullptr, "sanity");
+    assert(_thread_oop != nullptr, "sanity");
+  }
+
+  _frames = new (mtServiceability) GrowableArray<StackFrameInfo*>(10, mtServiceability);
+  bool stop_at_vthread_entry = _thread_type == ThreadType::MountedVirtual;
+
+  // vframes are resource allocated
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  for (vframe* vf = get_top_frame(); vf != nullptr; vf = vf->sender()) {
+    if (stop_at_vthread_entry && vf->is_vthread_entry()) {
+      break;
+    }
+    if (vf->is_java_frame()) {
+      javaVFrame* jvf = javaVFrame::cast(vf);
+      _frames->append(new StackFrameInfo(jvf, false));
+    } else {
+      // ignore non-Java frames
+    }
+  }
+}
+
+void ThreadDumper::dump_stack_traces(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map) {
+  assert(_thread_serial_num != 0 && _start_frame_serial_num != 0, "serial_nums are not initialized");
+
+  // write HPROF_FRAME records for this thread's stack trace
+  int depth = _frames->length();
+  int frame_serial_num = _start_frame_serial_num;
+
+  if (oom_thread()) {
+    // OOM thread
+    // write fake frame that makes it look like the thread, which caused OOME,
+    // is in the OutOfMemoryError zero-parameter constructor
+    int oome_serial_num = klass_map->find(_oome_constructor->method_holder());
+    // the class serial number starts from 1
+    assert(oome_serial_num > 0, "OutOfMemoryError class not found");
+    DumperSupport::dump_stack_frame(writer, ++frame_serial_num, oome_serial_num, _oome_constructor, 0);
+    depth++;
+  }
+
+  for (int j = 0; j < _frames->length(); j++) {
+    StackFrameInfo* frame = _frames->at(j);
+    Method* m = frame->method();
+    int class_serial_num = klass_map->find(m->method_holder());
+    // the class serial number starts from 1
+    assert(class_serial_num > 0, "class not found");
+    DumperSupport::dump_stack_frame(writer, ++frame_serial_num, class_serial_num, m, frame->bci());
+  }
+
+  // write HPROF_TRACE record for the thread
+  DumperSupport::write_header(writer, HPROF_TRACE, checked_cast<u4>(3 * sizeof(u4) + depth * oopSize));
+  writer->write_u4(stack_trace_serial_num());   // stack trace serial number
+  writer->write_u4(thread_serial_num());        // thread serial number
+  writer->write_u4((u4)depth);                  // frame count (including oom frame)
+  for (int j = 1; j <= depth; j++) {
+    writer->write_id(_start_frame_serial_num + j);
+  }
+}
+
+void ThreadDumper::dump_thread_obj(AbstractDumpWriter * writer) {
+  assert(_thread_serial_num != 0 && _start_frame_serial_num != 0, "serial_num is not initialized");
+
+  u4 size = 1 + sizeof(address) + 4 + 4;
+  writer->start_sub_record(HPROF_GC_ROOT_THREAD_OBJ, size);
+  writer->write_objectID(_thread_oop);
+  writer->write_u4(thread_serial_num());      // thread serial number
+  writer->write_u4(stack_trace_serial_num()); // stack trace serial number
+  writer->end_sub_record();
+}
+
+void ThreadDumper::dump_stack_refs(AbstractDumpWriter * writer) {
+  assert(_thread_serial_num != 0 && _start_frame_serial_num != 0, "serial_num is not initialized");
+
+  JNILocalsDumper blk(writer, thread_serial_num());
+  if (_thread_type == ThreadType::Platform) {
+    if (!_java_thread->has_last_Java_frame()) {
+      // no last java frame but there may be JNI locals
+      _java_thread->active_handles()->oops_do(&blk);
+      return;
+    }
+  }
+
+  JavaStackRefDumper java_ref_dumper(writer, thread_serial_num());
+
+  // vframes are resource allocated
+  Thread* current_thread = Thread::current();
+  ResourceMark rm(current_thread);
+  HandleMark hm(current_thread);
+
+  bool stopAtVthreadEntry = _thread_type == ThreadType::MountedVirtual;
+  frame* last_entry_frame = nullptr;
+  bool is_top_frame = true;
+  int depth = 0;
+  if (oom_thread()) {
+    depth++;
+  }
+
+  for (vframe* vf = get_top_frame(); vf != nullptr; vf = vf->sender()) {
+    if (stopAtVthreadEntry && vf->is_vthread_entry()) {
+      break;
+    }
+
+    if (vf->is_java_frame()) {
+      javaVFrame* jvf = javaVFrame::cast(vf);
+      if (!(jvf->method()->is_native())) {
+        java_ref_dumper.set_frame_number(depth);
+        java_ref_dumper.dump_java_stack_refs(jvf->locals());
+        java_ref_dumper.dump_java_stack_refs(jvf->expressions());
+      } else {
+        // native frame
+        blk.set_frame_number(depth);
+        if (is_top_frame) {
+          // JNI locals for the top frame.
+          assert(_java_thread != nullptr, "impossible for unmounted vthread");
+          _java_thread->active_handles()->oops_do(&blk);
+        } else {
+          if (last_entry_frame != nullptr) {
+            // JNI locals for the entry frame
+            assert(last_entry_frame->is_entry_frame(), "checking");
+            last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(&blk);
+          }
+        }
+      }
+      last_entry_frame = nullptr;
+      // increment only for Java frames
+      depth++;
+    } else {
+      // externalVFrame - for an entry frame then we report the JNI locals
+      // when we find the corresponding javaVFrame
+      frame* fr = vf->frame_pointer();
+      assert(fr != nullptr, "sanity check");
+      if (fr->is_entry_frame()) {
+        last_entry_frame = fr;
+      }
+    }
+  is_top_frame = false;
+  }
+  assert(depth == frame_count(), "total number of Java frames not matched");
+}
+
+vframe* ThreadDumper::get_top_frame() const {
+  if (_thread_type == ThreadType::UnmountedVirtual) {
+    ContinuationWrapper cont(java_lang_VirtualThread::continuation(_thread_oop));
+    if (cont.is_empty()) {
+      return nullptr;
+    }
+    assert(!cont.is_mounted(), "sanity check");
+    stackChunkOop chunk = cont.last_nonempty_chunk();
+    if (chunk == nullptr || chunk->is_empty()) {
+      return nullptr;
+    }
+
+    RegisterMap reg_map(cont.continuation(), RegisterMap::UpdateMap::include);
+    frame fr = chunk->top_frame(&reg_map);
+    vframe* vf = vframe::new_vframe(&fr, &reg_map, nullptr); // don't need JavaThread
+    return vf;
+  }
+
+  RegisterMap reg_map(_java_thread,
+      RegisterMap::UpdateMap::include,
+      RegisterMap::ProcessFrames::include,
+      RegisterMap::WalkContinuation::skip);
+  switch (_thread_type) {
+  case ThreadType::Platform:
+    if (!_java_thread->has_last_Java_frame()) {
+      return nullptr;
+    }
+    return _java_thread->is_vthread_mounted()
+        ? _java_thread->carrier_last_java_vframe(&reg_map)
+        : _java_thread->platform_thread_last_java_vframe(&reg_map);
+
+  case ThreadType::MountedVirtual:
+    return _java_thread->last_java_vframe(&reg_map);
+
+  default: // make compilers happy
+      break;
+  }
+  ShouldNotReachHere();
+  return nullptr;
+}
+
 
 class VM_HeapDumper;
 
@@ -1651,7 +1955,9 @@ void DumpMerger::do_merge() {
       merge_file(path);
     }
     // Delete selected segmented heap file nevertheless
-    remove(path);
+    if (remove(path) != 0) {
+      log_info(heapdump)("Removal of segment file (%d) failed (%d)", i, errno);
+    }
   }
 
   // restore compressor for further use
@@ -1683,8 +1989,12 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   Method*                 _oome_constructor;
   bool                    _gc_before_heap_dump;
   GrowableArray<Klass*>*  _klass_map;
-  ThreadStackTrace**      _stack_traces;
-  int                     _num_threads;
+
+  ThreadDumper**          _thread_dumpers; // platform, carrier and mounted virtual threads
+  int                     _thread_dumpers_count;
+  volatile int            _thread_serial_num;
+  volatile int            _frame_serial_num;
+
   volatile int            _dump_seq;
   // parallel heap dump support
   uint                    _num_dumper_threads;
@@ -1721,15 +2031,18 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   // writes a HPROF_GC_CLASS_DUMP record for the given class
   static void do_class_dump(Klass* k);
 
-  // HPROF_GC_ROOT_THREAD_OBJ records
-  int do_thread(JavaThread* thread, u4 thread_serial_num);
-  void do_threads();
+  // HPROF_GC_ROOT_THREAD_OBJ records for platform and mounted virtual threads
+  void dump_threads();
 
   void add_class_serial_number(Klass* k, int serial_num) {
     _klass_map->at_put_grow(serial_num, k);
   }
 
-  // HPROF_TRACE and HPROF_FRAME records
+  bool is_oom_thread(JavaThread* thread) const {
+    return thread == _oome_thread && _oome_constructor != nullptr;
+  }
+
+  // HPROF_TRACE and HPROF_FRAME records for platform and mounted virtual threads
   void dump_stack_traces();
 
  public:
@@ -1742,8 +2055,12 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
     _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
-    _stack_traces = nullptr;
-    _num_threads = 0;
+
+    _thread_dumpers = nullptr;
+    _thread_dumpers_count = 0;
+    _thread_serial_num = 1;
+    _frame_serial_num = 1;
+
     _dump_seq = 0;
     _num_dumper_threads = num_dump_threads;
     _dumper_controller = nullptr;
@@ -1763,12 +2080,13 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   }
 
   ~VM_HeapDumper() {
-    if (_stack_traces != nullptr) {
-      for (int i=0; i < _num_threads; i++) {
-        delete _stack_traces[i];
+    if (_thread_dumpers != nullptr) {
+      for (int i = 0; i < _thread_dumpers_count; i++) {
+        delete _thread_dumpers[i];
       }
-      FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces);
+      FREE_C_HEAP_ARRAY(ThreadDumper*, _thread_dumpers);
     }
+
     if (_dumper_controller != nullptr) {
       delete _dumper_controller;
       _dumper_controller = nullptr;
@@ -1835,127 +2153,13 @@ void VM_HeapDumper::do_class_dump(Klass* k) {
   }
 }
 
-// Walk the stack of the given thread.
-// Dumps a HPROF_GC_ROOT_JAVA_FRAME record for each local
-// Dumps a HPROF_GC_ROOT_JNI_LOCAL record for each JNI local
-//
-// It returns the number of Java frames in this thread stack
-int VM_HeapDumper::do_thread(JavaThread* java_thread, u4 thread_serial_num) {
-  JNILocalsDumper blk(writer(), thread_serial_num);
-
-  oop threadObj = java_thread->threadObj();
-  assert(threadObj != nullptr, "sanity check");
-
-  int stack_depth = 0;
-  if (java_thread->has_last_Java_frame()) {
-
-    // vframes are resource allocated
-    Thread* current_thread = Thread::current();
-    ResourceMark rm(current_thread);
-    HandleMark hm(current_thread);
-
-    RegisterMap reg_map(java_thread,
-                        RegisterMap::UpdateMap::include,
-                        RegisterMap::ProcessFrames::include,
-                        RegisterMap::WalkContinuation::skip);
-    frame f = java_thread->last_frame();
-    vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
-    frame* last_entry_frame = nullptr;
-    int extra_frames = 0;
-
-    if (java_thread == _oome_thread && _oome_constructor != nullptr) {
-      extra_frames++;
+// Write a HPROF_GC_ROOT_THREAD_OBJ record for platform/carrier and mounted virtual threads.
+// Then walk the stack so that locals and JNI locals are dumped.
+void VM_HeapDumper::dump_threads() {
+    for (int i = 0; i < _thread_dumpers_count; i++) {
+        _thread_dumpers[i]->dump_thread_obj(writer());
+        _thread_dumpers[i]->dump_stack_refs(writer());
     }
-    while (vf != nullptr) {
-      blk.set_frame_number(stack_depth);
-      if (vf->is_java_frame()) {
-
-        // java frame (interpreted, compiled, ...)
-        javaVFrame *jvf = javaVFrame::cast(vf);
-        if (!(jvf->method()->is_native())) {
-          StackValueCollection* locals = jvf->locals();
-          for (int slot=0; slot<locals->size(); slot++) {
-            if (locals->at(slot)->type() == T_OBJECT) {
-              oop o = locals->obj_at(slot)();
-
-              if (o != nullptr) {
-                u4 size = 1 + sizeof(address) + 4 + 4;
-                writer()->start_sub_record(HPROF_GC_ROOT_JAVA_FRAME, size);
-                writer()->write_objectID(o);
-                writer()->write_u4(thread_serial_num);
-                writer()->write_u4((u4) (stack_depth + extra_frames));
-                writer()->end_sub_record();
-              }
-            }
-          }
-          StackValueCollection *exprs = jvf->expressions();
-          for(int index = 0; index < exprs->size(); index++) {
-            if (exprs->at(index)->type() == T_OBJECT) {
-               oop o = exprs->obj_at(index)();
-               if (o != nullptr) {
-                 u4 size = 1 + sizeof(address) + 4 + 4;
-                 writer()->start_sub_record(HPROF_GC_ROOT_JAVA_FRAME, size);
-                 writer()->write_objectID(o);
-                 writer()->write_u4(thread_serial_num);
-                 writer()->write_u4((u4) (stack_depth + extra_frames));
-                 writer()->end_sub_record();
-               }
-             }
-          }
-        } else {
-          // native frame
-          if (stack_depth == 0) {
-            // JNI locals for the top frame.
-            java_thread->active_handles()->oops_do(&blk);
-          } else {
-            if (last_entry_frame != nullptr) {
-              // JNI locals for the entry frame
-              assert(last_entry_frame->is_entry_frame(), "checking");
-              last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(&blk);
-            }
-          }
-        }
-        // increment only for Java frames
-        stack_depth++;
-        last_entry_frame = nullptr;
-
-      } else {
-        // externalVFrame - if it's an entry frame then report any JNI locals
-        // as roots when we find the corresponding native javaVFrame
-        frame* fr = vf->frame_pointer();
-        assert(fr != nullptr, "sanity check");
-        if (fr->is_entry_frame()) {
-          last_entry_frame = fr;
-        }
-      }
-      vf = vf->sender();
-    }
-  } else {
-    // no last java frame but there may be JNI locals
-    java_thread->active_handles()->oops_do(&blk);
-  }
-  return stack_depth;
-}
-
-
-// write a HPROF_GC_ROOT_THREAD_OBJ record for each java thread. Then walk
-// the stack so that locals and JNI locals are dumped.
-void VM_HeapDumper::do_threads() {
-  for (int i=0; i < _num_threads; i++) {
-    JavaThread* thread = _stack_traces[i]->thread();
-    oop threadObj = thread->threadObj();
-    u4 thread_serial_num = i+1;
-    u4 stack_serial_num = thread_serial_num + STACK_TRACE_ID;
-    u4 size = 1 + sizeof(address) + 4 + 4;
-    writer()->start_sub_record(HPROF_GC_ROOT_THREAD_OBJ, size);
-    writer()->write_objectID(threadObj);
-    writer()->write_u4(thread_serial_num);  // thread number
-    writer()->write_u4(stack_serial_num);   // stack trace serial number
-    writer()->end_sub_record();
-    int num_frames = do_thread(thread, thread_serial_num);
-    assert(num_frames == _stack_traces[i]->get_stack_depth(),
-           "total number of Java frames not matched");
-  }
 }
 
 bool VM_HeapDumper::doit_prologue() {
@@ -2100,6 +2304,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // this must be called after _klass_map is built when iterating the classes above.
     dump_stack_traces();
 
+    // HPROF_HEAP_DUMP/HPROF_HEAP_DUMP_SEGMENT starts here
+
     // Writes HPROF_GC_CLASS_DUMP records
     {
       LockedClassesDo locked_dump_class(&do_class_dump);
@@ -2107,7 +2313,7 @@ void VM_HeapDumper::work(uint worker_id) {
     }
 
     // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
-    do_threads();
+    dump_threads();
 
     // HPROF_GC_ROOT_JNI_GLOBAL
     JNIGlobalsDumper jni_dumper(writer());
@@ -2154,6 +2360,7 @@ void VM_HeapDumper::work(uint worker_id) {
       _dumper_controller->wait_all_dumpers_complete();
     } else {
       _dumper_controller->dumper_complete(local_writer, writer());
+      delete local_writer;
       return;
     }
   }
@@ -2163,58 +2370,44 @@ void VM_HeapDumper::work(uint worker_id) {
 
 void VM_HeapDumper::dump_stack_traces() {
   // write a HPROF_TRACE record without any frames to be referenced as object alloc sites
-  DumperSupport::write_header(writer(), HPROF_TRACE, 3*sizeof(u4));
-  writer()->write_u4((u4) STACK_TRACE_ID);
+  DumperSupport::write_header(writer(), HPROF_TRACE, 3 * sizeof(u4));
+  writer()->write_u4((u4)STACK_TRACE_ID);
   writer()->write_u4(0);                    // thread number
   writer()->write_u4(0);                    // frame count
 
-  _stack_traces = NEW_C_HEAP_ARRAY(ThreadStackTrace*, Threads::number_of_threads(), mtInternal);
-  int frame_serial_num = 0;
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    oop threadObj = thread->threadObj();
-    if (threadObj != nullptr && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
-      // dump thread stack trace
-      Thread* current_thread = Thread::current();
-      ResourceMark rm(current_thread);
-      HandleMark hm(current_thread);
+  // max number if every platform thread is carrier with mounted virtual thread
+  _thread_dumpers = NEW_C_HEAP_ARRAY(ThreadDumper*, Threads::number_of_threads() * 2, mtInternal);
 
-      ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
-      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr, true);
-      _stack_traces[_num_threads++] = stack_trace;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread * thread = jtiwh.next(); ) {
+    if (ThreadDumper::should_dump_pthread(thread)) {
+      bool add_oom_frame = is_oom_thread(thread);
 
-      // write HPROF_FRAME records for this thread's stack trace
-      int depth = stack_trace->get_stack_depth();
-      int thread_frame_start = frame_serial_num;
-      int extra_frames = 0;
-      // write fake frame that makes it look like the thread, which caused OOME,
-      // is in the OutOfMemoryError zero-parameter constructor
-      if (thread == _oome_thread && _oome_constructor != nullptr) {
-        int oome_serial_num = _klass_map->find(_oome_constructor->method_holder());
-        // the class serial number starts from 1
-        assert(oome_serial_num > 0, "OutOfMemoryError class not found");
-        DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, oome_serial_num,
-                                        _oome_constructor, 0);
-        extra_frames++;
+      oop mounted_vt = thread->is_vthread_mounted() ? thread->vthread() : nullptr;
+      if (mounted_vt != nullptr && !ThreadDumper::should_dump_vthread(mounted_vt)) {
+        mounted_vt = nullptr;
       }
-      for (int j=0; j < depth; j++) {
-        StackFrameInfo* frame = stack_trace->stack_frame_at(j);
-        Method* m = frame->method();
-        int class_serial_num = _klass_map->find(m->method_holder());
-        // the class serial number starts from 1
-        assert(class_serial_num > 0, "class not found");
-        DumperSupport::dump_stack_frame(writer(), ++frame_serial_num, class_serial_num, m, frame->bci());
-      }
-      depth += extra_frames;
 
-      // write HPROF_TRACE record for one thread
-      DumperSupport::write_header(writer(), HPROF_TRACE, checked_cast<u4>(3*sizeof(u4) + depth*oopSize));
-      int stack_serial_num = _num_threads + STACK_TRACE_ID;
-      writer()->write_u4(stack_serial_num);      // stack trace serial number
-      writer()->write_u4((u4) _num_threads);     // thread serial number
-      writer()->write_u4(depth);                 // frame count
-      for (int j=1; j <= depth; j++) {
-        writer()->write_id(thread_frame_start + j);
+      // mounted vthread (if any)
+      if (mounted_vt != nullptr) {
+        ThreadDumper* thread_dumper = new ThreadDumper(ThreadDumper::ThreadType::MountedVirtual, thread, mounted_vt);
+        _thread_dumpers[_thread_dumpers_count++] = thread_dumper;
+        if (add_oom_frame) {
+          thread_dumper->add_oom_frame(_oome_constructor);
+          // we add oom frame to the VT stack, don't add it to the carrier thread stack
+          add_oom_frame = false;
+        }
+        thread_dumper->init_serial_nums(&_thread_serial_num, &_frame_serial_num);
+        thread_dumper->dump_stack_traces(writer(), _klass_map);
       }
+
+      // platform or carrier thread
+      ThreadDumper* thread_dumper = new ThreadDumper(ThreadDumper::ThreadType::Platform, thread, thread->threadObj());
+      _thread_dumpers[_thread_dumpers_count++] = thread_dumper;
+      if (add_oom_frame) {
+        thread_dumper->add_oom_frame(_oome_constructor);
+      }
+      thread_dumper->init_serial_nums(&_thread_serial_num, &_frame_serial_num);
+      thread_dumper->dump_stack_traces(writer(), _klass_map);
     }
   }
 }

@@ -33,6 +33,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
@@ -54,10 +55,8 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -83,7 +82,7 @@ public final class SharedUtils {
     private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
     public static final AddressLayout C_POINTER = ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
 
     public static final Arena DUMMY_ARENA = new Arena() {
         @Override
@@ -92,7 +91,7 @@ public final class SharedUtils {
         }
 
         @Override
-        public MemorySegment allocate(long byteSize) {
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
             throw new UnsupportedOperationException();
         }
 
@@ -127,6 +126,10 @@ public final class SharedUtils {
 
     public static long alignUp(long addr, long alignment) {
         return ((addr - 1) | (alignment - 1)) + 1;
+    }
+
+    public static long remainsToAlignment(long addr, long alignment) {
+        return alignUp(addr, alignment) - addr;
     }
 
     /**
@@ -176,7 +179,7 @@ public final class SharedUtils {
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
-            // adjust return type so it matches the inferred type of the effective
+            // adjust return type so that it matches the inferred type of the effective
             // function descriptor
             target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
@@ -242,6 +245,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
             case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
+            case AIX_PPC_64 -> AixPPC64Linker.getInstance();
             case LINUX_PPC_64 -> LinuxPPC64Linker.getInstance();
             case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
@@ -249,24 +253,6 @@ public final class SharedUtils {
             case FALLBACK -> FallbackLinker.getInstance();
             case UNSUPPORTED -> throw new UnsupportedOperationException("Platform does not support native linker");
         };
-    }
-
-    public static String toJavaStringInternal(MemorySegment segment, long start) {
-        int len = strlen(segment, start);
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private static int strlen(MemorySegment segment, long start) {
-        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
-        for (int offset = 0; offset >= 0; offset++) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw new IllegalArgumentException("String too large");
     }
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
@@ -434,20 +420,6 @@ public final class SharedUtils {
         };
     }
 
-    public static final class SimpleVaArg {
-        public final MemoryLayout layout;
-        public final Object value;
-
-        public SimpleVaArg(MemoryLayout layout, Object value) {
-            this.layout = layout;
-            this.value = value;
-        }
-
-        public VarHandle varHandle() {
-            return layout.varHandle();
-        }
-    }
-
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
         // use VH_LONG for integers to zero out the whole register in the process
         if (type == long.class) {
@@ -514,5 +486,36 @@ public final class SharedUtils {
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
+    }
+
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+        return Map.ofEntries(
+                // specified canonical layouts
+                Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("short", ValueLayout.JAVA_SHORT),
+                Map.entry("int", ValueLayout.JAVA_INT),
+                Map.entry("float", ValueLayout.JAVA_FLOAT),
+                Map.entry("long", longLayout),
+                Map.entry("long long", ValueLayout.JAVA_LONG),
+                Map.entry("double", ValueLayout.JAVA_DOUBLE),
+                Map.entry("void*", ValueLayout.ADDRESS),
+                Map.entry("size_t", sizetLayout),
+                Map.entry("wchar_t", wchartLayout),
+                // unspecified size-dependent layouts
+                Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+                Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+                Map.entry("int32_t", ValueLayout.JAVA_INT),
+                Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                // unspecified JNI layouts
+                Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
+                Map.entry("jchar", ValueLayout.JAVA_CHAR),
+                Map.entry("jbyte", ValueLayout.JAVA_BYTE),
+                Map.entry("jshort", ValueLayout.JAVA_SHORT),
+                Map.entry("jint", ValueLayout.JAVA_INT),
+                Map.entry("jlong", ValueLayout.JAVA_LONG),
+                Map.entry("jfloat", ValueLayout.JAVA_FLOAT),
+                Map.entry("jdouble", ValueLayout.JAVA_DOUBLE)
+        );
     }
 }

@@ -39,10 +39,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -63,11 +68,6 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.inline.hpp"
-#include "services/nmtPreInit.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
@@ -1439,7 +1439,7 @@ bool os::write(int fd, const void *buf, size_t nBytes) {
     if (res == OS_ERR) {
       return false;
     }
-    buf = (void *)((char *)buf + nBytes);
+    buf = (void *)((char *)buf + res);
     nBytes -= res;
   }
 

@@ -335,7 +335,10 @@ private:
   address data() const { return (address) this + sizeof(*this) + sizeof(ImmutableOopMapPair) * _count; }
 
 public:
+  void operator delete(void* p);
+
   ImmutableOopMapSet(const OopMapSet* oopmap_set, int size) : _count(oopmap_set->size()), _size(size) {}
+  ~ImmutableOopMapSet() = default;
 
   ImmutableOopMap* oopmap_at_offset(int offset) const {
     assert(offset >= 0 && offset < _size, "must be within boundaries");

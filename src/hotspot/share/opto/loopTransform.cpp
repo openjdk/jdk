@@ -933,7 +933,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   the residual iterations are more than 10% of the trip count
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
-  if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
+  if (phase->C->do_superword() &&
+      cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
       is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
@@ -1038,7 +1039,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     } // switch
   }
 
-  if (UseSuperWord) {
+  if (phase->C->do_superword()) {
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
@@ -1918,6 +1919,9 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_normal_loop();
   post_head->set_post_loop(main_head);
 
+  // clone_loop() above changes the exit projection
+  main_exit = outer_main_end->proj_out(false);
+
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
   post_end->_prob = PROB_FAIR;
@@ -2282,6 +2286,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // can edit it's inputs directly.  Hammer in the new limit for the
     // minimum-trip guard.
     assert(opaq->outcnt() == 1, "");
+    // Notify limit -> opaq -> CmpI, it may constant fold.
+    _igvn.add_users_to_worklist(opaq->in(1));
     _igvn.replace_input_of(opaq, 1, new_limit);
   }
 
@@ -3599,9 +3605,13 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Non-counted loops may be peeled; exactly 1 iteration is peeled.
   // This removes loop-invariant tests (usually null checks).
   if (!_head->is_CountedLoop()) { // Non-counted loop
-    if (PartialPeelLoop && phase->partial_peel(this, old_new)) {
-      // Partial peel succeeded so terminate this round of loop opts
-      return false;
+    if (PartialPeelLoop) {
+      bool rc = phase->partial_peel(this, old_new);
+      if (Compile::current()->failing()) { return false; }
+      if (rc) {
+        // Partial peel succeeded so terminate this round of loop opts
+        return false;
+      }
     }
     if (policy_peeling(phase)) {    // Should we peel?
       if (PrintOpto) { tty->print_cr("should_peel"); }

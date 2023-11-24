@@ -41,6 +41,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -7017,8 +7018,10 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier_exception) {
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
+      __ authenticate_return_address(c_rarg1);
       __ verify_oop(r0);
-      __ mov(r19, r0); // save return value contaning the exception oop in callee-saved R19
+      // save return value containing the exception oop in callee-saved R19
+      __ mov(r19, r0);
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
@@ -7028,7 +7031,7 @@ class StubGenerator: public StubCodeGenerator {
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
       __ mov(r1, r0); // the exception handler
-      __ mov(r0, r19); // restore return value contaning the exception oop
+      __ mov(r0, r19); // restore return value containing the exception oop
       __ verify_oop(r0);
 
       __ leave();
@@ -7667,6 +7670,21 @@ address generate_poly1305_processBlocks2() {
   }
 
 #endif // INCLUDE_JFR
+
+  // exception handler for upcall stubs
+  address generate_upcall_stub_exception_handler() {
+    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    address start = __ pc();
+
+    // Native caller has no idea how to handle exceptions,
+    // so we just crash here. Up to callee to catch exceptions.
+    __ verify_oop(r0);
+    __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
+    __ blr(rscratch1);
+    __ should_not_reach_here();
+
+    return start;
+  }
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
@@ -8717,6 +8735,8 @@ address generate_poly1305_processBlocks2() {
     generate_atomic_entry_points();
 
 #endif // LINUX
+
+    StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }

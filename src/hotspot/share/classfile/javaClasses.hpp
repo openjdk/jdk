@@ -852,6 +852,9 @@ class java_lang_Module {
     static oop loader(oop module);
     static void set_loader(oop module, oop value);
 
+    // CDS
+    static int module_entry_offset() { return _module_entry_offset; }
+
     static oop name(oop module);
     static void set_name(oop module, oop value);
 
@@ -1465,7 +1468,9 @@ class java_lang_ClassLoader : AllStatic {
   static void compute_offsets();
 
  public:
+  // Support for CDS
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+  static int loader_data_offset() { return  _loader_data_offset; }
 
   static ClassLoaderData* loader_data_acquire(oop loader);
   static ClassLoaderData* loader_data(oop loader);

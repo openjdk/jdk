@@ -34,9 +34,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
@@ -100,7 +98,7 @@ final class StringLatin1 {
      */
     static int getChars(int i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q, r;
+        int q;
         int charPos = index;
 
         boolean negative = i < 0;
@@ -111,16 +109,15 @@ final class StringLatin1 {
         // Generate two digits per iteration
         while (i <= -100) {
             q = i / 100;
-            r = (q * 100) - i;
-            i = q;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(r));
+            writeDigitPair(buf, charPos, (q * 100) - i);
+            i = q;
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(-i));
+            writeDigitPair(buf, charPos, -i);
         } else {
             buf[--charPos] = (byte)('0' - i);
         }
@@ -162,7 +159,7 @@ final class StringLatin1 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair((int)((q * 100) - i)));
+            writeDigitPair(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -172,14 +169,14 @@ final class StringLatin1 {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair((q2 * 100) - i2));
+            writeDigitPair(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DecimalDigits.digitPair(-i2));
+            writeDigitPair(buf, charPos, -i2);
         } else {
             buf[--charPos] = (byte)('0' - i2);
         }
@@ -188,6 +185,12 @@ final class StringLatin1 {
             buf[--charPos] = (byte)'-';
         }
         return charPos;
+    }
+
+    private static void writeDigitPair(byte[] buf, int charPos, int value) {
+        short pair = DecimalDigits.digitPair(value);
+        buf[charPos] = (byte)(pair);
+        buf[charPos + 1] = (byte)(pair >> 8);
     }
 
     public static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {

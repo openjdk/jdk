@@ -1463,9 +1463,9 @@ public final class Pattern
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table>
@@ -5541,10 +5541,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * they are ignored for purposes of finding word boundaries.
      */
     static final class Bound extends Node {
-        static int LEFT = 0x1;
-        static int RIGHT= 0x2;
-        static int BOTH = 0x3;
-        static int NONE = 0x4;
+        static final int LEFT = 0x1;
+        static final int RIGHT= 0x2;
+        static final int BOTH = 0x3;
+        static final int NONE = 0x4;
         int type;
         boolean useUWORD;
         Bound(int n, boolean useUWORD) {

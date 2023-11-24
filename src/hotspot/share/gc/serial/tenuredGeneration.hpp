@@ -26,12 +26,12 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
 
-class BlockOffsetSharedArray;
+class SerialBlockOffsetSharedArray;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -50,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  BlockOffsetSharedArray* _bts;
+  SerialBlockOffsetSharedArray* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
@@ -84,8 +84,6 @@ class TenuredGeneration: public Generation {
   void compute_new_size_inner();
  public:
   virtual void compute_new_size();
-
-  virtual void invalidate_remembered_set();
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -134,8 +132,6 @@ class TenuredGeneration: public Generation {
   void save_marks();
 
   bool no_allocs_since_save_marks();
-
-  inline size_t block_size(const HeapWord* addr) const;
 
   inline bool block_is_obj(const HeapWord* addr) const;
 

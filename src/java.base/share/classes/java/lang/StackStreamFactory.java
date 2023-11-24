@@ -192,10 +192,10 @@ final class StackStreamFactory {
          *
          * Subclass should override this method to change the batch size
          *
-         * @param lastBatchFrameCount number of frames in the last batch; or zero
+         * @param lastBatchSize last batch size
          * @return suggested batch size
          */
-        protected abstract int batchSize(int lastBatchFrameCount);
+        protected abstract int batchSize(int lastBatchSize);
 
         /*
          * Returns the next batch size, always >= minimum batch size
@@ -203,7 +203,7 @@ final class StackStreamFactory {
          * Subclass may override this method if the minimum batch size is different.
          */
         protected int getNextBatchSize() {
-            int lastBatchSize = depth == 0 ? 0 : frameBuffer.curBatchFrameCount();
+            int lastBatchSize = depth == 0 ? 0 : frameBuffer.currentBatchSize();
             int nextBatchSize = batchSize(lastBatchSize);
             if (isDebug) {
                 System.err.println("last batch size = " + lastBatchSize +
@@ -312,19 +312,19 @@ final class StackStreamFactory {
          * 2. reuse or expand the allocated buffers
          * 3. create specialized StackFrame objects
          */
-        private Object doStackWalk(long anchor, int skipFrames, int batchSize,
-                                                int bufStartIndex, int bufEndIndex) {
+        private Object doStackWalk(long anchor, int skipFrames, int numFrames,
+                                   int bufStartIndex, int bufEndIndex) {
             checkState(NEW);
 
             frameBuffer.check(skipFrames);
 
             if (isDebug) {
-                System.err.format("doStackWalk: skip %d start %d end %d%n",
-                        skipFrames, bufStartIndex, bufEndIndex);
+                System.err.format("doStackWalk: skip %d start %d end %d nframes %d%n",
+                        skipFrames, bufStartIndex, bufEndIndex, numFrames);
             }
 
             this.anchor = anchor;  // set anchor for this bulk stack frame traversal
-            frameBuffer.setBatch(depth, bufStartIndex, bufEndIndex);
+            frameBuffer.setBatch(depth, bufStartIndex, numFrames);
 
             // traverse all frames and perform the action on the stack frames, if specified
             return consumeFrames();
@@ -334,10 +334,8 @@ final class StackStreamFactory {
          * Get next batch of stack frames.
          */
         private int getNextBatch() {
-            int nextBatchSize = Math.min(maxDepth - depth, getNextBatchSize());
-
             if (!frameBuffer.isActive()
-                    || (nextBatchSize <= 0)
+                    || (depth == maxDepth)
                     || (frameBuffer.isAtBottom() && !hasMoreContinuations())) {
                 if (isDebug) {
                     System.out.format("  more stack walk done%n");
@@ -346,11 +344,21 @@ final class StackStreamFactory {
                 return 0;
             }
 
+            // VM ends the batch when it reaches the bottom of a continuation
+            // i.e. Continuation::enter.  The stack walker will set the continuation
+            // to its parent to continue.
+            // Note that the current batch could have no stack frame filled.  This could
+            // happen when Continuation::enter is the last element of the frame buffer
+            // filled in the last batch and it needs to fetch another batch in order to
+            // detect reaching the bottom.
             if (frameBuffer.isAtBottom() && hasMoreContinuations()) {
+                if (isDebug) {
+                    System.out.format("  set continuation to %s%n", continuation.getParent());
+                }
                 setContinuation(continuation.getParent());
             }
 
-            int numFrames = fetchStackFrames(nextBatchSize);
+            int numFrames = fetchStackFrames();
             if (numFrames == 0 && !hasMoreContinuations()) {
                 frameBuffer.freeze(); // done stack walking
             }
@@ -415,34 +423,35 @@ final class StackStreamFactory {
 
             return callStackWalk(mode, 0,
                                  contScope, continuation,
-                                 frameBuffer.curBatchFrameCount(),
+                                 frameBuffer.currentBatchSize(),
                                  frameBuffer.startIndex(),
                                  frameBuffer.frames());
         }
 
         /*
-         * Fetches stack frames.
+         * Fetches a new batch of stack frames.  This method returns
+         * the number of stack frames filled in this batch.
          *
-         * @param batchSize number of elements of the frame buffers for this batch
-         * @return number of frames fetched in this batch
+         * When it reaches the bottom of a continuation, i.e. Continuation::enter,
+         * VM ends the batch and let the stack walker to set the continuation
+         * to its parent and continue the stack walking.  It may return zero.
          */
-        private int fetchStackFrames(int batchSize) {
+        private int fetchStackFrames() {
             int startIndex = frameBuffer.startIndex();
-            frameBuffer.resize(startIndex, batchSize);
 
-            int endIndex = fetchStackFrames(mode, anchor, batchSize,
-                                            startIndex,
-                                            frameBuffer.frames());
+            // If the last batch didn't fetch any frames, keep the current batch size.
+            int lastBatchFrameCount = frameBuffer.numFrames();
+            int batchSize = getNextBatchSize();
+            frameBuffer.resize(batchSize);
+
+            int numFrames = fetchStackFrames(mode, anchor, lastBatchFrameCount,
+                                             batchSize, startIndex,
+                                             frameBuffer.frames());
             if (isDebug) {
-                System.out.format("  more stack walk requesting %d got %d to %d frames%n",
-                                  batchSize, frameBuffer.startIndex(), endIndex);
+                System.out.format("  more stack walk got %d frames start %d batch size %d%n",
+                                  numFrames, frameBuffer.startIndex(), batchSize);
             }
-
-            int numFrames = endIndex - startIndex;
-
-            if (numFrames > 0) {
-                frameBuffer.setBatch(depth, startIndex, endIndex);
-            }
+            frameBuffer.setBatch(depth, startIndex, numFrames);
             return numFrames;
         }
 
@@ -454,7 +463,7 @@ final class StackStreamFactory {
          * @param skipframes  number of frames to be skipped before filling the frame buffer.
          * @param contScope   the continuation scope to walk.
          * @param continuation the continuation to walk, or {@code null} if walking a thread.
-         * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
+         * @param bufferSize  the buffer size
          * @param startIndex  start index of the frame buffers to be filled.
          * @param frames      Either a {@link ClassFrameInfo} array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
@@ -462,7 +471,7 @@ final class StackStreamFactory {
          */
         private native R callStackWalk(int mode, int skipframes,
                                        ContinuationScope contScope, Continuation continuation,
-                                       int batchSize, int startIndex,
+                                       int bufferSize, int startIndex,
                                        T[] frames);
 
         /**
@@ -470,15 +479,16 @@ final class StackStreamFactory {
          *
          * @param mode        mode of stack walking
          * @param anchor
-         * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
+         * @param lastBatchFrameCount the number of frames filled in the last batch.
+         * @param bufferSize  the buffer size
          * @param startIndex  start index of the frame buffers to be filled.
          * @param frames      Either a {@link ClassFrameInfo} array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          *
-         * @return the end index to the frame buffers
+         * @return the number of frames filled in this batch
          */
-        private native int fetchStackFrames(int mode, long anchor,
-                                            int batchSize, int startIndex,
+        private native int fetchStackFrames(int mode, long anchor, int lastBatchFrameCount,
+                                            int bufferSize, int startIndex,
                                             T[] frames);
 
         private native void setContinuation(long anchor, T[] frames, Continuation cont);
@@ -537,17 +547,18 @@ final class StackStreamFactory {
         }
 
         @Override
-        protected int batchSize(int lastBatchFrameCount) {
-            if (lastBatchFrameCount == 0) {
+        protected int batchSize(int lastBatchSize) {
+            if (lastBatchSize == 0) {
                 // First batch, use estimateDepth if not exceed the large batch size
-                int initialBatchSize = Math.max(walker.estimateDepth()+RESERVED_ELEMENTS, MIN_BATCH_SIZE);
-                return Math.min(initialBatchSize, LARGE_BATCH_SIZE);
+                return walker.estimateDepth() == 0
+                        ? SMALL_BATCH
+                        : Math.min(walker.estimateDepth() + RESERVED_ELEMENTS, LARGE_BATCH_SIZE);
             } else {
-                if (lastBatchFrameCount > BATCH_SIZE) {
-                    return lastBatchFrameCount;
-                } else {
-                    return Math.min(lastBatchFrameCount*2, BATCH_SIZE);
-                }
+                // expand only if last batch was full and the buffer size <= 32
+                // to minimize the number of unneeded frames decoded.
+                return (lastBatchSize > BATCH_SIZE || !frameBuffer.isFull())
+                        ? lastBatchSize
+                        : Math.min(lastBatchSize*2, BATCH_SIZE);
             }
         }
 
@@ -638,21 +649,20 @@ final class StackStreamFactory {
         }
 
         @Override
-        void resize(int startIndex, int elements) {
+        void resize(int size) {
             if (!isActive())
                 throw new IllegalStateException("inactive frame buffer can't be resized");
 
-            assert startIndex == START_POS :
-                    "bad start index " + startIndex + " expected " + START_POS;
+            assert startIndex() == START_POS :
+                    "bad start index " + startIndex() + " expected " + START_POS;
 
-            int size = startIndex+elements;
             if (stackFrames.length < size) {
                 T[] newFrames = allocateArray(size);
                 // copy initial magic...
-                System.arraycopy(stackFrames, 0, newFrames, 0, startIndex);
+                System.arraycopy(stackFrames, 0, newFrames, 0, startIndex());
                 stackFrames = newFrames;
             }
-            fill(stackFrames, startIndex, size);
+            fill(stackFrames, startIndex(), size);
             currentBatchSize = size;
         }
 
@@ -762,7 +772,7 @@ final class StackStreamFactory {
         }
 
         @Override
-        protected int batchSize(int lastBatchFrameCount) {
+        protected int batchSize(int lastBatchSize) {
             // this method is only called when the caller class is not found in
             // the first batch. getCallerClass may be invoked via core reflection.
             // So increase the next batch size as there may be implementation-specific
@@ -803,8 +813,7 @@ final class StackStreamFactory {
         // buffers for VM to fill stack frame info
         int currentBatchSize;    // current batch size
         int origin;         // index to the current traversed stack frame
-        int fence;          // index to the last frame in the current batch
-
+        int fence;          // index past the last frame of the current batch
         FrameBuffer(int initialBatchSize) {
             if (initialBatchSize < MIN_BATCH_SIZE) {
                 throw new IllegalArgumentException(initialBatchSize +
@@ -830,16 +839,13 @@ final class StackStreamFactory {
 
         /**
          * Resizes the buffers for VM to fill in the next batch of stack frames.
-         * The next batch will start at the given startIndex with the maximum number
-         * of elements.
          *
          * <p> Subclass may override this method to manage the allocated buffers.
          *
-         * @param startIndex the start index for the first frame of the next batch to fill in.
-         * @param elements the number of elements for the next batch to fill in.
+         * @param size new batch size
          *
          */
-        abstract void resize(int startIndex, int elements);
+        abstract void resize(int size);
 
         /**
          * Return the class at the given position in the current batch.
@@ -871,8 +877,8 @@ final class StackStreamFactory {
 
         // ------ FrameBuffer implementation ------
 
-        final int curBatchFrameCount() {
-            return currentBatchSize-START_POS;
+        final int currentBatchSize() {
+            return currentBatchSize;
         }
 
         /*
@@ -880,6 +886,15 @@ final class StackStreamFactory {
          */
         final boolean isEmpty() {
             return origin >= fence || (origin == START_POS && fence == 0);
+        }
+
+        /*
+         * Returns the number of stack frames filled in the current batch
+         */
+        final int numFrames() {
+            if (!isActive())
+                throw new IllegalStateException();
+            return fence - startIndex();
         }
 
         /*
@@ -892,10 +907,14 @@ final class StackStreamFactory {
 
         /*
          * Tests if this frame buffer is active.  It is inactive when
-         * it is done for traversal.  All stack frames have been traversed.
+         * it is done for traversal.
          */
         final boolean isActive() {
-            return origin > 0; //  && (fence == 0 || origin < fence || fence == currentBatchSize);
+            return origin > 0;
+        }
+
+        final boolean isFull() {
+            return fence == currentBatchSize;
         }
 
         /*
@@ -918,7 +937,7 @@ final class StackStreamFactory {
             if (isDebug) {
                 int index = origin-1;
                 System.out.format("  next frame at %d: %s (origin %d fence %d)%n", index,
-                        Objects.toString(c), index, fence);
+                        c.getName(), index, fence);
             }
             return c;
         }
@@ -941,17 +960,16 @@ final class StackStreamFactory {
         }
 
         /*
-         * Set the start and end index of a new batch of stack frames that have
-         * been filled in this frame buffer.
+         * Set a new batch of stack frames that have been filled in this frame buffer.
          */
-        final void setBatch(int depth, int startIndex, int endIndex) {
-            if (startIndex <= 0 || endIndex <= 0)
+        final void setBatch(int depth, int startIndex, int numFrames) {
+            if (startIndex <= 0 || numFrames < 0)
                 throw new IllegalArgumentException("startIndex=" + startIndex
-                        + " endIndex=" + endIndex);
+                        + " numFrames=" + numFrames);
 
             this.origin = startIndex;
-            this.fence = endIndex;
-            for (int i = START_POS; i < fence; i++) {
+            this.fence = startIndex + numFrames;
+            for (int i = startIndex; i < fence; i++) {
                 if (isDebug) System.err.format("  frame %d: %s%n", i, at(i));
                 if (depth == 0 && filterStackWalkImpl(at(i))) { // filter the frames due to the stack stream implementation
                     origin++;

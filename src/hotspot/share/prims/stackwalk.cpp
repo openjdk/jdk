@@ -152,7 +152,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 // Parameters:
 //   mode             Restrict which frames to be decoded.
 //   BaseFrameStream  stream of frames
-//   max_nframes      Maximum number of frames to be filled.
+//   buffer_size      Buffer size
 //   start_index      Start index to the user-supplied buffers.
 //   frames_array     Buffer to store stack frame information in, starting at start_index.
 //                    frames array is a ClassFrameInfo[] array when only getting caller
@@ -163,13 +163,13 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 // Returns the number of frames whose information was transferred into the buffers.
 //
 int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
-                              int max_nframes, int start_index,
+                              int buffer_size, int start_index,
                               objArrayHandle  frames_array,
                               int& end_index, TRAPS) {
   log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
-                       max_nframes, start_index, frames_array->length());
-  assert(max_nframes > 0, "invalid max_nframes");
-  assert(start_index + max_nframes <= frames_array->length(), "oob");
+                       buffer_size, start_index, frames_array->length());
+  assert(buffer_size > 0, "invalid buffer_size");
+  assert(buffer_size <= frames_array->length(), "oob");
 
   int frames_decoded = 0;
   for (; !stream.at_end(); stream.next()) {
@@ -186,49 +186,27 @@ int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
 
     // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
     // not set) and when StackWalker::getCallerClass is called
-    LogTarget(Debug, stackwalk) lt;
     if (!ShowHiddenFrames && skip_hidden_frames(mode)) {
       if (method->is_hidden()) {
-        if (lt.is_enabled()) {
-          ResourceMark rm(THREAD);
-          LogStream ls(lt);
-          ls.print("  skip hidden method: ");
-          method->print_short_name(&ls);
-          ls.cr();
-        }
+        log_debug(stackwalk)("  skip hidden method: %s", stream.method()->external_name());
 
-        // We end a batch on continuation bottom to let the Java side skip top frames of the next one
+        // End a batch on continuation bottom to let the Java side to set the continuation to its parent and continue
         if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
         continue;
       }
     }
 
     int index = end_index++;
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      LogStream ls(lt);
-      ls.print("  %d: frame method: ", index);
-      method->print_short_name(&ls);
-      ls.print_cr(" bci=%d", stream.bci());
-    }
-
-    // fill in StackFrameInfo and initialize MemberName
+    log_debug(stackwalk)("  frame %d: %s bci %d", index, stream.method()->external_name(), stream.bci());
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
-
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      LogStream ls(lt);
-      ls.print("  %d: done frame method: ", index);
-      method->print_short_name(&ls);
-    }
     frames_decoded++;
 
-    // We end a batch on continuation bottom to let the Java side skip top frames of the next one
+    // End a batch on continuation bottom to let the Java side to set the continuation to its parent and continue
     if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
 
-    if (frames_decoded >= max_nframes)  break;
+    if (end_index >= buffer_size)  break;
   }
-  log_debug(stackwalk)("fill_in_frames done frames_decoded=%d at_end=%d", frames_decoded, stream.at_end());
+  log_debug(stackwalk)("fill_in_frames returns %d at_end=%d", frames_decoded, stream.at_end());
 
   return frames_decoded;
 }
@@ -398,7 +376,7 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
 //   mode           Stack walking mode.
 //   skip_frames    Number of frames to be skipped.
 //   cont_scope     Continuation scope to walk (if not in this scope, we'll walk all the way).
-//   frame_count    Number of frames to be traversed.
+//   buffer_size    Buffer size.
 //   start_index    Start index to the user-supplied buffers.
 //   frames_array   Buffer to store stack frame info in, starting at start_index.
 //                  frames array is a ClassFrameInfo[] array when only getting caller
@@ -408,13 +386,13 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
 // Returns Object returned from AbstractStackWalker::doStackWalk call.
 //
 oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
-                    int frame_count, int start_index, objArrayHandle frames_array,
+                    int buffer_size, int start_index, objArrayHandle frames_array,
                     TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD); // needed to store a continuation in the RegisterMap
 
   JavaThread* jt = THREAD;
-  log_debug(stackwalk)("Start walking: mode " INT32_FORMAT_X " skip %d frames batch size %d", mode, skip_frames, frame_count);
+  log_debug(stackwalk)("Start walking: mode " INT32_FORMAT_X " skip %d frames, buffer size %d", mode, skip_frames, buffer_size);
   LogTarget(Debug, stackwalk) lt;
   if (lt.is_enabled()) {
     ResourceMark rm(THREAD);
@@ -438,17 +416,17 @@ oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_
                                                       RegisterMap::WalkContinuation::include)
                                         : RegisterMap(cont(), RegisterMap::UpdateMap::include);
     LiveFrameStream stream(jt, &regMap, cont_scope, cont);
-    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, buffer_size,
                            start_index, frames_array, THREAD);
   } else {
     JavaFrameStream stream(jt, mode, cont_scope, cont);
-    return fetchFirstBatch(stream, stackStream, mode, skip_frames, frame_count,
+    return fetchFirstBatch(stream, stackStream, mode, skip_frames, buffer_size,
                            start_index, frames_array, THREAD);
   }
 }
 
 oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
-                               jint mode, int skip_frames, int frame_count,
+                               jint mode, int skip_frames, int buffer_size,
                                int start_index, objArrayHandle frames_array, TRAPS) {
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
@@ -461,29 +439,14 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
             ik != abstractStackWalker_klass && ik->super() != abstractStackWalker_klass)  {
         break;
       }
-
-      LogTarget(Debug, stackwalk) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
-        LogStream ls(lt);
-        ls.print("  skip ");
-        stream.method()->print_short_name(&ls);
-        ls.cr();
-      }
+      log_debug(stackwalk)("  skip %s", stream.method()->external_name());
       stream.next();
     }
 
     // stack frame has been traversed individually and resume stack walk
     // from the stack frame at depth == skip_frames.
     for (int n=0; n < skip_frames && !stream.at_end(); stream.next(), n++) {
-      LogTarget(Debug, stackwalk) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
-        LogStream ls(lt);
-        ls.print("  skip ");
-        stream.method()->print_short_name(&ls);
-        ls.cr();
-      }
+      log_debug(stackwalk)("  skip %s", stream.method()->external_name());
     }
   }
 
@@ -491,7 +454,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   int numFrames = 0;
   if (!stream.at_end()) {
     KeepStackGCProcessedMark keep_stack(THREAD);
-    numFrames = fill_in_frames(mode, stream, frame_count, start_index,
+    numFrames = fill_in_frames(mode, stream, buffer_size, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
       THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", nullptr);
@@ -506,7 +469,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   JavaCallArguments args(stackStream);
   args.push_long(stream.address_value());
   args.push_int(skip_frames);
-  args.push_int(frame_count);
+  args.push_int(numFrames);
   args.push_int(start_index);
   args.push_int(end_index);
 
@@ -535,14 +498,15 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
 //   stackStream    StackStream object
 //   mode           Stack walking mode.
 //   magic          Must be valid value to continue the stack walk
-//   frame_count    Number of frames to be decoded.
+//   last_batch_count Number of frames fetched in the last batch.
+//   buffer_size    Buffer size.
 //   start_index    Start index to the user-supplied buffers.
 //   frames_array   Buffer to store StackFrame in, starting at start_index.
 //
-// Returns the end index of frame filled in the buffer.
+// Returns the number of frames filled in the buffer.
 //
 jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
-                               int frame_count, int start_index,
+                               int last_batch_count, int buffer_size, int start_index,
                                objArrayHandle frames_array,
                                TRAPS)
 {
@@ -556,16 +520,15 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is null", 0L);
   }
 
-  log_debug(stackwalk)("StackWalk::fetchNextBatch frame_count %d existing_stream "
-                       PTR_FORMAT " start %d frames %d",
-                       frame_count, p2i(existing_stream), start_index, frames_array->length());
+  log_debug(stackwalk)("StackWalk::fetchNextBatch last_batch_count %d buffer_size %d existing_stream "
+                       PTR_FORMAT " start %d", last_batch_count,
+                       buffer_size, p2i(existing_stream), start_index);
   int end_index = start_index;
-  if (frame_count <= 0) {
-    return end_index;        // No operation.
+  if (buffer_size <= start_index) {
+    return 0;        // No operation.
   }
 
-  int count = frame_count + start_index;
-  assert (frames_array->length() >= count, "not enough space in buffers");
+  assert (frames_array->length() >= buffer_size, "frames_array length < buffer_size");
 
   BaseFrameStream& stream = (*existing_stream);
   if (!stream.at_end()) {
@@ -574,17 +537,27 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
     // peeking  at a few frames. Take the cost of flushing out any pending deferred GC
     // processing of the stack.
     KeepStackGCProcessedMark keep_stack(jt);
-    stream.next(); // advance past the last frame decoded in previous batch
+
+    // Advance past the last frame decoded in the previous batch.
+    // If the last batch is empty, it means that the last batch returns after
+    // it advanced the frame it previously decoded as it reaches the bottom of
+    // the continuation and it returns to let Java side set the continuation.
+    // Now this batch starts right at the first frame of another continuation.
+    if (last_batch_count > 0) {
+      log_debug(stackwalk)("advanced past %s", stream.method()->external_name());
+      stream.next();
+    }
+
     if (!stream.at_end()) {
-      int n = fill_in_frames(mode, stream, frame_count, start_index,
+      int numFrames = fill_in_frames(mode, stream, buffer_size, start_index,
                              frames_array, end_index, CHECK_0);
-      if (n < 1 && !skip_hidden_frames(mode)) {
+      if (numFrames < 1 && !skip_hidden_frames(mode)) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);
       }
-      return end_index;
+      return numFrames;
     }
   }
-  return end_index;
+  return 0;
 }
 
 void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array, Handle cont, TRAPS) {

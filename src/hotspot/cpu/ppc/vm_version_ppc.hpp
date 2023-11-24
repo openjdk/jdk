@@ -127,7 +127,6 @@ public:
   static uint64_t _dscr_val;
 
   static void initialize_cpu_information(void);
-  static bool profile_all_receivers_at_type_check() { return false; }
 };
 
 #endif // CPU_PPC_VM_VERSION_PPC_HPP

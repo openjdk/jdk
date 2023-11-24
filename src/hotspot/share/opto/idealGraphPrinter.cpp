@@ -374,9 +374,28 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 #ifndef PRODUCT
     Compile::current()->_in_dump_cnt++;
     print_prop(NODE_NAME_PROPERTY, (const char *)node->Name());
+    print_prop("idx", node->_idx);
     const Type *t = node->bottom_type();
     print_prop("type", t->msg());
-    print_prop("idx", node->_idx);
+    if (t->category() != Type::Category::Control &&
+        t->category() != Type::Category::Memory) {
+      // Print detailed type information for nodes whose type is not trivial.
+      buffer[0] = 0;
+      stringStream bottom_type_stream(buffer, sizeof(buffer) - 1);
+      t->dump_on(&bottom_type_stream);
+      print_prop("bottom_type", buffer);
+      if (C->types() != nullptr && C->matcher() == nullptr) {
+        // Phase types maintained during optimization (GVN, IGVN, CCP) are
+        // available and valid (not in code generation phase).
+        const Type* pt = (*C->types())[node->_idx];
+        if (pt != nullptr) {
+          buffer[0] = 0;
+          stringStream phase_type_stream(buffer, sizeof(buffer) - 1);
+          pt->dump_on(&phase_type_stream);
+          print_prop("phase_type", buffer);
+        }
+      }
+    }
 
     if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);
