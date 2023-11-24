@@ -135,10 +135,10 @@ public abstract class MonitoredHost {
 
 
     /*
-     * Load the MonitoredHostServices
+     * Load the MonitoredHostServices.
+     * Access to this field MUST be guarded through synchronization on "monitoredHosts"
+     * field
      */
-    // not thread safe, access MUST be guarded through synchronization on "monitoredHosts"
-    // field
     private static final ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
         ServiceLoader.load(MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
 
