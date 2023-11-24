@@ -22,8 +22,8 @@
  */
 
 import java.nio.file.Path;
-import java.util.Scanner;
 
+import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
@@ -63,26 +63,10 @@ public class ModifiedFilesWarningTest extends ModifiedFilesTest {
                                 .validatingModule("java.base")
                                 .extraJlinkOpt("--unlock-run-image") // only generate a warning
                                 .build(), handler);
+        OutputAnalyzer out = handler.analyzer();
         // verify we get the warning message
-        expectMatch(modifiedFile.toString(), handler.stdErr());
-        expectMatch("WARNING: ", handler.stdErr());
-        expectMatch("has been modified", handler.stdErr());
-    }
-
-    private static void expectMatch(String string, String lines) {
-        boolean foundMatch = false;
-        try (Scanner lineScan = new Scanner(lines)) {
-            String line;
-            while (lineScan.hasNextLine()) {
-                line = lineScan.nextLine();
-                if (line.contains(string)) {
-                    foundMatch = true;
-                    break;
-                }
-            }
-        }
-        if (!foundMatch) {
-            throw new AssertionError(String.format("Expected to find '%s' in '%s'", string, lines));
-        }
+        out.stderrShouldMatch("WARNING: .* has been modified");
+        out.stderrShouldNotContain("java.lang.IllegalArgumentException");
+        out.stderrShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
     }
 }

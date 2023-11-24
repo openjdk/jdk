@@ -48,10 +48,14 @@ public class ModifiedFilesExitTest extends ModifiedFilesTest {
                                 .addModule("java.base")
                                 .validatingModule("java.base")
                                 .build(), handler, exitFailPred);
-        if (handler.analyzer().getExitValue() == 0) {
+        OutputAnalyzer analyzer = handler.analyzer();
+        if (analyzer.getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to modified file!");
         }
-        handler.analyzer().stdoutShouldContain(modifiedFile.toString() + " has been modified");
+        analyzer.stdoutShouldContain(modifiedFile.toString() + " has been modified");
+        // Verify the error message is reasonable
+        analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        analyzer.stdoutShouldNotContain("java.lang.IllegalArgumentException");
     }
 
 }

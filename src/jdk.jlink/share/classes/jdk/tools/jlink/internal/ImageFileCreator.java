@@ -166,6 +166,9 @@ public final class ImageFileCreator {
         //Handle files.
         try {
             plugins.storeFiles(allContent.resourcePool(), result, writer);
+        } catch (RunImageLinkException e) {
+            // Propagate reason for run-time image based links
+            throw e.getReason();
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
