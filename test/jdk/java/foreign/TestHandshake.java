@@ -33,6 +33,7 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -48,6 +49,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestHandshake {
@@ -177,6 +179,30 @@ public class TestHandshake {
         }
     }
 
+    static class SegmentSwappyCopyAccessor extends AbstractSegmentAccessor {
+
+        MemorySegment first, second;
+        ValueLayout sourceLayout, destLayout;
+        long count;
+
+
+        SegmentSwappyCopyAccessor(int id, MemorySegment segment, Arena _unused) {
+            super(id, segment);
+            long split = segment.byteSize() / 2;
+            first = segment.asSlice(0, split);
+            sourceLayout = JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN);
+            second = segment.asSlice(split);
+            destLayout = JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
+            count = Math.min(first.byteSize() / sourceLayout.byteSize(),
+                second.byteSize() / destLayout.byteSize());
+        }
+
+        @Override
+        public void doAccess() {
+            MemorySegment.copy(first, sourceLayout, 0L, second, destLayout, 0L, count);
+        }
+    }
+
     static class SegmentFillAccessor extends AbstractSegmentAccessor {
 
         SegmentFillAccessor(int id, MemorySegment segment, Arena _unused) {
@@ -264,6 +290,7 @@ public class TestHandshake {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
                 { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
+                { "SegmentSwappyCopyAccessor", (AccessorFactory)SegmentSwappyCopyAccessor::new },
                 { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
                 { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
                 { "BufferAccessor", (AccessorFactory)BufferAccessor::new },
