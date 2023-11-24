@@ -76,11 +76,19 @@
 // that might have gotten unmapped. Therefore, we check at the entry
 // to unsafe functions, if we have such async exception conditions,
 // and return immediately if that is the case.
+// We also use NoSafepointVerifier to block potential safepoints.
+// It would be problematic if an async exception handshake were installed later on
+// during another safepoint in the function, but before the memory access happens,
+// as the memory will be freed after the handshake is installed.
+#define ASYNC_EXCEPTION_CHECK(result_type) \
+  if (thread->has_async_exception_condition()) {return (result_type)0;} \
+  NoSafepointVerifier nsv;
+
 #define UNSAFE_ENTRY(result_type, header) \
-  JVM_ENTRY(static result_type, header) if (JavaThread::current()->has_async_exception_condition()) {return (result_type)0;}
+  JVM_ENTRY(static result_type, header)
 
 #define UNSAFE_LEAF(result_type, header) \
-  JVM_LEAF(static result_type, header) if (JavaThread::current()->has_async_exception_condition()) {return (result_type)0;}
+  JVM_LEAF(static result_type, header)
 
 #define UNSAFE_END JVM_END
 
@@ -285,10 +293,12 @@ UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe, 
 #define DEFINE_GETSETOOP(java_type, Type) \
  \
 UNSAFE_ENTRY(java_type, Unsafe_Get##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
+  ASYNC_EXCEPTION_CHECK(java_type) \
   return MemoryAccess<java_type>(thread, obj, offset).get(); \
 } UNSAFE_END \
  \
 UNSAFE_ENTRY(void, Unsafe_Put##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
+  ASYNC_EXCEPTION_CHECK(void) \
   MemoryAccess<java_type>(thread, obj, offset).put(x); \
 } UNSAFE_END \
  \
@@ -308,10 +318,12 @@ DEFINE_GETSETOOP(jdouble, Double);
 #define DEFINE_GETSETOOP_VOLATILE(java_type, Type) \
  \
 UNSAFE_ENTRY(java_type, Unsafe_Get##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
+  ASYNC_EXCEPTION_CHECK(java_type) \
   return MemoryAccess<java_type>(thread, obj, offset).get_volatile(); \
 } UNSAFE_END \
  \
 UNSAFE_ENTRY(void, Unsafe_Put##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
+  ASYNC_EXCEPTION_CHECK(void) \
   MemoryAccess<java_type>(thread, obj, offset).put_volatile(x); \
 } UNSAFE_END \
  \
@@ -368,6 +380,7 @@ UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
+  ASYNC_EXCEPTION_CHECK(void)
   size_t sz = (size_t)size;
 
   oop base = JNIHandles::resolve(obj);
@@ -377,6 +390,7 @@ UNSAFE_ENTRY(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, j
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
+  ASYNC_EXCEPTION_CHECK(void)
   size_t sz = (size_t)size;
 
   oop srcp = JNIHandles::resolve(srcObj);
@@ -395,11 +409,8 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcOb
   }
 } UNSAFE_END
 
-// This function is a leaf since if the source and destination are both in native memory
-// the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
-// If either source or destination (or both) are on the heap, the function will enter VM using
-// JVM_ENTRY_FROM_LEAF
-UNSAFE_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)) {
+UNSAFE_ENTRY(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)) {
+  ASYNC_EXCEPTION_CHECK(void)
   size_t sz = (size_t)size;
   size_t esz = (size_t)elemSize;
 
@@ -409,25 +420,24 @@ UNSAFE_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject sr
     address dst = (address)dstOffset;
 
     {
-      JavaThread* thread = JavaThread::thread_from_jni_environment(env);
       GuardUnsafeAccess guard(thread);
+      // Transition to native state. Since the source and destination are both in native memory
+      // the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
+      ThreadToNativeFromVM ttn(thread);
       Copy::conjoint_swap(src, dst, sz, esz);
     }
   } else {
     // At least one of src/dst are on heap, transition to VM to access raw pointers
+    oop srcp = JNIHandles::resolve(srcObj);
+    oop dstp = JNIHandles::resolve(dstObj);
 
-    JVM_ENTRY_FROM_LEAF(env, void, Unsafe_CopySwapMemory0) {
-      oop srcp = JNIHandles::resolve(srcObj);
-      oop dstp = JNIHandles::resolve(dstObj);
+    address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
+    address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
 
-      address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
-      address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
-
-      {
-        GuardUnsafeAccess guard(thread);
-        Copy::conjoint_swap(src, dst, sz, esz);
-      }
-    } JVM_END
+    {
+      GuardUnsafeAccess guard(thread);
+      Copy::conjoint_swap(src, dst, sz, esz);
+    }
   }
 } UNSAFE_END
 
@@ -724,12 +734,14 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReference(JNIEnv *env, jobject un
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+  ASYNC_EXCEPTION_CHECK(jint)
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
+  ASYNC_EXCEPTION_CHECK(jlong)
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x);
@@ -745,12 +757,14 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+  ASYNC_EXCEPTION_CHECK(jboolean)
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
+  ASYNC_EXCEPTION_CHECK(jboolean)
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x) == e;
