@@ -168,6 +168,9 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 }
 
 inline void HeapRegion::prepare_for_full_gc() {
+  // After marking and class unloading the heap temporarily contains dead objects
+  // with unloaded klasses. Moving parsable_bottom makes some (debug) code correctly
+  // skip dead objects.
   _parsable_bottom = top();
 }
 
