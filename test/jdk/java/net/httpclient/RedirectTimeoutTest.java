@@ -60,13 +60,14 @@ import java.time.Instant;
 import static java.net.http.HttpClient.Redirect.ALWAYS;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static jdk.test.lib.Utils.adjustTimeout;
 
 public class RedirectTimeoutTest {
 
-    HttpTestServer h1TestServer, h2TestServer;
+    static HttpTestServer h1TestServer, h2TestServer;
     static URI h1Uri, h1RedirectUri, h2Uri, h2RedirectUri, h2WarmupUri, testRedirectURI;
-    private static final long TIMEOUT_MILLIS = 1500L;
-    private static final long SLEEP_TIME = 750L;
+    private static final long TIMEOUT_MILLIS =  3000L; // 3s
+    private static final long SLEEP_TIME = 1500L; // 1.5s
     public static final int ITERATIONS = 4;
     private static final PrintStream out = System.out;
 
@@ -110,7 +111,7 @@ public class RedirectTimeoutTest {
         HttpRequest request = HttpRequest.newBuilder().uri(uri)
                 .GET()
                 .version(version)
-                .timeout(Duration.ofMillis(TIMEOUT_MILLIS))
+                .timeout(Duration.ofMillis(adjustTimeout(TIMEOUT_MILLIS)))
                 .build();
 
         try (HttpClient client = clientBuilder.build()) {
@@ -162,7 +163,7 @@ public class RedirectTimeoutTest {
             out.println(Instant.now() + ": Server: Redirect Handler Called");
             byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
             try {
-                Thread.sleep(SLEEP_TIME);
+                Thread.sleep(adjustTimeout(SLEEP_TIME));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
