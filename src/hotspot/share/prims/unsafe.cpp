@@ -82,10 +82,19 @@
 // that might have gotten unmapped. Therefore, we check at the entry
 // to unsafe functions, if we have such async exception conditions,
 // and return immediately if that is the case.
+//
 // We also use NoSafepointVerifier to block potential safepoints.
 // It would be problematic if an async exception handshake were installed later on
 // during another safepoint in the function, but before the memory access happens,
-// as the memory will be freed after the handshake is installed.
+// as the memory will be freed after the handshake is installed. We must notice
+// the installed handshake and return early before doing the memory access to prevent
+// accesses to freed memory.
+//
+// Note also that we MUST do a scoped memory access in the VM (or Java) thread
+// state. Since we rely on a handshake to check for threads that are accessing
+// scoped memory, and we need the handshaking thread to wait until we get to a
+// safepoint, in order to make sure we are not in the middle of accessing memory
+// that is about to be freed. (i.e. there can be no UNSAFE_LEAF_SCOPED)
 #define UNSAFE_ENTRY_SCOPED(result_type, header) \
   JVM_ENTRY(static result_type, header) \
   if (thread->has_async_exception_condition()) {return (result_type)0;} \
@@ -408,33 +417,15 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jo
   size_t sz = (size_t)size;
   size_t esz = (size_t)elemSize;
 
-  if (srcObj == nullptr && dstObj == nullptr) {
-    // Both src & dst are in native memory
-    address src = (address)srcOffset;
-    address dst = (address)dstOffset;
+  oop srcp = JNIHandles::resolve(srcObj);
+  oop dstp = JNIHandles::resolve(dstObj);
 
-    {
-      GuardUnsafeAccess guard(thread);
-      // Transitioning to native state below checks NSV, but doesn't actually do a safepoint poll.
-      // So, this is safe to ignore, as no async exception handshake can actually be installed.
-      PauseNoSafepointVerifier pnsv(&nsv);
-      // Transition to native state. Since the source and destination are both in native memory
-      // the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
-      ThreadToNativeFromVM ttn(thread);
-      Copy::conjoint_swap(src, dst, sz, esz);
-    }
-  } else {
-    // At least one of src/dst are on heap, transition to VM to access raw pointers
-    oop srcp = JNIHandles::resolve(srcObj);
-    oop dstp = JNIHandles::resolve(dstObj);
+  address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
+  address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
 
-    address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
-    address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
-
-    {
-      GuardUnsafeAccess guard(thread);
-      Copy::conjoint_swap(src, dst, sz, esz);
-    }
+  {
+    GuardUnsafeAccess guard(thread);
+    Copy::conjoint_swap(src, dst, sz, esz);
   }
 } UNSAFE_END
 
