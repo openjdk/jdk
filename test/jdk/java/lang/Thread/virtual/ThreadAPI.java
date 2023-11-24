@@ -27,7 +27,7 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run junit ThreadAPI
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 /*
@@ -35,7 +35,8 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
+ *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
 import java.time.Duration;
@@ -61,6 +62,7 @@ import java.util.stream.Stream;
 import java.nio.channels.Selector;
 
 import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
@@ -755,11 +757,11 @@ class ThreadAPI {
     void testJoin33() throws Exception {
         AtomicBoolean done = new AtomicBoolean();
         Thread thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
+            VThreadPinner.runPinned(() -> {
                 while (!done.get()) {
                     LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
-            }
+            });
         });
         try {
             assertFalse(thread.join(Duration.ofMillis(100)));
@@ -1179,10 +1181,10 @@ class ThreadAPI {
                     list.add("B");
                 });
                 child.start();
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.yield();   // pinned so will be a no-op
                     list.add("A");
-                }
+                });
                 try { child.join(); } catch (InterruptedException e) { }
             });
             thread.start();
@@ -1378,9 +1380,9 @@ class ThreadAPI {
     void testSleep8() throws Exception {
         VThreadRunner.run(() -> {
             long start = millisTime();
-            synchronized (lock) {
+            VThreadPinner.runPinned(() -> {
                 Thread.sleep(1000);
-            }
+            });
             expectDuration(start, /*min*/900, /*max*/20_000);
         });
     }
@@ -1394,9 +1396,9 @@ class ThreadAPI {
             Thread me = Thread.currentThread();
             me.interrupt();
             try {
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.sleep(2000);
-                }
+                });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // expected
@@ -1414,9 +1416,9 @@ class ThreadAPI {
             Thread t = Thread.currentThread();
             scheduleInterrupt(t, 100);
             try {
-                synchronized (lock) {
+                VThreadPinner.runPinned(() -> {
                     Thread.sleep(20 * 1000);
-                }
+                });
                 fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // interrupt status should be cleared

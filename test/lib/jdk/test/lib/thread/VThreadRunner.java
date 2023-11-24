@@ -29,7 +29,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Helper class to support tests running tasks a in virtual thread.
+ * Helper class to support tests running tasks in a virtual thread.
  */
 public class VThreadRunner {
     private VThreadRunner() { }
