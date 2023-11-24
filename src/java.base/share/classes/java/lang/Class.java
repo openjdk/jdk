@@ -2886,6 +2886,21 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
+     * Returns the most specific {@code Method} object of this class, super class or
+     * interface that have the specified method name and parameter types.
+     *
+     * @param publicOnly true if only public methods are examined, otherwise all methods
+     * @param name the name of the method
+     * @param parameterTypes the parameter array
+     * @return the list of {@code Method} objects for the public methods of
+     *         this class matching the specified name and parameters
+     */
+    Method findMethod(boolean publicOnly, String name, Class<?>... parameterTypes) {
+        PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, publicOnly);
+        return res == null ? null : getReflectionFactory().copyMethod(res.getMostSpecific());
+    }
+
+    /**
      * Returns a {@code Constructor} object that reflects the specified
      * constructor of the class represented by this
      * {@code Class} object.  The {@code parameterTypes} parameter is
@@ -4787,12 +4802,4 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private native int getClassAccessFlagsRaw0();
-
-    /**
-     * Return most specific method that matches name and parameterTypes.
-     */
-    Method findMethod(boolean publicOnly, String name, Class<?>... parameterTypes) {
-        PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, publicOnly);
-        return res == null ? null : getReflectionFactory().copyMethod(res.getMostSpecific());
-    }
 }
