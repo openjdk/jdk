@@ -133,15 +133,6 @@ public abstract class MonitoredHost {
         return getMonitoredHost(hostId);
     }
 
-
-    /*
-     * Load the MonitoredHostServices.
-     * Access to this field MUST be guarded through synchronization on "monitoredHosts"
-     * field
-     */
-    private static final ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
-        ServiceLoader.load(MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
-
     /**
      * Factory method to construct a MonitoredHost instance to manage the
      * connection to the host indicated by {@code hostId}.
@@ -154,34 +145,39 @@ public abstract class MonitoredHost {
      */
     public static MonitoredHost getMonitoredHost(HostIdentifier hostId)
                   throws MonitorException {
+        MonitoredHost mh = null;
 
         synchronized(monitoredHosts) {
-            MonitoredHost mh = monitoredHosts.get(hostId);
-            // remove any errored MonitorHost from the cache
-            if (mh != null && mh.isErrored()) {
-                monitoredHosts.remove(hostId);
-                mh = null;
-            }
+            mh = monitoredHosts.get(hostId);
             if (mh != null) {
-                return mh;
-            }
-            // not found in cache, now try to find a MonitoredHostService
-            // which can get a MonitoredHost for the hostId
-            hostId = resolveHostId(hostId);
-            for (MonitoredHostService mhs : monitoredHostServiceLoader) {
-                if (mhs.getScheme().equals(hostId.getScheme())) {
-                    mh = mhs.getMonitoredHost(hostId);
-                    break;
+                if (mh.isErrored()) {
+                    monitoredHosts.remove(hostId);
+                } else {
+                    return mh;
                 }
             }
-            if (mh == null) {
-                throw new IllegalArgumentException("Could not find MonitoredHost for scheme: "
-                        + hostId.getScheme());
-            }
-            // add it to the internal cache
-            monitoredHosts.put(mh.hostId, mh);
-            return mh;
         }
+
+        hostId = resolveHostId(hostId);
+
+        ServiceLoader<MonitoredHostService> services = ServiceLoader.load(
+                MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
+        for (MonitoredHostService mhs : services) {
+            if (mhs.getScheme().equals(hostId.getScheme())) {
+                mh = mhs.getMonitoredHost(hostId);
+                break;
+            }
+        }
+
+        if (mh == null) {
+            throw new IllegalArgumentException("Could not find MonitoredHost for scheme: " + hostId.getScheme());
+        }
+
+        synchronized(monitoredHosts) {
+            monitoredHosts.put(mh.hostId, mh);
+        }
+
+        return mh;
     }
 
     /**
