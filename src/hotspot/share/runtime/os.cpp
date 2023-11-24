@@ -1174,10 +1174,18 @@ bool os::is_readable_range(const void* from, const void* to) {
 // moved from debug.cpp (used to be find()) but still called from there
 // The verbose parameter is only set by the debug code in one case
 void os::print_location(outputStream* st, intptr_t x, bool verbose) {
+
+  // Trying to determine what a register refers to is inherently risky, so
+  // in case it fails we first print out the raw value. This leads to some
+  // duplication with the various `print` functions used below, but will aid
+  // with debugging things if we fail to decode the location.
+  st->print(INTPTR_FORMAT ": ", x);
+  st->flush();
+
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is null");
+    st->print_cr("is null");
     return;
   }
 
@@ -1198,11 +1206,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   // Check if addr is a JNI handle.
   if (align_down((intptr_t)addr, sizeof(intptr_t)) != 0 && accessible) {
     if (JNIHandles::is_global_handle((jobject) addr)) {
-      st->print_cr(INTPTR_FORMAT " is a global jni handle", p2i(addr));
+      st->print_cr("is a global jni handle");
       return;
     }
     if (JNIHandles::is_weak_global_handle((jobject) addr)) {
-      st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
+      st->print_cr("is a weak global jni handle");
       return;
     }
   }
@@ -1214,15 +1222,15 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       if (verbose) {
         thread->print_on(st);
       } else {
-        st->print_cr(INTPTR_FORMAT " is a thread", p2i(addr));
+        st->print_cr("is a thread");
       }
       return;
     }
     // If the addr is in the stack region for this thread then report that
     // and print thread info
     if (thread->is_in_full_stack(addr)) {
-      st->print_cr(INTPTR_FORMAT " is pointing into the stack for thread: "
-                   INTPTR_FORMAT, p2i(addr), p2i(thread));
+      st->print_cr("is pointing into the stack for thread: "
+                   INTPTR_FORMAT, p2i(thread));
       if (verbose) thread->print_on(st);
       return;
     }
@@ -1231,14 +1239,14 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   // Check if in metaspace and print types that have vptrs
   if (Metaspace::contains(addr)) {
     if (Klass::is_valid((Klass*)addr)) {
-      st->print_cr(INTPTR_FORMAT " is a pointer to class: ", p2i(addr));
+      st->print_cr("is a pointer to class: ");
       ((Klass*)addr)->print_on(st);
     } else if (Method::is_valid_method((const Method*)addr)) {
       ((Method*)addr)->print_value_on(st);
       st->cr();
     } else {
       // Use addr->print() from the debugger instead (not here)
-      st->print_cr(INTPTR_FORMAT " is pointing into metadata", p2i(addr));
+      st->print_cr("is pointing into metadata");
     }
     return;
   }
@@ -1250,7 +1258,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     Klass* k = CompressedKlassPointers::decode_raw(narrow_klass);
 
     if (Klass::is_valid(k)) {
-      st->print_cr(UINT32_FORMAT " is a compressed pointer to class: " INTPTR_FORMAT, narrow_klass, p2i((HeapWord*)k));
+      st->print_cr("is a compressed pointer to class: " INTPTR_FORMAT, p2i((HeapWord*)k));
       k->print_on(st);
       return;
     }
@@ -1268,7 +1276,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   if (accessible) {
-    st->print(INTPTR_FORMAT " points into unknown readable memory:", p2i(addr));
+    st->print("points into unknown readable memory:");
     if (is_aligned(addr, sizeof(intptr_t))) {
       st->print(" " PTR_FORMAT " |", *(intptr_t*)addr);
     }
@@ -1279,7 +1287,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
-  st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
+  st->print_cr("is an unknown value");
 }
 
 bool is_pointer_bad(intptr_t* ptr) {
