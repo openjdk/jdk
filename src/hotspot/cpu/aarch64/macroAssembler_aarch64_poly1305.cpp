@@ -227,6 +227,13 @@ void MacroAssembler::poly1305_reduce(AsmGenerator &acc, const RegPair u[], const
                                                       // u[2] < 0x4000000 (i.e. 27 bits)
 }
 
+// Vectorized poly1305.
+
+// We closely follow Goll and Gueron, ‘Vectorization of Poly1305
+// message authentication code’. 2015 12th Int. Conf. on Information
+// Technology – New Generations, Las Vegas, NV, USA, April 2015,
+// pp. 145–150, doi: 10.1109/ITNG.2015.28
+
 void MacroAssembler::poly1305_field_multiply(AsmGenerator &acc,
                                              const RegPair u[], const Register s[], const Register r[],
                                              Register RR2, RegSetIterator<Register> scratch) {
