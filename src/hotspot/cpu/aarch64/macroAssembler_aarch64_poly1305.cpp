@@ -93,7 +93,7 @@ void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
 
 #define _ acc << [=]()
 // Widening multiply s * r -> u
-void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_multiply(AsmGenerator &acc,
                                        const RegPair u[], const Register s[], const Register r[],
                                        Register RR2, RegSetIterator<Register> scratch) {
   _ { wide_mul(u[0], s[0], r[0]); };
@@ -115,7 +115,7 @@ void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
   _ { wide_madd(u[2], s[2], r[0]); };
 }
 
-void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], const char *s) {
+void MacroAssembler::poly1305_reduce(AsmGenerator &acc, const RegPair u[], const char *s) {
 #define _ acc << [=]()
   // Partial reduction mod 2**130 - 5
 
@@ -160,7 +160,7 @@ void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], 
                                                      // u[2] < 0x4000000 (i.e. 27 bits)
 }
 
-void MacroAssembler::poly1305_field_multiply(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_field_multiply(AsmGenerator &acc,
                                              const RegPair u[], const Register s[], const Register r[],
                                              Register RR2, RegSetIterator<Register> scratch) {
   poly1305_multiply(acc, u, s, r, RR2, scratch);
@@ -168,7 +168,7 @@ void MacroAssembler::poly1305_field_multiply(LambdaAccumulator &acc,
 }
 
 // Widening multiply s * r -> u
-void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_multiply_vec(AsmGenerator &acc,
                                            const FloatRegister u[],
                                            const FloatRegister s[],
                                            const FloatRegister r[],
@@ -247,7 +247,7 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], D, 0, s2);
 }
 
-void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_step_vec(AsmGenerator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister zero, Register input_start) {
   FloatRegister scratch1 = u[2], scratch2 = u[3];
@@ -294,7 +294,7 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
     };
 }
 
-void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_multiply_vec(AsmGenerator &acc,
                                            const FloatRegister u_v[],
                                            AbstractRegSet<FloatRegister> remaining,
                                            const FloatRegister s_v[],
@@ -303,7 +303,7 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   poly1305_multiply_vec(acc, u_v, s_v, r_v, rr_v);
 }
 
-void MacroAssembler::poly1305_reduce_step(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_reduce_step(AsmGenerator &acc,
                                           FloatRegister d, FloatRegister s,
                                           FloatRegister zero, FloatRegister scratch) {
   _ {
@@ -312,7 +312,7 @@ void MacroAssembler::poly1305_reduce_step(LambdaAccumulator &acc,
   _ { sli(s, T2D, zero, 26); };
 }
 
-void MacroAssembler::poly1305_reduce_vec(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_reduce_vec(AsmGenerator &acc,
                                          const FloatRegister u[],
                                          const FloatRegister zero,
                                          AbstractRegSet<FloatRegister> scratch) {
@@ -386,7 +386,7 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   csel(dest[2], dest[2], u[2]._lo, HS);
 }
 
-void MacroAssembler::poly1305_load(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_load(AsmGenerator &acc,
                                    const Register s[], const Register input_start) {
   _ {
     ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
@@ -398,7 +398,7 @@ void MacroAssembler::poly1305_load(LambdaAccumulator &acc,
   };
 }
 
-void MacroAssembler::poly1305_step(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_step(AsmGenerator &acc,
                                    const Register s[], const RegPair u[], Register input_start) {
   poly1305_load(acc, s, input_start);
   _ { poly1305_add(s, u); };
@@ -423,7 +423,7 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
   add(dest[2], dest[2], src[2]._lo);
 }
 
-void MacroAssembler::poly1305_add(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_add(AsmGenerator &acc,
                                   const Register dest[], const RegPair src[]) {
   _ { poly1305_add(dest, src); };
 }

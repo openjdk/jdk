@@ -32,7 +32,7 @@
 #include "metaprogramming/primitiveConversions.hpp"
 
 #ifndef PRODUCT
-const uintptr_t Assembler::asm_bp = 0xffffb8330ffc;
+const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
 
 static float unpack(unsigned value);
@@ -132,9 +132,9 @@ void Address::lea(MacroAssembler *as, Register r) const {
     if (offset() == 0 && base() == r) // it's a nop
       break;
     if (offset() > 0)
-      __ add(r, base(), uabs(offset()));
+      __ add(r, base(), offset());
     else
-      __ sub(r, base(), uabs(-offset()));
+      __ sub(r, base(), -offset());
     break;
   }
   case base_plus_offset_reg: {
@@ -248,6 +248,41 @@ void Address::assert_is_nonliteral() const {
 }
 
 #endif // ASSERT
+
+static RelocationHolder address_relocation(address target, relocInfo::relocType rtype) {
+  switch (rtype) {
+  case relocInfo::oop_type:
+  case relocInfo::metadata_type:
+    // Oops are a special case. Normally they would be their own section
+    // but in cases like icBuffer they are literals in the code stream that
+    // we don't have a section for. We use none so that we get a literal address
+    // which is always patchable.
+    return RelocationHolder::none;
+  case relocInfo::external_word_type:
+    return external_word_Relocation::spec(target);
+  case relocInfo::internal_word_type:
+    return internal_word_Relocation::spec(target);
+  case relocInfo::opt_virtual_call_type:
+    return opt_virtual_call_Relocation::spec();
+  case relocInfo::static_call_type:
+    return static_call_Relocation::spec();
+  case relocInfo::runtime_call_type:
+    return runtime_call_Relocation::spec();
+  case relocInfo::poll_type:
+  case relocInfo::poll_return_type:
+    return Relocation::spec_simple(rtype);
+  case relocInfo::none:
+    return RelocationHolder::none;
+  default:
+    ShouldNotReachHere();
+    return RelocationHolder::none;
+  }
+}
+
+Address::Address(address target, relocInfo::relocType rtype) :
+  _mode(literal),
+  _literal(target, address_relocation(target, rtype))
+{}
 
 void Assembler::b(const Address &dest) {
   code_section()->relocate(pc(), dest.rspec());

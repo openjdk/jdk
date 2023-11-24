@@ -368,7 +368,7 @@ class Address {
       : _base(base), _index(index), _offset(offset), _ext(ext) {}
     Register _base;
     Register _index;
-    jlong _offset;
+    int64_t _offset;
     extend _ext;
   };
 
@@ -409,9 +409,6 @@ class Address {
     }
   }
 
-  template<typename T>
-  inline RelocationHolder address_relocation(T *target, relocInfo::relocType rtype);
-
  public:
   // no_mode initializes _nonliteral for ease of copying.
   Address() :
@@ -447,14 +444,12 @@ class Address {
     _nonliteral(p.reg(), p.idx_reg(), p.offset())
   {}
 
-  template <typename T>
-  Address(T *target, const RelocationHolder& rspec) :
+  Address(address target, const RelocationHolder& rspec) :
     _mode(literal),
-    _literal((address)target, rspec)
+    _literal(target, rspec)
   {}
 
-  template <typename T>
-  Address(T *target, relocInfo::relocType rtype = relocInfo::external_word_type);
+  Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
   Address(Register base, RegisterOrConstant index, extend ext = lsl()) {
     if (index.is_register()) {
@@ -491,7 +486,7 @@ class Address {
     return _nonliteral._base;
   }
 
-  jlong offset() const {
+  int64_t offset() const {
     assert_is_nonliteral();
     return _nonliteral._offset;
   }
@@ -1612,9 +1607,7 @@ public:
 public:
 
   enum SIMD_Arrangement {
-    T8B = 0b000, T16B = 0b001, T4H = 0b010, T8H = 0b011,
-    T2S = 0b100,  T4S = 0b101, T1D = 0b110, T2D = 0b111,
-    T1Q, INVALID_ARRANGEMENT
+    T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
   };
 
   enum SIMD_RegVariant {
@@ -2721,11 +2714,11 @@ template<typename R, typename... Rx>
 #undef INSN
 
 // Advanced SIMD three same
-#define INSN(NAME, U, op2, op3)                                                       \
+#define INSN(NAME, op1, op2, op3)                                                       \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     starti;                                                                             \
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                    \
-    f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24), f(op2, 23);            \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);            \
     f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
   }
 

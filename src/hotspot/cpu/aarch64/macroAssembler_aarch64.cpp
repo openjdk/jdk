@@ -1,5 +1,3 @@
-#include <utility>
-
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
@@ -36,14 +34,13 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
-#include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
-#include "kernelGenerator_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -79,7 +76,6 @@
 
 #ifdef ASSERT
 extern "C" void disnm(intptr_t p);
-extern address poo;
 #endif
 // Target-dependent relocation processing
 //
@@ -619,13 +615,19 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
 
 // Calls to C land
 //
-// When entering C land, the fp & sp of the last Java frame have to be recorded
+// When entering C land, the rfp, & resp of the last Java frame have to be recorded
 // in the (thread-local) JavaThread object. When leaving C land, the last Java fp
 // has to be reset to 0. This is required to allow proper stack traversal.
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
                                          Register last_java_fp,
                                          Register last_java_pc,
                                          Register scratch) {
+
+  if (last_java_pc->is_valid()) {
+      str(last_java_pc, Address(rthread,
+                                JavaThread::frame_anchor_offset()
+                                + JavaFrameAnchor::last_Java_pc_offset()));
+    }
 
   // determine last_java_sp register
   if (last_java_sp == sp) {
@@ -636,12 +638,6 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 
   str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
-
-  if (last_java_pc->is_valid()) {
-      str(last_java_pc, Address(rthread,
-                                JavaThread::frame_anchor_offset()
-                                + JavaFrameAnchor::last_Java_pc_offset()));
-    }
 
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
@@ -6409,4 +6405,3 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
 #endif
   strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
-

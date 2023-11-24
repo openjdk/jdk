@@ -63,9 +63,6 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 
-address poo;
-
-
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -7093,129 +7090,58 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-typedef __uint128_t u128;
-typedef uint64_t u64;
-typedef uint32_t u32;
+  // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
+  // are represented as long[5], with BITS_PER_LIMB = 26.
+  // Pack five 26-bit limbs into three 64-bit registers.
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
+    __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
+    __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
 
-  template <typename T>
-  static void ADC(T &result, u64 &carry, u64 n, u64 m) {
-    u128 sum = (u128)n + m + carry;
-    result = (u64)sum;
-    carry = (u64)(sum >> 64);
+    __ add(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
+    __ add(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
+    __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
+    __ add(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+
+    if (dest2->is_valid()) {
+      __ add(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    } else {
+#ifdef ASSERT
+      Label OK;
+      __ cmp(zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+      __ br(__ EQ, OK);
+      __ stop("high bits of Poly1305 integer should be zero");
+      __ should_not_reach_here();
+      __ bind(OK);
+#endif
+    }
   }
 
-#define PACK_26(dest0, dest1, dest2, src) do {  \
-  dest0 = src[0] >> 0;    /* 26 bits */         \
-  dest0 |= src[1] << 26;  /* 26 bits */         \
-  dest0 |= src[2] << 52;  /* 12 bits */         \
-  dest0 &= 0xffffffffffffffff; /* 64 bits */    \
-                                                \
-  dest1 = src[2] >> 12;   /* 14 bits */         \
-  dest1 |= src[3] << 14;  /* 26 bits */         \
-  dest1 |= src[4] << 40;  /* 24 bits */         \
-  dest1 &= 0xffffffffffffffff; /* 64 bits */    \
-                                                \
-  dest2 = src[4] >> 24;   /* 2 bits  */         \
-} while(0)
-
-  // Private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
-  static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
-    static int counter;
-
-    static constexpr int BLOCK_LENGTH = 16;
-
-    DEBUG_ONLY(setbuf(stdout, NULL);)
-
-    u64 u0, u1, u2;
-    PACK_26(u0, u1, u2, acc_start);
-
-    u64 r0, r1, r2;
-    PACK_26(r0, r1, r2, r_start);
-    const uint64_t  rr0 = (r0 >> 2) * 5;
-    const uint64_t  rr1 = (r1 >> 2) * 5;
-
-    while (length >= BLOCK_LENGTH) {
-      DEBUG_ONLY(printf("#%d\n", ++counter);)
-
-      u64 s0, s1; u32 s2;
-      u64 *c = (u64*)input_start;
-
-      DEBUG_ONLY(printf("C: %016lx:%016lx\n", (u64)c[1], (u64)c[0]);)
-      DEBUG_ONLY(printf("U: %lx:%016lx:%016lx\n", (u64)u2, (u64)u1, (u64)u0);)
-
-      // s = u + c, with carry propagation
-      uint64_t carry = 0;
-      ADC(s0, carry, u0, c[0]);
-      ADC(s1, carry, u1, c[1]);
-      s2 = u2 + carry;
-      // Dead: u0, u1, u2
-      s2 += 1;
-
-      DEBUG_ONLY(printf("S: %lx:%016lx:%016lx\n", (u64)s2, s1, s0);)
-      DEBUG_ONLY(printf("R:   %016lx:%016lx\n", r1, r0);)
-      DEBUG_ONLY(printf("RR:   %016lx:%016lx\n", rr1, rr0);)
-
-      {
-        const u128 x0 = (u128)s0*r0 + (u128)s1*rr1 + (u128)s2*rr0;
-        const u128 x1 = (u128)s0*r1 + (u128)s1*r0  + (u128)s2*rr1;
-        const u64 x2 = s2 * (r0 & 3); // ...recover 2 bits
-        // Dead: s0, s1, s2
-
-        // partial reduction modulo 2^130 - 5
-        u128 tmp3 = x2 + (x1 >> 64);
-        // Dead: x2
-        u128 tmp0 = (tmp3 >>  2) * 5 + (x0 & 0xffffffffffffffff);
-        u128 tmp1 = (tmp0 >> 64)     + (x1 & 0xffffffffffffffff) + (x0 >> 64);
-        // Dead: x1, x0
-        u0 = tmp0;
-        // Dead: tmp0
-        u128 tmp2 = (tmp1 >> 64)     + (tmp3 & 3);
-        // Dead: tmp3;
-        u1 = tmp1;
-        // Dead: tmp1
-        u2 = tmp2;
-        // Dead: tmp2
-      }
-      // Live: u0, u1, u2
-
-      DEBUG_ONLY(printf("U:   %lx:%016lx:%016lx\n", (u64)u2, (u64)u1, (u64)u0);)
-
-      input_start += BLOCK_LENGTH;
-      length -= BLOCK_LENGTH;
-    }
-
-    {
-      // Fully reduce modulo 2^130 - 5
-      u64 carry = 0;
-      ADC(u0, carry, u0, (u2 >> 2) * 5);
-      ADC(u1, carry, u1, 0);
-      u2 = (u2 + carry) & 3;
-    }
-
-    acc_start[0] = u0         & 0x3ffffff;
-    acc_start[1] = (u0 >> 26) & 0x3ffffff;
-    acc_start[2] = ((u0 >> 52) | (u1 << 12)) & 0x3ffffff;
-    acc_start[3] = (u1 >> 14) & 0x3ffffff;
-    acc_start[4] = ((u1 >> 40) | (u2 << 24)) & 0x3ffffff;
+  // As above, but return only a 128-bit integer, packed into two
+  // 64-bit registers.
+  void pack_26(Register dest0, Register dest1, Register src) {
+    pack_26(dest0, dest1, noreg, src);
   }
+
+  // Multiply and multiply-accumulate unsigned 64-bit registers.
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+    __ mul(prod_lo, n, m);
+    __ umulh(prod_hi, n, m);
+  }
+  void wide_madd(Register sum_lo, Register sum_hi, Register n, Register m) {
+    wide_mul(rscratch1, rscratch2, n, m);
+    __ adds(sum_lo, sum_lo, rscratch1);
+    __ adc(sum_hi, sum_hi, rscratch2);
+  }
+
+  // Poly1305, RFC 7539
+
+  // See https://loup-vaillant.fr/tutorials/poly1305-design for a
+  // description of the tricks used to simplify and accelerate this
+  // computation.
 
   address generate_poly1305_processBlocks() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
-    address start = __ pc();
-    Label here;
-    __ set_last_Java_frame(sp, rfp, lr, rscratch1);
-    __ enter();
-    __ lea(rscratch1, Address(CAST_FROM_FN_PTR(address, &do_poly1305_processBlocks)));
-    __ blr(rscratch1);
-    __ bind(here);
-    __ reset_last_Java_frame(true);
-    __ leave();
-    __ ret(lr);
-    return start;
-  }
-
-  address generate_poly1305_processBlocks1() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
     address start = __ pc();
@@ -7229,68 +7155,96 @@ typedef uint32_t u32;
     // Arguments
     const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
-    // Rn is the randomly-generated key, packed into three registers
-    Register R[] = { *++regs, *++regs, *++regs,};
-    __ pack_26(R[0], R[1], R[2], r_start);
+    // R_n is the 128-bit randomly-generated key, packed into two
+    // registers.  The caller passes this key to us as long[5], with
+    // BITS_PER_LIMB = 26.
+    const Register R_0 = *++regs, R_1 = *++regs;
+    pack_26(R_0, R_1, r_start);
 
-    // Un is the current checksum
-    const RegPair u[] = {{*++regs, *++regs},
-                         {*++regs, *++regs},
-                         {*++regs, *++regs},};
-    __ pack_26(u[0]._lo, u[1]._lo, u[2]._lo, acc_start);
+    // RR_n is (R_n >> 2) * 5
+    const Register RR_0 = *++regs, RR_1 = *++regs;
+    __ lsr(RR_0, R_0, 2);
+    __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
+    __ lsr(RR_1, R_1, 2);
+    __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
+
+    // U_n is the current checksum
+    const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+    pack_26(U_0, U_1, U_2, acc_start);
 
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
 
-    // Sn is to be the sum of Un and the next block of data
-    Register S[] = { *++regs, *++regs, *++regs,};
-
-    // Compute (R2 << 26) * 5.
-    Register RR2 = *++regs;
-
-    __ lsl(RR2, R[2], 26);
-    __ add(RR2, RR2, RR2, __ LSL, 2);
-
-    __ subsw(length, length, BLOCK_LENGTH);
-    __ br(~ Assembler::GE, DONE); {
+    __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+    __ br(Assembler::LT, DONE); {
       __ bind(LOOP);
 
-      __ poly1305_step(S, u, input_start);
-      __ poly1305_multiply(u, S, R, RR2, regs);
-      __ poly1305_reduce(u);
+      // S_n is to be the sum of U_n and the next block of data
+      const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+      __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
+      __ adds(S_0, U_0, S_0);
+      __ adcs(S_1, U_1, S_1);
+      __ adc(S_2, U_2, zr);
+      __ add(S_2, S_2, 1);
 
-      __ subsw(length, length, BLOCK_LENGTH);
-      __ br(Assembler::GE, LOOP);
+      const Register U_0HI = *++regs, U_1HI = *++regs;
+
+      // NB: this logic depends on some of the special properties of
+      // Poly1305 keys. In particular, because we know that the top
+      // four bits of R_0 and R_1 are zero, we can add together
+      // partial products without any risk of needing to propagate a
+      // carry out.
+      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
+      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
+      __ andr(U_2, R_0, 3);
+      __ mul(U_2, S_2, U_2);
+
+      // Recycle registers S_0, S_1, S_2
+      regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
+
+      // Partial reduction mod 2**130 - 5
+      __ adds(U_1, U_0HI, U_1);
+      __ adc(U_2, U_1HI, U_2);
+      // Sum now in U_2:U_1:U_0.
+      // Dead: U_0HI, U_1HI.
+      regs = (regs.remaining() + U_0HI + U_1HI).begin();
+
+      // U_2:U_1:U_0 += (U_2 >> 2) * 5 in two steps
+
+      // First, U_2:U_1:U_0 += (U_2 >> 2)
+      __ lsr(rscratch1, U_2, 2);
+      __ andr(U_2, U_2, (u8)3);
+      __ adds(U_0, U_0, rscratch1);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
+      // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
+      __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
+
+      __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
+      __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+      __ br(~ Assembler::LT, LOOP);
     }
 
-    // Fully reduce modulo 2^130 - 5
-    __ adds(u[0]._lo, u[0]._lo, u[1]._lo, __ LSL, 52);
-    __ lsr(u[1]._lo, u[1]._lo, 12);
-    __ lsl(rscratch1, u[2]._lo, 40);
-    __ adcs(u[1]._lo, u[1]._lo, rscratch1);
-    __ lsr(u[2]._lo, u[2]._lo, 24);
-    __ adc(u[2]._lo, u[2]._lo, zr);
+    // Further reduce modulo 2^130 - 5
+    __ lsr(rscratch1, U_2, 2);
+    __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
+    __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
+    __ adcs(U_1, U_1, zr);
+    __ andr(U_2, U_2, (u1)3);
+    __ adc(U_2, U_2, zr);
 
-    // Subtract 2^130 - 5
-    // = 0x3_ffffffffffffffff_fffffffffffffffb
-    __ mov(rscratch1, 0xfffffffffffffffb); __ subs(S[0], u[0]._lo, rscratch1);
-    __ mov(rscratch1, 0xffffffffffffffff); __ sbcs(S[1], u[1]._lo, rscratch1);
-    __ mov(rscratch1, 0x3);                __ sbcs(S[2], u[2]._lo, rscratch1);
-    __ csel(u[0]._lo, S[0], u[0]._lo, __ HS);
-    __ csel(u[1]._lo, S[1], u[1]._lo, __ HS);
-    __ csel(u[2]._lo, S[2], u[2]._lo, __ HS);
-
-    // And store it all back
-    __ ubfiz(rscratch1, u[0]._lo, 0, 26);
-    __ ubfx(rscratch2, u[0]._lo, 26, 26);
+    // Unpack the sum into five 26-bit limbs and write to memory.
+    __ ubfiz(rscratch1, U_0, 0, 26);
+    __ ubfx(rscratch2, U_0, 26, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start));
-
-    __ ubfx(rscratch1, u[0]._lo, 52, 12);
-    __ bfi(rscratch1, u[1]._lo, 12, 14);
-    __ ubfx(rscratch2, u[1]._lo, 14, 26);
+    __ ubfx(rscratch1, U_0, 52, 12);
+    __ bfi(rscratch1, U_1, 12, 14);
+    __ ubfx(rscratch2, U_1, 14, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
-
-    __ extr(rscratch1, u[2]._lo, u[1]._lo, 40);
+    __ ubfx(rscratch1, U_1, 40, 24);
+    __ bfi(rscratch1, U_2, 24, 3);
     __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
 
     __ bind(DONE);
@@ -7388,10 +7342,9 @@ address generate_poly1305_processBlocks2() {
 
   // We're going to use R**6
   {
+    // The low halves of u0 and u1
     CoreRegs u0_lo(u0[0]._lo, u0[1]._lo, u0[2]._lo);
     CoreRegs u1_lo(u1[0]._lo, u1[1]._lo, u1[2]._lo);
-
-    poo = __ pc();
 
     __ poly1305_field_multiply(u0, R, R, RR2, regs);
     // u0_lo = R**2
@@ -7399,14 +7352,15 @@ address generate_poly1305_processBlocks2() {
     __ poly1305_field_multiply(u1, u0_lo, R, RR2, regs);
     // u1_lo = R**3
 
+    // RR2 = 5 * (R[2] << 26)
     __ copy_3_regs(R, u1_lo);
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
     __ poly1305_field_multiply(u1, R, R, RR2, regs);
-    //u1_lo = R**6
-    __ copy_3_regs(R, u1_lo);
+    // u1_lo = R**6
 
+    __ copy_3_regs(R, u1_lo);
     __ lsl(RR2, R[2], 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
   }
@@ -7459,7 +7413,7 @@ address generate_poly1305_processBlocks2() {
       // __ poly1305_load(S1, input_start);
 
       constexpr int COLS = 4;
-      LambdaAccumulator gen[COLS];
+      AsmGenerator gen[COLS];
 
       __ poly1305_step(gen[0], S0, u0, input_start);
       __ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
@@ -7475,7 +7429,7 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
                                  vregs.remaining());
 
-      LambdaAccumulator::Iterator it[COLS];
+      AsmGenerator::Iterator it[COLS];
       int len[COLS];
 
       int l_max = INT_MIN;
@@ -8633,6 +8587,7 @@ address generate_poly1305_processBlocks2() {
     // }
   };
 
+
   // Initialization
   void generate_initial_stubs() {
     // Generate initial stubs and initializes the entry points
@@ -8864,24 +8819,6 @@ address generate_poly1305_processBlocks2() {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
-
-    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
-
-    if (UsePoly1305Intrinsics) {
-      if (getenv("OLD_POLY1305") == NULL) {
-        StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks2();
-      } else {
-        StubRoutines::_poly1305_processBlocks= generate_poly1305_processBlocks1();
-      }
-    }
-
-#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
-
-    generate_atomic_entry_points();
-
-#endif // LINUX
-
-    StubRoutines::aarch64::set_completed();
 #endif // COMPILER2_OR_JVMCI
   }
 

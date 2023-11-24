@@ -36,7 +36,6 @@
 #include "runtime/icache.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -1359,8 +1358,7 @@ void ZLoadBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
   // Current assumption is that the barrier stubs are the first stubs emitted after the actual code
   assert(stubs_start_offset() <= output->buffer_sizing_data()->_code, "stubs are assumed to be emitted directly after code and code_size is a hard limit on where it can start");
 
-  guarantee(!_test_and_branch_reachable_entry.is_unused(), "Should be used");
- __ bind(_test_and_branch_reachable_entry);
+  __ bind(_test_and_branch_reachable_entry);
 
   // Next branch's offset is unknown, but is > branch_offset
   const int next_branch_offset = branch_offset + NativeInstruction::instruction_size;

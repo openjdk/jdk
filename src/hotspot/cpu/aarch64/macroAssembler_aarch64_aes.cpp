@@ -152,6 +152,54 @@ void MacroAssembler::aes_round(FloatRegister input, FloatRegister subkey) {
   aese(input, subkey); aesmc(input, input);
 }
 
+// KernelGenerator
+//
+// The abstract base class of an unrolled function generator.
+// Subclasses override generate(), length(), and next() to generate
+// unrolled and interleaved functions.
+//
+// The core idea is that a subclass defines a method which generates
+// the base case of a function and a method to generate a clone of it,
+// shifted to a different set of registers. KernelGenerator will then
+// generate several interleaved copies of the function, with each one
+// using a different set of registers.
+
+// The subclass must implement three methods: length(), which is the
+// number of instruction bundles in the intrinsic, generate(int n)
+// which emits the nth instruction bundle in the intrinsic, and next()
+// which takes an instance of the generator and returns a version of it,
+// shifted to a new set of registers.
+
+class KernelGenerator: public MacroAssembler {
+protected:
+  const int _unrolls;
+public:
+  KernelGenerator(Assembler *as, int unrolls)
+    : MacroAssembler(as->code()), _unrolls(unrolls) { }
+  virtual void generate(int index) = 0;
+  virtual int length() = 0;
+  virtual KernelGenerator *next() = 0;
+  int unrolls() { return _unrolls; }
+  void unroll();
+};
+
+void KernelGenerator::unroll() {
+  ResourceMark rm;
+  KernelGenerator **generators
+    = NEW_RESOURCE_ARRAY(KernelGenerator *, unrolls());
+
+  generators[0] = this;
+  for (int i = 1; i < unrolls(); i++) {
+    generators[i] = generators[i-1]->next();
+  }
+
+  for (int j = 0; j < length(); j++) {
+    for (int i = 0; i < unrolls(); i++) {
+      generators[i]->generate(j);
+    }
+  }
+}
+
 // An unrolled and interleaved generator for AES encryption.
 class AESKernelGenerator: public KernelGenerator {
   Register _from, _to;
