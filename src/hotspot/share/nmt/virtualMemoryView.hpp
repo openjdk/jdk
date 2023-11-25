@@ -47,8 +47,6 @@
   5. Insufficient amount of unit tests
   6. Need to fix includes, copyright stmts etc
 
-  I've started on splitting up reserving and mapping, but haven't confirmed that it works.
-
   I've gotten some input on just how large these mappings can be: Approx. 16 million mappings at once.
   Perhaps we can introduce an alignment+maximum size for this in order to solve the problem? We can then statically allocate the mapping area and get
   O(1) mapping info.
@@ -143,6 +141,28 @@ private:
   static OverlappingResult overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                       TrackedOffsetRange* out, int* len);
 
+  struct VirtualMemory {
+    RegionStorage* reserved_regions;
+    GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* mapped_regions;
+    GrowableArrayCHeap<RegionStorage, mtNMT>* committed_regions;
+    VirtualMemory() :
+      reserved_regions(nullptr),
+      mapped_regions(nullptr),
+      committed_regions(nullptr) {
+    }
+
+    // Performing a deep copy is expensive, so we want to be very explicit when we do this.
+    // Therefore we make this a method instead of copy assignment operator.
+    VirtualMemory deep_copy() {
+      VirtualMemory virt_mem;
+      virt_mem.reserved_regions  = new RegionStorage{this->reserved_regions->length()};
+      virt_mem.mapped_regions    = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{this->mapped_regions->length()};
+      virt_mem.committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{this->committed_regions->length()};
+      
+      return virt_mem;
+    }
+  };
+  static VirtualMemory virt_mem;
   static RegionStorage* _reserved_regions;
   static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* _mapped_regions;
   static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
@@ -151,7 +171,6 @@ private:
   static NativeCallStackStorage* _stack_storage;
   static bool _is_detailed_mode;
 
-private:
   static void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
 public:
@@ -161,6 +180,8 @@ public:
 
   static void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void release_memory(address base_addr, size_t size);
+  static void commit_memory();
+  static void uncommit_memory();
 
   static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
