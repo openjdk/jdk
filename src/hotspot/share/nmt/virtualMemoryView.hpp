@@ -78,7 +78,7 @@ public:
     }
   };
   // Add tracking information
-  struct TrackedRange : public Range { // Currently unused, but can be used by the old API and all committed memory
+  struct TrackedRange : public Range {
     NativeCallStackStorage::StackIndex stack_idx; // From whence did this happen?
     MEMFLAGS flag; // What flag does it have? Guaranteed to be mtNone for committed range.
     TrackedRange(address start = 0, size_t size = 0, NativeCallStackStorage::StackIndex stack_idx = {0,0}, MEMFLAGS flag = mtNone) :

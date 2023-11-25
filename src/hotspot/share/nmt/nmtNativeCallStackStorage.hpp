@@ -29,34 +29,39 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+// Virtual memory regions that are tracked by NMT also has their NativeCallStack tracked.
+// The NCS are fairly large, so we store them separately and without duplicates.
+// This datastructure consists of an array of pointers to chunks containing a fixed amount of stacks.
+// With this set up a stack can be uniquely identified by a pair consisting of the chunk index and the index within the chunk.
+// These can be stored in one 4-byte integer by limiting the number of chunks and the static size of a chunk to 2**16.
 class NativeCallStackStorage : public CHeapObj<mtNMT> {
 private:
-  static constexpr const int static_chunk_size = 256;
-  static constexpr const uint16_t is_in_emergency = 65535;
-  static constexpr const uint32_t emergency_chunk = 65535 - 1;
+  static constexpr int      static_chunk_size = 256;
+  static constexpr uint16_t is_in_emergency = 65535;
+  static constexpr uint32_t emergency_chunk = 65535 - 1;
 
   struct NCSChunk : public CHeapObj<mtNMT> {
     NativeCallStack stacks[static_chunk_size];
   };
   GrowableArrayCHeap<NCSChunk*, mtNMT> stack_chunks;
 
-  // If we actually run out of possible NCSChunks we need an escape hatch to not crash the VM.
+  // If we actually run out of possible NCSChunks we need an escape hatch to not be forced to crash the VM.
   GrowableArrayCHeap<NativeCallStack, mtNMT> emergency;
   bool is_detailed_mode;
 
 public:
-  struct alignas(uint32_t) StackIndex {
-    // 2 bytes to index, 2 bytes to chunk
-    alignas(uint32_t) uint8_t compressed[4];
-    StackIndex(uint32_t chunk, uint32_t index) {
-      ::new (&compressed[0]) uint32_t(chunk);
-      ::new (&compressed[2]) uint32_t(index);
+  struct StackIndex {
+  private:
+    uint16_t _chunk, _index;
+  public:
+    StackIndex(uint16_t chunk, uint16_t index)
+    : _chunk(chunk), _index(index) {
     }
     uint32_t chunk() {
-      return *((uint32_t*)&compressed[0]);
+      return _chunk;
     }
     uint32_t index() {
-      return *((uint32_t*)&compressed[2]);
+      return _index;
     }
   };
 
