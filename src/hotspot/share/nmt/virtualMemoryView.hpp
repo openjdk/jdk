@@ -191,6 +191,7 @@ private:
 
   static void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
+
 public:
   static void initialize(bool is_detailed_mode);
 
