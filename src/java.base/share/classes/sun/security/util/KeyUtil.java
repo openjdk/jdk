@@ -416,6 +416,12 @@ public final class KeyUtil {
             DerValue val = new DerValue(publicKey.getEncoded());
             val.data.getDerValue();
             byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            // According to https://www.rfc-editor.org/rfc/rfc8554.html:
+            // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
+            // is the LMS public key for the top-level tree.
+            // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
+            // Section 8: type is the numeric identifier for an LMS specification.
+            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
             if (rawKey.length < 8) {
                 throw new NoSuchAlgorithmException("Cannot decode public key");
             }
