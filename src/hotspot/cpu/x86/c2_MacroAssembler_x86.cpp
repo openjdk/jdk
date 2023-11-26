@@ -1141,8 +1141,8 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
     vcmp = &MacroAssembler::vcmppd;
   }
 
-  // Make sure EnableX86ECoreOpts isn't disabled on register overlaps 
-  XMMRegister maxmin, scratch; 
+  // Make sure EnableX86ECoreOpts isn't disabled on register overlaps
+  XMMRegister maxmin, scratch;
   if (dst == btmp) {
     maxmin = btmp;
     scratch = tmp;
