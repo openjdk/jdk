@@ -151,7 +151,7 @@ private:
       committed_regions(nullptr) {
     }
 
-    // Performing a deep copy is expensive, so we want to be communicate clearly that a deep copy occurs.
+    // Performing a deep copy is expensive, so we want to communicate clearly that a deep copy occurs.
     // Therefore we make this a method instead of copy assignment operator.
     VirtualMemory deep_copy() {
       VirtualMemory virt_mem;
@@ -180,10 +180,7 @@ private:
       return virt_mem;
     }
   };
-  static VirtualMemory virt_mem;
-  static RegionStorage* _reserved_regions;
-  static GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* _mapped_regions;
-  static GrowableArrayCHeap<RegionStorage, mtNMT>* _committed_regions;
+  static VirtualMemory _virt_mem;
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   static NativeCallStackStorage* _stack_storage;
@@ -193,14 +190,16 @@ private:
   static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
 
 public:
+  // A default PhysicalMemorySpace for when allocating to the heap.
+  static PhysicalMemorySpace heap;
   static void initialize(bool is_detailed_mode);
 
   static PhysicalMemorySpace register_space(const char* descriptive_name);
 
   static void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void release_memory(address base_addr, size_t size);
-  static void commit_memory();
-  static void uncommit_memory();
+  static void commit_memory(address base_addr, size_t size, const NativeCallStack& stack);
+  static void uncommit_memory(address base_addr, size_t size);
 
   static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
@@ -214,6 +213,10 @@ public:
 
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
+  // Produce a deep copy of the current state, this can function as a baseline.
+  static VirtualMemory copy() {
+    return _virt_mem.deep_copy();
+  }
 
 };
 
