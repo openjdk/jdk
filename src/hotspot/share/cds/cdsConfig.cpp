@@ -29,6 +29,7 @@
 #include "classfile/classLoaderDataShared.hpp"
 #include "logging/log.hpp"
 
+bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
 
 // The ability to dump the FMG depends on many factors checked by
@@ -36,10 +37,6 @@ bool CDSConfig::_is_dumping_dynamic_archive = false;
 // _dumping_full_module_graph_disabled. (Ditto for loading the FMG).
 bool CDSConfig::_dumping_full_module_graph_disabled = false;
 bool CDSConfig::_loading_full_module_graph_disabled = false;
-
-bool CDSConfig::is_dumping_static_archive() {
-  return DumpSharedSpaces;
-}
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::is_dumping_heap() {
