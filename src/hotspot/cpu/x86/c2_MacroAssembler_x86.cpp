@@ -1141,7 +1141,8 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
     vcmp = &MacroAssembler::vcmppd;
   }
 
-  XMMRegister maxmin, scratch;
+  // Make sure EnableX86ECoreOpts isn't disabled on register overlaps 
+  XMMRegister maxmin, scratch; 
   if (dst == btmp) {
     maxmin = btmp;
     scratch = tmp;
@@ -1150,16 +1151,18 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
     scratch = btmp;
   }
 
-  if (EnableX86ECoreOpts && !is_double_word) {
+  bool precompute_mask = EnableX86ECoreOpts && UseAVX>1;
+  if (precompute_mask && !is_double_word) {
     vpsrad(tmp, mask, 32, vlen_enc);
     mask = tmp;
-  } else if (EnableX86ECoreOpts && is_double_word) {
+  } else if (precompute_mask && is_double_word) {
     vpxor(tmp, tmp, tmp, vlen_enc);
     vpcmpgtq(tmp, tmp, mask, vlen_enc);
     mask = tmp;
   }
-  (this->*vblend)(atmp, a, b, mask, vlen_enc, false, btmp);
-  (this->*vblend)(btmp, b, a, mask, vlen_enc, false, tmp);
+
+  (this->*vblend)(atmp, a, b, mask, vlen_enc, !precompute_mask, btmp);
+  (this->*vblend)(btmp, b, a, mask, vlen_enc, !precompute_mask, tmp);
   (this->*vmaxmin)(maxmin, atmp, btmp, vlen_enc);
   (this->*vcmp)(scratch, atmp, atmp, Assembler::UNORD_Q, vlen_enc);
   (this->*vblend)(dst, maxmin, atmp, scratch, vlen_enc, false, scratch);

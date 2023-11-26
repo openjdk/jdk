@@ -3570,9 +3570,10 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
 // vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
 void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
   bool dst_available = dst != mask && (dst != src1 || dst != src2);
-  if (EnableX86ECoreOpts && scratch_available && dst_available) {
+  if (blend_emulation && scratch_available && dst_available) {
     if (compute_mask) {
       vpsrad(scratch, mask, 32, vector_len);
       mask = scratch;
@@ -3593,9 +3594,10 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
 // vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
 void MacroAssembler::vblendvpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
   // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst && (!compute_mask || scratch != mask);
   bool dst_available = dst != mask && (dst != src1 || dst != src2);
-  if (EnableX86ECoreOpts && scratch_available && dst_available) {
+  if (blend_emulation && scratch_available && dst_available) {
     if (compute_mask) {
       vpxor(scratch, scratch, scratch, vector_len);
       vpcmpgtq(scratch, scratch, mask, vector_len);
