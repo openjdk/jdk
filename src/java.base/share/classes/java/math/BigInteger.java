@@ -751,9 +751,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         final int numInts = ((numBits - 1) >> 5) + 1;
         // numInts >= 1, since numBits > 0
 
-        
         int word = rnd.nextInt() & (-1 >>> -numBits); // Mask out any excess bits
-        
+
         // Skip any leading zero ints
         int len;
         for (len = numInts; len > 0 && word == 0; len--)
@@ -766,7 +765,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             for (int i = 1; i < randomBits.length; i++)
                 randomBits[i] = rnd.nextInt();
         }
-        
+
         return randomBits;
     }
 
