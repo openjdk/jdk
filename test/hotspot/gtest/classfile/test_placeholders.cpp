@@ -31,6 +31,14 @@
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
+// Helper to avoid interference from the cleanup delay queue by draining it
+// immediately after creation.
+TempNewSymbol new_stable_temp_symbol(const char* name) {
+  TempNewSymbol t = SymbolTable::new_symbol(name);
+  TempSymbolCleanupDelayer::drain_queue();
+  return t;
+}
+
 // Test that multiple threads calling handle_parallel_super_load don't underflow supername refcount.
 TEST_VM(PlaceholderTable, supername) {
   JavaThread* THREAD = JavaThread::current();
@@ -39,10 +47,10 @@ TEST_VM(PlaceholderTable, supername) {
   ThreadInVMfromNative tivfn(THREAD);
 
   // Assert messages assume these symbols are unique, and the refcounts start at one.
-  Symbol* A = SymbolTable::new_symbol("abc2_8_2023_class");
-  Symbol* D = SymbolTable::new_symbol("def2_8_2023_class");
+  TempNewSymbol A = new_stable_temp_symbol("abc2_8_2023_class");
+  TempNewSymbol D = new_stable_temp_symbol("def2_8_2023_class");
   Symbol* super = SymbolTable::new_symbol("super2_8_2023_supername");
-  Symbol* interf = SymbolTable::new_symbol("interface2_8_2023_supername");
+  TempNewSymbol interf = new_stable_temp_symbol("interface2_8_2023_supername");
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
 

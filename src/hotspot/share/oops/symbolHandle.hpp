@@ -27,7 +27,16 @@
 
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+
+class TempSymbolCleanupDelayer : AllStatic {
+  static Symbol* volatile _queue[];
+  static volatile uint _index;
+
+public:
+  static const uint QueueSize = 128;
+  static void delay_cleanup(Symbol* s);
+  static void drain_queue();
+};
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -44,18 +53,12 @@
 // probe() and lookup_only() will increment the refcount if symbol is found.
 template <bool TEMP>
 class SymbolHandleBase : public StackObj {
-  static Symbol* volatile _cleanup_delay_queue[];
-  static volatile uint _cleanup_delay_index;
-
   Symbol* _temp;
 
 public:
-  static constexpr uint CLEANUP_DELAY_MAX_ENTRIES = 128;
-
   SymbolHandleBase() : _temp(nullptr) { }
 
   // Conversion from a Symbol* to a SymbolHandleBase.
-  // Does not increment the current reference count if temporary.
   SymbolHandleBase(Symbol *s) : _temp(s) {
     if (!TEMP) {
       Symbol::maybe_increment_refcount(_temp);
@@ -66,7 +69,7 @@ public:
     // queue. But don't requeue existing entries, or entries that are held
     // elsewhere - it's a waste of effort.
     if (s != nullptr && s->refcount() == 1) {
-      add_to_cleanup_delay_queue(s);
+      TempSymbolCleanupDelayer::delay_cleanup(s);
     }
   }
 
@@ -90,19 +93,6 @@ public:
     Symbol::maybe_decrement_refcount(_temp);
   }
 
-  // Keep this symbol alive for some time to allow for reuse.
-  // Temp symbols for the same string can often be created in quick succession,
-  // and this queue allows them to be reused instead of churning.
-  void add_to_cleanup_delay_queue(Symbol* sym) {
-    sym->increment_refcount();
-    STATIC_ASSERT(is_power_of_2(CLEANUP_DELAY_MAX_ENTRIES)); // allow modulo shortcut
-    uint i = Atomic::add(&_cleanup_delay_index, 1u) & (CLEANUP_DELAY_MAX_ENTRIES - 1);
-    Symbol* old = Atomic::xchg(&_cleanup_delay_queue[i], sym);
-    if (old != nullptr) {
-      old->decrement_refcount();
-    }
-  }
-
   // Symbol* conversion operators
   Symbol* operator -> () const                   { return _temp; }
   bool    operator == (Symbol* o) const          { return _temp == o; }
@@ -111,21 +101,7 @@ public:
   static unsigned int compute_hash(const SymbolHandleBase& name) {
     return (unsigned int) name->identity_hash();
   }
-
-  static void drain_cleanup_delay_queue() {
-    for (uint i = 0; i < CLEANUP_DELAY_MAX_ENTRIES; i++) {
-      Symbol* sym = Atomic::xchg(&_cleanup_delay_queue[i], (Symbol*) nullptr);
-      if (sym != nullptr) {
-        sym->decrement_refcount();
-      }
-    }
-  }
 };
-
-template<bool TEMP>
-Symbol* volatile SymbolHandleBase<TEMP>::_cleanup_delay_queue[CLEANUP_DELAY_MAX_ENTRIES] = {};
-template<bool TEMP>
-volatile uint SymbolHandleBase<TEMP>::_cleanup_delay_index = 0;
 
 // TempNewSymbol is a temporary holder for a newly created symbol
 using TempNewSymbol = SymbolHandleBase<true>;

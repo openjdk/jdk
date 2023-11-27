@@ -31,7 +31,7 @@
 // immediately after creation.
 TempNewSymbol stable_temp_symbol(Symbol* sym) {
   TempNewSymbol t = sym;
-  TempNewSymbol::drain_cleanup_delay_queue();
+  TempSymbolCleanupDelayer::drain_queue();
   return t;
 }
 
@@ -158,7 +158,7 @@ TEST_VM(SymbolTable, test_cleanup_delay) {
   // Fill up the queue
   constexpr int symbol_name_length = 30;
   char symbol_name[symbol_name_length];
-  for (uint i = 1; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+  for (uint i = 1; i < TempSymbolCleanupDelayer::QueueSize; i++) {
     os::snprintf(symbol_name, symbol_name_length, "temp-filler-%d", i);
     TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
     ASSERT_EQ(s->refcount(), 2) << "TempNewSymbol refcount just created is 2";
@@ -176,21 +176,21 @@ TEST_VM(SymbolTable, test_cleanup_delay_drain) {
   // Fill up the queue
   constexpr int symbol_name_length = 30;
   char symbol_name[symbol_name_length];
-  TempNewSymbol symbols[TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES] = {};
-  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+  TempNewSymbol symbols[TempSymbolCleanupDelayer::QueueSize] = {};
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
     os::snprintf(symbol_name, symbol_name_length, "temp-%d", i);
     TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
     symbols[i] = s;
   }
 
   // While in the queue refcounts are incremented
-  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
     ASSERT_EQ(symbols[i]->refcount(), 2) << "TempNewSymbol refcount in queue is 2";
   }
 
   // Draining the queue should decrement the refcounts
-  TempNewSymbol::drain_cleanup_delay_queue();
-  for (uint i = 0; i < TempNewSymbol::CLEANUP_DELAY_MAX_ENTRIES; i++) {
+  TempSymbolCleanupDelayer::drain_queue();
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
     ASSERT_EQ(symbols[i]->refcount(), 1) << "TempNewSymbol refcount after drain is 1";
   }
 }
