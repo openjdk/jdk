@@ -108,9 +108,9 @@ public class Object {
 
     /**
      * Indicates whether another object instance should be considered "equal
-     * to" this one. Several libraries libraries like the 
-     * {@link java.util Java Collections Framework}, depend on this method. 
-     * This method is used for example by most implementations of 
+     * to" this one. Several libraries libraries like the
+     * {@link java.util Java Collections Framework}, depend on this method.
+     * This method is used for example by most implementations of
      * {@link java.util.Collection#contains(Object)} and 
      * {@link java.util.Map#containsKey(Object)}. Overriding this method does
      * not affect the '==' operator.
@@ -122,9 +122,9 @@ public class Object {
      * {@link #hashCode() hashCode} method.
      * <p>
      * Note, that as overriding this method affects how objects behave in the
-     * commonly used collection classes and correct behavior requires you to 
+     * commonly used collection classes and correct behavior requires you to
      * override also the {@link #hashCode() hashCode} method, it can be
-     * easier to define logical equality checks in some other way in your 
+     * easier to define logical equality checks in some other way in your
      * application code.
      * <p>
      * The {@code equals} method implements an equivalence relation
