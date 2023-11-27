@@ -111,19 +111,25 @@ class TestUseCompressedOopsErgoTools {
 
     checkUseCompressedOops(gcflags, maxHeapForCompressedOops, true);
     checkUseCompressedOops(gcflags, maxHeapForCompressedOops - 1, true);
-    checkUseCompressedOops(gcflags, maxHeapForCompressedOops + 1, false);
+    checkUseCompressedOops(gcflags, maxHeapForCompressedOops + 1, true);
+    checkUseCompressedOops(gcflags, (long) (maxHeapForCompressedOops * 1.02), true);
+    checkUseCompressedOops(gcflags, (long) (maxHeapForCompressedOops * 1.02) + 1, false);
 
     // the use of HeapBaseMinAddress should not change the outcome
     checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), maxHeapForCompressedOops, true);
     checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), maxHeapForCompressedOops - 1, true);
-    checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), maxHeapForCompressedOops + 1, false);
+    checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), maxHeapForCompressedOops + 1, true);
+    checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), (long) (maxHeapForCompressedOops * 1.02), true);
+    checkUseCompressedOops(join(gcflags, "-XX:HeapBaseMinAddress=32G"), (long) (maxHeapForCompressedOops * 1.02) + 1, false);
 
     // use a different object alignment
     maxHeapForCompressedOops = getMaxHeapForCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"));
 
     checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops, true);
     checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops - 1, true);
-    checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops + 1, false);
+    checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), maxHeapForCompressedOops + 1, true);
+    checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), (long) (maxHeapForCompressedOops * 1.02), true);
+    checkUseCompressedOops(join(gcflags, "-XX:ObjectAlignmentInBytes=16"), (long) (maxHeapForCompressedOops * 1.02) + 1, false);
 
     // use a different CompressedClassSpaceSize
     String compressedClassSpaceSizeArg = "-XX:CompressedClassSpaceSize=" + 2 * getCompressedClassSpaceSize();
@@ -131,7 +137,9 @@ class TestUseCompressedOopsErgoTools {
 
     checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops, true);
     checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops - 1, true);
-    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops + 1, false);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), maxHeapForCompressedOops + 1, true);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), (long) (maxHeapForCompressedOops * 1.02), true);
+    checkUseCompressedOops(join(gcflags, compressedClassSpaceSizeArg), (long) (maxHeapForCompressedOops * 1.02) + 1, false);
   }
 
   private static void checkUseCompressedOops(String[] args, long heapsize, boolean expectUseCompressedOops) throws Exception {
