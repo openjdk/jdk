@@ -1490,8 +1490,8 @@ address StubGenerator::generate_string_indexof() {
     __ jmp(Address(r13, rax, Address::times_8));
 
     __ bind(L_trampoline);
-    __ mov64(r13, (int64_t)jump_table_1);
-    __ jmp(Address(r13, rax, Address::times_8));
+    __ mov64(rdi, (int64_t)jump_table_1);
+    __ jmp(Address(rdi, rax, Address::times_8));
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////

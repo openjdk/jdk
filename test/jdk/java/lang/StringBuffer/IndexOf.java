@@ -36,6 +36,14 @@ public class IndexOf {
 
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
+		if (false) {
+		String xx = "0#.!,))\"7-0#:02/62;+-\"\"0$25-5$#)1263'.&&(127+'*$%\"1+9,45'-/&,0;97*/, ,$':'8+#3%5:6+#  '3-:.!";
+		String yy = "0#:02/62;+-\"\"0$25-5$#)1263";
+		int gg = xx.indexOf(yy, 50);
+		System.err.println(gg);
+
+		} else {
+
     for (int i = 0; i < 20000; i++) {
       int foo = testName.indexOf("dex");
     }
@@ -46,6 +54,7 @@ public class IndexOf {
     compareIndexOfLastIndexOf();
     generator.setSeed(1999);
     compareStringStringBuffer();
+		}
 
     if (failure)
       throw new RuntimeException("One or more BitSet failures.");
@@ -140,26 +149,33 @@ public class IndexOf {
 
   private static void compareStringStringBuffer() {
     int failCount = 0;
+	boolean make_new = true;
 
+      String fragment = null;
+      StringBuffer testBuffer = null;
+      String testString = null;
+      int testIndex = 0;
     generator.setSeed(1999);
 
-    for (int x = 0; x < 10000; x++) {
-      String testString = generateTestString(1, 100);
-      int len = testString.length();
+    for (int x = 0; x < 1000000; x++) {
+	  if(make_new) {
+			  testString = generateTestString(1, 100);
+			  int len = testString.length();
 
-      StringBuffer testBuffer = new StringBuffer(len);
-      testBuffer.append(testString);
-      if (!testString.equals(testBuffer.toString()))
-        throw new RuntimeException("Initial equality failure");
+			  testBuffer = new StringBuffer(len);
+			  testBuffer.append(testString);
+			  if (!testString.equals(testBuffer.toString()))
+				throw new RuntimeException("Initial equality failure");
 
-      int x1 = 0;
-      int x2 = 1000;
-      while (x2 > testString.length()) {
-        x1 = generator.nextInt(len);
-        x2 = generator.nextInt(100);
-        x2 = x1 + x2;
-      }
-      String fragment = testString.substring(x1, x2);
+			  int x1 = 0;
+			  int x2 = 1000;
+			  while (x2 > testString.length()) {
+				x1 = generator.nextInt(len);
+				x2 = generator.nextInt(100);
+				x2 = x1 + x2;
+			  }
+			  fragment = testString.substring(x1, x2);
+	  }
 
       int sAnswer = testString.indexOf(fragment);
       int sbAnswer = testBuffer.indexOf(fragment);
@@ -178,7 +194,14 @@ public class IndexOf {
         }
       }
 
-      int testIndex = getRandomIndex(-100, 100);
+      if ((fragment == "0#:02/62;+-\"\"0$25-5$#)1263") && (testBuffer.length() == 94)) {
+				String xx = "abc";
+				String yy = "abcdefg";
+				int sA = xx.indexOf(yy);
+			}
+
+	  if(make_new)
+        testIndex = getRandomIndex(-100, 100);
 
       sAnswer = testString.indexOf(fragment, testIndex);
       sbAnswer = testBuffer.indexOf(fragment, testIndex);
@@ -190,6 +213,7 @@ public class IndexOf {
         System.err.println("  testString = '" + testString + "'");
         System.err.println("  testBuffer = '" + testBuffer + "'");
         failCount++;
+		make_new = false;
       } else {
         if ((sAnswer > testString.length()) || ((sAnswer != -1) && (sAnswer < testIndex) && (fragment.length() != 0))) {
           System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: "
@@ -209,7 +233,7 @@ public class IndexOf {
         failCount++;
       }
 
-      testIndex = getRandomIndex(-100, 100);
+      if(make_new) testIndex = getRandomIndex(-100, 100);
 
       sAnswer = testString.lastIndexOf(fragment, testIndex);
       sbAnswer = testBuffer.lastIndexOf(fragment, testIndex);
