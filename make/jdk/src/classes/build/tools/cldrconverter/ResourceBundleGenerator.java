@@ -174,7 +174,7 @@ class ResourceBundleGenerator implements BundleGenerator {
 
         try (PrintWriter out = new PrintWriter(file, encoding)) {
             // Output copyright headers
-            out.println(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.println(getOpenJDKCopyright());
             out.println(CopyrightHeaders.getUnicodeCopyright());
 
             if (useJava) {
@@ -294,7 +294,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         CLDRConverter.info("Generating file " + file);
 
         try (PrintWriter out = new PrintWriter(file, "us-ascii")) {
-            out.printf(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.printf(getOpenJDKCopyright());
 
             out.printf("""
                 package sun.util.%s;
@@ -447,5 +447,13 @@ class ResourceBundleGenerator implements BundleGenerator {
             }
         });
         return tags;
+    }
+
+    private static String getOpenJDKCopyright() {
+        if (CLDRConverter.jdkHeaderTemplate != null) {
+            return String.format(CLDRConverter.jdkHeaderTemplate, CLDRConverter.copyrightYear);
+        } else {
+            return CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,21 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile
+ *      java.base/jdk.internal.classfile.attribute
+ *      java.base/jdk.internal.classfile.constantpool
+ *      java.base/jdk.internal.classfile.instruction
+ *      java.base/jdk.internal.classfile.components
+ *      java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
- * @run testng/othervm -DuseAP=false RecordCompilationTests
- * @run testng/othervm -DuseAP=true RecordCompilationTests
+ * @run junit/othervm -DuseAP=false RecordCompilationTests
+ * @run junit/othervm -DuseAP=true RecordCompilationTests
  */
 
 import java.io.File;
 
 import java.lang.annotation.ElementType;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,26 +69,11 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeMirror;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Fieldref_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Record_attribute;
-import com.sun.tools.classfile.Record_attribute.ComponentInfo;
-import com.sun.tools.classfile.RuntimeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeTypeAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
-import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
-import com.sun.tools.classfile.TypeAnnotation;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.Opcode;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.FieldInstruction;
 
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
@@ -97,11 +81,10 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.JCDiagnostic;
 
-import org.testng.annotations.Test;
 import tools.javac.combo.CompilationTestCase;
+import org.junit.jupiter.api.Test;
 
 import static java.lang.annotation.ElementType.*;
-import static org.testng.Assert.assertEquals;
 
 /** Records are the first feature which sports automatic injection of (declarative and type) annotations : from a
  *  given record component to one or more record members, if applicable.
@@ -115,8 +98,7 @@ import static org.testng.Assert.assertEquals;
  *  method: testAnnos()
  */
 
-@Test
-public class RecordCompilationTests extends CompilationTestCase {
+class RecordCompilationTests extends CompilationTestCase {
     private static String[] OPTIONS_WITH_AP = {"-processor", SimplestAP.class.getName()};
 
     private static final List<String> BAD_COMPONENT_NAMES = List.of(
@@ -144,7 +126,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
-    public void testMalformedDeclarations() {
+    @Test
+    void testMalformedDeclarations() {
         assertFail("compiler.err.premature.eof", "record R()");
         assertFail("compiler.err.expected", "record R();");
         assertFail("compiler.err.illegal.start.of.type", "record R(,) { }");
@@ -166,7 +149,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.instance.initializer.not.allowed.in.records", "record R(int i) { {} }");
     }
 
-    public void testGoodDeclarations() {
+    @Test
+    void testGoodDeclarations() {
         assertOK("public record R() { }");
         assertOK("record R() { }");
         assertOK("record R() implements java.io.Serializable, Runnable { public void run() { } }");
@@ -196,7 +180,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testGoodMemberDeclarations() {
+    @Test
+    void testGoodMemberDeclarations() {
         String template = "public record R(int x) {\n"
                 + "    public R(int x) { this.x = x; }\n"
                 + "    public int x() { return x; }\n"
@@ -207,12 +192,14 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK(template);
     }
 
-    public void testBadComponentNames() {
+    @Test
+    void testBadComponentNames() {
         for (String s : BAD_COMPONENT_NAMES)
             assertFail("compiler.err.illegal.record.component.name", "record R(int #) { } ", s);
     }
 
-    public void testRestrictedIdentifiers() {
+    @Test
+    void testRestrictedIdentifiers() {
         for (String s : List.of("interface record { void m(); }",
                 "@interface record { }",
                 "class record { }",
@@ -231,7 +218,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testValidMembers() {
+    @Test
+    void testValidMembers() {
         for (String s : List.of("record X(int j) { }",
                 "interface I { }",
                 "static { }",
@@ -242,12 +230,14 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testCyclic() {
+    @Test
+    void testCyclic() {
         // Cyclic records are OK, but cyclic inline records would not be
         assertOK("record R(R r) { }");
     }
 
-    public void testBadExtends() {
+    @Test
+    void testBadExtends() {
         assertFail("compiler.err.expected", "record R(int x) extends Object { }");
         assertFail("compiler.err.expected", "record R(int x) {}\n"
                 + "record R2(int x) extends R { }");
@@ -255,7 +245,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 + "class C extends R { }");
     }
 
-    public void testNoExtendRecord() {
+    @Test
+    void testNoExtendRecord() {
         assertFail("compiler.err.invalid.supertype.record",
                    """
                    class R extends Record {
@@ -267,7 +258,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testFieldDeclarations() {
+    @Test
+    void testFieldDeclarations() {
         // static fields are OK
         assertOK("public record R(int x) {\n" +
                 "    static int I = 1;\n" +
@@ -295,7 +287,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                         "}");
     }
 
-    public void testAccessorRedeclaration() {
+    @Test
+    void testAccessorRedeclaration() {
         assertOK("public record R(int x) {\n" +
                 "    public int x() { return x; };" +
                 "}");
@@ -351,7 +344,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                         "}");
     }
 
-    public void testConstructorRedeclaration() {
+    @Test
+    void testConstructorRedeclaration() {
         for (String goodCtor : List.of(
                 "public R(int x) { this(x, 0); }",
                 "public R(int x, int y) { this.x = x; this.y = y; }",
@@ -442,7 +436,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 "public R(int a) { super(); this.a = a; }");
     }
 
-    public void testAnnotationCriteria() {
+    @Test
+    void testAnnotationCriteria() {
         String imports = "import java.lang.annotation.*;\n";
         String template = "@Target({ # }) @interface A {}\n";
         EnumMap<ElementType, String> annotations = new EnumMap<>(ElementType.class);
@@ -451,7 +446,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         EnumSet<ElementType> goodSet = EnumSet.of(RECORD_COMPONENT, FIELD, METHOD, PARAMETER, TYPE_USE);
         EnumSet<ElementType> badSet = EnumSet.of(CONSTRUCTOR, PACKAGE, TYPE, LOCAL_VARIABLE, ANNOTATION_TYPE, TYPE_PARAMETER, MODULE);
 
-        assertEquals(goodSet.size() + badSet.size(), values().length);
+        Assert.check(goodSet.size() + badSet.size() == values().length);
         String A_GOOD = template.replace("#",
                                          goodSet.stream().map(ElementType::name).map(s -> "ElementType." + s).collect(Collectors.joining(",")));
         String A_BAD = template.replace("#",
@@ -475,7 +470,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         // TODO: OK to redeclare with or without same annos
     }
 
-    public void testNestedRecords() {
+    @Test
+    void testNestedRecords() {
         String template = "class R { \n" +
                           "    # record RR(int a) { }\n" +
                           "}";
@@ -493,7 +489,8 @@ public class RecordCompilationTests extends CompilationTestCase {
             assertOK("record R(int x) { # }", s);
     }
 
-    public void testDuplicatedMember() {
+    @Test
+    void testDuplicatedMember() {
         String template
                 = "    record R(int i) {\n" +
                   "        public int i() { return i; }\n" +
@@ -502,7 +499,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.already.defined", template);
     }
 
-    public void testStaticLocals() {
+    @Test
+    void testStaticLocals() {
         // static locals can't capture local variables, instance fields or type variables
         for (String s : List.of(
                 "record RR(int x) { public int x() { return y; }};",
@@ -592,7 +590,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("class R { void m() { final record RR(int x) { }; } }");
     }
 
-    public void testStaticDefinitionsInInnerClasses() {
+    @Test
+    void testStaticDefinitionsInInnerClasses() {
         // static defs in inner classes can't capture instance fields or type variables
         for (String s : List.of(
                 """
@@ -1058,7 +1057,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testReturnInCanonical_Compact() {
+    @Test
+    void testReturnInCanonical_Compact() {
         assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x) { # }",
                 "public R { return; }");
         assertFail("compiler.err.invalid.canonical.constructor.in.record", "record R(int x) { # }",
@@ -1067,7 +1067,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("record R(int x) { public R { Runnable r = () -> { return; };} }");
     }
 
-    public void testArgumentsAreNotFinalInCompact() {
+    @Test
+    void testArgumentsAreNotFinalInCompact() {
         assertOK(
                 """
                 record R(int x) {
@@ -1078,14 +1079,16 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testNoNativeMethods() {
+    @Test
+    void testNoNativeMethods() {
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native R {}");
         assertFail("compiler.err.mod.not.allowed.here", "record R(int x) { # }",
                 "public native void m();");
     }
 
-    public void testRecordsInsideInner() {
+    @Test
+    void testRecordsInsideInner() {
         assertOK(
                 """
                 class Outer {
@@ -1126,7 +1129,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testAnnoInsideLocalOrAnonymous() {
+    @Test
+    void testAnnoInsideLocalOrAnonymous() {
         assertFail("compiler.err.annotation.decl.not.allowed.here",
                 """
                 class Outer {
@@ -1230,7 +1234,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testReceiverParameter() {
+    @Test
+    void testReceiverParameter() {
         assertFail("compiler.err.receiver.parameter.not.applicable.constructor.toplevel.class",
                 """
                 record R(int i) {
@@ -1258,7 +1263,8 @@ public class RecordCompilationTests extends CompilationTestCase {
                 """);
     }
 
-    public void testOnlyOneFieldRef() throws Exception {
+    @Test
+    void testOnlyOneFieldRef() throws Exception {
         for (String source : List.of(
                 "record R(int recordComponent) {}",
                 """
@@ -1289,16 +1295,15 @@ public class RecordCompilationTests extends CompilationTestCase {
         )) {
             File dir = assertOK(true, source);
             int numberOfFieldRefs = 0;
-            for (final File fileEntry : dir.listFiles()) {
+            for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().endsWith("R.class")) {
-                    ClassFile classFile = ClassFile.read(fileEntry);
-                    for (CPInfo cpInfo : classFile.constant_pool.entries()) {
-                        if (cpInfo instanceof ConstantPool.CONSTANT_Fieldref_info) {
+                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    for (PoolEntry pe : classFile.constantPool()) {
+                        if (pe instanceof FieldRefEntry fieldRefEntry) {
                             numberOfFieldRefs++;
-                            ConstantPool.CONSTANT_NameAndType_info nameAndType =
-                                    (ConstantPool.CONSTANT_NameAndType_info)classFile.constant_pool
-                                            .get(((ConstantPool.CONSTANT_Fieldref_info)cpInfo).name_and_type_index);
-                            Assert.check(nameAndType.getName().equals("recordComponent"));
+                            NameAndTypeEntry nameAndType = (NameAndTypeEntry) classFile.constantPool()
+                                            .entryByIndex(fieldRefEntry.nameAndType().index());
+                            Assert.check(nameAndType.name().equalsString("recordComponent"));
                         }
                     }
                     Assert.check(numberOfFieldRefs == 1);
@@ -1309,36 +1314,38 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     //  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
     //  record component
-    public void testCheckInitializationOrderInCompactConstructor() throws Exception {
-        int putField1 = -1;
-        int putField2 = -1;
+    @Test
+    void testCheckInitializationOrderInCompactConstructor() throws Exception {
+        FieldInstruction putField1 = null;
+        FieldInstruction putField2 = null;
         File dir = assertOK(true, "record R(int i, String s) { R {} }");
-        for (final File fileEntry : dir.listFiles()) {
+        for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassFile classFile = ClassFile.read(fileEntry);
-                for (Method method : classFile.methods) {
-                    if (method.getName(classFile.constant_pool).equals("<init>")) {
-                        Code_attribute code_attribute = (Code_attribute) method.attributes.get("Code");
-                        for (Instruction instruction : code_attribute.getInstructions()) {
-                            if (instruction.getMnemonic().equals("putfield")) {
-                                if (putField1 != -1 && putField2 != -1) {
+                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                for (MethodModel method : classFile.methods()) {
+                    if (method.methodName().equalsString("<init>")) {
+                        CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                        for (CodeElement ce : code_attribute.elementList()) {
+                            if (ce instanceof Instruction instruction && instruction.opcode() == Opcode.PUTFIELD) {
+                                if (putField1 != null && putField2 != null) {
                                     throw new AssertionError("was expecting only two putfield instructions in this method");
                                 }
-                                if (putField1 == -1) {
-                                    putField1 = instruction.getShort(1);
-                                } else if (putField2 == -1) {
-                                    putField2 = instruction.getShort(1);
+                                if (putField1 == null) {
+                                    putField1 = (FieldInstruction) instruction;
+                                } else {
+                                    putField2 = (FieldInstruction) instruction;
                                 }
                             }
                         }
                         // now we need to check that we are assigning to `i` first and to `s` afterwards
-                        CONSTANT_Fieldref_info fieldref_info1 = (CONSTANT_Fieldref_info)classFile.constant_pool.get(putField1);
-                        if (!fieldref_info1.getNameAndTypeInfo().getName().equals("i")) {
+                        assert putField1 != null;
+                        FieldRefEntry fieldref_info1 = putField1.field();
+                        if (!fieldref_info1.name().equalsString("i")) {
                             throw new AssertionError("was expecting variable name 'i'");
                         }
-
-                        CONSTANT_Fieldref_info fieldref_info2 = (CONSTANT_Fieldref_info)classFile.constant_pool.get(putField2);
-                        if (!fieldref_info2.getNameAndTypeInfo().getName().equals("s")) {
+                        assert putField2 != null;
+                        FieldRefEntry fieldref_info2 = putField2.field();
+                        if (!fieldref_info2.name().equalsString("s")) {
                             throw new AssertionError("was expecting variable name 's'");
                         }
                     }
@@ -1347,7 +1354,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAcceptRecordId() {
+    @Test
+    void testAcceptRecordId() {
         String[] previousOptions = getCompileOptions();
         try {
             String[] testOptions = {};
@@ -1364,7 +1372,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testMultipleAnnosInRecord() throws Exception {
+    @Test
+    void testMultipleAnnosInRecord() throws Exception {
         String[] previousOptions = getCompileOptions();
 
         try {
@@ -1405,7 +1414,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAnnos() throws Exception {
+    @Test
+    void testAnnos() throws Exception {
         String[] previousOptions = getCompileOptions();
         try {
             String srcTemplate =
@@ -1459,104 +1469,84 @@ public class RecordCompilationTests extends CompilationTestCase {
 
                 File dir = assertOK(true, code);
 
-                ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
+                ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
                 // field first
-                Assert.check(classFile.fields.length == 1);
-                Field field = classFile.fields[0];
+                Assert.check(classFile.fields().size() == 1);
+                FieldModel field = classFile.fields().get(0);
                 // if FIELD is one of the targets then there must be a declaration annotation applied to the field, apart from
                 // the type annotation
                 if (target.contains("ElementType.FIELD")) {
-                    checkAnno(classFile,
-                            (RuntimeAnnotations_attribute) findAttributeOrFail(
-                                    field.attributes,
-                                    RuntimeVisibleAnnotations_attribute.class),
+                    checkAnno(findAttributeOrFail(field.attributes(), RuntimeVisibleAnnotationsAttribute.class),
                             "Anno");
                 } else {
-                    assertAttributeNotPresent(field.attributes, RuntimeVisibleAnnotations_attribute.class);
+                    assertAttributeNotPresent(field.attributes(), RuntimeVisibleAnnotationsAttribute.class);
                 }
 
                 // lets check now for the type annotation
                 if (target.contains("ElementType.TYPE_USE")) {
-                    checkTypeAnno(
-                            classFile,
-                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                            "FIELD",
-                            "Anno");
+                    checkTypeAnno(findAttributeOrFail(field.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
+                            "FIELD", "Anno");
                 } else {
-                    assertAttributeNotPresent(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                    assertAttributeNotPresent(field.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class);
                 }
 
                 // checking for the annotation on the corresponding parameter of the canonical constructor
-                Method init = findMethodOrFail(classFile, "<init>");
+                MethodModel init = findMethodOrFail(classFile, "<init>");
                 // if PARAMETER is one of the targets then there must be a declaration annotation applied to the parameter, apart from
                 // the type annotation
                 if (target.contains("ElementType.PARAMETER")) {
-                    checkParameterAnno(classFile,
-                            (RuntimeVisibleParameterAnnotations_attribute) findAttributeOrFail(
-                                    init.attributes,
-                                    RuntimeVisibleParameterAnnotations_attribute.class),
+                    checkParameterAnno(
+                            (RuntimeVisibleParameterAnnotationsAttribute) findAttributeOrFail(
+                                    init.attributes(),
+                                    RuntimeVisibleParameterAnnotationsAttribute.class),
                             "Anno");
                 } else {
-                    assertAttributeNotPresent(init.attributes, RuntimeVisibleAnnotations_attribute.class);
+                    assertAttributeNotPresent(init.attributes(), RuntimeVisibleAnnotationsAttribute.class);
                 }
                 // let's check now for the type annotation
                 if (target.contains("ElementType.TYPE_USE")) {
-                    checkTypeAnno(
-                            classFile,
-                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                    checkTypeAnno(findAttributeOrFail(init.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                             "METHOD_FORMAL_PARAMETER", "Anno");
                 } else {
-                    assertAttributeNotPresent(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                    assertAttributeNotPresent(init.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class);
                 }
 
                 // checking for the annotation in the accessor
-                Method accessor = findMethodOrFail(classFile, "s");
+                MethodModel accessor = findMethodOrFail(classFile, "s");
                 // if METHOD is one of the targets then there must be a declaration annotation applied to the accessor, apart from
                 // the type annotation
                 if (target.contains("ElementType.METHOD")) {
-                    checkAnno(classFile,
-                            (RuntimeAnnotations_attribute) findAttributeOrFail(
-                                    accessor.attributes,
-                                    RuntimeVisibleAnnotations_attribute.class),
+                    checkAnno(findAttributeOrFail(accessor.attributes(), RuntimeVisibleAnnotationsAttribute.class),
                             "Anno");
                 } else {
-                    assertAttributeNotPresent(accessor.attributes, RuntimeVisibleAnnotations_attribute.class);
+                    assertAttributeNotPresent(accessor.attributes(), RuntimeVisibleAnnotationsAttribute.class);
                 }
                 // let's check now for the type annotation
                 if (target.contains("ElementType.TYPE_USE")) {
-                    checkTypeAnno(
-                            classFile,
-                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                    checkTypeAnno(findAttributeOrFail(accessor.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                             "METHOD_RETURN", "Anno");
                 } else {
-                    assertAttributeNotPresent(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                    assertAttributeNotPresent(accessor.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class);
                 }
 
                 // checking for the annotation in the Record attribute
-                Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
-                Assert.check(record.component_count == 1);
+                RecordAttribute record = (RecordAttribute) findAttributeOrFail(classFile.attributes(), RecordAttribute.class);
+                Assert.check(record.components().size() == 1);
                 // if RECORD_COMPONENT is one of the targets then there must be a declaration annotation applied to the
                 // field, apart from the type annotation
                 if (target.contains("ElementType.RECORD_COMPONENT")) {
-                    checkAnno(classFile,
-                            (RuntimeAnnotations_attribute) findAttributeOrFail(
-                                    record.component_info_arr[0].attributes,
-                                    RuntimeVisibleAnnotations_attribute.class),
+                    checkAnno(findAttributeOrFail(record.components().get(0).attributes(), RuntimeVisibleAnnotationsAttribute.class),
                             "Anno");
                 } else {
-                    assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleAnnotations_attribute.class);
+                    assertAttributeNotPresent(record.components().get(0).attributes(), RuntimeVisibleAnnotationsAttribute.class);
                 }
                 // lets check now for the type annotation
                 if (target.contains("ElementType.TYPE_USE")) {
-                    checkTypeAnno(
-                            classFile,
-                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
-                                    record.component_info_arr[0].attributes,
-                                    RuntimeVisibleTypeAnnotations_attribute.class),
+                    checkTypeAnno(findAttributeOrFail(record.components().get(0).attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                             "FIELD", "Anno");
                 } else {
-                    assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                    assertAttributeNotPresent(record.components().get(0).attributes(), RuntimeVisibleTypeAnnotationsAttribute.class);
                 }
             }
 
@@ -1568,7 +1558,8 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     // JDK-8292159: TYPE_USE annotations on generic type arguments
     //              of record components discarded
-    public void testOnlyTypeAnnotationsOnComponentField() throws Exception {
+    @Test
+    void testOnlyTypeAnnotationsOnComponentField() throws Exception {
         String code =
                 """
                 import java.lang.annotation.*;
@@ -1581,105 +1572,114 @@ public class RecordCompilationTests extends CompilationTestCase {
 
         File dir = assertOK(true, code);
 
-        ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
+        ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
         // field first
-        Assert.check(classFile.fields.length == 1);
-        Field field = classFile.fields[0];
-        checkTypeAnno(
-                classFile,
-                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+        Assert.check(classFile.fields().size() == 1);
+        FieldModel field = classFile.fields().get(0);
+        checkTypeAnno(findAttributeOrFail(field.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                 "FIELD",
                 "Anno");
 
         // checking for the annotation on the corresponding parameter of the canonical constructor
-        Method init = findMethodOrFail(classFile, "<init>");
-        checkTypeAnno(
-                classFile,
-                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+        MethodModel init = findMethodOrFail(classFile, "<init>");
+        checkTypeAnno(findAttributeOrFail(init.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                 "METHOD_FORMAL_PARAMETER", "Anno");
 
         // checking for the annotation in the accessor
-        Method accessor = findMethodOrFail(classFile, "s");
-        checkTypeAnno(
-                classFile,
-                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+        MethodModel accessor = findMethodOrFail(classFile, "s");
+        checkTypeAnno(findAttributeOrFail(accessor.attributes(), RuntimeVisibleTypeAnnotationsAttribute.class),
                 "METHOD_RETURN", "Anno");
 
         // checking for the annotation in the Record attribute
-        Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
-        Assert.check(record.component_count == 1);
-        checkTypeAnno(
-                classFile,
-                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
-                            record.component_info_arr[0].attributes,
-                                RuntimeVisibleTypeAnnotations_attribute.class),
+        RecordAttribute record = (RecordAttribute) findAttributeOrFail(classFile.attributes(), RecordAttribute.class);
+        Assert.check(record.components().size() == 1);
+        checkTypeAnno(findAttributeOrFail(record.components().get(0).attributes(),
+                                RuntimeVisibleTypeAnnotationsAttribute.class),
                         "FIELD", "Anno");
     }
 
-    private void checkTypeAnno(ClassFile classFile,
-                               RuntimeTypeAnnotations_attribute rtAnnos,
+    private void checkTypeAnno(Attribute<?> rtAnnos,
                                String positionType,
-                               String annoName) throws Exception {
+                               String annoName) {
         // containing only one type annotation
-        Assert.check(rtAnnos.annotations.length == 1);
-        TypeAnnotation tAnno = (TypeAnnotation)rtAnnos.annotations[0];
-        Assert.check(tAnno.position.type.toString().equals(positionType));
-        String annotationName = classFile.constant_pool.getUTF8Value(tAnno.annotation.type_index).toString().substring(1);
+        TypeAnnotation tAnno;
+        switch (rtAnnos) {
+            case RuntimeVisibleTypeAnnotationsAttribute rtVAnnos -> {
+                Assert.check(rtVAnnos.annotations().size() == 1);
+                tAnno = rtVAnnos.annotations().get(0);
+            }
+            case RuntimeInvisibleTypeAnnotationsAttribute rtIAnnos -> {
+                Assert.check(rtIAnnos.annotations().size() == 1);
+                tAnno = rtIAnnos.annotations().get(0);
+            }
+            default -> throw new AssertionError();
+        }
+        assert tAnno != null;
+        Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
+        String annotationName = tAnno.classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
-
-    private void checkAnno(ClassFile classFile,
-                           RuntimeAnnotations_attribute rAnnos,
-                           String annoName) throws Exception {
+    private void checkAnno(Attribute<?> rAnnos,
+                           String annoName) {
         // containing only one type annotation
-        Assert.check(rAnnos.annotations.length == 1);
-        Annotation anno = (Annotation)rAnnos.annotations[0];
-        String annotationName = classFile.constant_pool.getUTF8Value(anno.type_index).toString().substring(1);
+        Annotation anno;
+        switch (rAnnos) {
+            case RuntimeVisibleAnnotationsAttribute rVAnnos -> {
+                Assert.check(rVAnnos.annotations().size() == 1);
+                anno = rVAnnos.annotations().get(0);
+            }
+            case RuntimeInvisibleAnnotationsAttribute rIAnnos -> {
+                Assert.check(rIAnnos.annotations().size() == 1);
+                anno = rIAnnos.annotations().get(0);
+            }
+            default -> throw new AssertionError();
+        }
+        assert anno != null;
+        String annotationName = anno.classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
 
     // special case for parameter annotations
-    private void checkParameterAnno(ClassFile classFile,
-                           RuntimeVisibleParameterAnnotations_attribute rAnnos,
-                           String annoName) throws Exception {
+    private void checkParameterAnno(RuntimeVisibleParameterAnnotationsAttribute rAnnos,
+                           String annoName) {
         // containing only one type annotation
-        Assert.check(rAnnos.parameter_annotations.length == 1);
-        Assert.check(rAnnos.parameter_annotations[0].length == 1);
-        Annotation anno = (Annotation)rAnnos.parameter_annotations[0][0];
-        String annotationName = classFile.constant_pool.getUTF8Value(anno.type_index).toString().substring(1);
+        Assert.check(rAnnos.parameterAnnotations().size() == 1);
+        Assert.check(rAnnos.parameterAnnotations().get(0).size() == 1);
+        Annotation anno = rAnnos.parameterAnnotations().get(0).get(0);
+        String annotationName = anno.classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
 
     private File findClassFileOrFail(File dir, String name) {
         for (final File fileEntry : dir.listFiles()) {
-            if (fileEntry.getName().equals("R.class")) {
+            if (fileEntry.getName().equals(name)) {
                 return fileEntry;
             }
         }
         throw new AssertionError("file not found");
     }
 
-    private Method findMethodOrFail(ClassFile classFile, String name) throws Exception {
-        for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(name)) {
+    private MethodModel findMethodOrFail(ClassModel classFile, String name) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(name)) {
                 return method;
             }
         }
         throw new AssertionError("method not found");
     }
 
-    private Attribute findAttributeOrFail(Attributes attributes, Class<? extends Attribute> attrClass) {
-        for (Attribute attribute : attributes) {
-            if (attribute.getClass() == attrClass) {
+    private Attribute<?> findAttributeOrFail(List<Attribute<?>> attributes, Class<? extends Attribute<?>> attrClass) {
+        for (Attribute<?> attribute : attributes) {
+            if (attrClass.isAssignableFrom(attribute.getClass())) {
                 return attribute;
             }
         }
-        throw new AssertionError("attribute not found");
+        throw new AssertionError("attribute not found" + attrClass.toString() + "!!!!" + attributes.getFirst().getClass().toString());
     }
 
-    private void assertAttributeNotPresent(Attributes attributes, Class<? extends Attribute> attrClass) {
-        for (Attribute attribute : attributes) {
+    private void assertAttributeNotPresent(List<Attribute<?>> attributes, Class<? extends Attribute<?>> attrClass) {
+        for (Attribute<?> attribute : attributes) {
             if (attribute.getClass() == attrClass) {
                 throw new AssertionError("attribute not expected");
             }
@@ -1717,24 +1717,23 @@ public class RecordCompilationTests extends CompilationTestCase {
             for (Element e : annoElements) {
                 Symbol s = (Symbol) e;
                 switch (s.getKind()) {
-                    case FIELD:
+                    case FIELD -> {
                         Assert.check(targetSet.contains("ElementType.FIELD"));
                         targetSet.remove("ElementType.FIELD");
-                        break;
-                    case METHOD:
+                    }
+                    case METHOD -> {
                         Assert.check(targetSet.contains("ElementType.METHOD"));
                         targetSet.remove("ElementType.METHOD");
-                        break;
-                    case PARAMETER:
+                    }
+                    case PARAMETER -> {
                         Assert.check(targetSet.contains("ElementType.PARAMETER"));
                         targetSet.remove("ElementType.PARAMETER");
-                        break;
-                    case RECORD_COMPONENT:
+                    }
+                    case RECORD_COMPONENT -> {
                         Assert.check(targetSet.contains("ElementType.RECORD_COMPONENT"));
                         targetSet.remove("ElementType.RECORD_COMPONENT");
-                        break;
-                    default:
-                        throw new AssertionError("unexpected element kind");
+                    }
+                    default -> throw new AssertionError("unexpected element kind");
                 }
             }
         }
@@ -1783,16 +1782,17 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testMethodsInheritedFromRecordArePublicAndFinal() throws Exception {
+    @Test
+    void testMethodsInheritedFromRecordArePublicAndFinal() throws Exception {
         int numberOfFieldRefs = 0;
         File dir = assertOK(true, "record R() {}");
-        for (final File fileEntry : dir.listFiles()) {
+        for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassFile classFile = ClassFile.read(fileEntry);
-                for (Method method : classFile.methods)
-                    switch (method.getName(classFile.constant_pool)) {
+                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                for (MethodModel method : classFile.methods())
+                    switch (method.methodName().stringValue()) {
                         case "toString", "equals", "hashCode" ->
-                            Assert.check(method.access_flags.is(AccessFlags.ACC_PUBLIC) && method.access_flags.is(AccessFlags.ACC_FINAL));
+                            Assert.check(((method.flags().flagsMask() & Classfile.ACC_PUBLIC) != 0) && ((method.flags().flagsMask() & Classfile.ACC_FINAL) != 0));
                         default -> {}
                     }
             }
@@ -1802,7 +1802,8 @@ public class RecordCompilationTests extends CompilationTestCase {
     private static final List<String> ACCESSIBILITY = List.of(
             "public", "protected", "", "private");
 
-    public void testCanonicalAccessibility() throws Exception {
+    @Test
+    void testCanonicalAccessibility() throws Exception {
         // accessibility of canonical can't be stronger than that of the record type
         for (String a1 : ACCESSIBILITY) {
             for (String a2 : ACCESSIBILITY) {
@@ -1818,13 +1819,13 @@ public class RecordCompilationTests extends CompilationTestCase {
         // as the record type
         for (String a : ACCESSIBILITY) {
             File dir = assertOK(true, "class R {# record RR() {} }", a);
-            for (final File fileEntry : dir.listFiles()) {
+            for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().equals("R$RR.class")) {
-                    ClassFile classFile = ClassFile.read(fileEntry);
-                    for (Method method : classFile.methods)
-                        if (method.getName(classFile.constant_pool).equals("<init>")) {
-                            Assert.check(method.access_flags.flags == accessFlag(a),
-                                    "was expecting access flag " + accessFlag(a) + " but found " + method.access_flags.flags);
+                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    for (MethodModel method : classFile.methods())
+                        if (method.methodName().equalsString("<init>")) {
+                            Assert.check(method.flags().flagsMask() == accessFlag(a),
+                                    "was expecting access flag " + accessFlag(a) + " but found " + method.flags().flagsMask());
                         }
                 }
             }
@@ -1832,28 +1833,27 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     private int protection(String access) {
-        switch (access) {
-            case "private": return 3;
-            case "protected": return 1;
-            case "public": return 0;
-            case "": return 2;
-            default:
-                throw new AssertionError();
-        }
+        return switch (access) {
+            case "private" -> 3;
+            case "protected" -> 1;
+            case "public" -> 0;
+            case "" -> 2;
+            default -> throw new AssertionError();
+        };
     }
 
     private int accessFlag(String access) {
-        switch (access) {
-            case "private": return AccessFlags.ACC_PRIVATE;
-            case "protected": return AccessFlags.ACC_PROTECTED;
-            case "public": return AccessFlags.ACC_PUBLIC;
-            case "": return 0;
-            default:
-                throw new AssertionError();
-        }
+        return switch (access) {
+            case "private" -> Classfile.ACC_PRIVATE;
+            case "protected" -> Classfile.ACC_PROTECTED;
+            case "public" -> Classfile.ACC_PUBLIC;
+            case "" -> 0;
+            default -> throw new AssertionError();
+        };
     }
 
-    public void testSameArity() {
+    @Test
+    void testSameArity() {
         for (String source : List.of(
                 """
                 record R(int... args) {
@@ -1927,7 +1927,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testSafeVararsAnno() {
+    @Test
+    void testSafeVararsAnno() {
         assertFail("compiler.err.annotation.type.not.applicable",
                 """
                 @SafeVarargs
@@ -1989,7 +1990,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testOverrideAtAccessor() {
+    @Test
+    void testOverrideAtAccessor() {
         assertOK(
                 """
                 record R(int i) {
@@ -2027,7 +2029,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoAssigmentInsideCompactRecord() {
+    @Test
+    void testNoAssigmentInsideCompactRecord() {
         assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
@@ -2048,7 +2051,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoNPEStaticAnnotatedFields() {
+    @Test
+    void testNoNPEStaticAnnotatedFields() {
         assertOK(
                 """
                 import java.lang.annotation.Native;
@@ -2081,7 +2085,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testDoNotAllowCStyleArraySyntaxForRecComponents() {
+    @Test
+    void testDoNotAllowCStyleArraySyntaxForRecComponents() {
         assertFail("compiler.err.record.component.and.old.array.syntax",
                 """
                 record R(int i[]) {}
@@ -2099,9 +2104,10 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testNoWarningForSerializableRecords() {
+    @Test
+    void testNoWarningForSerializableRecords() {
         if (!useAP) {
-            // dont execute this test when the default annotation processor is on as it will fail due to
+            // don't execute this test when the default annotation processor is on as it will fail due to
             // spurious warnings
             appendCompileOptions("-Werror", "-Xlint:serial");
             assertOK(
@@ -2114,7 +2120,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
-    public void testAnnotationsOnVarargsRecComp() {
+    @Test
+    void testAnnotationsOnVarargsRecComp() {
         assertOK(
                 """
                 import java.lang.annotation.*;
@@ -2149,7 +2156,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         );
     }
 
-    public void testSaveVarargsAnno() {
+    @Test
+    void testSaveVarargsAnno() {
         // the compiler would generate an erronous accessor
         assertFail("compiler.err.varargs.invalid.trustme.anno",
                 """

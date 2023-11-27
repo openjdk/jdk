@@ -28,6 +28,7 @@
 #include "oops/constMethodFlags.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 // An ConstMethod represents portions of a Java method which are not written to after
 // the classfile is parsed(*see below).  This part of the method can be shared across

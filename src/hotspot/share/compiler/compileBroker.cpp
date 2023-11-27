@@ -31,6 +31,7 @@
 #include "code/codeHeapState.hpp"
 #include "code/dependencyContext.hpp"
 #include "compiler/compilationLog.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -330,6 +331,10 @@ void CompileQueue::add(CompileTask* task) {
     _last = task;
   }
   ++_size;
+  ++_total_added;
+  if (_size > _peak_size) {
+    _peak_size = _size;
+  }
 
   // Mark the method as being in the compile queue.
   task->method()->set_queued_for_compilation();
@@ -486,6 +491,7 @@ void CompileQueue::remove(CompileTask* task) {
     _last = task->prev();
   }
   --_size;
+  ++_total_removed;
 }
 
 void CompileQueue::remove_and_mark_stale(CompileTask* task) {
@@ -513,6 +519,14 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
   if (is_c2_compile(comp_level)) return _c2_compile_queue;
   if (is_c1_compile(comp_level)) return _c1_compile_queue;
   return nullptr;
+}
+
+CompileQueue* CompileBroker::c1_compile_queue() {
+  return _c1_compile_queue;
+}
+
+CompileQueue* CompileBroker::c2_compile_queue() {
+  return _c2_compile_queue;
 }
 
 void CompileBroker::print_compile_queues(outputStream* st) {
@@ -591,7 +605,7 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
+void CompileBroker::compilation_init(JavaThread* THREAD) {
   // No need to initialize compilation system if we do not use it.
   if (!UseCompiler) {
     return;
@@ -649,6 +663,10 @@ void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
      JFR_ONLY(register_jfr_phasetype_serializer(compiler_jvmci);)
    }
 #endif // INCLUDE_JVMCI
+
+  if (CompilerOracle::should_collect_memstat()) {
+    CompilationMemoryStatistic::initialize();
+  }
 
   // Start the compiler thread(s)
   init_compiler_threads();
@@ -750,11 +768,7 @@ void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
                                           (jlong)CompileBroker::no_compile,
                                           CHECK);
   }
-}
 
-// Completes compiler initialization. Compilation requests submitted
-// prior to this will be silently ignored.
-void CompileBroker::compilation_init_phase2() {
   _initialized = true;
 }
 
@@ -1229,6 +1243,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         blocking = false;
       }
 
+      // In libjvmci, JVMCI initialization should not deadlock with other threads
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
         vframeStream vfst(JavaThread::cast(thread));
@@ -1240,12 +1255,12 @@ void CompileBroker::compile_method_base(const methodHandle& method,
             break;
           }
         }
-      }
 
-      // Don't allow blocking compilation requests to JVMCI
-      // if JVMCI itself is not yet initialized
-      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
-        blocking = false;
+        // Don't allow blocking compilation requests to JVMCI
+        // if JVMCI itself is not yet initialized
+        if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+          blocking = false;
+        }
       }
 
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
@@ -1320,6 +1335,13 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
+    // JVMCI compilation is not yet initializable.
+    return nullptr;
+  }
+#endif
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
@@ -1347,12 +1369,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
-
-#if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
-    return nullptr;
-  }
-#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
@@ -1697,8 +1713,11 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());
-  if (comp->is_jvmci() && !task->should_wait_for_compilation()) {
+  if (!UseJVMCINativeLibrary && comp->is_jvmci() && !task->should_wait_for_compilation()) {
     // It may return before compilation is completed.
+    // Note that libjvmci should not pre-emptively unblock
+    // a thread waiting for a compilation as it does not call
+    // Java code and so is not deadlock prone like jarjvmci.
     free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
 #endif
@@ -1772,17 +1791,22 @@ bool CompileBroker::init_compiler_runtime() {
   return true;
 }
 
+void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
+  BufferBlob* blob = thread->get_buffer_blob();
+  if (blob != nullptr) {
+    blob->flush();
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(blob);
+  }
+}
+
 /**
  * If C1 and/or C2 initialization failed, we shut down all compilation.
  * We do this to keep things simple. This can be changed if it ever turns
  * out to be a problem.
  */
 void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
-  // Free buffer blob, if allocated
-  if (thread->get_buffer_blob() != nullptr) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free(thread->get_buffer_blob());
-  }
+  free_buffer_blob_if_allocated(thread);
 
   if (comp->should_perform_shutdown()) {
     // There are two reasons for shutting down the compiler
@@ -1921,11 +1945,7 @@ void CompileBroker::compiler_thread_loop() {
           // Notify compiler that the compiler thread is about to stop
           thread->compiler()->stopping_compiler_thread(thread);
 
-          // Free buffer blob, if allocated
-          if (thread->get_buffer_blob() != nullptr) {
-            MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-            CodeCache::free(thread->get_buffer_blob());
-          }
+          free_buffer_blob_if_allocated(thread);
           return; // Stop this thread.
         }
       }
@@ -2203,7 +2223,16 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      failure_reason = compile_state.failure_reason();
+      if (env.init_error() != JNI_OK) {
+        const char* msg = env.init_error_msg();
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d, %s)",
+                                    env.init_error(), msg == nullptr ? "unknown" : msg), mtJVMCI);
+        bool reason_on_C_heap = true;
+        // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
+        // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+        bool retryable = env.init_error() == JNI_ENOMEM;
+        compile_state.set_failure(retryable, failure_reason, reason_on_C_heap);
+      }
       if (failure_reason == nullptr) {
         if (WhiteBoxAPI && WhiteBox::compilation_locked) {
           // Must switch to native to block
@@ -2225,7 +2254,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         }
       }
     }
-    if (!task->is_success()) {
+    if (!task->is_success() && !JVMCI::in_shutdown()) {
       handle_compile_error(thread, task, nullptr, compilable, failure_reason);
     }
     if (event.should_commit()) {
@@ -2662,8 +2691,8 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   uint total_bailout_count = CompileBroker::_total_bailout_count;
   uint total_invalidated_count = CompileBroker::_total_invalidated_count;
 
-  uint nmethods_size = CompileBroker::_sum_nmethod_code_size;
-  uint nmethods_code_size = CompileBroker::_sum_nmethod_size;
+  uint nmethods_code_size = CompileBroker::_sum_nmethod_code_size;
+  uint nmethods_size = CompileBroker::_sum_nmethod_size;
 
   tty->cr();
   tty->print_cr("Accumulated compiler times");
@@ -2806,29 +2835,33 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
                                     !Compile_lock->owned_by_self();
   bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
                                     !CodeCache_lock->owned_by_self();
-  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : nullptr) : nullptr;
-  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : nullptr) : nullptr;
-  Mutex*   function_lock_1 = allFun ? nullptr : (should_take_Compile_lock   ? Compile_lock    : nullptr);
-  Monitor* function_lock_2 = allFun ? nullptr : (should_take_CodeCache_lock ? CodeCache_lock  : nullptr);
+  bool take_global_lock_1   =  allFun && should_take_Compile_lock;
+  bool take_global_lock_2   =  allFun && should_take_CodeCache_lock;
+  bool take_function_lock_1 = !allFun && should_take_Compile_lock;
+  bool take_function_lock_2 = !allFun && should_take_CodeCache_lock;
+  bool take_global_locks    = take_global_lock_1 || take_global_lock_2;
+  bool take_function_locks  = take_function_lock_1 || take_function_lock_2;
+
   ts_global.update(); // record starting point
-  MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
-  MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+
+  ConditionalMutexLocker mu1(Compile_lock, take_global_lock_1, Mutex::_safepoint_check_flag);
+  ConditionalMutexLocker mu2(CodeCache_lock, take_global_lock_2, Mutex::_no_safepoint_check_flag);
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
   }
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
-    MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    ConditionalMutexLocker mu11(Compile_lock, take_function_lock_1,  Mutex::_safepoint_check_flag);
+    ConditionalMutexLocker mu22(CodeCache_lock, take_function_lock_2, Mutex::_no_safepoint_check_flag);
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }
@@ -2849,7 +2882,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
   if (discard) CodeCache::discard(out);
 
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());

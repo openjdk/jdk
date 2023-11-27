@@ -167,7 +167,7 @@ public class TestHotSpotJVMCIRuntime {
         }
         String[] names = {"translate", "attachCurrentThread", "registerNativeMethods"};
         for (String name : names) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:+EnableJVMCI",
                 "-XX:-UseJVMCICompiler",
@@ -182,5 +182,10 @@ public class TestHotSpotJVMCIRuntime {
             output.shouldContain("java.lang.OutOfMemoryError: JNI_ENOMEM creating or attaching to libjvmci");
             output.shouldNotHaveExitValue(0);
         }
+    }
+
+    @Test
+    public void lookupTypeTest() throws Exception {
+        // This is tested by compiler/jvmci/compilerToVM/LookupTypeTest.java
     }
 }

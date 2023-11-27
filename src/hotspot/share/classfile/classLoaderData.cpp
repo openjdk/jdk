@@ -558,9 +558,6 @@ void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
 void ClassLoaderData::remove_class(Klass* scratch_class) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  // Adjust global class iterator.
-  ClassLoaderDataGraph::adjust_saved_class(scratch_class);
-
   Klass* prev = nullptr;
   for (Klass* k = _klasses; k != nullptr; k = k->next_link()) {
     if (k == scratch_class) {
@@ -620,9 +617,6 @@ void ClassLoaderData::unload() {
   if (_jmethod_ids != nullptr) {
     Method::clear_jmethod_ids(this);
   }
-
-  // Clean up global class iterator for compiler
-  ClassLoaderDataGraph::adjust_saved_class(this);
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {

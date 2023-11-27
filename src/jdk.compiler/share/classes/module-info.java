@@ -162,6 +162,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
+ * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
  * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
@@ -173,6 +174,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
  * <tr><th scope="row">{@code requires-transitive-automatic} <td>automatic modules in {@code requires transitive}
  * <tr><th scope="row">{@code serial}               <td>{@link java.base/java.io.Serializable Serializable} classes

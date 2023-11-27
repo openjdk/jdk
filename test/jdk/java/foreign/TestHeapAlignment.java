@@ -23,8 +23,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
@@ -45,11 +43,11 @@ public class TestHeapAlignment {
 
     @Test(dataProvider = "layouts")
     public void testHeapAlignment(MemorySegment segment, int align, Object val, Object arr, ValueLayout layout, Function<Object, MemorySegment> segmentFactory) {
-        assertAligned(align, layout, () -> layout.varHandle().get(segment));
-        assertAligned(align, layout, () -> layout.varHandle().set(segment, val));
+        assertAligned(align, layout, () -> layout.varHandle().get(segment, 0L));
+        assertAligned(align, layout, () -> layout.varHandle().set(segment, 0L, val));
         MemoryLayout seq = MemoryLayout.sequenceLayout(10, layout);
-        assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).get(segment, 0L));
-        assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).set(segment, 0L, val));
+        assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).get(segment, 0L, 0L));
+        assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).set(segment, 0L, 0L, val));
         assertAligned(align, layout, () -> segment.spliterator(layout));
         if (arr != null) {
             assertAligned(align, layout, () -> MemorySegment.copy(arr, 0, segment, layout, 0, 1));

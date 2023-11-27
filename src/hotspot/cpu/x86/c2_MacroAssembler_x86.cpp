@@ -35,6 +35,7 @@
 #include "opto/subnode.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -621,7 +622,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     movptr(Address(boxReg, 0), tmpReg);
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "");
-    fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT);
+    lightweight_lock(objReg, tmpReg, thread, scrReg, NO_COUNT);
     jmp(COUNT);
   }
   jmp(DONE_LABEL);
@@ -925,7 +926,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     bind  (Stacked);
     if (LockingMode == LM_LIGHTWEIGHT) {
       mov(boxReg, tmpReg);
-      fast_unlock_impl(objReg, boxReg, tmpReg, NO_COUNT);
+      lightweight_unlock(objReg, boxReg, tmpReg, NO_COUNT);
       jmp(COUNT);
     } else if (LockingMode == LM_LEGACY) {
       movptr(tmpReg, Address (boxReg, 0));      // re-fetch
@@ -3852,13 +3853,11 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     VM_Version::supports_bmi2()) {
 
     Label test_64_loop, test_tail, BREAK_LOOP;
-    Register tmp3_aliased = len;
-
     movl(tmp1, len);
     vpxor(vec2, vec2, vec2, Assembler::AVX_512bit);
 
-    andl(tmp1, 64 - 1);   // tail count (in chars) 0x3F
-    andl(len, ~(64 - 1));    // vector count (in chars)
+    andl(tmp1, 0x0000003f); // tail count (in chars) 0x3F
+    andl(len,  0xffffffc0); // vector count (in chars)
     jccb(Assembler::zero, test_tail);
 
     lea(ary1, Address(ary1, len, Address::times_1));
@@ -3878,12 +3877,17 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     testl(tmp1, -1);
     jcc(Assembler::zero, DONE);
 
+
+    // check the tail for absense of negatives
     // ~(~0 << len) applied up to two times (for 32-bit scenario)
 #ifdef _LP64
-    mov64(tmp3_aliased, 0xFFFFFFFFFFFFFFFF);
-    shlxq(tmp3_aliased, tmp3_aliased, tmp1);
-    notq(tmp3_aliased);
-    kmovql(mask2, tmp3_aliased);
+    {
+      Register tmp3_aliased = len;
+      mov64(tmp3_aliased, 0xFFFFFFFFFFFFFFFF);
+      shlxq(tmp3_aliased, tmp3_aliased, tmp1);
+      notq(tmp3_aliased);
+      kmovql(mask2, tmp3_aliased);
+    }
 #else
     Label k_init;
     jmp(k_init);
@@ -3915,8 +3919,13 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     ktestq(mask1, mask2);
     jcc(Assembler::zero, DONE);
 
+    // do a full check for negative registers in the tail
+    movl(len, tmp1); // tmp1 holds low 6-bit from original len;
+                     // ary1 already pointing to the right place
+    jmpb(TAIL_START);
+
     bind(BREAK_LOOP);
-    // At least one byte in the last 64 bytes is negative.
+    // At least one byte in the last 64 byte block was negative.
     // Set up to look at the last 64 bytes as if they were a tail
     lea(ary1, Address(ary1, len, Address::times_1));
     addptr(result, len);

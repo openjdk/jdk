@@ -52,6 +52,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -1338,7 +1339,12 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
+#ifdef _LP64
+  // Needs full 64-bit immediate for later patching.
+  mov64(rax, (intptr_t)Universe::non_oop_word());
+#else
   movptr(rax, (intptr_t)Universe::non_oop_word());
+#endif
   call(AddressLiteral(entry, rh));
 }
 
@@ -1864,6 +1870,92 @@ void MacroAssembler::cmpoop(Register src1, jobject src2, Register rscratch) {
   cmpptr(src1, rscratch);
 }
 #endif
+
+void MacroAssembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
+  if ((UseAVX > 0) && (dst != src)) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtss2sd(dst, src);
+}
+
+void MacroAssembler::cvtss2sd(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtss2sd(dst, src);
+}
+
+void MacroAssembler::cvtsd2ss(XMMRegister dst, XMMRegister src) {
+  if ((UseAVX > 0) && (dst != src)) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsd2ss(dst, src);
+}
+
+void MacroAssembler::cvtsd2ss(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsd2ss(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdl(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdl(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdl(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdl(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssl(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssl(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssl(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssl(dst, src);
+}
+
+#ifdef _LP64
+void MacroAssembler::cvtsi2sdq(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdq(dst, src);
+}
+
+void MacroAssembler::cvtsi2sdq(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorpd(dst, dst);
+  }
+  Assembler::cvtsi2sdq(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssq(XMMRegister dst, Register src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssq(dst, src);
+}
+
+void MacroAssembler::cvtsi2ssq(XMMRegister dst, Address src) {
+  if (UseAVX > 0) {
+    xorps(dst, dst);
+  }
+  Assembler::cvtsi2ssq(dst, src);
+}
+#endif  // _LP64
 
 void MacroAssembler::locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch) {
   assert(rscratch != noreg || always_reachable(adr), "missing");
@@ -2561,7 +2653,15 @@ void MacroAssembler::movptr(Register dst, Address src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
-  LP64_ONLY(mov64(dst, src)) NOT_LP64(movl(dst, src));
+#ifdef _LP64
+  if (is_simm32(src)) {
+    movq(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(dst, src);
+  }
+#else
+  movl(dst, src);
+#endif
 }
 
 void MacroAssembler::movptr(Address dst, Register src) {
@@ -9279,6 +9379,17 @@ void MacroAssembler::evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src
   }
 }
 
+void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    vpshufb(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    vpshufb(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src3), "missing");
 
@@ -9788,7 +9899,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with unspecified ZF.
 //
@@ -9796,7 +9907,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 // hdr: the (pre-loaded) header of the object, must be rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
@@ -9824,14 +9935,14 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with unspecified ZF.
 //
 // obj: the object to be unlocked
 // hdr: the (pre-loaded) header of the object, must be rax
 // tmp: a temporary register
-void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
 

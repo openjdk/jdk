@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,9 @@ public sealed interface Signature {
 
         /** {@return the class name, as a symbolic descriptor} */
         default ClassDesc classDesc() {
-            return ClassDesc.ofInternalName(className());
+            var outer = outerType();
+            return outer.isEmpty() ? ClassDesc.ofInternalName(className())
+                    : outer.get().classDesc().nested(className());
         }
 
         /** {@return the type arguments of the class} */
@@ -176,7 +178,26 @@ public sealed interface Signature {
          * an upper bound, or a lower bound
          */
         public enum WildcardIndicator {
-            DEFAULT, UNBOUNDED, EXTENDS, SUPER;
+
+            /**
+             * default bound wildcard (empty)
+             */
+            DEFAULT,
+
+            /**
+             * unbounded indicator {@code *}
+             */
+            UNBOUNDED,
+
+            /**
+             * upper-bounded indicator {@code +}
+             */
+            EXTENDS,
+
+            /**
+             * lower-bounded indicator {@code -}
+             */
+            SUPER;
         }
 
         /** {@return the wildcard indicator} */

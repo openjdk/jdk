@@ -319,10 +319,10 @@ public:
 
   // This is true if the compilation is not going to produce code.
   // (It is reasonable to retry failed compilations.)
-  bool failing() { return _failure_reason != nullptr; }
+  bool failing() const { return _failure_reason != nullptr; }
 
   // Reason this compilation is failing, such as "too many basic blocks".
-  const char* failure_reason() { return _failure_reason; }
+  const char* failure_reason() const { return _failure_reason; }
 
   // Return state of appropriate compatibility
   int compilable() { return _compilable; }

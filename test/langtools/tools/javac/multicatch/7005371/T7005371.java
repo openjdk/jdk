@@ -25,16 +25,19 @@
  * @test
  * @bug 7005371
  * @summary  Multicatch: assertion error while generating LocalVariableTypeTable attribute
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -g SubTest.java
  * @run main T7005371
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
 
 import java.io.*;
 
@@ -60,10 +63,10 @@ public class T7005371 {
     void verifyLocalVariableTypeTableAttr(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassFile cf = ClassFile.read(f);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals(TEST_METHOD_NAME)) {
+            ClassModel cf = Classfile.of().parse(f.toPath());
+            MethodModel testMethod = null;
+            for (MethodModel m : cf.methods()) {
+                if (m.methodName().equalsString(TEST_METHOD_NAME)) {
                     testMethod = m;
                     break;
                 }
@@ -71,22 +74,20 @@ public class T7005371 {
             if (testMethod == null) {
                 throw new Error("Missing method: " + TEST_METHOD_NAME);
             }
-            Code_attribute code = (Code_attribute)testMethod.attributes.get(Attribute.Code);
+            CodeAttribute code = testMethod.findAttribute(Attributes.CODE).orElse(null);
             if (code == null) {
                 throw new Error("Missing Code attribute for method: " + TEST_METHOD_NAME);
             }
-            LocalVariableTypeTable_attribute lvt_table =
-                    (LocalVariableTypeTable_attribute)code.attributes.get(Attribute.LocalVariableTypeTable);
+            LocalVariableTypeTableAttribute lvt_table = code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null);
             if (lvt_table == null) {
                 throw new Error("Missing LocalVariableTypeTable attribute for method: " + TEST_METHOD_NAME);
             }
-            if (lvt_table.local_variable_table_length != LVT_LENGTH) {
+            if (lvt_table.localVariableTypes().size() != LVT_LENGTH) {
                 throw new Error("LocalVariableTypeTable has wrong size" +
-                        "\nfound: " + lvt_table.local_variable_table_length +
+                        "\nfound: " + lvt_table.localVariableTypes().size() +
                         "\nrequired: " + LVT_LENGTH);
             }
-            String sig =
-                    cf.constant_pool.getUTF8Value(lvt_table.local_variable_table[0].signature_index);
+            String sig = lvt_table.localVariableTypes().get(0).signature().stringValue();
 
             if (sig == null || !sig.equals(LVT_SIG_TYPE)) {
                 throw new Error("LocalVariableTypeTable has wrong signature" +

@@ -37,6 +37,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * appear on methods of annotation types, and records the default value
  * {@jls 9.6.2} for the element corresponding to this method.  Delivered as a
  * {@link MethodElement} when traversing the elements of a {@link MethodModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface AnnotationDefaultAttribute
         extends Attribute<AnnotationDefaultAttribute>, MethodElement

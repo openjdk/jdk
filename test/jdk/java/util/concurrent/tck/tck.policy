@@ -1,6 +1,7 @@
 grant {
     // Permissions j.u.c. needs directly
     permission java.lang.RuntimePermission "modifyThread";
+    permission java.lang.RuntimePermission "modifyThreadGroup";
     permission java.lang.RuntimePermission "getClassLoader";
     permission java.lang.RuntimePermission "setContextClassLoader";
     permission java.util.PropertyPermission "*", "read";

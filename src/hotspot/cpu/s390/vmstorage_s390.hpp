@@ -27,6 +27,7 @@
 #include <cstdint>
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 
 enum class StorageType : int8_t {
   INTEGER = 0,

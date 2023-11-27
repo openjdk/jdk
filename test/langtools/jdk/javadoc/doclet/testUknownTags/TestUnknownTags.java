@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8314448
+ * @bug 8314448 8288660
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,6 +33,9 @@
  */
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
@@ -68,7 +71,7 @@ public class TestUnknownTags extends JavadocTester {
                     "x");
             new OutputChecker(Output.OUT)
                     .setExpectFound(true)
-                    .checkUnique("unknown tag");
+                    .checkUnique(Pattern.compile("unknown tag."));
         }
         // DocLint is default
         javadoc("-d", base.resolve("out").toString(),
@@ -76,7 +79,7 @@ public class TestUnknownTags extends JavadocTester {
                 "x");
         new OutputChecker(Output.OUT)
                 .setExpectFound(true)
-                .checkUnique("unknown tag");
+                .checkUnique(Pattern.compile("unknown tag."));
     }
 
     // Disabled simple tags are treated as known tags, but aren't checked
@@ -102,5 +105,134 @@ public class TestUnknownTags extends JavadocTester {
         checkOutput(Output.OUT, false, "unknown tag");
         checkOutput(Output.OUT, false, "Tag @myDisabledTag cannot be used in class documentation");
         checkOutput(Output.OUT, true, "Tag @myEnabledTag cannot be used in class documentation");
+    }
+
+    // This tests two assertions:
+    //
+    //   - the "helpful note" is output exactly once,
+    //   - some typos have fix suggestions, and
+    //   - there's no difference between inline and block tags as
+    //     far as the diagnostic output is concerned
+    @Test
+    public void testSimilarTags(Path base) throws Exception {
+        var src = base.resolve("src");
+        // put some tags as inline in the main description, so that they are
+        // not parsed as contents of the immediately preceding unknown
+        // block tags
+        tb.writeJavaFiles(src, """
+                package x;
+
+                /**
+                 * {@cod}
+                 * {@codejdk.net.hosts.file}
+                 * {@coe}
+                 * {@cpde}
+                 * {@ocde}
+                 * {@ode}
+                 *
+                 * @auther
+                 *
+                 * @Depricated
+                 * @deprecation
+                 *
+                 * @DocRoot
+                 * @dccRoot
+                 * @docroot
+                 *
+                 * @ecception
+                 * @excception
+                 * @exceptbion
+                 * @exceptino
+                 * @exceptions
+                 * @exceptoin
+                 * @execption
+                 *
+                 * @implnote
+                 *
+                 * @inheritdoc
+                 * @inherotDoc
+                 * @inheretdoc
+                 * @inhertitDoc
+                 *
+                 * @jvm
+                 * @jmvs
+                 *
+                 * @Link
+                 * @linK
+                 * @linbk
+                 * @lini
+                 * @linke
+                 * @linked
+                 *
+                 * @linkplan
+                 *
+                 * @params
+                 * @pararm
+                 * @parasm
+                 * @parem
+                 * @parm
+                 * @parma
+                 * @praam
+                 * @prarm
+                 *
+                 * @Return
+                 * @eturn
+                 * @result
+                 * @retrun
+                 * @retuen
+                 * @retun
+                 * @retunr
+                 * @retur
+                 * @returns
+                 * @returnss
+                 * @retursn
+                 * @rturn
+                 *
+                 * @See
+                 * @gsee
+                 *
+                 * @serialdata
+                 *
+                 * @sinc
+                 * @sine
+                 *
+                 * @systemproperty
+                 *
+                 * @thows
+                 * @thrown
+                 * @throwss
+                 */
+                public class MyClass { }
+                """);
+        // don't check exit status: we don't care if it's an error or warning
+
+        // DocLint is explicit
+        int i = 0;
+        for (var check : new String[]{":all", ":none", "", null}) {
+            var outputDir = "out-DocLint-" + i++; // use separate output directories
+
+            var args = new ArrayList<String>();
+            if (check != null) // check == null means DocLint is default
+                args.add("-Xdoclint" + check);
+            args.addAll(Arrays.asList(
+                    "-d", base.resolve(outputDir).toString(),
+                    "-tag", "apiNote:a:API Note:",
+                    "-tag", "implSpec:a:Implementation Requirements:",
+                    "-tag", "implNote:a:Implementation Note:",
+                    "-tag", "jls:a:JLS", // this tag isn't exactly that of JDK, for simplicity reasons
+                    "-tag", "jvms:a:JVMS", // this tag isn't exactly that of JDK, for simplicity reasons
+                    "--source-path", src.toString(),
+                    "x"));
+
+            javadoc(args.toArray(new String[]{}));
+
+            new OutputChecker(Output.OUT)
+                    .setExpectFound(true)
+                    .setExpectOrdered(false)
+                    .check("author", "code", "deprecated", "docRoot",
+                            "exception", "implNote", "inheritDoc", "jvms",
+                            "link", "linkplain", "param", "return", "see",
+                            "serialData", "since", "systemProperty", "throws");
+        }
     }
 }

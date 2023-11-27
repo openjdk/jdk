@@ -402,6 +402,11 @@
  * @implNote
  *
  * <ul>
+ * <li><a href="#JDKCATALOG">JDK built-in Catalog</a>
+ *      <ul>
+ *      <li><a href="#JC_PROCESS">External Resource Resolution Process with the built-in Catalog</a></li>
+ *      </ul>
+ * </li>
  * <li><a href="#IN_ISFP">Implementation Specific Properties</a>
  *      <ul>
  *      <li><a href="#Processor">Processor Support</a></li>
@@ -410,6 +415,33 @@
  *      </ul>
  * </li>
  * </ul>
+ *
+ * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
+ * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:
+ * <ul>
+ * <li>DTD for {@link java.util.prefs.Preferences java.util.prefs.Preferences}, preferences.dtd</li>
+ * <li>DTD for {@link java.util.Properties java.util.Properties}, properties.dtd</li>
+ * </ul>
+ * <p>
+ * The catalog is loaded once when the first JAXP processor factory is created.
+ *
+ * <h3 id="JC_PROCESS">External Resource Resolution Process with the built-in Catalog</h3>
+ * The JDK creates a {@link javax.xml.catalog.CatalogResolver CatalogResolver}
+ * with the built-in catalog when needed. This CatalogResolver is used as the
+ * default external resource resolver.
+ * <p>
+ * XML processors may use resolvers (such as {@link org.xml.sax.EntityResolver EntityResolver},
+ * {@link javax.xml.stream.XMLResolver XMLResolver}, and {@link javax.xml.catalog.CatalogResolver CatalogResolver})
+ * to handle external references. In the absence of the user-defined resolvers,
+ * the JDK XML processors fall back to the default CatalogResolver to attempt to
+ * find a resolution before making a connection to fetch the resources. The fall-back
+ * also takes place if a user-defined resolver exists but allows the process to
+ * continue when unable to resolve the resource.
+ * <p>
+ * If the default CatalogResolver is unable to locate a resource, it may signal
+ * the XML processors to continue processing, or skip the resource, or
+ * throw a CatalogException. The behavior is configured with the
+ * <a href="#JDKCATALOG_RESOLVE">{@code jdk.xml.jdkcatalog.resolve}</a> property.
  *
  * <h2 id="IN_ISFP">Implementation Specific Properties</h2>
  * In addition to the standard <a href="#Conf_Properties">JAXP Properties</a>,
@@ -752,7 +784,7 @@
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
- * <td style="text-align:center" rowspan="3">yes</td>
+ * <td style="text-align:center" rowspan="5">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
@@ -808,6 +840,74 @@
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">9</td>
  * </tr>
+ * <tr>
+ * <td id="DTD">{@systemProperty jdk.xml.dtd.support}<a href="#Note7">[7]</a></td>
+ * <td>Instructs the parser to handle DTDs in accordance with the setting of this property.
+ * The options are:
+ * <ul>
+ * <li><p>
+ * {@code allow} -- indicates that the parser shall continue processing DTDs;
+ * </li>
+ * <li><p>
+ * {@code ignore} -- indicates that the parser shall skip DTDs;
+ * </li>
+ * <li><p>
+ * {@code deny} -- indicates that the parser shall reject DTDs as an error.
+ * The parser shall report the error in accordance with its relevant specification.
+ * </li>
+ * </ul>
+ * </td>
+ * <td style="text-align:center">String</td>
+ * <td>
+ * {@code allow, ignore, and deny}. Values are case-insensitive.
+ * </td>
+ * <td style="text-align:center">allow</td>
+ * <td style="text-align:center">No</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#DOM">DOM</a><br>
+ *     <a href="#SAX">SAX</a><br>
+ *     <a href="#StAX">StAX</a><br>
+ *     <a href="#Validation">Validation</a><br>
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 1</a></td>
+ * <td style="text-align:center">22</td>
+ * </tr>
+ * <tr>
+ * <td id="JDKCATALOG_RESOLVE">{@systemProperty jdk.xml.jdkcatalog.resolve}</td>
+ * <td>Instructs the JDK default CatalogResolver to act in accordance with the setting
+ * of this property when unable to resolve an external reference with the built-in Catalog.
+ * The options are:
+ * <ul>
+ * <li><p>
+ * {@code continue} -- Indicates that the processing should continue
+ * </li>
+ * <li><p>
+ * {@code ignore} -- Indicates that the reference is skipped
+ * </li>
+ * <li><p>
+ * {@code strict} -- Indicates that the resolver should throw a CatalogException
+ * </li>
+ * </ul>
+ * </td>
+ * <td style="text-align:center">String</td>
+ * <td>
+ * {@code continue, ignore, and strict}. Values are case-insensitive.
+ * </td>
+ * <td style="text-align:center">continue</td>
+ * <td style="text-align:center">No</td>
+ * <td style="text-align:center">Yes</td>
+ * <td style="text-align:center">
+ *     <a href="#DOM">DOM</a><br>
+ *     <a href="#SAX">SAX</a><br>
+ *     <a href="#StAX">StAX</a><br>
+ *     <a href="#Validation">Validation</a><br>
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 1</a></td>
+ * <td style="text-align:center">22</td>
+ * </tr>
  * </tbody>
  * </table>
  * <p id="Note1">
@@ -838,6 +938,19 @@
  * are as shown in the table <a href="#Processor">Processors</a>.
  * <p id="Note6">
  * <b>[6]</b> Indicates the initial release the property is introduced.
+ * <p id="Note7">
+ * <b>[7]</b> The {@code jdk.xml.dtd.support} property complements the two existing
+ * DTD-related properties, {@code disallow-doctype-decl}(fully qualified name:
+ * {@code http://apache.org/xml/features/disallow-doctype-decl}) and supportDTD
+ * ({@code javax.xml.stream.supportDTD}), by providing a uniformed support for the
+ * processors listed and a system property that can be used in the
+ * <a href="#Conf_CF">JAXP Configuration File</a>. When {@code disallow-doctype-decl} is
+ * set on the DOM or SAX factory, or supportDTD on StAX factory, the {@code jdk.xml.dtd.support}
+ * property will have no effect.
+ * <p>
+ * These three properties control whether DTDs as a whole shall be processed. When
+ * they are set to deny or ignore, other properties that regulate a part or an
+ * aspect of DTD shall have no effect.
  *
  * <h3 id="IN_Legacy">Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.

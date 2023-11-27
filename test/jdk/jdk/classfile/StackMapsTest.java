@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990
+ * @bug 8305990 8320222
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -263,5 +261,45 @@ class StackMapsTest {
 
         //then verify transformed bytecode
         assertEmpty(cc.parse(transformedBytes).verify(null));
+    }
+
+    @Test
+    void testInvalidStack() throws Exception {
+        //stack size mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                Classfile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       Classfile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0d);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
+        //stack content mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                Classfile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       Classfile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0f);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
     }
 }

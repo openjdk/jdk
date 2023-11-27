@@ -241,9 +241,9 @@ class MacroAssembler: public Assembler {
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
   int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -253,6 +253,15 @@ class MacroAssembler: public Assembler {
                                Register scan_tmp,
                                Label& no_such_interface,
                                bool return_method = true);
+
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
 
   // virtual method calling
   // n.n. x86 allows RegisterOrConstant for vtable_index
@@ -376,8 +385,24 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
+  void fence(uint32_t predecessor, uint32_t successor) {
+    if (UseZtso) {
+      if ((pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) == StoreLoad) {
+        // TSO allows for stores to be reordered after loads. When the compiler
+        // generates a fence to disallow that, we are required to generate the
+        // fence for correctness.
+        Assembler::fence(predecessor, successor);
+      } else {
+        // TSO guarantees other fences already.
+      }
+    } else {
+      // always generate fence for RVWMO
+      Assembler::fence(predecessor, successor);
+    }
+  }
+
   void pause() {
-    fence(w, 0);
+    Assembler::fence(w, 0);
   }
 
   // prints msg, dumps registers and stops execution
@@ -1184,6 +1209,9 @@ public:
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
+  void wide_madd(Register sum_lo, Register sum_hi, Register n,
+                 Register m, Register tmp1, Register tmp2);
   void cad(Register dst, Register src1, Register src2, Register carry);
   void cadc(Register dst, Register src1, Register src2, Register carry);
   void adc(Register dst, Register src1, Register src2, Register carry);
@@ -1224,7 +1252,7 @@ public:
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
   // test single bit in Rs, result is set to Rd
-  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
@@ -1273,6 +1301,13 @@ public:
   }
 
   // vector pseudo instructions
+  // rotate vector register left with shift bits, 32-bit version
+  inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
+    vsrl_vi(tmp_vr, vd, 32 - shift);
+    vsll_vi(vd, vd, shift);
+    vor_vv(vd, vd, tmp_vr);
+  }
+
   inline void vl1r_v(VectorRegister vd, Register rs) {
     vl1re8_v(vd, rs);
   }
@@ -1371,11 +1406,17 @@ public:
   void zero_extend(Register dst, Register src, int bits);
   void sign_extend(Register dst, Register src, int bits);
 
+private:
+  void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
+
+public:
   // compare src1 and src2 and get -1/0/1 in dst.
   // if [src1 > src2], dst = 1;
   // if [src1 == src2], dst = 0;
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_ul2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_uw2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
   // support for argument shuffling
   void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
@@ -1437,12 +1478,12 @@ private:
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
-  void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
-  void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
+  void load_reserved(Register dst, Register addr, enum operand_size size, Assembler::Aqrl acquire);
+  void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
 
 public:
-  void fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT

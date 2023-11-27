@@ -29,6 +29,7 @@
 #include "jvm_constants.h"
 #include "jvm_io.h"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 

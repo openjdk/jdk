@@ -49,7 +49,7 @@
              }
          }
          // else this is the main test
-         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
+         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
                   "-XX:-CreateCoredumpOnCrash", "-Xmx128m", "-Xshare:on", TestCDSVMCrash.class.getName(),"throwOOME");
          OutputAnalyzer output = new OutputAnalyzer(pb.start());
          // executeAndLog should throw an exception in the VM crashed

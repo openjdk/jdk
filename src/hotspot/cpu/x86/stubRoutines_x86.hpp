@@ -37,7 +37,7 @@ enum platform_dependent_constants {
   _continuation_stubs_code_size =  1000 LP64_ONLY(+1000),
   // AVX512 intrinsics add more code in 64-bit VM,
   // Windows have more code to save/restore registers
-  _compiler_stubs_code_size     = 20000 LP64_ONLY(+30000) WINDOWS_ONLY(+2000),
+  _compiler_stubs_code_size     = 20000 LP64_ONLY(+32000) WINDOWS_ONLY(+2000),
   _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000) ZGC_ONLY(+20000)
 };
 
@@ -126,10 +126,11 @@ class x86 {
 
  private:
   static jint    _mxcsr_std;
+#ifdef _LP64
+  static jint    _mxcsr_rz;
+#endif // _LP64
 
   static address _verify_mxcsr_entry;
-
-  static address _method_entry_barrier;
 
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
@@ -207,6 +208,9 @@ class x86 {
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
+#ifdef _LP64
+  static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
+#endif // _LP64
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 #ifdef _LP64

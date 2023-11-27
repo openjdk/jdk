@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -41,6 +42,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -58,8 +60,8 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -128,6 +130,9 @@ char* Arguments::_ext_dirs = nullptr;
 
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
+
+// True if -Xint/-Xmixed/-Xcomp were specified
+static bool mode_flag_cmd_line = false;
 
 bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
   char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
@@ -504,6 +509,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
+  { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -523,6 +529,13 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+  { "UseCounterDecay",              JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+
+#ifdef LINUX
+  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
+#endif
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1251,15 +1264,15 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   }
 
 #if INCLUDE_CDS
-  if (is_internal_module_property(key) ||
-      strcmp(key, "jdk.module.main") == 0) {
+  if (is_internal_module_property(key)) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
-    MetaspaceShared::disable_full_module_graph();
+    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::disable_dumping_full_module_graph();
     log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 #endif
@@ -1325,7 +1338,7 @@ const char* unsupported_options[] = { "--limit-modules",
                                       "--patch-module"
                                     };
 void Arguments::check_unsupported_dumping_properties() {
-  assert(is_dumping_archive(),
+  assert(CDSConfig::is_dumping_archive(),
          "this function is only used with CDS dump time");
   assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
   // If a vm option is found in the unsupported_options array, vm will exit with an error message.
@@ -1902,22 +1915,12 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
   if (LockingMode == LM_LIGHTWEIGHT) {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");
   }
 #endif
-
-  if (UseHeavyMonitors) {
-    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags\n", LockingMode);
-      return false;
-    }
-    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
-  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
@@ -2602,16 +2605,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xint
     } else if (match_option(option, "-Xint")) {
           set_mode_flags(_int);
+          mode_flag_cmd_line = true;
     // -Xmixed
     } else if (match_option(option, "-Xmixed")) {
           set_mode_flags(_mixed);
+          mode_flag_cmd_line = true;
     // -Xcomp
     } else if (match_option(option, "-Xcomp")) {
       // for testing the compiler; turn off all flags that inhibit compilation
           set_mode_flags(_comp);
+          mode_flag_cmd_line = true;
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
-      DumpSharedSpaces = true;
+      CDSConfig::enable_dumping_static_archive();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
@@ -3032,15 +3038,19 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
-    // Compiler threads may concurrently update the class metadata (such as method entries), so it's
-    // unsafe with -Xshare:dump (which modifies the class metadata in place). Let's disable
-    // compiler just to be safe.
-    //
-    // Note: this is not a concern for dynamically dumping shared spaces, which makes a copy of the
-    // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
-    // TODO: revisit the following for the static archive case.
-    set_mode_flags(_int);
+  if (CDSConfig::is_dumping_static_archive()) {
+    if (!mode_flag_cmd_line) {
+      // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
+      //
+      // If your classlist is large and you don't care about deterministic dumping, you can use
+      // -Xshare:dump -Xmixed to improve dumping speed.
+      set_mode_flags(_int);
+    } else if (_mode == _comp) {
+      // -Xcomp may use excessive CPU for the test tiers. Also, -Xshare:dump runs a small and fixed set of
+      // Java code, so there's not much benefit in running -Xcomp.
+      log_info(cds)("reduced -Xcomp to -Xmixed for static dumping");
+      set_mode_flags(_mixed);
+    }
 
     // String deduplication may cause CDS to iterate the strings in different order from one
     // run to another which resulting in non-determinstic CDS archives.
@@ -3056,9 +3066,9 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 
   if (ArchiveClassesAtExit == nullptr && !RecordDynamicDumpInfo) {
-    DynamicDumpSharedSpaces = false;
+    CDSConfig::disable_dumping_dynamic_archive();
   } else {
-    DynamicDumpSharedSpaces = true;
+    CDSConfig::enable_dumping_dynamic_archive();
   }
 
   if (AutoCreateSharedArchive) {
@@ -3075,11 +3085,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
-  if (UseSharedSpaces && !DumpSharedSpaces && check_unsupported_cds_runtime_properties()) {
+  if (UseSharedSpaces && check_unsupported_cds_runtime_properties()) {
     UseSharedSpaces = false;
   }
 
-  if (DumpSharedSpaces || DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_archive()) {
     // Always verify non-system classes during CDS dump
     if (!BytecodeVerificationRemote) {
       BytecodeVerificationRemote = true;
@@ -3356,7 +3366,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 }
 
 void Arguments::set_shared_spaces_flags_and_archive_paths() {
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
@@ -3367,7 +3377,7 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
   //
   // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
-  if (DumpSharedSpaces || UseSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive() || UseSharedSpaces) {
     init_shared_archive_paths();
   }
 #endif  // INCLUDE_CDS
@@ -3437,7 +3447,7 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
 void Arguments::init_shared_archive_paths() {
   if (ArchiveClassesAtExit != nullptr) {
     assert(!RecordDynamicDumpInfo, "already checked");
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
     check_unsupported_dumping_properties();
@@ -3454,12 +3464,12 @@ void Arguments::init_shared_archive_paths() {
     int archives = num_archives(SharedArchiveFile);
     assert(archives > 0, "must be");
 
-    if (is_dumping_archive() && archives > 1) {
+    if (CDSConfig::is_dumping_archive() && archives > 1) {
       vm_exit_during_initialization(
         "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
 
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       assert(archives == 1, "must be");
       // Static dump is simple: only one archive is allowed in SharedArchiveFile. This file
       // will be overwritten no matter regardless of its contents
@@ -3486,7 +3496,7 @@ void Arguments::init_shared_archive_paths() {
           // If +AutoCreateSharedArchive and the specified shared archive does not exist,
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            DynamicDumpSharedSpaces = true;
+            CDSConfig::enable_dumping_dynamic_archive();
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
             SharedArchivePath = get_default_shared_archive_path();
             SharedArchiveFile = nullptr;
@@ -3901,12 +3911,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
   }
-  if (CountCompiledCalls) {
-    if (UseCounterDecay) {
-      warning("UseCounterDecay disabled because CountCalls is set");
-      UseCounterDecay = false;
-    }
-  }
 #endif // PRODUCT
 
   if (ScavengeRootsInCode == 0) {
@@ -3924,7 +3928,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   set_object_alignment();
 
 #if !INCLUDE_CDS
-  if (DumpSharedSpaces || RequireSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive() || RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
       "Shared spaces are not supported in this VM\n");
     return JNI_ERR;

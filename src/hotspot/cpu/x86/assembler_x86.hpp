@@ -26,6 +26,7 @@
 #define CPU_X86_ASSEMBLER_X86_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Contains all the definitions needed for x86 assembly code generation.
@@ -985,6 +986,7 @@ private:
 
   void addb(Address dst, int imm8);
   void addb(Address dst, Register src);
+  void addb(Register dst, int imm8);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
   void addw(Address dst, Register src);
@@ -1244,12 +1246,18 @@ private:
   void divss(XMMRegister dst, XMMRegister src);
 
 
-#ifndef _LP64
+  void fnstsw_ax();
+  void fprem();
+  void fld_d(Address adr);
+  void fstp_d(Address adr);
+  void fstp_d(int index);
+
  private:
 
   void emit_farith(int b1, int b2, int i);
 
  public:
+#ifndef _LP64
   void emms();
 
   void fabs();
@@ -1308,7 +1316,6 @@ private:
 
   void fld1();
 
-  void fld_d(Address adr);
   void fld_s(Address adr);
   void fld_s(int index);
 
@@ -1337,10 +1344,6 @@ private:
   void fnsave(Address dst);
 
   void fnstcw(Address src);
-
-  void fnstsw_ax();
-
-  void fprem();
   void fprem1();
 
   void frstor(Address src);
@@ -1352,8 +1355,6 @@ private:
   void fst_d(Address adr);
   void fst_s(Address adr);
 
-  void fstp_d(Address adr);
-  void fstp_d(int index);
   void fstp_s(Address adr);
 
   void fsub(int i);
@@ -1655,7 +1656,6 @@ private:
 
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address  dst, int32_t imm64);
-  void movslq(Register dst, int32_t imm64);
 
   void movslq(Register dst, Address src);
   void movslq(Register dst, Register src);
@@ -1952,6 +1952,7 @@ private:
   void pshufb(XMMRegister dst, XMMRegister src);
   void pshufb(XMMRegister dst, Address src);
   void vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpshufb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evpshufb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
 
 
@@ -2183,7 +2184,7 @@ private:
   void subss(XMMRegister dst, XMMRegister src);
 
   void testb(Address dst, int imm8);
-  void testb(Register dst, int imm8);
+  void testb(Register dst, int imm8, bool use_ral = true);
 
   void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);

@@ -55,22 +55,6 @@ MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo)
 }
 
 JNIEXPORT jboolean JNICALL
-Java_sun_java2d_metal_MTLGraphicsConfig_isMetalFrameworkAvailable
-    (JNIEnv *env, jclass mtlgc)
-{
-    jboolean metalSupported = JNI_FALSE;
-
-    // It is guaranteed that metal supported GPU is available since macOS 10.14
-    if (@available(macOS 10.14, *)) {
-        metalSupported = JNI_TRUE;
-    }
-
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "MTLGraphicsConfig_isMetalFrameworkAvailable : %d", metalSupported);
-
-    return metalSupported;
-}
-
-JNIEXPORT jboolean JNICALL
 Java_sun_java2d_metal_MTLGraphicsConfig_tryLoadMetalLibrary
     (JNIEnv *env, jclass mtlgc, jint displayID, jstring shadersLibName)
 {

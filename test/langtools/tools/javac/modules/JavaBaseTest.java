@@ -31,26 +31,25 @@
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      jdk.jdeps/com.sun.tools.classfile
+ *      java.base/jdk.internal.classfile
+ *      java.base/jdk.internal.classfile.attribute
+ *      java.base/jdk.internal.classfile.constantpool
+ *      java.base/jdk.internal.classfile.instruction
+ *      java.base/jdk.internal.classfile.components
+ *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
  */
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.Module_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;
@@ -109,12 +108,8 @@ public class JavaBaseTest {
                     .resolve(target).resolve(mode.name().toLowerCase());
             Files.createDirectories(base);
             switch (mode) {
-                case SOURCE:
-                    testSource(base, mods, target);
-                    break;
-                case CLASS:
-                    testClass(base, mods, target);
-                    break;
+                case SOURCE -> testSource(base, mods, target);
+                case CLASS -> testClass(base, mods, target);
             }
         } catch (Exception e) {
             error("Exception: " + e);
@@ -213,57 +208,44 @@ public class JavaBaseTest {
         jct.files(tb.findJavaFiles(src1))
             .run(Task.Expect.SUCCESS);
 
-        ClassFile cf1 = ClassFile.read(modules1.resolve("module-info.class"));
+        ClassModel cm1 = Classfile.of().parse(modules1.resolve("module-info.class"));
 
-        Map<String,Attribute> attrMap = new LinkedHashMap<>(cf1.attributes.map);
-        Module_attribute modAttr1 = (Module_attribute) attrMap.get("Module");
-        Module_attribute.RequiresEntry[] requires =
-                new Module_attribute.RequiresEntry[modAttr1.requires_count];
-        for (int i = 0; i < modAttr1.requires_count; i++) {
-            Module_attribute.RequiresEntry e1 = modAttr1.requires[i];
-            int flags = e1.requires_flags;
-            Module_attribute.RequiresEntry e2;
-            if (e1.getRequires(cf1.constant_pool).equals("java.base")) {
+        ModuleAttribute modAttr1 = cm1.findAttribute(Attributes.MODULE).orElseThrow();
+        List<ModuleRequireInfo> requires = Arrays.asList(new ModuleRequireInfo[modAttr1.requires().size()]);
+        for (int i = 0; i < modAttr1.requires().size(); ++i) {
+            ModuleRequireInfo e1 = modAttr1.requires().get(i);
+            int flags = e1.requiresFlagsMask();
+            ModuleRequireInfo e2;
+            if (e1.requires().name().equalsString("java.base")) {
                 for (String mod : mods) {
                     switch (mod) {
-                        case "static":
-                            flags |= Module_attribute.ACC_STATIC_PHASE;
-                            break;
-                        case "transitive":
-                            flags |= Module_attribute.ACC_TRANSITIVE;
-                            break;
+                        case "static" -> flags |= Classfile.ACC_STATIC_PHASE;
+                        case "transitive" -> flags |= Classfile.ACC_TRANSITIVE;
                     }
                 }
-                e2 = new Module_attribute.RequiresEntry(
-                        e1.requires_index,
-                        flags,
-                        e1.requires_version_index);
+                e2 = ModuleRequireInfo.of(e1.requires(), flags, e1.requiresVersion().orElse(null));
             } else {
                 e2 = e1;
             }
-            requires[i] = e2;
+            requires.set(i, e2);
         }
-        Module_attribute modAttr2 = new Module_attribute(
-                modAttr1.attribute_name_index,
-                modAttr1.module_name,
-                modAttr1.module_flags,
-                modAttr1.module_version_index,
-                requires,
-                modAttr1.exports,
-                modAttr1.opens,
-                modAttr1.uses_index,
-                modAttr1.provides);
-        attrMap.put("Module", modAttr2);
-        Attributes attributes = new Attributes(attrMap);
 
-        ClassFile cf2 = new ClassFile(
-                cf1.magic, cf1.minor_version, cf1.major_version,
-                cf1.constant_pool, cf1.access_flags,
-                cf1.this_class, cf1.super_class, cf1.interfaces,
-                cf1.fields, cf1.methods, attributes);
+        ModuleAttribute modAttr2 = ModuleAttribute.of(
+                modAttr1.moduleName(),
+                modAttr1.moduleFlagsMask(),
+                modAttr1.moduleVersion().orElse(null),
+                requires,
+                modAttr1.exports(),
+                modAttr1.opens(),
+                modAttr1.uses(),
+                modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        new ClassWriter().write(cf2, modInfo.toFile());
+        byte[] newBytes = Classfile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
+        try (OutputStream out = Files.newOutputStream(modInfo)) {
+            out.write(newBytes);
+        }
     }
 
     private void error(String message) {

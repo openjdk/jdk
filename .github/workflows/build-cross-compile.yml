@@ -31,12 +31,6 @@ on:
       gcc-major-version:
         required: true
         type: string
-      apt-gcc-version:
-        required: true
-        type: string
-      apt-gcc-cross-version:
-        required: true
-        type: string
       extra-conf-options:
         required: false
         type: string
@@ -91,7 +85,7 @@ jobs:
 
     steps:
       - name: 'Checkout the JDK source'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 'Get the BootJDK'
         id: bootjdk
@@ -106,6 +100,10 @@ jobs:
         with:
           platform: linux-x64
 
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
         # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install toolchain and dependencies'
         run: |
@@ -113,12 +111,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
           sudo apt-get install \
-              gcc-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
-              debian-ports-archive-keyring
+              gcc-${{ inputs.gcc-major-version }} \
+              g++-${{ inputs.gcc-major-version }} \
+              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
+              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Check cache for sysroot'
@@ -140,7 +137,6 @@ jobs:
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype-dev,libpng-dev
           --resolve-deps
           --variant=minbase
-          $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
           ${{ matrix.debian-version }}
           sysroot
           ${{ matrix.debian-repository }}
@@ -163,6 +159,7 @@ jobs:
           --with-conf-name=linux-${{ matrix.target-cpu }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --enable-debug
           --disable-precompiled-headers
