@@ -26,7 +26,6 @@
  * @bug 6359734
  * @key printer
  * @summary Test that fonts with a translation print where they should.
- * @author prr
  * @run main/manual PrintTranslatedFont
  */
 

@@ -25,7 +25,6 @@
  * @test
  * @bug 4509958
  * @summary Tests that the empty areas aren't drawn.
- * @key printer
  * @run main EmptyFill
  */
 
@@ -67,11 +66,10 @@ public class EmptyFill implements Printable {
        }
        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
        StreamPrintService svc = spfs[0].getPrintService(baos);
-
-       PrinterJob pj = PrinterJob.getPrinterJob();
        if (svc == null) {
            return;
        }
+       PrinterJob pj = PrinterJob.getPrinterJob();
        pj.setPrintService(svc);
        pj.setPrintable(new EmptyFill());
        pj.print();

@@ -11,8 +11,8 @@
 #
 # A test flagged with cgroups uses cgroups.
 #
-# Notes on "client" keywords : headful sound printer 2d dnd multimon 
-# ==================================================================
+# Notes on "client" keywords : headful sound printer multimon 
+# ===========================================================
 #
 # These keywords are there to help with test selection so that
 # tests that need a particular resource can be selected to run on a system
@@ -42,8 +42,8 @@
 # "multimon" should be used in conjunction with headful and is used to identify
 # tests which require two displays connected.
 
-keys=headful sound printer 2d dnd multimon \
-     i18n intermittent printer randomness jfr cgroups
+keys=headful sound printer multimon \
+     i18n intermittent randomness jfr cgroups
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \

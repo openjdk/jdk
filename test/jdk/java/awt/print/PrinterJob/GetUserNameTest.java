@@ -23,7 +23,6 @@
 /*
  * @test
  * @bug 6197099
- * @key printer
  * @summary Verifies PrinterJob's getUserName() throws a security exception when
  *          username permission is not given
  * @run main/othervm/java.security.policy=GetUserNameTest.policy GetUserNameTest

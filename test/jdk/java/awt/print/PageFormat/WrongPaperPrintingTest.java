@@ -23,8 +23,8 @@
 
 /* @test
    @bug 8167102 8181659
-   @summary PrintRequestAttributeSet breaks page size set using PageFormat
    @key printer
+   @summary PrintRequestAttributeSet breaks page size set using PageFormat
    @run main/manual WrongPaperPrintingTest
  */
 

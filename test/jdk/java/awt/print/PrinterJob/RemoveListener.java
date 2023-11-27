@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 1.1 01/05/17
+ * @test
  * @bug 4459889
  * @summary No NullPointerException should occur.
  * @key printer
