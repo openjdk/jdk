@@ -613,7 +613,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * that not finding tasks doesn't mean that there won't soon be
      * some. Further, a scan may give up under contention, returning
      * even without knowing whether any tasks are still present, which
-     * is OK given, a secondary check (in awaitWork) needed to cover
+     * is OK given, a secondary check (in deactivate) needed to cover
      * deactivation/signal races. Blocking and unblocking via
      * park/unpark can cause serious slowdowns when tasks are rapidly
      * but irregularly generated (which is often due to garbage
@@ -621,11 +621,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * workers to rescan multiple times, even when there are unlikely
      * to be tasks. But this causes enough memory traffic and CAS
      * contention to prefer using quieter short spinwaits in awaitWork
-     * and elsewhere.  Those in awaitWork are set to small values that
-     * only cover near-miss scenarios for inactivate/activate races.
-     * Because idle workers are often not yet blocked (parked), we use
-     * the WorkQueue parker field to advertise that a waiter actually
-     * needs unparking upon signal.
+     * and elsewhere; set to small values that only cover near-miss
+     * scenarios for deactivate/reactivate races.  Because idle workers
+     * are often not yet blocked (parked), we use the WorkQueue parker
+     * field to advertise that a waiter actually needs unparking upon
+     * signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -906,11 +906,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * cases due to GC bookkeeping (cardmarks etc), and reduce the
      * number of resizes, which are not especially fast because they
      * require atomic transfers.  Currently, arrays are initialized to
-     * be fairly small but early resizes rapidly increase size by more
-     * than a factor of two until very large.  (Maintenance note: any
-     * changes in fields, queues, or their uses, or JVM layout
-     * policies, must be accompanied by re-evaluation of these
-     * placement and sizing decisions.)
+     * be fairly small.  (Maintenance note: any changes in fields,
+     * queues, or their uses, or JVM layout policies, must be
+     * accompanied by re-evaluation of these placement and sizing
+     * decisions.)
      *
      * Style notes
      * ===========
@@ -1041,7 +1040,8 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     // source history window packing used in scan() and runWorker()
     static final long RESCAN          = 1L << 63; // must be negative
-    static final long WMASK           = ~(((long)SMASK) << 48); // id bits only
+    static final long HMASK           = ((((long)SMASK) << 32) |
+                                         (((long)SMASK) << 16)); // history bits
     static final long NO_HISTORY      = ((((long)INVALID_ID) << 32) | // no 3rd
                                          (((long)INVALID_ID) << 16)); // no 2nd
 
@@ -1301,7 +1301,7 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
-            int s = top, b = base, cap, m, room; ForkJoinTask<?>[] a;
+            int s = top, b = base, cap, m, room, newCap; ForkJoinTask<?>[] a;
             if ((a = array) == null || (cap = a.length) <= 0 ||
                 (room = (m = cap - 1) - (s - b)) < 0) { // could not resize
                 if (!internal)
@@ -1314,30 +1314,27 @@ public class ForkJoinPool extends AbstractExecutorService {
                 U.putReference(a, pos, task);         // inside lock
             else
                 U.getAndSetReference(a, pos, task);   // fully fenced
-            if (room == 0) {                          // resize for next time
-                int newCap;                           // rapidly grow until large
-                if ((newCap = (cap < 1 << 24) ? cap << 2 : cap << 1) > 0) {
-                    ForkJoinTask<?>[] newArray = null;
-                    try {
-                        newArray = new ForkJoinTask<?>[newCap];
-                    } catch (OutOfMemoryError ex) {
+            if (room == 0 && (newCap = cap << 1) > 0) {
+                ForkJoinTask<?>[] newArray = null;
+                try {                                 // resize for next time
+                    newArray = new ForkJoinTask<?>[newCap];
+                } catch (OutOfMemoryError ex) {
+                }
+                if (newArray != null) {               // else throw on next push
+                    int newMask = newCap - 1;         // poll old, push to new
+                    for (int k = s, j = cap; j > 0; --j, --k) {
+                        ForkJoinTask<?> u;
+                        if ((u = (ForkJoinTask<?>)U.getAndSetReference(
+                                 a, slotOffset(k & m), null)) == null)
+                            break;                    // lost to pollers
+                        newArray[k & newMask] = u;
                     }
-                    if (newArray != null) {           // else throw on next push
-                        int newMask = newCap - 1;     // poll old, push to new
-                        for (int k = s, j = cap; j > 0; --j, --k) {
-                            if ((newArray[k & newMask] =
-                                 (ForkJoinTask<?>)U.getAndSetReference(
-                                     a, slotOffset(k & m), null)) == null)
-                                break;                // lost to pollers
-                        }
-                        updateArray(newArray);        // fully fenced
-                    }
+                    updateArray(newArray);            // fully fenced
                 }
             }
             if (!internal)
                 unlockPhase();
-            if ((room == 0 || room >= m || a[m & (s - 1)] == null) &&
-                pool != null)
+            if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
                 pool.signalWork();
         }
 
@@ -2029,17 +2026,13 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred; // seed from registerWorker
-            for (long window = NO_HISTORY | (r >>> 16);;) {
+            long window = (long)((r >>> 16) & SMASK) | NO_HISTORY;
+            do {
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5;   // xorshift
-                if ((runState & STOP) != 0)                 // terminating
-                    break;
-                if (window == (window = scan(w, window & WMASK, r)) &&
-                    window >= 0L && phase != (phase = awaitWork(w, phase))) {
-                    if ((phase & IDLE) != 0)
-                        break;                              // worker exit
-                    window = NO_HISTORY | (window & SMASK); // clear history
-                }
-             }
+            } while ((runState & STOP) == 0 &&
+                     ((window != (window = scan(w, window, r)) || window < 0L ||
+                       ((phase = deactivate(w, phase)) & IDLE) == 0 ||
+                       ((phase = awaitWork(w, phase)) & IDLE) == 0)));
         }
     }
 
@@ -2056,6 +2049,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     private long scan(WorkQueue w, long window, int r) {
         WorkQueue[] qs = queues;
         int n = (qs == null) ? 0 : qs.length, step = (r << 1) | 1;
+        long next = window & ~RESCAN;
         outer: for (int i = (short)window, l = n; l > 0; --l, i += step) {
             int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
             if ((q = qs[j = i & SMASK & (n - 1)]) != null &&
@@ -2067,18 +2061,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if (q.base == b) {            // else inconsistent; retry
                         int nb = b + 1, nk = nb & (cap - 1);
                         if (t == null) {
-                            if (a[k] == null) {   // revisit if another task
-                                if (window >= 0L && a[nk] != null)
-                                    window |= RESCAN;
-                                break;
-                            }
+                            if (next >= 0L && (a[k] != null || a[nk] != null))
+                                next |= RESCAN;
+                            break;                // revisit if another task
                         }
                         else if (t == (o = U.compareAndExchangeReference(
-                                            a, slotOffset(k), t, null))) {
+                                           a, slotOffset(k), t, null))) {
                             q.updateBase(nb);
-                            long pw = window, nw = ((pw << 16) | j) & WMASK;
-                            window = nw | RESCAN;
-                            if ((nw != pw || (short)(nw >>> 32) != j) &&
+                            next = RESCAN | ((window << 16) & HMASK) | j;
+                            if (((short)(next >>> 32) != j || next != window) &&
                                 a[nk] != null)
                                 signalWork();     // limit propagation
                             if (w != null)        // always true
@@ -2091,72 +2082,89 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
             }
         }
-        return window;
+        return next;
     }
 
     /**
-     * Tries to inactivate, and if successful, awaits signal or termination.
+     * Deactivates w, reactivating on contention, already signalled,
+     * or possible missed signal.
      *
      * @param w the worker (may be null if already terminated)
-     * @param p current phase
+     * @param phase current phase
+     * @return phase on exit
+     */
+    private int deactivate(WorkQueue w, int phase) {
+        int idle = phase | IDLE, p = idle, active = idle + IDLE;
+        if (phase != idle && w != null) {
+            long pc = ctl, qc = (active & LMASK) | ((pc - RC_UNIT) & UMASK);
+            w.stackPred = (int)pc;                  // set ctl stack link
+            w.phase = idle;                         // try to deactivate
+            if (!compareAndSetCtl(pc, qc))          // contended enque
+                p = w.phase = phase;                // back out
+            else if ((runState & SHUTDOWN) == 0 || (qc & RC_MASK) > 0L ||
+                     !quiescent() || (runState & STOP) == 0) {
+                WorkQueue[] qs = queues;            // recheck queues
+                int n = (qs == null) ? 0 : qs.length;
+                for (int i = -n; i < n; ++i) {
+                    WorkQueue q; ForkJoinTask<?>[] a; int cap;
+                    if ((p = w.phase) == active)    // precede, then interleave
+                        break;                      //  with signal checks
+                    if (i >= 0 && (q = qs[i]) != null && (a = q.array) != null &&
+                        (cap = a.length) > 0 && a[q.base & (cap - 1)] != null &&
+                        qc == ctl && qc == compareAndExchangeCtl(qc, pc)) {
+                        p = w.phase = active;       // may have missed signal
+                        break;
+                    }
+                    Thread.onSpinWait();            // reduce memory traffic
+                }
+            }
+        }
+        return p;
+    }
+
+    /**
+     * Awaits signal or termination.
+     *
+     * @param w the worker (may be null if already terminated)
+     * @param p current phase with IDLE known to be set
      * @return current phase, with IDLE set if worker should exit
      */
     private int awaitWork(WorkQueue w, int p) {
-        int idlePhase, nextPhase;
-        if ((idlePhase = p | IDLE) == p || w == null)
-            return p;                           // already terminating
-        long pc = ctl, qc = (((nextPhase = p + (IDLE << 1)) & LMASK) |
-                             ((pc - RC_UNIT) & UMASK));
-        w.stackPred = (int)pc;                  // set ctl stack link
-        w.phase = idlePhase;                    // try to inactivate
-        if (!compareAndSetCtl(pc, qc))          // contended enque
-            return w.phase = p;                 // back out
-        WorkQueue[] qs = queues;                // recheck queues
-        int n = (qs == null) ? 0 : qs.length;
-        for (int l = -n, r = nextPhase; l < n; ++l, ++r) {
-            WorkQueue q; ForkJoinTask<?>[] a; int cap;
-            U.loadFence();
-            if ((q = qs[r & SMASK & (n - 1)]) != null && (a = q.array) != null &&
-                (cap = a.length) > 0 && a[q.base & (cap - 1)] != null &&
-                qc == ctl && qc == compareAndExchangeCtl(qc, pc))
-                return p = w.phase = nextPhase; // self-signal
-            Thread.onSpinWait();                // reduce memory traffic
-            if ((p = w.phase) == nextPhase)
-                return p;                       // interleave signal checks
-        }
-        long deadline = 0L;                     // timeout if trimmable
-        if ((qc & RC_MASK) <= 0L && quiescent() && // all idle and w is ctl top
-            (nextPhase & SMASK) == ((int)(qc = ctl) & SMASK)) {
-            int nt = (short)(qc >>> TC_SHIFT);
-            long delay = keepAlive;             // scale if not at target
+        int active = p + IDLE;
+        long deadline = 0L, c = ctl;                // use timeout if trimmable
+        if ((c & RC_MASK) <= 0L && ((int)c & SMASK) == (active & SMASK)) {
+            int nt = (short)(c >>> TC_SHIFT);       // all idle and w is ctl top
+            long delay = keepAlive;                 // scale if not at target
             if (nt != (nt = Math.max(nt, parallelism)) && nt > 0)
                 delay = Math.max(TIMEOUT_SLOP, delay / nt);
             if ((deadline = delay + System.currentTimeMillis()) == 0L)
-                deadline = 1L;                  // avoid zero
+                deadline = 1L;                      // avoid zero
         }
-        LockSupport.setCurrentBlocker(this);    // emulate LockSupport.park
-        w.parker = Thread.currentThread();
-        for (p = IDLE;;) {
-            if ((runState & STOP) != 0 || (p = w.phase) == nextPhase)
-                break;
-            U.park(deadline != 0L, deadline);
-            if ((p = w.phase) == nextPhase || (runState & STOP) != 0)
-                break;
-            Thread.interrupted();               // clear for next park
-            if (deadline != 0L &&               // try to trim on timeout
-                deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
-                long sp = w.stackPred & LMASK, c;
-                if ((nextPhase & SMASK) == ((int)(c = ctl) & SMASK)  &&
-                    compareAndSetCtl(c, sp | (UMASK & (c - TC_UNIT)))) {
-                    w.source = DEREGISTERED;
-                    w.phase = nextPhase;
+        if ((runState & STOP) == 0 && w != null && (p = w.phase) != active) {
+            LockSupport.setCurrentBlocker(this);    // emulate LockSupport.park
+            w.parker = Thread.currentThread();
+            for (;;) {
+                if ((runState & STOP) != 0 || (p = w.phase) == active)
                     break;
+                U.park(deadline != 0L, deadline);
+                if ((p = w.phase) == active || (runState & STOP) != 0)
+                    break;
+                Thread.interrupted();               // clear for next park
+                if (deadline != 0L &&               // try to trim on timeout
+                    deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
+                    long sp = w.stackPred & LMASK, qc = ctl;
+                    if (((int)qc & SMASK) == (active & SMASK) &&
+                        compareAndSetCtl(qc, sp | (UMASK & (qc - TC_UNIT)))) {
+                        w.source = DEREGISTERED;
+                        w.phase = active;
+                        break;
+                    }
+                    deadline = 0L;                  // no longer trimmable
                 }
-                deadline = 0L;                  // no longer trimmable
             }
+            w.parker = null;
+            LockSupport.setCurrentBlocker(null);
         }
-        w.parker = null;
-        LockSupport.setCurrentBlocker(null);
         return p;
     }
 
@@ -3107,12 +3115,10 @@ public class ForkJoinPool extends AbstractExecutorService {
         poolSubmit(true, task);
         try {
             return task.join();
-        } catch (RuntimeException rex) {
-            throw rex;
-        } catch (Error eex) {
-            throw eex;
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+        } catch (RuntimeException | Error unchecked) {
+            throw unchecked;
+        } catch (Exception checked) {
+            throw new RuntimeException(checked);
         }
     }
 
