@@ -331,7 +331,7 @@ public class VisibilityTest {
     }
 
     private int runCmd(List<String> argsList) throws Throwable {
-        // Build process (with VM flags)
+        // Build process (without VM flags)
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 Stream.concat(Stream.of("-ea", "-esa"), argsList.stream()).toList());
         // Evaluate process status

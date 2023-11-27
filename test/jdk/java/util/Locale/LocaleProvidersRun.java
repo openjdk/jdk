@@ -180,7 +180,7 @@ public class LocaleProvidersRun {
     private static void testRun(String prefList, String methodName,
             String param1, String param2, String param3) throws Throwable {
 
-        // Build process (with VM flags)
+        // Build process (without VM flags)
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASS_PATH,
