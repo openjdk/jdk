@@ -28,7 +28,6 @@ import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributedElement;
@@ -39,6 +38,7 @@ import jdk.internal.classfile.CompoundElement;
 import jdk.internal.classfile.FieldModel;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
@@ -48,8 +48,63 @@ public record ParserVerifier(ClassModel classModel) {
 
     List<VerifyError> verify() {
         var errors = new ArrayList<VerifyError>();
+        verifyConstantPool(errors);
         verifyAttributes(classModel, errors);
         return errors;
+    }
+
+    private void verifyConstantPool(List<VerifyError> errors) {
+        for (var cpe : classModel.constantPool()) try {
+            switch (cpe) {
+                case DoubleEntry de ->
+                    de.doubleValue();
+                case FloatEntry fe ->
+                    fe.floatValue();
+                case IntegerEntry ie ->
+                    ie.intValue();
+                case LongEntry le ->
+                    le.longValue();
+                case Utf8Entry ue ->
+                    ue.stringValue();
+                case ConstantDynamicEntry cde ->
+                    cde.asSymbol();
+                case InvokeDynamicEntry ide ->
+                    ide.asSymbol();
+                case ClassEntry ce ->
+                    ce.asSymbol();
+                case StringEntry se ->
+                    se.stringValue();
+                case MethodHandleEntry mhe ->
+                    mhe.asSymbol();
+                case MethodTypeEntry mte ->
+                    mte.asSymbol();
+                case FieldRefEntry fre -> {
+                    fre.owner().asSymbol();
+                    fre.name().stringValue();
+                    fre.typeSymbol();
+                }
+                case InterfaceMethodRefEntry imre -> {
+                    imre.owner().asSymbol();
+                    imre.name().stringValue();
+                    imre.typeSymbol();
+                }
+                case MethodRefEntry mre -> {
+                    mre.owner().asSymbol();
+                    mre.name().stringValue();
+                    mre.typeSymbol();
+                }
+                case ModuleEntry me ->
+                    me.asSymbol();
+                case NameAndTypeEntry nate -> {
+                    nate.name().stringValue();
+                    nate.type().stringValue();
+                }
+                case PackageEntry pe ->
+                    pe.asSymbol();
+            }
+        } catch (IllegalArgumentException iae) {
+            errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(iae.getMessage(), cpe.index(), toString(classModel))));
+        }
     }
 
     private void verifyAttributes(ClassfileElement cfe, List<VerifyError> errors) {

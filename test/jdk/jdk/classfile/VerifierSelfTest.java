@@ -29,7 +29,9 @@
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
 import static java.lang.constant.ConstantDescs.*;
+import java.lang.invoke.MethodHandleInfo;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -97,6 +99,131 @@ class VerifierSelfTest {
         }
     }
 
+    @Test
+    void testConstantPoolVerification() {
+        var cc = Classfile.of();
+        var cd_test = ClassDesc.of("ConstantPoolTestClass");
+        var clm = cc.parse(cc.build(cd_test, clb -> {
+            var cp = clb.constantPool();
+            var ce_valid = cp.classEntry(cd_test);
+            var ce_invalid = cp.classEntry(cp.utf8Entry("invalid.class.name"));
+            var nate_field = cp.nameAndTypeEntry("field", CD_int);
+            var nate_method = cp.nameAndTypeEntry(" method", MTD_void);
+            var bsme = cp.bsmEntry(BSM_INVOKE, List.of());
+            cp.methodTypeEntry(cp.utf8Entry("invalid method type"));
+            cp.constantDynamicEntry(bsme, nate_method);
+            cp.invokeDynamicEntry(bsme, nate_field);
+            cp.fieldRefEntry(ce_valid, nate_method);
+            cp.fieldRefEntry(ce_invalid, nate_field);
+            cp.methodRefEntry(ce_valid, nate_field);
+            cp.methodRefEntry(ce_invalid, nate_method);
+            cp.interfaceMethodRefEntry(ce_valid, nate_field);
+            cp.interfaceMethodRefEntry(ce_invalid, nate_method);
+            cp.methodHandleEntry(MethodHandleInfo.REF_getField, cp.methodRefEntry(cd_test, "method", MTD_void));
+            cp.methodHandleEntry(MethodHandleInfo.REF_invokeVirtual, cp.fieldRefEntry(cd_test, "field", CD_int));
+        }));
+        assertVerify(clm, """
+                Invalid class name: invalid.class.name at constant pool index 4 in class ConstantPoolTestClass
+                Bad method descriptor: invalid method type at constant pool index 19 in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index 20 in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index 21 in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index 22 in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index 23 in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index 24 in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index 25 in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index 26 in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index 27 in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index 31 in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index 33 in class ConstantPoolTestClass
+                """);
+    }
+
+    @Test
+    void testAttributesVerification() {
+        var cc = Classfile.of();
+        var cd_test = ClassDesc.of("AttributesTestClass");
+        var clm = cc.parse(cc.build(cd_test, clb -> patch(clb,
+                DeprecatedAttribute.of(),
+                EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
+                InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
+                NestHostAttribute.of(cd_test),
+                NestMembersAttribute.ofSymbols(cd_test),
+                PermittedSubclassesAttribute.ofSymbols(cd_test),
+                RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
+                        SignatureAttribute.of(Signature.of(CD_String))))),
+                SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
+                SourceFileAttribute.of("AttributesTestClass.java"),
+                SyntheticAttribute.of())
+                    .withField("f", CD_String, fb -> patch(fb,
+                            ConstantValueAttribute.of(""),
+                            DeprecatedAttribute.of(),
+                            SignatureAttribute.of(Signature.of(CD_String)),
+                            SyntheticAttribute.of()))
+                    .withMethod("m", MTD_void, 0, mb -> patch(mb,
+                            DeprecatedAttribute.of(),
+                            ExceptionsAttribute.ofSymbols(CD_Exception),
+                            MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)),
+                            SignatureAttribute.of(MethodSignature.of(MTD_void)),
+                            SyntheticAttribute.of())
+                            .withCode(cob -> cob.return_()))
+
+        ));
+        assertVerify(clm, """
+                Wrong Deprecated attribute length in class AttributesTestClass
+                Multiple EnclosingMethod attributes in class AttributesTestClass
+                Wrong EnclosingMethod attribute length in class AttributesTestClass
+                Multiple InnerClasses attributes in class AttributesTestClass
+                Wrong InnerClasses attribute length in class AttributesTestClass
+                Multiple NestHost attributes in class AttributesTestClass
+                Wrong NestHost attribute length in class AttributesTestClass
+                Multiple NestMembers attributes in class AttributesTestClass
+                Wrong NestMembers attribute length in class AttributesTestClass
+                Multiple PermittedSubclasses attributes in class AttributesTestClass
+                Wrong PermittedSubclasses attribute length in class AttributesTestClass
+                Multiple Record attributes in class AttributesTestClass
+                Wrong Record attribute length in class AttributesTestClass
+                Multiple Signature attributes in class AttributesTestClass
+                Wrong Signature attribute length in class AttributesTestClass
+                Multiple SourceFile attributes in class AttributesTestClass
+                Wrong SourceFile attribute length in class AttributesTestClass
+                Wrong Synthetic attribute length in class AttributesTestClass
+                Multiple ConstantValue attributes in field AttributesTestClass.f
+                Wrong ConstantValue attribute length in field AttributesTestClass.f
+                Wrong Deprecated attribute length in field AttributesTestClass.f
+                Multiple Signature attributes in field AttributesTestClass.f
+                Wrong Signature attribute length in field AttributesTestClass.f
+                Wrong Synthetic attribute length in field AttributesTestClass.f
+                Wrong Deprecated attribute length in method AttributesTestClass::m()
+                Multiple Exceptions attributes in method AttributesTestClass::m()
+                Wrong Exceptions attribute length in method AttributesTestClass::m()
+                Multiple MethodParameters attributes in method AttributesTestClass::m()
+                Wrong MethodParameters attribute length in method AttributesTestClass::m()
+                Multiple Signature attributes in method AttributesTestClass::m()
+                Wrong Signature attribute length in method AttributesTestClass::m()
+                Wrong Synthetic attribute length in method AttributesTestClass::m()
+                Multiple Signature attributes in Record component c of class AttributesTestClass
+                Wrong Signature attribute length in Record component c of class AttributesTestClass
+                Multiple Signature attributes in Record component c of class AttributesTestClass
+                Wrong Signature attribute length in Record component c of class AttributesTestClass
+                """);
+    }
+
+    private static void assertVerify(ClassModel clm, String errors) {
+        var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
+        var expected = errors.lines().filter(exp -> !found.remove(exp)).toList();
+        if (!found.isEmpty() || !expected.isEmpty()) {
+            ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
+            fail(STR."""
+
+                 Expected:
+                   \{ expected.stream().collect(Collectors.joining("\n  ")) }
+
+                 Found:
+                   \{ found.stream().collect(Collectors.joining("\n  ")) }
+                 """);
+        }
+    }
+
     private static class CloneAttribute extends CustomAttribute<CloneAttribute> {
         CloneAttribute(Attribute a) {
             super(new AttributeMapper<CloneAttribute>(){
@@ -140,88 +267,5 @@ class VerifierSelfTest {
             lst.add(new CloneAttribute(a));
         }
         return lst;
-    }
-
-    @Test
-    void testParserVerifier() {
-
-        var cc = Classfile.of();
-        var cd_test = ClassDesc.of("TestParserVerifier");
-        var clm = cc.parse(cc.build(cd_test, clb -> patch(clb,
-                DeprecatedAttribute.of(),
-                EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
-                InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
-                NestHostAttribute.of(cd_test),
-                NestMembersAttribute.ofSymbols(cd_test),
-                PermittedSubclassesAttribute.ofSymbols(cd_test),
-                RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
-                        SignatureAttribute.of(Signature.of(CD_String))))),
-                SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
-                SourceFileAttribute.of("TestParserVerifier.java"),
-                SyntheticAttribute.of())
-                    .withField("f", CD_String, fb -> patch(fb,
-                            ConstantValueAttribute.of(""),
-                            DeprecatedAttribute.of(),
-                            SignatureAttribute.of(Signature.of(CD_String)),
-                            SyntheticAttribute.of()))
-                    .withMethod("m", MTD_void, 0, mb -> patch(mb,
-                            DeprecatedAttribute.of(),
-                            ExceptionsAttribute.ofSymbols(CD_Exception),
-                            MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)),
-                            SignatureAttribute.of(MethodSignature.of(MTD_void)),
-                            SyntheticAttribute.of())
-                            .withCode(cob -> cob.return_()))
-
-        ));
-        var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
-        var expected = """
-                Wrong Deprecated attribute length in class TestParserVerifier
-                Multiple EnclosingMethod attributes in class TestParserVerifier
-                Wrong EnclosingMethod attribute length in class TestParserVerifier
-                Multiple InnerClasses attributes in class TestParserVerifier
-                Wrong InnerClasses attribute length in class TestParserVerifier
-                Multiple NestHost attributes in class TestParserVerifier
-                Wrong NestHost attribute length in class TestParserVerifier
-                Multiple NestMembers attributes in class TestParserVerifier
-                Wrong NestMembers attribute length in class TestParserVerifier
-                Multiple PermittedSubclasses attributes in class TestParserVerifier
-                Wrong PermittedSubclasses attribute length in class TestParserVerifier
-                Multiple Record attributes in class TestParserVerifier
-                Wrong Record attribute length in class TestParserVerifier
-                Multiple Signature attributes in class TestParserVerifier
-                Wrong Signature attribute length in class TestParserVerifier
-                Multiple SourceFile attributes in class TestParserVerifier
-                Wrong SourceFile attribute length in class TestParserVerifier
-                Wrong Synthetic attribute length in class TestParserVerifier
-                Multiple ConstantValue attributes in field TestParserVerifier.f
-                Wrong ConstantValue attribute length in field TestParserVerifier.f
-                Wrong Deprecated attribute length in field TestParserVerifier.f
-                Multiple Signature attributes in field TestParserVerifier.f
-                Wrong Signature attribute length in field TestParserVerifier.f
-                Wrong Synthetic attribute length in field TestParserVerifier.f
-                Wrong Deprecated attribute length in method TestParserVerifier::m()
-                Multiple Exceptions attributes in method TestParserVerifier::m()
-                Wrong Exceptions attribute length in method TestParserVerifier::m()
-                Multiple MethodParameters attributes in method TestParserVerifier::m()
-                Wrong MethodParameters attribute length in method TestParserVerifier::m()
-                Multiple Signature attributes in method TestParserVerifier::m()
-                Wrong Signature attribute length in method TestParserVerifier::m()
-                Wrong Synthetic attribute length in method TestParserVerifier::m()
-                Multiple Signature attributes in Record component c of class TestParserVerifier
-                Wrong Signature attribute length in Record component c of class TestParserVerifier
-                Multiple Signature attributes in Record component c of class TestParserVerifier
-                Wrong Signature attribute length in Record component c of class TestParserVerifier
-                """.lines().filter(exp -> !found.remove(exp)).toList();
-        if (!found.isEmpty() || !expected.isEmpty()) {
-            ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
-            fail(STR."""
-
-                 Expected:
-                   \{ expected.stream().collect(Collectors.joining("\n  ")) }
-
-                 Found:
-                   \{ found.stream().collect(Collectors.joining("\n  ")) }
-                 """);
-        }
     }
 }
