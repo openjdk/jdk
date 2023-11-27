@@ -119,38 +119,37 @@ public:
         mapped_regions(),
         committed_regions() {
     }
-    ~VirtualMemory() {
-    };
-
-    // Performing a deep copy is expensive, so we want to communicate clearly that a deep copy occurs.
-    // Therefore we make this a method instead of copy assignment operator.
-    VirtualMemory deep_copy() {
-      VirtualMemory virt_mem;
-      virt_mem.reserved_regions = RegionStorage{this->reserved_regions.length()};
-      virt_mem.mapped_regions =
-          GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{this->mapped_regions.length()};
-      virt_mem.committed_regions =
-          GrowableArrayCHeap<RegionStorage, mtNMT>{this->committed_regions.length()};
-      for (int i = 0; i < this->reserved_regions.length(); i++) {
-        virt_mem.reserved_regions.push(this->reserved_regions.at(i));
-      }
-      for (int i = 0; i < this->mapped_regions.length(); i++) {
-        OffsetRegionStorage& ith = this->mapped_regions.at(i);
-        virt_mem.mapped_regions.push(ith);
-        OffsetRegionStorage& vith = virt_mem.mapped_regions.at(i);
-        for (int j = 0; j < ith.length(); j++) {
-          vith.push(ith.at(j));
+    VirtualMemory(const VirtualMemory& other) {
+      *this = other;
+    }
+    VirtualMemory& operator=(const VirtualMemory& other) {
+      if (this != &other) {
+        this->reserved_regions = RegionStorage{other.reserved_regions.length()};
+        this->mapped_regions =
+            GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{other.mapped_regions.length()};
+        this->committed_regions =
+            GrowableArrayCHeap<RegionStorage, mtNMT>{other.committed_regions.length()};
+        for (int i = 0; i < other.reserved_regions.length(); i++) {
+          this->reserved_regions.push(other.reserved_regions.at(i));
+        }
+        for (int i = 0; i < other.mapped_regions.length(); i++) {
+          const OffsetRegionStorage& ith = other.mapped_regions.at(i);
+          this->mapped_regions.push(ith);
+          OffsetRegionStorage& vith = this->mapped_regions.at(i);
+          for (int j = 0; j < ith.length(); j++) {
+            vith.push(ith.at(j));
+          }
+        }
+        for (int i = 0; i < other.committed_regions.length(); i++) {
+          const RegionStorage& ith = other.committed_regions.at(i);
+          this->committed_regions.push(ith);
+          RegionStorage& vith = this->committed_regions.at(i);
+          for (int j = 0; j < ith.length(); j++) {
+            vith.push(ith.at(j));
+          }
         }
       }
-      for (int i = 0; i < this->committed_regions.length(); i++) {
-        RegionStorage& ith = this->committed_regions.at(i);
-        virt_mem.committed_regions.push(ith);
-        RegionStorage& vith = virt_mem.committed_regions.at(i);
-        for (int j = 0; j < ith.length(); j++) {
-          vith.push(ith.at(j));
-        }
-      }
-      return virt_mem;
+      return *this;
     }
   };
 
