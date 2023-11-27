@@ -38,7 +38,7 @@ GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
 NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
-VirtualMemoryView::VirtualMemory VirtualMemoryView::_virt_mem{};
+VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;;
 
 void VirtualMemoryView::report(outputStream* output, size_t scale) {
   auto print_mapped_virtual_memory_region = [&](TrackedOffsetRange& mapped_range) -> void {
@@ -91,9 +91,9 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
     }
   };
   for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
-    RegionStorage& reserved_ranges = *_virt_mem.reserved_regions;
-    OffsetRegionStorage& mapped_ranges = _virt_mem.mapped_regions->at(space_id);
-    RegionStorage& committed_ranges = _virt_mem.committed_regions->at(space_id);
+    RegionStorage& reserved_ranges = _virt_mem->reserved_regions;
+    OffsetRegionStorage& mapped_ranges = _virt_mem->mapped_regions.at(space_id);
+    RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space_id);
     bool found_committed[committed_ranges.length()];
     for (int i = 0; i < committed_ranges.length(); i++) {
       found_committed[i] = false;
@@ -162,12 +162,12 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
 }
 
 void VirtualMemoryView::release_memory(address base_addr, size_t size) {
-  unregister_memory(*_virt_mem.reserved_regions, base_addr, size);
+  unregister_memory(_virt_mem->reserved_regions, base_addr, size);
 }
 
 void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& space,
                                                          address offset, size_t size) {
-  RegionStorage& committed_ranges = _virt_mem.committed_regions->at(space.id);
+  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space.id);
   unregister_memory(committed_ranges, offset, size);
 
 }
@@ -193,20 +193,20 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
 }
 
 void VirtualMemoryView::reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
-  register_memory(*_virt_mem.reserved_regions, base_addr, size, flag, stack);
+  register_memory(_virt_mem->reserved_regions, base_addr, size, flag, stack);
 }
 
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,
                                                        address offset, size_t size,
                                                        const NativeCallStack& stack) {
-  RegionStorage& crngs = _virt_mem.committed_regions->at(space.id);
+  RegionStorage& crngs = _virt_mem->committed_regions.at(space.id);
   register_memory(crngs, offset, size, mtNone, stack);
 }
 
 void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
                                                      address base_addr, size_t size) {
   Range range_to_remove{base_addr, size};
-  OffsetRegionStorage& range_array = _virt_mem.mapped_regions->at(space.id);
+  OffsetRegionStorage& range_array = _virt_mem->mapped_regions.at(space.id);
   TrackedOffsetRange out[2];
   int len;
   for (int i = 0; i < range_array.length(); i++) {
@@ -232,7 +232,7 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
   // This method is a bit tricky because we need to care about preserving the offsets of any already existing view
   // that overlaps with the view being added.
   NativeCallStackStorage::StackIndex stack_idx = _stack_storage->push(stack);
-  OffsetRegionStorage& rngs = _virt_mem.mapped_regions->at(space.id);
+  OffsetRegionStorage& rngs = _virt_mem->mapped_regions.at(space.id);
   // We need to find overlapping regions and split on them, because the offsets may differ.
   for (int i = 0; i < rngs.length(); i++) {
     TrackedOffsetRange& rng = rngs.at(i);
@@ -269,16 +269,16 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
   // These are allocated just to be copied for at_put_grow.
   OffsetRegionStorage to_copy_res{};
   RegionStorage to_copy_comm{};
-  _virt_mem.mapped_regions->at_put_grow(next_space.id, to_copy_res);
-  _virt_mem.committed_regions->at_put_grow(next_space.id, to_copy_comm);
+  _virt_mem->mapped_regions.at_put_grow(next_space.id, to_copy_res);
+  _virt_mem->committed_regions.at_put_grow(next_space.id, to_copy_comm);
   _names->at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
 }
 
 void VirtualMemoryView::initialize(bool is_detailed_mode) {
-  _virt_mem.reserved_regions = new RegionStorage{};
-  _virt_mem.mapped_regions = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
-  _virt_mem.committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{5};
+  _virt_mem->reserved_regions = RegionStorage{};
+  _virt_mem->mapped_regions = GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
+  _virt_mem->committed_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{5};
   _stack_storage = new NativeCallStackStorage{is_detailed_mode};
   _names = new GrowableArrayCHeap<const char*, mtNMT>{5};
   _is_detailed_mode = is_detailed_mode;

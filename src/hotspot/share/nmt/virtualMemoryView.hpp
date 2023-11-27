@@ -107,10 +107,54 @@ public:
     }
   };
 
-private:
   using OffsetRegionStorage = GrowableArrayCHeap<TrackedOffsetRange, mtNMT>;
   using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
 
+  struct VirtualMemory {
+    RegionStorage reserved_regions;
+    GrowableArrayCHeap<OffsetRegionStorage, mtNMT> mapped_regions;
+    GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
+    VirtualMemory()
+      : reserved_regions(),
+        mapped_regions(),
+        committed_regions() {
+    }
+    ~VirtualMemory() {
+    };
+
+    // Performing a deep copy is expensive, so we want to communicate clearly that a deep copy occurs.
+    // Therefore we make this a method instead of copy assignment operator.
+    VirtualMemory deep_copy() {
+      VirtualMemory virt_mem;
+      virt_mem.reserved_regions = RegionStorage{this->reserved_regions.length()};
+      virt_mem.mapped_regions =
+          GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{this->mapped_regions.length()};
+      virt_mem.committed_regions =
+          GrowableArrayCHeap<RegionStorage, mtNMT>{this->committed_regions.length()};
+      for (int i = 0; i < this->reserved_regions.length(); i++) {
+        virt_mem.reserved_regions.push(this->reserved_regions.at(i));
+      }
+      for (int i = 0; i < this->mapped_regions.length(); i++) {
+        OffsetRegionStorage& ith = this->mapped_regions.at(i);
+        virt_mem.mapped_regions.push(ith);
+        OffsetRegionStorage& vith = virt_mem.mapped_regions.at(i);
+        for (int j = 0; j < ith.length(); j++) {
+          vith.push(ith.at(j));
+        }
+      }
+      for (int i = 0; i < this->committed_regions.length(); i++) {
+        RegionStorage& ith = this->committed_regions.at(i);
+        virt_mem.committed_regions.push(ith);
+        RegionStorage& vith = virt_mem.committed_regions.at(i);
+        for (int j = 0; j < ith.length(); j++) {
+          vith.push(ith.at(j));
+        }
+      }
+      return virt_mem;
+    }
+  };
+
+private:
   // Utilities
   static bool overlaps(Range a, Range b);
   static bool adjacent(Range a, Range b);
@@ -141,46 +185,7 @@ private:
   static OverlappingResult overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                       TrackedOffsetRange* out, int* len);
 
-  struct VirtualMemory {
-    RegionStorage* reserved_regions;
-    GrowableArrayCHeap<OffsetRegionStorage, mtNMT>* mapped_regions;
-    GrowableArrayCHeap<RegionStorage, mtNMT>* committed_regions;
-    VirtualMemory() :
-      reserved_regions(nullptr),
-      mapped_regions(nullptr),
-      committed_regions(nullptr) {
-    }
-
-    // Performing a deep copy is expensive, so we want to communicate clearly that a deep copy occurs.
-    // Therefore we make this a method instead of copy assignment operator.
-    VirtualMemory deep_copy() {
-      VirtualMemory virt_mem;
-      virt_mem.reserved_regions  = new RegionStorage{this->reserved_regions->length()};
-      virt_mem.mapped_regions    = new GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{this->mapped_regions->length()};
-      virt_mem.committed_regions = new GrowableArrayCHeap<RegionStorage, mtNMT>{this->committed_regions->length()};
-      for (int i = 0; i < this->reserved_regions->length(); i++) {
-        virt_mem.reserved_regions->push(this->reserved_regions->at(i));
-      }
-      for (int i = 0; i < this->mapped_regions->length(); i++) {
-        OffsetRegionStorage& ith = this->mapped_regions->at(i);
-        virt_mem.mapped_regions->push(ith);
-        OffsetRegionStorage& vith = virt_mem.mapped_regions->at(i);
-        for (int j = 0; j < ith.length(); j++) {
-          vith.push(ith.at(j));
-        }
-      }
-      for (int i = 0; i < this->committed_regions->length(); i++) {
-        RegionStorage& ith = this->committed_regions->at(i);
-        virt_mem.committed_regions->push(ith);
-        RegionStorage& vith = virt_mem.committed_regions->at(i);
-        for (int j = 0; j < ith.length(); j++) {
-          vith.push(ith.at(j));
-        }
-      }
-      return virt_mem;
-    }
-  };
-  static VirtualMemory _virt_mem;
+  static VirtualMemory* _virt_mem;
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   static NativeCallStackStorage* _stack_storage;
@@ -215,7 +220,7 @@ public:
   static void report(outputStream* output, size_t scale = K);
   // Produce a deep copy of the current state, this can function as a baseline.
   static VirtualMemory copy() {
-    return _virt_mem.deep_copy();
+    return _virt_mem->deep_copy();
   }
 
 };
