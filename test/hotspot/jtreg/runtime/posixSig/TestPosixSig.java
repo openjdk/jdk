@@ -44,8 +44,16 @@ public class TestPosixSig {
         if (args.length == 0) {
 
             // Create a new java process for the TestPsig Java/JNI test.
+            // We run the VM in interpreted mode, because the JIT might mark
+            // a Java method as not-entrant, which means turning the first opcode
+            // of the compiled method to NULL. Calling such a method after establishing
+            // the new SIGILL signal handler with TestPosixSig.changeSigActionFor(4)
+            // below will result in an endless loop, where the invalid opcode will be
+            // continously executed, raising SIGILL, and the signal handler will return
+            // to the invalid opcode...
             ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+CheckJNICalls",
+                "-Xint",
                 "-Djava.library.path=" + libpath + ":.",
                 "TestPosixSig", "dummy");
 
