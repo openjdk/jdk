@@ -107,7 +107,25 @@ public class Object {
     public native int hashCode();
 
     /**
-     * Indicates whether some other object is "equal to" this one.
+     * Indicates whether another object instance should be considered "equal
+     * to" this one, by libraries such as the 
+     * {@link java.util Java Collections Framework}. This method is used for 
+     * example by most implementations of 
+     * {@link java.util.Collection#contains(Object)} and 
+     * {@link java.util.Map#containsKey(Object)}. Overriding this method does
+     * not affect the '==' operator.
+     * <p>
+     * The default implementation only makes a reference comparison. If you
+     * want for example two instances representing the same logical entity 
+     * to be considered equal in a {@link java.util.HashSet}, you must
+     * override the default implementation, together with a compatible 
+     * {@link #hashCode() hashCode} method.
+     * <p>
+     * Note, that as overriding this method affects the behaviour in commonly
+     * used collection classes and for a correct behaviour requires you to 
+     * also override also the {@link #hashCode() hashCode} method, it can be
+     * easier to define logical equality checks to some other way in your 
+     * application. 
      * <p>
      * The {@code equals} method implements an equivalence relation
      * on non-null object references:
