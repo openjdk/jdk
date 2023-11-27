@@ -524,7 +524,6 @@ public class SignerInfo implements DerEncoder {
                 break;
             case "HSS/LMS":
                 // RFC 8708 requires the same hash algorithm used as in the HSS/LMS algorithm
-                // Currently RFC 8554 only supports SHA-256.
                 if (!digAlgId.equals(AlgorithmId.get(KeyUtil.hashAlgFromHSS(key)))) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
