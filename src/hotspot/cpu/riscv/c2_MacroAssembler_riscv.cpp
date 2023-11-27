@@ -1676,30 +1676,40 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
+static void float16_to_float_nan_path(C2_MacroAssembler& masm, C2GeneralStub<FloatRegister, Register, Register>& stub) {
+#define __ masm.
+  FloatRegister dst = stub.data<0>();
+  Register src = stub.data<1>();
+  Register tmp = stub.data<2>();
+  __ bind(stub.entry());
+
+  // construct a NaN in 32 bits from the NaN in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+  __ mv(tmp, 0x7f800000);
+  // sign-bit was already set via sign-extension if necessary.
+  __ slli(t0, src, 13);
+  __ orr(tmp, t0, tmp);
+  __ fmv_w_x(dst, tmp);
+
+  __ j(stub.continuation());
+#undef __
+}
+
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  Label nan_case, done;
+  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_nan_path);
 
   // check whether it's a NaN.
   mv(t0, 0x7c00);
   andr(tmp, src, t0);
-  beq(t0, tmp, nan_case);
+  // jump to stub processing NaN case
+  beq(t0, tmp, stub->entry());
 
   // non-NaN cases, just use built-in instructions.
   fmv_h_x(dst, src);
   fcvt_s_h(dst, dst);
-  j(done);
 
-  // construct a NaN in 32 bits from the NaN in 16 bits,
-  // we need the payloads of non-canonical NaNs to be preserved.
-  bind(nan_case);
-  mv(tmp, 0x7f800000);
-  // sign-bit was already set via sign-extension if necessary.
-  slli(t0, src, 13);
-  orr(tmp, t0, tmp);
-  fmv_w_x(dst, tmp);
-
-  bind(done);
+  bind(stub->continuation());
 }
 
 void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
