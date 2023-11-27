@@ -4003,10 +4003,6 @@ bool os::can_commit_large_page_memory() {
   return UseTransparentHugePages;
 }
 
-bool os::can_execute_large_page_memory() {
-  return UseLargePages;
-}
-
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   char* result = pd_attempt_reserve_memory_at(requested_addr, bytes, !ExecMem);
