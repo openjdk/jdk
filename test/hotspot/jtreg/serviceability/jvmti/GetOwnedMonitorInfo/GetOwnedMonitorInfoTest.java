@@ -55,7 +55,7 @@ public class GetOwnedMonitorInfoTest {
         // assert when an owned monitor with a dead object was found.
         // Inject this situation into this test that performs other
         // GetOwnedMonitorInfo testing.
-        Object obj = new Object() { public String toString() {return "";} };
+        Object obj = new Object() {};
         jniMonitorEnter(obj);
         if (!Thread.holdsLock(obj)) {
             throw new RuntimeException("The object is not locked");
@@ -76,6 +76,8 @@ public class GetOwnedMonitorInfoTest {
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
         Thread t1 = threadFactory.newThread(() -> {
+            Thread.currentThread().setName("Worker-Thread");
+
             if (jni) {
                 jniMonitorEnterAndLetObjectDie();
             }

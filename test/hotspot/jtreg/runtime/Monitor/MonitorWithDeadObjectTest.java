@@ -23,10 +23,11 @@
  */
 
 /*
+ * @bug 8320515
  * @summary This test checks that ObjectMonitors with dead objects don't
             cause asserts, crashes, or failures when various sub-systems
             in the JVM find them.
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @library /testlibrary /test/lib
  * @modules jdk.management
  */
@@ -42,13 +43,8 @@
  */
 
 /*
- * @test id=DumpThreadsAfterDetachBeforeJoin
+ * @test id=DumpThreadsAfterDetach
  * @run main/othervm/native MonitorWithDeadObjectTest 2
- */
-
-/*
- * @test id=DumpThreadsAfterDetachAfterJoin
- * @run main/othervm/native MonitorWithDeadObjectTest 3
  */
 
 import java.lang.management.ManagementFactory;
@@ -56,10 +52,7 @@ import java.lang.management.ThreadMXBean;
 
 public class MonitorWithDeadObjectTest {
     public static native void createMonitorWithDeadObject();
-    public static native void createMonitorWithDeadObjectNoJoin();
     public static native void createMonitorWithDeadObjectDumpThreadsBeforeDetach();
-
-    public static native void joinTestThread();
 
     static {
         System.loadLibrary("MonitorWithDeadObjectTest");
@@ -72,7 +65,8 @@ public class MonitorWithDeadObjectTest {
 
     private static void testDetachThread() {
         // Create an ObjectMonitor with a dead object from an
-        // attached thread.
+        // attached thread. This used to provoke an assert
+        // in DetachCurrentThread.
         createMonitorWithDeadObject();
     }
 
@@ -83,26 +77,13 @@ public class MonitorWithDeadObjectTest {
         createMonitorWithDeadObjectDumpThreadsBeforeDetach();
     }
 
-    private static void testDumpThreadsAfterDetachBeforeJoin() {
-        createMonitorWithDeadObjectNoJoin();
+    private static void testDumpThreadsAfterDetach() {
+        createMonitorWithDeadObject();
 
-        // After createMonitorWithDeadObjectNoJoin has been called, there's an
-        // "owned" monitor with a dead object. The thread dumping code used to
-        // not tolerate such a monitor and would assert. Run a thread dump
-        // and make sure that it doesn't crash/assert.
-        dumpThreadsWithLockedMonitors();
-
-        joinTestThread();
-    }
-
-    private static void testDumpThreadsAfterDetachAfterJoin() {
-        createMonitorWithDeadObjectNoJoin();
-        joinTestThread();
-
-        // After createMonitorWithDeadObjectNoJoin has been called, there's an
-        // "owned" monitor with a dead object. The thread dumping code used to
-        // not tolerate such a monitor and would assert. Run a thread dump
-        // and make sure that it doesn't crash/assert.
+        // After createMonitorWithDeadObject has been called, there's an "owned"
+        // monitor with a dead object. The thread dumping code used to not
+        // tolerate such a monitor and would assert. Run a thread dump and make
+        // sure that it doesn't crash/assert.
         dumpThreadsWithLockedMonitors();
     }
 
@@ -111,8 +92,7 @@ public class MonitorWithDeadObjectTest {
         switch (test) {
             case 0: testDetachThread(); break;
             case 1: testDumpThreadsBeforeDetach(); break;
-            case 2: testDumpThreadsAfterDetachBeforeJoin(); break;
-            case 3: testDumpThreadsAfterDetachAfterJoin(); break;
+            case 2: testDumpThreadsAfterDetach(); break;
             default: throw new RuntimeException("Unknown test");
         };
     }

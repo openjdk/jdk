@@ -127,7 +127,6 @@ static void* create_monitor_with_dead_object_in_thread() {
   //   assert that we didn't have "owned" monitors with dead objects. This
   //   test provokes that situation and that asserts.
   if ((*jvm)->DetachCurrentThread(jvm) != JNI_OK) die("DetachCurrentThread");
-  pthread_exit(NULL);
 
   return NULL;
 }
@@ -146,45 +145,25 @@ static void* create_monitor_with_dead_object_and_dump_threads_in_thread() {
   thread_dump_with_locked_monitors(env);
 
   if ((*jvm)->DetachCurrentThread(jvm) != JNI_OK) die("DetachCurrentThread");
-  pthread_exit(NULL);
 
   return NULL;
 }
 
 JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObject(JNIEnv* env, jclass jc) {
-    pthread_attr_t attr;
     void* ret;
 
     (*env)->GetJavaVM(env, &jvm);
 
-    if (pthread_attr_init(&attr) != 0) die("pthread_attr_init");
-    if (pthread_create(&attacher, &attr, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
+    if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
     if (pthread_join(attacher, &ret) != 0) die("pthread_join");
-}
-
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObjectNoJoin(JNIEnv* env, jclass jc) {
-    pthread_attr_t attr;
-    void* ret;
-
-    (*env)->GetJavaVM(env, &jvm);
-
-    if (pthread_attr_init(&attr) != 0) die("pthread_attr_init");
-    if (pthread_create(&attacher, &attr, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
 }
 
 JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObjectDumpThreadsBeforeDetach(JNIEnv* env, jclass jc) {
-    pthread_attr_t attr;
     void* ret;
 
     (*env)->GetJavaVM(env, &jvm);
 
-    if (pthread_attr_init(&attr) != 0) die("pthread_attr_init");
-    if (pthread_create(&attacher, &attr, create_monitor_with_dead_object_and_dump_threads_in_thread, NULL) != 0) die("pthread_create");
-    if (pthread_join(attacher, &ret) != 0) die("pthread_join");
-}
-
-JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_joinTestThread(JNIEnv* env, jclass jc) {
-    void* ret;
+    if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_and_dump_threads_in_thread, NULL) != 0) die("pthread_create");
     if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
