@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "runtime/java.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#endif
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP
 
-Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
-  switch (name()) {
-#if INCLUDE_SERIALGC
-    case Generation::DefNew:
-      return new DefNewGeneration(rs, _init_size, _min_size, _max_size);
+#include "jfr/utilities/jfrAllocation.hpp"
 
-    case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
-#endif
+class Mathod;
+class Symbol;
 
-    default:
-      guarantee(false, "unrecognized GenerationName");
-      return nullptr;
-  }
-}
+class JfrStackFilter : public JfrCHeapObj {
+ private:
+  size_t _count;
+  Symbol** _class_names;
+  Symbol** _method_names;
+
+ public:
+  JfrStackFilter(Symbol** class_names, Symbol** method_names, size_t count);
+  ~JfrStackFilter();
+  bool match(const Method* method) const;
+};
+
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP

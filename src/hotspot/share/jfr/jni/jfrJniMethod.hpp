@@ -57,7 +57,7 @@ jlong JNICALL jfr_class_id(JNIEnv* env, jclass jvm, jclass jc);
 
 jstring JNICALL jfr_get_pid(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip);
+jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip, jlong stack_filter_id);
 
 jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jclass jvm);
 
@@ -158,6 +158,10 @@ jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
 
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
+
+jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jobject classes, jobject methods);
+
+jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jlong start_filter_id);
 
 #ifdef __cplusplus
 }

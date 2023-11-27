@@ -1036,12 +1036,13 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
-                                    Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-                                    Register tmp3, int ae)
+                                       Register cnt1, Register cnt2, Register result,
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       int ae)
 {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
-      DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
-      SHORT_LOOP_START, TAIL_CHECK, L;
+        DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+        SHORT_LOOP_START, TAIL_CHECK, L;
 
   const int STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
