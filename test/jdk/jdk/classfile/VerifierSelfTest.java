@@ -103,38 +103,40 @@ class VerifierSelfTest {
     void testConstantPoolVerification() {
         var cc = Classfile.of();
         var cd_test = ClassDesc.of("ConstantPoolTestClass");
+        var indexes = new int[12];
         var clm = cc.parse(cc.build(cd_test, clb -> {
             var cp = clb.constantPool();
             var ce_valid = cp.classEntry(cd_test);
             var ce_invalid = cp.classEntry(cp.utf8Entry("invalid.class.name"));
+            indexes[0] = ce_invalid.index();
             var nate_field = cp.nameAndTypeEntry("field", CD_int);
             var nate_method = cp.nameAndTypeEntry(" method", MTD_void);
             var bsme = cp.bsmEntry(BSM_INVOKE, List.of());
-            cp.methodTypeEntry(cp.utf8Entry("invalid method type"));
-            cp.constantDynamicEntry(bsme, nate_method);
-            cp.invokeDynamicEntry(bsme, nate_field);
-            cp.fieldRefEntry(ce_valid, nate_method);
-            cp.fieldRefEntry(ce_invalid, nate_field);
-            cp.methodRefEntry(ce_valid, nate_field);
-            cp.methodRefEntry(ce_invalid, nate_method);
-            cp.interfaceMethodRefEntry(ce_valid, nate_field);
-            cp.interfaceMethodRefEntry(ce_invalid, nate_method);
-            cp.methodHandleEntry(MethodHandleInfo.REF_getField, cp.methodRefEntry(cd_test, "method", MTD_void));
-            cp.methodHandleEntry(MethodHandleInfo.REF_invokeVirtual, cp.fieldRefEntry(cd_test, "field", CD_int));
+            indexes[1] = cp.methodTypeEntry(cp.utf8Entry("invalid method type")).index();
+            indexes[2] = cp.constantDynamicEntry(bsme, nate_method).index();
+            indexes[3] = cp.invokeDynamicEntry(bsme, nate_field).index();
+            indexes[4] = cp.fieldRefEntry(ce_valid, nate_method).index();
+            indexes[5] = cp.fieldRefEntry(ce_invalid, nate_field).index();
+            indexes[6] = cp.methodRefEntry(ce_valid, nate_field).index();
+            indexes[7] = cp.methodRefEntry(ce_invalid, nate_method).index();
+            indexes[8] = cp.interfaceMethodRefEntry(ce_valid, nate_field).index();
+            indexes[9] = cp.interfaceMethodRefEntry(ce_invalid, nate_method).index();
+            indexes[10] = cp.methodHandleEntry(MethodHandleInfo.REF_getField, cp.methodRefEntry(cd_test, "method", MTD_void)).index();
+            indexes[11] = cp.methodHandleEntry(MethodHandleInfo.REF_invokeVirtual, cp.fieldRefEntry(cd_test, "field", CD_int)).index();
         }));
-        assertVerify(clm, """
-                Invalid class name: invalid.class.name at constant pool index 4 in class ConstantPoolTestClass
-                Bad method descriptor: invalid method type at constant pool index 19 in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index 20 in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index 21 in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index 22 in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index 23 in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index 24 in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index 25 in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index 26 in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index 27 in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index 31 in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index 33 in class ConstantPoolTestClass
+        assertVerify(clm, STR."""
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[0] } in class ConstantPoolTestClass
+                Bad method descriptor: invalid method type at constant pool index \{ indexes[1] } in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[2] } in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[3] } in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[4] } in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[5] } in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[6] } in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[7] } in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[8] } in class ConstantPoolTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[9] } in class ConstantPoolTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[10] } in class ConstantPoolTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[11] } in class ConstantPoolTestClass
                 """);
     }
 
