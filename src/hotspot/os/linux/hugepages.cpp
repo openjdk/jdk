@@ -119,10 +119,21 @@ static os::PageSizes scan_hugepages() {
     while ((entry = readdir(dir)) != nullptr) {
       if (entry->d_type == DT_DIR &&
           sscanf(entry->d_name, "hugepages-%zukB", &pagesize) == 1) {
-        // The kernel is using kB, hotspot uses bytes
-        // Add each found Large Page Size to page_sizes
-        pagesize *= K;
-        pagesizes.add(pagesize);
+        FILE *fp = fopen(entry->d_name, "r");
+        if (fp) {
+          int x = 0;
+          if (fscanf(fp, "%d", &x) == 1) {
+            if (x > 0) {
+              // The kernel is using kB, hotspot uses bytes
+              // Add each found Large Page Size to pagesizes.
+              pagesize *= K;
+              pagesizes.add(pagesize);
+            }
+            // If hugepages-%zukB/nr_hugepages is 0, it's not
+            // necessary to add to pagesizes.
+          }
+          fclose(fp);
+        }
       }
     }
     closedir(dir);
