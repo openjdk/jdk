@@ -645,10 +645,10 @@ public abstract class DatagramChannel
     /**
      * {@inheritDoc}
      * <p>
-     * If the channel's socket was bound to the wildcard address and is
+     * If the channel's socket was initially bound to the wildcard address and is
      * {@link #isConnected connected}, then the address returned
-     * may be the local address selected as source address for
-     * outgoing datagrams sent on the socket instead of the wildcard address.
+     * may be the local address selected as the source address for
+     * datagrams sent via this channel instead of the wildcard address.
      * When {@link #disconnect} is called, the bound address reverts
      * to the wildcard address.
      * <p>

@@ -604,10 +604,10 @@ public class DatagramSocket implements java.io.Closeable {
 
     /**
      * Returns the address of the endpoint this socket is bound to.
-     * <p>If the socket was bound to the wildcard address and is
+     * <p>If the socket was initially bound to the wildcard address and is
      * {@link #isConnected connected}, then the address returned
-     * may be the local address selected as source address for
-     * outgoing datagrams sent on the socket instead of the wildcard address.
+     * may be the local address selected as the source address for
+     * datagrams sent on this socket instead of the wildcard address.
      * When {@link #disconnect()} is called, the bound address reverts
      * to the wildcard address.
      *
@@ -720,10 +720,10 @@ public class DatagramSocket implements java.io.Closeable {
 
     /**
      * Gets the local address to which the socket is bound.
-     * <p>If the socket was bound to the wildcard address and is
+     * <p>If the socket was initially bound to the wildcard address and is
      * {@link #isConnected connected}, then the address returned
-     * may be the local address selected as source address for
-     * outgoing datagrams sent on the socket instead of the wildcard address.
+     * may be the local address selected as the source address for
+     * datagrams sent on the socket instead of the wildcard address.
      * When {@link #disconnect()} is called, the bound address reverts
      * to the wildcard address.
      *
