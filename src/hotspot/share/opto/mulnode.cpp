@@ -1408,7 +1408,7 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     return TypeLong::LONG;
   }
 
-  return TypeLong::make((jlong)r1->get_con() >> (r2->get_con() & 63));
+  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
 }
 
 //=============================================================================
