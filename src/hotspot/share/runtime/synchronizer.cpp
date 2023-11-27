@@ -599,13 +599,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  if (LockingMode == LM_LIGHTWEIGHT && monitor->is_owner_anonymous()) {
-    // It must be owned by us. Pop lock object from lock stack.
-    LockStack& lock_stack = current->lock_stack();
-    oop popped = lock_stack.pop();
-    assert(popped == object, "must be owned by this thread");
-    monitor->set_owner_from_anonymous(current);
-  }
+  assert(!monitor->is_owner_anonymous(), "must not be");
   monitor->exit(current);
 }
 
@@ -1060,27 +1054,34 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
 
 // Visitors ...
 
+// Iterate over all ObjectMonitors.
+template <typename Function>
+void ObjectSynchronizer::monitors_iterate(Function function) {
+  MonitorList::Iterator iter = _in_use_list.iterator();
+  while (iter.has_next()) {
+    ObjectMonitor* monitor = iter.next();
+    function(monitor);
+  }
+}
+
 // Iterate ObjectMonitors owned by any thread and where the owner `filter`
 // returns true.
 template <typename OwnerFilter>
 void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter) {
-  MonitorList::Iterator iter = _in_use_list.iterator();
-  while (iter.has_next()) {
-    ObjectMonitor* mid = iter.next();
-
+  monitors_iterate([&](ObjectMonitor* monitor) {
     // This function is only called at a safepoint or when the
     // target thread is suspended or when the target thread is
     // operating on itself. The current closures in use today are
     // only interested in an owned ObjectMonitor and ownership
     // cannot be dropped under the calling contexts so the
     // ObjectMonitor cannot be async deflated.
-    if (mid->has_owner() && filter(mid->owner_raw())) {
-      assert(!mid->is_being_async_deflated(), "Owned monitors should not be deflating");
-      assert(mid->object_peek() != nullptr, "Owned monitors should not have a dead object");
+    if (monitor->has_owner() && filter(monitor->owner_raw())) {
+      assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
+      assert(monitor->object_peek() != nullptr, "Owned monitors should not have a dead object");
 
-      closure->do_monitor(mid);
+      closure->do_monitor(monitor);
     }
-  }
+  });
 }
 
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
@@ -1574,18 +1575,22 @@ public:
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+static size_t delete_monitors(JavaThread* current, GrowableArray<ObjectMonitor*>* delete_list,
+                              LogStream* ls, elapsedTimer* timer_p) {
   NativeHeapTrimmer::SuspendMark sm("monitor deletion");
-  size_t count = 0;
+  size_t deleted_count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;
-    count++;
+    deleted_count++;
+    // A JavaThread must check for a safepoint/handshake and honor it.
+    ObjectSynchronizer::chk_for_block_req(current, "deletion", "deleted_count",
+                                          deleted_count, ls, timer_p);
   }
-  return count;
+  return deleted_count;
 }
 
 // This function is called by the MonitorDeflationThread to deflate
-// ObjectMonitors. It is also called via do_final_audit_and_print_stats().
+// ObjectMonitors.
 size_t ObjectSynchronizer::deflate_idle_monitors() {
   Thread* current = Thread::current();
   if (current->is_Java_thread()) {
@@ -1614,11 +1619,8 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   size_t deflated_count = deflate_monitor_list(current, ls, &timer);
   size_t unlinked_count = 0;
   size_t deleted_count = 0;
-  if (deflated_count > 0 || is_final_audit()) {
-    // There are ObjectMonitors that have been deflated or this is the
-    // final audit and all the remaining ObjectMonitors have been
-    // deflated, BUT the MonitorDeflationThread blocked for the final
-    // safepoint during unlinking.
+  if (deflated_count > 0) {
+    // There are ObjectMonitors that have been deflated.
 
     // Unlink deflated ObjectMonitors from the in-use list.
     ResourceMark rm;
@@ -1658,30 +1660,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // After the handshake, safely free the ObjectMonitors that were
     // deflated and unlinked in this cycle.
-    if (current->is_Java_thread()) {
-      if (ls != NULL) {
-        timer.stop();
-        ls->print_cr("before setting blocked: unlinked_count=" SIZE_FORMAT
-                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                     SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, in_use_list_ceiling(),
-                     _in_use_list.count(), _in_use_list.max());
-      }
-      // Mark the calling JavaThread blocked (safepoint safe) while we free
-      // the ObjectMonitors so we don't delay safepoints whilst doing that.
-      ThreadBlockInVM tbivm(JavaThread::cast(current));
-      if (ls != NULL) {
-        ls->print_cr("after setting blocked: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        timer.start();
-      }
-      deleted_count = delete_monitors(&delete_list);
-      // ThreadBlockInVM is destroyed here
-    } else {
-      // A non-JavaThread can just free the ObjectMonitors:
-      deleted_count = delete_monitors(&delete_list);
-    }
+    deleted_count = delete_monitors(JavaThread::cast(current), &delete_list, ls, &timer);
     assert(unlinked_count == deleted_count, "must be");
   }
 
@@ -1799,12 +1778,6 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
   log_info(monitorinflation)("Starting the final audit.");
 
   if (log_is_enabled(Info, monitorinflation)) {
-    // Do deflations in order to reduce the in-use monitor population
-    // that is reported by ObjectSynchronizer::log_in_use_monitor_details()
-    // which is called by ObjectSynchronizer::audit_and_print_stats().
-    while (deflate_idle_monitors() > 0) {
-      ; // empty
-    }
     // The other audit_and_print_stats() call is done at the Debug
     // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
     audit_and_print_stats(true /* on_exit */);
@@ -1853,7 +1826,7 @@ void ObjectSynchronizer::audit_and_print_stats(bool on_exit) {
     // When exiting this log output is at the Info level. When called
     // at a safepoint, this log output is at the Trace level since
     // there can be a lot of it.
-    log_in_use_monitor_details(ls);
+    log_in_use_monitor_details(ls, !on_exit /* log_all */);
   }
 
   ls->flush();
@@ -1933,29 +1906,34 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
 // Log details about ObjectMonitors on the in_use_list. The 'BHL'
 // flags indicate why the entry is in-use, 'object' and 'object type'
 // indicate the associated object and its type.
-void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
-  stringStream ss;
+void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
+    stringStream ss;
     out->print_cr("In-use monitor info:");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
     out->print_cr("==================  ===  ==================  ==================");
-    MonitorList::Iterator iter = _in_use_list.iterator();
-    while (iter.has_next()) {
-      ObjectMonitor* mid = iter.next();
-      const oop obj = mid->object_peek();
-      const markWord mark = mid->header();
-      ResourceMark rm;
-      out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(mid),
-                 mid->is_busy(), mark.hash() != 0, mid->owner() != nullptr,
-                 p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
-      if (mid->is_busy()) {
-        out->print(" (%s)", mid->is_busy_to_string(&ss));
-        ss.reset();
+
+    auto is_interesting = [&](ObjectMonitor* monitor) {
+      return log_all || monitor->has_owner() || monitor->is_busy();
+    };
+
+    monitors_iterate([&](ObjectMonitor* monitor) {
+      if (is_interesting(monitor)) {
+        const oop obj = monitor->object_peek();
+        const markWord mark = monitor->header();
+        ResourceMark rm;
+        out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(monitor),
+                   monitor->is_busy(), mark.hash() != 0, monitor->owner() != nullptr,
+                   p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
+        if (monitor->is_busy()) {
+          out->print(" (%s)", monitor->is_busy_to_string(&ss));
+          ss.reset();
+        }
+        out->cr();
       }
-      out->cr();
-    }
+    });
   }
 
   out->flush();

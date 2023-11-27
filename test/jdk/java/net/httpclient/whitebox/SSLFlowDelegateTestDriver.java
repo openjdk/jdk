@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,13 @@
  * questions.
  */
 
-package jdk.javadoc.internal.tool;
-
-/**
- * The access value kinds.
+/*
+ * @test
+ * @bug 8308144
+ * @summary tests that the SSLFlowDelegate doesn't accumulate application data when the
+ *          downReader doesn't request any
+ * @modules java.net.http/jdk.internal.net.http
+ * @run testng/othervm  -Djdk.internal.httpclient.debug=true
+ *                      -Djavax.net.debug=ssl:handshake
+ *                      java.net.http/jdk.internal.net.http.SSLFlowDelegateTest
  */
-public enum AccessKind {
-    /** Limits access to public entities */
-    PUBLIC,
-    /** Limits access to public and protected entities */
-    PROTECTED,
-    /** Limits access to public, protected and package private entities */
-    PACKAGE,
-    /** No limits */
-    PRIVATE;
-}

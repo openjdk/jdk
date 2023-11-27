@@ -276,24 +276,15 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
-  if (!_object.is_null()) {
-    // Release object's oop storage if it hasn't already been done.
-    release_object();
-  }
+  _object.release(_oop_storage);
 }
 
 oop ObjectMonitor::object() const {
   check_object_context();
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.resolve();
 }
 
 oop ObjectMonitor::object_peek() const {
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.peek();
 }
 
@@ -518,16 +509,6 @@ bool ObjectMonitor::deflate_monitor() {
     return false;
   }
 
-  if (ObjectSynchronizer::is_final_audit() && owner_is_DEFLATER_MARKER()) {
-    // The final audit can see an already deflated ObjectMonitor on the
-    // in-use list because MonitorList::unlink_deflated() might have
-    // blocked for the final safepoint before unlinking all the deflated
-    // monitors.
-    assert(contentions() < 0, "must be negative: contentions=%d", contentions());
-    // Already returned 'true' when it was originally deflated.
-    return false;
-  }
-
   const oop obj = object_peek();
 
   if (obj == nullptr) {
@@ -597,9 +578,6 @@ bool ObjectMonitor::deflate_monitor() {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
   }
-
-  // Release object's oop storage since the ObjectMonitor has been deflated:
-  release_object();
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
   // to force any racing threads to retry.
