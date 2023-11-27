@@ -7831,7 +7831,7 @@ instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ablendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
+instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
   predicate(UseAVX > 0 && EnableX86ECoreOpts &&
             n->in(2)->bottom_type()->isa_vectmask() == NULL &&
             Matcher::vector_length_in_bytes(n) <= 32);
