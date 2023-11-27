@@ -1488,7 +1488,7 @@ void Arguments::set_use_compressed_oops() {
     // would benefit from a small reduction to allow enabling compressed oops. This is easily done by
     // accident, for example setting -Xmx32G is a tiny amount over the limit.
     // TODO: print human readable size
-    warning("Heap size lowered from " SIZE_FORMAT "%s to " SIZE_FORMAT "%s to accommodate Compressed Oops", 
+    warning("Heap size lowered from " SIZE_FORMAT "%s to " SIZE_FORMAT "%s to accommodate Compressed Oops",
             byte_size_in_exact_unit(max_heap_size), exact_unit_for_byte_size (max_heap_size),
             byte_size_in_exact_unit(max_for_compressed_oops), exact_unit_for_byte_size (max_for_compressed_oops));
     max_heap_size = max_for_compressed_oops;
