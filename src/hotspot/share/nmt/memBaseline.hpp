@@ -30,6 +30,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/virtualMemoryView.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/linkedlist.hpp"
 
@@ -72,6 +73,7 @@ class MemBaseline {
 
   // All virtual memory allocations
   LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
+  VirtualMemoryView::VirtualMemory _virtual_memory;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order

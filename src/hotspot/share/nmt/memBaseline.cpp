@@ -192,6 +192,7 @@ void MemBaseline::baseline(bool summaryOnly) {
   if (!summaryOnly &&
       MemTracker::tracking_level() == NMT_detail) {
     baseline_allocation_sites();
+    this->_virtual_memory = VirtualMemoryView::copy();
     _baseline_type = Detail_baselined;
   }
 
