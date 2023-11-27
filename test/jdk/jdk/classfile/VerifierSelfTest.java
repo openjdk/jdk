@@ -38,10 +38,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -147,40 +149,71 @@ class VerifierSelfTest {
         var cd_test = ClassDesc.of("TestParserVerifier");
         var clm = cc.parse(cc.build(cd_test, clb -> patch(clb,
                 DeprecatedAttribute.of(),
+                EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
+                InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
+                NestHostAttribute.of(cd_test),
+                NestMembersAttribute.ofSymbols(cd_test),
+                PermittedSubclassesAttribute.ofSymbols(cd_test),
                 RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
                         SignatureAttribute.of(Signature.of(CD_String))))),
-                SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))))
+                SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
+                SourceFileAttribute.of("TestParserVerifier.java"),
+                SyntheticAttribute.of())
                     .withField("f", CD_String, fb -> patch(fb,
                             ConstantValueAttribute.of(""),
                             DeprecatedAttribute.of(),
-                            SignatureAttribute.of(Signature.of(CD_String))))
+                            SignatureAttribute.of(Signature.of(CD_String)),
+                            SyntheticAttribute.of()))
                     .withMethod("m", MTD_void, 0, mb -> patch(mb,
                             DeprecatedAttribute.of(),
-                            SignatureAttribute.of(MethodSignature.of(MTD_void)))
+                            ExceptionsAttribute.ofSymbols(CD_Exception),
+                            MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)),
+                            SignatureAttribute.of(MethodSignature.of(MTD_void)),
+                            SyntheticAttribute.of())
                             .withCode(cob -> cob.return_()))
 
         ));
         var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
         var expected = """
                 Wrong Deprecated attribute length in class TestParserVerifier
+                Multiple EnclosingMethod attributes in class TestParserVerifier
+                Wrong EnclosingMethod attribute length in class TestParserVerifier
+                Multiple InnerClasses attributes in class TestParserVerifier
+                Wrong InnerClasses attribute length in class TestParserVerifier
+                Multiple NestHost attributes in class TestParserVerifier
+                Wrong NestHost attribute length in class TestParserVerifier
+                Multiple NestMembers attributes in class TestParserVerifier
+                Wrong NestMembers attribute length in class TestParserVerifier
+                Multiple PermittedSubclasses attributes in class TestParserVerifier
+                Wrong PermittedSubclasses attribute length in class TestParserVerifier
                 Multiple Record attributes in class TestParserVerifier
                 Wrong Record attribute length in class TestParserVerifier
                 Multiple Signature attributes in class TestParserVerifier
                 Wrong Signature attribute length in class TestParserVerifier
+                Multiple SourceFile attributes in class TestParserVerifier
+                Wrong SourceFile attribute length in class TestParserVerifier
+                Wrong Synthetic attribute length in class TestParserVerifier
                 Multiple ConstantValue attributes in field TestParserVerifier.f
                 Wrong ConstantValue attribute length in field TestParserVerifier.f
                 Wrong Deprecated attribute length in field TestParserVerifier.f
                 Multiple Signature attributes in field TestParserVerifier.f
                 Wrong Signature attribute length in field TestParserVerifier.f
+                Wrong Synthetic attribute length in field TestParserVerifier.f
                 Wrong Deprecated attribute length in method TestParserVerifier::m()
+                Multiple Exceptions attributes in method TestParserVerifier::m()
+                Wrong Exceptions attribute length in method TestParserVerifier::m()
+                Multiple MethodParameters attributes in method TestParserVerifier::m()
+                Wrong MethodParameters attribute length in method TestParserVerifier::m()
                 Multiple Signature attributes in method TestParserVerifier::m()
                 Wrong Signature attribute length in method TestParserVerifier::m()
+                Wrong Synthetic attribute length in method TestParserVerifier::m()
                 Multiple Signature attributes in Record component c of class TestParserVerifier
                 Wrong Signature attribute length in Record component c of class TestParserVerifier
                 Multiple Signature attributes in Record component c of class TestParserVerifier
                 Wrong Signature attribute length in Record component c of class TestParserVerifier
                 """.lines().filter(exp -> !found.remove(exp)).toList();
         if (!found.isEmpty() || !expected.isEmpty()) {
+            ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
             fail(STR."""
 
                  Expected:
