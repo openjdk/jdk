@@ -48,7 +48,18 @@ public interface JavaLangRefAccess {
      * Runs the finalization methods of any objects pending finalization.
      *
      * Invoked by Runtime.runFinalization()
+     *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
+     * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * no objects will be pending finalization, so this method does nothing.
+     *
+     * @see     java.lang.Object#finalize()
+     * @jls 12.6 Finalization of Class Instances
      */
+    @Deprecated(since="22", forRemoval=true)
     void runFinalization();
 
     /**
