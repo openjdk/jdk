@@ -2061,9 +2061,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if (q.base == b) {            // else inconsistent; retry
                         int nb = b + 1, nk = nb & (cap - 1);
                         if (t == null) {
-                            if (next >= 0L && (a[k] != null || a[nk] != null))
-                                next |= RESCAN;
-                            break;                // revisit if another task
+                            if (a[k] == null) {   // revisit if another task
+                                if (next >= 0L && a[nk] != null)
+                                    next |= RESCAN;
+                                break;
+                            }
                         }
                         else if (t == (o = U.compareAndExchangeReference(
                                            a, slotOffset(k), t, null))) {
