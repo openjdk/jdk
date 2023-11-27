@@ -431,8 +431,7 @@ public class AutomaticModulesTest {
         Path jarfile = dir.resolve("m.jar");
         JarUtils.createJarFile(jarfile, tmpdir);
 
-        // catch FindException, inspect its cause's type and details, and rethrow
-
+        // FindException should be thrown with InvalidModuleDescriptorException as cause
         var finder = ModuleFinder.of(dir);
         FindException ex = assertThrows(FindException.class, () -> finder.findAll());
         Throwable cause = ex.getCause();
@@ -570,8 +569,8 @@ public class AutomaticModulesTest {
         assertTrue(a.reads().contains(c));
 
         assertTrue(b.reads().contains(a));
-        assertTrue(b.reads().contains(c));
         assertFalse(b.reads().contains(b));
+        assertTrue(b.reads().contains(c));
         testReadAllBootModules(cf, "b");  // b reads all modules in boot layer
 
         assertTrue(c.reads().contains(a));
@@ -644,8 +643,8 @@ public class AutomaticModulesTest {
 
         assertTrue(c.reads().contains(a));
         assertTrue(c.reads().contains(b));
-        assertTrue(c.reads().contains(d));
         assertFalse(c.reads().contains(c));
+        assertTrue(c.reads().contains(d));
         testReadAllBootModules(cf, "c");   // c reads all modules in boot layer
 
         assertTrue(d.reads().contains(a));
@@ -719,14 +718,10 @@ public class AutomaticModulesTest {
         assertTrue(b.reads().contains(d));
         assertTrue(b.reads().contains(base));
 
-        assertTrue(reads(cf, "b", "c"));
-        assertTrue(reads(cf, "b", "d"));
-        assertTrue(reads(cf, "b", "java.base"));
-
         assertTrue(c.reads().contains(a));
         assertTrue(c.reads().contains(b));
-        assertTrue(c.reads().contains(d));
         assertFalse(c.reads().contains(c));
+        assertTrue(c.reads().contains(d));
         testReadAllBootModules(cf, "c");   // c reads all modules in boot layer
 
         assertTrue(d.reads().contains(a));
@@ -827,24 +822,24 @@ public class AutomaticModulesTest {
 
         assertTrue(auto1.reads().contains(m1));
         assertTrue(auto1.reads().contains(m2));
+        assertFalse(auto1.reads().contains(auto1));
         assertTrue(auto1.reads().contains(auto2));
         assertTrue(auto1.reads().contains(auto3));
         assertTrue(auto1.reads().contains(base));
-        assertFalse(auto1.reads().contains(auto1));
 
         assertTrue(auto2.reads().contains(m1));
         assertTrue(auto2.reads().contains(m2));
         assertTrue(auto2.reads().contains(auto1));
+        assertFalse(auto2.reads().contains(auto2));
         assertTrue(auto2.reads().contains(auto3));
         assertTrue(auto2.reads().contains(base));
-        assertFalse(auto2.reads().contains(auto2));
 
         assertTrue(auto3.reads().contains(m1));
         assertTrue(auto3.reads().contains(m2));
         assertTrue(auto3.reads().contains(auto1));
         assertTrue(auto3.reads().contains(auto2));
-        assertTrue(auto3.reads().contains(base));
         assertFalse(auto3.reads().contains(auto3));
+        assertTrue(auto3.reads().contains(base));
     }
 
     /**
@@ -913,15 +908,15 @@ public class AutomaticModulesTest {
 
         assertTrue(auto2.reads().contains(m1));
         assertTrue(auto2.reads().contains(auto1));
+        assertFalse(auto2.reads().contains(auto2));
         assertTrue(auto2.reads().contains(auto3));
         assertTrue(auto2.reads().contains(base));
-        assertFalse(auto2.reads().contains(auto2));
 
         assertTrue(auto3.reads().contains(m1));
         assertTrue(auto3.reads().contains(auto1));
         assertTrue(auto3.reads().contains(auto2));
-        assertTrue(auto3.reads().contains(base));
         assertFalse(auto3.reads().contains(auto3));
+        assertTrue(auto3.reads().contains(base));
     }
 
     /**
@@ -962,8 +957,8 @@ public class AutomaticModulesTest {
 
         assertTrue(auto1.reads().contains(base));
         assertTrue(auto1.reads().contains(m1));
-        assertTrue(auto1.reads().contains(auto2));
         assertFalse(auto1.reads().contains(auto1));
+        assertTrue(auto1.reads().contains(auto2));
 
         assertTrue(auto2.reads().contains(base));
         assertTrue(auto2.reads().contains(m1));
