@@ -402,8 +402,8 @@ ENABLE_JAVAC_SERVER := @ENABLE_JAVAC_SERVER@
 JAVAC_SERVER_DIR = $(MAKESUPPORT_OUTPUTDIR)/javacservers
 
 # Number of parallel jobs to use for compilation
-JOBS? = @JOBS@
-TEST_JOBS? = @TEST_JOBS@
+JOBS ?= @JOBS@
+TEST_JOBS ?= @TEST_JOBS@
 
 # Default make target
 DEFAULT_MAKE_TARGET := @DEFAULT_MAKE_TARGET@
