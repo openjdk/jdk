@@ -1479,16 +1479,19 @@ void Arguments::set_use_compressed_oops() {
   // the only value that can override MaxHeapSize if we are
   // to use UseCompressedOops are InitialHeapSize and MinHeapSize.
   size_t max_heap_size = MAX3(MaxHeapSize, InitialHeapSize, MinHeapSize);
+  size_t max_for_compressed_oops = max_heap_for_compressed_oops();
   bool isExplicitlyDisabled = !FLAG_IS_DEFAULT(UseCompressedOops) && !UseCompressedOops;
 
-  double ratio = max_heap_size / (double) max_heap_for_compressed_oops();
+  double ratio = max_heap_size / (double) max_for_compressed_oops;
   if (!isExplicitlyDisabled && ratio > 1 && ratio < 1.02) {
     // User set max heap within 2% of the compressed oops limit. Assume they intended or at least
     // would benefit from a small reduction to allow enabling compressed oops. This is easily done by
     // accident, for example setting -Xmx32G is a tiny amount over the limit.
     // TODO: print human readable size
-    warning("Heap size lowered from %lu to %lu to accommodate Compressed Oops", max_heap_size, max_heap_for_compressed_oops());
-    max_heap_size = max_heap_for_compressed_oops();
+    warning("Heap size lowered from " SIZE_FORMAT "%s to " SIZE_FORMAT "%s to accommodate Compressed Oops", 
+            byte_size_in_exact_unit(max_heap_size), exact_unit_for_byte_size (max_heap_size),
+            byte_size_in_exact_unit(max_for_compressed_oops), exact_unit_for_byte_size (max_for_compressed_oops));
+    max_heap_size = max_for_compressed_oops;
     if (!FLAG_IS_DEFAULT(MaxHeapSize) && MaxHeapSize > max_heap_size) {
       FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
     }
@@ -1500,7 +1503,7 @@ void Arguments::set_use_compressed_oops() {
     }
   }
 
-  if (max_heap_size <= max_heap_for_compressed_oops()) {
+  if (max_heap_size <= max_for_compressed_oops) {
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(UseCompressedOops, true);
     }
