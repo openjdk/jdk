@@ -2264,8 +2264,6 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 }
 
 void Method::clear_jmethod_id() {
-  // This should only be called when there is a reachable method_holder containing the jmethodIDs
-  assert(constMethod() != nullptr && constants() != nullptr && method_holder() != nullptr, "invariant");
   // Being at a safepoint prevents racing against other class redefinitions
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   // The jmethodID is not stored in the Method instance, we need to look it up first
