@@ -40,7 +40,7 @@ bool VirtualMemoryView::_is_detailed_mode = false;
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
 VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;;
 
-void VirtualMemoryView::report(outputStream* output, size_t scale) {
+void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t scale) {
   auto print_mapped_virtual_memory_region = [&](TrackedOffsetRange& mapped_range) -> void {
     output->print("\n\t");
     const NativeCallStack& stack = _stack_storage->get(mapped_range.stack_idx);
@@ -91,9 +91,9 @@ void VirtualMemoryView::report(outputStream* output, size_t scale) {
     }
   };
   for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
-    RegionStorage& reserved_ranges = _virt_mem->reserved_regions;
-    OffsetRegionStorage& mapped_ranges = _virt_mem->mapped_regions.at(space_id);
-    RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space_id);
+    RegionStorage& reserved_ranges = mem.reserved_regions;
+    OffsetRegionStorage& mapped_ranges = mem.mapped_regions.at(space_id);
+    RegionStorage& committed_ranges = mem.committed_regions.at(space_id);
     bool found_committed[committed_ranges.length()];
     for (int i = 0; i < committed_ranges.length(); i++) {
       found_committed[i] = false;

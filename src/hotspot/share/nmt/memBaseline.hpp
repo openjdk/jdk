@@ -95,6 +95,10 @@ class MemBaseline {
 
   BaselineType baseline_type() const { return _baseline_type; }
 
+  VirtualMemoryView::VirtualMemory& virtual_memory_view() {
+    return _virtual_memory;
+  }
+
   MallocMemorySnapshot* malloc_memory_snapshot() {
     return &_malloc_memory_snapshot;
   }
