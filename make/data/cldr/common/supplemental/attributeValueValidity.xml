@@ -7,10 +7,40 @@
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
-			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
-			<!-- and is maintained manually by the CLDR TC -->
-			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
+			<!-- This $language list contains ONLY those languages that are in the CLDR locales' IDs (after maximizing with LikelySubtags) -->
 			<variable id='$language' type='choice'>
+                aa ab af agq ak am an ann apc ar arn as asa ast az
+                ba bal bas be bem bew bez bg bgc bgn bho blo blt bm bn bo br brx bs bss byn
+                ca cad cch ccp ce ceb cgg cho chr cic ckb co cs csw cu cv cy
+                da dav de dje doi dsb dua dv dyo dz
+                ebu ee el en eo es et eu ewo
+                fa ff fi fil fo fr frr fur fy
+                ga gaa gd gez gl gn gsw gu guz gv
+                ha haw he hi hnj hr hsb hu hy
+                ia id ie ig ii io is it iu
+                ja jbo jgo jmc jv
+                ka kab kaj kam kcg kde kea ken kgp khq ki kk kkj kl kln km kn ko kok kpe ks ksb ksf ksh ku kw kxv ky
+                la lag lb lg lij lkt lmo ln lo lrc lt lu luo luy lv
+                mai mas mdf mer mfe mg mgh mgo mi mic mk ml mn mni moh mr ms mt mua mus my myv mzn
+                naq nb nd nds ne nl nmg nn nnh no nqo nr nso nus nv ny nyn
+                oc om or os osa
+                pa pap pcm pis pl prg ps pt
+                qu quc
+                raj rhg rif rm rn ro rof ru rw rwk
+                sa sah saq sat sbp sc scn sd sdh se seh ses sg shi shn si sid sk skr sl sma smj smn sms sn so sq sr ss ssy st su sv sw syr szl
+                ta te teo tg th ti tig tk tn to tok tpi tr trv trw ts tt twq tyv tzm
+                ug uk ur uz
+                vai ve vec vi vmw vo vun
+                wa wae wal wbp wo
+                xh xnr xog
+                yav yi yo yrl yue
+                za zgh zh zu
+			</variable>
+			<!-- The following are exceptional cases.
+				In v44 this contains a copy of the previous $language list to make review of CLDR-16789 easier;
+				this should be rationalized later.
+			  -->
+			<variable id='$languageExceptions' type='choice'>
 				af agq ak am ann apc ar as asa ast az
 				bas be bem bez bg bgc bho bm bn bo br brx bs
 				ca ccp ce ceb cgg chr ckb cs cu cv cy
@@ -39,8 +69,7 @@
 				xh xog
 				yav yi yo yrl yue
 				zgh zh zu
-			</variable>
-			<variable id='$languageExceptions' type='choice'>
+
 				mul root zxx
 				ab ace ada ady ain ale alt an anp arn arp ars atj av awa ay
 				ba ban bi bin bla bug byn
@@ -420,26 +449,13 @@
 			<attributeValues dtds='ldml' elements='displayName' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='relativeTimePattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
 			<attributeValues dtds='ldml' elements='unitPattern' attributes='count' type='localeSpecific'>pluralOrdinal</attributeValues>
-			<attributeValues dtds='keyboard' elements='keyMap' attributes='modifiers' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='keyboard' attributes='locale' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='iso' type='list'>A00 A01 A02 A03 A04 A05 B00 B01 B02 B03 B04 B05 B06 B07 B08
-				B09 B10 B11 B12 C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 D01 D02 D03 D04 D05 D06 D07 D08 D09 D10 D11 D12 D13 E00 E01 E02 E03 E04 E05 E06
-				E07 E08 E09 E10 E11 E12 E13</attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='longPress' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='map' attributes='to' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='name' attributes='value' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='from' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transform' attributes='to' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='number' type='TODO'></attributeValues>
-			<attributeValues dtds='keyboard' elements='version' attributes='platform' type='TODO'></attributeValues>
-			<attributeValues dtds='platform' elements='map' attributes='iso' type='list'>A03 B00 B01 B02 B03 B04 B05 B06 B07 B08 B09 B10 B11 C01 C02
-				C03 C04 C05 C06 C07 C08 C09 C10 C11 C12 D01 D02 D03 D04 D05 D06 D07 D08 D09 D10 D11 D12 D13 E00 E01 E02 E03 E04 E05 E06 E07 E08 E09 E10 E11 E12
-				E13</attributeValues>
-			<attributeValues dtds='platform' elements='map' attributes='keycode' type='list'>0 1 10 11 115 12 13 132 14 15 16 17 18 19 2 20 21 22 23
-				24 25 26 27 28 29 3 30 31 32 33 34 35 36 37 38 39 4 40 41 42 43 44 45 46 47 48 49 5 50 51 52 53 54 55 56 57 58 59 6 60 61 65 7 8 86 9 93 94 97</attributeValues>
-			<attributeValues dtds='platform' elements='platform' attributes='id' type='list'>android chromeos osx windows</attributeValues>
+			<attributeValues dtds='keyboard3' elements='keyboard3' attributes='locale' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='info' attributes='name' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='from' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transform' attributes='to' type='TODO'></attributeValues>
+			<attributeValues dtds='keyboard3' elements='transforms' attributes='type' type='choice'>simple</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='cldrVersion' type='list'>28</attributeValues>
+			<attributeValues dtds='keyboard3' elements='version' attributes='number' type='TODO'></attributeValues>
 		</validity>
 	</metadata>
 </supplementalData>

@@ -171,6 +171,7 @@ public:
   PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* hr) {
+    hr->prepare_for_full_gc();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
     return false;

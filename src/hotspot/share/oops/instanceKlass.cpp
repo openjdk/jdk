@@ -501,6 +501,10 @@ static Monitor* create_init_monitor(const char* name) {
   return new Monitor(Mutex::safepoint, name);
 }
 
+InstanceKlass::InstanceKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
   Klass(kind),
   _nest_members(nullptr),
@@ -822,8 +826,8 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (DumpSharedSpaces && SystemDictionaryShared::has_class_failed_verification(this)) {
-    // This is for CDS dumping phase only -- we use the in_error_state to indicate that
+  if (CDSConfig::is_dumping_static_archive() && SystemDictionaryShared::has_class_failed_verification(this)) {
+    // This is for CDS static dump only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
     //
@@ -1875,7 +1879,7 @@ NOINLINE int linear_search(const Array<Method*>* methods, const Symbol* name) {
 
 inline int InstanceKlass::quick_search(const Array<Method*>* methods, const Symbol* name) {
   if (_disable_method_binary_search) {
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     // At the final stage of dynamic dumping, the methods array may not be sorted
     // by ascending addresses of their names, so we can't use binary search anymore.
     // However, methods with the same name are still laid out consecutively inside the
@@ -2691,21 +2695,22 @@ void InstanceKlass::remove_java_mirror() {
 }
 
 void InstanceKlass::init_shared_package_entry() {
+  assert(CDSConfig::is_dumping_archive(), "must be");
 #if !INCLUDE_CDS_JAVA_HEAP
   _package_entry = nullptr;
 #else
-  if (!MetaspaceShared::use_full_module_graph()) {
-    _package_entry = nullptr;
-  } else if (DynamicDumpSharedSpaces) {
-    if (!MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
-      _package_entry = nullptr;
-    }
-  } else {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     if (is_shared_unregistered_class()) {
       _package_entry = nullptr;
     } else {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
     }
+  } else if (CDSConfig::is_dumping_dynamic_archive() &&
+             CDSConfig::is_loading_full_module_graph() &&
+             MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
+    // _package_entry is an archived package in the base archive. Leave it as is.
+  } else {
+    _package_entry = nullptr;
   }
   ArchivePtrMarker::mark_pointer((address**)&_package_entry);
 #endif
@@ -3027,7 +3032,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 
   if (is_shared() && _package_entry != nullptr) {
-    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
+    if (CDSConfig::is_loading_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
       assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
