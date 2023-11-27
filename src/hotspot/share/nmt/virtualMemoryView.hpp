@@ -217,11 +217,9 @@ public:
 
   // Produce a report on output.
   static void report(outputStream* output, size_t scale = K);
-  // Produce a deep copy of the current state, this can function as a baseline.
-  static VirtualMemory copy() {
-    return _virt_mem->deep_copy();
+  static const VirtualMemory& virtual_memory() {
+    return *_virt_mem;
   }
-
 };
 
 #endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP
