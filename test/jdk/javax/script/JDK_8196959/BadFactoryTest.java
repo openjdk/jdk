@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8196959
- * @summary BadFactory that results in NPE being thrown from ScriptEngineManager
+ * @summary Verify that ScriptEngineManager can load BadFactory without throwing NPE
  * @library /javax/script/JDK_8196959
  * @build BadFactory BadFactoryTest
  * @run junit/othervm BadFactoryTest
