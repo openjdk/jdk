@@ -745,12 +745,6 @@ class BasicTests {
     }
 
     @Test
-    void testStop() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertThrows(UnsupportedOperationException.class, () -> group.stop());
-    }
-
-    @Test
     void testNull1() {
         assertThrows(NullPointerException.class,
                      () -> new ThreadGroup(null, "group"));
