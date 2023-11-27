@@ -3487,7 +3487,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   if (RewriteBytecodes && !UseSharedSpaces && !CDSConfig::is_dumping_static_archive()) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
   }
-  invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, Rflags /* tmp */);
+  invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, Rflags /* tmp */, Rrecv /* tmp */);
 
   __ align(32, 12);
   __ bind(LnotFinal);
@@ -3510,35 +3510,23 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
   assert(byte_no == f2_byte, "use this argument");
   Register Rcache  = R31;
   __ load_method_entry(Rcache, R11_scratch1);
-  invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, R22_tmp2);
+  invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, R22_tmp2, R23_tmp3);
 }
 
-void TemplateTable::invokevfinal_helper(Register Rcache, Register Rscratch1, Register Rscratch2, Register Rscratch3) {
+void TemplateTable::invokevfinal_helper(Register Rcache,
+                                        Register Rscratch1, Register Rscratch2, Register Rscratch3, Register Rscratch4) {
 
-  assert_different_registers(Rcache, Rscratch1, Rscratch2, Rscratch3);
+  assert_different_registers(Rcache, Rscratch1, Rscratch2, Rscratch3, Rscratch4);
 
-  // Load receiver from stack slot.
-  Register Rmethod = Rscratch3;
-  __ ld(Rmethod, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
+  Register Rrecv     = Rscratch2,
+           Rmethod   = Rscratch3,
+           Rret_addr = Rscratch4;
+  prepare_invoke(Rcache, Rret_addr, Rrecv, Rscratch1);
 
-  // Get return address.
-  Register Rtable_addr = Rscratch2,
-           Rret_addr   = Rcache,
-           Rret_type   = Rscratch1;
-  // Get return type. It's coded into the upper 4 bits of the lower half of the 64 bit value.
-  __ lbz(Rret_type, in_bytes(ResolvedMethodEntry::type_offset()), Rcache);
-  __ load_dispatch_table(Rtable_addr, Interpreter::invoke_return_entry_table());
-  __ sldi(Rret_type, Rret_type, LogBytesPerWord);
-  __ ldx(Rret_addr, Rret_type, Rtable_addr); // kills Rcache
-
-  Register Rnum_params = Rscratch2,
-           Rrecv       = Rscratch2;
-  __ ld(Rnum_params, in_bytes(Method::const_offset()), Rmethod);
-  __ lhz(Rnum_params /* number of params */, in_bytes(ConstMethod::size_of_parameters_offset()), Rnum_params);
-
-  // Load receiver and receiver null check.
-  __ load_receiver(Rnum_params, Rrecv);
+  // Receiver null check.
   __ null_check_throw(Rrecv, -1, Rscratch1);
+
+  __ ld(Rmethod, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
 
   __ profile_final_call(Rrecv, Rscratch1);
   // Argument and return type profiling.
@@ -3558,9 +3546,9 @@ void TemplateTable::invokespecial(int byte_no) {
            Rmethod     = R31;
 
   load_resolved_method_entry_special_or_static(Rcache,  // ResolvedMethodEntry*
-                                               Rmethod, // Method* or itable index
+                                               Rmethod, // Method*
                                                noreg);  // flags
-  prepare_invoke(Rcache, Rret_addr, Rreceiver, R11_scratch1); // recv
+  prepare_invoke(Rcache, Rret_addr, Rreceiver, R11_scratch1);
 
   // Receiver null check.
   __ null_check_throw(Rreceiver, -1, R11_scratch1);
@@ -3578,10 +3566,10 @@ void TemplateTable::invokestatic(int byte_no) {
   Register Rcache    = R3_ARG1,
            Rret_addr = R4_ARG2;
 
-  load_resolved_method_entry_special_or_static(Rcache,  // ResolvedMethodEntry*
-                                               R19_method, // Method* or itable index
-                                               noreg); // flags
-  prepare_invoke(Rcache, Rret_addr, noreg, R11_scratch1); // recv
+  load_resolved_method_entry_special_or_static(Rcache,     // ResolvedMethodEntry*
+                                               R19_method, // Method*
+                                               noreg);     // flags
+  prepare_invoke(Rcache, Rret_addr, noreg, R11_scratch1);
 
   __ profile_call(R11_scratch1, R12_scratch2);
   // Argument and return type profiling.
@@ -3639,7 +3627,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                  Rcache           = R31;
 
   load_resolved_method_entry_interface(Rcache, noreg, noreg, Rflags);
-  prepare_invoke(Rcache, Rret_addr, Rreceiver, Rscratch1); // recv
+  prepare_invoke(Rcache, Rret_addr, Rreceiver, Rscratch1);
 
   // First check for Object case, then private interface method,
   // then regular interface method.
@@ -3757,7 +3745,7 @@ void TemplateTable::invokehandle(int byte_no) {
                  Rcache    = R31;
 
   load_resolved_method_entry_handle(Rcache,  // ResolvedMethodEntry*
-                                    Rmethod, // Method* or itable index
+                                    Rmethod, // Method*
                                     Rscratch1,
                                     Rflags);
   prepare_invoke(Rcache, Rret_addr, Rrecv, Rscratch1);

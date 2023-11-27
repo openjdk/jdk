@@ -39,7 +39,6 @@ size_t CompressedKlassPointers::_range = 0;
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
 void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift) {
-  assert(is_valid_base(requested_base), "Address must be a valid encoding base");
   address const end = addr + len;
 
   const int narrow_klasspointer_bits = sizeof(narrowKlass) * 8;
@@ -89,23 +88,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   set_base(base);
   set_shift(shift);
   set_range(range);
-
-  assert(is_valid_base(_base), "Address must be a valid encoding base");
-}
-
-// Given an address p, return true if p can be used as an encoding base.
-//  (Some platforms have restrictions of what constitutes a valid base address).
-bool CompressedKlassPointers::is_valid_base(address p) {
-#ifdef AARCH64
-  // Below 32G, base must be aligned to 4G.
-  // Above that point, base must be aligned to 32G
-  if (p < (address)(32 * G)) {
-    return is_aligned(p, 4 * G);
-  }
-  return is_aligned(p, (4 << LogKlassAlignmentInBytes) * G);
-#else
-  return true;
-#endif
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
