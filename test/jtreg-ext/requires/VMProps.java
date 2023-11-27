@@ -726,18 +726,24 @@ public class VMProps implements Callable<Map<String, String>> {
      *
      * This could be improved to handle extra options not starting
      * with -X as well as "standard" options.
+     *
+     * Multiple invocations of the same flag will overwrite the flag
+     * value with the latest value. Except for -Xlog where the value
+     * will always be NONEMPTY_TEST_SENTINEL (when pressent).
      */
     private Map<String, String> xOptFlags() {
         return allFlags()
             .filter(s -> s.startsWith("-X") && !s.startsWith("-XX:") && !s.equals("-X"))
+            .map(s -> s.replaceFirst("-Xlog:.*", "-Xlog:NONEMPTY_TEST_SENTINEL")) // the value should never be tested, replace to be sure
             .map(s -> s.replaceFirst("-", ""))
             .map(flag -> flag.splitWithDelimiters("[:0123456789]", 2))
             .collect(Collectors.toMap(a -> "vm.opt.x." + a[0],
                                       a -> (a.length == 1)
-                                      ? "true" // -Xnoclassgc
-                                      : (a[1].equals(":")
-                                         ? a[2]            // ["-XshowSettings", ":", "system"]
-                                         : a[1] + a[2]))); // ["-Xmx", "4", "g"]
+                                          ? "true" // -Xnoclassgc
+                                          : (a[1].equals(":")
+                                              ? a[2]            // ["-XshowSettings", ":", "system"]
+                                              : a[1] + a[2]),   // ["-Xmx", "4", "g"]
+                                      (a, b) -> b));
     }
 
     /*
