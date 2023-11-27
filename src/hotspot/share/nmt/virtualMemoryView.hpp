@@ -110,7 +110,7 @@ public:
   using OffsetRegionStorage = GrowableArrayCHeap<TrackedOffsetRange, mtNMT>;
   using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
 
-  struct VirtualMemory {
+  struct VirtualMemory : public CHeapObj<mtNMT> {
     RegionStorage reserved_regions;
     GrowableArrayCHeap<OffsetRegionStorage, mtNMT> mapped_regions;
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;

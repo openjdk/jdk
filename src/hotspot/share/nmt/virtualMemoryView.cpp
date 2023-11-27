@@ -276,6 +276,7 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
 }
 
 void VirtualMemoryView::initialize(bool is_detailed_mode) {
+  _virt_mem = new VirtualMemory();
   _virt_mem->reserved_regions = RegionStorage{};
   _virt_mem->mapped_regions = GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
   _virt_mem->committed_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{5};
