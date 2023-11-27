@@ -150,21 +150,21 @@ static void* create_monitor_with_dead_object_and_dump_threads_in_thread() {
 }
 
 JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObject(JNIEnv* env, jclass jc) {
-    void* ret;
+  void* ret;
 
-    (*env)->GetJavaVM(env, &jvm);
+  (*env)->GetJavaVM(env, &jvm);
 
-    if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
-    if (pthread_join(attacher, &ret) != 0) die("pthread_join");
+  if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_in_thread, NULL) != 0) die("pthread_create");
+  if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
 JNIEXPORT void JNICALL Java_MonitorWithDeadObjectTest_createMonitorWithDeadObjectDumpThreadsBeforeDetach(JNIEnv* env, jclass jc) {
-    void* ret;
+  void* ret;
 
-    (*env)->GetJavaVM(env, &jvm);
+  (*env)->GetJavaVM(env, &jvm);
 
-    if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_and_dump_threads_in_thread, NULL) != 0) die("pthread_create");
-    if (pthread_join(attacher, &ret) != 0) die("pthread_join");
+  if (pthread_create(&attacher, NULL, create_monitor_with_dead_object_and_dump_threads_in_thread, NULL) != 0) die("pthread_create");
+  if (pthread_join(attacher, &ret) != 0) die("pthread_join");
 }
 
 #ifdef __cplusplus
