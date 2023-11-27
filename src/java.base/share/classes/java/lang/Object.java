@@ -121,9 +121,9 @@ public class Object {
      * override the default implementation, together with a compatible 
      * {@link #hashCode() hashCode} method.
      * <p>
-     * Note, that as overriding this method affects the behaviour in commonly
-     * used collection classes and for a correct behaviour requires you to 
-     * also override also the {@link #hashCode() hashCode} method, it can be
+     * Note, that as overriding this method affects how objects behave in the
+     * commonly used collection classes and correct behavior requires you to 
+     * override also the {@link #hashCode() hashCode} method, it can be
      * easier to define logical equality checks to some other way in your 
      * application. 
      * <p>
