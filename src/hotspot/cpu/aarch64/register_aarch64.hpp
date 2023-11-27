@@ -69,8 +69,8 @@ class Register {
 
   constexpr Register() : _encoding(-1) {} // noreg
 
-  int operator==(const Register r) const { return _encoding == r._encoding; }
-  int operator!=(const Register r) const { return _encoding != r._encoding; }
+  constexpr bool operator==(const Register r) const { return _encoding == r._encoding; }
+  constexpr bool operator!=(const Register r) const { return _encoding != r._encoding; }
 
   constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
