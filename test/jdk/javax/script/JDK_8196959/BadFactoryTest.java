@@ -43,11 +43,14 @@ public class BadFactoryTest {
 
     @Test
     public void scriptEngineManagerShouldLoadBadFactory() {
+        // Check that ScriptEngineManager initializes even in the
+        // presence of a ScriptEngineFactory returning nulls
         ScriptEngineManager m = new ScriptEngineManager();
-        // Sanity check that ScriptEngineManager loads the BadFactory
+
+        // Sanity check that ScriptEngineManager actually found the BadFactory
         Optional<ScriptEngineFactory> badFactory = m.getEngineFactories().stream()
                 .filter(fac -> fac.getClass() == BadFactory.class)
                 .findAny();
-        assertTrue(badFactory.isPresent(), "BadFactory not loaded");
+        assertTrue(badFactory.isPresent(), "BadFactory not found");
     }
 }
