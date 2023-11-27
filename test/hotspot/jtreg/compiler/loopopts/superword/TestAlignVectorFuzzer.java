@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.compiler2.enabled
+ * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
@@ -41,10 +42,10 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.compiler2.enabled
+ * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
@@ -57,10 +58,10 @@
  * @library /test/lib
  * @requires vm.compiler2.enabled
  * @requires vm.bits == 64
+ * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 -XX:ObjectAlignmentInBytes=16
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
@@ -73,10 +74,10 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires vm.compiler2.enabled
+ * @key randomness
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=250
- *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 -XX:-TieredCompilation -Xbatch
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
@@ -93,9 +94,8 @@ import jdk.test.lib.Utils;
 import jdk.internal.misc.Unsafe;
 
 public class TestAlignVectorFuzzer {
-
+    static final int ITERATIONS_MAX = 5; // time allowance may lead to fewer iterations
     static final int RANGE_CON = 1024 * 8;
-    static final int ITERATIONS = 5;
     static int ZERO = 0;
 
     private static final Random random = Utils.getRandomInstance();
@@ -555,12 +555,18 @@ public class TestAlignVectorFuzzer {
         tests.put("testUU_unsafe_BasI", () -> { return testUU_unsafe_BasI(aB.clone()); });
         tests.put("testUU_unsafe_BasIH", () -> { return testUU_unsafe_BasIH(aB.clone(), bB.clone(), cB.clone()); });
 
-        for (int i = 1; i <= ITERATIONS; i++) {
+
+        long test_time_allowance = System.currentTimeMillis() +
+                                   Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) -
+                                   20_000; // somewhat arbitrary margin
+
+        for (int i = 1; i <= ITERATIONS_MAX; i++) {
             setRandomConstants();
             for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
                 String name = entry.getKey();
                 TestFunction test = entry.getValue();
-                System.out.println("ITERATION " + i + " of " + ITERATIONS + ". Test " + name);
+                System.out.println("ITERATION " + i + " of " + ITERATIONS_MAX + ". Test " + name +
+                                   ", time allowance: " + (test_time_allowance - System.currentTimeMillis()));
 
                 // Compute gold value, probably deopt first if constants have changed.
                 Object[] gold = test.run();
@@ -569,6 +575,11 @@ public class TestAlignVectorFuzzer {
                 for (int j = 0; j < 10_000; j++) {
                     Object[] result = test.run();
                     verify(name, gold, result);
+                }
+
+                if (System.currentTimeMillis() > test_time_allowance) {
+                    System.out.println("TEST PASSED: hit maximal time allownance during iteration " + i);
+                    return;
                 }
             }
         }
