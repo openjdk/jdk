@@ -1394,7 +1394,7 @@ public final class StackMapGenerator {
         }
 
         Type getComponent() {
-            if (sym.isArray()) {
+            if (isArray()) {
                 var comp = sym.componentType();
                 if (comp.isPrimitive()) {
                     return switch (comp.descriptorString().charAt(0)) {
