@@ -256,7 +256,7 @@ inline BitMapView stackChunkOopDesc::bitmap() const {
   return bitmap;
 }
 
-inline BitMap::idx_t stackChunkOopDesc::bit_index_for(intptr_t* p) const {
+inline BitMap::idx_t stackChunkOopDesc::bit_index_for(address p) const {
   return UseCompressedOops ? bit_index_for((narrowOop*)p) : bit_index_for((oop*)p);
 }
 
