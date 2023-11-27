@@ -25,6 +25,7 @@
 
 package java.lang.management;
 
+import java.lang.foreign.Linker;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
@@ -547,8 +548,8 @@ public class ThreadInfo {
      * Tests if the thread associated with this {@code ThreadInfo} is executing
      * native code. This method returns {@code true} if the thread is executing
      * a native method or if executing native code invoked using a {@linkplain
-     * java.lang.invoke.MethodHandle method handle} obtained from the
-     * {@linkplain java.lang.foreign.Linker native linker}.
+     * Linker#downcallHandle(java.lang.foreign.FunctionDescriptor, Linker.Option...)
+     * method handle} obtained from the {@linkplain Linker native linker}.
      *
      * @return {@code true} if the thread is executing native code;
      *         {@code false} otherwise.
