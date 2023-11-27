@@ -42,9 +42,9 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.instruction.SwitchCase;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Label;
+import java.lang.classfile.instruction.SwitchCase;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
@@ -386,11 +386,11 @@ public class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = new ArrayList<>();
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
-        byte[] classBytes = Classfile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
+        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
             clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                .withMethodBody("typeSwitch",
                                TYPES_SWITCH_DESCRIPTOR,
-                               Classfile.ACC_FINAL | Classfile.ACC_PUBLIC | Classfile.ACC_STATIC,
+                               ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
                                cb -> {
                     cb.aload(0);
                     Label nonNullLabel = cb.newLabel();

@@ -238,7 +238,7 @@ class StackMapsTest {
 
     @Test
     void testInvalidAALOADStack() {
-        Classfile.of().build(ClassDesc.of("Test"), clb
+        ClassFile.of().build(ClassDesc.of("Test"), clb
                 -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
                         -> cob.bipush(10)
                               .anewarray(ConstantDescs.CD_Object)
