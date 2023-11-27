@@ -824,57 +824,6 @@ PANDOC_MARKDOWN_FLAG:=@PANDOC_MARKDOWN_FLAG@
 
 ####################################################
 #
-# INSTALLATION
-#
-
-# Common prefix for all installed files. Defaults to /usr/local,
-# but /opt/myjdk is another common version.
-INSTALL_PREFIX=@prefix@
-
-# Directories containing architecture-dependent files should be relative to exec_prefix
-INSTALL_EXECPREFIX=@exec_prefix@
-
-# java,javac,javap etc are installed here.
-INSTALL_BINDIR=@bindir@
-
-# Read only architecture-independent data
-INSTALL_DATADIR=@datadir@
-
-# Root of above.
-INSTALL_DATAROOTDIR=@datarootdir@
-
-# Doc files, other than info and man.
-INSTALL_DOCDIR=@docdir@
-
-# Html documentation
-INSTALL_HTMLDIR=@htmldir@
-
-# Installing C header files, JNI headers for example.
-INSTALL_INCLUDEDIR=@includedir@
-
-# Installing library files....
-INSTALL_INCLUDEDIR=@libdir@
-
-# Executables that other programs run.
-INSTALL_LIBEXECDIR=@libexecdir@
-
-# Locale-dependent but architecture-independent data, such as message catalogs.
-INSTALL_LOCALEDIR=@localedir@
-
-# Modifiable single-machine data
-INSTALL_LOCALSTATEDIR=@localstatedir@
-
-# Man pages
-INSTALL_MANDIR=@mandir@
-
-# Modifiable architecture-independent data.
-INSTALL_SHAREDSTATEDIR=@sharedstatedir@
-
-# Read-only single-machine data
-INSTALL_SYSCONFDIR=@sysconfdir@
-
-####################################################
-#
 # Libraries
 #
 
