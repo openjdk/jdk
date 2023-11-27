@@ -31,7 +31,7 @@ import javax.swing.text.html.StyleSheet;
 
 /*
  * @test
- * @bug 7083187
+ * @bug 7083187 8318113
  * @summary  Verifies if CSS.CSSValue attribute is same
  * @run main CSSAttributeEqualityBug
  */
@@ -72,6 +72,9 @@ public class CSSAttributeEqualityBug {
             "background-position: 1em 2em",
 
             "border-width: medium",
+
+            "background-image: none",
+            "background-image: url(image.png)",
     };
 
     /**
@@ -86,6 +89,8 @@ public class CSSAttributeEqualityBug {
             {"margin-top: 42px", "margin-top: 22px"},
             {"margin-top: 42px", "margin-top: 42pt"},
             {"margin-top: 100%", "margin-top: 50%"},
+
+            {"background-image: none", "background-image: url(image.png)"},
     };
 
     private static final String[][] EQUALS_WITH_SPACE = {

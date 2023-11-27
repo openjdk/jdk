@@ -278,7 +278,7 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   fi
 
   AC_MSG_CHECKING([Checking binutils API])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[init_disassemble_info(0, 0, 0, 0);]])],
     [
       AC_MSG_RESULT([New API])
       HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
