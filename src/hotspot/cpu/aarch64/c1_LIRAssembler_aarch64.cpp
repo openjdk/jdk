@@ -1511,7 +1511,6 @@ void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
 
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  assert(VM_Version::supports_cx8(), "wrong machine");
   Register addr;
   if (op->addr()->is_register()) {
     addr = as_reg(op->addr());

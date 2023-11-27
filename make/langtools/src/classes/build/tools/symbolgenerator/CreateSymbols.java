@@ -150,7 +150,9 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Pair;
+import java.nio.file.DirectoryStream;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * A tool for processing the .sym.txt files.
@@ -228,10 +230,24 @@ public class CreateSymbols {
      */
     @SuppressWarnings("unchecked")
     public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation,
-                              long timestamp, String currentVersion, String systemModules) throws IOException {
+                              long timestamp, String currentVersion, String preReleaseTag, String moduleClasses) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
                                                                     : null,
                                      Paths.get(ctDescriptionFile));
+
+        int currentVersionParsed = Integer.parseInt(currentVersion);
+
+        currentVersion = Integer.toString(currentVersionParsed, Character.MAX_RADIX);
+        currentVersion = currentVersion.toUpperCase(Locale.ROOT);
+
+        String previousVersion = Integer.toString(currentVersionParsed - 1, Character.MAX_RADIX);
+
+        previousVersion = previousVersion.toUpperCase(Locale.ROOT);
+
+        //load current version classes:
+        Path moduleClassPath = Paths.get(moduleClasses);
+
+        loadVersionClassesFromDirectory(data.classes, data.modules, moduleClassPath, currentVersion, previousVersion);
 
         stripNonExistentAnnotations(data);
         splitHeaders(data.classes);
@@ -241,12 +257,19 @@ public class CreateSymbols {
 
         for (ModuleDescription md : data.modules.values()) {
             for (ModuleHeaderDescription mhd : md.header) {
-                List<String> versionsList =
-                        Collections.singletonList(mhd.versions);
                 writeModulesForVersions(directory2FileData,
                                         md,
                                         mhd,
-                                        versionsList);
+                                        mhd.versions,
+                                        version -> {
+                                            String versionString = Character.toString(version);
+                                            int versionNumber = Integer.parseInt(versionString, Character.MAX_RADIX);
+                                            versionString = Integer.toString(versionNumber);
+                                            if (versionNumber == currentVersionParsed && !preReleaseTag.isEmpty()) {
+                                                versionString = versionString + "-" + preReleaseTag;
+                                            }
+                                            return versionString;
+                                        });
                 List<String> packages = new ArrayList<>();
                 mhd.exports.stream()
                            .map(ExportsDescription::packageName)
@@ -292,13 +315,6 @@ public class CreateSymbols {
                 }
             }
         }
-
-        currentVersion = Integer.toString(Integer.parseInt(currentVersion), Character.MAX_RADIX);
-        currentVersion = currentVersion.toUpperCase(Locale.ROOT);
-
-        openDirectory(directory2FileData, currentVersion + "/")
-                .add(new FileData(currentVersion + "/system-modules",
-                                  Files.readAllBytes(Paths.get(systemModules))));
 
         try (OutputStream fos = new FileOutputStream(ctSymLocation);
              OutputStream bos = new BufferedOutputStream(fos);
@@ -788,10 +804,14 @@ public class CreateSymbols {
     void writeModulesForVersions(Map<String, Set<FileData>> directory2FileData,
                                  ModuleDescription moduleDescription,
                                  ModuleHeaderDescription header,
-                                 Iterable<String> versions)
+                                 String versions,
+                                 Function<Character, String> version2ModuleVersion)
             throws IOException {
-        for (String ver : versions) {
-            writeModule(directory2FileData, moduleDescription, header, ver);
+        //ensure every module-info.class is written separatelly,
+        //so that the correct version is used for it:
+        for (char ver : versions.toCharArray()) {
+            writeModule(directory2FileData, moduleDescription, header, ver,
+                        version2ModuleVersion);
         }
     }
 
@@ -799,7 +819,8 @@ public class CreateSymbols {
     void writeModule(Map<String, Set<FileData>> directory2FileData,
                     ModuleDescription moduleDescription,
                     ModuleHeaderDescription header,
-                    String version) throws IOException {
+                    char version,
+                    Function<Character, String> version2ModuleVersion) throws IOException {
         List<CPInfo> constantPool = new ArrayList<>();
         constantPool.add(null);
         int currentClass = addClass(constantPool, "module-info");
@@ -807,7 +828,9 @@ public class CreateSymbols {
         int[] interfaces = new int[0];
         AccessFlags flags = new AccessFlags(header.flags);
         Map<String, Attribute> attributesMap = new HashMap<>();
-        addAttributes(moduleDescription, header, constantPool, attributesMap);
+        String versionString = Character.toString(version);
+        addAttributes(moduleDescription, header, constantPool, attributesMap,
+                      version2ModuleVersion.apply(version));
         Attributes attributes = new Attributes(attributesMap);
         CPInfo[] cpData = constantPool.toArray(new CPInfo[constantPool.size()]);
         ConstantPool cp = new ConstantPool(cpData);
@@ -823,7 +846,7 @@ public class CreateSymbols {
                 new Method[0],
                 attributes);
 
-        doWrite(directory2FileData, version, moduleDescription.name, "module-info" + EXTENSION, classFile);
+        doWrite(directory2FileData, versionString, moduleDescription.name, "module-info" + EXTENSION, classFile);
     }
 
     void writeClass(Map<String, Set<FileData>> directory2FileData,
@@ -924,7 +947,8 @@ public class CreateSymbols {
     private void addAttributes(ModuleDescription md,
                                ModuleHeaderDescription header,
                                List<CPInfo> cp,
-                               Map<String, Attribute> attributes) {
+                               Map<String, Attribute> attributes,
+                               String moduleVersion) {
         addGenericAttributes(header, cp, attributes);
         if (header.moduleResolution != null) {
             int attrIdx = addString(cp, Attribute.ModuleResolution);
@@ -945,12 +969,13 @@ public class CreateSymbols {
             attributes.put(Attribute.ModuleMainClass,
                            new ModuleMainClass_attribute(attrIdx, targetIdx));
         }
+        int versionIdx = addString(cp, moduleVersion);
         int attrIdx = addString(cp, Attribute.Module);
         attributes.put(Attribute.Module,
                        new Module_attribute(attrIdx,
                              addModuleName(cp, md.name),
                              0,
-                             0,
+                             versionIdx,
                              header.requires
                                    .stream()
                                    .map(r -> createRequiresEntry(cp, r))
@@ -1123,8 +1148,9 @@ public class CreateSymbols {
             MethodParameters_attribute.Entry[] entries =
                     desc.methodParameters
                         .stream()
-                        .map(p -> new MethodParameters_attribute.Entry(addString(constantPool, p.name),
-                                                                        p.flags))
+                        .map(p -> new MethodParameters_attribute.Entry(p.name == null || p.name.isEmpty() ? 0
+                                                                                                          : addString(constantPool, p.name),
+                                                                       p.flags))
                         .toArray(s -> new MethodParameters_attribute.Entry[s]);
             attributes.put(Attribute.MethodParameters,
                            new MethodParameters_attribute(attributeString, entries));
@@ -1492,7 +1518,7 @@ public class CreateSymbols {
             }
         }
 
-        ExcludeIncludeList currentEIList = excludesIncludes;
+        ExcludeIncludeList currentEIList;
 
         if (!currentVersionModules.isEmpty()) {
             Set<String> privateIncludes =
@@ -1509,19 +1535,182 @@ public class CreateSymbols {
             currentEIList = new ExcludeIncludeList(includes,
                                                    privateIncludes,
                                                    Collections.emptySet());
+        } else {
+            currentEIList = excludesIncludes;
         }
 
         ClassList currentVersionClasses = new ClassList();
+        Map<String, String> extraModulesPackagesToDerive = new HashMap<>();
 
         for (byte[] classFileData : classData) {
             try (InputStream in = new ByteArrayInputStream(classFileData)) {
                 inspectClassFile(in, currentVersionClasses,
-                                 currentEIList, version);
+                                 currentEIList, version,
+                                 cf -> {
+                                     PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
+                                     if (permitted != null) {
+                                         try {
+                                             String currentPack = cf.getName().substring(0, cf.getName().lastIndexOf('/'));
+
+                                             for (int i = 0; i < permitted.subtypes.length; i++) {
+                                                 String permittedClassName = cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName();
+                                                 if (!currentEIList.accepts(permittedClassName, false)) {
+                                                     String permittedPack = permittedClassName.substring(0, permittedClassName.lastIndexOf('/'));
+
+                                                     extraModulesPackagesToDerive.put(permittedPack, currentPack);
+                                                 }
+                                             }
+                                         } catch (ConstantPoolException ex) {
+                                             throw new IllegalStateException(ex);
+                                         }
+                                     }
+                                 });
             } catch (IOException | ConstantPoolException ex) {
                 throw new IllegalStateException(ex);
             }
         }
 
+        //derive extra module packages for permitted types based on on their supertypes:
+        boolean modified;
+
+        do {
+            modified = false;
+
+            for (Iterator<Entry<String, String>> it = extraModulesPackagesToDerive.entrySet().iterator(); it.hasNext();) {
+                Entry<String, String> e = it.next();
+                Optional<ModuleHeaderDescription> module = currentVersionModules.values().stream().map(md -> md.header.get(0)).filter(d -> containsPackage(d, e.getValue())).findAny();
+                if (module.isPresent()) {
+                    if (!module.get().extraModulePackages.contains(e.getKey())) {
+                        module.get().extraModulePackages.add(e.getKey());
+                    }
+                    it.remove();
+                    modified = true;
+                }
+            }
+        } while (modified);
+
+        if (!extraModulesPackagesToDerive.isEmpty()) {
+            throw new AssertionError("Cannot derive some owning modules: " + extraModulesPackagesToDerive);
+        }
+
+        finishClassLoading(classes, modules, currentVersionModules, currentVersionClasses, currentEIList, version, baseline);
+    }
+
+    private boolean containsPackage(ModuleHeaderDescription module, String pack) {
+        return module.exports.stream().filter(ed -> ed.packageName().equals(pack)).findAny().isPresent() ||
+               module.extraModulePackages.contains(pack);
+    }
+
+    private void loadVersionClassesFromDirectory(ClassList classes,
+                                    Map<String, ModuleDescription> modules,
+                                    Path modulesDirectory,
+                                    String version,
+                                    String baseline) {
+        Map<String, ModuleDescription> currentVersionModules =
+                new HashMap<>();
+        ClassList currentVersionClasses = new ClassList();
+        Set<String> privateIncludes = new HashSet<>();
+        Set<String> includes = new HashSet<>();
+        ExcludeIncludeList currentEIList = new ExcludeIncludeList(includes,
+                privateIncludes,
+                Collections.emptySet());
+
+        try {
+            Map<Path, ModuleHeaderDescription> modulePath2Header = new HashMap<>();
+            List<Path> pendingExportedDirectories = new ArrayList<>();
+
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(modulesDirectory)) {
+                for (Path p : ds) {
+                    Path moduleInfo = p.resolve("module-info.class");
+
+                    if (Files.isReadable(moduleInfo)) {
+                        ModuleDescription md;
+
+                        try (InputStream in = Files.newInputStream(moduleInfo)) {
+                            md = inspectModuleInfoClassFile(in,
+                                    currentVersionModules, version);
+                        }
+                        if (md == null) {
+                            continue;
+                        }
+
+                        modulePath2Header.put(p, md.header.get(0));
+
+                        Set<String> currentModuleExports =
+                                md.header.get(0).exports.stream()
+                                                        .filter(e -> !e.isQualified())
+                                                        .map(e -> e.packageName + '/')
+                                                        .collect(Collectors.toSet());
+
+                        for (String dir : currentModuleExports) {
+                            includes.add(dir);
+                            pendingExportedDirectories.add(p.resolve(dir));
+                        }
+                    }
+                }
+            }
+
+            List<String> pendingExtraClasses = new ArrayList<>();
+
+            for (Path exported : pendingExportedDirectories) {
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(exported)) {
+                    for (Path p2 : ds) {
+                        if (!Files.isRegularFile(p2) || !p2.getFileName().toString().endsWith(".class")) {
+                            continue;
+                        }
+
+                        loadFromDirectoryHandleClassFile(p2, currentVersionClasses,
+                                                         currentEIList, version,
+                                                         pendingExtraClasses);
+                    }
+                }
+            }
+
+            while (!pendingExtraClasses.isEmpty()) {
+                String current = pendingExtraClasses.remove(pendingExtraClasses.size() - 1);
+
+                if (currentVersionClasses.find(current, true) != null) {
+                    continue;
+                }
+
+                for (Entry<Path, ModuleHeaderDescription> e : modulePath2Header.entrySet()) {
+                    Path currentPath = e.getKey().resolve(current + ".class");
+
+                    if (Files.isReadable(currentPath)) {
+                        String pack = current.substring(0, current.lastIndexOf('/'));
+
+                        e.getValue().extraModulePackages.add(pack);
+
+                        loadFromDirectoryHandleClassFile(currentPath, currentVersionClasses,
+                                                         currentEIList, version,
+                                                         pendingExtraClasses);
+                    }
+                }
+            }
+        } catch (IOException | ConstantPoolException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        finishClassLoading(classes, modules, currentVersionModules, currentVersionClasses, currentEIList, version, baseline);
+    }
+
+    private void loadFromDirectoryHandleClassFile(Path path, ClassList currentVersionClasses,
+                                                  ExcludeIncludeList currentEIList, String version,
+                                                  List<String> todo) throws IOException, ConstantPoolException {
+        try (InputStream in = Files.newInputStream(path)) {
+            inspectClassFile(in, currentVersionClasses,
+                             currentEIList, version,
+                             cf -> {
+                                 Set<String> superTypes = otherRelevantTypesWithOwners(cf);
+
+                                 currentEIList.privateIncludeList.addAll(superTypes);
+                                 todo.addAll(superTypes);
+                             });
+        }
+    }
+
+    private void finishClassLoading(ClassList classes, Map<String, ModuleDescription> modules, Map<String, ModuleDescription> currentVersionModules, ClassList currentVersionClasses, ExcludeIncludeList currentEIList, String version,
+                                    String baseline) {
         ModuleDescription unsupported =
                 currentVersionModules.get("jdk.unsupported");
 
@@ -1562,6 +1751,11 @@ public class CreateSymbols {
                     modified |= include(includedClasses, currentVersionClasses, header.extendsAttr);
                     for (String i : header.implementsAttr) {
                         modified |= include(includedClasses, currentVersionClasses, i);
+                    }
+                    if (header.permittedSubclasses != null) {
+                        for (String i : header.permittedSubclasses) {
+                            modified |= include(includedClasses, currentVersionClasses, i);
+                        }
                     }
 
                     modified |= includeOutputType(Collections.singleton(header),
@@ -1962,6 +2156,11 @@ public class CreateSymbols {
     public static boolean ALLOW_NON_EXISTING_CLASSES = false;
 
     private void inspectClassFile(InputStream in, ClassList classes, ExcludeIncludeList excludesIncludes, String version) throws IOException, ConstantPoolException {
+        inspectClassFile(in, classes, excludesIncludes, version, cf -> {});
+    }
+
+    private void inspectClassFile(InputStream in, ClassList classes, ExcludeIncludeList excludesIncludes, String version,
+                                  Consumer<ClassFile> extraTask) throws IOException, ConstantPoolException {
         ClassFile cf = ClassFile.read(in);
 
         if (cf.access_flags.is(AccessFlags.ACC_MODULE)) {
@@ -1971,6 +2170,8 @@ public class CreateSymbols {
         if (!excludesIncludes.accepts(cf.getName(), true)) {
             return ;
         }
+
+        extraTask.accept(cf);
 
         ClassHeaderDescription headerDesc = new ClassHeaderDescription();
 
@@ -2032,13 +2233,13 @@ public class CreateSymbols {
         }
     }
 
-    private void inspectModuleInfoClassFile(InputStream in,
+    private ModuleDescription inspectModuleInfoClassFile(InputStream in,
             Map<String, ModuleDescription> modules,
             String version) throws IOException, ConstantPoolException {
         ClassFile cf = ClassFile.read(in);
 
         if (!cf.access_flags.is(AccessFlags.ACC_MODULE)) {
-            return ;
+            return null;
         }
 
         ModuleHeaderDescription headerDesc = new ModuleHeaderDescription();
@@ -2048,7 +2249,7 @@ public class CreateSymbols {
 
         for (Attribute attr : cf.attributes) {
             if (!readAttribute(cf, headerDesc, attr))
-                return ;
+                return null;
         }
 
         String name = headerDesc.name;
@@ -2062,6 +2263,8 @@ public class CreateSymbols {
         }
 
         addModuleHeader(moduleDesc, headerDesc, version);
+
+        return moduleDesc;
     }
 
     private Set<String> enhancedIncludesListBasedOnClassHeaders(ClassList classes,
@@ -2072,35 +2275,53 @@ public class CreateSymbols {
             try (InputStream in = new ByteArrayInputStream(classFileData)) {
                 ClassFile cf = ClassFile.read(in);
 
-                if (cf.access_flags.is(AccessFlags.ACC_MODULE)) {
-                    continue;
-                }
-
-                Set<String> additionalClasses = new HashSet<>();
-
-                if (cf.super_class != 0) {
-                    additionalClasses.add(cf.getSuperclassName());
-                }
-                for (int i = 0; i < cf.interfaces.length; i++) {
-                    additionalClasses.add(cf.getInterfaceName(i));
-                }
-
-                for (String additional : additionalClasses) {
-                    int dollar;
-
-                    additionalIncludes.add(additional);
-
-                    while ((dollar = additional.lastIndexOf('$')) != (-1)) {
-                        additional = additional.substring(0, dollar);
-                        additionalIncludes.add(additional);
-                    }
-                }
+                additionalIncludes.addAll(otherRelevantTypesWithOwners(cf));
             } catch (IOException | ConstantPoolException ex) {
                 throw new IllegalStateException(ex);
             }
         }
 
         return additionalIncludes;
+    }
+
+    private Set<String> otherRelevantTypesWithOwners(ClassFile cf) {
+        Set<String> supertypes = new HashSet<>();
+
+        try {
+            if (cf.access_flags.is(AccessFlags.ACC_MODULE)) {
+                return supertypes;
+            }
+
+            Set<String> additionalClasses = new HashSet<>();
+
+            if (cf.super_class != 0) {
+                additionalClasses.add(cf.getSuperclassName());
+            }
+            for (int i = 0; i < cf.interfaces.length; i++) {
+                additionalClasses.add(cf.getInterfaceName(i));
+            }
+            PermittedSubclasses_attribute permitted = (PermittedSubclasses_attribute) cf.getAttribute(Attribute.PermittedSubclasses);
+            if (permitted != null) {
+                for (int i = 0; i < permitted.subtypes.length; i++) {
+                    additionalClasses.add(cf.constant_pool.getClassInfo(permitted.subtypes[i]).getName());
+                }
+            }
+
+            for (String additional : additionalClasses) {
+                int dollar;
+
+                supertypes.add(additional);
+
+                while ((dollar = additional.lastIndexOf('$')) != (-1)) {
+                    additional = additional.substring(0, dollar);
+                    supertypes.add(additional);
+                }
+            }
+
+            return supertypes;
+        } catch (ConstantPoolException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private void addModuleHeader(ModuleDescription moduleDesc,
@@ -2115,7 +2336,9 @@ public class CreateSymbols {
             }
         }
 
-        headerDesc.versions += version;
+        if (!headerDesc.versions.contains(version)) {
+            headerDesc.versions += version;
+        }
 
         if (!existed) {
             moduleDesc.header.add(headerDesc);
@@ -2159,7 +2382,9 @@ public class CreateSymbols {
             }
         }
 
-        headerDesc.versions += version;
+        if (!headerDesc.versions.contains(version)) {
+            headerDesc.versions += version;
+        }
 
         if (!existed) {
             clazzDesc.header.add(headerDesc);
@@ -4415,22 +4640,25 @@ public class CreateSymbols {
                 String ctSymLocation;
                 String timestampSpec;
                 String currentVersion;
-                String systemModules;
+                String preReleaseTag;
+                String moduleClasses;
 
-                if (args.length == 6) {
+                if (args.length == 7) {
                     ctDescriptionFileExtra = null;
                     ctDescriptionFile = args[1];
                     ctSymLocation = args[2];
                     timestampSpec = args[3];
                     currentVersion = args[4];
-                    systemModules = args[5];
-                } else if (args.length == 7) {
+                    preReleaseTag = args[5];
+                    moduleClasses = args[6];
+                } else if (args.length == 8) {
                     ctDescriptionFileExtra = args[1];
                     ctDescriptionFile = args[2];
                     ctSymLocation = args[3];
                     timestampSpec = args[4];
                     currentVersion = args[5];
-                    systemModules = args[6];
+                    preReleaseTag = args[6];
+                    moduleClasses = args[7];
                 } else {
                     help();
                     return ;
@@ -4446,7 +4674,8 @@ public class CreateSymbols {
                                                   ctSymLocation,
                                                   timestamp,
                                                   currentVersion,
-                                                  systemModules);
+                                                  preReleaseTag,
+                                                  moduleClasses);
                 break;
             }
             case "build-javadoc-data": {

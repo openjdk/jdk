@@ -319,7 +319,8 @@ class PerfData : public CHeapObj<mtInternal> {
     // PerfData memory region. This redundancy is maintained for
     // security reasons as the PerfMemory region may be in shared
     // memory.
-    const char* name() { return _name; }
+    const char* name() const { return _name; }
+    bool name_equals(const char* name) const;
 
     // returns the variability classification associated with this item
     Variability variability() { return _v; }
@@ -576,7 +577,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     PerfDataArray* _set;
 
     // method to search for a instrumentation object by name
-    static bool by_name(void* name, PerfData* pd);
+    static bool by_name(const char* name, PerfData* pd);
 
   protected:
     // we expose the implementation here to facilitate the clone
