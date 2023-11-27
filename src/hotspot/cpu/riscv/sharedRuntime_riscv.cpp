@@ -694,9 +694,7 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on riscv");
 
   // We return the amount of VMRegImpl stack slots we need to reserve for all
   // the arguments NOT counting out_preserve_stack_slots.
@@ -1345,7 +1343,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now figure out where the args must be stored and how much stack space
   // they require.
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // incoming registers
@@ -1650,6 +1648,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = x9;  // Will contain the oop
   const Register lock_reg = x30;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = x30;  // value of old header at unlock time
+  const Register lock_tmp = x31;  // Temporary used by lightweight_lock/unlock
   const Register tmp      = ra;
 
   Label slow_path_lock;
@@ -1701,7 +1700,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ lightweight_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
 
     __ bind(count);
@@ -1829,7 +1828,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ test_bit(t0, old_hdr, exact_log2(markWord::monitor_value));
       __ bnez(t0, slow_path_unlock);
-      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     }
 

@@ -501,6 +501,10 @@ static Monitor* create_init_monitor(const char* name) {
   return new Monitor(Mutex::safepoint, name);
 }
 
+InstanceKlass::InstanceKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
   Klass(kind),
   _nest_members(nullptr),
@@ -822,8 +826,8 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (DumpSharedSpaces && SystemDictionaryShared::has_class_failed_verification(this)) {
-    // This is for CDS dumping phase only -- we use the in_error_state to indicate that
+  if (CDSConfig::is_dumping_static_archive() && SystemDictionaryShared::has_class_failed_verification(this)) {
+    // This is for CDS static dump only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
     //
