@@ -25,24 +25,26 @@
 /*
  * @bug 8320515
  * @summary This test checks that ObjectMonitors with dead objects don't
-            cause asserts, crashes, or failures when various sub-systems
-            in the JVM find them.
- * @requires os.family != "windows" & os.family != "aix"
+ *          cause asserts, crashes, or failures when various sub-systems
+ *          in the JVM find them.
  * @library /testlibrary /test/lib
  * @modules jdk.management
  */
 
 /*
+ * @requires os.family != "windows" & os.family != "aix"
  * @test id=DetachThread
  * @run main/othervm/native MonitorWithDeadObjectTest 0
  */
 
 /*
+ * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsBeforeDetach
  * @run main/othervm/native MonitorWithDeadObjectTest 1
  */
 
 /*
+ * @requires os.family != "windows" & os.family != "aix"
  * @test id=DumpThreadsAfterDetach
  * @run main/othervm/native MonitorWithDeadObjectTest 2
  */
