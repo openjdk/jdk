@@ -372,10 +372,10 @@ bool VirtualMemoryView::adjacent(Range a, Range b) {
 VirtualMemoryView::OverlappingResult
 VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                     TrackedOffsetRange* out, int* len) {
-  const auto a = to_split.start;
-  const auto b = to_split.end();
-  const auto c = to_remove.start;
-  const auto d = to_remove.end();
+  const address a = to_split.start;
+  const address b = to_split.end();
+  const address c = to_remove.start;
+  const address d = to_remove.end();
   /*
       to_split enclosed entirely by to_remove -- nothing is left
       Also handles the case where they are exactly the same, still has the same result.
