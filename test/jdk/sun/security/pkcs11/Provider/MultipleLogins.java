@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,16 @@ public class MultipleLogins {
     static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     public static void main(String[] args) throws Exception {
-        String nssConfig;
+        String nssConfig = null;
         try {
             nssConfig = PKCS11Test.getNssConfig();
-            if (nssConfig == null) {
-                // No test framework support yet. Ignore
-                System.out.println("No NSS config found. Skipping.");
-                return;
-            }
         } catch (SkippedException exc) {
             System.out.println("Skipping test: " + exc.getMessage());
+        }
+
+        if (nssConfig == null) {
+            // No test framework support yet. Ignore
+            System.out.println("No NSS config found. Skipping.");
             return;
         }
 
