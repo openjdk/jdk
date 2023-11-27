@@ -371,7 +371,7 @@ public class SwitchBootstrapsTest {
             clb.withFlags(AccessFlag.SYNTHETIC)
                .withMethodBody("<init>",
                                MethodTypeDesc.of(ConstantDescs.CD_void),
-                               Classfile.ACC_PUBLIC,
+                               ClassFile.ACC_PUBLIC,
                                cb -> {
                                    cb.aload(0);
                                    cb.invokespecial(ConstantDescs.CD_Object,
