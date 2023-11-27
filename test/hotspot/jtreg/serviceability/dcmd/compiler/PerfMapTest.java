@@ -92,6 +92,6 @@ public class PerfMapTest {
         do {
             path = Paths.get(String.format("%s/%s.map", test_dir, UUID.randomUUID().toString()));
         } while(Files.exists(path));
-        run(new JMXExecutor(), "Compiler.perfmap filename=" + path.toString(), path);
+        run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
     }
 }
