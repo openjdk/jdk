@@ -729,7 +729,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @see #bitLength()
      */
     public BigInteger(int numBits, Random rnd) {
-        // randomBits() returns a zero length array if len == 0
+        // randomBits() returns a zero length array if numBits == 0
         this.mag = randomBits(numBits, rnd);
 
         if (this.mag.length == 0) {
