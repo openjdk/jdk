@@ -391,7 +391,7 @@ template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
                                                          CardTableRS* ct,
-                                                         Func&& object_start) {
+                                                         Func& object_start) {
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
       current_card++;

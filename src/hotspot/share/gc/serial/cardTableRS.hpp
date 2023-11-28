@@ -53,13 +53,14 @@ class CardTableRS : public CardTable {
 
   static void clear_cards(CardValue* start, CardValue* end);
 
-  static CardValue* find_first_dirty_card(CardValue* const start_card,
-                                          CardValue* const end_card);
+  static CardValue* find_first_dirty_card(CardValue* start_card,
+                                          CardValue* end_card);
+
   template<typename Func>
-  CardValue* find_first_clean_card(CardValue* const start_card,
-                                   CardValue* const end_card,
+  CardValue* find_first_clean_card(CardValue* start_card,
+                                   CardValue* end_card,
                                    CardTableRS* ct,
-                                   Func&& object_start);
+                                   Func& object_start);
 
 public:
   CardTableRS(MemRegion whole_heap);
