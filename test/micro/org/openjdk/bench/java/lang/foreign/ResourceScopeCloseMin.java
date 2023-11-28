@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package org.openjdk.bench.java.lang.foreign;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -35,9 +34,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -45,35 +43,58 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
-public class AllocFromSliceTest extends CLayouts {
+@Fork(value = 3)
+public class ResourceScopeCloseMin {
 
-    @Param({"5", "20", "100", "500", "1000"})
-    public int size;
-    public int start;
-    public byte[] arr;
+    Runnable dummy = () -> {};
 
-    @Setup
-    public void setup() {
-        arr = new byte[1024];
-        Random random = new Random(0);
-        random.nextBytes(arr);
-        start = random.nextInt(1024 - size);
-    }
+    static class ConfinedScope {
+        final Thread owner;
+        boolean closed;
+        final List<Runnable> resources = new ArrayList<>();
 
-    @Benchmark
-    public MemorySegment alloc_confined() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(size);
-            MemorySegment.copy(arr, start, segment, C_CHAR, 0, size);
-            return segment;
+        private void checkState() {
+            if (closed) {
+                throw new AssertionError("Closed");
+            } else if (owner != Thread.currentThread()) {
+                throw new AssertionError("Wrong thread");
+            }
+        }
+
+        ConfinedScope() {
+            this.owner = Thread.currentThread();
+        }
+
+        void addCloseAction(Runnable runnable) {
+            checkState();
+            resources.add(runnable);
+        }
+
+        public void close() {
+            checkState();
+            closed = true;
+            for (Runnable r : resources) {
+                r.run();
+            }
         }
     }
 
     @Benchmark
-    public MemorySegment alloc_confined_slice() {
-        try (Arena arena = Arena.ofConfined()) {
-            return arena.allocateFrom(C_CHAR, MemorySegment.ofArray(arr), C_CHAR, start, size);
+    public void confined_close() {
+        ConfinedScope scope = new ConfinedScope();
+        try { // simulate TWR
+            scope.addCloseAction(dummy);
+            scope.close();
+        } catch (RuntimeException ex) {
+            scope.close();
+            throw ex;
         }
+    }
+
+    @Benchmark
+    public void confined_close_notry() {
+        ConfinedScope scope = new ConfinedScope();
+        scope.addCloseAction(dummy);
+        scope.close();
     }
 }
