@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "runtime/java.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#endif
+// key: compiler.err.redundant.superclass.init
 
-Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
-  switch (name()) {
-#if INCLUDE_SERIALGC
-    case Generation::DefNew:
-      return new DefNewGeneration(rs, _init_size, _min_size, _max_size);
-
-    case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
-#endif
-
-    default:
-      guarantee(false, "unrecognized GenerationName");
-      return nullptr;
-  }
+class RedundantSuperclassInit {
+    RedundantSuperclassInit() {
+        super();
+        super();
+    }
 }

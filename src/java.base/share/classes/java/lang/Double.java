@@ -316,7 +316,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * {@snippet lang="java" :
  * double d = 0.0;
- * while(d != 1.0) { // Surprising infinite loop
+ * while (d != 1.0) { // Surprising infinite loop
  *   d += 0.1; // Sum never _exactly_ equals 1.0
  * }
  * }
@@ -325,7 +325,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * {@snippet lang="java" :
  * double d = 0.0;
- * for(int i = 0; i < 10; i++) {
+ * for (int i = 0; i < 10; i++) {
  *   d += 0.1;
  * } // Value of d is equal to Math.nextDown(1.0).
  * }
@@ -335,7 +335,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * {@snippet lang="java" :
  *  double d = 0.0;
- *  while(d <= 1.0) {
+ *  while (d <= 1.0) {
  *    d += 0.1;
  *  } // Value of d approximately 1.0999999999999999
  *  }
