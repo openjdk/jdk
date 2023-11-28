@@ -1313,60 +1313,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
   return true;
 }
 
-#if INCLUDE_CDS
-const char* unsupported_properties[] = { "jdk.module.limitmods",
-                                         "jdk.module.upgrade.path",
-                                         "jdk.module.patch.0" };
-const char* unsupported_options[] = { "--limit-modules",
-                                      "--upgrade-module-path",
-                                      "--patch-module"
-                                    };
-void Arguments::check_unsupported_dumping_properties() {
-  assert(CDSConfig::is_dumping_archive(),
-         "this function is only used with CDS dump time");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  // If a vm option is found in the unsupported_options array, vm will exit with an error message.
-  SystemProperty* sp = system_properties();
-  while (sp != nullptr) {
-    for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-      if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
-        vm_exit_during_initialization(
-          "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
-      }
-    }
-    sp = sp->next();
-  }
-
-  // Check for an exploded module build in use with -Xshare:dump.
-  if (!has_jimage()) {
-    vm_exit_during_initialization("Dumping the shared archive is not supported with an exploded module build");
-  }
-}
-
-bool Arguments::check_unsupported_cds_runtime_properties() {
-  assert(UseSharedSpaces, "this function is only used with -Xshare:{on,auto}");
-  assert(ARRAY_SIZE(unsupported_properties) == ARRAY_SIZE(unsupported_options), "must be");
-  if (ArchiveClassesAtExit != nullptr) {
-    // dynamic dumping, just return false for now.
-    // check_unsupported_dumping_properties() will be called later to check the same set of
-    // properties, and will exit the VM with the correct error message if the unsupported properties
-    // are used.
-    return false;
-  }
-  for (uint i = 0; i < ARRAY_SIZE(unsupported_properties); i++) {
-    if (get_property(unsupported_properties[i]) != nullptr) {
-      if (RequireSharedSpaces) {
-        warning("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      } else {
-        log_info(cds)("CDS is disabled when the %s option is specified.", unsupported_options[i]);
-      }
-      return true;
-    }
-  }
-  return false;
-}
-#endif
-
 //===========================================================================================================
 // Setting int/mixed/comp mode flags
 
@@ -3021,66 +2967,9 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     return JNI_ERR;
   }
 
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_static_archive()) {
-    if (!mode_flag_cmd_line) {
-      // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
-      //
-      // If your classlist is large and you don't care about deterministic dumping, you can use
-      // -Xshare:dump -Xmixed to improve dumping speed.
-      set_mode_flags(_int);
-    } else if (_mode == _comp) {
-      // -Xcomp may use excessive CPU for the test tiers. Also, -Xshare:dump runs a small and fixed set of
-      // Java code, so there's not much benefit in running -Xcomp.
-      log_info(cds)("reduced -Xcomp to -Xmixed for static dumping");
-      set_mode_flags(_mixed);
-    }
-
-    // String deduplication may cause CDS to iterate the strings in different order from one
-    // run to another which resulting in non-determinstic CDS archives.
-    // Disable UseStringDeduplication while dumping CDS archive.
-    UseStringDeduplication = false;
-  }
-
-  // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
-  if (ArchiveClassesAtExit != nullptr && RecordDynamicDumpInfo) {
-    jio_fprintf(defaultStream::output_stream(),
-                "-XX:+RecordDynamicDumpInfo cannot be used with -XX:ArchiveClassesAtExit.\n");
+  if (!CDSConfig::check_vm_args_consistency(patch_mod_javabase, mode_flag_cmd_line)) {
     return JNI_ERR;
   }
-
-  if (ArchiveClassesAtExit == nullptr && !RecordDynamicDumpInfo) {
-    CDSConfig::disable_dumping_dynamic_archive();
-  } else {
-    CDSConfig::enable_dumping_dynamic_archive();
-  }
-
-  if (AutoCreateSharedArchive) {
-    if (SharedArchiveFile == nullptr) {
-      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
-      return JNI_ERR;
-    }
-    if (ArchiveClassesAtExit != nullptr) {
-      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
-      return JNI_ERR;
-    }
-  }
-
-  if (UseSharedSpaces && patch_mod_javabase) {
-    no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
-  }
-  if (UseSharedSpaces && check_unsupported_cds_runtime_properties()) {
-    UseSharedSpaces = false;
-  }
-
-  if (CDSConfig::is_dumping_archive()) {
-    // Always verify non-system classes during CDS dump
-    if (!BytecodeVerificationRemote) {
-      BytecodeVerificationRemote = true;
-      log_info(cds)("All non-system classes will be verified (-Xverify:remote) during CDS dump time.");
-    }
-  }
-#endif
 
 #ifndef CAN_SHOW_REGISTERS_ON_ASSERT
   UNSUPPORTED_OPTION(ShowRegistersOnAssert);
@@ -3793,7 +3682,7 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  CDSConfig::initialize_archive_paths();
+  CDSConfig::initialize();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

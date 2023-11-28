@@ -248,7 +248,6 @@ class Arguments : AllStatic {
 
   // Operation modi
   static Mode _mode;
-  static void set_mode_flags(Mode mode);
 
   // preview features
   static bool _enable_preview;
@@ -493,6 +492,7 @@ class Arguments : AllStatic {
 
   // Operation modi
   static Mode mode()                { return _mode;           }
+  static void set_mode_flags(Mode mode);
   static bool is_interpreter_only() { return mode() == _int;  }
   static bool is_compiler_only()    { return mode() == _comp; }
 
@@ -503,10 +503,6 @@ class Arguments : AllStatic {
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
-
-  static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
-
-  static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN0;
 
   static bool atojulong(const char *s, julong* result);
 

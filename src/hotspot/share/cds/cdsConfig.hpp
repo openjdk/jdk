@@ -37,20 +37,22 @@ class CDSConfig : public AllStatic {
   static bool _loading_full_module_graph_disabled;
 
   static char*  _default_archive_path;
-  static char*  SharedArchivePath;
-  static char*  SharedDynamicArchivePath;
- //static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
+  static char*  _static_archive_path;
+  static char*  _dynamic_archive_path;
 #endif
 
   static void extract_shared_archive_paths(const char* archive_path,
                                            char** base_archive_path,
                                            char** top_archive_path);
   static void init_shared_archive_paths();
+  static bool check_unsupported_cds_runtime_properties();
 
 public:
-  // Initialization
-  static void initialize_archive_paths() NOT_CDS_RETURN;
+  // Initialization and command-line checking
+  static void initialize() NOT_CDS_RETURN;
   static void check_system_property(const char* key, const char* value) NOT_CDS_RETURN;
+  static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
+  static bool check_vm_args_consistency(bool patch_mod_javabase,  bool mode_flag_cmd_line) NOT_CDS_RETURN_(false);
 
   // Basic CDS features
   static bool      is_dumping_archive()                      { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
@@ -61,11 +63,15 @@ public:
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
   // Archive paths
-  static char* get_default_archive_path()                    NOT_CDS_RETURN_(nullptr);
+  // Points to the classes.jsa in $JAVA_HOME
+  static char* default_archive_path()                         NOT_CDS_RETURN_(nullptr);
+  // The actual static archive  (if any) selected at runtime
+  static const char* static_archive_path()                   { return CDS_ONLY(_static_archive_path) NOT_CDS(nullptr); }
+  // The actual dynamic archive  (if any) selected at runtime
+  static const char* dynamic_archive_path()                  { return CDS_ONLY(_dynamic_archive_path) NOT_CDS(nullptr); }
+
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
 
-  static const char* GetSharedArchivePath()                  { return CDS_ONLY(SharedArchivePath) NOT_CDS(nullptr); }
-  static const char* GetSharedDynamicArchivePath()           { return CDS_ONLY(SharedDynamicArchivePath) NOT_CDS(nullptr); }
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);

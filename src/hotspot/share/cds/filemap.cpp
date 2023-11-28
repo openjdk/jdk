@@ -162,8 +162,8 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
 
-    const char* default_base_archive_name = CDSConfig::get_default_archive_path();
-    const char* current_base_archive_name = CDSConfig::GetSharedArchivePath();
+    const char* default_base_archive_name = CDSConfig::default_archive_path();
+    const char* current_base_archive_name = CDSConfig::static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -199,7 +199,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(CDSConfig::GetSharedArchivePath());
+    copy_base_archive_name(CDSConfig::static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -1248,7 +1248,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 
   const char* base = file_helper.base_archive_name();
   if (base == nullptr) {
-    *base_archive_name = CDSConfig::get_default_archive_path();
+    *base_archive_name = CDSConfig::default_archive_path();
   } else {
     *base_archive_name = os::strdup_check_oom(base);
   }
@@ -2273,7 +2273,7 @@ bool FileMapInfo::initialize() {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = CDSConfig::GetSharedDynamicArchivePath();
+        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
       }
       return false;
     }
