@@ -377,6 +377,7 @@ ENABLE_HSDIS_BUNDLING := @ENABLE_HSDIS_BUNDLING@
 HSDIS_CFLAGS := @HSDIS_CFLAGS@
 HSDIS_LDFLAGS := @HSDIS_LDFLAGS@
 HSDIS_LIBS := @HSDIS_LIBS@
+CAPSTONE_ARCH_AARCH64_NAME := @CAPSTONE_ARCH_AARCH64_NAME@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
