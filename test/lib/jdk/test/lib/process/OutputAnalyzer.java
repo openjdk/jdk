@@ -621,6 +621,14 @@ public final class OutputAnalyzer {
         return asLines(getOutput());
     }
 
+    public List<String> stdoutAsLines() {
+        return asLines(getStdout());
+    }
+
+    public List<String> stderrAsLines() {
+        return asLines(getStderr());
+    }
+
     private List<String> asLines(String buffer) {
         return Arrays.asList(buffer.split("\\R"));
     }
@@ -784,6 +792,74 @@ public final class OutputAnalyzer {
             }
         }
         return -1;
+    }
+
+    private void searchLinesForMultiLinePattern(String[] haystack, String[] needles, boolean verbose) {
+
+        if (needles.length == 0) {
+            return;
+        }
+
+        int firstNeedlePos = 0;
+        for (int i = 0; i < haystack.length; i++) {
+            if (verbose) {
+                System.out.println("" + i + ":" + haystack[i]);
+            }
+            if (haystack[i].contains(needles[0])) {
+                if (verbose) {
+                    System.out.println("Matches pattern 0 (\"" + needles[0] + "\")");
+                }
+                firstNeedlePos = i;
+                break;
+            }
+        }
+
+        for (int i = 1; i < needles.length; i++) {
+            int haystackPos = firstNeedlePos + i;
+            if (haystackPos < haystack.length) {
+                if (verbose) {
+                    System.out.println("" + haystackPos + ":" + haystack[haystackPos]);
+                }
+                if (haystack[haystackPos].contains(needles[i])) {
+                    if (verbose) {
+                        System.out.println("Matches pattern " + i  + "(\"" + needles[i] + "\")");
+                    }
+                } else {
+                    String err = "First unmatched pattern: " + i + " (\"" + needles[i] + "\")";
+                    if (!verbose) { // don't print twice
+                        reportDiagnosticSummary();
+                    }
+                    throw new RuntimeException(err);
+                }
+            }
+        }
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stdoutLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stdoutLines, needles, verbose);
+    }
+
+    public void stdoutShouldContainMultiLinePattern(String... needles) {
+        stdoutShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] stderrLines = stdoutAsLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(stderrLines, needles, verbose);
+    }
+
+    public void stderrShouldContainMultiLinePattern(String... needles) {
+        stderrShouldContainMultiLinePattern(needles, true);
+    }
+
+    public void shouldContainMultiLinePattern(String[] needles, boolean verbose) {
+        String [] lines = asLines().toArray(new String[0]);
+        searchLinesForMultiLinePattern(lines, needles, verbose);
+    }
+
+    public void shouldContainMultiLinePattern(String... needles) {
+        shouldContainMultiLinePattern(needles, true);
     }
 
 }
