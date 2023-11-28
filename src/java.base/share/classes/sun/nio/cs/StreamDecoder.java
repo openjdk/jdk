@@ -291,7 +291,7 @@ public class StreamDecoder extends Reader {
 
     private void lockedFillZeroToPosition() throws IOException {
         ensureOpen();
-        Arrays.fill(bb.array(), 0, bb.arrayOffset() + bb.position(), (byte)0);
+        Arrays.fill(bb.array(), bb.arrayOffset(), bb.arrayOffset() + bb.position(), (byte)0);
     }
 
     // -- Charset-based stream decoder impl --
