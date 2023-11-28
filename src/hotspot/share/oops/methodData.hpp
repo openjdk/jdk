@@ -2312,6 +2312,7 @@ public:
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
+    assert(extra_data_lock()->owned_by_self(), "must have lock");
     ProfileData* data = nullptr;
     // If m not null, try to allocate a SpeculativeTrapData entry
     if (m == nullptr) {

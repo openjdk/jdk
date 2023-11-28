@@ -2494,7 +2494,10 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
     // Find the profile data for this BCI.  If there isn't one,
     // try to allocate one from the MDO's set of spares.
     // This will let us detect a repeated trap at this point.
-    pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
+    {
+      MutexLocker ml(trap_mdo->extra_data_lock());
+      pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
+    }
 
     if (pdata != nullptr) {
       if (reason_is_speculate(reason) && !pdata->is_SpeculativeTrapData()) {

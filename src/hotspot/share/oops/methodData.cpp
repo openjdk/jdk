@@ -1460,9 +1460,10 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   }
 
   if (create_if_missing && dp < end) {
-    MutexLocker ml(&_extra_data_lock);
     // Check again now that we have the lock. Another thread may
-    // have added extra data entries.
+    // have added extra data entries. Do it re-entrant in case
+    // we already have the lock further up.
+    ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self());
     ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
     if (result != nullptr || dp >= end) {
       return result;
