@@ -523,8 +523,6 @@ class os: AllStatic {
     size_t size;
     int lgrp_id;
   };
-  static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
-
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
@@ -672,6 +670,8 @@ class os: AllStatic {
 
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
+
+  static void           prepare_native_symbols();
 
   // Builds the platform-specific name of a library.
   // Returns false if the buffer is too small.

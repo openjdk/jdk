@@ -47,7 +47,8 @@ private:
 
 public:
   void add(ObjectMonitor* monitor);
-  size_t unlink_deflated(GrowableArray<ObjectMonitor*>* unlinked_list,
+  size_t unlink_deflated(size_t deflated_count,
+                         GrowableArray<ObjectMonitor*>* unlinked_list,
                          ObjectMonitorDeflationSafepointer* safepointer);
   size_t count() const;
   size_t max() const;

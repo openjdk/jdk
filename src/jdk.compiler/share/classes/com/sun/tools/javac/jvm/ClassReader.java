@@ -2332,7 +2332,12 @@ public class ClassReader {
                 thrown.add(addTypeAnnotations(thrownType, thrownType(i++)));
             }
             mt.thrown = thrown.toList();
-            mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            /* possible information loss if the type of the method is void then we can't add type
+             * annotations to it
+             */
+            if (!mt.restype.hasTag(TypeTag.VOID)) {
+                mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            }
 
             Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
             if (recvtype != null) {
