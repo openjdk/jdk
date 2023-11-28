@@ -193,8 +193,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
   volatile bool allocator_running = true;
   volatile bool processor_running = true;
 
-  ProcessorThread* proc_threads[nthreads] = {};
-  for (uint i = 0; i < nthreads; ++i) {
+  ProcessorThread* proc_threads[nthreads * 2] = {};
+  for (uint i = 0; i < nthreads * 2; ++i) {
     proc_threads[i] = new ProcessorThread(&post,
                                           allocator,
                                           cbl,
