@@ -100,7 +100,8 @@ public class SerialNumber {
     /**
      * Return the SerialNumber as user readable string.
      */
-    public String toString() { return "Serial number: " + serialNum.toString(16); }
+    public String toString() { return "Serial number: " +
+        serialNum.toString(16).toUpperCase().replaceAll("(?<=..)(..)", ":$1"); }
 
     /**
      * Encode the SerialNumber in DER form to the stream.
