@@ -1,3 +1,4 @@
+#include "precompiled.hpp"
 #include "oops/symbolHandle.hpp"
 #include "runtime/atomic.hpp"
 
