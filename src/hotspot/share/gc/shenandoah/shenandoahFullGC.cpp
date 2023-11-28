@@ -284,7 +284,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   ShenandoahPrepareForMarkClosure cl;
   heap->heap_region_iterate(&cl);
 
-  heap->set_unload_classes(heap->heuristics()->should_unload_classes());
+  heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
   // enable ("weak") refs discovery

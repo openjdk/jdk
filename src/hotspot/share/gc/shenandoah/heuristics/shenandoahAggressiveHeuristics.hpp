@@ -41,6 +41,8 @@ public:
 
   virtual bool should_start_gc();
 
+  virtual bool should_unload_classes();
+
   virtual const char* name()     { return "Aggressive"; }
   virtual bool is_diagnostic()   { return true; }
   virtual bool is_experimental() { return false; }

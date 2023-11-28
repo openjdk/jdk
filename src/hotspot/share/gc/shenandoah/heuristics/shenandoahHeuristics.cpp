@@ -253,8 +253,13 @@ void ShenandoahHeuristics::record_requested_gc() {
   _gc_times_learned = 0;
 }
 
-bool ShenandoahHeuristics::should_unload_classes() {
+bool ShenandoahHeuristics::can_unload_classes() {
   if (!ClassUnloading) return false;
+  return true;
+}
+
+bool ShenandoahHeuristics::should_unload_classes() {
+  if (!can_unload_classes()) return false;
   if (has_metaspace_oom()) return true;
   return ClassUnloadingWithConcurrentMark;
 }

@@ -105,7 +105,7 @@ void ShenandoahDegenGC::op_degenerated() {
 
       // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
-      heap->set_unload_classes(heap->heuristics()->should_unload_classes());
+      heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
       op_reset();
 
