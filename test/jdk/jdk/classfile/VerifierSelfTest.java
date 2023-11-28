@@ -29,7 +29,6 @@
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.invoke.MethodHandleInfo;
 import java.net.URI;

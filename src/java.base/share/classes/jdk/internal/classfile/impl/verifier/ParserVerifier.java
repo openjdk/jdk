@@ -30,7 +30,6 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import jdk.internal.classfile.Attribute;
@@ -57,7 +56,6 @@ public record ParserVerifier(ClassModel classModel) {
         verifyFields(errors);
         verifyMethods(errors);
         verifyAttributes(classModel, errors);
-        //verify LNTA vs LNTTA
         return errors;
     }
 
