@@ -25,20 +25,12 @@
 #ifndef SHARE_NMT_VIRTUALMEMORYVIEW_HPP
 #define SHARE_NMT_VIRTUALMEMORYVIEW_HPP
 
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "memory/metaspace.hpp" // For MetadataType
-#include "memory/metaspaceStats.hpp"
-#include "memory/resourceArea.hpp"
-#include "nmt/allocationSite.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/pair.hpp"
 
 /*
   Remaining issues:
