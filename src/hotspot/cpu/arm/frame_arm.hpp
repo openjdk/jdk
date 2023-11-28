@@ -99,8 +99,6 @@
   }
 #endif
 
-  const ImmutableOopMap* get_oop_map() const;
-
  public:
   // Constructors
 

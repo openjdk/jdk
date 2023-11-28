@@ -735,8 +735,16 @@ public:
   };
 
   bool check() const { return int_at(0) == 0x841f0f; }
-  int displacement() const { return (jint) int_at(displacement_offset); }
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
+    int32_t data = int_at(displacement_offset);
+    if (data == 0) {
+      return false; // no information encoded
+    }
+    cb_offset = (data & 0xffffff);
+    oopmap_slot = (data >> 24) & 0xff;
+    return true; // decoding succeeded
+  }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 

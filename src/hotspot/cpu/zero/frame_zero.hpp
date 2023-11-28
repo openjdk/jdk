@@ -44,8 +44,6 @@
     align_wiggle     =  1
   };
 
- const ImmutableOopMap* get_oop_map() const;
-
   // Constructor
  public:
   frame(ZeroFrame* zeroframe, intptr_t* sp);

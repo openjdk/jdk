@@ -657,9 +657,9 @@ class NativeGeneralJump: public NativeInstruction {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { Unimplemented(); return false; }
-  int displacement() const { return 0; }
-  void patch(jint diff) { Unimplemented(); }
-  void make_deopt() { Unimplemented(); }
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented() ; return false; }
+  void make_deopt();
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {

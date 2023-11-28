@@ -400,8 +400,6 @@
 
  public:
 
-  const ImmutableOopMap* get_oop_map() const;
-
   // Constructors
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);

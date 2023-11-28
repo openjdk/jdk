@@ -684,10 +684,15 @@ void NativePostCallNop::make_deopt() {
   ICache::invalidate_range(instr_addr, instruction_size);
 }
 
-void NativePostCallNop::patch(jint diff) {
-  assert(diff != 0, "must be");
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  int32_t data = (oopmap_slot << 24) | cb_offset;
+  assert(data != 0, "must be");
   int32_t *code_pos = (int32_t *) addr_at(displacement_offset);
-  *((int32_t *)(code_pos)) = (int32_t) diff;
+  *((int32_t *)(code_pos)) = (int32_t) data;
+  return true; // successfully encoded
 }
 
 void NativeDeoptInstruction::verify() {
