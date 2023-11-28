@@ -366,9 +366,6 @@
   product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
           "Attempt more loop opts after barrier expansion.")                \
                                                                             \
-  product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
-          "Fix references with load reference barrier. Disabling this "     \
-          "might degrade performance.")
 
 // end of GC_SHENANDOAH_FLAGS
 
