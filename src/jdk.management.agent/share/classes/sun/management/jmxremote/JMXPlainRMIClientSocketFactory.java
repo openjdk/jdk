@@ -39,7 +39,7 @@ import java.security.PrivilegedAction;
 /**
  * Implement RMIClientSocketFactory to enable JMX-specific properties.
  */
-public class JMXRMIStandardClientSocketFactory implements RMIClientSocketFactory, Serializable {
+public class JMXPlainRMIClientSocketFactory implements RMIClientSocketFactory, Serializable {
 
     private static final long serialVersionUID = 1L; 
 
