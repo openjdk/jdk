@@ -97,6 +97,12 @@ public class TestChaCha20 {
                 System.out.println("Setting up ASIMD worker");
                 configs.add(new ArrayList());
             }
+        } else if (Platform.isRISCV64()) {
+            // AArch64 intrinsics require the advanced simd instructions
+            if (containsFuzzy(cpuFeatures, "v")) {
+                System.out.println("Setting up vector worker");
+                configs.add(List.of("-XX:+UseRVV"));
+            }
         } else {
             // We only have ChaCha20 intrinsics on x64 and aarch64
             // currently.  If the platform is neither of these then
