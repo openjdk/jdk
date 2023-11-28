@@ -273,28 +273,25 @@ public class StreamDecoder extends Reader {
         return !closed;
     }
 
-    public void spaceOut(int charCount) throws IOException {
+    public void fillZeroToPosition() throws IOException {
         Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
-                lockedSpaceOut(charCount);
+                lockedFillZeroToPosition();
             } finally {
                 locker.unlock();
             }
         } else {
             synchronized (lock) {
-                lockedSpaceOut(charCount);
+                lockedFillZeroToPosition();
             }
         }
     }
 
-    private void lockedSpaceOut(int charCount) throws IOException {
+    private void lockedFillZeroToPosition() throws IOException {
         ensureOpen();
-        var byteCount = charCount * 4; // worst case for all supplementary chars
-        var fromIndex = bb.arrayOffset() + Math.max(bb.position() - byteCount, 0);
-        var toIndex = bb.arrayOffset() + bb.position();
-        Arrays.fill(bb.array(), fromIndex, toIndex, (byte)' ');
+        Arrays.fill(bb.array(), 0, bb.arrayOffset() + bb.position(), (byte)0);
     }
 
     // -- Charset-based stream decoder impl --
