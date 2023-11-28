@@ -34,7 +34,7 @@
 public class TestTopCastIIOnUndetectedDeadPath {
     static class X {
         static void m(int[] a) {
-            
+
         }
     }
 
@@ -55,4 +55,3 @@ public class TestTopCastIIOnUndetectedDeadPath {
         test(42);
     }
 }
-
