@@ -34,10 +34,18 @@ class ValueStack: public CompilationResourceObj {
     CallerState,         // Caller state when inlining
     StateBefore,         // Before before execution of instruction
     StateAfter,          // After execution of instruction
-    ExceptionState,      // Exception handling of instruction
-    EmptyExceptionState, // Exception handling of instructions not covered by an xhandler
-    CallerExceptionState,
-    CallerEmptyExceptionState,
+    // Exception states for an instruction.
+    // Dead stack items or locals may be invalidated or cleared/removed.
+    // Locals are retained if needed for JVMTI.
+    // "empty" exception states are used when there is no handler,
+    // and invalidate the locals.
+    // "leaf" exception states clear the stack.
+    // "caller" exception states are used for the parent/caller,
+    // and invalidate the stack.
+    ExceptionState,      // Exception state for leaf with handler, stack cleared
+    EmptyExceptionState, // Exception state for leaf w/o handler, stack cleared, locals invalidated
+    CallerExceptionState, // Exception state for parent with handler, stack invalidated
+    CallerEmptyExceptionState, // Exception state for parent w/o handler, stack+locals invalidated
     BlockBeginState      // State of BlockBegin instruction with phi functions of this block
   };
 
