@@ -119,7 +119,6 @@ static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
 
 address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
-                                       BasicType* in_sig_bt, int total_in_args,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -127,27 +126,16 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
+  int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
 
   Register callerSP            = R2, // C/C++ uses R2 as TOC, but we can reuse it here
            tmp                 = R11_scratch1, // same as shuffle_reg
            call_target_address = R12_scratch2; // same as _abi._scratch2
-  VMStorage shuffle_reg = abi._scratch1;
-  JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs);
-  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg);
+  GrowableArray<VMStorage> unfiltered_out_regs;
+  int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
   // The Java call uses the JIT ABI, but we also call C.
-  int out_arg_area = MAX2(frame::jit_out_preserve_size + arg_shuffle.out_arg_bytes(), (int)frame::native_abi_reg_args_size);
-
-#ifndef PRODUCT
-  LogTarget(Trace, foreign, upcall) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    arg_shuffle.print_on(&ls);
-  }
-#endif
+  int out_arg_area = MAX2(frame::jit_out_preserve_size + out_arg_bytes, (int)frame::native_abi_reg_args_size);
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
   RegSpiller arg_spiller(call_regs._arg_regs);
@@ -168,6 +156,19 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     // buffer address from
     locs.set(StubLocations::RETURN_BUFFER, abi._scratch2);
   }
+
+  GrowableArray<VMStorage> in_regs = ForeignGlobals::replace_place_holders(call_regs._arg_regs, locs);
+  GrowableArray<VMStorage> filtered_out_regs = ForeignGlobals::upcall_filter_receiver_reg(unfiltered_out_regs);
+  ArgumentShuffle arg_shuffle(in_regs, filtered_out_regs, abi._scratch1);
+
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   int frame_size = align_up(frame_bottom_offset, StackAlignmentInBytes);
 
@@ -229,7 +230,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     __ addi(as_Register(locs.get(StubLocations::RETURN_BUFFER)), R1_SP, ret_buf_offset);
   }
   __ ld(callerSP, _abi0(callers_sp), R1_SP); // preset (used to access caller frame argument slots)
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::native_abi_minframe_size, frame::jit_out_preserve_size, locs);
+  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::native_abi_minframe_size, frame::jit_out_preserve_size);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");

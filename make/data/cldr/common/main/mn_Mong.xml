@@ -26,57 +26,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</layout>
 	<characters>
 		<exemplarCharacters>[᠐ ᠑ ᠒ ᠓ ᠔ ᠕ ᠖ ᠗ ᠘ ᠙ ᠠ ᠡ ᠢ ᠣ ᠤ ᠥ ᠦ ᠧ ᠨ ᠩ ᠪ ᠫ ᠬ ᠭ ᠮ ᠯ ᠰ ᠱ ᠲ ᠳ ᠴ ᠵ ᠶ ᠷ ᠸ ᠹ ᠺ ᠻ ᠼ ᠽ ᠾ ᠿ ᡀ ᡁ ᡂ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ᠠ ᠡ ᠢ ᠣ ᠤ ᠥ ᠦ ᠧ ᠨ ᠩ ᠪ ᠫ ᠬ ᠭ ᠮ ᠯ ᠰ ᠱ ᠲ ᠳ ᠴ ᠵ ᠶ ᠷ ᠸ ᠹ ᠺ ᠻ ᠼ ᠽ ᠾ ᠿ ᡀ ᡁ ᡂ]</exemplarCharacters>
 	</characters>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>mong</native>
 		</otherNumberingSystems>
 		<currencies>
 			<currency type="BRL">
 				<displayName>бразил реал</displayName>
-				<displayName count="one">бразил реал</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>юань</displayName>
-				<displayName count="one">юань</displayName>
-				<displayName count="other">юань</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>евро</displayName>
-				<displayName count="one">евро</displayName>
-				<displayName count="other">евро</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>фунт стерлинг</displayName>
-				<displayName count="one">фунт стерлинг</displayName>
-				<displayName count="other">фунт стерлинг</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>рупи</displayName>
-				<displayName count="one">рупи</displayName>
-				<displayName count="other">рупи</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>иен</displayName>
-				<displayName count="one">иен</displayName>
-				<displayName count="other">иен</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName>төгрөг</displayName>
-				<displayName count="one">төгрөг</displayName>
-				<displayName count="other">төгрөг</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>рубль</displayName>
-				<displayName count="one">рубль</displayName>
-				<displayName count="other">рубль</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>ам. доллар</displayName>
-				<displayName count="one">ам. доллар</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
 		</currencies>

@@ -192,7 +192,7 @@ public class ElementsTable {
 
     private final ModifierFilter accessFilter;
 
-    private final AccessKind expandRequires;
+    private final AccessLevel expandRequires;
 
     final boolean xclasses;
 
@@ -605,8 +605,8 @@ public class ElementsTable {
             return;
         }
 
-        final boolean expandAll = expandRequires.equals(AccessKind.PRIVATE)
-                || expandRequires.equals(AccessKind.PACKAGE);
+        final boolean expandAll = expandRequires.equals(AccessLevel.PRIVATE)
+                || expandRequires.equals(AccessLevel.PACKAGE);
 
         Set<ModuleElement> result = new LinkedHashSet<>();
         ListBuffer<ModuleElement> queue = new ListBuffer<>();
@@ -657,13 +657,13 @@ public class ElementsTable {
     }
 
     private Set<PackageElement> computeModulePackages() throws ToolException {
-        AccessKind accessValue = accessFilter.getAccessValue(ElementKind.PACKAGE);
-        final boolean documentAllModulePackages = (accessValue == AccessKind.PACKAGE ||
-                accessValue == AccessKind.PRIVATE);
+        AccessLevel accessValue = accessFilter.getAccessValue(ElementKind.PACKAGE);
+        final boolean documentAllModulePackages = (accessValue == AccessLevel.PACKAGE ||
+                accessValue == AccessLevel.PRIVATE);
 
         accessValue = accessFilter.getAccessValue(ElementKind.MODULE);
-        final boolean moduleDetailedMode = (accessValue == AccessKind.PACKAGE ||
-                accessValue == AccessKind.PRIVATE);
+        final boolean moduleDetailedMode = (accessValue == AccessLevel.PACKAGE ||
+                accessValue == AccessLevel.PRIVATE);
         Set<PackageElement> expandedModulePackages = new LinkedHashSet<>();
 
         for (ModuleElement mdle : specifiedModuleElements) {
@@ -1185,12 +1185,8 @@ public class ElementsTable {
                                                     ElementKind.PACKAGE,
                                                     ElementKind.MODULE);
 
-        // all possible access levels allowed for each element
-        private final EnumMap<ElementKind, EnumSet<AccessKind>> filterMap =
-                new EnumMap<>(ElementKind.class);
-
-        // the specified access level for each element
-        private final EnumMap<ElementKind, AccessKind> accessMap =
+        // the allowed access level for each element kind
+        private final EnumMap<ElementKind, AccessLevel> allowedAccess =
                 new EnumMap<>(ElementKind.class);
 
         /**
@@ -1199,35 +1195,23 @@ public class ElementsTable {
          * @param options the tool options
          */
         ModifierFilter(ToolOptions options) {
-
-            AccessKind accessValue = null;
             for (ElementKind kind : ALLOWED_KINDS) {
-                accessValue = switch (kind) {
+                var accessValue = switch (kind) {
                     case METHOD  -> options.showMembersAccess();
                     case CLASS   -> options.showTypesAccess();
                     case PACKAGE -> options.showPackagesAccess();
                     case MODULE  -> options.showModuleContents();
                     default -> throw new AssertionError("unknown element: " + kind);
                 };
-                accessMap.put(kind, accessValue);
-                filterMap.put(kind, getFilterSet(accessValue));
+                allowedAccess.put(kind, accessValue);
             }
         }
 
-        static EnumSet<AccessKind> getFilterSet(AccessKind accessValue) {
-            return switch (accessValue) {
-                case PUBLIC    -> EnumSet.of(AccessKind.PUBLIC);
-                case PROTECTED -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED);
-                case PACKAGE   -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED, AccessKind.PACKAGE);
-                case PRIVATE   -> EnumSet.allOf(AccessKind.class);
-            };
-        }
-
-        public AccessKind getAccessValue(ElementKind kind) {
+        public AccessLevel getAccessValue(ElementKind kind) {
             if (!ALLOWED_KINDS.contains(kind)) {
                 throw new IllegalArgumentException("not allowed: " + kind);
             }
-            return accessMap.getOrDefault(kind, AccessKind.PROTECTED);
+            return allowedAccess.getOrDefault(kind, AccessLevel.PROTECTED);
         }
 
         /**
@@ -1237,21 +1221,13 @@ public class ElementsTable {
          * @return whether the modifiers pass this filter
          */
         public boolean checkModifier(Element e) {
-            Set<Modifier> modifiers = e.getModifiers();
-            AccessKind fflag = AccessKind.PACKAGE;
-            if (modifiers.contains(Modifier.PUBLIC)) {
-                fflag = AccessKind.PUBLIC;
-            } else if (modifiers.contains(Modifier.PROTECTED)) {
-                fflag = AccessKind.PROTECTED;
-            } else if (modifiers.contains(Modifier.PRIVATE)) {
-                fflag = AccessKind.PRIVATE;
-            }
-            EnumSet<AccessKind> filterSet = filterMap.get(getAllowedKind(e.getKind()));
-            return filterSet.contains(fflag);
+            var access = AccessLevel.of(e.getModifiers());
+            return allowedAccess.get(toTrackedKind(e.getKind())).compareTo(access) <= 0;
         }
 
-        // convert a requested element kind to an allowed access kind
-        private ElementKind getAllowedKind(ElementKind kind) {
+        // convert the requested element kind to a tracked access kind
+        // (access is tracked for certain kinds only)
+        private ElementKind toTrackedKind(ElementKind kind) {
             return switch (kind) {
                 case CLASS, METHOD, MODULE, PACKAGE -> kind;
                 case RECORD, ANNOTATION_TYPE, ENUM, INTERFACE -> ElementKind.CLASS;
