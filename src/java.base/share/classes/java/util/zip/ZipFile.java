@@ -487,12 +487,11 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * {@return a string identifying this ZIP file}
+     * {@return a string identifying this {@code ZipFile}, for debugging}
      *
-     * The exact details of the representation are subject to change and this
-     * string value is recommended only for debugging purposes. But the following
-     * format may be regarded as typical: The underlying ZIP file name followed
-     * by '@' and a hex representation of the identity hash for this {@code ZipFile}.
+     * The string returned is given in the following format: The underlying ZIP file name
+     * followed by '@' and a hex representation of the identity hash for this {@code ZipFile}.
+     * The exact details of this format are subject to change.
      */
     @Override
     public String toString() {
