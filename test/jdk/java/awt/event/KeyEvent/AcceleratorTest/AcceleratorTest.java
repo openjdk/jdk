@@ -57,8 +57,8 @@ public class AcceleratorTest {
     static String[] CMD = {
             "\u042E, keep me in focus",
             "Item Ctrl Be",
-            "Item English Period",
-            "Item English N",
+            "Item Ctrl English Period",
+            "Item Ctrl English N",
             "\u0436"
     };
 
@@ -142,7 +142,7 @@ public class AcceleratorTest {
                             for (int i = 0; i < CMD.length; i++) {
                                 if (cmdHash.get(CMD[i]) == 0) notYet = true;
                             }
-                            text.append("FIRED\n");
+                            text.append(evt.getActionCommand() + " FIRED\n");
                             if (!notYet) {
                                 text.append("All tests passed.");
                             }
@@ -182,7 +182,7 @@ public class AcceleratorTest {
                 if (cmdHash.get(CMD[i]) == 0) notYet = true;
                 //text.append(CMD[i]+":"+cmdHash.get(CMD[i]));
             }
-            text.append("FIRED\n");
+            text.append(ae.getActionCommand() + " FIRED\n");
             if (!notYet) {
                 text.append("All tests passed.\n");
             }
