@@ -3662,6 +3662,156 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   bind(L_end);
 }
 
+static const int64_t bits32 = right_n_bits(32);
+static const int64_t bits8 = right_n_bits(8);
+
+/**
+ * Emits code to update CRC-32 with a byte value according to constants in table
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]val       Register containing the byte to fold into the CRC.
+ * @param [in]table     Register containing the table of crc constants.
+ *
+ * uint32_t crc;
+ * val = crc_table[(val ^ crc) & 0xFF];
+ * crc = val ^ (crc >> 8);
+ *
+ */
+void MacroAssembler::update_byte_crc32(Register crc, Register val, Register table, Register tmp) {
+  assert_different_registers(crc, val, table, tmp);
+
+  xorr(val, val, crc);
+  andi(val, val, bits8);
+  slli(val, val, 2);
+  add(tmp, table, val);
+  lwu(val, Address(tmp));
+  srli(crc, crc, 8);
+  xorr(crc, val, crc);
+}
+
+/**
+ * Emits code to update CRC-32 with a 32-bit value according to tables 0 to 3
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]v         Register containing the 32-bit to fold into the CRC.
+ * @param [in]table0    Register containing table 0 of crc constants.
+ * @param [in]table1    Register containing table 1 of crc constants.
+ * @param [in]table2    Register containing table 2 of crc constants.
+ * @param [in]table3    Register containing table 3 of crc constants.
+ *
+ * uint32_t crc;
+ *   v = crc ^ v
+ *   crc = table3[v&0xff]^table2[(v>>8)&0xff]^table1[(v>>16)&0xff]^table0[v>>24]
+ *
+ */
+void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp,
+        Register table0, Register table1, Register table2, Register table3,
+        bool upper) {
+  const Register t3 = x28;
+  assert_different_registers(crc, v, tmp, table0, table1, table2, table3, t3);
+
+  if (upper)
+    srli(v, v, 32);
+  xorr(v, crc, v);
+
+  andi(tmp, v, bits8);
+  shadd(tmp, tmp, table3, t3, 2);
+  Assembler::lwu(crc, tmp, 0);
+
+  srli(tmp, v, 8);
+  andi(tmp, tmp, bits8);
+  shadd(tmp, tmp, table2, t3, 2);
+  Assembler::lwu(t3, tmp, 0);
+  xorr(crc, crc, t3);
+
+  srli(tmp, v, 16);
+  andi(tmp, tmp, bits8);
+  shadd(tmp, tmp, table1, t3, 2);
+  Assembler::lwu(t3, tmp, 0);
+  xorr(crc, crc, t3);
+
+  srli(tmp, v, 24);
+  andi(tmp, tmp, bits8);
+  shadd(tmp, tmp, table0, t3, 2);
+  Assembler::lwu(t3, tmp, 0);
+  xorr(crc, crc, t3);
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register that will contain address of CRC table
+ * @param tmp   scratch register
+ */
+void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp, Register tmp2, Register tmp3) {
+  assert_different_registers(crc, buf, table0, table1, table2, table3, tmp, tmp2, tmp3);
+  Label L_by16, L_by16_loop, L_by16_loop_enter, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+
+  mv(tmp3, bits32);
+  notr(crc, crc);
+  andr(crc, crc, tmp3);
+
+  const ExternalAddress table_addr = StubRoutines::crc_table_addr();
+  la(table0, table_addr);
+  add(table1, table0, 1*256*sizeof(juint), tmp);
+  add(table2, table0, 2*256*sizeof(juint), tmp);
+  add(table3, table0, 3*256*sizeof(juint), tmp);
+
+  bind(L_by16);
+    subw(len, len, 16);
+    bge(len, zr, L_by16_loop_enter);
+    addiw(len, len, 16-4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    bgt(len, zr, L_by1_loop);
+    j(L_exit);
+
+  bind(L_by4_loop);
+    Assembler::lwu(tmp, buf, 0);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    subw(len, len, 4);
+    addi(buf, buf, 4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    ble(len, zr, L_exit);
+
+  bind(L_by1_loop);
+    subw(len, len, 1);
+    Assembler::lbu(tmp, buf, 0);
+    update_byte_crc32(crc, tmp, table0, tmp2);
+    addi(buf, buf, 1);
+    bgt(len, zr, L_by1_loop);
+    j(L_exit);
+
+    align(CodeEntryAlignment);
+  bind(L_by16_loop_enter);
+    const Register buf_end = x28; // t3
+    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+    andi(len, len, 16-1); // len = (len % 16)
+    sub(len, len, 16); // Length after all iterations
+  bind(L_by16_loop);
+    ld(tmp, Address(buf));
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+    ld(tmp, Address(buf, wordSize));
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    addi(buf, buf, 16);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+
+    ble(buf, buf_end, L_by16_loop);
+    addiw(len, len, 16-4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    bgt(len, zr, L_by1_loop);
+
+  bind(L_exit);
+    notr(crc, crc);
+    andr(crc, crc, tmp3);
+}
+
 // Multiply and multiply-accumulate unsigned 64-bit registers.
 void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
   assert_different_registers(prod_lo, prod_hi);

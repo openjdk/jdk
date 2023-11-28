@@ -172,8 +172,7 @@ void VM_Version::initialize() {
   }
 
   if (UseCRC32Intrinsics) {
-    warning("CRC32 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
   }
 
   if (UseCRC32CIntrinsics) {

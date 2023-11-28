@@ -1235,6 +1235,16 @@ public:
                        Register z, Register zlen,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
+
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
+  void kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp, Register tmp2, Register tmp3);
+  void update_word_crc32(Register crc, Register v, Register tmp,
+        Register table0, Register table1, Register table2, Register table3,
+        bool upper);
+  void update_byte_crc32(Register crc, Register val, Register table, Register tmp);
+
 #endif
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
