@@ -35,6 +35,7 @@ import jdk.jfr.internal.RemoveFields;
 @Description("Modification of Security property")
 @MirrorEvent(className = "jdk.internal.event.SecurityPropertyModificationEvent")
 @RemoveFields("duration")
+@StackFilter({"java.security.Security::setProperty"})
 public final class SecurityPropertyModificationEvent extends AbstractJDKEvent {
     @Label("Key")
     public String key;

@@ -28,8 +28,8 @@
 #include <ffi.h>
 
 #include <errno.h>
-#include <malloc.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <wchar.h>
 #ifdef _WIN64
 #include <Windows.h>

@@ -965,6 +965,12 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   if (args_cell > 0) {
     object_size += DataLayout::compute_size_in_bytes(args_cell);
   }
+
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+  }
+
   return object_size;
 }
 
@@ -1275,13 +1281,26 @@ void MethodData::initialize() {
   // for method entry so they don't fit with the framework for the
   // profiling of bytecodes). We store the offset within the MDO of
   // this area (or -1 if no parameter is profiled)
+  int parm_data_size = 0;
   if (parms_cell > 0) {
-    object_size += DataLayout::compute_size_in_bytes(parms_cell);
+    parm_data_size = DataLayout::compute_size_in_bytes(parms_cell);
+    object_size += parm_data_size;
     _parameters_type_data_di = data_size + extra_size + arg_data_size;
     DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
     dp->initialize(DataLayout::parameters_type_data_tag, 0, parms_cell);
   } else {
     _parameters_type_data_di = no_parameters;
+  }
+
+  _exception_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+    ExceptionTableElement* exception_handlers = method()->exception_table_start();
+    for (int i = 0; i < num_exception_handlers; i++) {
+      DataLayout *dp = exception_handler_data_at(i);
+      dp->initialize(DataLayout::bit_data_tag, exception_handlers[i].handler_pc, single_exception_handler_data_cell_count());
+    }
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1376,6 +1395,28 @@ ProfileData* MethodData::bci_to_data(int bci) {
     }
   }
   return bci_to_extra_data(bci, nullptr, false);
+}
+
+DataLayout* MethodData::exception_handler_bci_to_data_helper(int bci) {
+  assert(ProfileExceptionHandlers, "not profiling");
+  for (int i = 0; i < num_exception_handler_data(); i++) {
+    DataLayout* exception_handler_data = exception_handler_data_at(i);
+    if (exception_handler_data->bci() == bci) {
+      return exception_handler_data;
+    }
+  }
+  return nullptr;
+}
+
+BitData* MethodData::exception_handler_bci_to_data_or_null(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  return data != nullptr ? new BitData(data) : nullptr;
+}
+
+BitData MethodData::exception_handler_bci_to_data(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  assert(data != nullptr, "invalid bci");
+  return BitData(data);
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {

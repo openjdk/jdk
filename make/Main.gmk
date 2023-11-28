@@ -608,11 +608,11 @@ endif
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -867,14 +867,6 @@ ifeq ($(JCOV_ENABLED), true)
 endif
 
 ################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
-
-################################################################################
 #
 # Dependency declarations between targets.
 #
@@ -971,7 +963,20 @@ else
   jdk.jdeps-gendata: java
 
   # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) $(JAVA_TARGETS)
+  # jdk.compiler-gendata needs the BUILD_JDK. If the BUILD_JDK was supplied
+  # externally, no extra prerequisites are needed.
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and an external BUILD_JDK wasn't supplied, it's
+      # produced by the create-buildjdk target.
+      jdk.compiler-gendata: create-buildjdk
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # When not cross compiling, the BUILD_JDK is the interim jdk image, and
+    # the javac launcher is needed.
+    jdk.compiler-gendata: jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the jmods for all non
