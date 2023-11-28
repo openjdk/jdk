@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import static jdk.jpackage.internal.OverridableResource.createResource;
@@ -42,10 +44,24 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         });
     }
 
+    @Override
+    protected List<String> replacementStringIds() {
+        return LINUX_REPLACEMENT_STRING_IDS;
+    }
+
+    @Override
+    protected Map<String, String> createImpl() throws IOException {
+        var data = super.createImpl();
+        if (!data.isEmpty()) {
+            data.put(COMMON_SCRIPTS, stringifyTextFile("common_utils.sh"));
+        }
+        return data;
+    }
+
     static ShellCustomAction create(PlatformPackage thePackage,
             Map<String, Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
+            return ShellCustomAction.nop(LINUX_REPLACEMENT_STRING_IDS);
         }
         return new LinuxLaunchersAsServices(thePackage, params);
     }
@@ -84,4 +100,16 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
     private final static List<String> REQUIRED_PACKAGES = List.of("systemd",
             "coreutils" /* /usr/bin/wc */, "grep");
+
+    private static final String COMMON_SCRIPTS = "COMMON_SCRIPTS";
+
+    private static final List<String> LINUX_REPLACEMENT_STRING_IDS;
+
+    static {
+        ArrayList<String> buf = new ArrayList<>();
+        buf.addAll(UnixLaunchersAsServices.REPLACEMENT_STRING_IDS);
+        buf.add(COMMON_SCRIPTS);
+
+        LINUX_REPLACEMENT_STRING_IDS = Collections.unmodifiableList(buf);
+    }
 }
