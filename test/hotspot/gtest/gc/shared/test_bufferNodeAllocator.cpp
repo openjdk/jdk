@@ -185,7 +185,12 @@ public:
 };
 
 static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
-  const uint nthreads = 4;
+
+  // deallocation is slower than allocation, so lets create
+  // more deallocation threads to prevent too large buildup of
+  // free nodes (footprint)
+  const uint nthreads_mut = 4;
+  const uint nthreads_proc = 6;
   const uint milliseconds_to_run = 1000;
 
   Semaphore post;
@@ -193,8 +198,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
   volatile bool allocator_running = true;
   volatile bool processor_running = true;
 
-  ProcessorThread* proc_threads[nthreads * 2] = {};
-  for (uint i = 0; i < nthreads * 2; ++i) {
+  ProcessorThread* proc_threads[nthreads_proc] = {};
+  for (uint i = 0; i < nthreads_proc; ++i) {
     proc_threads[i] = new ProcessorThread(&post,
                                           allocator,
                                           cbl,
@@ -202,8 +207,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     proc_threads[i]->doit();
   }
 
-  AllocatorThread* alloc_threads[nthreads] = {};
-  for (uint i = 0; i < nthreads; ++i) {
+  AllocatorThread* alloc_threads[nthreads_mut] = {};
+  for (uint i = 0; i < nthreads_mut; ++i) {
     alloc_threads[i] = new AllocatorThread(&post,
                                            allocator,
                                            cbl,
@@ -219,12 +224,12 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     this_thread->sleep(milliseconds_to_run);
   }
   Atomic::release_store(&allocator_running, false);
-  for (uint i = 0; i < nthreads; ++i) {
+  for (uint i = 0; i < nthreads_mut; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
   Atomic::release_store(&processor_running, false);
-  for (uint i = 0; i < nthreads; ++i) {
+  for (uint i = 0; i < nthreads_proc; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
