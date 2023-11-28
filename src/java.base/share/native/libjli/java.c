@@ -406,6 +406,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
+/*
+ * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
 int
 invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
@@ -415,7 +419,10 @@ invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     return 1;
 }
 
-
+/*
+ * Invoke an instance main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
 int
 invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
@@ -429,6 +436,10 @@ invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs)
     return 1;
  }
 
+/*
+ * Invoke a static main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
 int
 invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
@@ -438,6 +449,10 @@ invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     return 1;
 }
 
+/*
+ * Invoke an instance main without arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetMethodID and returns 0 (false).
+ */
 int
 invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
     jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
