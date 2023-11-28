@@ -759,11 +759,6 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _initialized = true;
 }
 
-Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK_NH);
-  return thread_oop;
-}
-
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
 // Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
 // the running java application.  Configured with vm options DeoptimizeObjectsALot*.
@@ -910,6 +905,13 @@ static bool trace_compiler_threads() {
   return TraceCompilerThreads || lt.is_enabled();
 }
 
+static jobject create_compiler_thread(AbstractCompiler* compiler, int i, TRAPS) {
+  char name_buffer[256];
+  os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", compiler->name(), i);
+  Handle thread_oop = JavaThread::create_system_thread_object(name_buffer, CHECK_NULL);
+  return JNIHandles::make_global(thread_oop);
+}
+
 static void print_compiler_threads(stringStream& msg) {
   if (TraceCompilerThreads) {
     tty->print_cr("%7d %s", (int)tty->time_stamp().milliseconds(), msg.as_string());
@@ -940,13 +942,9 @@ void CompileBroker::init_compiler_threads() {
     _compiler1_logs = NEW_C_HEAP_ARRAY(CompileLog*, _c1_count, mtCompiler);
   }
 
-  char name_buffer[256];
-
   for (int i = 0; i < _c2_count; i++) {
     // Create a name for our thread.
-    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
-    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-    jobject thread_handle = JNIHandles::make_global(thread_oop);
+    jobject thread_handle = create_compiler_thread(_compilers[1], i, CHECK);
     _compiler2_objects[i] = thread_handle;
     _compiler2_logs[i] = nullptr;
 
@@ -967,9 +965,7 @@ void CompileBroker::init_compiler_threads() {
 
   for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
-    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
-    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-    jobject thread_handle = JNIHandles::make_global(thread_oop);
+    jobject thread_handle = create_compiler_thread(_compilers[0], i, CHECK);
     _compiler1_objects[i] = thread_handle;
     _compiler1_logs[i] = nullptr;
 
@@ -997,7 +993,7 @@ void CompileBroker::init_compiler_threads() {
     // Initialize and start the object deoptimizer threads
     const int total_count = DeoptimizeObjectsALotThreadCountSingle + DeoptimizeObjectsALotThreadCountAll;
     for (int count = 0; count < total_count; count++) {
-      Handle thread_oop = create_thread_oop("Deoptimize objects a lot single mode", CHECK);
+      Handle thread_oop = JavaThread::create_system_thread_object("Deoptimize objects a lot single mode", CHECK);
       jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
       make_thread(deoptimizer_t, thread_handle, nullptr, nullptr, THREAD);
     }
@@ -1040,7 +1036,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         {
           // We have to give up the lock temporarily for the Java calls.
           MutexUnlocker mu(CompileThread_lock);
-          thread_oop = create_thread_oop(name_buffer, THREAD);
+          thread_oop = JavaThread::create_system_thread_object(name_buffer, THREAD);
         }
         if (HAS_PENDING_EXCEPTION) {
           if (trace_compiler_threads()) {
