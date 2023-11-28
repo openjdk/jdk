@@ -331,8 +331,10 @@ public class Binary16Conversion {
 
             if (s1 != s2) {
                 errors++;
-                System.out.println("Different conversion of float value 1 (" + f + "/" + Integer.toHexString(Float.floatToRawIntBits(f)) + "): " +
-                                    Integer.toHexString(s1 & 0xffff) + "(" + s1 + ")" + " != " + Integer.toHexString(s2 & 0xffff) + "(" + s2 + ")");
+                System.out.println("Different conversion of float value (" + f + "/" +
+                                    Integer.toHexString(Float.floatToRawIntBits(f)) + "): " +
+                                    Integer.toHexString(s1 & 0xffff) + "(" + s1 + ")" + " != " +
+                                    Integer.toHexString(s2 & 0xffff) + "(" + s2 + ")");
             }
         }
 
