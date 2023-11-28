@@ -25,9 +25,13 @@
 package jdk.internal.classfile.impl.verifier;
 
 import java.lang.constant.ClassDesc;
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributedElement;
@@ -54,56 +58,68 @@ public record ParserVerifier(ClassModel classModel) {
     }
 
     private void verifyConstantPool(List<VerifyError> errors) {
-        for (var cpe : classModel.constantPool()) try {
-            switch (cpe) {
-                case DoubleEntry de ->
-                    de.doubleValue();
-                case FloatEntry fe ->
-                    fe.floatValue();
-                case IntegerEntry ie ->
-                    ie.intValue();
-                case LongEntry le ->
-                    le.longValue();
-                case Utf8Entry ue ->
-                    ue.stringValue();
-                case ConstantDynamicEntry cde ->
-                    cde.asSymbol();
-                case InvokeDynamicEntry ide ->
-                    ide.asSymbol();
-                case ClassEntry ce ->
-                    ce.asSymbol();
-                case StringEntry se ->
-                    se.stringValue();
-                case MethodHandleEntry mhe ->
-                    mhe.asSymbol();
-                case MethodTypeEntry mte ->
-                    mte.asSymbol();
+        for (var cpe : classModel.constantPool()) {
+            Consumer<Runnable> check = c -> {
+                try {
+                    c.run();
+                } catch (VerifyError|Exception e) {
+                    errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel))));
+                }
+            };
+            check.accept(switch (cpe) {
+                case DoubleEntry de -> de::doubleValue;
+                case FloatEntry fe -> fe::floatValue;
+                case IntegerEntry ie -> ie::intValue;
+                case LongEntry le -> le::longValue;
+                case Utf8Entry ue -> ue::stringValue;
+                case ConstantDynamicEntry cde -> cde::asSymbol;
+                case InvokeDynamicEntry ide -> ide::asSymbol;
+                case ClassEntry ce -> ce::asSymbol;
+                case StringEntry se -> se::stringValue;
+                case MethodHandleEntry mhe -> mhe::asSymbol;
+                case MethodTypeEntry mte -> mte::asSymbol;
                 case FieldRefEntry fre -> {
-                    fre.owner().asSymbol();
-                    fre.name().stringValue();
-                    fre.typeSymbol();
+                    check.accept(fre.owner()::asSymbol);
+                    check.accept(fre::typeSymbol);
+                    yield () -> verifyFieldName(fre.name().stringValue());
                 }
                 case InterfaceMethodRefEntry imre -> {
-                    imre.owner().asSymbol();
-                    imre.name().stringValue();
-                    imre.typeSymbol();
+                    check.accept(imre.owner()::asSymbol);
+                    check.accept(imre::typeSymbol);
+                    yield () -> verifyMethodName(imre.name().stringValue());
                 }
                 case MethodRefEntry mre -> {
-                    mre.owner().asSymbol();
-                    mre.name().stringValue();
-                    mre.typeSymbol();
+                    check.accept(mre.owner()::asSymbol);
+                    check.accept(mre::typeSymbol);
+                    yield () -> verifyMethodName(mre.name().stringValue());
                 }
-                case ModuleEntry me ->
-                    me.asSymbol();
+                case ModuleEntry me -> me::asSymbol;
                 case NameAndTypeEntry nate -> {
-                    nate.name().stringValue();
-                    nate.type().stringValue();
+                    check.accept(nate.name()::stringValue);
+                    yield () -> nate.type().stringValue();
                 }
-                case PackageEntry pe ->
-                    pe.asSymbol();
-            }
-        } catch (IllegalArgumentException iae) {
-            errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(iae.getMessage(), cpe.index(), toString(classModel))));
+                case PackageEntry pe -> pe::asSymbol;
+            });
+        }
+    }
+
+    private void verifyFieldName(String name) {
+        if (name.length() == 0 || name.chars().anyMatch(ch -> switch(ch) {
+                    case '.', ';', '[', '/' -> true;
+                    default -> false;
+                })) {
+              throw new VerifyError("Illegal field name %s in %s".formatted(name, toString(classModel)));
+        }
+    }
+
+    private void verifyMethodName(String name) {
+        if (!name.equals(INIT_NAME)
+            && !name.equals(CLASS_INIT_NAME)
+            && (name.length() == 0 || name.chars().anyMatch(ch -> switch(ch) {
+                    case '.', ';', '[', '/', '<', '>' -> true;
+                    default -> false;
+                }))) {
+              throw new VerifyError("Illegal method name %s in %s".formatted(name, toString(classModel)));
         }
     }
 
