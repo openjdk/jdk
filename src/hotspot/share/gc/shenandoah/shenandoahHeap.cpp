@@ -957,11 +957,8 @@ MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* lo
                                                              Metaspace::MetadataType mdtype) {
   MetaWord* result;
 
-  // Inform metaspace OOM to GC heuristics if class unloading is possible.
-  if (heuristics()->can_unload_classes()) {
-    ShenandoahHeuristics* h = heuristics();
-    h->record_metaspace_oom();
-  }
+  // Inform metaspace OOM to GC heuristics.
+  heuristics()->record_metaspace_oom();
 
   // Expand and retry allocation
   result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);

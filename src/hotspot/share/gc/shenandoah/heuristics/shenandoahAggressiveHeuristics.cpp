@@ -55,7 +55,3 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
   log_info(gc)("Trigger: Start next cycle immediately");
   return true;
 }
-
-bool ShenandoahAggressiveHeuristics::should_unload_classes() {
-  return can_unload_classes();
-}

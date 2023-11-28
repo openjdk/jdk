@@ -144,7 +144,7 @@ void ShenandoahControlThread::run_service() {
         policy->record_explicit_to_concurrent();
         mode = default_mode;
         // Unload and clean up everything
-        heap->set_unload_classes(heuristics->can_unload_classes());
+        heap->set_unload_classes(heuristics->should_unload_classes());
       } else {
         policy->record_explicit_to_full();
         mode = stw_full;
@@ -160,7 +160,7 @@ void ShenandoahControlThread::run_service() {
         mode = default_mode;
 
         // Unload and clean up everything
-        heap->set_unload_classes(heuristics->can_unload_classes());
+        heap->set_unload_classes(heuristics->should_unload_classes());
       } else {
         policy->record_implicit_to_full();
         mode = stw_full;

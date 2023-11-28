@@ -41,7 +41,7 @@ bool ShenandoahPassiveHeuristics::should_start_gc() {
 
 bool ShenandoahPassiveHeuristics::should_unload_classes() {
   // Always unload classes, if we can.
-  return can_unload_classes();
+  return ClassUnloading;
 }
 
 bool ShenandoahPassiveHeuristics::should_degenerate_cycle() {
