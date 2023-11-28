@@ -1269,11 +1269,12 @@ void CodeCache::initialize() {
   try_enable_segmented_code_cache(preferred_ps);
   initialize_heaps_sizes(preferred_ps);
   preferred_ps = preferred_page_size_for_heaps(preferred_ps);
-  const size_t size = align_up(ReservedCodeCacheSize, preferred_ps);
+  const size_t alignment = MAX2(preferred_ps, os::vm_allocation_granularity());
+  const size_t size = align_up(ReservedCodeCacheSize, alignment);
   if (size > ReservedCodeCacheSize) {
     log_warning(codecache)("Code cache size was increased to " PROPERFMT " bytes to be "
-                           "preferred page size aligned (" PROPERFMT ").",
-                           PROPERFMTARGS(size), PROPERFMTARGS(preferred_ps));
+                           "allocation granularity aligned (" PROPERFMT ").",
+                           PROPERFMTARGS(size), PROPERFMTARGS(alignment));
   }
   ReservedCodeSpace rs = reserve_memory(size, preferred_ps);
   if (rs.page_size() < preferred_ps) {
