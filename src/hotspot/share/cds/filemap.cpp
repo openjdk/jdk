@@ -1463,7 +1463,7 @@ BitMapView FileMapRegion::ptrmap_view() {
   return bitmap_view(false);
 }
 
-bool FileMapRegion::check_region_crc() const {
+bool FileMapRegion::check_region_crc(char* base) const {
   // This function should be called after the region has been properly
   // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
   // I.e., this->mapped_base() must be valid.
@@ -1472,8 +1472,8 @@ bool FileMapRegion::check_region_crc() const {
     return true;
   }
 
-  assert(mapped_base() != nullptr, "must be initialized");
-  int crc = ClassLoader::crc32(0, mapped_base(), (jint)sz);
+  assert(base != nullptr, "must be initialized");
+  int crc = ClassLoader::crc32(0, base, (jint)sz);
   if (crc != this->crc()) {
     log_warning(cds)("Checksum verification failed.");
     return false;
@@ -1758,13 +1758,12 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
     return false;
   }
 
-  r->set_mapped_from_file(false);
-  r->set_mapped_base(base);
-
-  if (VerifySharedSpaces && !r->check_region_crc()) {
-    r->set_mapped_base(nullptr);
+  if (VerifySharedSpaces && !r->check_region_crc(base)) {
     return false;
   }
+
+  r->set_mapped_from_file(false);
+  r->set_mapped_base(base);
 
   return true;
 }
@@ -1820,7 +1819,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     r->set_mapped_base(requested_addr);
   }
 
-  if (VerifySharedSpaces && !r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc(requested_addr)) {
     r->set_mapped_base(nullptr);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
@@ -1843,9 +1842,7 @@ char* FileMapInfo::map_bitmap_region() {
     return nullptr;
   }
 
-  r->set_mapped_base(bitmap_base);
-  if (VerifySharedSpaces && !r->check_region_crc()) {
-    r->set_mapped_base(nullptr);
+  if (VerifySharedSpaces && !r->check_region_crc(bitmap_base)) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -1854,6 +1851,7 @@ char* FileMapInfo::map_bitmap_region() {
   }
 
   r->set_mapped_from_file(true);
+  r->set_mapped_base(bitmap_base);
   log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                 is_static() ? "static " : "dynamic",
                 MetaspaceShared::bm, p2i(r->mapped_base()), p2i(r->mapped_end()),
@@ -2129,13 +2127,13 @@ bool FileMapInfo::map_heap_region_impl() {
     return false;
   }
 
-  r->set_mapped_base(base);
-  if (VerifySharedSpaces && !r->check_region_crc()) {
-    r->set_mapped_base(nullptr);
+  if (VerifySharedSpaces && !r->check_region_crc(base)) {
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
     return false;
   }
+
+  r->set_mapped_base(base);
 
   // If the requested range is different from the range allocated by GC, then
   // the pointers need to be patched.
