@@ -70,7 +70,7 @@ public:
   // The actual dynamic archive  (if any) selected at runtime
   static const char* dynamic_archive_path()                  { return CDS_ONLY(_dynamic_archive_path) NOT_CDS(nullptr); }
 
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
+  static int num_archives(const char* archive_path)          NOT_CDS_RETURN_(0);
 
 
   // CDS archived heap
