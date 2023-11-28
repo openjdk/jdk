@@ -579,31 +579,33 @@ public class SynthTableUI extends BasicTableUI
         Rectangle cellRect;
         TableColumn aColumn;
         int columnWidth;
-        if (table.getComponentOrientation().isLeftToRight()) {
-            for (int row = rMin; row <= rMax; row++) {
-                cellRect = table.getCellRect(row, cMin, false);
-                for (int column = cMin; column <= cMax; column++) {
-                    aColumn = cm.getColumn(column);
-                    columnWidth = aColumn.getWidth();
-                    cellRect.width = columnWidth - columnMargin;
-                    if (aColumn != draggedColumn) {
-                        paintCell(context, g, cellRect, row, column);
-                    }
-                    cellRect.x += columnWidth;
-                }
-            }
+        boolean ltrFlag = table.getComponentOrientation().isLeftToRight();
+
+        int columnStart;
+        int columnEnd;
+
+        if (ltrFlag) {
+            columnStart = cMin;
+            columnEnd = cMax;
         } else {
-            for (int row = rMin; row <= rMax; row++) {
-                cellRect = table.getCellRect(row, cMax, false);
-                for (int column = cMax; column >= cMin; column--) {
-                    aColumn = cm.getColumn(column);
-                    columnWidth = aColumn.getWidth();
-                    cellRect.width = columnWidth - columnMargin;
-                    if (aColumn != draggedColumn) {
-                        paintCell(context, g, cellRect, row, column);
-                    }
-                    cellRect.x += columnWidth;
+            columnStart = cMax;
+            columnEnd = cMin;
+        }
+
+        //Right-to-Left is painted from cMin to cMax
+        //Left-to-Right is painted from cMax to cMin
+        for (int row = rMin; row <= rMax; row++) {
+            cellRect = table.getCellRect(row, columnStart, false);
+            for (int column = columnStart;
+                 ltrFlag ? column <= columnEnd : column >= columnEnd;
+                 column += (ltrFlag ?  1 : -1) ) {
+                aColumn = cm.getColumn(column);
+                columnWidth = aColumn.getWidth();
+                cellRect.width = columnWidth - columnMargin;
+                if (aColumn != draggedColumn) {
+                    paintCell(context, g, cellRect, row, column);
                 }
+                cellRect.x += columnWidth;
             }
         }
 
