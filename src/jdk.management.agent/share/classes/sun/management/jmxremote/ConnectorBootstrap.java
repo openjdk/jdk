@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -785,7 +785,7 @@ public final class ConnectorBootstrap {
             env.put(RMIConnectorServer.SERIAL_FILTER_PATTERN, jmxRmiFilter);
         }
 
-        boolean useSocketFactory = bindAddress != null && !useSsl;
+        boolean useServerSocketFactory = bindAddress != null && !useSsl;
 
         if (useAuthentication) {
             if (loginConfigName != null) {
@@ -815,6 +815,10 @@ public final class ConnectorBootstrap {
             ssf = createSslRMIServerSocketFactory(
                     sslConfigFileName, enabledCipherSuites,
                     enabledProtocols, sslNeedClientAuth, bindAddress);
+        } else {
+            csf = new JMXPlainRMIClientSocketFactory();
+            env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE,
+                    csf);
         }
 
         if (useSsl) {
@@ -824,7 +828,7 @@ public final class ConnectorBootstrap {
                     ssf);
         }
 
-        if (useSocketFactory) {
+        if (useServerSocketFactory) {
             ssf = new HostAwareSocketFactory(bindAddress);
             env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
                     ssf);
@@ -849,7 +853,7 @@ public final class ConnectorBootstrap {
             registry =
                     new SingleEntryRegistry(port, csf, ssf,
                     "jmxrmi", exporter.firstExported);
-        } else if (useSocketFactory) {
+        } else if (useServerSocketFactory) {
             registry =
                     new SingleEntryRegistry(port, csf, ssf,
                     "jmxrmi", exporter.firstExported);
