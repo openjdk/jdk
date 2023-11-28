@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "runtime/java.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#endif
+/*
+ * @test
+ * @bug 8318913
+ * @summary Ensure release and enable-preview work well together.
+ * @modules jdk.compiler
+ * @compile --release ${jdk.version} --enable-preview ReleaseAndEnablePreview.java
+ */
 
-Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
-  switch (name()) {
-#if INCLUDE_SERIALGC
-    case Generation::DefNew:
-      return new DefNewGeneration(rs, _init_size, _min_size, _max_size);
+public class ReleaseAndEnablePreview {
 
-    case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
-#endif
+    public String evt(String str) {
+        return str.length() + "" + str.charAt(0);
+    }
 
-    default:
-      guarantee(false, "unrecognized GenerationName");
-      return nullptr;
-  }
 }

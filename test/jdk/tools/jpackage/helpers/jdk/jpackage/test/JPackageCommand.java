@@ -888,10 +888,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         final Path rootDir = isImagePackageType() ? outputBundle() : pathToUnpackedPackageFile(
                 appInstallationDirectory());
 
-        try ( Stream<Path> walk = ThrowingSupplier.toSupplier(() -> Files.walk(
-                rootDir)).get()) {
-            List<String> files = walk.filter(path -> path.getFileName().equals(
-                    filename)).map(Path::toString).toList();
+        try ( Stream<Path> walk = ThrowingSupplier.toSupplier(() -> {
+            if (TKit.isLinux() && rootDir.equals(Path.of("/"))) {
+                // Installed package with split app image on Linux. Iterate
+                // through package file list instead of the entire file system.
+                return LinuxHelper.getPackageFiles(this);
+            } else {
+                return Files.walk(rootDir);
+            }
+        }).get()) {
+            List<String> files = walk.filter(path -> filename.equals(
+                    path.getFileName())).map(Path::toString).toList();
 
             if (expectedPath == null) {
                 TKit.assertStringListEquals(List.of(), files, String.format(

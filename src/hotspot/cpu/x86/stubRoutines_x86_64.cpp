@@ -44,5 +44,4 @@ address StubRoutines::x86::_float_sign_mask = nullptr;
 address StubRoutines::x86::_float_sign_flip = nullptr;
 address StubRoutines::x86::_double_sign_mask = nullptr;
 address StubRoutines::x86::_double_sign_flip = nullptr;
-address StubRoutines::x86::_method_entry_barrier = nullptr;
 

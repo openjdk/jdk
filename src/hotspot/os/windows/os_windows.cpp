@@ -1398,6 +1398,9 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return _getcwd(buf, n);
 }
 
+void os::prepare_native_symbols() {
+}
+
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
 #ifdef _WIN64
@@ -3823,11 +3826,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
 }
 
 char* os::non_memory_address_word() {
