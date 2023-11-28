@@ -203,9 +203,14 @@
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
 {
-    BOOL supportsSecureState = YES;
-    if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
-        supportsSecureState = NO;
+    static BOOL checked = NO;
+    static BOOL supportsSecureState = YES;
+
+    if (checked == NO) {
+        checked = YES;
+        if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
+            supportsSecureState = NO;
+        }
     }
     return supportsSecureState;
 }

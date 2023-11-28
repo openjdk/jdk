@@ -411,9 +411,14 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
-    BOOL supportsSecureState = YES;
-    if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
-       supportsSecureState = NO;
+    static BOOL checked = NO;
+    static BOOL supportsSecureState = YES;
+
+    if (checked == NO) {
+        checked = YES;
+        if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
+            supportsSecureState = NO;
+        }
     }
     return supportsSecureState;
 }
@@ -650,7 +655,9 @@ JNI_COCOA_ENTER(env);
 
     NSMenu *menu = (NSMenu *)jlong_to_ptr(nsMenuPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);
@@ -830,13 +837,15 @@ JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-        switch (menuID) {
-            case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
-                [delegate _updateAboutMenu:visible enabled:enabled];
-                break;
-            case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
-                [delegate _updatePreferencesMenu:visible enabled:enabled];
-                break;
+        if (delegate != nil) {
+            switch (menuID) {
+                case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
+                    [delegate _updateAboutMenu:visible enabled:enabled];
+                    break;
+                case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
+                    [delegate _updatePreferencesMenu:visible enabled:enabled];
+                    break;
+            }
         }
     }];
 
@@ -855,7 +864,9 @@ JNI_COCOA_ENTER(env);
 
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);
