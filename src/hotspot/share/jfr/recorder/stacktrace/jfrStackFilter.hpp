@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,14 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include <jni.h>
-#include <jvm.h>
-#include "java_util_concurrent_atomic_AtomicLong.h"
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP
 
-JNIEXPORT jboolean JNICALL
-Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8(JNIEnv *env, jclass cls)
-{
-    return JVM_SupportsCX8();
-}
+#include "jfr/utilities/jfrAllocation.hpp"
+
+class Mathod;
+class Symbol;
+
+class JfrStackFilter : public JfrCHeapObj {
+ private:
+  size_t _count;
+  Symbol** _class_names;
+  Symbol** _method_names;
+
+ public:
+  JfrStackFilter(Symbol** class_names, Symbol** method_names, size_t count);
+  ~JfrStackFilter();
+  bool match(const Method* method) const;
+};
+
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKFILTER_HPP

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,31 +21,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package sun.security.provider;
 
-#include "precompiled.hpp"
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "runtime/java.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#endif
+/*
+ * The SHAKE128 extendable output function.
+ */
+public final class SHAKE128 extends SHA3 {
+    public SHAKE128(int d) {
+        super("SHAKE128", d, (byte) 0x1F, 32);
+    }
 
-Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
-  switch (name()) {
-#if INCLUDE_SERIALGC
-    case Generation::DefNew:
-      return new DefNewGeneration(rs, _init_size, _min_size, _max_size);
+    public void update(byte in) {
+        engineUpdate(in);
+    }
+    public void update(byte[] in, int off, int len) {
+        engineUpdate(in, off, len);
+    }
 
-    case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
-#endif
+    public byte[] digest() {
+        return engineDigest();
+    }
 
-    default:
-      guarantee(false, "unrecognized GenerationName");
-      return nullptr;
-  }
+    public void reset() {
+        engineReset();
+    }
 }

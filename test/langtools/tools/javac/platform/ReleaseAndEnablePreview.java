@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.call.must.be.first.stmt.in.ctor
+/*
+ * @test
+ * @bug 8318913
+ * @summary Ensure release and enable-preview work well together.
+ * @modules jdk.compiler
+ * @compile --release ${jdk.version} --enable-preview ReleaseAndEnablePreview.java
+ */
 
-class CallMustBeFirst {
-    CallMustBeFirst() {
-        int i = 0;
-        super();
+public class ReleaseAndEnablePreview {
+
+    public String evt(String str) {
+        return str.length() + "" + str.charAt(0);
     }
+
 }

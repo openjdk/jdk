@@ -1510,9 +1510,6 @@ bool Matcher::match_rule_supported(int opcode) {
 #ifdef _LP64
     case Op_CompareAndSwapP:
 #endif
-      if (!VM_Version::supports_cx8()) {
-        return false;
-      }
       break;
     case Op_StrIndexOf:
       if (!UseSSE42Intrinsics) {
@@ -10119,5 +10116,3 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
   %}
   ins_pipe(pipe_slow);
 %}
-
-
