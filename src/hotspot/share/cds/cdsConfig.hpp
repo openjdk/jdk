@@ -45,13 +45,13 @@ class CDSConfig : public AllStatic {
   static void extract_shared_archive_paths(const char* archive_path,
                                            char** base_archive_path,
                                            char** top_archive_path);
+  static void init_shared_archive_paths();
 
 public:
-  // { -- these function are public only during code refactoring. Will be made private
+  // Initialization
+  static void initialize_archive_paths() NOT_CDS_RETURN;
+  static void check_system_property(const char* key, const char* value) NOT_CDS_RETURN;
 
-  // -- }
-
-public:
   // Basic CDS features
   static bool      is_dumping_archive()                      { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }
   static bool      is_dumping_static_archive()               { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
@@ -61,13 +61,11 @@ public:
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
   // Archive paths
-  static char* get_default_archive_path();
+  static char* get_default_archive_path()                    NOT_CDS_RETURN_(nullptr);
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
-  static void init_shared_archive_paths();
-  static void set_shared_spaces_flags_and_archive_paths();
 
-  static const char* GetSharedArchivePath() { return SharedArchivePath; }
-  static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
+  static const char* GetSharedArchivePath()                  { return CDS_ONLY(SharedArchivePath) NOT_CDS(nullptr); }
+  static const char* GetSharedDynamicArchivePath()           { return CDS_ONLY(SharedDynamicArchivePath) NOT_CDS(nullptr); }
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);

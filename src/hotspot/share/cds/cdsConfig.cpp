@@ -63,8 +63,8 @@ char* CDSConfig::get_default_archive_path() {
   return _default_archive_path;
 }
 
-void CDSConfig::set_shared_spaces_flags_and_archive_paths() {
-  if (CDSConfig::is_dumping_static_archive()) {
+void CDSConfig::initialize_archive_paths() {
+  if (is_dumping_static_archive()) {
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
@@ -75,8 +75,8 @@ void CDSConfig::set_shared_spaces_flags_and_archive_paths() {
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
   //
   // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
-  if (CDSConfig::is_dumping_static_archive() || UseSharedSpaces) {
-    CDSConfig::init_shared_archive_paths();
+  if (is_dumping_static_archive() || UseSharedSpaces) {
+    init_shared_archive_paths();
   }
 #endif  // INCLUDE_CDS
 }
@@ -125,29 +125,29 @@ void CDSConfig::extract_shared_archive_paths(const char* archive_path,
 void CDSConfig::init_shared_archive_paths() {
   if (ArchiveClassesAtExit != nullptr) {
     assert(!RecordDynamicDumpInfo, "already checked");
-    if (CDSConfig::is_dumping_static_archive()) {
+    if (is_dumping_static_archive()) {
       vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
     }
     Arguments::check_unsupported_dumping_properties();
 
-    if (os::same_files(CDSConfig::get_default_archive_path(), ArchiveClassesAtExit)) {
+    if (os::same_files(get_default_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
-        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", CDSConfig::get_default_archive_path());
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_archive_path());
     }
   }
 
   if (SharedArchiveFile == nullptr) {
-    SharedArchivePath = CDSConfig::get_default_archive_path();
+    SharedArchivePath = get_default_archive_path();
   } else {
     int archives = num_archives(SharedArchiveFile);
     assert(archives > 0, "must be");
 
-    if (CDSConfig::is_dumping_archive() && archives > 1) {
+    if (is_dumping_archive() && archives > 1) {
       vm_exit_during_initialization(
         "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
 
-    if (CDSConfig::is_dumping_static_archive()) {
+    if (is_dumping_static_archive()) {
       assert(archives == 1, "must be");
       // Static dump is simple: only one archive is allowed in SharedArchiveFile. This file
       // will be overwritten no matter regardless of its contents
@@ -174,9 +174,9 @@ void CDSConfig::init_shared_archive_paths() {
           // If +AutoCreateSharedArchive and the specified shared archive does not exist,
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            CDSConfig::enable_dumping_dynamic_archive();
+            enable_dumping_dynamic_archive();
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
-            SharedArchivePath = CDSConfig::get_default_archive_path();
+            SharedArchivePath = get_default_archive_path();
             SharedArchiveFile = nullptr;
           } else {
             if (AutoCreateSharedArchive) {
@@ -222,6 +222,21 @@ void CDSConfig::init_shared_archive_paths() {
     }
   }
 }
+
+void CDSConfig::check_system_property(const char* key, const char* value) {
+  if (Arguments::is_internal_module_property(key)) {
+    MetaspaceShared::disable_optimized_module_handling();
+    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+  }
+  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
+      strcmp(key, "jdk.module.validation") == 0 ||
+      strcmp(key, "java.system.class.loader") == 0) {
+    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::disable_dumping_full_module_graph();
+    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
+  }
+}
+
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::is_dumping_heap() {

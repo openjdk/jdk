@@ -1259,19 +1259,7 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
     value = &prop[key_len + 1];
   }
 
-#if INCLUDE_CDS
-  if (is_internal_module_property(key)) {
-    MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
-  }
-  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.validation") == 0 ||
-      strcmp(key, "java.system.class.loader") == 0) {
-    CDSConfig::disable_loading_full_module_graph();
-    CDSConfig::disable_dumping_full_module_graph();
-    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
-  }
-#endif
+  CDSConfig::check_system_property(key, value);
 
   if (strcmp(key, "java.compiler") == 0) {
     // we no longer support java.compiler system property, log a warning and let it get
@@ -3805,7 +3793,7 @@ jint Arguments::apply_ergo() {
 
   GCConfig::arguments()->initialize();
 
-  CDSConfig::set_shared_spaces_flags_and_archive_paths();
+  CDSConfig::initialize_archive_paths();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
