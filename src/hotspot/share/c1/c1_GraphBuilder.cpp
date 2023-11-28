@@ -3506,7 +3506,6 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   return recur_level;
 }
 
-
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
 

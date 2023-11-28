@@ -1105,7 +1105,7 @@ define SetupNativeCompilationBody
               $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
               $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
           $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
+              $(DSYMUTIL) --reproducer Off --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
         endif
 
         # Since the link rule creates more than one file that we want to track,
