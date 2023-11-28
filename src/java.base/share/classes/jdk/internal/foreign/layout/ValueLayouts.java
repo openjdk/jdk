@@ -59,7 +59,7 @@ public final class ValueLayouts {
     // Suppresses default constructor, ensuring non-instantiability.
     private ValueLayouts() {}
 
-    abstract sealed static class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
+    abstract static sealed class AbstractValueLayout<V extends AbstractValueLayout<V> & ValueLayout> extends AbstractLayout<V> {
 
         static final int ADDRESS_SIZE_BYTES = Unsafe.ADDRESS_SIZE;
 

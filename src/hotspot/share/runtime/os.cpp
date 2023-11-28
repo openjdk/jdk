@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -39,10 +40,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -63,11 +69,6 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.inline.hpp"
-#include "services/nmtPreInit.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
@@ -630,7 +631,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return rc;
   }
@@ -661,7 +662,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
     ::memset(inner_ptr, 0, size);
   } else {

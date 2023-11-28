@@ -1099,7 +1099,7 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   if (count == 0) {
     return 0.0;
   }
-  size_t const expected_bytes = _eden_surv_rate_group->accum_surv_rate_pred(count) * HeapRegion::GrainBytes;
+  size_t const expected_bytes = _eden_surv_rate_group->accum_surv_rate_pred(count - 1) * HeapRegion::GrainBytes;
   if (bytes_to_copy != nullptr) {
     *bytes_to_copy = expected_bytes;
   }

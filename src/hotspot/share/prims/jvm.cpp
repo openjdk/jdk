@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -102,6 +103,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
+#include "utilities/zipLibrary.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -2943,7 +2945,7 @@ static void thread_entry(JavaThread* thread, TRAPS) {
 
 JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // During java -Xshare:dump, if we allow multiple Java threads to
     // execute in parallel, symbols and classes may be loaded in
     // random orders which will make the resulting CDS archive
@@ -3412,8 +3414,7 @@ JVM_END
 // Library support ///////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(void*, JVM_LoadZipLibrary())
-  ClassLoader::load_zip_library_if_needed();
-  return ClassLoader::zip_library_handle();
+  return ZipLibrary::handle();
 JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
@@ -3585,12 +3586,6 @@ JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjec
   return res;
 JVM_END
 
-// Atomic ///////////////////////////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jboolean, JVM_SupportsCX8())
-  return VM_Version::supports_cx8();
-JVM_END
-
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");
@@ -3606,7 +3601,7 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jobject dynamicMethodType,
                                               jclass lambdaProxyClass))
 #if INCLUDE_CDS
-  if (!Arguments::is_dumping_archive()) {
+  if (!CDSConfig::is_dumping_archive()) {
     return;
   }
 
@@ -3694,7 +3689,7 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-  return Arguments::is_dumping_archive();
+  return CDSConfig::is_dumping_archive();
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
@@ -3702,7 +3697,8 @@ JVM_LEAF(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
+    // We do this so that the default CDS archive can be deterministic.
     const char* release = VM_Version::vm_release();
     const char* dbg_level = VM_Version::jdk_debug_level();
     const char* version = VM_Version::internal_vm_info_string();
@@ -3725,7 +3721,7 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
-  return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
+  return ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive();
 #else
   return false;
 #endif // INCLUDE_CDS
@@ -3733,12 +3729,12 @@ JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled() || DynamicDumpSharedSpaces,  "Should be set and open or do dynamic dump");
+  assert(ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive(),  "Should be set and open or do dynamic dump");
   if (line != nullptr) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
-    if (DynamicDumpSharedSpaces) {
+    if (CDSConfig::is_dumping_dynamic_archive()) {
       // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
       LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));

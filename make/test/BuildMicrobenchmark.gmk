@@ -107,6 +107,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
         --enable-preview \

@@ -124,6 +124,8 @@ JAR := $(FIXPATH) $(JAR_CMD)
 JLINK := $(FIXPATH) $(JLINK_CMD)
 JMOD := $(FIXPATH) $(JMOD_CMD)
 
+JTREG_JAVA := $(FIXPATH) $(JTREG_JDK)/bin/java $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+
 BUILD_JAVA := $(JDK_IMAGE_DIR)/bin/JAVA
 ################################################################################
 # Some common tools. Assume most common name and no path.

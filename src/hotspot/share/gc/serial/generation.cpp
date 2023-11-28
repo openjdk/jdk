@@ -31,7 +31,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -55,14 +54,6 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
   }
   _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
           (HeapWord*)_virtual_space.high_boundary());
-}
-
-size_t Generation::initial_size() {
-  SerialHeap* serial_heap = SerialHeap::heap();
-  if (serial_heap->is_young_gen(this)) {
-    return serial_heap->young_gen_spec()->init_size();
-  }
-  return serial_heap->old_gen_spec()->init_size();
 }
 
 size_t Generation::max_capacity() const {
@@ -193,14 +184,6 @@ class GenerationBlockSizeClosure : public SpaceClosure {
   }
   GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
 };
-
-size_t Generation::block_size(const HeapWord* p) const {
-  GenerationBlockSizeClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  assert(blk.size > 0, "seems reasonable");
-  return blk.size;
-}
 
 class GenerationBlockIsObjClosure : public SpaceClosure {
  public:

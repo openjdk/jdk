@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
@@ -455,7 +456,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     // This array is written into the CDS archive. Make sure it
     // has deterministic contents.
     zap_filler_array_with(start, words, 0);

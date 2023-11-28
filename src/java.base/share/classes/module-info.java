@@ -148,6 +148,7 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
+        java.desktop, // for ScopedValue
         jdk.compiler,
         jdk.incubator.vector,
         jdk.jshell;
@@ -187,15 +188,20 @@ module java.base {
     exports jdk.internal.classfile to
         jdk.jartool,
         jdk.jdeps,
+        jdk.jfr,
         jdk.jlink,
         jdk.jshell;
     exports jdk.internal.classfile.attribute to
         jdk.jartool,
         jdk.jdeps,
+        jdk.jfr,
         jdk.jlink;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.classfile.constantpool to
         jdk.jartool,
         jdk.jdeps,
+        jdk.jfr,
         jdk.jlink;
     exports jdk.internal.classfile.instruction to
         jdk.jdeps,

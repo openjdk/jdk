@@ -43,6 +43,7 @@ import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
@@ -274,6 +275,38 @@ public final class Utils {
 
     public static String toHexString(long value) {
         return "0x" + Long.toHexString(value);
+    }
+
+    public record BaseAndScale(int base, long scale) {
+
+        public static final BaseAndScale BYTE =
+                new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);
+        public static final BaseAndScale CHAR =
+                new BaseAndScale(Unsafe.ARRAY_CHAR_BASE_OFFSET, Unsafe.ARRAY_CHAR_INDEX_SCALE);
+        public static final BaseAndScale SHORT =
+                new BaseAndScale(Unsafe.ARRAY_SHORT_BASE_OFFSET, Unsafe.ARRAY_SHORT_INDEX_SCALE);
+        public static final BaseAndScale INT =
+                new BaseAndScale(Unsafe.ARRAY_INT_BASE_OFFSET, Unsafe.ARRAY_INT_INDEX_SCALE);
+        public static final BaseAndScale FLOAT =
+                new BaseAndScale(Unsafe.ARRAY_FLOAT_BASE_OFFSET, Unsafe.ARRAY_FLOAT_INDEX_SCALE);
+        public static final BaseAndScale LONG =
+                new BaseAndScale(Unsafe.ARRAY_LONG_BASE_OFFSET, Unsafe.ARRAY_LONG_INDEX_SCALE);
+        public static final BaseAndScale DOUBLE =
+                new BaseAndScale(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, Unsafe.ARRAY_DOUBLE_INDEX_SCALE);
+
+        public static BaseAndScale of(Object array) {
+            return switch (array) {
+                case byte[]   _ -> BaseAndScale.BYTE;
+                case char[]   _ -> BaseAndScale.CHAR;
+                case short[]  _ -> BaseAndScale.SHORT;
+                case int[]    _ -> BaseAndScale.INT;
+                case float[]  _ -> BaseAndScale.FLOAT;
+                case long[]   _ -> BaseAndScale.LONG;
+                case double[] _ -> BaseAndScale.DOUBLE;
+                default -> throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
+            };
+        }
+
     }
 
 }

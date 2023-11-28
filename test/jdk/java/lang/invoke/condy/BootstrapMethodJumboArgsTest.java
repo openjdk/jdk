@@ -25,13 +25,17 @@
  * @test
  * @bug 8186046
  * @summary Test bootstrap methods throwing an exception
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng BootstrapMethodJumboArgsTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 BootstrapMethodJumboArgsTest
  */
 
-import jdk.experimental.bytecode.PoolHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
@@ -49,12 +53,11 @@ public class BootstrapMethodJumboArgsTest {
 
 
     static Object bsmZero(MethodHandles.Lookup l, String name, Object type,
-                      Object... args) {
+                          Object... args) {
         Object[] a = args.clone();
         if (type instanceof MethodType) {
             return new ConstantCallSite(MethodHandles.constant(Object[].class, a));
-        }
-        else {
+        } else {
             return a;
         }
     }
@@ -66,8 +69,7 @@ public class BootstrapMethodJumboArgsTest {
         System.arraycopy(args, 0, a, 1, args.length);
         if (type instanceof MethodType) {
             return new ConstantCallSite(MethodHandles.constant(Object[].class, a));
-        }
-        else {
+        } else {
             return a;
         }
     }
@@ -80,15 +82,8 @@ public class BootstrapMethodJumboArgsTest {
         System.arraycopy(args, 0, a, 2, args.length);
         if (type instanceof MethodType) {
             return new ConstantCallSite(MethodHandles.constant(Object[].class, a));
-        }
-        else {
+        } else {
             return a;
-        }
-    }
-
-    static void manyStaticStrings(String[] args, PoolHelper.StaticArgListBuilder<String, String, byte[]> staticArgs) {
-        for (String s : args) {
-            staticArgs.add(s);
         }
     }
 
@@ -99,8 +94,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object[].class,
-                    "bsmZero", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmZero", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);
@@ -109,8 +104,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object[].class,
-                    "bsmOne", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmOne", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);
@@ -119,8 +114,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                     L, "name", Object[].class,
-                    "bsmTwo", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmTwo", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);
@@ -134,8 +129,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.invokedynamic(
                     L, "name", methodType(Object[].class),
-                    "bsmZero", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmZero", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);
@@ -144,8 +139,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.invokedynamic(
                     L, "name", methodType(Object[].class),
-                    "bsmOne", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmOne", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);
@@ -154,8 +149,8 @@ public class BootstrapMethodJumboArgsTest {
         {
             MethodHandle mh = InstructionHelper.invokedynamic(
                     L, "name", methodType(Object[].class),
-                    "bsmTwo", methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class, Object.class, Object[].class),
-                    S -> manyStaticStrings(expected, S));
+                    "bsmTwo", methodType(Object.class, MethodHandles.Lookup.class, String.class,
+                            Object.class, Object.class, Object.class, Object[].class), expected);
 
             Object[] actual = (Object[]) mh.invoke();
             Assert.assertEquals(actual, expected);

@@ -174,6 +174,7 @@ public:
 
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
+  void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
@@ -229,11 +230,17 @@ private:
   HeapWord* volatile _top_at_mark_start;
 
   // The area above this limit is fully parsable. This limit
-  // is equal to bottom except from Remark and until the region has been
-  // scrubbed concurrently. The scrubbing ensures that all dead objects (with
-  // possibly unloaded classes) have beenreplaced with filler objects that
-  // are parsable. Below this limit the marking bitmap must be used to
-  // determine size and liveness.
+  // is equal to bottom except
+  //
+  // * from Remark and until the region has been scrubbed concurrently. The
+  //   scrubbing ensures that all dead objects (with possibly unloaded classes)
+  //   have been replaced with filler objects that are parsable.
+  // * after the marking phase in the Full GC pause until the objects have been
+  //   moved. Some (debug) code iterates over the heap after marking but before
+  //   compaction.
+  //
+  // Below this limit the marking bitmap must be used to determine size and
+  // liveness.
   HeapWord* volatile _parsable_bottom;
 
   // Amount of dead data in the region.
@@ -244,7 +251,7 @@ private:
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
-  int  _age_index;
+  uint  _age_index;
 
   // NUMA node.
   uint _node_index;
@@ -507,7 +514,7 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() const;
+  uint age_in_surv_rate_group() const;
   bool has_valid_age_in_surv_rate() const;
 
   bool has_surv_rate_group() const;
