@@ -268,6 +268,9 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_reguard;
   Label L_after_reguard;
   if (_needs_transition) {
+    // Restore cpu control state after JNI call
+    __ restore_cpu_control_state_after_jni(rscratch1, tmp1);
+
     __ mov(tmp1, _thread_in_native_trans);
     __ strw(tmp1, Address(rthread, JavaThread::thread_state_offset()));
 
