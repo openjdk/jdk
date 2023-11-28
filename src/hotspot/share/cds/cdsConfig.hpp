@@ -26,6 +26,7 @@
 #define SHARE_CDS_CDSCONFIG_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 class CDSConfig : public AllStatic {
@@ -36,7 +37,19 @@ class CDSConfig : public AllStatic {
   static bool _loading_full_module_graph_disabled;
 
   static char*  _default_archive_path;
+  static char*  SharedArchivePath;
+  static char*  SharedDynamicArchivePath;
+ //static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
 #endif
+
+  static void extract_shared_archive_paths(const char* archive_path,
+                                           char** base_archive_path,
+                                           char** top_archive_path);
+
+public:
+  // { -- these function are public only during code refactoring. Will be made private
+
+  // -- }
 
 public:
   // Basic CDS features
@@ -47,7 +60,14 @@ public:
   static void  enable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = true); }
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
+  // Archive paths
   static char* get_default_archive_path();
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
+  static void init_shared_archive_paths();
+  static void set_shared_spaces_flags_and_archive_paths();
+
+  static const char* GetSharedArchivePath() { return SharedArchivePath; }
+  static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);

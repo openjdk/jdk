@@ -163,7 +163,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     header_size = c_header_size;
 
     const char* default_base_archive_name = CDSConfig::get_default_archive_path();
-    const char* current_base_archive_name = Arguments::GetSharedArchivePath();
+    const char* current_base_archive_name = CDSConfig::GetSharedArchivePath();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -199,7 +199,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(Arguments::GetSharedArchivePath());
+    copy_base_archive_name(CDSConfig::GetSharedArchivePath());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -916,7 +916,7 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
 
 bool FileMapInfo::check_module_paths() {
   const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = Arguments::num_archives(rp);
+  int num_paths = CDSConfig::num_archives(rp);
   if (num_paths != header()->num_module_paths()) {
     return false;
   }
@@ -2273,7 +2273,7 @@ bool FileMapInfo::initialize() {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
+        ArchiveClassesAtExit = CDSConfig::GetSharedDynamicArchivePath();
       }
       return false;
     }
