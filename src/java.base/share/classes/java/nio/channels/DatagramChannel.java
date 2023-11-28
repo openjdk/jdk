@@ -662,7 +662,7 @@ public abstract class DatagramChannel
      * @return  The {@code SocketAddress} that the socket is bound to, or the
      *          {@code SocketAddress} representing the loopback address if
      *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound.
+     *          channel's socket is not bound
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
