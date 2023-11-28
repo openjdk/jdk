@@ -350,32 +350,32 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
                                                          CardValue* const end_card) {
   using Word = uintptr_t;
 
-  CardValue* i_card = start_card;
+  CardValue* current_card = start_card;
 
-  while (!is_aligned(i_card, sizeof(Word))) {
-    if (i_card >= end_card) {
+  while (!is_aligned(current_card, sizeof(Word))) {
+    if (current_card >= end_card) {
       return end_card;
     }
-    if (is_dirty(i_card)) {
-      return i_card;
+    if (is_dirty(current_card)) {
+      return current_card;
     }
-    ++i_card;
+    ++current_card;
   }
 
   // Word comparison
-  while (i_card + sizeof(Word) <= end_card) {
-    Word* i_word = reinterpret_cast<Word*>(i_card);
-    if (*i_word != (Word)clean_card_row_val()) {
+  while (current_card + sizeof(Word) <= end_card) {
+    Word* current_word = reinterpret_cast<Word*>(current_card);
+    if (*current_word != (Word)clean_card_row_val()) {
       // Found a dirty card in this word; fall back to per-CardValue comparison.
       break;
     }
-    i_card += sizeof(Word);
+    current_card += sizeof(Word);
   }
 
   // Per-CardValue comparison.
-  for (/* empty */; i_card < end_card; ++i_card) {
-    if (is_dirty(i_card)) {
-      return i_card;
+  for (/* empty */; current_card < end_card; ++current_card) {
+    if (is_dirty(current_card)) {
+      return current_card;
     }
   }
 
@@ -392,18 +392,18 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
                                                          CardValue* const end_card,
                                                          CardTableRS* ct,
                                                          Func&& object_start) {
-  for (CardValue* i_card = start_card; i_card < end_card; /* empty */) {
-    if (is_dirty(i_card)) {
-      i_card++;
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    if (is_dirty(current_card)) {
+      current_card++;
       continue;
     }
 
     // A potential candidate.
-    HeapWord* addr = ct->addr_for(i_card);
+    HeapWord* addr = ct->addr_for(current_card);
     HeapWord* obj_start_addr = object_start(addr);
 
     if (obj_start_addr == addr) {
-      return i_card;
+      return current_card;
     }
 
     // Final obj in dirty-chunk crosses card-boundary.
@@ -411,7 +411,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     if (obj->is_objArray()) {
       // ObjArrays are always precisely-marked so we are not allowed to jump to
       // the end of the current object.
-      return i_card;
+      return current_card;
     }
 
     // Card occupied by next obj.
@@ -421,7 +421,7 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
     }
 
     // Continue the search after this known-dirty card...
-    i_card = next_obj_card + 1;
+    current_card = next_obj_card + 1;
   }
 
   return end_card;
@@ -479,8 +479,8 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
   CardValue* const clear_limit_card = is_card_aligned(mr.end()) ? end_card - 1
                                                                 : end_card - 2;
 
-  for (CardValue* i_card = start_card; i_card < end_card; /* empty */) {
-    CardValue* const dirty_l = find_first_dirty_card(i_card, end_card);
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    CardValue* const dirty_l = find_first_dirty_card(current_card, end_card);
 
     if (dirty_l == end_card) {
       // No dirty cards to iterate.
@@ -516,7 +516,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
       }
 
       if (obj_end_addr >= addr_r) {
-        i_card = dirty_r + 1;
+        current_card = dirty_r + 1;
         break;
       }
 
