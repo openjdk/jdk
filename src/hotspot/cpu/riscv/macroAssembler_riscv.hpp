@@ -254,6 +254,15 @@ class MacroAssembler: public Assembler {
                                Label& no_such_interface,
                                bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   // n.n. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,
@@ -1200,6 +1209,9 @@ public:
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
+  void wide_madd(Register sum_lo, Register sum_hi, Register n,
+                 Register m, Register tmp1, Register tmp2);
   void cad(Register dst, Register src1, Register src2, Register carry);
   void cadc(Register dst, Register src1, Register src2, Register carry);
   void adc(Register dst, Register src1, Register src2, Register carry);

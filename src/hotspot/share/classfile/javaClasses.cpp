@@ -802,9 +802,7 @@ GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = nullptr;
 inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
   assert(fd->has_initial_value(), "caller should have checked this");
   assert(fd->field_type() == T_OBJECT, "caller should have checked this");
-  // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
-  // during DumpSharedSpaces
-  assert(fd->signature()->equals("Ljava/lang/String;"), "just checking");
+  assert(fd->signature() == vmSymbols::string_signature(), "just checking");
 }
 #endif
 
