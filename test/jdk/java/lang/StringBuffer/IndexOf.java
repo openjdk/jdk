@@ -54,6 +54,8 @@ public class IndexOf {
     compareIndexOfLastIndexOf();
     generator.setSeed(1999);
     compareStringStringBuffer();
+    generator.setSeed(1999);
+    compareExhaustive();
 		}
 
     if (failure)
@@ -84,6 +86,68 @@ public class IndexOf {
     return constraint1 + x;
   }
 
+  private static int naiveFind(String haystack, String needle, int offset) {
+    int x = offset;
+    int y = 0;
+    int len = haystack.length() - offset;
+    if (needle.length() == 0) return 0;
+    if (needle.length() > len) return -1;
+    for (x = offset; x < len - needle.length() + 1; x++) {
+      if (haystack.charAt(x) == needle.charAt(0)) {
+        for (y = 1; y < needle.length(); y++) {
+          if (haystack.charAt(x + y) != needle.charAt(y)) {
+            break;
+          }
+        }
+        if (y == needle.length()) return x;
+      }
+    }
+    return -1;
+  }
+
+  private static void compareExhaustive() {
+    int failCount = 0;
+    String sourceString;
+    StringBuffer sourceBuffer;
+    String targetString;
+    String targetStringBeginning;
+    String targetStringMiddle;
+    String targetStringEnd;
+    int hsLen = 97;
+    int maxNeedleLen = hsLen / 2;
+    int haystackLen;
+    int needleLen;
+    int hsBegin, hsEnd, nBegin, nEnd;
+
+    for (int i = 0; i < 10000; i++) {
+      do {
+        sourceString = generateTestString(hsLen - 1, hsLen);
+        sourceBuffer = new StringBuffer(sourceString);
+        targetString = generateTestString(maxNeedleLen - 1, maxNeedleLen);
+      } while (naiveFind(sourceString, targetString, 0) != -1);
+
+      for (haystackLen = 0; haystackLen < hsLen; haystackLen += 7) {
+        for (needleLen = 0; (needleLen < maxNeedleLen) && (needleLen <= haystackLen); needleLen++) {
+          for (hsBegin = 0; (hsBegin < haystackLen - needleLen) && (hsBegin + haystackLen < hsLen); hsBegin += 3) {
+            for (nBegin = 0; (nBegin < needleLen) && (nBegin + needleLen < maxNeedleLen); nBegin += 3) {
+              int nResult = naiveFind(sourceString.substring(hsBegin, hsBegin + haystackLen),
+                                      targetString.substring(nBegin, nBegin + needleLen), 0);
+              int iResult = sourceString.substring(hsBegin, hsBegin + haystackLen).indexOf(targetString.substring(nBegin, nBegin + needleLen));
+              if (iResult != nResult) {
+                System.out.println("Source="+sourceString.substring(hsBegin, hsBegin + haystackLen));
+                System.out.println("Target="+targetString.substring(nBegin, nBegin + needleLen));
+                System.out.println("haystackLen="+haystackLen+" neeldeLen="+needleLen+" hsBegin="+hsBegin+" nBegin="+nBegin+
+                                   " iResult="+iResult+" nResult="+nResult);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    report("Exhaustive                   ", failCount);
+  }
+
   private static void simpleTest() {
     int failCount = 0;
     String sourceString;
@@ -100,11 +164,14 @@ public class IndexOf {
       int index1 = generator.nextInt(90) + 5;
       sourceBuffer = sourceBuffer.replace(index1, index1, targetString);
 
-      if (sourceBuffer.indexOf(targetString) != index1)
+      if ((sourceBuffer.indexOf(targetString) != index1) ||
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
         failCount++;
-      if (sourceBuffer.indexOf(targetString, 5) != index1)
+      if ((sourceBuffer.indexOf(targetString, 5) != index1) ||
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
         failCount++;
-      if (sourceBuffer.indexOf(targetString, 99) == index1)
+      if ((sourceBuffer.indexOf(targetString, 99) == index1) ||
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
         failCount++;
     }
 

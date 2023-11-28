@@ -32,11 +32,87 @@
 //                     String handling intrinsics
 //                     --------------------------
 //
-// Currently implementing strchr and strstr.  Used for IndexOf operations.
+// Currently implements scheme described in http://0x80.pl/articles/simd-strfind.html
+// Implementation can be found at https://github.com/WojciechMula/sse4-strstr
+//
+// The general idea is as follows:
+// 1. Broadcast the first byte of the needle to a ymm register (32 bytes)
+// 2. Broadcast the last byte of the needle to a different ymm register
+// 3. Compare the first-byte ymm register to the first 32 bytes of the haystack
+// 4. Compare the last-byte register to the 32 bytes of the haystack at the (k-1)st position
+// 5. Logically AND the results of the comparison
+//
+// The result of the AND yields the position within the haystack where both the first
+// and last bytes of the needle exist in their correct relative positions.  Check the full
+// needle value against the haystack to confirm a match.
+//
+// This implementation uses memcmp to compare when the size of the needle is >= 32 bytes.
+// For other needle sizes, the comparison is done with register compares to eliminate the
+// overhead of the call (including range checks, etc.).  The size of the comparison is
+// known, and it is also known to be safe reading the haystack for the full width of the needle.
+//
+// The original algorithm as implemented will potentially read past the end of the haystack.
+// This implementation protects against that.  Instead of reading as many 32-byte chunks as
+// possible and then handling the tail, we calculate the last position of a vaild 32-byte
+// read and adjust the starting position of the second read such that the last read will not
+// go beyond the end of the haystack.  So the first comparison is to the first 32 bytes of the
+// haystack, and the second is offset by an amount to make the last read legal.  The remainder of
+// the comparisons are done incrementing by 32 bytes.
+//
+// This will cause 16 bytes on average to be examined twice, but that is cheaper than the
+// logic required for tail processing.
 //
 /******************************************************************************/
 
 #define __ _masm->
+
+/******************************************************************************/
+//                     Helper for loop construct
+//                     --------------------------
+//
+// Code:
+//
+// template <size_t k, typename MEMCMP>
+// size_t FORCE_INLINE avx2_strstr_memcmp_ptr(const char *s, size_t n, const char *needle, MEMCMP memcmp_fun)
+// {
+//   char *start = (char *)s;
+//   char *end = (char *)&s[(n)]; // & ~0x1f];
+//   long long incr = (n <= 32) ? 32 : (n - k - 31) % 32;
+
+//   const __m256i first = _mm256_set1_epi8(needle[0]);
+//   const __m256i last = _mm256_set1_epi8(needle[k - 1]);
+
+//   while (s < end)
+//   {
+
+//     const __m256i block_first = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s));
+//     CHECK_BOUNDS(s, 32, start);
+//     const __m256i block_last = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s + k - 1));
+//     CHECK_BOUNDS(s + k - 1, 32, start);
+
+//     const __m256i eq_first = _mm256_cmpeq_epi8(first, block_first);
+//     const __m256i eq_last = _mm256_cmpeq_epi8(last, block_last);
+
+//     uint32_t mask = _mm256_movemask_epi8(_mm256_and_si256(eq_first, eq_last));
+
+//     while (mask != 0)
+//     {
+////////////////  Helper code ends here, before comparing full needle
+//       const auto bitpos = bits::get_first_bit_set(mask);
+//       if (memcmp_fun(s + bitpos + 1, needle + 1, k - 2) == 0)
+//       {
+//         return s - start + bitpos;
+//       }
+
+//       mask = bits::clear_leftmost_set(mask);
+//     }
+//     s += incr;
+//     incr = 32;
+//   }
+
+//   return std::string::npos;
+// }
+/******************************************************************************/
 
 void StubGenerator::loop_helper(int size, Label& bailout, Label& loop_top) {
   Label temp;
@@ -70,8 +146,8 @@ void StubGenerator::loop_helper(int size, Label& bailout, Label& loop_top) {
 
 address StubGenerator::generate_string_indexof() {
   StubCodeMark mark(this, "StubRoutines", "stringIndexOf");
-  address large_hs_jmp_table[32];
-  address small_hs_jmp_table[32];
+  address large_hs_jmp_table[32];   // Jump table for large haystacks
+  address small_hs_jmp_table[32];   // Jump table for small haystacks
   int jmp_ndx = 0;
   __ align(CodeEntryAlignment);
   address start = __ pc();
@@ -102,27 +178,6 @@ address StubGenerator::generate_string_indexof() {
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
-    // switch statement for AVX2 instructions:
-    //    r15, rsi <= n
-    //    rdi, r11 <= s
-    //    r10, rdx <= needle
-    //    r12, rcx <= k
-    //    rbx <= n - k
-    //    rax <= k - 1
-
-    large_hs_jmp_table[0] = __ pc();  // Case for needle size == 1
-    __ vpbroadcastb(xmm0, Address(r10, 0), Assembler::AVX_256bit);
-    __ vpcmpeqb(xmm1, xmm0, Address(r11, 0), Assembler::AVX_256bit);
-    __ vpmovmskb(rax, xmm1);
-    __ testl(rax, rax);
-    __ je(L_0x406044);
-    __ tzcntl(r13, rax);
-    __ jmp(L_exit);
-
-    __ bind(L_CASE_0);  // Needle size == 0
-    __ xorl(r15, r15);
-    __ jmp(L_0x406019);
-
     // Small-ish string
     // On entry:
     //    r15, rsi <= n
@@ -150,8 +205,7 @@ address StubGenerator::generate_string_indexof() {
     //   *B = *A;
     __ cmpl(r15, 0x10);
     __ ja(L_byte_copy);
-    __ leaq(rax, Address(r15, -0x10));
-    __ movdqu(xmm0, Address(r11, rax, Address::times_1));
+    __ movdqu(xmm0, Address(r11, r15, Address::times_1, -0x10));
     __ movdqu(Address(r12, 0), xmm0);
     __ movl(rax, 0x10);
     __ subl(rax, r15);  // 16 - i
@@ -162,6 +216,7 @@ address StubGenerator::generate_string_indexof() {
     __ movq(r12, rcx);
     __ jmp(L_0x404933);
 
+//  Copy the haystack (16 < size < 32) to the stack
     __ bind(L_byte_copy);
     {
       Label L_8, L_4, L_2, L_1, L_restore;
@@ -234,14 +289,7 @@ address StubGenerator::generate_string_indexof() {
     __ xorl(r15, r15);
     __ jmpb(L_0x4049cc);
 
-    //  CASE 8 CASE 9:
-    small_hs_jmp_table[8] = __ pc();
-    small_hs_jmp_table[9] = __ pc();
-    __ movq(rax, Address(rbx, r15, Address::times_1, -0x1c));
-    __ cmpq(rax, Address(rcx, 0));
-    __ je(L_0x406019);
     __ align(8);
-
     __ bind(L_top_loop_1);
     __ incrementq(r15);
     __ cmpq(r13, r15);
@@ -257,14 +305,6 @@ address StubGenerator::generate_string_indexof() {
     __ cmpq(rax, 0x1e);
     __ ja_b(L_long_compare);
     __ jmp(L_trampoline);  // Jump to the correct case for small haystacks
-
-    //  CASE 4: CASE 5:
-    small_hs_jmp_table[4] = __ pc();
-    small_hs_jmp_table[5] = __ pc();
-    __ movl(rax, Address(rbx, r15, Address::times_1, -0x1c));
-    __ cmpl(rax, Address(rcx, 0));
-    __ jne(L_top_loop_1);
-    __ jmp(L_0x406019);
 
     //  Needle size >= 32 - use memcmp
     __ bind(L_long_compare);
@@ -298,6 +338,14 @@ address StubGenerator::generate_string_indexof() {
     __ jne(L_top_loop_1);
     __ jmp(L_0x406019);
 
+    //  CASE 4: CASE 5:
+    small_hs_jmp_table[4] = __ pc();
+    small_hs_jmp_table[5] = __ pc();
+    __ movl(rax, Address(rbx, r15, Address::times_1, -0x1c));
+    __ cmpl(rax, Address(rcx, 0));
+    __ jne(L_top_loop_1);
+    __ jmp(L_0x406019);
+
     //  CASE 6:
     small_hs_jmp_table[6] = __ pc();
     __ movl(rax, Address(rbx, r15, Address::times_1, -0x1c));
@@ -317,6 +365,13 @@ address StubGenerator::generate_string_indexof() {
     __ cmpw(Address(r10, 0x5), rax);
     __ jne(L_top_loop_1);
     __ jmp(L_0x406019);
+
+    //  CASE 8 CASE 9:
+    small_hs_jmp_table[8] = __ pc();
+    small_hs_jmp_table[9] = __ pc();
+    __ movq(rax, Address(rbx, r15, Address::times_1, -0x1c));
+    __ cmpq(rax, Address(rcx, 0));
+    __ je(L_0x406019);
 
     //  CASE 10:
     small_hs_jmp_table[10] = __ pc();
@@ -650,6 +705,19 @@ address StubGenerator::generate_string_indexof() {
     __ movq(r10, r13);
     __ jne_b(L_inner_anysize_loop);
     __ jmpb(L_top_anysize_loop);
+
+    large_hs_jmp_table[0] = __ pc();  // Case for needle size == 1
+    __ vpbroadcastb(xmm0, Address(r10, 0), Assembler::AVX_256bit);
+    __ vpcmpeqb(xmm1, xmm0, Address(r11, 0), Assembler::AVX_256bit);
+    __ vpmovmskb(rax, xmm1);
+    __ testl(rax, rax);
+    __ je(L_0x406044);
+    __ tzcntl(r13, rax);
+    __ jmp(L_exit);
+
+    __ bind(L_CASE_0);  // Needle size == 0
+    __ xorl(r15, r15);
+    __ jmp(L_0x406019);
 
     //    case 2:   // case for needle size == 2
     large_hs_jmp_table[1] = __ pc();
@@ -1367,6 +1435,7 @@ address StubGenerator::generate_string_indexof() {
     __ leave();  // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
+//  Tail cleanup stuff
     __ bind(L_0x40602e);
     __ movl(rax, rbp);
     __ movq(r13, Address(rsp, 0x8));
@@ -1430,6 +1499,10 @@ address StubGenerator::generate_string_indexof() {
     for (jmp_ndx = 0; jmp_ndx < 32; jmp_ndx++) {
       __ emit_address(small_hs_jmp_table[jmp_ndx]);
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     __ align(16);
     __ bind(L_begin);
@@ -2343,163 +2416,163 @@ address StubGenerator::generate_string_indexof() {
     // 439             movbe   (%rsi), %ecx
 
     __ shlq(rax, 0x20);
-    // 	shlq	$32, %rcx
+    //   shlq  $32, %rcx
     __ shlq(rcx, 0x20);
-    // 	movbe	-4(%rdi, %rdx), %edi
+    //   movbe  -4(%rdi, %rdx), %edi
     __ movzbl(rdi, Address(rdi, rdx, Address::times_1, -0x4));
-    // 	movbe	-4(%rsi, %rdx), %esi
+    //   movbe  -4(%rsi, %rdx), %esi
     __ movzbl(rsi, Address(rsi, rdx, Address::times_1, -0x4));
-    // 	orq	%rdi, %rax
+    //   orq  %rdi, %rax
     __ orq(rax, rdi);
-    // 	orq	%rsi, %rcx
+    //   orq  %rsi, %rcx
     __ orq(rcx, rsi);
-    // 	subq	%rcx, %rax
+    //   subq  %rcx, %rax
     __ subq(rax, rcx);
-    // 	/* Fast path for return zero.  */
-    // 	jnz	L(ret_nonzero)
+    //   /* Fast path for return zero.  */
+    //   jnz  L(ret_nonzero)
     __ jne_b(L_ret_nonzero);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     __ ret(0);
     __ align(16);
 
     __ bind(L_one_or_less);
 
-    // 	.p2align 4
+    //   .p2align 4
     // L(one_or_less):
-    // 	jb	L(zero)
+    //   jb  L(zero)
     __ jb_b(L_zero);
-    // 	movzbl	(%rsi), %ecx
+    //   movzbl  (%rsi), %ecx
     __ movzbl(rcx, Address(rsi, 0));
-    // 	movzbl	(%rdi), %eax
+    //   movzbl  (%rdi), %eax
     __ movzbl(rax, Address(rdi, 0));
-    // 	subl	%ecx, %eax
+    //   subl  %ecx, %eax
     __ subl(rax, rcx);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     __ ret(0);
     __ p2align(16, 5);
 
     __ bind(L_ret_nonzero);
 
-    // 	.p2align 4,, 5
+    //   .p2align 4,, 5
     // L(ret_nonzero):
-    // 	sbbl	%eax, %eax
+    //   sbbl  %eax, %eax
     __ sbbl(rax, rax);
-    // 	orl	$1, %eax
+    //   orl  $1, %eax
     __ orl(rax, 0x1);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     __ ret(0);
     __ p2align(16, 2);
 
     __ bind(L_zero);
 
-    // 	.p2align 4,, 2
+    //   .p2align 4,, 2
     // L(zero):
-    // 	xorl	%eax, %eax
+    //   xorl  %eax, %eax
     __ xorl(rax, rax);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     __ ret(0);
     __ align(16);
 
     __ bind(L_between_8_15);
 
-    // 	.p2align 4
+    //   .p2align 4
     // L(between_8_15):
-    // 	movbe	(%rdi), %rax
+    //   movbe  (%rdi), %rax
     __ movzbl(rax, Address(rdi, 0));
-    // 	movbe	(%rsi), %rcx
+    //   movbe  (%rsi), %rcx
     __ movzbl(rcx, Address(rsi, 0));
-    // 	subq	%rcx, %rax
+    //   subq  %rcx, %rax
     __ subq(rax, rcx);
-    // 	jnz	L(ret_nonzero)
+    //   jnz  L(ret_nonzero)
     __ jne_b(L_ret_nonzero);
-    // 	movbe	-8(%rdi, %rdx), %rax
+    //   movbe  -8(%rdi, %rdx), %rax
     __ movzbl(rax, Address(rdi, rdx, Address::times_1, -0x8));
-    // 	movbe	-8(%rsi, %rdx), %rcx
+    //   movbe  -8(%rsi, %rdx), %rcx
     __ movzbl(rcx, Address(rsi, rdx, Address::times_1, -0x8));
-    // 	subq	%rcx, %rax
+    //   subq  %rcx, %rax
     __ subq(rax, rcx);
-    // 	/* Fast path for return zero.  */
-    // 	jnz	L(ret_nonzero)
+    //   /* Fast path for return zero.  */
+    //   jnz  L(ret_nonzero)
     __ jne_b(L_ret_nonzero);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     // # endif
     __ ret(0);
     __ p2align(16, 10);
 
     __ bind(L_between_16_31);
 
-    // 	.p2align 4,, 10
+    //   .p2align 4,, 10
     // L(between_16_31):
-    // 	/* From 16 to 31 bytes.  No branch when size == 16.  */
-    // 	vmovdqu	(%rsi), %xmm2
+    //   /* From 16 to 31 bytes.  No branch when size == 16.  */
+    //   vmovdqu  (%rsi), %xmm2
     __ movdqu(xmm2, Address(rsi, 0));
-    // 	VPCMPEQ	(%rdi), %xmm2, %xmm2
+    //   VPCMPEQ  (%rdi), %xmm2, %xmm2
     __ vpcmpeqb(xmm2, xmm2, Address(rdi, 0), Assembler::AVX_128bit);
-    // 	vpmovmskb %xmm2, %eax
+    //   vpmovmskb %xmm2, %eax
     __ vpmovmskb(rax, xmm2, Assembler::AVX_128bit);
-    // 	subl	$0xffff, %eax
+    //   subl  $0xffff, %eax
     __ subl(rax, 0xffff);
-    // 	jnz	L(return_vec_0)
+    //   jnz  L(return_vec_0)
     __ jne(L_return_vec_0);
 
-    // 	/* Use overlapping loads to avoid branches.  */
+    //   /* Use overlapping loads to avoid branches.  */
 
-    // 	vmovdqu	-16(%rsi, %rdx), %xmm2
+    //   vmovdqu  -16(%rsi, %rdx), %xmm2
     __ movdqu(xmm2, Address(rsi, rdx, Address::times_1, -0x10));
-    // 	leaq	-16(%rdi, %rdx), %rdi
+    //   leaq  -16(%rdi, %rdx), %rdi
     __ leaq(rdi, Address(rdi, rdx, Address::times_1, -0x10));
-    // 	leaq	-16(%rsi, %rdx), %rsi
+    //   leaq  -16(%rsi, %rdx), %rsi
     __ leaq(rsi, Address(rsi, rdx, Address::times_1, -0x10));
-    // 	VPCMPEQ	(%rdi), %xmm2, %xmm2
+    //   VPCMPEQ  (%rdi), %xmm2, %xmm2
     __ vpcmpeqb(xmm2, xmm2, Address(rdi, 0), Assembler::AVX_128bit);
-    // 	vpmovmskb %xmm2, %eax
+    //   vpmovmskb %xmm2, %eax
     __ vpmovmskb(rax, xmm2, Assembler::AVX_128bit);
-    // 	subl	$0xffff, %eax
+    //   subl  $0xffff, %eax
     __ subl(rax, 0xffff);
-    // 	/* Fast path for return zero.  */
-    // 	jnz	L(return_vec_0)
+    //   /* Fast path for return zero.  */
+    //   jnz  L(return_vec_0)
     __ jne(L_return_vec_0);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     // # else
     __ ret(0);
     __ align(16);
 
     __ bind(L_between_2_3);
 
-    // 	.p2align 4
+    //   .p2align 4
     // L(between_2_3):
-    // 	/* Load as big endian to avoid branches.  */
-    // 	movzwl	(%rdi), %eax
+    //   /* Load as big endian to avoid branches.  */
+    //   movzwl  (%rdi), %eax
     __ movzwl(rax, Address(rdi, 0));
-    // 	movzwl	(%rsi), %ecx
+    //   movzwl  (%rsi), %ecx
     __ movzwl(rcx, Address(rsi, 0));
-    // 	bswap	%eax
+    //   bswap  %eax
     __ bswapl(rax);
-    // 	bswap	%ecx
+    //   bswap  %ecx
     __ bswapl(rcx);
-    // 	shrl	%eax
+    //   shrl  %eax
     __ shrl(rax, 1);
-    // 	shrl	%ecx
+    //   shrl  %ecx
     __ shrl(rcx, 1);
-    // 	movzbl	-1(%rdi, %rdx), %edi
+    //   movzbl  -1(%rdi, %rdx), %edi
     __ movzbl(rdi, Address(rdi, rdx, Address::times_1, -0x1));
-    // 	movzbl	-1(%rsi, %rdx), %esi
+    //   movzbl  -1(%rsi, %rdx), %esi
     __ movzbl(rsi, Address(rsi, rdx, Address::times_1, -0x1));
-    // 	orl	%edi, %eax
+    //   orl  %edi, %eax
     __ orl(rax, rdi);
-    // 	orl	%esi, %ecx
+    //   orl  %esi, %ecx
     __ orl(rcx, rsi);
-    // 	/* Subtraction is okay because the upper bit is zero.  */
-    // 	subl	%ecx, %eax
+    //   /* Subtraction is okay because the upper bit is zero.  */
+    //   subl  %ecx, %eax
     __ subl(rax, rcx);
-    // 	/* No ymm register was touched.  */
-    // 	ret
+    //   /* No ymm register was touched.  */
+    //   ret
     __ ret(0);
 
   } else {  // SSE version
