@@ -22,15 +22,11 @@
  *
  */
 #include "precompiled.hpp"
-#include "logging/log.hpp"
-#include "memory/metaspaceStats.hpp"
-#include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/virtualMemoryView.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 uint32_t VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
