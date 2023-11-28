@@ -151,7 +151,7 @@ address StubGenerator::generate_string_indexof() {
     __ cmpl(r15, 0x10);
     __ ja(L_byte_copy);
     __ leaq(rax, Address(r15, -0x10));
-    __ movdqu(xmm0, Address(r11, rax, Address::times_1, -0x10));
+    __ movdqu(xmm0, Address(r11, rax, Address::times_1));
     __ movdqu(Address(r12, 0), xmm0);
     __ movl(rax, 0x10);
     __ subl(rax, r15);  // 16 - i
