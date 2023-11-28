@@ -2892,8 +2892,8 @@ public final class Class<T> implements java.io.Serializable,
      * @param publicOnly true if only public methods are examined, otherwise all methods
      * @param name the name of the method
      * @param parameterTypes the parameter array
-     * @return the list of {@code Method} objects for the public methods of
-     *         this class matching the specified name and parameters
+     * @return the {@code Method} object for the method found from this class matching
+     * the specified name and parameters, or null if not found
      */
     Method findMethod(boolean publicOnly, String name, Class<?>... parameterTypes) {
         PublicMethods.MethodList res = getMethodsRecursive(name, parameterTypes, true, publicOnly);
