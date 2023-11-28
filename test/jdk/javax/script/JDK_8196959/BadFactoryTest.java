@@ -21,6 +21,14 @@
  * questions.
  */
 
+import org.junit.jupiter.api.Test;
+
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /*
  * @test
  * @bug 8196959
@@ -30,15 +38,6 @@
  * @run junit/othervm BadFactoryTest
  * @run junit/othervm -Djava.security.manager=allow BadFactoryTest
  */
-
-import org.junit.jupiter.api.Test;
-
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class BadFactoryTest {
 
     @Test
