@@ -53,7 +53,11 @@ public record ParserVerifier(ClassModel classModel) {
     List<VerifyError> verify() {
         var errors = new ArrayList<VerifyError>();
         verifyConstantPool(errors);
+        verifyInterfaces(errors);
+        verifyFields(errors);
+        verifyMethods(errors);
         verifyAttributes(classModel, errors);
+        //verify LNTA vs LNTTA
         return errors;
     }
 
@@ -120,6 +124,39 @@ public record ParserVerifier(ClassModel classModel) {
                     default -> false;
                 }))) {
               throw new VerifyError("Illegal method name %s in %s".formatted(name, toString(classModel)));
+        }
+    }
+
+    private void verifyInterfaces(List<VerifyError> errors) {
+        var intfs = new HashSet<ClassEntry>();
+        for (var intf : classModel.interfaces()) {
+            if (!intfs.add(intf)) {
+                errors.add(new VerifyError("Duplicate interface %s in %s".formatted(intf.asSymbol().displayName(), toString(classModel))));
+            }
+        }
+    }
+
+    private void verifyFields(List<VerifyError> errors) {
+        var fields = new HashSet<String>();
+        for (var f : classModel.fields()) try {
+            if (!fields.add(f.fieldName().stringValue() + f.fieldType().stringValue())) {
+                errors.add(new VerifyError("Duplicate field name %s with signature %s in %s".formatted(f.fieldName().stringValue(), f.fieldType().stringValue(), toString(classModel))));
+            }
+            verifyFieldName(f.fieldName().stringValue());
+        } catch (VerifyError ve) {
+            errors.add(ve);
+        }
+    }
+
+    private void verifyMethods(List<VerifyError> errors) {
+        var methods = new HashSet<String>();
+        for (var m : classModel.methods()) try {
+            if (!methods.add(m.methodName().stringValue() + m.methodType().stringValue())) {
+                errors.add(new VerifyError("Duplicate method name %s with signature %s in %s".formatted(m.methodName().stringValue(), m.methodType().stringValue(), toString(classModel))));
+            }
+            verifyMethodName(m.methodName().stringValue());
+        } catch (VerifyError ve) {
+            errors.add(ve);
         }
     }
 

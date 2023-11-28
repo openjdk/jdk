@@ -100,9 +100,9 @@ class VerifierSelfTest {
     }
 
     @Test
-    void testConstantPoolVerification() {
+    void testParserVerification() {
         var cc = Classfile.of();
-        var cd_test = ClassDesc.of("ConstantPoolTestClass");
+        var cd_test = ClassDesc.of("ParserVerificationTestClass");
         var indexes = new int[9];
         var clm = cc.parse(cc.build(cd_test, clb -> {
             var cp = clb.constantPool();
@@ -120,31 +120,7 @@ class VerifierSelfTest {
             indexes[6] = cp.interfaceMethodRefEntry(ce_invalid, nate_invalid_field).index();
             indexes[7] = cp.methodHandleEntry(MethodHandleInfo.REF_getField, cp.methodRefEntry(cd_test, "method", MTD_void)).index();
             indexes[8] = cp.methodHandleEntry(MethodHandleInfo.REF_invokeVirtual, cp.fieldRefEntry(cd_test, "field", CD_int)).index();
-        }));
-        assertVerify(clm, STR."""
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[0] } in class ConstantPoolTestClass
-                Bad method descriptor: invalid method type at constant pool index \{ indexes[1] } in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[2] } in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[3] } in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[4] } in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[4] } in class ConstantPoolTestClass
-                Illegal field name method; in class ConstantPoolTestClass at constant pool index \{ indexes[4] } in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[5] } in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[5] } in class ConstantPoolTestClass
-                Illegal method name field; in class ConstantPoolTestClass at constant pool index \{ indexes[5] } in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[6] } in class ConstantPoolTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[6] } in class ConstantPoolTestClass
-                Illegal method name field; in class ConstantPoolTestClass at constant pool index \{ indexes[6] } in class ConstantPoolTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[7] } in class ConstantPoolTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[8] } in class ConstantPoolTestClass
-                """);
-    }
-
-    @Test
-    void testAttributesVerification() {
-        var cc = Classfile.of();
-        var cd_test = ClassDesc.of("AttributesTestClass");
-        var clm = cc.parse(cc.build(cd_test, clb -> patch(clb,
+            patch(clb,
                 DeprecatedAttribute.of(),
                 EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
                 InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
@@ -154,13 +130,16 @@ class VerifierSelfTest {
                 RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
                         SignatureAttribute.of(Signature.of(CD_String))))),
                 SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
-                SourceFileAttribute.of("AttributesTestClass.java"),
+                SourceFileAttribute.of("ParserVerificationTestClass.java"),
                 SyntheticAttribute.of())
+                    .withInterfaceSymbols(CD_List, CD_List)
                     .withField("f", CD_String, fb -> patch(fb,
                             ConstantValueAttribute.of(""),
                             DeprecatedAttribute.of(),
                             SignatureAttribute.of(Signature.of(CD_String)),
                             SyntheticAttribute.of()))
+                    .withField("/", CD_int, 0)
+                    .withField("/", CD_int, 0)
                     .withMethod("m", MTD_void, 0, mb -> patch(mb,
                             DeprecatedAttribute.of(),
                             ExceptionsAttribute.ofSymbols(CD_Exception),
@@ -168,51 +147,70 @@ class VerifierSelfTest {
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
                             .withCode(cob -> cob.return_()))
-
-        ));
-        assertVerify(clm, """
-                Wrong Deprecated attribute length in class AttributesTestClass
-                Multiple EnclosingMethod attributes in class AttributesTestClass
-                Wrong EnclosingMethod attribute length in class AttributesTestClass
-                Multiple InnerClasses attributes in class AttributesTestClass
-                Wrong InnerClasses attribute length in class AttributesTestClass
-                Multiple NestHost attributes in class AttributesTestClass
-                Wrong NestHost attribute length in class AttributesTestClass
-                Multiple NestMembers attributes in class AttributesTestClass
-                Wrong NestMembers attribute length in class AttributesTestClass
-                Multiple PermittedSubclasses attributes in class AttributesTestClass
-                Wrong PermittedSubclasses attribute length in class AttributesTestClass
-                Multiple Record attributes in class AttributesTestClass
-                Wrong Record attribute length in class AttributesTestClass
-                Multiple Signature attributes in class AttributesTestClass
-                Wrong Signature attribute length in class AttributesTestClass
-                Multiple SourceFile attributes in class AttributesTestClass
-                Wrong SourceFile attribute length in class AttributesTestClass
-                Wrong Synthetic attribute length in class AttributesTestClass
-                Multiple ConstantValue attributes in field AttributesTestClass.f
-                Wrong ConstantValue attribute length in field AttributesTestClass.f
-                Wrong Deprecated attribute length in field AttributesTestClass.f
-                Multiple Signature attributes in field AttributesTestClass.f
-                Wrong Signature attribute length in field AttributesTestClass.f
-                Wrong Synthetic attribute length in field AttributesTestClass.f
-                Wrong Deprecated attribute length in method AttributesTestClass::m()
-                Multiple Exceptions attributes in method AttributesTestClass::m()
-                Wrong Exceptions attribute length in method AttributesTestClass::m()
-                Multiple MethodParameters attributes in method AttributesTestClass::m()
-                Wrong MethodParameters attribute length in method AttributesTestClass::m()
-                Multiple Signature attributes in method AttributesTestClass::m()
-                Wrong Signature attribute length in method AttributesTestClass::m()
-                Wrong Synthetic attribute length in method AttributesTestClass::m()
-                Multiple Signature attributes in Record component c of class AttributesTestClass
-                Wrong Signature attribute length in Record component c of class AttributesTestClass
-                Multiple Signature attributes in Record component c of class AttributesTestClass
-                Wrong Signature attribute length in Record component c of class AttributesTestClass
-                """);
-    }
-
-    private static void assertVerify(ClassModel clm, String errors) {
+                    .withMethod("<>", MTD_void, Classfile.ACC_NATIVE, mb -> {})
+                    .withMethod("<>", MTD_void, Classfile.ACC_NATIVE, mb -> {});
+        }));
         var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
-        var expected = errors.lines().filter(exp -> !found.remove(exp)).toList();
+        var expected = STR."""
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[0] } in class ParserVerificationTestClass
+                Bad method descriptor: invalid method type at constant pool index \{ indexes[1] } in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[2] } in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[3] } in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
+                Illegal field name method; in class ParserVerificationTestClass at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
+                Illegal method name field; in class ParserVerificationTestClass at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
+                Illegal method name field; in class ParserVerificationTestClass at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index \{ indexes[7] } in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index \{ indexes[8] } in class ParserVerificationTestClass
+                Duplicate interface List in class ParserVerificationTestClass
+                Illegal field name / in class ParserVerificationTestClass
+                Duplicate field name / with signature I in class ParserVerificationTestClass
+                Illegal field name / in class ParserVerificationTestClass
+                Illegal method name <> in class ParserVerificationTestClass
+                Duplicate method name <> with signature ()V in class ParserVerificationTestClass
+                Illegal method name <> in class ParserVerificationTestClass
+                Wrong Deprecated attribute length in class ParserVerificationTestClass
+                Multiple EnclosingMethod attributes in class ParserVerificationTestClass
+                Wrong EnclosingMethod attribute length in class ParserVerificationTestClass
+                Multiple InnerClasses attributes in class ParserVerificationTestClass
+                Wrong InnerClasses attribute length in class ParserVerificationTestClass
+                Multiple NestHost attributes in class ParserVerificationTestClass
+                Wrong NestHost attribute length in class ParserVerificationTestClass
+                Multiple NestMembers attributes in class ParserVerificationTestClass
+                Wrong NestMembers attribute length in class ParserVerificationTestClass
+                Multiple PermittedSubclasses attributes in class ParserVerificationTestClass
+                Wrong PermittedSubclasses attribute length in class ParserVerificationTestClass
+                Multiple Record attributes in class ParserVerificationTestClass
+                Wrong Record attribute length in class ParserVerificationTestClass
+                Multiple Signature attributes in class ParserVerificationTestClass
+                Wrong Signature attribute length in class ParserVerificationTestClass
+                Multiple SourceFile attributes in class ParserVerificationTestClass
+                Wrong SourceFile attribute length in class ParserVerificationTestClass
+                Wrong Synthetic attribute length in class ParserVerificationTestClass
+                Multiple ConstantValue attributes in field ParserVerificationTestClass.f
+                Wrong ConstantValue attribute length in field ParserVerificationTestClass.f
+                Wrong Deprecated attribute length in field ParserVerificationTestClass.f
+                Multiple Signature attributes in field ParserVerificationTestClass.f
+                Wrong Signature attribute length in field ParserVerificationTestClass.f
+                Wrong Synthetic attribute length in field ParserVerificationTestClass.f
+                Wrong Deprecated attribute length in method ParserVerificationTestClass::m()
+                Multiple Exceptions attributes in method ParserVerificationTestClass::m()
+                Wrong Exceptions attribute length in method ParserVerificationTestClass::m()
+                Multiple MethodParameters attributes in method ParserVerificationTestClass::m()
+                Wrong MethodParameters attribute length in method ParserVerificationTestClass::m()
+                Multiple Signature attributes in method ParserVerificationTestClass::m()
+                Wrong Signature attribute length in method ParserVerificationTestClass::m()
+                Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
+                Multiple Signature attributes in Record component c of class ParserVerificationTestClass
+                Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
+                Multiple Signature attributes in Record component c of class ParserVerificationTestClass
+                Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
+                """.lines().filter(exp -> !found.remove(exp)).toList();
         if (!found.isEmpty() || !expected.isEmpty()) {
             ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
             fail(STR."""
