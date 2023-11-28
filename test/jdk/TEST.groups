@@ -332,7 +332,7 @@ jdk_sctp = \
 #
 # core group to run all core area tests
 #
-jdk_core_no_security = \
+jdk_core = \
     :jdk_lang \
     :jdk_util \
     :jdk_math \
@@ -341,13 +341,10 @@ jdk_core_no_security = \
     :jdk_net \
     :jdk_rmi \
     :jdk_time \
+    :jdk_security \
     :jdk_text \
     :core_tools \
     :jdk_other
-
-jdk_core = \
-    :jdk_core_no_security \
-    :jdk_security
 
 #
 # svc group to run all serviceability area tests
@@ -644,3 +641,7 @@ jdk_containers_extended = \
     :jdk_io \
     :jdk_nio \
     :jdk_svc
+
+jdk_core_no_security = \
+   :jdk_core \
+   -:jdk_security
