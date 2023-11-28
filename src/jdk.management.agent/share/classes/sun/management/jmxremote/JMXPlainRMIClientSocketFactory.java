@@ -41,7 +41,7 @@ import java.security.PrivilegedAction;
  */
 public class JMXPlainRMIClientSocketFactory implements RMIClientSocketFactory, Serializable {
 
-    private static final long serialVersionUID = 1L; 
+    private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("removal")
     private static final int connectTimeout =    // default 1 minute
