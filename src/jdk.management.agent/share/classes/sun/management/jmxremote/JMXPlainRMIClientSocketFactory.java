@@ -61,8 +61,4 @@ public class JMXPlainRMIClientSocketFactory implements RMIClientSocketFactory, S
             return s;
         }
     }
-
-//    public ServerSocket createServerSocket(int port) throws IOException {
-//        return new ServerSocket(port);
-//    }
 }
