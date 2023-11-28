@@ -34,6 +34,8 @@ class CDSConfig : public AllStatic {
   static bool _is_dumping_dynamic_archive;
   static bool _dumping_full_module_graph_disabled;
   static bool _loading_full_module_graph_disabled;
+
+  static char*  _default_archive_path;
 #endif
 
 public:
@@ -44,6 +46,8 @@ public:
   static bool      is_dumping_dynamic_archive()              { return CDS_ONLY(_is_dumping_dynamic_archive) NOT_CDS(false); }
   static void  enable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = true); }
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
+
+  static char* get_default_archive_path();
 
   // CDS archived heap
   static bool      is_dumping_heap()                         NOT_CDS_JAVA_HEAP_RETURN_(false);

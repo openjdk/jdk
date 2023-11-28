@@ -101,7 +101,6 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
-char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
@@ -3384,25 +3383,6 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
 }
 
 #if INCLUDE_CDS
-// Sharing support
-// Construct the path to the archive
-char* Arguments::get_default_shared_archive_path() {
-  if (_default_shared_archive_path == nullptr) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != nullptr) *end = '\0';
-    size_t jvm_path_len = strlen(jvm_path);
-    size_t file_sep_len = strlen(os::file_separator());
-    const size_t len = jvm_path_len + file_sep_len + 20;
-    _default_shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-    jio_snprintf(_default_shared_archive_path, len,
-                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
-                jvm_path, os::file_separator());
-  }
-  return _default_shared_archive_path;
-}
-
 int Arguments::num_archives(const char* archive_path) {
   if (archive_path == nullptr) {
     return 0;
@@ -3452,14 +3432,14 @@ void Arguments::init_shared_archive_paths() {
     }
     check_unsupported_dumping_properties();
 
-    if (os::same_files(get_default_shared_archive_path(), ArchiveClassesAtExit)) {
+    if (os::same_files(CDSConfig::get_default_archive_path(), ArchiveClassesAtExit)) {
       vm_exit_during_initialization(
-        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", get_default_shared_archive_path());
+        "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", CDSConfig::get_default_archive_path());
     }
   }
 
   if (SharedArchiveFile == nullptr) {
-    SharedArchivePath = get_default_shared_archive_path();
+    SharedArchivePath = CDSConfig::get_default_archive_path();
   } else {
     int archives = num_archives(SharedArchiveFile);
     assert(archives > 0, "must be");
@@ -3498,7 +3478,7 @@ void Arguments::init_shared_archive_paths() {
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
             CDSConfig::enable_dumping_dynamic_archive();
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
-            SharedArchivePath = get_default_shared_archive_path();
+            SharedArchivePath = CDSConfig::get_default_archive_path();
             SharedArchiveFile = nullptr;
           } else {
             if (AutoCreateSharedArchive) {

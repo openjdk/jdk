@@ -162,7 +162,7 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
 
-    const char* default_base_archive_name = Arguments::get_default_shared_archive_path();
+    const char* default_base_archive_name = CDSConfig::get_default_archive_path();
     const char* current_base_archive_name = Arguments::GetSharedArchivePath();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
@@ -1248,7 +1248,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 
   const char* base = file_helper.base_archive_name();
   if (base == nullptr) {
-    *base_archive_name = Arguments::get_default_shared_archive_path();
+    *base_archive_name = CDSConfig::get_default_archive_path();
   } else {
     *base_archive_name = os::strdup_check_oom(base);
   }

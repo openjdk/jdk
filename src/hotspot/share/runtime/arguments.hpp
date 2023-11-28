@@ -364,7 +364,6 @@ class Arguments : AllStatic {
   // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
 
-  static char*  _default_shared_archive_path;
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
@@ -501,7 +500,6 @@ class Arguments : AllStatic {
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
-  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(nullptr);
   static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi

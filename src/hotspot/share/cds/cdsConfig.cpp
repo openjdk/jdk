@@ -27,6 +27,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "include/jvm_io.h"
 #include "logging/log.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
@@ -37,6 +38,25 @@ bool CDSConfig::_is_dumping_dynamic_archive = false;
 // _dumping_full_module_graph_disabled. (Ditto for loading the FMG).
 bool CDSConfig::_dumping_full_module_graph_disabled = false;
 bool CDSConfig::_loading_full_module_graph_disabled = false;
+
+char* CDSConfig::_default_archive_path = nullptr;
+
+char* CDSConfig::get_default_archive_path() {
+  if (_default_archive_path == nullptr) {
+    char jvm_path[JVM_MAXPATHLEN];
+    os::jvm_path(jvm_path, sizeof(jvm_path));
+    char *end = strrchr(jvm_path, *os::file_separator());
+    if (end != nullptr) *end = '\0';
+    size_t jvm_path_len = strlen(jvm_path);
+    size_t file_sep_len = strlen(os::file_separator());
+    const size_t len = jvm_path_len + file_sep_len + 20;
+    _default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+    jio_snprintf(_default_archive_path, len,
+                LP64_ONLY(!UseCompressedOops ? "%s%sclasses_nocoops.jsa":) "%s%sclasses.jsa",
+                jvm_path, os::file_separator());
+  }
+  return _default_archive_path;
+}
 
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::is_dumping_heap() {
