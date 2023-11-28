@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_VIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
