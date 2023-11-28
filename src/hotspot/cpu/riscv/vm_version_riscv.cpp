@@ -171,9 +171,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (UseCRC32Intrinsics) {
-    warning("CRC32 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
   }
 
   if (UseCRC32CIntrinsics) {

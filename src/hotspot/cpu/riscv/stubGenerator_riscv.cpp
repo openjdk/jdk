@@ -4625,6 +4625,51 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *       rax   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
+
+    address start = __ pc();
+
+    const Register crc    = c_rarg0;  // crc
+    const Register buf    = c_rarg1;  // source java byte array address
+    const Register len    = c_rarg2;  // length
+    const Register table0 = c_rarg3;  // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+
+    const Register tmp1 = t0;
+    const Register tmp2 = t1;
+    const Register tmp3 = t2;
+    const Register tmp4 = x28; // t3
+    const Register tmp5 = x29; // t4
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len, table0, table1, table2,
+                    table3, tmp1, tmp2, tmp3, tmp4, tmp5);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
+
 #endif // COMPILER2
 
 #if INCLUDE_JFR
@@ -4765,6 +4810,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
+
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
   void generate_continuation_stubs() {
