@@ -612,6 +612,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h
       Bytecode_invoke call = Bytecode_invoke_check(method, bci);
       if (call.is_valid()) {
         ResourceMark rm(current);
+        MutexLocker ml(trap_mdo->extra_data_lock());
         ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, nullptr);
         if (pdata != nullptr && pdata->is_BitData()) {
           BitData* bit_data = (BitData*) pdata;

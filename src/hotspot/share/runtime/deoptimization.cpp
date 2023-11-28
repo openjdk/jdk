@@ -1797,6 +1797,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   ScopeDesc* imm_scope = cvf->scope();
   MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
   if (imm_mdo != nullptr) {
+    MutexLocker ml(imm_mdo->extra_data_lock());
     ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
       BitData* bit_data = (BitData*) pdata;
