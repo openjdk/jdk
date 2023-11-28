@@ -359,15 +359,6 @@ public class Check {
         return types.createErrorType(found instanceof Type type ? type : syms.errType);
     }
 
-    /** Report an error that symbol cannot be referenced before super
-     *  has been called.
-     *  @param pos        Position to be used for error reporting.
-     *  @param sym        The referenced symbol.
-     */
-    void earlyRefError(DiagnosticPosition pos, Symbol sym) {
-        log.error(pos, Errors.CantRefBeforeCtorCalled(sym));
-    }
-
     /** Report duplicate declaration error.
      */
     void duplicateError(DiagnosticPosition pos, Symbol sym) {
@@ -3934,10 +3925,11 @@ public class Check {
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-            JCMethodInvocation app = TreeInfo.firstConstructorCall(l.head);
-            if (app == null) continue;
-            JCMethodDecl meth = (JCMethodDecl) l.head;
-            if (TreeInfo.name(app.meth) == names._this) {
+            if (!TreeInfo.isConstructor(l.head))
+                continue;
+            JCMethodDecl meth = (JCMethodDecl)l.head;
+            JCMethodInvocation app = TreeInfo.findConstructorCall(meth);
+            if (app != null && TreeInfo.name(app.meth) == names._this) {
                 callMap.put(meth.sym, TreeInfo.symbol(app.meth));
             } else {
                 meth.sym.flags_field |= ACYCLIC;
@@ -3967,6 +3959,128 @@ public class Check {
                 ctor.flags_field &= ~LOCKED;
             }
             ctor.flags_field |= ACYCLIC;
+        }
+    }
+
+/* *************************************************************************
+ * Verify the proper placement of super()/this() calls.
+ *
+ *    - super()/this() may only appear in constructors
+ *    - There must be at most one super()/this() call per constructor
+ *    - The super()/this() call, if any, must be a top-level statement in the
+ *      constructor, i.e., not nested inside any other statement or block
+ *    - There must be no return statements prior to the super()/this() call
+ **************************************************************************/
+
+    void checkSuperInitCalls(JCClassDecl tree) {
+        new SuperThisChecker().check(tree);
+    }
+
+    private class SuperThisChecker extends TreeScanner {
+
+        // Match this scan stack: 1=JCMethodDecl, 2=JCExpressionStatement, 3=JCMethodInvocation
+        private static final int MATCH_SCAN_DEPTH = 3;
+
+        private boolean constructor;        // is this method a constructor?
+        private boolean firstStatement;     // at the first statement in method?
+        private JCReturn earlyReturn;       // first return prior to the super()/init(), if any
+        private Name initCall;              // whichever of "super" or "init" we've seen already
+        private int scanDepth;              // current scan recursion depth in method body
+
+        public void check(JCClassDecl classDef) {
+            scan(classDef.defs);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            Assert.check(!constructor);
+            Assert.check(earlyReturn == null);
+            Assert.check(initCall == null);
+            Assert.check(scanDepth == 1);
+
+            // Initialize state for this method
+            constructor = TreeInfo.isConstructor(tree);
+            try {
+
+                // Scan method body
+                if (tree.body != null) {
+                    firstStatement = true;
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        scan(l.head);
+                        firstStatement = false;
+                    }
+                }
+
+                // Verify no 'return' seen prior to an explicit super()/this() call
+                if (constructor && earlyReturn != null && initCall != null)
+                    log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized);
+            } finally {
+                firstStatement = false;
+                constructor = false;
+                earlyReturn = null;
+                initCall = null;
+            }
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            scanDepth++;
+            try {
+                super.scan(tree);
+            } finally {
+                scanDepth--;
+            }
+        }
+
+        @Override
+        public void visitApply(JCMethodInvocation apply) {
+            do {
+
+                // Is this a super() or this() call?
+                Name methodName = TreeInfo.name(apply.meth);
+                if (methodName != names._super && methodName != names._this)
+                    break;
+
+                // super()/this() calls must only appear in a constructor
+                if (!constructor) {
+                    log.error(apply.pos(), Errors.CallMustOnlyAppearInCtor);
+                    break;
+                }
+
+                // super()/this() calls must be a top level statement
+                if (scanDepth != MATCH_SCAN_DEPTH) {
+                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere);
+                    break;
+                }
+
+                // super()/this() calls must not appear more than once
+                if (initCall != null) {
+                    log.error(apply.pos(), Errors.RedundantSuperclassInit);
+                    break;
+                }
+
+                // If super()/this() isn't first, require "statements before super()" feature
+                if (!firstStatement)
+                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
+
+                // We found a legitimate super()/this() call; remember it
+                initCall = methodName;
+            } while (false);
+
+            // Proceed
+            super.visitApply(apply);
+        }
+
+        @Override
+        public void visitReturn(JCReturn tree) {
+            if (constructor && initCall == null && earlyReturn == null)
+                earlyReturn = tree;             // we have seen a return but not (yet) a super()/this()
+            super.visitReturn(tree);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            // don't descend any further
         }
     }
 

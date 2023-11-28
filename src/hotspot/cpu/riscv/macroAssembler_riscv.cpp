@@ -2048,23 +2048,6 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1
   beq(trial_klass, tmp1, L);
 }
 
-// Multiply and multiply-accumulate unsigned 64-bit registers.
-void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
-  assert_different_registers(prod_lo, prod_hi);
-
-  mul(prod_lo, n, m);
-  mulhu(prod_hi, n, m);
-}
-void MacroAssembler::wide_madd(Register sum_lo, Register sum_hi, Register n,
-                Register m, Register tmp1, Register tmp2) {
-  assert_different_registers(sum_lo, sum_hi);
-  assert_different_registers(sum_hi, tmp2);
-
-  wide_mul(tmp1, tmp2, n, m);
-  cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
-  adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
-}
-
 // Move an oop into a register.
 void MacroAssembler::movoop(Register dst, jobject obj) {
   int oop_index;
@@ -2534,6 +2517,109 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     add(method_result, recv_klass, scan_tmp);
     ld(method_result, Address(method_result));
   }
+}
+
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  int vtable_start_offset_bytes = in_bytes(Klass::vtable_start_offset());
+  int scan_step = itableOffsetEntry::size() * wordSize;
+  int ioffset_bytes = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset_bytes = in_bytes(itableOffsetEntry::offset_offset());
+  int itmentry_off_bytes = in_bytes(itableMethodEntry::method_offset());
+  const int vte_scale = exact_log2(vtableEntry::size_in_bytes());
+
+  Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
+
+  lwu(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add(recv_klass, recv_klass, vtable_start_offset_bytes + ioffset_bytes);
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset()
+  //                            + sizeof(vtableEntry) * (recv_klass->_vtable_len);
+  // scan_temp = &(itable[0]._interface)
+  // temp_itbl_klass = itable[0]._interface;
+  shadd(scan_temp, scan_temp, recv_klass, scan_temp, vte_scale);
+  ld(temp_itbl_klass, Address(scan_temp));
+  mv(holder_offset, zr);
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  bne(resolved_klass, holder_klass, L_loop_search_resolved_entry);
+  beq(holder_klass, temp_itbl_klass, L_holder_found);
+  beqz(temp_itbl_klass, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_search_holder;
+  bind(L_search_holder);
+    add(scan_temp, scan_temp, scan_step);
+    ld(temp_itbl_klass, Address(scan_temp));
+    beq(holder_klass, temp_itbl_klass, L_holder_found);
+    bnez(temp_itbl_klass, L_search_holder);
+
+  j(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   while (true) {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == 0) {
+  //       goto L_no_such_interface;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //     if (temp_itbl_klass == holder_klass) {
+  //        holder_offset = scan_temp;
+  //     }
+  //   }
+  //
+  Label L_loop_search_resolved;
+  bind(L_loop_search_resolved);
+    add(scan_temp, scan_temp, scan_step);
+    ld(temp_itbl_klass, Address(scan_temp));
+  bind(L_loop_search_resolved_entry);
+    beqz(temp_itbl_klass, L_no_such_interface);
+    beq(resolved_klass, temp_itbl_klass, L_resolved_found);
+    bne(holder_klass, temp_itbl_klass, L_loop_search_resolved);
+    mv(holder_offset, scan_temp);
+    j(L_loop_search_resolved);
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  beqz(holder_offset, L_search_holder);
+  mv(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  lwu(method_result, Address(scan_temp, ooffset_bytes - ioffset_bytes));
+  add(recv_klass, recv_klass, itable_index * wordSize + itmentry_off_bytes
+                              - vtable_start_offset_bytes - ioffset_bytes); // substract offsets to restore the original value of recv_klass
+  add(method_result, recv_klass, method_result);
+  ld(method_result, Address(method_result));
 }
 
 // virtual method calling
@@ -3574,6 +3660,24 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+}
+
+// Multiply and multiply-accumulate unsigned 64-bit registers.
+void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+  assert_different_registers(prod_lo, prod_hi);
+
+  mul(prod_lo, n, m);
+  mulhu(prod_hi, n, m);
+}
+
+void MacroAssembler::wide_madd(Register sum_lo, Register sum_hi, Register n,
+                               Register m, Register tmp1, Register tmp2) {
+  assert_different_registers(sum_lo, sum_hi);
+  assert_different_registers(sum_hi, tmp2);
+
+  wide_mul(tmp1, tmp2, n, m);
+  cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
+  adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
 }
 
 // add two unsigned input and output carry
