@@ -458,7 +458,7 @@ void CodeCache::add_heap(const ReservedSpace& rs, const char* name, CodeBlobType
     // Special Reserve Space is fully committed.
     size_initial = rs.size();
   }
-  size_initial = align_up(size_initial, rs.page_size());
+  size_initial = align_up(size_initial, rs.alignment());
   assert(size_initial <= rs.size(), "Initial size must not exceed reserved size");
 
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
