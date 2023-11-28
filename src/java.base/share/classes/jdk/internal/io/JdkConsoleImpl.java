@@ -195,6 +195,9 @@ public final class JdkConsoleImpl implements JdkConsole {
             System.arraycopy(rcb, 0, b, 0, len);
             if (zeroOut) {
                 Arrays.fill(rcb, 0, len, ' ');
+                if (reader instanceof LineReader lr) {
+                    lr.spaceOut(len);
+                }
             }
         }
         return b;
@@ -227,6 +230,11 @@ public final class JdkConsoleImpl implements JdkConsole {
             cb = new char[1024];
             nextChar = nChars = 0;
             leftoverLF = false;
+        }
+        public void spaceOut(int charCount) throws IOException {
+            if (in instanceof StreamDecoder sd) {
+                sd.spaceOut(charCount);
+            }
         }
         public void close () {}
         public boolean ready() throws IOException {
