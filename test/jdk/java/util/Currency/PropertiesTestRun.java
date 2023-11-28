@@ -42,27 +42,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class PropertiesTestRun {
 
-    // Collection of String paths used for the cmdline processes
-    private static final String TEST_JAVA = Utils.TEST_JDK;
-
+    // String paths used for the cmdline processes
+    private static final String TEST_JDK = Utils.TEST_JDK;
     private static final String TEST_PROPS =
             Utils.TEST_SRC+Utils.FILE_SEPARATOR+"currency.properties";
-
     private static final String WRITABLE_JDK =
             "."+Utils.FILE_SEPARATOR+"WRITABLE_JDK";
-
     private static final String WRITABLE_JDK_LIB =
             WRITABLE_JDK+Utils.FILE_SEPARATOR+"lib";
-
     private static final String WRITABLE_JDK_BIN =
             WRITABLE_JDK+Utils.FILE_SEPARATOR+"bin";
+    private static final String WRITABLE_JDK_JAVA_PATH =
+            WRITABLE_JDK_BIN + Utils.FILE_SEPARATOR + "java";
 
     // Create a writable JDK and set up dumps 1-3
     @BeforeAll
@@ -70,22 +68,23 @@ public class PropertiesTestRun {
         // Create separate JDK to supersede currencies via lib directory
         createWritableJDK();
         // Create dump without user defined prop file
-        invokeTestJDKMethod("PropertiesTest", "-d", "dump1");
+        executeTestJDKMethod("PropertiesTest", "-d", "dump1");
         // Create dump with user defined prop file (via system property)
-        invokeTestJDKMethod("-Djava.util.currency.data="+TEST_PROPS, "PropertiesTest", "-d", "dump2");
+        executeTestJDKMethod("-Djava.util.currency.data="+TEST_PROPS,
+                "PropertiesTest", "-d", "dump2");
         // Create dump with user defined prop file (via lib)
-        invokeWritableJDKMethod("PropertiesTest", "-d", "dump3");
+        executeWritableJDKMethod("PropertiesTest", "-d", "dump3");
     }
 
     // Need to create a separate JDK to insert the user defined properties file
     // into the lib folder. Create separate JDK to not disturb current TEST JDK.
     private static void createWritableJDK() throws Throwable {
         // Copy Test JDK into a separate JDK folder
-        invokeProcess(new String[]{"cp", "-H", "-R", TEST_JAVA, WRITABLE_JDK});
+        executeProcess(new String[]{"cp", "-H", "-R", TEST_JDK, WRITABLE_JDK});
         // Make the separate JDK writable
-        invokeProcess(new String[]{"chmod", "-R", "u+w", WRITABLE_JDK_LIB});
+        executeProcess(new String[]{"chmod", "-R", "u+w", WRITABLE_JDK_LIB});
         // Copy the properties file into the writable JDK lib folder
-        invokeProcess(new String[]{"cp", TEST_PROPS, WRITABLE_JDK_LIB});
+        executeProcess(new String[]{"cp", TEST_PROPS, WRITABLE_JDK_LIB});
     }
 
     // Compares the dumped output is expected between the default currencies
@@ -93,9 +92,11 @@ public class PropertiesTestRun {
     @Test
     void compareDumps() throws Throwable {
         // Compare dump (from sys prop)
-        invokeTestJDKMethod("PropertiesTest", "-c", "dump1", "dump2", TEST_PROPS);
+        executeTestJDKMethod("PropertiesTest", "-c", "dump1", "dump2",
+                TEST_PROPS);
         // Compare dump (from lib)
-        invokeTestJDKMethod("PropertiesTest", "-c", "dump1", "dump3", TEST_PROPS);
+        executeTestJDKMethod("PropertiesTest", "-c", "dump1", "dump3",
+                TEST_PROPS);
     }
 
     // Launch a test from PropertiesTest. See PropertiesTest.java for more
@@ -104,8 +105,8 @@ public class PropertiesTestRun {
     @MethodSource("PropertiesTestMethods")
     void launchPropertiesTests(String methodName) throws Throwable {
         // Test via both the lib and system property
-        invokeWritableJDKMethod("PropertiesTest", methodName);
-        invokeTestJDKMethod("-Djava.util.currency.data="+TEST_PROPS,
+        executeWritableJDKMethod("PropertiesTest", methodName);
+        executeTestJDKMethod("-Djava.util.currency.data="+TEST_PROPS,
                 "PropertiesTest", methodName);
     }
 
@@ -114,18 +115,19 @@ public class PropertiesTestRun {
     }
 
     // Launch a PropertiesTest method using the TEST JDK
-    private static void invokeTestJDKMethod(String... params) throws Throwable {
+    private static void executeTestJDKMethod(String... params) throws Throwable {
         int exitStatus = ProcessTools.executeTestJvm(params).getExitValue();
         if (exitStatus != 0) {
-            fail("Process started with: " + Arrays.toString(params) + " did not pass");
+            fail("Process started with: " + Arrays.toString(params) + " failed");
         }
     }
 
     // Launch a PropertiesTest method using the WRITABLE JDK
-    private static void invokeWritableJDKMethod(String... params) throws Throwable {
+    private static void executeWritableJDKMethod(String... params) throws Throwable {
         // Need to include WritableJDK javapath, TEST JDK classpath
         String[] allParams = new String[3+params.length+Utils.getTestJavaOpts().length];
-        allParams[0] = WRITABLE_JDK_BIN + Utils.FILE_SEPARATOR + "java";
+        // We don't use executeTestJvm() because we want to point to separate JDK java path
+        allParams[0] = WRITABLE_JDK_JAVA_PATH;
         allParams[1] = "-cp";
         allParams[2] = System.getProperty("java.class.path");
         // Add test.vm.opts and test.java.opts
@@ -135,25 +137,21 @@ public class PropertiesTestRun {
         System.arraycopy(params, 0, allParams, Utils.getTestJavaOpts().length+3,
                 params.length);
         // Launch the actual test method with all parameters set
-        invokeProcess(allParams);
+        executeProcess(allParams);
     }
 
-    // Invoke a process and fail if the command is not successful
-    private static void invokeProcess(String[] params) throws Throwable {
+    // Execute a process and fail if the command is not successful
+    private static void executeProcess(String[] params) throws Throwable {
         System.out.println("Command line: " + Arrays.toString(params));
         int exitStatus = ProcessTools.executeProcess(params).getExitValue();
         if (exitStatus != 0) {
-            fail("Process started with: " + Arrays.toString(params) + " did not pass");
+            fail("Process started with: " + Arrays.toString(params) + " failed");
         }
     }
 
     @AfterAll
     static void tearDown() throws Throwable {
-        tearDownWritableJDK();
-    }
-
-    // Remove the copied writable JDK image from scratch folder
-    private static void tearDownWritableJDK() throws Throwable {
-        invokeProcess(new String[]{"rm", "-rf", WRITABLE_JDK});
+        // Remove the copied writable JDK image from scratch folder
+        executeProcess(new String[]{"rm", "-rf", WRITABLE_JDK});
     }
 }
