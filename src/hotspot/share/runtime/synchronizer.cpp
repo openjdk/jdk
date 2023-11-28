@@ -1663,16 +1663,16 @@ public:
     if (_stream != nullptr) {
       _timer.stop();
       _stream->print_cr("pausing %s: %s=" SIZE_FORMAT ", in_use_list stats: ceiling="
-          SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-          op_name, cnt_name, cnt, ceiling(), count(), max());
+                        SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                        op_name, cnt_name, cnt, ceiling(), count(), max());
     }
   }
 
   void after_block_for_safepoint(const char* op_name) {
     if (_stream != nullptr) {
       _stream->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
-          ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
-          ceiling(), count(), max());
+                        ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
+                       ceiling(), count(), max());
       _timer.start();
     }
   }

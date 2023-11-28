@@ -69,6 +69,7 @@ public:
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
   friend class ObjectMonitorDeflationLogging;
+
  public:
   typedef enum {
     inflate_cause_vm_internal = 0,
