@@ -269,6 +269,10 @@ private:
 
   JavaThread* owning_thread(ThreadsList* t_list);
 
+  bool is_owner_anonymous() const {
+    return owner_raw() == anon_owner_ptr();
+  }
+
  private:
   void*     owner() const;  // Returns null if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
@@ -300,10 +304,6 @@ private:
 
   void set_owner_anonymous() {
     set_owner_from_raw(nullptr, anon_owner_ptr());
-  }
-
-  bool is_owner_anonymous() const {
-    return owner_raw() == anon_owner_ptr();
   }
 
   void set_owner_from_anonymous(JavaThread* owner) {

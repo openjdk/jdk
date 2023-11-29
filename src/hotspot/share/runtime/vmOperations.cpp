@@ -316,7 +316,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   }
 
   void add(ObjectMonitor* monitor) {
-    void* key = monitor->owner();
+    void* key = monitor->owner_key();
 
     ObjectMonitorLinkedList* list = get_list(key);
     if (list == nullptr) {

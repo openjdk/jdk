@@ -1644,7 +1644,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           ObjectSynchronizer::enter(obj, nullptr, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
           ObjectMonitor* mon = ObjectSynchronizer::inflate(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
-          assert(mon->owner() == deoptee_thread, "must be");
+          assert(mon->is_owner(deoptee_thread), "must be");
         } else {
           BasicLock* lock = mon_info->lock();
           ObjectSynchronizer::enter(obj, lock, deoptee_thread);
