@@ -103,7 +103,11 @@ static void commit(HelperType& helper) {
   assert(thread != nullptr, "invariant");
   if (thread->is_Java_thread()) {
     JavaThread* jt = JavaThread::cast(thread);
-    if (jt->thread_state() != _thread_in_vm) {
+    if (jt->thread_state() == _thread_in_Java) {
+      ThreadInVMfromJava transition(jt);
+      event.commit();
+      return;
+    } else if (jt->thread_state() != _thread_in_vm) {
       assert(jt->thread_state() == _thread_in_native, "invariant");
       // For a JavaThread to take a JFR stacktrace, it must be in _thread_in_vm. Can safepoint here.
       ThreadInVMfromNative transition(jt);
