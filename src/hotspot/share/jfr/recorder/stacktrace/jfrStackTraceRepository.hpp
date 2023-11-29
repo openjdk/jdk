@@ -32,7 +32,6 @@
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
-class JfrDeprecatedEdge;
 
 class JfrStackTraceRepository : public JfrCHeapObj {
   friend class JfrDeprecatedEdge;
@@ -75,7 +74,6 @@ class JfrStackTraceRepository : public JfrCHeapObj {
 
  public:
   static traceid record(Thread* current_thread, int skip = 0, int64_t stack_filter_id = -1);
-  static void record_for_deprecated_method(const JfrDeprecatedEdge* edge, u1 frame_type, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_HPP

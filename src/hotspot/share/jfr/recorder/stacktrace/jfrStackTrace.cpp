@@ -28,7 +28,6 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfrStackFilter.hpp"
@@ -54,9 +53,6 @@ JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, const Instance
 
 JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
-
-JfrStackFrame::JfrStackFrame(const JfrDeprecatedEdge* edge, u1 type) :
-  _klass(edge->sender_ik()), _methodid(edge->sender_methodid()), _line(edge->linenumber()), _bci(edge->bci()), _type(type) {}
 
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
   _next(nullptr),
@@ -355,19 +351,6 @@ bool JfrStackTrace::record(JavaThread* current_thread, int skip, int64_t stack_f
     return false;
   }
   return record(current_thread, current_thread->last_frame(), skip, stack_filter_id);
-}
-
-bool JfrStackTrace::record(const JfrDeprecatedEdge* edge, u1 frame_type, JavaThread* current_thread) {
-  assert(edge != nullptr, "invariant");
-  assert(current_thread != nullptr, "invariant");
-  assert(current_thread == Thread::current(), "invariant");
-  _hash = 1;
-  _hash = (_hash * 31) + edge->sender_methodid();
-  _hash = (_hash * 31) + edge->bci();
-  _hash = (_hash * 31) + frame_type;
-  _lineno = true;
-  _frames[0] = JfrStackFrame(edge, frame_type);
-  return true;
 }
 
 void JfrStackFrame::resolve_lineno() const {
