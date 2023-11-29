@@ -190,6 +190,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
 }
 
+
 // ------------------------------------------------------------------
 // ciMethod::load_code
 //
