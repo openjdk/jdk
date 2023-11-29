@@ -63,7 +63,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2023
  */
 @SuppressWarnings("deprecation")
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
@@ -402,7 +402,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
 
         JAXPSAXParser(SAXParserImpl saxParser, XMLSecurityPropertyManager securityPropertyMgr,
                 XMLSecurityManager securityManager) {
-            super();
+            super(null, null, securityPropertyMgr, securityManager);
             fSAXParser = saxParser;
             fSecurityManager = securityManager;
             fSecurityPropertyMgr = securityPropertyMgr;

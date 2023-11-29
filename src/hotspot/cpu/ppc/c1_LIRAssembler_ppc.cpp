@@ -3106,7 +3106,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         // Klass seen before, nothing to do (regardless of unknown bit).
         //beq(CCR1, do_nothing);
 
-        __ andi_(R0, klass, TypeEntries::type_unknown);
+        __ andi_(R0, tmp, TypeEntries::type_unknown);
         // Already unknown. Nothing to do anymore.
         //bne(CCR0, do_nothing);
         __ crorc(CCR0, Assembler::equal, CCR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne

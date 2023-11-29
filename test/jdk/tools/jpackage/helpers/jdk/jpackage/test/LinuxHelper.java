@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,7 +464,7 @@ public final class LinuxHelper {
         }
     }
 
-    private static Path getSystemDesktopFilesFolder() {
+    static Path getSystemDesktopFilesFolder() {
         return Stream.of("/usr/share/applications",
                 "/usr/local/share/applications").map(Path::of).filter(dir -> {
             return Files.exists(dir.resolve("defaults.list"));
@@ -558,12 +558,17 @@ public final class LinuxHelper {
         final String xdgCmdName = "xdg-icon-resource";
 
         Stream<String> scriptletBodyStream = scriptletBody.stream()
-                .filter(str -> str.startsWith(xdgCmdName))
                 .filter(str -> Pattern.compile(
                         "\\b" + dashMime + "\\b").matcher(str).find());
         if (scriptletType == Scriptlet.PostInstall) {
+            scriptletBodyStream = scriptletBodyStream.filter(str -> str.
+                    startsWith(xdgCmdName));
             scriptletBodyStream = scriptletBodyStream.filter(str -> List.of(
                     str.split("\\s+")).contains(iconPathInPackage.toString()));
+        } else {
+            scriptletBodyStream = scriptletBodyStream.filter(str -> str.
+                    contains(xdgCmdName)).filter(str -> str.startsWith(
+                    "do_if_file_belongs_to_single_package"));
         }
 
         scriptletBodyStream.peek(xdgCmd -> {

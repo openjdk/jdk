@@ -47,6 +47,7 @@ private:
 public:
   void add(ObjectMonitor* monitor);
   size_t unlink_deflated(Thread* current, LogStream* ls, elapsedTimer* timer_p,
+                         size_t deflated_count,
                          GrowableArray<ObjectMonitor*>* unlinked_list);
   size_t count() const;
   size_t max() const;
