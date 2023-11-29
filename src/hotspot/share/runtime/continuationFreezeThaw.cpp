@@ -2167,11 +2167,16 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
 }
 
 void ThawBase::clear_bitmap_bits(address start, address end) {
+  assert(is_aligned(start, wordSize), "should be aligned: " PTR_FORMAT, p2i(start));
+  assert(is_aligned(end, VMRegImpl::stack_slot_size), "should be aligned: " PTR_FORMAT, p2i(end));
+
   // we need to clear the bits that correspond to arguments as they reside in the caller frame
   // or they will keep objects that are otherwise unreachable alive
-  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(end));
+  address effective_end = UseCompressedOops ? end : align_down(end, wordSize);
+  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
-  chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(end));
+  chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
+  assert(chunk->bitmap().count_one_bits(chunk->bit_index_for(effective_end), chunk->bit_index_for(end)) == 0, "bits should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
@@ -2300,9 +2305,8 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
     address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
-    // If the last stack slot in the argument area is unused c2 could place a narrow oop for the caller. Since
-    // passed oops will always be word aligned there is no need to clear this bit anyways.
-    int argsize_in_bytes = (added_argsize << LogBytesPerWord) - (UseCompressedOops ? VMRegImpl::stack_slot_size : 0);
+    int stack_args_slots = f.cb()->as_compiled_method()->method()->num_stack_arg_slots(false /* rounded */);
+    int argsize_in_bytes = stack_args_slots * VMRegImpl::stack_slot_size;
     clear_bitmap_bits(start, start + argsize_in_bytes);
   }
 

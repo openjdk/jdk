@@ -441,7 +441,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  if (slot & 1) slot++;
   return slot;
 }
 
