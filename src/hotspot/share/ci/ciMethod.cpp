@@ -190,11 +190,6 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
 }
 
-
-bool ciMethod::deprecated() const {
-  return is_loaded() && get_Method()->deprecated();
-}
-
 // ------------------------------------------------------------------
 // ciMethod::load_code
 //
