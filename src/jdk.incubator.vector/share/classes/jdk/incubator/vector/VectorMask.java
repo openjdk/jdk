@@ -208,7 +208,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
         return VectorSupport.load(
                 vsp.maskType(), vsp.elementType(), laneCount,
                 bits, (long) offset + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
-                bits, offset, vsp,
+                bits, offset, vsp, false,
                 (c, idx, s)
                   -> s.opm(n -> c[((int )idx) + n]));
     }

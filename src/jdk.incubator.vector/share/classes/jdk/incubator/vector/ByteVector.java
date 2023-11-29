@@ -3375,7 +3375,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
             a, arrayAddress(a, offset),
             this,
-            a, offset,
+            a, offset, false,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_ + i] = e));
@@ -3528,7 +3528,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset),
             normalized,
-            a, offset,
+            a, offset, false,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));
@@ -3738,7 +3738,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
             a, arrayAddress(a, offset),
-            a, offset, vsp,
+            a, offset, vsp, false,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
@@ -3755,7 +3755,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
             a, arrayAddress(a, offset), m, offsetInRange,
-            a, offset, vsp,
+            a, offset, vsp, false,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
@@ -3772,7 +3772,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset),
-            a, offset, vsp,
+            a, offset, vsp, false,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
     }
@@ -3789,7 +3789,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset), m, offsetInRange,
-            a, offset, vsp,
+            a, offset, vsp, false,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
     }
@@ -3837,7 +3837,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
             a, arrayAddress(a, offset),
-            this, a, offset,
+            this, a, offset, false,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_+i] = e));
@@ -3854,7 +3854,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
             a, arrayAddress(a, offset),
-            this, m, a, offset,
+            this, m, a, offset, false,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
                       (arr_, off_, i, e) -> arr_[off_ + i] = e));
@@ -3873,7 +3873,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
             a, booleanArrayAddress(a, offset),
-            normalized, m, a, offset,
+            normalized, m, a, offset, false,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
                       (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));

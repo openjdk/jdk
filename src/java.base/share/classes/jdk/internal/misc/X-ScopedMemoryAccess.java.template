@@ -356,7 +356,7 @@ public class ScopedMemoryAccess {
 
             return VectorSupport.load(vmClass, e, length,
                     msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
-                    msp, offset, s,
+                    msp, offset, s, true,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -398,7 +398,7 @@ public class ScopedMemoryAccess {
 
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
                     msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, m, offsetInRange,
-                    msp, offset, s,
+                    msp, offset, s, true,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -440,7 +440,7 @@ public class ScopedMemoryAccess {
             VectorSupport.store(vmClass, e, length,
                     msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
                     v,
-                    msp, offset,
+                    msp, offset, true,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -482,7 +482,7 @@ public class ScopedMemoryAccess {
             VectorSupport.storeMasked(vmClass, maskClass, e, length,
                     msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
                     v, m,
-                    msp, offset,
+                    msp, offset, true,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);

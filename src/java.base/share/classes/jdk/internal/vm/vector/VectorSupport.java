@@ -422,7 +422,7 @@ public class VectorSupport {
     VM load(Class<? extends VM> vmClass, Class<E> eClass,
             int length,
             Object base, long offset,
-            C container, long index, S s,
+            C container, long index, S s, boolean from_ms,
             LoadOperation<C, VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s);
@@ -447,7 +447,7 @@ public class VectorSupport {
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                  int length, Object base, long offset,
                  M m, int offsetInRange,
-                 C container, long index, S s,
+                 C container, long index, S s, boolean from_ms,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s, m);
@@ -495,7 +495,7 @@ public class VectorSupport {
     void store(Class<?> vClass, Class<?> eClass,
                int length,
                Object base, long offset,
-               V v, C container, long index,
+               V v, C container, long index, boolean from_ms,
                StoreVectorOperation<C, V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v);
@@ -516,7 +516,7 @@ public class VectorSupport {
     void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                      int length,
                      Object base, long offset,
-                     V v, M m, C container, long index,
+                     V v, M m, C container, long index, boolean from_ms,
                      StoreVectorMaskedOperation<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v, m);
