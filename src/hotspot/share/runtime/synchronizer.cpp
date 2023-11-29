@@ -84,44 +84,68 @@ size_t MonitorList::max() const {
   return Atomic::load(&_max);
 }
 
-// Walk the in-use list and unlink (at most MonitorDeflationMax) deflated
-// ObjectMonitors. Returns the number of unlinked ObjectMonitors.
+// Walk the in-use list and unlink deflated ObjectMonitors.
+// Returns the number of unlinked ObjectMonitors.
 size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                     elapsedTimer* timer_p,
+                                    size_t deflated_count,
                                     GrowableArray<ObjectMonitor*>* unlinked_list) {
   size_t unlinked_count = 0;
   ObjectMonitor* prev = nullptr;
-  ObjectMonitor* head = Atomic::load_acquire(&_head);
-  ObjectMonitor* m = head;
+  ObjectMonitor* m = Atomic::load_acquire(&_head);
+
   // The in-use list head can be null during the final audit.
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
-      // Find next live ObjectMonitor.
+      // Find next live ObjectMonitor. Batch up the unlinkable monitors, so we can
+      // modify the list once per batch. The batch starts at "m".
+      size_t unlinked_batch = 0;
       ObjectMonitor* next = m;
+      // Look for at most MonitorUnlinkBatch monitors, or the number of
+      // deflated and not unlinked monitors, whatever comes first.
+      assert(deflated_count >= unlinked_count, "Sanity: underflow");
+      size_t unlinked_batch_limit = MIN2<size_t>(deflated_count - unlinked_count, MonitorUnlinkBatch);
       do {
         ObjectMonitor* next_next = next->next_om();
-        unlinked_count++;
+        unlinked_batch++;
         unlinked_list->append(next);
         next = next_next;
-        if (unlinked_count >= (size_t)MonitorDeflationMax) {
-          // Reached the max so bail out on the gathering loop.
+        if (unlinked_batch >= unlinked_batch_limit) {
+          // Reached the max batch, so bail out of the gathering loop.
+          break;
+        }
+        if (prev == nullptr && Atomic::load(&_head) != m) {
+          // Current batch used to be at head, but it is not at head anymore.
+          // Bail out and figure out where we currently are. This avoids long
+          // walks searching for new prev during unlink under heavy list inserts.
           break;
         }
       } while (next != nullptr && next->is_being_async_deflated());
+
+      // Unlink the found batch.
       if (prev == nullptr) {
-        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, head, next);
-        if (prev_head != head) {
-          // Find new prev ObjectMonitor that just got inserted.
+        // The current batch is the first batch, so there is a chance that it starts at head.
+        // Optimistically assume no inserts happened, and try to unlink the entire batch from the head.
+        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, m, next);
+        if (prev_head != m) {
+          // Something must have updated the head. Figure out the actual prev for this batch.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
             prev = n;
           }
+          assert(prev != nullptr, "Should have found the prev for the current batch");
           prev->set_next_om(next);
         }
       } else {
+        // The current batch is preceded by another batch. This guarantees the current batch
+        // does not start at head. Unlink the entire current batch without updating the head.
+        assert(Atomic::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
-      if (unlinked_count >= (size_t)MonitorDeflationMax) {
-        // Reached the max so bail out on the searching loop.
+
+      unlinked_count += unlinked_batch;
+      if (unlinked_count >= deflated_count) {
+        // Reached the max so bail out of the searching loop.
+        // There should be no more deflated monitors left.
         break;
       }
       m = next;
@@ -137,6 +161,20 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
                                             ls, timer_p);
     }
   }
+
+#ifdef ASSERT
+  // Invariant: the code above should unlink all deflated monitors.
+  // The code that runs after this unlinking does not expect deflated monitors.
+  // Notably, attempting to deflate the already deflated monitor would break.
+  {
+    ObjectMonitor* m = Atomic::load_acquire(&_head);
+    while (m != nullptr) {
+      assert(!m->is_being_async_deflated(), "All deflated monitors should be unlinked");
+      m = m->next_om();
+    }
+  }
+#endif
+
   Atomic::sub(&_count, unlinked_count);
   return unlinked_count;
 }
@@ -599,13 +637,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  if (LockingMode == LM_LIGHTWEIGHT && monitor->is_owner_anonymous()) {
-    // It must be owned by us. Pop lock object from lock stack.
-    LockStack& lock_stack = current->lock_stack();
-    oop popped = lock_stack.pop();
-    assert(popped == object, "must be owned by this thread");
-    monitor->set_owner_from_anonymous(current);
-  }
+  assert(!monitor->is_owner_anonymous(), "must not be");
   monitor->exit(current);
 }
 
@@ -1581,14 +1613,18 @@ public:
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+static size_t delete_monitors(JavaThread* current, GrowableArray<ObjectMonitor*>* delete_list,
+                              LogStream* ls, elapsedTimer* timer_p) {
   NativeHeapTrimmer::SuspendMark sm("monitor deletion");
-  size_t count = 0;
+  size_t deleted_count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;
-    count++;
+    deleted_count++;
+    // A JavaThread must check for a safepoint/handshake and honor it.
+    ObjectSynchronizer::chk_for_block_req(current, "deletion", "deleted_count",
+                                          deleted_count, ls, timer_p);
   }
-  return count;
+  return deleted_count;
 }
 
 // This function is called by the MonitorDeflationThread to deflate
@@ -1627,7 +1663,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     // Unlink deflated ObjectMonitors from the in-use list.
     ResourceMark rm;
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
-    unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, &delete_list);
+    unlinked_count = _in_use_list.unlink_deflated(current, ls, &timer, deflated_count, &delete_list);
     if (current->is_monitor_deflation_thread()) {
       if (ls != nullptr) {
         timer.stop();
@@ -1662,30 +1698,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // After the handshake, safely free the ObjectMonitors that were
     // deflated and unlinked in this cycle.
-    if (current->is_Java_thread()) {
-      if (ls != NULL) {
-        timer.stop();
-        ls->print_cr("before setting blocked: unlinked_count=" SIZE_FORMAT
-                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
-                     SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     unlinked_count, in_use_list_ceiling(),
-                     _in_use_list.count(), _in_use_list.max());
-      }
-      // Mark the calling JavaThread blocked (safepoint safe) while we free
-      // the ObjectMonitors so we don't delay safepoints whilst doing that.
-      ThreadBlockInVM tbivm(JavaThread::cast(current));
-      if (ls != NULL) {
-        ls->print_cr("after setting blocked: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
-                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
-        timer.start();
-      }
-      deleted_count = delete_monitors(&delete_list);
-      // ThreadBlockInVM is destroyed here
-    } else {
-      // A non-JavaThread can just free the ObjectMonitors:
-      deleted_count = delete_monitors(&delete_list);
-    }
+    deleted_count = delete_monitors(JavaThread::cast(current), &delete_list, ls, &timer);
     assert(unlinked_count == deleted_count, "must be");
   }
 

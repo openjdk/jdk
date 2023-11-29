@@ -178,7 +178,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = x18;
   const Register holder_klass_reg   = x19; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = xmethod; // resolved interface klass (REFC)
+  const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;
   const Register icholder_reg       = t1;
@@ -195,28 +195,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, j_rarg0);
 
   // Receiver subtype check against REFC.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             temp_reg2, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             xmethod, temp_reg,
-                             L_no_such_interface);
-
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
+  __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, xmethod,
+                                  temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 256;
-  const ptrdiff_t codesize = typecheckSize + lookupSize;
+  const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);

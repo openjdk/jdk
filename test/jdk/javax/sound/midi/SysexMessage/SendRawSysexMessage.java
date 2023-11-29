@@ -34,7 +34,7 @@ import static javax.sound.midi.SysexMessage.SYSTEM_EXCLUSIVE;
 
 /**
  * @test
- * @bug 8237495 8301310
+ * @bug 8074211 8237495 8301310
  * @summary fail with memory errors when asked to send a sysex message starting
  *          with 0xF7
  */
@@ -114,6 +114,11 @@ public final class SendRawSysexMessage {
                         (byte) SPECIAL_SYSTEM_EXCLUSIVE}), -1);
                 System.err.println("note off");
                 r.send(new ShortMessage(ShortMessage.NOTE_OFF, 5, 5), -1);
+                // The three parts of the sysex below are added for
+                // JDK-8301310, but it can also used to test JDK-8074211.
+                // However, The testcase does not fail when JDK-8074211 occurs.
+                // It's recommended to setup a loopback MIDI device then check
+                // whether the sysex received is the same as the testcase.
                 System.err.println("sysex part 1 of 3");
                 r.send(new SysexMessage(new byte[]{
                         (byte) SYSTEM_EXCLUSIVE, 0x7D, 0x01, 0x02}, 4), -1);

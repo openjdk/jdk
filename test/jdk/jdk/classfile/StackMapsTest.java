@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222
+ * @bug 8305990 8320222 8320618
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -43,7 +43,6 @@ import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
-import java.util.List;
 import java.lang.reflect.AccessFlag;
 
 /**
@@ -235,6 +234,18 @@ class StackMapsTest {
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0)))))
                               .verify(null));
+    }
+
+    @Test
+    void testInvalidAALOADStack() {
+        Classfile.of().build(ClassDesc.of("Test"), clb
+                -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
+                        -> cob.bipush(10)
+                              .anewarray(ConstantDescs.CD_Object)
+                              .lconst_1() //long on stack caused NPE, see 8320618
+                              .aaload()
+                              .astore(2)
+                              .return_()));
     }
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));

@@ -33,7 +33,6 @@ instruct compareAndSwapP_shenandoah(rRegI res,
                                     rax_RegP oldval, rRegP newval,
                                     rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set res (ShenandoahCompareAndSwapP mem_ptr (Binary oldval newval)));
   match(Set res (ShenandoahWeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(TEMP tmp1, TEMP tmp2, KILL cr, KILL oldval);
@@ -95,7 +94,6 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
                                         rRegP tmp1, rRegP tmp2,
                                         rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set oldval (ShenandoahCompareAndExchangeP mem_ptr (Binary oldval newval)));
   effect(KILL cr, TEMP tmp1, TEMP tmp2);
   ins_cost(1000);
