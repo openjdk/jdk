@@ -61,9 +61,13 @@ public:
   static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
   static void dump_main_module_name() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_addmods_names() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_addmods_names(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool check_addmods_name() NOT_CDS_JAVA_HEAP_RETURN_(false);
 
 #if INCLUDE_CDS_JAVA_HEAP
   static char* _archived_main_module_name;
+  static Array<char*>*  _addmods_names;
 #endif
 
   // Provides the java.lang.Module for the unnamed module defined

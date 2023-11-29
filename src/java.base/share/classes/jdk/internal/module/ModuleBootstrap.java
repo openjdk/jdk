@@ -141,7 +141,6 @@ public final class ModuleBootstrap {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
                getProperty("jdk.module.addexports.0") == null &&  // --add-exports
@@ -212,10 +211,9 @@ public final class ModuleBootstrap {
         // If the java heap was archived at CDS dump time and the environment
         // at dump time matches the current environment then use the archived
         // system modules and finder.
-        ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule);
+        ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule, addModules);
         if (archivedModuleGraph != null
                 && !haveModulePath
-                && addModules.isEmpty()
                 && limitModules.isEmpty()
                 && !isPatched) {
             systemModuleFinder = archivedModuleGraph.finder();
@@ -371,6 +369,34 @@ public final class ModuleBootstrap {
             roots = null;
         }
 
+        // Setup a set of modules for archiving.
+        Set<String> archiveRoots = new HashSet<>();
+        if (CDS.isDumpingStaticArchive()) {
+            canArchive = true;
+            // Only archive the modules which are in the runtime image.
+            // Check mainModule first.
+            if (mainModule != null) {
+                if (isModuleInRuntimeImage(systemModuleFinder, mainModule)) {
+                    archiveRoots.add(mainModule);
+                } else {
+                    canArchive = false;
+                }
+            }
+            // Check the modules from addModules.
+            if (canArchive && addModules.size() != 0) {
+                for (String mod : addModules) {
+                    if (isModuleInRuntimeImage(SystemModuleFinders.ofSystem(), mod)) {
+                        archiveRoots.add(mod);
+                    } else {
+                        canArchive = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if (CDS.isDumpingStaticArchive() && !canArchive) {
+            archiveRoots = null;
+        }
         Counters.add("jdk.module.boot.3.optionsAndRootsTime");
 
         // Step 4: Resolve the root modules, with service binding, to create
@@ -384,6 +410,10 @@ public final class ModuleBootstrap {
         } else {
             if (archivedModuleGraph != null) {
                 cf = archivedModuleGraph.configuration();
+            } else if (CDS.isDumpingStaticArchive() && canArchive &&
+                       (addModules.size() > 0) && (archiveRoots.size() > 0)) {
+                // Create configuration for archiving the modules in the addModules.
+                cf = Modules.newBootLayerConfiguration(SystemModuleFinders.ofSystem(), archiveRoots, traceOutput);
             } else {
                 Map<String, Set<String>> map = systemModules.moduleReads();
                 cf = JLMA.newConfiguration(systemModuleFinder, map);
@@ -469,36 +499,40 @@ public final class ModuleBootstrap {
                 limitedFinder = new SafeModuleFinder(finder);
         }
 
-        // If -Xshare:dump and mainModule are specified, check if the mainModule
-        // is in the runtime image and not on the upgrade module path. If so,
-        // set canArchive to true so that the module graph can be archived.
-        if (CDS.isDumpingStaticArchive() && mainModule != null) {
-            String scheme = systemModuleFinder.find(mainModule)
-                    .stream()
-                    .map(ModuleReference::location)
-                    .flatMap(Optional::stream)
-                    .findAny()
-                    .map(URI::getScheme)
-                    .orElse(null);
-            if ("jrt".equalsIgnoreCase(scheme)) {
-                canArchive = true;
-            }
-        }
-
         // Archive module graph and boot layer can be archived at CDS dump time.
         if (canArchive) {
+            boolean configHasIncubatorModules = checkIncubatingStatus(cf);
+
             ArchivedModuleGraph.archive(hasSplitPackages,
                                         hasIncubatorModules,
                                         systemModuleFinder,
                                         cf,
                                         clf,
-                                        mainModule);
-            if (!hasSplitPackages && !hasIncubatorModules) {
+                                        mainModule,
+                                        addModules);
+            if (!hasSplitPackages && !configHasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
         }
 
         return bootLayer;
+    }
+
+    /**
+     * Check if a module is in the runtime image.
+     */
+    private static boolean isModuleInRuntimeImage(ModuleFinder finder, String moduleName) {
+        String scheme = finder.find(moduleName)
+                .stream()
+                .map(ModuleReference::location)
+                .flatMap(Optional::stream)
+                .findAny()
+                .map(URI::getScheme)
+                .orElse(null);
+        if ("jrt".equalsIgnoreCase(scheme))
+            return true;
+        else
+            return false;
     }
 
     /**
@@ -920,7 +954,7 @@ public final class ModuleBootstrap {
     /**
      * Checks incubating status of modules in the configuration
      */
-    private static void checkIncubatingStatus(Configuration cf) {
+    private static boolean checkIncubatingStatus(Configuration cf) {
         String incubating = null;
         for (ResolvedModule resolvedModule : cf.modules()) {
             ModuleReference mref = resolvedModule.reference();
@@ -935,8 +969,11 @@ public final class ModuleBootstrap {
                 }
             }
         }
-        if (incubating != null)
+        if (incubating != null) {
             warn("Using incubator modules: " + incubating);
+            return true;
+        }
+        return false;
     }
 
     /**

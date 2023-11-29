@@ -196,6 +196,8 @@ class Arguments : AllStatic {
   static int    _num_jvm_args;
   // string containing all java command (class/jarfile name and app args)
   static char* _java_command;
+  // number of unique modules specified in the --add-modules option
+  static unsigned int _addmods_count;
 
   // Property list
   static SystemProperty* _system_properties;
@@ -289,6 +291,8 @@ class Arguments : AllStatic {
   // Numbered properties are never writeable, and always internal.
   static bool create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
   static bool create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count);
+  static bool create_numbered_addmods_property(const char* prop_base_name, const char* prop_value, unsigned int &count);
+  static bool is_duplicate_addmods_module(const char* prop_base_name, const char* prop_value, unsigned int count, bool &duplicate);
 
   static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
 
@@ -472,6 +476,8 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
+  static bool is_add_modules_property(const char* key);
+  static unsigned int addmods_count() { return  _addmods_count; }
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
