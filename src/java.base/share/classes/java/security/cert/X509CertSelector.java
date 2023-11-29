@@ -1930,7 +1930,7 @@ public class X509CertSelector implements CertSelector {
 
         if (debug != null) {
             debug.println("X509CertSelector.match(Serial number: "
-                + (xcert.getSerialNumber()).toString(16).toUpperCase().replaceAll("(?<=..)(..)", ":$1")
+                + HexFormat.ofDelimiter(":").withUpperCase().formatHex(xcert.getSerialNumber().toByteArray())
                 + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
                 + xcert.getSubjectX500Principal() + ")");
         }
