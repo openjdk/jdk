@@ -518,190 +518,6 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   return align_up(current_offset, alignment_required()) - current_offset;
 }
 
-<<<<<<< HEAD
-// EMIT_RM()
-void emit_rm(C2_MacroAssembler *masm, int f1, int f2, int f3) {
-  unsigned char c = (unsigned char) ((f1 << 6) | (f2 << 3) | f3);
-  __ emit_int8(c);
-}
-
-// EMIT_CC()
-void emit_cc(C2_MacroAssembler *masm, int f1, int f2) {
-  unsigned char c = (unsigned char) (f1 | f2);
-  __ emit_int8(c);
-}
-
-// EMIT_OPCODE()
-void emit_opcode(C2_MacroAssembler *masm, int code) {
-  __ emit_int8((unsigned char) code);
-}
-
-// EMIT_OPCODE() w/ relocation information
-void emit_opcode(C2_MacroAssembler *masm,
-                 int code, relocInfo::relocType reloc, int offset, int format)
-{
-  __ relocate(__ inst_mark() + offset, reloc, format);
-  emit_opcode(masm, code);
-}
-
-// EMIT_D8()
-void emit_d8(C2_MacroAssembler *masm, int d8) {
-  __ emit_int8((unsigned char) d8);
-}
-
-// EMIT_D16()
-void emit_d16(C2_MacroAssembler *masm, int d16) {
-  __ emit_int16(d16);
-}
-
-// EMIT_D32()
-void emit_d32(C2_MacroAssembler *masm, int d32) {
-  __ emit_int32(d32);
-}
-
-// EMIT_D64()
-void emit_d64(C2_MacroAssembler *masm, int64_t d64) {
-  __ emit_int64(d64);
-}
-
-// emit 32 bit value and construct relocation entry from relocInfo::relocType
-void emit_d32_reloc(C2_MacroAssembler* masm,
-                    int d32,
-                    relocInfo::relocType reloc,
-                    int format)
-{
-  assert(reloc != relocInfo::external_word_type, "use 2-arg emit_d32_reloc");
-  __ relocate(__ inst_mark(), reloc, format);
-  __ emit_int32(d32);
-}
-
-// emit 32 bit value and construct relocation entry from RelocationHolder
-void emit_d32_reloc(C2_MacroAssembler* masm, int d32, RelocationHolder const& rspec, int format) {
-#ifdef ASSERT
-  if (rspec.reloc()->type() == relocInfo::oop_type &&
-      d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
-    assert(Universe::heap()->is_in((address)(intptr_t)d32), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)), "cannot embed broken oops in code");
-  }
-#endif
-  __ relocate(__ inst_mark(), rspec, format);
-  __ emit_int32(d32);
-}
-
-void emit_d32_reloc(C2_MacroAssembler* masm, address addr) {
-  address next_ip = __ pc() + 4;
-  emit_d32_reloc(masm, (int) (addr - next_ip),
-                 external_word_Relocation::spec(addr),
-                 RELOC_DISP32);
-}
-
-
-// emit 64 bit value and construct relocation entry from relocInfo::relocType
-void emit_d64_reloc(C2_MacroAssembler* masm, int64_t d64, relocInfo::relocType reloc, int format) {
-  __ relocate(__ inst_mark(), reloc, format);
-  __ emit_int64(d64);
-}
-
-// emit 64 bit value and construct relocation entry from RelocationHolder
-void emit_d64_reloc(C2_MacroAssembler* masm, int64_t d64, RelocationHolder const& rspec, int format) {
-#ifdef ASSERT
-  if (rspec.reloc()->type() == relocInfo::oop_type &&
-      d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
-    assert(Universe::heap()->is_in((address)d64), "should be real oop");
-    assert(oopDesc::is_oop(cast_to_oop(d64)), "cannot embed broken oops in code");
-  }
-#endif
-  __ relocate(__ inst_mark(), rspec, format);
-  __ emit_int64(d64);
-}
-
-// Access stack slot for load or store
-void store_to_stackslot(C2_MacroAssembler *masm, int opcode, int rm_field, int disp)
-{
-  emit_opcode(masm, opcode);                  // (e.g., FILD   [RSP+src])
-  if (-0x80 <= disp && disp < 0x80) {
-    emit_rm(masm, 0x01, rm_field, RSP_enc);   // R/M byte
-    emit_rm(masm, 0x00, RSP_enc, RSP_enc);    // SIB byte
-    emit_d8(masm, disp);     // Displacement  // R/M byte
-  } else {
-    emit_rm(masm, 0x02, rm_field, RSP_enc);   // R/M byte
-    emit_rm(masm, 0x00, RSP_enc, RSP_enc);    // SIB byte
-    emit_d32(masm, disp);     // Displacement // R/M byte
-  }
-}
-
-   // rRegI ereg, memory mem) %{    // emit_reg_mem
-void encode_RegMem(C2_MacroAssembler *masm,
-                   int reg,
-                   int base, int index, int scale, int disp, relocInfo::relocType disp_reloc)
-{
-  assert(disp_reloc == relocInfo::none, "cannot have disp");
-  int regenc = reg & 7;
-  int baseenc = base & 7;
-  int indexenc = index & 7;
-
-  // There is no index & no scale, use form without SIB byte
-  if (index == 0x4 && scale == 0 && base != RSP_enc && base != R12_enc) {
-    // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
-    if (disp == 0 && base != RBP_enc && base != R13_enc) {
-      emit_rm(masm, 0x0, regenc, baseenc); // *
-    } else if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
-      // If 8-bit displacement, mode 0x1
-      emit_rm(masm, 0x1, regenc, baseenc); // *
-      emit_d8(masm, disp);
-    } else {
-      // If 32-bit displacement
-      if (base == -1) { // Special flag for absolute address
-        emit_rm(masm, 0x0, regenc, 0x5); // *
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(masm, disp);
-        }
-      } else {
-        // Normal base + offset
-        emit_rm(masm, 0x2, regenc, baseenc); // *
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(masm, disp);
-        }
-      }
-    }
-  } else {
-    // Else, encode with the SIB byte
-    // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
-    if (disp == 0 && base != RBP_enc && base != R13_enc) {
-      // If no displacement
-      emit_rm(masm, 0x0, regenc, 0x4); // *
-      emit_rm(masm, scale, indexenc, baseenc);
-    } else {
-      if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
-        // If 8-bit displacement, mode 0x1
-        emit_rm(masm, 0x1, regenc, 0x4); // *
-        emit_rm(masm, scale, indexenc, baseenc);
-        emit_d8(masm, disp);
-      } else {
-        // If 32-bit displacement
-        if (base == 0x04 ) {
-          emit_rm(masm, 0x2, regenc, 0x4);
-          emit_rm(masm, scale, indexenc, 0x04); // XXX is this valid???
-        } else {
-          emit_rm(masm, 0x2, regenc, 0x4);
-          emit_rm(masm, scale, indexenc, baseenc); // *
-        }
-        if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
-        } else {
-          emit_d32(masm, disp);
-        }
-      }
-    }
-  }
-}
-
-=======
->>>>>>> origin/master
 // This could be in MacroAssembler but it's fairly C2 specific
 void emit_cmpfp_fixup(MacroAssembler* masm) {
   Label exit;
@@ -997,27 +813,10 @@ void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
   // Note that VerifyStackAtCalls' Majik cookie does not change the frame size popped here
 
   if (framesize) {
-<<<<<<< HEAD
-    emit_opcode(masm, Assembler::REX_W);
-    if (framesize < 0x80) {
-      emit_opcode(masm, 0x83); // addq rsp, #framesize
-      emit_rm(masm, 0x3, 0x00, RSP_enc);
-      emit_d8(masm, framesize);
-    } else {
-      emit_opcode(masm, 0x81); // addq rsp, #framesize
-      emit_rm(masm, 0x3, 0x00, RSP_enc);
-      emit_d32(masm, framesize);
-    }
-  }
-
-  // popq rbp
-  emit_opcode(masm, 0x58 | RBP_enc);
-=======
     __ addq(rsp, framesize);
   }
 
   __ popq(rbp);
->>>>>>> origin/master
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
     __ reserved_stack_check();
@@ -1629,25 +1428,8 @@ void BoxLockNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
-<<<<<<< HEAD
-  if (offset >= 0x80) {
-    emit_opcode(masm, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(masm, 0x8D); // LEA  reg,[SP+offset]
-    emit_rm(masm, 0x2, reg & 7, 0x04);
-    emit_rm(masm, 0x0, 0x04, RSP_enc);
-    emit_d32(masm, offset);
-  } else {
-    emit_opcode(masm, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(masm, 0x8D); // LEA  reg,[SP+offset]
-    emit_rm(masm, 0x1, reg & 7, 0x04);
-    emit_rm(masm, 0x0, 0x04, RSP_enc);
-    emit_d8(masm, offset);
-  }
-=======
 
-  MacroAssembler masm(&cbuf);
-  masm.lea(as_Register(reg), Address(rsp, offset));
->>>>>>> origin/master
+  __ lea(as_Register(reg), Address(rsp, offset));
 }
 
 uint BoxLockNode::size(PhaseRegAlloc *ra_) const
@@ -1845,75 +1627,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 // tertiary opcode.  Only the opcode sections which a particular
 // instruction needs for encoding need to be specified.
 encode %{
-<<<<<<< HEAD
-  // Build emit functions for each basic byte or larger field in the
-  // intel encoding scheme (opcode, rm, sib, immediate), and call them
-  // from C++ code in the enc_class source block.  Emit functions will
-  // live in the main source block for now.  In future, we can
-  // generalize this by adding a syntax that specifies the sizes of
-  // fields in an order, so that the adlc can build the emit functions
-  // automagically
-
-  // Set instruction mark in MacroAssembler. This is used only in
-  // instructions that emit bytes directly to the CodeBuffer wraped
-  // in the MacroAssembler. Should go away once all "instruct" are
-  // patched to emit bytes only using methods in MacroAssembler.
-  enc_class SetInstMark %{
-    __ set_inst_mark();
-  %}
-
-  enc_class ClearInstMark %{
-    __ clear_inst_mark();
-  %}
-
-  // Emit primary opcode
-  enc_class OpcP
-  %{
-    emit_opcode(masm, $primary);
-  %}
-
-  // Emit secondary opcode
-  enc_class OpcS
-  %{
-    emit_opcode(masm, $secondary);
-  %}
-
-  // Emit tertiary opcode
-  enc_class OpcT
-  %{
-    emit_opcode(masm, $tertiary);
-  %}
-
-  // Emit opcode directly
-  enc_class Opcode(immI d8)
-  %{
-    emit_opcode(masm, $d8$$constant);
-  %}
-
-  // Emit size prefix
-  enc_class SizePrefix
-  %{
-    emit_opcode(masm, 0x66);
-  %}
-
-  enc_class reg(rRegI reg)
-  %{
-    emit_rm(masm, 0x3, 0, $reg$$reg & 7);
-  %}
-
-  enc_class reg_reg(rRegI dst, rRegI src)
-  %{
-    emit_rm(masm, 0x3, $dst$$reg & 7, $src$$reg & 7);
-  %}
-
-  enc_class opc_reg_reg(immI opcode, rRegI dst, rRegI src)
-  %{
-    emit_opcode(masm, $opcode$$constant);
-    emit_rm(masm, 0x3, $dst$$reg & 7, $src$$reg & 7);
-  %}
-
-=======
->>>>>>> origin/master
   enc_class cdql_enc(no_rax_rdx_RegI div)
   %{
     // Full implementation of Java idiv and irem; checks for
@@ -2029,100 +1742,6 @@ encode %{
     __ bind(done);
   %}
 
-<<<<<<< HEAD
-  // Opcde enc_class for 8/32 bit immediate instructions with sign-extension
-  enc_class OpcSE(immI imm)
-  %{
-    // Emit primary opcode and set sign-extend bit
-    // Check for 8-bit immediate, and set sign extend bit in opcode
-    if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(masm, $primary | 0x02);
-    } else {
-      // 32-bit immediate
-      emit_opcode(masm, $primary);
-    }
-  %}
-
-  enc_class OpcSErm(rRegI dst, immI imm)
-  %{
-    // OpcSEr/m
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    // Emit primary opcode and set sign-extend bit
-    // Check for 8-bit immediate, and set sign extend bit in opcode
-    if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(masm, $primary | 0x02);
-    } else {
-      // 32-bit immediate
-      emit_opcode(masm, $primary);
-    }
-    // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(masm, 0x3, $secondary, dstenc);
-  %}
-
-  enc_class OpcSErm_wide(rRegL dst, immI imm)
-  %{
-    // OpcSEr/m
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    // Emit primary opcode and set sign-extend bit
-    // Check for 8-bit immediate, and set sign extend bit in opcode
-    if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(masm, $primary | 0x02);
-    } else {
-      // 32-bit immediate
-      emit_opcode(masm, $primary);
-    }
-    // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(masm, 0x3, $secondary, dstenc);
-  %}
-
-  enc_class Con8or32(immI imm)
-  %{
-    // Check for 8-bit immediate, and set sign extend bit in opcode
-    if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      $$$emit8$imm$$constant;
-    } else {
-      // 32-bit immediate
-      $$$emit32$imm$$constant;
-    }
-  %}
-
-  enc_class opc2_reg(rRegI dst)
-  %{
-    // BSWAP
-    emit_cc(masm, $secondary, $dst$$reg);
-  %}
-
-  enc_class opc3_reg(rRegI dst)
-  %{
-    // BSWAP
-    emit_cc(masm, $tertiary, $dst$$reg);
-  %}
-
-  enc_class reg_opc(rRegI div)
-  %{
-    // INC, DEC, IDIV, IMOD, JMP indirect, ...
-    emit_rm(masm, 0x3, $secondary, $div$$reg & 7);
-  %}
-
-  enc_class enc_cmov(cmpOp cop)
-  %{
-    // CMOV
-    $$$emit8$primary;
-    emit_cc(masm, $secondary, $cop$$cmpcode);
-  %}
-
-=======
->>>>>>> origin/master
   enc_class enc_PartialSubtypeCheck()
   %{
     Register Rrdi = as_Register(RDI_enc); // result register
@@ -2165,8 +1784,6 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    MacroAssembler _masm(&cbuf);
-
     if (!_method) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, $meth$$method)));
     } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
@@ -2175,7 +1792,7 @@ encode %{
       __ addr_nop_5();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       address mark = __ pc();
@@ -2184,7 +1801,7 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method, call_offset);
+        __ code()->shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
         address stub = CompiledStaticCall::emit_to_interp_stub(masm, mark);
@@ -2203,531 +1820,6 @@ encode %{
     __ post_call_nop();
   %}
 
-<<<<<<< HEAD
-  enc_class reg_opc_imm(rRegI dst, immI8 shift)
-  %{
-    // SAL, SAR, SHR
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    $$$emit8$primary;
-    emit_rm(masm, 0x3, $secondary, dstenc);
-    $$$emit8$shift$$constant;
-  %}
-
-  enc_class reg_opc_imm_wide(rRegL dst, immI8 shift)
-  %{
-    // SAL, SAR, SHR
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    $$$emit8$primary;
-    emit_rm(masm, 0x3, $secondary, dstenc);
-    $$$emit8$shift$$constant;
-  %}
-
-  enc_class load_immI(rRegI dst, immI src)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xB8 | dstenc);
-    $$$emit32$src$$constant;
-  %}
-
-  enc_class load_immL(rRegL dst, immL src)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xB8 | dstenc);
-    emit_d64(masm, $src$$constant);
-  %}
-
-  enc_class load_immUL32(rRegL dst, immUL32 src)
-  %{
-    // same as load_immI, but this time we care about zeroes in the high word
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xB8 | dstenc);
-    $$$emit32$src$$constant;
-  %}
-
-  enc_class load_immL32(rRegL dst, immL32 src)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xC7);
-    emit_rm(masm, 0x03, 0x00, dstenc);
-    $$$emit32$src$$constant;
-  %}
-
-  enc_class load_immP31(rRegP dst, immP32 src)
-  %{
-    // same as load_immI, but this time we care about zeroes in the high word
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xB8 | dstenc);
-    $$$emit32$src$$constant;
-  %}
-
-  enc_class load_immP(rRegP dst, immP src)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    emit_opcode(masm, 0xB8 | dstenc);
-    // This next line should be generated from ADLC
-    if ($src->constant_reloc() != relocInfo::none) {
-      emit_d64_reloc(masm, $src$$constant, $src->constant_reloc(), RELOC_IMM64);
-    } else {
-      emit_d64(masm, $src$$constant);
-    }
-  %}
-
-  enc_class Con32(immI src)
-  %{
-    // Output immediate
-    $$$emit32$src$$constant;
-  %}
-
-  enc_class Con32F_as_bits(immF src)
-  %{
-    // Output Float immediate bits
-    jfloat jf = $src$$constant;
-    jint jf_as_bits = jint_cast(jf);
-    emit_d32(masm, jf_as_bits);
-  %}
-
-  enc_class Con16(immI src)
-  %{
-    // Output immediate
-    $$$emit16$src$$constant;
-  %}
-
-  // How is this different from Con32??? XXX
-  enc_class Con_d32(immI src)
-  %{
-    emit_d32(masm,$src$$constant);
-  %}
-
-  enc_class conmemref (rRegP t1) %{    // Con32(storeImmI)
-    // Output immediate memory reference
-    emit_rm(masm, 0x00, $t1$$reg, 0x05 );
-    emit_d32(masm, 0x00);
-  %}
-
-  enc_class lock_prefix()
-  %{
-    emit_opcode(masm, 0xF0); // lock
-  %}
-
-  enc_class REX_mem(memory mem)
-  %{
-    if ($mem$$base >= 8) {
-      if ($mem$$index < 8) {
-        emit_opcode(masm, Assembler::REX_B);
-      } else {
-        emit_opcode(masm, Assembler::REX_XB);
-      }
-    } else {
-      if ($mem$$index >= 8) {
-        emit_opcode(masm, Assembler::REX_X);
-      }
-    }
-  %}
-
-  enc_class REX_mem_wide(memory mem)
-  %{
-    if ($mem$$base >= 8) {
-      if ($mem$$index < 8) {
-        emit_opcode(masm, Assembler::REX_WB);
-      } else {
-        emit_opcode(masm, Assembler::REX_WXB);
-      }
-    } else {
-      if ($mem$$index < 8) {
-        emit_opcode(masm, Assembler::REX_W);
-      } else {
-        emit_opcode(masm, Assembler::REX_WX);
-      }
-    }
-  %}
-
-  // for byte regs
-  enc_class REX_breg(rRegI reg)
-  %{
-    if ($reg$$reg >= 4) {
-      emit_opcode(masm, $reg$$reg < 8 ? Assembler::REX : Assembler::REX_B);
-    }
-  %}
-
-  // for byte regs
-  enc_class REX_reg_breg(rRegI dst, rRegI src)
-  %{
-    if ($dst$$reg < 8) {
-      if ($src$$reg >= 4) {
-        emit_opcode(masm, $src$$reg < 8 ? Assembler::REX : Assembler::REX_B);
-      }
-    } else {
-      if ($src$$reg < 8) {
-        emit_opcode(masm, Assembler::REX_R);
-      } else {
-        emit_opcode(masm, Assembler::REX_RB);
-      }
-    }
-  %}
-
-  // for byte regs
-  enc_class REX_breg_mem(rRegI reg, memory mem)
-  %{
-    if ($reg$$reg < 8) {
-      if ($mem$$base < 8) {
-        if ($mem$$index >= 8) {
-          emit_opcode(masm, Assembler::REX_X);
-        } else if ($reg$$reg >= 4) {
-          emit_opcode(masm, Assembler::REX);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_B);
-        } else {
-          emit_opcode(masm, Assembler::REX_XB);
-        }
-      }
-    } else {
-      if ($mem$$base < 8) {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_R);
-        } else {
-          emit_opcode(masm, Assembler::REX_RX);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_RB);
-        } else {
-          emit_opcode(masm, Assembler::REX_RXB);
-        }
-      }
-    }
-  %}
-
-  enc_class REX_reg(rRegI reg)
-  %{
-    if ($reg$$reg >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-    }
-  %}
-
-  enc_class REX_reg_wide(rRegI reg)
-  %{
-    if ($reg$$reg < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-    }
-  %}
-
-  enc_class REX_reg_reg(rRegI dst, rRegI src)
-  %{
-    if ($dst$$reg < 8) {
-      if ($src$$reg >= 8) {
-        emit_opcode(masm, Assembler::REX_B);
-      }
-    } else {
-      if ($src$$reg < 8) {
-        emit_opcode(masm, Assembler::REX_R);
-      } else {
-        emit_opcode(masm, Assembler::REX_RB);
-      }
-    }
-  %}
-
-  enc_class REX_reg_reg_wide(rRegI dst, rRegI src)
-  %{
-    if ($dst$$reg < 8) {
-      if ($src$$reg < 8) {
-        emit_opcode(masm, Assembler::REX_W);
-      } else {
-        emit_opcode(masm, Assembler::REX_WB);
-      }
-    } else {
-      if ($src$$reg < 8) {
-        emit_opcode(masm, Assembler::REX_WR);
-      } else {
-        emit_opcode(masm, Assembler::REX_WRB);
-      }
-    }
-  %}
-
-  enc_class REX_reg_mem(rRegI reg, memory mem)
-  %{
-    if ($reg$$reg < 8) {
-      if ($mem$$base < 8) {
-        if ($mem$$index >= 8) {
-          emit_opcode(masm, Assembler::REX_X);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_B);
-        } else {
-          emit_opcode(masm, Assembler::REX_XB);
-        }
-      }
-    } else {
-      if ($mem$$base < 8) {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_R);
-        } else {
-          emit_opcode(masm, Assembler::REX_RX);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_RB);
-        } else {
-          emit_opcode(masm, Assembler::REX_RXB);
-        }
-      }
-    }
-  %}
-
-  enc_class REX_reg_mem_wide(rRegL reg, memory mem)
-  %{
-    if ($reg$$reg < 8) {
-      if ($mem$$base < 8) {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_W);
-        } else {
-          emit_opcode(masm, Assembler::REX_WX);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_WB);
-        } else {
-          emit_opcode(masm, Assembler::REX_WXB);
-        }
-      }
-    } else {
-      if ($mem$$base < 8) {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_WR);
-        } else {
-          emit_opcode(masm, Assembler::REX_WRX);
-        }
-      } else {
-        if ($mem$$index < 8) {
-          emit_opcode(masm, Assembler::REX_WRB);
-        } else {
-          emit_opcode(masm, Assembler::REX_WRXB);
-        }
-      }
-    }
-  %}
-
-  enc_class reg_mem(rRegI ereg, memory mem)
-  %{
-    // High registers handle in encode_RegMem
-    int reg = $ereg$$reg;
-    int base = $mem$$base;
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int disp = $mem$$disp;
-    relocInfo::relocType disp_reloc = $mem->disp_reloc();
-
-    encode_RegMem(masm, reg, base, index, scale, disp, disp_reloc);
-  %}
-
-  enc_class RM_opc_mem(immI rm_opcode, memory mem)
-  %{
-    int rm_byte_opcode = $rm_opcode$$constant;
-
-    // High registers handle in encode_RegMem
-    int base = $mem$$base;
-    int index = $mem$$index;
-    int scale = $mem$$scale;
-    int displace = $mem$$disp;
-
-    relocInfo::relocType disp_reloc = $mem->disp_reloc();       // disp-as-oop when
-                                            // working with static
-                                            // globals
-    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace,
-                  disp_reloc);
-  %}
-
-  enc_class reg_lea(rRegI dst, rRegI src0, immI src1)
-  %{
-    int reg_encoding = $dst$$reg;
-    int base         = $src0$$reg;      // 0xFFFFFFFF indicates no base
-    int index        = 0x04;            // 0x04 indicates no index
-    int scale        = 0x00;            // 0x00 indicates no scale
-    int displace     = $src1$$constant; // 0x00 indicates no displacement
-    relocInfo::relocType disp_reloc = relocInfo::none;
-    encode_RegMem(masm, reg_encoding, base, index, scale, displace,
-                  disp_reloc);
-  %}
-
-  enc_class neg_reg(rRegI dst)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    }
-    // NEG $dst
-    emit_opcode(masm, 0xF7);
-    emit_rm(masm, 0x3, 0x03, dstenc);
-  %}
-
-  enc_class neg_reg_wide(rRegI dst)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc < 8) {
-      emit_opcode(masm, Assembler::REX_W);
-    } else {
-      emit_opcode(masm, Assembler::REX_WB);
-      dstenc -= 8;
-    }
-    // NEG $dst
-    emit_opcode(masm, 0xF7);
-    emit_rm(masm, 0x3, 0x03, dstenc);
-  %}
-
-  enc_class setLT_reg(rRegI dst)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    } else if (dstenc >= 4) {
-      emit_opcode(masm, Assembler::REX);
-    }
-    // SETLT $dst
-    emit_opcode(masm, 0x0F);
-    emit_opcode(masm, 0x9C);
-    emit_rm(masm, 0x3, 0x0, dstenc);
-  %}
-
-  enc_class setNZ_reg(rRegI dst)
-  %{
-    int dstenc = $dst$$reg;
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-      dstenc -= 8;
-    } else if (dstenc >= 4) {
-      emit_opcode(masm, Assembler::REX);
-    }
-    // SETNZ $dst
-    emit_opcode(masm, 0x0F);
-    emit_opcode(masm, 0x95);
-    emit_rm(masm, 0x3, 0x0, dstenc);
-  %}
-
-
-  // Compare the lonogs and set -1, 0, or 1 into dst
-  enc_class cmpl3_flag(rRegL src1, rRegL src2, rRegI dst)
-  %{
-    int src1enc = $src1$$reg;
-    int src2enc = $src2$$reg;
-    int dstenc = $dst$$reg;
-
-    // cmpq $src1, $src2
-    if (src1enc < 8) {
-      if (src2enc < 8) {
-        emit_opcode(masm, Assembler::REX_W);
-      } else {
-        emit_opcode(masm, Assembler::REX_WB);
-      }
-    } else {
-      if (src2enc < 8) {
-        emit_opcode(masm, Assembler::REX_WR);
-      } else {
-        emit_opcode(masm, Assembler::REX_WRB);
-      }
-    }
-    emit_opcode(masm, 0x3B);
-    emit_rm(masm, 0x3, src1enc & 7, src2enc & 7);
-
-    // movl $dst, -1
-    if (dstenc >= 8) {
-      emit_opcode(masm, Assembler::REX_B);
-    }
-    emit_opcode(masm, 0xB8 | (dstenc & 7));
-    emit_d32(masm, -1);
-
-    // jl,s done
-    emit_opcode(masm, 0x7C);
-    emit_d8(masm, dstenc < 4 ? 0x06 : 0x08);
-
-    // setne $dst
-    if (dstenc >= 4) {
-      emit_opcode(masm, dstenc < 8 ? Assembler::REX : Assembler::REX_B);
-    }
-    emit_opcode(masm, 0x0F);
-    emit_opcode(masm, 0x95);
-    emit_opcode(masm, 0xC0 | (dstenc & 7));
-
-    // movzbl $dst, $dst
-    if (dstenc >= 4) {
-      emit_opcode(masm, dstenc < 8 ? Assembler::REX : Assembler::REX_RB);
-    }
-    emit_opcode(masm, 0x0F);
-    emit_opcode(masm, 0xB6);
-    emit_rm(masm, 0x3, dstenc & 7, dstenc & 7);
-  %}
-
-  enc_class Push_ResultXD(regD dst) %{
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-
-  enc_class Push_SrcXD(regD src) %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-  %}
-
-
-  enc_class enc_rethrow()
-  %{
-    __ set_inst_mark();
-    emit_opcode(masm, 0xE9); // jmp entry
-    emit_d32_reloc(masm,
-                   (int) (OptoRuntime::rethrow_stub() - __ pc() - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
-    __ clear_inst_mark();
-  %}
-
-=======
->>>>>>> origin/master
 %}
 
 
@@ -5906,14 +4998,9 @@ instruct loadSSI(rRegI dst, stackSlotI src)
 
   ins_cost(125);
   format %{ "movl    $dst, $src\t# int stk" %}
-<<<<<<< HEAD
-  opcode(0x8B);
-  ins_encode(SetInstMark, REX_reg_mem(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
-=======
   ins_encode %{
     __ movl($dst$$Register, $src$$Address);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -5923,14 +5010,9 @@ instruct loadSSL(rRegL dst, stackSlotL src)
 
   ins_cost(125);
   format %{ "movq    $dst, $src\t# long stk" %}
-<<<<<<< HEAD
-  opcode(0x8B);
-  ins_encode(SetInstMark, REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
-=======
   ins_encode %{
     __ movq($dst$$Register, $src$$Address);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -5940,14 +5022,9 @@ instruct loadSSP(rRegP dst, stackSlotP src)
 
   ins_cost(125);
   format %{ "movq    $dst, $src\t# ptr stk" %}
-<<<<<<< HEAD
-  opcode(0x8B);
-  ins_encode(SetInstMark, REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
-=======
   ins_encode %{
     __ movq($dst$$Register, $src$$Address);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -6405,14 +5482,9 @@ instruct storeSSI(stackSlotI dst, rRegI src)
 
   ins_cost(100);
   format %{ "movl    $dst, $src\t# int stk" %}
-<<<<<<< HEAD
-  opcode(0x89);
-  ins_encode(SetInstMark, REX_reg_mem(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
-=======
   ins_encode %{
     __ movl($dst$$Address, $src$$Register);
   %}
->>>>>>> origin/master
   ins_pipe( ialu_mem_reg );
 %}
 
@@ -6422,14 +5494,9 @@ instruct storeSSL(stackSlotL dst, rRegL src)
 
   ins_cost(100);
   format %{ "movq    $dst, $src\t# long stk" %}
-<<<<<<< HEAD
-  opcode(0x89);
-  ins_encode(SetInstMark, REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
-=======
   ins_encode %{
     __ movq($dst$$Address, $src$$Register);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -6439,14 +5506,9 @@ instruct storeSSP(stackSlotP dst, rRegP src)
 
   ins_cost(100);
   format %{ "movq    $dst, $src\t# ptr stk" %}
-<<<<<<< HEAD
-  opcode(0x89);
-  ins_encode(SetInstMark, REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
-=======
   ins_encode %{
     __ movq($dst$$Address, $src$$Register);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -8633,14 +7695,9 @@ instruct subP_rReg(rRegP dst, rRegI src, immI_0 zero, rFlagsReg cr)
   effect(KILL cr);
 
   format %{ "subq    $dst, $src\t# ptr - int" %}
-<<<<<<< HEAD
-  opcode(0x2B);
-  ins_encode(SetInstMark, REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src), ClearInstMark);
-=======
   ins_encode %{
     __ subq($dst$$Register, $src$$Register);
   %}
->>>>>>> origin/master
   ins_pipe(ialu_reg_reg);
 %}
 
