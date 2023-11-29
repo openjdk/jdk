@@ -362,13 +362,20 @@ UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
   os::free(p);
 } UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
+UNSAFE_LEAF(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
   size_t sz = (size_t)size;
 
-  oop base = JNIHandles::resolve(obj);
-  void* p = index_oop_from_field_offset_long(base, offset);
-
-  Copy::fill_to_memory_atomic(p, sz, value);
+  if (obj == nullptr) {
+      address addr = (address)offset;
+      Copy::fill_to_memory_atomic(addr, sz, value);
+  } else {
+      // transition to VM to access raw pointers
+      JVM_ENTRY_FROM_LEAF(env, void, Unsafe_SetMemory0) {
+          oop base = JNIHandles::resolve(obj);
+          void* p = index_oop_from_field_offset_long(base, offset);
+          Copy::fill_to_memory_atomic(p, sz, value);
+      } JVM_END
+  }
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
