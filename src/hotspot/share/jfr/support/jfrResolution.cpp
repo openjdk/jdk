@@ -70,14 +70,6 @@ static inline Method* ljf_sender_method(int& bci, u1& frame_type, JavaThread* jt
     return nullptr;
   }
   vframeStream stream(jt, false, false);
-  /*
-  while (stream.method()->is_native()) {
-    stream.next();
-    if (strncmp(stream.method()->method_holder()->name()->as_C_string(), "java/lang/invoke", 16) == 0) {
-      stream.next();
-    }
-  }
-  */
   return frame_context(stream, bci, frame_type, jt);
 }
 
@@ -102,7 +94,7 @@ void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* j
   if (jfr_is_started_on_command_line()) {
     vframeStream stream(jt, false, false);
     assert(!stream.at_end(), "invariant");
-    stream.next();
+    stream.next(); // now at caller
     int bci;
     u1 frame_type;
     Method* const sender = frame_context(stream, bci, frame_type, jt);
