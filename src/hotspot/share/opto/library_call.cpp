@@ -1209,7 +1209,6 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
     tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
   }
 
-    // ASGASG if AVX2 && ptr != null and LL, make runtime call - like base64
   if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::string_IndexOf_Type(),
@@ -1265,7 +1264,6 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* phi = new PhiNode(region, TypeInt::INT);
   Node* result = nullptr;
 
-    // ASGASG if AVX2 && ptr != null and LL, make runtime call - like base64
   if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::string_IndexOf_Type(),

@@ -4450,8 +4450,6 @@ void Assembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int ve
   assert(vector_len == AVX_128bit ? VM_Version::supports_avx() : VM_Version::supports_avx2(), "");
   assert(vector_len <= AVX_256bit, "evex encoding is different - has k register as dest");
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
-//  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
-//  emit_int16(0x74, (0xC0 | encode));
   vex_prefix(src2, src1->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x74);
   emit_operand(dst, src2, 0);
