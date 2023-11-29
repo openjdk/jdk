@@ -84,7 +84,7 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
   size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
   uint num_workers = 1;
   if (pretouch_workers != nullptr) {
-    num_workers = MIN2<uint>(num_chunks, pretouch_workers->max_workers());
+    num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
   }
 
   bool use_workers = (num_workers > 1);
