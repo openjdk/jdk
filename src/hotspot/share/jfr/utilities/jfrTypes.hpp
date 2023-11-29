@@ -63,4 +63,12 @@ enum JfrCheckpointBufferKind {
   JFR_VIRTUAL_THREADLOCAL
 };
 
+struct JfrCheckpointEntry {
+  uint64_t size;
+  uint64_t start_time;
+  uint64_t duration;
+  uint32_t flushpoint;
+  uint32_t nof_segments;
+};
+
 #endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP

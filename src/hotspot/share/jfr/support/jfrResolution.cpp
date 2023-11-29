@@ -27,10 +27,14 @@
 #include "ci/ciMethod.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jfr/instrumentation/jfrResolution.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
+#include "jfr/support/jfrResolution.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_GraphBuilder.hpp"
@@ -41,9 +45,76 @@
 
 static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
 
-static const Method* ljf_sender_method(JavaThread* jt) {
+static inline bool jfr_is_started_on_command_line() {
+  return JfrRecorder::is_started_on_commandline();
+}
+
+static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_type, JavaThread* jt) {
+  bci = stream.bci();
+  frame_type = stream.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+  Method* method = stream.method();
+  if (frame_type == JfrStackFrame::FRAME_JIT) {
+    const intptr_t* const id = stream.frame_id();
+    stream.next();
+    if (!stream.at_end() && id == stream.frame_id()) {
+      frame_type = JfrStackFrame::FRAME_INLINE;
+    }
+  }
+  return method;
+}
+
+static inline Method* ljf_sender_method(int& bci, u1& frame_type, JavaThread* jt) {
+  ResourceMark rm(jt);
   assert(jt != nullptr, "invariant");
   if (!jt->has_last_Java_frame()) {
+    return nullptr;
+  }
+  vframeStream stream(jt, false, false);
+  /*
+  while (stream.method()->is_native()) {
+    stream.next();
+    if (strncmp(stream.method()->method_holder()->name()->as_C_string(), "java/lang/invoke", 16) == 0) {
+      stream.next();
+    }
+  }
+  */
+  return frame_context(stream, bci, frame_type, jt);
+}
+
+static inline void on_runtime_deprecated(const Method* method, JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
+  assert(method->deprecated(), "invariant");
+  if (jfr_is_started_on_command_line()) {
+    int bci;
+    u1 frame_type;
+    Method* const sender = ljf_sender_method(bci, frame_type, jt);
+    if (sender == nullptr) {
+      return;
+    }
+    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
+  }
+}
+
+void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* jt) {
+  assert(jt->has_last_Java_frame(), "Invariant");
+  assert(jt->last_frame().is_runtime_frame(), "invariant");
+  if (jfr_is_started_on_command_line()) {
+    vframeStream stream(jt, false, false);
+    assert(!stream.at_end(), "invariant");
+    stream.next();
+    int bci;
+    u1 frame_type;
+    Method* const sender = frame_context(stream, bci, frame_type, jt);
+    assert(sender != nullptr, "invariant");
+    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
+  }
+}
+
+static inline const Method* ljf_sender_method(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  if (!jt->has_last_Java_frame()) {
+    return nullptr;
     return nullptr;
   }
   const vframeStream ljf(jt, false, false);
@@ -55,8 +126,14 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   assert(info.resolved_klass() != nullptr, "invariant");
   static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();
   assert(event_writer_method_name != nullptr, "invariant");
+  Method* const method = info.selected_method();
+  assert(method != nullptr, "invariant");
+  if (method->deprecated()) {
+    on_runtime_deprecated(method, THREAD);
+    return;
+  }
   // Fast path
-  if (info.selected_method()->name() != event_writer_method_name) {
+  if (method->name() != event_writer_method_name) {
     return;
   }
   static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
@@ -104,10 +181,26 @@ static inline bool is_compiler_linking_event_writer(const ciKlass * holder, cons
   return is_compiler_linking_event_writer(holder->name()->get_symbol(), target->name()->get_symbol());
 }
 
+static inline void on_compiler_resolve_deprecated(const ciMethod* target, int bci, Method* sender) {
+  assert(target != nullptr, "invariant");
+  assert(sender != nullptr, "invariant");
+  if (jfr_is_started_on_command_line()) {
+    const Method* const method = target->get_Method();
+    assert(method != nullptr, "Invariant");
+    assert(method->deprecated(), "invariant");
+    JfrDeprecationManager::on_link(method, sender, bci, JfrStackFrame::FRAME_JIT, JavaThread::current());
+  }
+}
+
 #ifdef COMPILER1
 // C1
 void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target) {
-  if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(builder->method()->get_Method())) {
+  Method* const sender = builder->method()->get_Method();
+  if (target->deprecated()) {
+    on_compiler_resolve_deprecated(target, builder->bci(), sender);
+    return;
+  }
+  if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(sender)) {
     builder->bailout(link_error_msg);
   }
 }
@@ -116,7 +209,12 @@ void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass
 #ifdef COMPILER2
 // C2
 void JfrResolution::on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target) {
-  if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(parse->method()->get_Method())) {
+  Method* const sender = parse->method()->get_Method();
+  if (target->deprecated()) {
+    on_compiler_resolve_deprecated(target, parse->bci(), sender);
+    return;
+  }
+  if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(sender)) {
     parse->C->record_failure(link_error_msg);
   }
 }
