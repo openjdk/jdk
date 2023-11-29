@@ -643,9 +643,14 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                // Prevent poisoning and leaking of buf
-                byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
-                out.write(buffer);
+                // trust all OutputStreams from java.io
+                if (out.getClass().getPackageName() == getClass().getPackageName()) {
+                    out.write(getBufIfOpen(), pos, count);
+                } else {
+                    // Prevent poisoning and leaking of buf
+                    byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
+                    out.write(buffer);
+                }
                 pos = count;
             }
             try {
