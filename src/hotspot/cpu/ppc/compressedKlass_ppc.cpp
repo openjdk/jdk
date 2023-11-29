@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +24,25 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/generationSpec.hpp"
-#include "runtime/java.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_SERIALGC
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#endif
+#include "oops/compressedKlass.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
-  switch (name()) {
-#if INCLUDE_SERIALGC
-    case Generation::DefNew:
-      return new DefNewGeneration(rs, _init_size, _min_size, _max_size);
+char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
-    case Generation::MarkSweepCompact:
-      return new TenuredGeneration(rs, _init_size, _min_size, _max_size, remset);
-#endif
+  char* result = nullptr;
 
-    default:
-      guarantee(false, "unrecognized GenerationName");
-      return nullptr;
+  // Optimize for base=0 shift=0; failing that, for base=0 shift>0
+  if (optimize_for_zero_base) {
+    result = reserve_address_space_for_unscaled_encoding(size, aslr);
+    if (result == nullptr) {
+      result = reserve_address_space_for_zerobased_encoding(size, aslr);
+    }
   }
+
+  // Optimize for a single 16-bit move: a base that has only bits set in its third quadrant [32..48).
+  if (result == nullptr) {
+    result = reserve_address_space_for_16bit_move(size, aslr);
+  }
+
+  return result;
 }

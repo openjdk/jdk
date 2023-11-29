@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017 SAP SE and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,28 +20,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#include "jni.h"
+#include "precompiled.hpp"
 
-JNIEXPORT jint JNICALL
-Java_gc_stress_TestJNIBlockFullGC_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *env, jclass jCls, jintArray jIn) {
-  jint *bufIn = NULL;
-  jint jInLen = (*env)->GetArrayLength(env, jIn);
-  jint result = 0;
-  jint i;
+#ifdef _LP64
 
-  if (jInLen != 0) {
-    bufIn = (jint*)(*env)->GetPrimitiveArrayCritical(env, jIn, 0);
-  }
+#include "oops/compressedKlass.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-  for (i = 0; i < jInLen; ++i) {
-    result += bufIn[i]; // result = sum of all array elements
-  }
+char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
-  if (bufIn != NULL) {
-    (*env)->ReleasePrimitiveArrayCritical(env, jIn, bufIn, 0);
-  }
+  char* result = nullptr;
 
+  // Optimize for unscaled encoding; failing that, for zero-based encoding:
+  if (optimize_for_zero_base) {
+    result = reserve_address_space_for_unscaled_encoding(size, aslr);
+    if (result == nullptr) {
+      result = reserve_address_space_for_zerobased_encoding(size, aslr);
+    }
+  } // end: low-address reservation
+
+  // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
   return result;
 }
+
+#endif // _LP64

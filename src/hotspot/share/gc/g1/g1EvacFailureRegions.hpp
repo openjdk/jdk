@@ -25,32 +25,43 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP
 
-#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
 class G1AbstractSubTask;
-class G1HeapRegionChunkClosure;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
-// This class records for every region on the heap whether evacuation failed for it,
-// and records for every evacuation failure region to speed up iteration of these
-// regions in post evacuation phase.
+// This class records for every region on the heap whether it had experienced an
+// evacuation failure.
+// An evacuation failure may occur due to pinning or due to allocation failure
+// (not enough to-space). For every such occurrence the class records region
+// information to speed up iteration of these regions in various gc phases.
+//
+// Pinned regions may experience an allocation failure at the same time as G1
+// tries to evacuate anything but objects that are possible to be pinned. So
+//
+//   _num_regions_pinned + _num_regions_alloc_failed >= _num_regions_evac_failed
+//
 class G1EvacFailureRegions {
-  // Records for every region on the heap whether evacuation failed for it.
-  CHeapBitMap _regions_failed_evacuation;
-  // Regions (index) of evacuation failed in the current collection.
-  uint* _evac_failure_regions;
+  // Records for every region on the heap whether the region has experienced an
+  // evacuation failure.
+  CHeapBitMap _regions_evac_failed;
+  // Records for every region on the heap whether the evacuation failure cause
+  // has been allocation failure or region pinning.
+  CHeapBitMap _regions_pinned;
+  CHeapBitMap _regions_alloc_failed;
+  // Evacuation failed regions (indexes) in the current collection.
+  uint* _evac_failed_regions;
   // Number of regions evacuation failed in the current collection.
-  volatile uint _evac_failure_regions_cur_length;
+  volatile uint _num_regions_evac_failed;
 
 public:
   G1EvacFailureRegions();
   ~G1EvacFailureRegions();
 
   uint get_region_idx(uint idx) const {
-    assert(idx < _evac_failure_regions_cur_length, "precondition");
-    return _evac_failure_regions[idx];
+    assert(idx < _num_regions_evac_failed, "precondition");
+    return _evac_failed_regions[idx];
   }
 
   // Sets up the bitmap and failed regions array for addition.
@@ -66,18 +77,16 @@ public:
   // Return a G1AbstractSubTask which does necessary preparation for evacuation failed regions
   G1AbstractSubTask* create_prepare_regions_task();
 
-  uint num_regions_failed_evacuation() const {
-    return Atomic::load(&_evac_failure_regions_cur_length);
-  }
+  inline uint num_regions_evac_failed() const;
 
-  bool evacuation_failed() const {
-    return num_regions_failed_evacuation() > 0;
-  }
+  inline bool has_regions_evac_failed() const;
+  inline bool has_regions_evac_pinned() const;
+  inline bool has_regions_alloc_failed() const;
 
   // Record that the garbage collection encountered an evacuation failure in the
   // given region. Returns whether this has been the first occurrence of an evacuation
   // failure in that region.
-  inline bool record(uint region_idx);
+  inline bool record(uint worker_id, uint region_idx, bool cause_pinned);
 };
 
 #endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_HPP

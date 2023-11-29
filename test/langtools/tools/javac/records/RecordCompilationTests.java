@@ -403,11 +403,11 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.invalid.canonical.constructor.in.record",
                    "record R(int x, int y) { public R(int y, int x) { this.x = this.y = 0; }}");
 
-        // first invocation should be one to the canonical
-        assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
+        // constructor is not canonical, so it must only invoke another constructor
+        assertFail("compiler.err.non.canonical.constructor.invoke.another.constructor",
                 "record R(int x, int y) { public R(int y, int x, int z) { this.x = this.y = 0; } }");
 
-        assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
+        assertFail("compiler.err.non.canonical.constructor.invoke.another.constructor",
                 "record R(int x, int y) { public R(int y, int x, int z) { super(); this.x = this.y = 0; } }");
 
         assertOK("record R(int x, int y) { " +

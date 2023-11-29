@@ -153,14 +153,55 @@ public class JdiInitiator {
      */
     private VirtualMachine listenTarget(int port, List<String> remoteVMOptions) {
         ListeningConnector listener = (ListeningConnector) connector;
+        try {
+            String addr;
+
+            try {
+                // Start listening, get the JDI connection address
+                addr = listener.startListening(connectorArgs);
+                debug("Listening at address: " + addr);
+            } catch (Throwable t) {
+                throw reportLaunchFail(t, "listen");
+            }
+
+            runListenProcess(addr, port, remoteVMOptions, process -> {
+                // Accept the connection from the remote agent
+                vm = timedVirtualMachineCreation(() -> listener.accept(connectorArgs),
+                        () -> process.waitFor());
+                try {
+                    listener.stopListening(connectorArgs);
+                } catch (IOException | IllegalConnectorArgumentsException ex) {
+                    // ignore
+                }
+            });
+            return vm;
+        } catch (Throwable ex) {
+            try {
+                listener.stopListening(connectorArgs);
+            } catch (IOException | IllegalConnectorArgumentsException iex) {
+                // ignore
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * Create a process that will attach to the given address.
+     * @param jdiAddress address on which a JDI server is waiting for a connection
+     * @param jshellControlPort the port which the remote agent should connect to
+     * @param remoteVMOptions VM options for the remote agent VM
+     * @param setupVM a callback that should be called then the remote agent process
+     *                is created. The callback will setup the JDI's {@code VirtualMachine}.
+     * @since 22
+     */
+    protected void runListenProcess(String jdiAddress,
+                                    int jshellControlPort,
+                                    List<String> remoteVMOptions,
+                                    ProcessStarted setupVM) {
         // Files to collection to output of a start-up failure
         File crashErrorFile = createTempFile("error");
         File crashOutputFile = createTempFile("output");
         try {
-            // Start listening, get the JDI connection address
-            String addr = listener.startListening(connectorArgs);
-            debug("Listening at address: " + addr);
-
             // Launch the RemoteAgent requesting a connection on that address
             String javaHome = System.getProperty("java.home");
             List<String> args = new ArrayList<>();
@@ -168,34 +209,22 @@ public class JdiInitiator {
                     ? "java"
                     : javaHome + File.separator + "bin" + File.separator + "java");
             args.add("-agentlib:jdwp=transport=" + connector.transport().name() +
-                    ",address=" + addr);
+                    ",address=" + jdiAddress);
             args.addAll(remoteVMOptions);
             args.add(remoteAgent);
-            args.add("" + port);
+            args.add("" + jshellControlPort);
             ProcessBuilder pb = new ProcessBuilder(args);
             pb.redirectError(crashErrorFile);
             pb.redirectOutput(crashOutputFile);
             process = pb.start();
 
-            // Accept the connection from the remote agent
-            vm = timedVirtualMachineCreation(() -> listener.accept(connectorArgs),
-                    () -> process.waitFor());
-            try {
-                listener.stopListening(connectorArgs);
-            } catch (IOException | IllegalConnectorArgumentsException ex) {
-                // ignore
-            }
+            setupVM.processStarted(process);
+
             crashErrorFile.delete();
             crashOutputFile.delete();
-            return vm;
         } catch (Throwable ex) {
             if (process != null) {
                 process.destroyForcibly();
-            }
-            try {
-                listener.stopListening(connectorArgs);
-            } catch (IOException | IllegalConnectorArgumentsException iex) {
-                // ignore
             }
             String text = readFile(crashErrorFile) + readFile(crashOutputFile);
             crashErrorFile.delete();
@@ -326,6 +355,21 @@ public class JdiInitiator {
      */
     private void debug(Throwable ex, String where) {
         // Reserved for future logging
+    }
+
+    /**
+     * Callback that should invoked when the remote process is invoked.
+     *
+     * @since 22
+     */
+    protected interface ProcessStarted {
+        /**
+         * Notify the process has been started.
+         *
+         * @param p the {@code Process}
+         * @throws Throwable thrown when anything goes wrong.
+         */
+        public void processStarted(Process p) throws Throwable;
     }
 
 }
