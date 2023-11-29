@@ -29,11 +29,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.tools.jlink.internal.JlinkCLIArgsListener;
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.RunImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -53,7 +54,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * Plugin to collect resources from jmod which aren't classes or
  * resources. Needed for the the run-time image based jlink.
  */
-public final class AddRunImageResourcesPlugin extends AbstractPlugin {
+public final class AddRunImageResourcesPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
 
     private static final int SYMLINKED_RES = 1;
     private static final int REGULAR_RES = 0;
@@ -81,6 +82,8 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
 
     private final Map<String, List<String>> nonClassResEntries;
 
+    private String[] commands;
+
     public AddRunImageResourcesPlugin() {
         super(NAME);
         this.nonClassResEntries = new ConcurrentHashMap<>();
@@ -95,11 +98,10 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         // Only add resources if we have the jdk.jlink module part of the
         // link.
-        Optional<ResourcePoolModule> jdkJlink = in.moduleView().findModule("jdk.jlink");
+        Optional<ResourcePoolModule> jdkJlink = in.moduleView().findModule(JLINK_MOD_NAME);
         if (jdkJlink.isPresent()) {
             Platform targetPlatform = getTargetPlatform(in);
-            in.transformAndCopy(e -> { ResourcePoolEntry retval = recordAndFilterEntry(e, targetPlatform);
-                                   return retval;}, out);
+            in.transformAndCopy(e -> recordAndFilterEntry(e, targetPlatform), out);
             addModuleResourceEntries(out);
         } else {
             in.transformAndCopy(Function.identity(), out);
@@ -110,31 +112,19 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
     private Platform getTargetPlatform(ResourcePool in) {
         String platform = in.moduleView().findModule("java.base")
                 .map(ResourcePoolModule::targetPlatform)
-                .orElse(null);
-        if (platform == null) {
-            throw new IllegalStateException("java.base not part of the image?");
-        }
+                .orElseThrow(() -> new AssertionError("java.base not found"));
         return Platform.parsePlatform(platform);
     }
 
     private void addModuleResourceEntries(ResourcePoolBuilder out) {
-        for (String module: keysInSortedOrder()) {
+        nonClassResEntries.keySet().stream().sorted().forEach(module -> {
             String mResource = String.format(RESPATH, module);
-            List<String> mResources = nonClassResEntries.get(module);
-            if (mResources == null) {
-                throw new AssertionError("Module listed, but no resources?");
-            }
+            List<String> mResources = Objects.requireNonNull(nonClassResEntries.get(module),
+                                                             "Module listed, but no resources?");
             String mResContent = mResources.stream().sorted().collect(Collectors.joining("\n"));
             out.add(ResourcePoolEntry.create(mResource,
                     mResContent.getBytes(StandardCharsets.UTF_8)));
-        }
-    }
-
-    private List<String> keysInSortedOrder() {
-        List<String> keys = new ArrayList<>();
-        keys.addAll(nonClassResEntries.keySet());
-        Collections.sort(keys);
-        return keys;
+        });
     }
 
     private ResourcePoolEntry recordAndFilterEntry(ResourcePoolEntry entry, Platform platform) {
@@ -156,6 +146,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
                    entry.path().startsWith(RESPATH_PREFIX)) {
             // Filter internal runtime image based link resource file which we
             // create later on-the-fly
+            // TODO: Use the same filter technique than for other plugins
             return null;
         }
         return entry;
@@ -181,7 +172,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
             }
         } catch (RunImageLinkException e) {
             // RunImageArchive::RunImageFile.content() may throw this when
-            // getting the content(). Propagate this specific exeption.
+            // getting the content(). Propagate this specific exception.
             throw e;
         } catch (Exception e) {
             throw new AssertionError("Failed to generate hash sum for " + entry.path());
@@ -237,4 +228,8 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin {
         return Category.METAINFO_ADDER;
     }
 
+    @Override
+    public void process(String[] commands) {
+        this.commands = commands;
+    }
 }

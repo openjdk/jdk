@@ -66,7 +66,7 @@ public final class ImagePluginConfiguration {
     /*
      * Create a stack of plugins from a configuration.
      */
-    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration pluginsConfiguration)
+    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration pluginsConfiguration, String[] cli)
             throws Exception {
         if (pluginsConfiguration == null) {
             return new ImagePluginStack();
@@ -130,6 +130,6 @@ public final class ImagePluginConfiguration {
             };
         }
 
-        return new ImagePluginStack(builder, orderedPlugins, lastSorter);
+        return new ImagePluginStack(builder, orderedPlugins, lastSorter, cli);
     }
 }

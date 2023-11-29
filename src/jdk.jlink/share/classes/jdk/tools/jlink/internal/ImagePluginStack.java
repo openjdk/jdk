@@ -28,7 +28,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jdk.internal.jimage.decompressor.Decompressor;
@@ -162,22 +171,25 @@ public final class ImagePluginStack {
     private final Plugin lastSorter;
     private final List<Plugin> plugins = new ArrayList<>();
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
+    private final List<JlinkCLIArgsListener> cliArgsListeners = new ArrayList<>();
     private final boolean validate;
+    private final String[] cliArgs;
 
     public ImagePluginStack() {
-        this(null, Collections.emptyList(), null);
+        this(null, Collections.emptyList(), null, null);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
-            Plugin lastSorter) {
-        this(imageBuilder, plugins, lastSorter, true);
+            Plugin lastSorter, String[] cliArgs) {
+        this(imageBuilder, plugins, lastSorter, true, cliArgs);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
             Plugin lastSorter,
-            boolean validate) {
+            boolean validate,
+            String[] cliArgs) {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
@@ -186,7 +198,11 @@ public final class ImagePluginStack {
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
             }
+            if (p instanceof JlinkCLIArgsListener) {
+                cliArgsListeners.add((JlinkCLIArgsListener) p);
+            }
         });
+        this.cliArgs = cliArgs;
         this.validate = validate;
     }
 
@@ -226,6 +242,9 @@ public final class ImagePluginStack {
             return new ResourcePoolManager(resources.byteOrder(),
                     resources.getStringTable()).resourcePool();
         }
+        cliArgsListeners.forEach((p) -> {
+            p.process(cliArgs);
+        });
         PreVisitStrings previsit = new PreVisitStrings();
         resourcePrevisitors.forEach((p) -> {
             p.previsit(resources.resourcePool(), previsit);
