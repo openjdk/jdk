@@ -35,6 +35,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -77,12 +78,23 @@ class G1YoungGCTraceTime {
   GCTraceTime(Info, gc) _tt;
 
   const char* update_young_gc_name() {
+    char evacuation_failed_string[48];
+    evacuation_failed_string[0] = '\0';
+
+    if (_collector->evacuation_failed()) {
+      snprintf(evacuation_failed_string,
+               ARRAY_SIZE(evacuation_failed_string),
+               " (Evacuation Failure: %s%s%s)",
+               _collector->evacuation_alloc_failed() ? "Allocation" : "",
+               _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
+               _collector->evacuation_pinned() ? "Pinned" : "");
+    }
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
              "Pause Young (%s) (%s)%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
              GCCause::to_string(_pause_cause),
-             _collector->evacuation_failed() ? " (Evacuation Failure)" : "");
+             evacuation_failed_string);
     return _young_gc_name_data;
   }
 
@@ -314,6 +326,10 @@ class G1PrepareEvacuationTask : public WorkerTask {
       if (!region->rem_set()->is_complete()) {
         return false;
       }
+      // We also cannot collect the humongous object if it is pinned.
+      if (region->has_pinned_objects()) {
+        return false;
+      }
       // Candidate selection must satisfy the following constraints
       // while concurrent marking is in progress:
       //
@@ -386,13 +402,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
       } else {
         _g1h->register_region_with_region_attr(hr);
       }
-      log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu marked %d reclaim candidate %d type array %d",
+      log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
+                               "marked %d pinned count %u reclaim candidate %d type array %d",
                                index,
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->code_roots_list_length(),
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
+                               hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
                                cast_to_oop(hr->bottom())->is_typeArray()
                               );
@@ -759,7 +777,7 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double collection_start_time_ms = phase_times()->cur_collection_start_sec() * 1000.0;
 
-  while (!evacuation_failed() && collection_set()->optional_region_length() > 0) {
+  while (!evacuation_alloc_failed() && collection_set()->optional_region_length() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - collection_start_time_ms;
     double time_left_ms = MaxGCPauseMillis - time_used_ms;
@@ -1010,7 +1028,15 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 }
 
 bool G1YoungCollector::evacuation_failed() const {
-  return _evac_failure_regions.evacuation_failed();
+  return _evac_failure_regions.has_regions_evac_failed();
+}
+
+bool G1YoungCollector::evacuation_pinned() const {
+  return _evac_failure_regions.has_regions_evac_pinned();
+}
+
+bool G1YoungCollector::evacuation_alloc_failed() const {
+  return _evac_failure_regions.has_regions_alloc_failed();
 }
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
@@ -1083,7 +1109,7 @@ void G1YoungCollector::collect() {
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed());
   }
   TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

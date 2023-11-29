@@ -1363,7 +1363,10 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
     uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
+      bool can_reclaim = hr->used() > 0 && hr->live_bytes() == 0 &&
+                         !hr->is_young() && !hr->has_pinned_objects();
+
+      if (can_reclaim) {
         log_trace(gc, marking)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                                hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
