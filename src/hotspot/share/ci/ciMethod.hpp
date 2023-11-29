@@ -186,8 +186,6 @@ class ciMethod : public ciMetadata {
   int max_locals() const                         { check_is_loaded(); return _max_locals; }
   vmIntrinsicID intrinsic_id() const             { check_is_loaded(); return _intrinsic_id; }
   bool has_exception_handlers() const            { check_is_loaded(); return _handler_count > 0; }
-  bool deprecated() const;
-  bool deprecated_call_site(int bci);
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
@@ -202,6 +200,7 @@ class ciMethod : public ciMetadata {
   bool intrinsic_candidate()    const { return get_Method()->intrinsic_candidate();    }
   bool is_static_initializer()  const { return get_Method()->is_static_initializer();  }
   bool changes_current_thread() const { return get_Method()->changes_current_thread(); }
+  bool deprecated() const;
 
   bool check_intrinsic_candidate() const {
     if (intrinsic_id() == vmIntrinsics::_blackhole) {

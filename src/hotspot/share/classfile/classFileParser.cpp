@@ -2052,6 +2052,14 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
       ik->set_is_value_based();
     }
   }
+  if (has_annotation(_java_lang_Deprecated)) {
+    Array<Method*>* methods = ik->methods();
+    int length = ik->methods()->length();
+    for (int i = 0; i < length; i++) {
+      Method* m = methods->at(i);
+      m->set_deprecated();
+    }
+  }
   if (has_annotation(_java_lang_Deprecated_for_removal)) {
     Array<Method*>* methods = ik->methods();
     int length = ik->methods()->length();
