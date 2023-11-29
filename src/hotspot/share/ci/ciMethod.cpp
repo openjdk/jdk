@@ -191,6 +191,10 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
 }
 
 
+bool ciMethod::deprecated() const {
+  return is_loaded() && get_Method()->deprecated();
+}
+
 // ------------------------------------------------------------------
 // ciMethod::load_code
 //

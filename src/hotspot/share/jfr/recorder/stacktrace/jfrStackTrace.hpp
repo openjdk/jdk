@@ -33,6 +33,8 @@ class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
+class JfrDeprecatedEdge;
+class Method;
 
 class JfrStackFrame {
   friend class ObjectSampleCheckpoint;
@@ -46,6 +48,7 @@ class JfrStackFrame {
  public:
   JfrStackFrame(const traceid& id, int bci, u1 type, const InstanceKlass* klass);
   JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* klass);
+  JfrStackFrame(const JfrDeprecatedEdge* edge, u1 type);
 
   bool equals(const JfrStackFrame& rhs) const;
   void write(JfrChunkWriter& cw) const;
@@ -96,6 +99,7 @@ class JfrStackTrace : public JfrCHeapObj {
   bool record(JavaThread* current_thread, int skip, int64_t stack_frame_id);
   bool record(JavaThread* current_thread, const frame& frame, int skip, int64_t stack_frame_id);
   bool record_async(JavaThread* other_thread, const frame& frame);
+  bool record(const JfrDeprecatedEdge* edge, u1 frame_type, JavaThread* current_thread);
 
   bool have_lineno() const { return _lineno; }
   bool full_stacktrace() const { return _reached_root; }

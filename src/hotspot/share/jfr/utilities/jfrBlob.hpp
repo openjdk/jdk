@@ -66,6 +66,9 @@ class JfrBlob : public JfrCHeapObj {
       _next->exclusive_write(writer);
     }
   }
+  size_t size() const {
+    return _size;
+  }
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRBLOB_HPP

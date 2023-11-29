@@ -159,13 +159,13 @@ NO_TRANSITION(jdouble, jfr_time_conv_factor(JNIEnv* env, jclass jvm))
   return (jdouble)JfrTimeConverter::nano_to_counter_multiplier();
 NO_TRANSITION_END
 
-NO_TRANSITION(jboolean, jfr_set_cutoff(JNIEnv* env, jclass jvm, jlong event_type_id, jlong cutoff_ticks))
-  return JfrEventSetting::set_cutoff(event_type_id, cutoff_ticks) ? JNI_TRUE : JNI_FALSE;
-NO_TRANSITION_END
-
 NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms))
   JfrEventThrottler::configure(static_cast<JfrEventId>(event_type_id), event_sample_size, period_ms);
   return JNI_TRUE;
+NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value))
+  JfrEventSetting::set_miscellaneous(event_type_id, value);
 NO_TRANSITION_END
 
 NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jclass jvm))

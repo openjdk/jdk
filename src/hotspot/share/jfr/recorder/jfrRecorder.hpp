@@ -61,8 +61,9 @@ class JfrRecorder : public JfrCHeapObj {
  public:
   static bool is_enabled();
   static bool is_disabled();
-  static bool create(bool simulate_failure);
   static bool is_created();
+  static bool is_started_on_commandline();
+  static bool create(bool simulate_failure);
   static void destroy();
   static void start_recording();
   static bool is_recording();
