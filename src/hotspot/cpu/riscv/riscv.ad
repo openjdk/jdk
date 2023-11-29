@@ -8285,7 +8285,7 @@ instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, iRegINoSp tmp) %{
   ins_encode %{
     __ float16_to_float($dst$$FloatRegister, $src$$Register, $tmp$$Register);
   %}
-  ins_pipe(fp_f2i);
+  ins_pipe(pipe_slow);
 %}
 
 // float <-> int
