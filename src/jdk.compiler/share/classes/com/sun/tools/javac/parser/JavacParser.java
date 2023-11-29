@@ -3361,6 +3361,8 @@ public class JavacParser implements Parser {
                 case RPAREN: parenDepth--; break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
+                case FINAL:
+                    if (parenDepth > 0) return PatternResult.PATTERN;
                 default: return pendingResult;
             }
             lookahead++;
