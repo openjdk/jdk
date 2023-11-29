@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
@@ -127,11 +128,13 @@ static void create_edge(const Method* method, Method* sender, int bci, u1 frame_
   _list.add(edge);
 }
 
+// This is the entry point for newly discovered edges in JfrResolution.cpp.
 void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   assert(method != nullptr, "invariant");
   assert(method->deprecated(), "invariant");
   assert(sender != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
+  assert(JfrRecorder::is_started_on_commandline(), "invariant");
   if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
     create_edge(method, sender, bci, frame_type, jt);
   }
