@@ -487,7 +487,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
 java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-all
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
-java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
+java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 
 ############################################################################
@@ -622,12 +622,6 @@ com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
-sun/security/tools/keytool/NssTest.java                         8295343 generic-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 generic-all
-sun/security/pkcs11/rsa/TestSignatures.java                     8295343 generic-all
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 generic-all
-sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 generic-all
-sun/security/pkcs11/KeyStore/Basic.java                         8295343 generic-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 

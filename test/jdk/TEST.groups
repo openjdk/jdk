@@ -75,11 +75,12 @@ tier2_part3 = \
 tier3 = \
     :build \
     :jdk_vector \
+    -:jdk_vector_sanity \
     :jdk_rmi \
     :jdk_svc \
-   -:jdk_svc_sanity \
-   -:jdk_vector_sanity \
-   -:svc_tools
+    -:jdk_svc_sanity \
+    -:svc_tools \
+    :jdk_jpackage
 
 # Everything not in other tiers
 tier4 = \
@@ -284,10 +285,11 @@ jdk_loom = \
     jdk/jfr/threading
 
 #
-# Tool (and tool API) tests are split into core and svc groups
+# Tool (and tool API) tests are mostly split into core and svc groups
 #
 core_tools = \
     tools \
+    -tools/jpackage \
     jdk/internal/jrtfs \
     sun/tools/jrunscript
 
@@ -299,10 +301,14 @@ svc_tools = \
 
 jdk_tools = \
     :core_tools \
-    :svc_tools
+    :svc_tools \
+    :jdk_jpackage
 
 jdk_jfr = \
     jdk/jfr
+
+jdk_jpackage = \
+    tools/jpackage
 
 #
 # Catch-all for other areas with a small number of tests
@@ -579,7 +585,9 @@ jdk_nio_networkchannel = \
 
 jdk_core_manual = \
     :jdk_core_manual_no_input \
-    :jdk_core_manual_no_input_security
+    :jdk_security_manual_no_input \
+    :jdk_core_manual_interactive \
+    :jdk_security_manual_interactive
 
 jdk_core_manual_no_input = \
     java/net/HugeDataTransferTest.java \
@@ -598,7 +606,7 @@ jdk_core_manual_no_input = \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
     javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java
 
-jdk_core_manual_no_input_security = \
+jdk_security_manual_no_input = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
@@ -625,13 +633,14 @@ jdk_core_manual_no_input_security = \
 jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \
     java/util/TimeZone/DefaultTimeZoneTest.java \
-    sun/security/tools/keytool/i18n.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
-    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
+
+jdk_security_manual_interactive = \
+    sun/security/tools/keytool/i18n.java \
     java/security/Policy/Root/Root.java \
     sun/security/krb5/config/native/TestDynamicStore.java
-
 
 # Test sets for running inside container environment
 jdk_containers_extended = \

@@ -295,6 +295,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseInlineCaches, true,                                      \
           "Use Inline Caches for virtual calls ")                           \
                                                                             \
+  product(size_t, InlineCacheBufferSize, 10*K, EXPERIMENTAL,                \
+          "InlineCacheBuffer size")                                         \
+                                                                            \
   product(bool, InlineArrayCopy, true, DIAGNOSTIC,                          \
           "Inline arraycopy native that is known to be part of "            \
           "base library DLL")                                               \
@@ -667,8 +670,8 @@ const int ObjectAlignmentInBytes = 8;
           "Print JVM warnings to output stream")                            \
                                                                             \
   product(bool, RegisterFinalizersAtInit, true,                             \
-          "Register finalizable objects at end of Object.<init> or "        \
-          "after allocation")                                               \
+          "(Deprecated) Register finalizable objects at end of "            \
+          "Object.<init> or after allocation")                              \
                                                                             \
   develop(bool, RegisterReferences, true,                                   \
           "Tell whether the VM should register soft/weak/final/phantom "    \
@@ -732,6 +735,10 @@ const int ObjectAlignmentInBytes = 8;
           "The maximum number of monitors to deflate, unlink and delete "   \
           "at one time (minimum is 1024).")                                 \
           range(1024, max_jint)                                             \
+                                                                            \
+  product(intx, MonitorUnlinkBatch, 500, DIAGNOSTIC,                        \
+          "The maximum number of monitors to unlink in one batch. ")        \
+          range(1, max_jint)                                                \
                                                                             \
   product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \
@@ -834,6 +841,13 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, CrashOnOutOfMemoryError, false,                             \
           "JVM aborts, producing an error log and core/mini dump, on the "  \
           "first occurrence of an out-of-memory error thrown from JVM")     \
+                                                                            \
+  product(intx, UserThreadWaitAttemptsAtExit, 30,                           \
+          "The number of times to wait for user threads to stop executing " \
+          "native code during JVM exit. Each wait lasts 10 milliseconds. "  \
+          "The maximum number of waits is 1000, to wait at most 10 "        \
+          "seconds.")                                                       \
+          range(0, 1000)                                                    \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1984,6 +1998,13 @@ const int ObjectAlignmentInBytes = 8;
           "more eagerly at the cost of higher overhead. A value of 0 "      \
           "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
+                                                                            \
+  develop(bool, SimulateFullAddressSpace, false,                            \
+          "Simulates a very populated, fragmented address space; no "       \
+          "targeted reservations will succeed.")                            \
+                                                                            \
+  product(bool, ProfileExceptionHandlers, true,                             \
+          "Profile exception handlers")                                     \
 
 // end of RUNTIME_FLAGS
 

@@ -78,7 +78,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
 
         List<String> log;
         List<String> expected = Arrays.asList(
-                "- compiler.warn.source.no.bootclasspath: 8",
+                "- compiler.warn.source.no.bootclasspath: 8, (compiler.misc.source.no.bootclasspath: 8)",
                 "- compiler.warn.option.obsolete.source: 8",
                 "- compiler.warn.option.obsolete.suppression",
                 "3 warnings"
@@ -125,7 +125,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
 
         List<String> log;
         List<String> expected = Arrays.asList(
-                "- compiler.warn.source.no.system.modules.path: 9",
+                "- compiler.warn.source.no.system.modules.path: 9, (compiler.misc.source.no.system.modules.path: 9)",
                 "1 warning"
         );
 
