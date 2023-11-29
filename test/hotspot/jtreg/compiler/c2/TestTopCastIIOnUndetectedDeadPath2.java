@@ -25,6 +25,7 @@
  * @test
  * @bug 8319372
  * @summary CastII because of condition guarding it becomes top
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestTopCastIIOnUndetectedDeadPath2::test -XX:-TieredCompilation
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=256120824 TestTopCastIIOnUndetectedDeadPath2
  * @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,TestTopCastIIOnUndetectedDeadPath2::test -XX:-TieredCompilation
