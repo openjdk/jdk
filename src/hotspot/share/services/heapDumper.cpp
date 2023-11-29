@@ -790,14 +790,14 @@ class DumperSupport : AllStatic {
   }
 
   static void report_dormant_archived_object(oop o, oop ref_obj) {
-    if (log_is_enabled(Debug, cds, heap)) {
+    if (log_is_enabled(Trace, cds, heap)) {
       ResourceMark rm;
       if (ref_obj != nullptr) {
-        log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
+        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name(),
                   p2i(ref_obj), ref_obj->klass()->external_name());
       } else {
-        log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
+        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
                   p2i(o), o->klass()->external_name());
       }
     }
