@@ -316,6 +316,12 @@ void CompilerConfig::set_compilation_policy_flags() {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, (size_t)ReservedCodeCacheSize * 5));
     }
+    // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
+    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+    if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
+        8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
+      FLAG_SET_ERGO(SegmentedCodeCache, true);
+    }
     if (Arguments::is_compiler_only()) { // -Xcomp
       // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
       // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
@@ -530,6 +536,10 @@ bool CompilerConfig::check_args_consistency(bool status) {
         warning("TieredCompilation disabled due to -Xint.");
       }
       FLAG_SET_CMDLINE(TieredCompilation, false);
+    }
+    if (SegmentedCodeCache) {
+      warning("SegmentedCodeCache has no meaningful effect with -Xint");
+      FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
     if (EnableJVMCI || UseJVMCICompiler) {

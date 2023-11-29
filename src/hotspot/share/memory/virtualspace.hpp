@@ -93,12 +93,12 @@ class ReservedSpace {
 
   // Splitting
   // This splits the space into two spaces, the first part of which will be returned.
-  ReservedSpace first_part(size_t partition_size, size_t alignment) const;
-  ReservedSpace last_part (size_t partition_size, size_t alignment) const;
+  ReservedSpace first_part(size_t partition_size, size_t alignment);
+  ReservedSpace last_part (size_t partition_size, size_t alignment);
 
   // These simply call the above using the default alignment.
-  inline ReservedSpace first_part(size_t partition_size) const;
-  inline ReservedSpace last_part (size_t partition_size) const;
+  inline ReservedSpace first_part(size_t partition_size);
+  inline ReservedSpace last_part (size_t partition_size);
 
   // Alignment
   static size_t page_align_size_up(size_t size);
@@ -114,12 +114,12 @@ class ReservedSpace {
 };
 
 ReservedSpace
-ReservedSpace::first_part(size_t partition_size) const
+ReservedSpace::first_part(size_t partition_size)
 {
   return first_part(partition_size, alignment());
 }
 
-ReservedSpace ReservedSpace::last_part(size_t partition_size) const
+ReservedSpace ReservedSpace::last_part(size_t partition_size)
 {
   return last_part(partition_size, alignment());
 }
@@ -151,7 +151,6 @@ class ReservedCodeSpace : public ReservedSpace {
  public:
   // Constructor
   ReservedCodeSpace(size_t r_size, size_t rs_align, size_t page_size);
-  ReservedCodeSpace(size_t r_size, size_t page_size) : ReservedCodeSpace(r_size, MAX2(page_size, os::vm_allocation_granularity()), page_size) {}
 };
 
 // VirtualSpace is data structure for committing a previously reserved address range in smaller chunks.

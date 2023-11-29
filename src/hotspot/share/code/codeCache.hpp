@@ -111,19 +111,17 @@ class CodeCache : AllStatic {
   static ExceptionCache* volatile _exception_cache_purge_list;
 
   // CodeHeap management
-  static void initialize_heaps_sizes(size_t preferred_page_size);
+  static void initialize_heaps();                             // Initializes the CodeHeaps
   // Check the code heap sizes set by the user via command line
   static void check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set);
-  static void create_heaps(const ReservedCodeSpace& rs);
-  static void add_heap(CodeHeap* heap);
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
-  static void add_heap(const ReservedSpace& rs, const char* name, CodeBlobType code_blob_type);
+  static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
   static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
   static CodeHeap* get_code_heap(const void* cb);             // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
-  static ReservedCodeSpace reserve_memory(size_t size, size_t preferred_page_size); // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedCodeSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
@@ -141,9 +139,11 @@ class CodeCache : AllStatic {
  public:
   // Initialization
   static void initialize();
+  static size_t page_size(bool aligned = true, size_t min_pages = 1); // Returns the page size used by the CodeCache
 
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
+  static void add_heap(CodeHeap* heap);
   static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
   static const GrowableArray<CodeHeap*>* compiled_heaps() { return _compiled_heaps; }
   static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }

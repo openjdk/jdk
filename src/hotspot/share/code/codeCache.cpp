@@ -196,23 +196,12 @@ void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, 
   }
 }
 
-static uint non_nmethod_heap_min_size() {
-  return CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-}
-
-void CodeCache::initialize_heaps_sizes(size_t preferred_page_size) {
-  if (!SegmentedCodeCache) {
-    // Use a single code heap
-    FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
-    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
-    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    return;
-  }
-
+void CodeCache::initialize_heaps() {
   bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  const size_t min_size     = MAX2(os::vm_allocation_granularity(), preferred_page_size);
+  const size_t ps           = page_size(false, 8);
+  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
   const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
@@ -310,10 +299,12 @@ void CodeCache::initialize_heaps_sizes(size_t preferred_page_size) {
     non_nmethod_size += non_profiled_size;
     non_profiled_size = 0;
   }
-  if (non_nmethod_size < non_nmethod_heap_min_size()) {
+  // Make sure we have enough space for VM internal code
+  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+  if (non_nmethod_size < min_code_cache_size) {
     vm_exit_during_initialization(err_msg(
         "Not enough space in non-nmethod code heap to run VM: " SIZE_FORMAT "K < " SIZE_FORMAT "K",
-        non_nmethod_size/K, non_nmethod_heap_min_size()/K));
+        non_nmethod_size/K, min_code_cache_size/K));
   }
 
   // Verify sizes and update flag values
@@ -321,32 +312,22 @@ void CodeCache::initialize_heaps_sizes(size_t preferred_page_size) {
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod_size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
-}
 
-void CodeCache::create_heaps(const ReservedCodeSpace& rs) {
-  if (!SegmentedCodeCache) {
-    // Use a single code heap
-    add_heap(rs, "CodeCache", CodeBlobType::All);
-    return;
+  // Print warning if using large pages but not able to use the size given
+  if (UseLargePages) {
+    const size_t lg_ps = page_size(false, 1);
+    if (ps < lg_ps) {
+      log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
+                             "Reverting to smaller page size (" PROPERFMT ").",
+                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
+    }
   }
 
-  assert(heap_available(CodeBlobType::NonNMethod) &&
-         (heap_available(CodeBlobType::MethodProfiled) || heap_available(CodeBlobType::MethodNonProfiled)),
-         "Invalid segmented CodeCache configuration");
-
-  const size_t size_alignment = rs.page_size();
-  assert(is_aligned(rs.size(), rs.page_size()), "The size of the reserved CodeCache memory must be page aligned");
-
-  // TODO: NonNMethodCodeHeapSize is usually small: ~5MB-8M. Should we align down
-  //       if large pages are used.
-  size_t non_nmethod_size = align_up(NonNMethodCodeHeapSize, size_alignment);
-  assert(non_nmethod_size >= non_nmethod_heap_min_size(), "Not enough space in non-nmethod code heap");
-
-  size_t profiled_size = 0;
-  if (heap_available(CodeBlobType::MethodProfiled)) {
-    profiled_size = heap_available(CodeBlobType::MethodNonProfiled) ? align_down(ProfiledCodeHeapSize, size_alignment)
-                                                                    : rs.size() - non_nmethod_size;
-  }
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod_size = align_up(non_nmethod_size, min_size);
+  profiled_size    = align_down(profiled_size, min_size);
+  non_profiled_size = align_down(non_profiled_size, min_size);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -355,10 +336,14 @@ void CodeCache::create_heaps(const ReservedCodeSpace& rs) {
   //         Non-nmethods
   //      Profiled nmethods
   // ---------- low ------------
+  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
   ReservedSpace profiled_space      = rs.first_part(profiled_size);
   ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
   ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
+
+  // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
+  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
@@ -368,12 +353,27 @@ void CodeCache::create_heaps(const ReservedCodeSpace& rs) {
   add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
 }
 
-ReservedCodeSpace CodeCache::reserve_memory(size_t size, size_t preferred_page_size) {
-  assert(is_aligned(size, preferred_page_size), "The size of the reserved CodeCache memory must be page aligned");
-  ReservedCodeSpace rs(size, preferred_page_size);
+size_t CodeCache::page_size(bool aligned, size_t min_pages) {
+  if (os::can_execute_large_page_memory()) {
+    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
+      // Make sure that the page size allows for an incremental commit of the reserved space
+      min_pages = MAX2(min_pages, (size_t)8);
+    }
+    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
+  } else {
+    return os::vm_page_size();
+  }
+}
+
+ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+  // Align and reserve space for code cache
+  const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
+  const size_t rs_size = align_up(size, rs_align);
+  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
-                                          size/K));
+                                          rs_size/K));
   }
 
   // Initialize bounds
@@ -442,7 +442,7 @@ void CodeCache::add_heap(CodeHeap* heap) {
   }
 }
 
-void CodeCache::add_heap(const ReservedSpace& rs, const char* name, CodeBlobType code_blob_type) {
+void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type) {
   // Check if heap is needed
   if (!heap_available(code_blob_type)) {
     return;
@@ -454,13 +454,7 @@ void CodeCache::add_heap(const ReservedSpace& rs, const char* name, CodeBlobType
 
   // Reserve Space
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  if (rs.special()) {
-    // Special Reserve Space is fully committed.
-    size_initial = rs.size();
-  }
-  size_initial = align_up(size_initial, rs.page_size());
-  assert(size_initial <= rs.size(), "Initial size must not exceed reserved size");
-
+  size_initial = align_up(size_initial, os::vm_page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
                                           heap->name(), size_initial/K));
@@ -1186,74 +1180,6 @@ size_t CodeCache::freelists_length() {
 
 void icache_init();
 
-static void try_enable_segmented_code_cache(size_t preferred_page_size) {
-  if (CompilerConfig::is_interpreter_only() && SegmentedCodeCache) {
-    log_warning(codecache)("SegmentedCodeCache has no meaningful effect with -Xint");
-    FLAG_SET_DEFAULT(SegmentedCodeCache, false);
-  }
-  if (CompilerConfig::is_tiered() && FLAG_IS_DEFAULT(SegmentedCodeCache)
-      && ReservedCodeCacheSize >= 240*M
-      && NonNMethodCodeHeapSize > preferred_page_size) {
-    FLAG_SET_ERGO(SegmentedCodeCache, true);
-  }
-}
-
-// The minimum number of memory pages we want CodeCaceh to have.
-// It's some magic number to reduce memory fragmentation.
-constexpr size_t min_pages = 8;
-
-static size_t preferred_page_size_for_heaps(size_t page_size) {
-  if (!SegmentedCodeCache) {
-    // There is only one heap for the whole CodeCache.
-    // No need to seach for a page size suitable for all heaps.
-    return page_size;
-  }
-
-  assert(CodeCache::heap_available(CodeBlobType::NonNMethod) &&
-         (CodeCache::heap_available(CodeBlobType::MethodProfiled) ||
-          CodeCache::heap_available(CodeBlobType::MethodNonProfiled)),
-         "Invalid segmented CodeCache configuration");
-
-  size_t min_pages_for_non_nmethods = 2;
-  size_t min_pages_for_profiled = (min_pages - min_pages_for_non_nmethods) / 2;
-  size_t min_pages_for_non_profiled = min_pages - min_pages_for_non_nmethods - min_pages_for_profiled;
-  if (UseLargePages && FLAG_IS_CMDLINE(NonNMethodCodeHeapSize) &&
-      FLAG_IS_CMDLINE(ProfiledCodeHeapSize) &&
-      FLAG_IS_CMDLINE(NonProfiledCodeHeapSize)) {
-    // As a user uses large pages and specifies heap sizes,
-    // their intent is likely to use the lagest page.
-    min_pages_for_non_nmethods = 1;
-    min_pages_for_profiled = 1;
-    min_pages_for_non_profiled = 1;
-  }
-
-  page_size = MIN2(page_size, os::page_size_for_region_unaligned(NonNMethodCodeHeapSize, min_pages_for_non_nmethods));
-
-  if (CodeCache::heap_available(CodeBlobType::MethodProfiled)) {
-    if (!CodeCache::heap_available(CodeBlobType::MethodNonProfiled)) {
-      min_pages_for_profiled += min_pages_for_non_profiled;
-    }
-    page_size = MIN2(page_size, os::page_size_for_region_unaligned(ProfiledCodeHeapSize, min_pages_for_profiled));
-  }
-  if (CodeCache::heap_available(CodeBlobType::MethodNonProfiled)) {
-    if (!CodeCache::heap_available(CodeBlobType::MethodProfiled)) {
-      min_pages_for_non_profiled += min_pages_for_profiled;
-    }
-    page_size = MIN2(page_size, os::page_size_for_region_unaligned(NonProfiledCodeHeapSize, min_pages_for_non_profiled));
-  }
-  return page_size;
-}
-
-static size_t preferred_page_size() {
-  if (UseLargePages && FLAG_IS_CMDLINE(ReservedCodeCacheSize)) {
-    // As a user wants large pages and specifies the CodeCache reserved size,
-    // their intent is likely to use the lagest page size.
-    return os::page_size_for_region_aligned(ReservedCodeCacheSize, 1);
-  }
-
-  return os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages);
-}
-
 void CodeCache::initialize() {
   assert(CodeCacheSegmentSize >= (uintx)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
@@ -1265,26 +1191,19 @@ void CodeCache::initialize() {
   // default page size.
   CodeCacheExpansionSize = align_up(CodeCacheExpansionSize, os::vm_page_size());
 
-  size_t preferred_ps = preferred_page_size();
-  try_enable_segmented_code_cache(preferred_ps);
-  initialize_heaps_sizes(preferred_ps);
-  preferred_ps = preferred_page_size_for_heaps(preferred_ps);
-  const size_t size = align_up(ReservedCodeCacheSize, preferred_ps);
-  if (size > ReservedCodeCacheSize) {
-    log_warning(codecache)("Code cache size was increased to " PROPERFMT " bytes to be "
-                           "preferred page size aligned (" PROPERFMT ").",
-                           PROPERFMTARGS(size), PROPERFMTARGS(preferred_ps));
+  if (SegmentedCodeCache) {
+    // Use multiple code heaps
+    initialize_heaps();
+  } else {
+    // Use a single code heap
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
+    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
+    // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
+    LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
+    add_heap(rs, "CodeCache", CodeBlobType::All);
   }
-  ReservedCodeSpace rs = reserve_memory(size, preferred_ps);
-  if (rs.page_size() < preferred_ps) {
-    log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
-                           "Reverting to smaller page size (" PROPERFMT ").",
-                           PROPERFMTARGS(preferred_ps), PROPERFMTARGS(rs.page_size()));
-  }
-
-  // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
-  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
-  create_heaps(rs);
 
   // Initialize ICache flush mechanism
   // This service is needed for os::register_code_area
