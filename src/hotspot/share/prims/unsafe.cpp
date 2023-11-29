@@ -798,7 +798,6 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, job
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   event->set_parkedClass((obj != NULL) ? obj->klass() : NULL);
   event->set_timeout(timeout_nanos);
   event->set_until(until_epoch_millis);

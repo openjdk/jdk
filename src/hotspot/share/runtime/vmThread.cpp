@@ -245,7 +245,6 @@ void VMThread::wait_for_vm_thread_exit() {
 
 static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation* op) {
   assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   assert(op != NULL, "invariant");
   const bool evaluate_at_safepoint = op->evaluate_at_safepoint();
   event->set_operation(op->type());

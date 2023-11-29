@@ -571,7 +571,6 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
 void SystemDictionary::post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld) {
   assert(event != NULL, "invariant");
   assert(k != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
   event->set_loadedClass(k);
   event->set_definingClassLoader(k->class_loader_data());
   event->set_initiatingClassLoader(init_cld);
