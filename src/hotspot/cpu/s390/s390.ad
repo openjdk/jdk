@@ -2113,10 +2113,13 @@ encode %{
     if (_method) { // Emit stub for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(masm);
       if (stub == nullptr) {
+        __ clear_inst_mark();
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     }
+
+    __ clear_inst_mark();
   %}
 
   // Java dynamic call
@@ -2143,6 +2146,7 @@ encode %{
       unsigned int ret_off = __ offset();
       assert(__ offset() - start_off == 6, "bad prelude len: %d", __ offset() - start_off);
       ret_off += emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
+      __ clear_inst_mark();
       assert(_method, "lazy_constant may be wrong when _method==null");
     } else {
       assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
@@ -9677,6 +9681,7 @@ instruct RethrowException() %{
     __ set_inst_mark();
     __ load_const_optimized(Z_R1_scratch, (address)OptoRuntime::rethrow_stub());
     __ z_br(Z_R1_scratch);
+    __ clear_inst_mark();
   %}
   ins_pipe(pipe_class_dummy);
 %}

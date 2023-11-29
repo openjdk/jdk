@@ -3383,6 +3383,7 @@ encode %{
 
       // The stub for call to interpreter.
       address stub = CompiledStaticCall::emit_to_interp_stub(masm);
+      __ clear_inst_mark();
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -14541,6 +14542,7 @@ instruct RethrowException() %{
   ins_encode %{
     __ set_inst_mark();
     __ b64_patchable((address)OptoRuntime::rethrow_stub(), relocInfo::runtime_call_type);
+    __ clear_inst_mark();
   %}
   ins_pipe(pipe_class_call);
 %}

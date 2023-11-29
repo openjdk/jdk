@@ -2430,7 +2430,6 @@ encode %{
   %}
 
   enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2445,7 +2444,6 @@ encode %{
   %}
 
   enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2460,7 +2458,6 @@ encode %{
   %}
 
   enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
@@ -2475,7 +2472,6 @@ encode %{
   %}
 
   enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
