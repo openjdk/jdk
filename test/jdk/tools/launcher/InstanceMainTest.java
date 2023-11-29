@@ -42,7 +42,7 @@ public class InstanceMainTest extends TestHelper {
             }
             """,
 
-            // instance dominating instance
+            // instance dominating static
             """
             class MainClass {
                 void main(String[] args) {
