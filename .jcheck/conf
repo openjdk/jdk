@@ -1,7 +1,7 @@
 [general]
 project=jdk-updates
 jbs=JDK
-version=17.0.10
+version=17.0.11
 
 [checks]
 error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists
