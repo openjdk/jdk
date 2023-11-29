@@ -2030,7 +2030,7 @@ public class BasicTableUI extends TableUI
             int y = damagedArea.y;
             for (int row = rMin; row <= rMax; row++) {
                 y += table.getRowHeight(row);
-                SwingUtilities2.drawHLine(g, damagedArea.x, damagedArea.x + tableWidth - 1, y - 1);
+                SwingUtilities2.drawHLine(g, damagedArea.x, tableWidth - 1, y - 1);
             }
         }
         if (table.getShowVerticalLines()) {

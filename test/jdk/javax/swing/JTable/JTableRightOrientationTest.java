@@ -22,9 +22,11 @@
  */
 
 import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
@@ -57,7 +59,9 @@ import java.util.List;
 public class JTableRightOrientationTest {
     static JFrame frame;
     static CustomTable customTableObj;
-    static String failureString;
+    static volatile int allColumnWidths;
+    static volatile Point tableLocation;
+    static volatile Dimension tableSize;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -83,33 +87,32 @@ public class JTableRightOrientationTest {
                 robot.waitForIdle();
                 robot.delay(1000);
                 SwingUtilities.invokeAndWait(() -> {
-                    int allColumnWidths = 0;
+                    allColumnWidths = 0;
                     for (int i = 0; i < customTableObj.table.getColumnCount(); i++) {
                         allColumnWidths += customTableObj.table.getTableHeader().getColumnModel()
                                 .getColumn(i)
                                 .getWidth();
                     }
-                    BufferedImage bufferedImage = robot.createScreenCapture(
-                            new Rectangle(customTableObj.table.getLocationOnScreen().x,
-                                    customTableObj.table.getLocationOnScreen().y,
-                                    customTableObj.table.getWidth() - allColumnWidths,
-                                    customTableObj.table.getHeight()));
-                    int expectedRGB = bufferedImage.getRGB(0, 0);
-                    for (int x = 0; x < bufferedImage.getWidth(); x++) {
-                        for (int y = 0; y < bufferedImage.getHeight(); y++) {
-                            if (expectedRGB != bufferedImage.getRGB(x, y)) {
-                                saveImage(bufferedImage, "failureImage.png");
-                                failureString = "Test Failed at <" + x + ", " + y + ">";
-                                break;
-                            }
+                    tableLocation = customTableObj.table.getLocationOnScreen();
+                    tableSize = customTableObj.table.getSize();
+                });
+
+                BufferedImage bufferedImage = robot.createScreenCapture(
+                        new Rectangle(tableLocation.x,
+                                tableLocation.y,
+                                (int)tableSize.getWidth() - allColumnWidths,
+                                (int)tableSize.getHeight()));
+                int expectedRGB = bufferedImage.getRGB(0, 0);
+                for (int x = 0; x < bufferedImage.getWidth(); x++) {
+                    for (int y = 0; y < bufferedImage.getHeight(); y++) {
+                        if (expectedRGB != bufferedImage.getRGB(x, y)) {
+                            saveImage(bufferedImage, "failureImage.png");
+                            throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
                         }
                     }
-                });
-                if (failureString != null) {
-                    throw new RuntimeException(failureString);
-                } else {
-                    System.out.println("Test Passed!");
                 }
+
+                System.out.println("Test Passed!");
             } finally {
                 SwingUtilities.invokeAndWait(() -> {
                     if (frame != null) {

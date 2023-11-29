@@ -531,7 +531,7 @@ public class SynthTableUI extends BasicTableUI
             for (int row = rMin; row <= rMax; row++) {
                 y += table.getRowHeight(row);
                 synthG.drawLine(context, "Table.grid",
-                                g, damagedArea.x, y - 1, damagedArea.x + tableWidth - 1,y - 1);
+                                g, damagedArea.x, y - 1, tableWidth - 1,y - 1);
             }
         }
         if (table.getShowVerticalLines()) {
