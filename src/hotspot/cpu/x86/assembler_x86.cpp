@@ -969,7 +969,8 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       assert(which == call32_operand, "jcc has no disp32 or imm");
       return ip;
     default:
-      ShouldNotReachHere();
+      fatal("Instruction not handled: %02X", 0xFF & *(ip-1));
+      //ShouldNotReachHere();
     }
     break;
 
