@@ -309,7 +309,6 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
 
   // Store appendix, if any.
   if (has_appendix) {
-    assert(method_entry->has_resolved_references_index(), "sanity");
     const int appendix_index = method_entry->resolved_references_index();
     objArrayOop resolved_references = constant_pool()->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");

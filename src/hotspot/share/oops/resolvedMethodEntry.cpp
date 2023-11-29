@@ -74,7 +74,13 @@ void ResolvedMethodEntry::print_on(outputStream* st) const {
     st->print_cr(" - Resolved References Index: none");
   }
   if (bytecode2() == Bytecodes::_invokevirtual) {
+#ifdef ASSERT
+    if (_has_table_index) {
+      st->print_cr(" - Table Index: %d", table_index());
+    }
+#else
     st->print_cr(" - Table Index: %d", table_index());
+#endif
   } else {
     st->print_cr(" - Table Index: none");
   }

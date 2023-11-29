@@ -77,10 +77,10 @@ class ResolvedMethodEntry {
   u1 _tos_state;                     // TOS state
   u1 _flags;                         // Flags: [00|has_resolved_ref_index|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
   u1 _bytecode1, _bytecode2;         // Resolved invoke codes
-  DEBUG_ONLY(
-      bool _has_interface_klass;
-      bool _has_table_index;
-  )
+#ifdef ASSERT
+  bool _has_interface_klass;
+  bool _has_table_index;
+#endif
 
   // Constructors
   public:
@@ -93,10 +93,10 @@ class ResolvedMethodEntry {
       _bytecode1(0),
       _bytecode2(0) {
         _entry_specific._interface_klass = nullptr;
-        DEBUG_ONLY(
-          _has_interface_klass = false;
-          _has_table_index = false;
-        )
+#ifdef ASSERT
+        _has_interface_klass = false;
+        _has_table_index = false;
+#endif
       }
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
@@ -191,32 +191,30 @@ class ResolvedMethodEntry {
   }
 
   void set_klass(InstanceKlass* klass) {
-    DEBUG_ONLY(
-      assert(has_resolved_references_index() == false &&
-             _has_table_index                == false,
-             "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
-      _has_interface_klass = true;
-    )
+    assert(has_resolved_references_index() == false &&
+           _has_table_index                == false,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
+#ifdef ASSERT
+    _has_interface_klass = true;
+#endif
     _entry_specific._interface_klass = klass;
   }
 
   void set_resolved_references_index(u2 ref_index) {
-    DEBUG_ONLY(
-      assert(_has_interface_klass            == false &&
-             _has_table_index                == false,
-             "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
-    )
+    assert(_has_interface_klass            == false &&
+           _has_table_index                == false,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
     set_flags(1 << has_resolved_ref_shift);
     _entry_specific._resolved_references_index = ref_index;
   }
 
   void set_table_index(u2 table_index) {
-    DEBUG_ONLY(
-      assert(has_resolved_references_index() == false &&
-             _has_interface_klass            == false,
-             "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
-      _has_table_index = true;
-    )
+    assert(has_resolved_references_index() == false &&
+           _has_interface_klass            == false,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
+#ifdef ASSERT
+    _has_table_index = true;
+#endif
     _entry_specific._table_index = table_index;
   }
 
