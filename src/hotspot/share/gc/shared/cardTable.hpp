@@ -112,8 +112,7 @@ public:
 
   // Return true if "p" is at the start of a card.
   bool is_card_aligned(HeapWord* p) {
-    CardValue* pcard = byte_for(p);
-    return (addr_for(pcard) == p);
+    return is_aligned(p, card_size());
   }
 
   // Mapping from address to card marking array entry
@@ -196,7 +195,7 @@ public:
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
-  static intptr_t clean_card_row_val()   { return clean_card_row; }
+  static constexpr intptr_t clean_card_row_val()   { return clean_card_row; }
 
   // Initialize card size
   static void initialize_card_size();

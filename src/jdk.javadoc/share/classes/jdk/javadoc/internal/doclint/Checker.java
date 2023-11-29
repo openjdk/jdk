@@ -1248,14 +1248,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isDefaultConstructor() {
-        if (env.currElement.getKind() == ElementKind.CONSTRUCTOR) {
-            // A synthetic default constructor has the same pos as the
-            // enclosing class
-            TreePath p = env.currPath;
-            return env.getPos(p) == env.getPos(p.getParentPath());
-        } else {
-            return false;
-        }
+        return env.currElement.getKind() == ElementKind.CONSTRUCTOR
+                && env.elements.getOrigin(env.currElement) == Elements.Origin.MANDATED;
     }
 
     private boolean isDeclaredType() {
