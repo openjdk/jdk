@@ -432,6 +432,7 @@ static void start_recorder() {
 
 static void stop_recorder() {
   assert(JfrRotationLock::is_owner(), "invariant");
+  JfrDeprecationManager::on_recorder_stop();
   set_recorder_state(RUNNING, STOPPED);
   log_debug(jfr, system)("Recording service STOPPED");
 }
@@ -451,7 +452,6 @@ void JfrRecorderService::start() {
 
 static void stop() {
   assert(JfrRecorderService::is_recording(), "invariant");
-  JfrDeprecationManager::stop_enqueuing_klasses();
   stop_recorder();
   assert(!JfrRecorderService::is_recording(), "invariant");
 }
