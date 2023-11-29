@@ -207,10 +207,20 @@ public class ByteArrayInputStream extends InputStream {
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
         if (len > 0) {
+            byte[] tmp;
+            if ("java.io".equals(out.getClass().getPackageName()))
+                tmp = null;
+            else
+                tmp = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
+
             int nwritten = 0;
             while (nwritten < len) {
                 int nbyte = Integer.min(len - nwritten, MAX_TRANSFER_SIZE);
-                out.write(buf, pos, nbyte);
+                if (tmp != null) {
+                    System.arraycopy(buf, pos, tmp, 0, nbyte);
+                    out.write(tmp, 0, nbyte);
+                } else
+                    out.write(buf, pos, nbyte);
                 pos += nbyte;
                 nwritten += nbyte;
             }
