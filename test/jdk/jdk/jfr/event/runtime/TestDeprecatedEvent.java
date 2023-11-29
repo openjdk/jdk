@@ -122,19 +122,6 @@ public class TestDeprecatedEvent {
         }
     }
 
-    /*
-    private static List<RecordedEvent> filter(Recording r) throws Exception {
-        List<RecordedEvent> list = new ArrayList<RecordedEvent>();
-        List<RecordedEvent> events = Events.fromRecording(r);
-        for (RecordedEvent e : events) {
-            if (EVENT_NAME.equals(e.getEventType().getName())) {
-                list.add(e);
-            }
-        }
-        return list;
-    }
-    */
-
     // Validates invocations that happened before JFR was started.
     private static void validateLevelAllPreJFR(Recording r) throws Exception {
         List<RecordedEvent> events = Events.fromRecording(r);
@@ -143,7 +130,6 @@ public class TestDeprecatedEvent {
     }
 
     private static void validateLevelAll(Recording r) throws Exception {
-        validateLevelAllPreJFR(r);
         List<RecordedEvent> events = Events.fromRecording(r);
         printInvocations(events, "all");
         assertMethod(events, "testLevelAll", "deprecated1");

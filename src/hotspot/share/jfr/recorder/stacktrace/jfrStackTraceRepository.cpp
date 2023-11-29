@@ -199,20 +199,6 @@ void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* current_threa
   }
 }
 
-void JfrStackTraceRepository::record_for_deprecated_method(const JfrDeprecatedEdge* edge, u1 frame_type, JavaThread* jt) {
-  assert(edge != nullptr, "invariant");
-  assert(jt != nullptr, "invariant");
-  JfrThreadLocal* const tl = jt->jfr_thread_local();
-  assert(tl != nullptr, "invariant");
-  assert(!tl->has_cached_stack_trace(), "invariant");
-  JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
-  stacktrace.record(edge, frame_type, jt);
-  const traceid hash = stacktrace.hash();
-  if (hash != 0) {
-    tl->set_cached_stack_trace_id(add(leak_profiler_instance(), stacktrace), hash);
-  }
-}
-
 traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   assert(stacktrace._nr_of_frames > 0, "invariant");
