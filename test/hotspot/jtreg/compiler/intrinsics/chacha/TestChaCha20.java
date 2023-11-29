@@ -105,7 +105,7 @@ public class TestChaCha20 {
                 configs.add(new ArrayList());
             }
         } else if (Platform.isRISCV64()) {
-            // AArch64 intrinsics require the advanced simd instructions
+            // Riscv64 intrinsics require the vector instructions
             if (containsFuzzy(cpuFeatures, "v", true)) {
                 System.out.println("Setting up vector worker");
                 configs.add(new ArrayList());
