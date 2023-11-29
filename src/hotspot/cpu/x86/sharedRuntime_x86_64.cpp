@@ -197,7 +197,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // Save registers, fpu state, and flags.
   // We assume caller has already pushed the return address onto the
   // stack, so rsp is 8-byte aligned here.
-  // We push rpb twice in this sequence because we want the real rbp
+  // We push rbp twice in this sequence because we want the real rbp
   // to be under the return like a normal enter.
 
   __ enter();          // rsp becomes 16-byte aligned here
