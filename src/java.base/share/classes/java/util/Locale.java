@@ -45,6 +45,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
@@ -257,6 +258,51 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * that you can use to obtain {@code Locale} objects for commonly used
  * locales. For example, {@code Locale.US} is the {@code Locale} object
  * for the United States.
+ *
+ * <h3><a id="default_locale">Default Locale</a></h3>
+ *
+ * <p>The default locale is provided mainly for the locale-sensitive methods if no
+ * {@code Locale} is explicitly specified as an argument, such as
+ * {@link DateFormat#getInstance()}. The default locale is constructed from a few
+ * system properties, which are determined by the host environment at the Java
+ * runtime startup. Those system properties are listed below. All but
+ * {@code user.language} are optional.
+ * <table class="striped">
+ * <caption style="display:none">Shows property keys and associated values</caption>
+ * <thead>
+ * <tr><th scope="col">Key</th>
+ *     <th scope="col">Description of Associated Value</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row">{@systemProperty user.language}</th>
+ *     <td>{@link ##def_language language} for the default locale,
+ *     such as "en" (English)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.script}</th>
+ *     <td>{@link ##def_script script} for the default locale,
+ *     such as "Latn" (Latin)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.country}</th>
+ *     <td>{@link ##def_region country} for the default locale,
+ *     such as "US" (United States)</td></tr>
+ * <tr><th scope="row">{@systemProperty user.variant}</th>
+ *     <td>{@link ##def_variant variant} for the default locale,
+ *     such as "POSIX"</td></tr>
+ * <tr><th scope="row">{@systemProperty user.extensions}</th>
+ *     <td>{@link ##def_extensions extensions} for the default locale,
+ *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
+ * </tbody>
+ * </table>
+ * Users can override these system properties by specifying them to the Java
+ * launcher's command line in order to customize the default locale independent
+ * of the host environment.
+ * <p>There are also finer-grained default locales specific for each
+ * {@link Locale.Category} and corresponding system properties which consist of the
+ * base system properties as listed above, appended by either ".display" or ".format"
+ * depending on the category. For example, setting a value to
+ * {@code user.language.display} system property will have the value for the default
+ * locale for {@link Locale.Category#DISPLAY} category.
+ * <p>Default locales can be queried by {@link #getDefault()} and
+ * {@link #getDefault(Category)}, and set by {@link #setDefault(Locale)} and
+ * {@link #setDefault(Category, Locale)}.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
@@ -984,14 +1030,14 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the current value of the default locale for this instance
-     * of the Java Virtual Machine.
+     * Gets the current value of the {@link ##default_locale default locale} for
+     * this instance of the Java Virtual Machine.
      * <p>
      * The Java Virtual Machine sets the default locale during startup
      * based on the host environment. It is used by many locale-sensitive
      * methods if no locale is explicitly specified.
      * It can be changed using the
-     * {@link #setDefault(java.util.Locale) setDefault} method.
+     * {@link #setDefault(Locale)} method.
      *
      * @return the default locale for this instance of the Java Virtual Machine
      */
@@ -1001,13 +1047,13 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the current value of the default locale for the specified Category
-     * for this instance of the Java Virtual Machine.
+     * Gets the current value of the {@link ##default_locale default locale} for
+     * the specified Category for this instance of the Java Virtual Machine.
      * <p>
      * The Java Virtual Machine sets the default locale during startup based
      * on the host environment. It is used by many locale-sensitive methods
      * if no locale is explicitly specified. It can be changed using the
-     * setDefault(Locale.Category, Locale) method.
+     * {@link #setDefault(Locale.Category, Locale)} method.
      *
      * @param category the specified category to get the default locale
      * @throws NullPointerException if category is null
@@ -1108,8 +1154,9 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the default locale for this instance of the Java Virtual Machine.
-     * This does not affect the host locale.
+     * Sets the {@link ##default_locale default locale} for
+     * this instance of the Java Virtual Machine. This does not affect the
+     * host locale.
      * <p>
      * If there is a security manager, its {@code checkPermission}
      * method is called with a {@code PropertyPermission("user.language", "write")}
@@ -1142,8 +1189,9 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the default locale for the specified Category for this instance
-     * of the Java Virtual Machine. This does not affect the host locale.
+     * Sets the {@link ##default_locale default locale} for the specified
+     * Category for this instance of the Java Virtual Machine. This does
+     * not affect the host locale.
      * <p>
      * If there is a security manager, its checkPermission method is called
      * with a PropertyPermission("user.language", "write") permission before
