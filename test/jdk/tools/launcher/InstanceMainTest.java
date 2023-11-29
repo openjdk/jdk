@@ -81,7 +81,7 @@ public class InstanceMainTest extends TestHelper {
             }
             """,
 
-            // unnamed class dominating instance
+            // main with args dominating main without args
             """
             void main(String[] args) {
             }
