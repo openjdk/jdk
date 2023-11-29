@@ -1112,7 +1112,7 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
     // only interested in an owned ObjectMonitor and ownership
     // cannot be dropped under the calling contexts so the
     // ObjectMonitor cannot be async deflated.
-    if (monitor->has_owner() && filter(monitor->owner_raw())) {
+    if (monitor->has_owner() && filter(monitor)) {
       assert(!monitor->is_being_async_deflated(), "Owned monitors should not be deflating");
       assert(monitor->object_peek() != nullptr, "Owned monitors should not have a dead object");
       closure->do_monitor(monitor);
@@ -1123,13 +1123,13 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
 // ObjectMonitors where owner is set to a stack-lock address in thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
-  auto thread_filter = [&](void* owner) { return owner == thread; };
+  auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->is_owner(thread); };
   return owned_monitors_iterate_filtered(closure, thread_filter);
 }
 
 // Iterate ObjectMonitors owned by any thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure) {
-  auto all_filter = [&](void* owner) { return true; };
+  auto all_filter = [&](ObjectMonitor* monitor) { return true; };
   return owned_monitors_iterate_filtered(closure, all_filter);
 }
 
