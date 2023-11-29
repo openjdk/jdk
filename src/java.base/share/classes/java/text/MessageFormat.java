@@ -288,7 +288,7 @@ import java.util.Objects;
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
  * {@snippet lang=java :
- * form.applyPattern(
+ * msgFmt.applyPattern(
  *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
  * }
  *
