@@ -81,18 +81,21 @@
   product(bool, ShenandoahGenerationalCensusIgnoreOlderCohorts, true,       \
                                                                EXPERIMENTAL,\
           "(Generational mode only) Ignore mortality rates older than the " \
-          " oldest cohort under the tenuring age for the last cycle." )     \
+          "oldest cohort under the tenuring age for the last cycle." )      \
                                                                             \
-  product(uintx, ShenandoahGenerationalMinTenuringAge, 0, EXPERIMENTAL,     \
-          "(Generational mode only) Floor for adaptive tenuring age.")      \
-          range(0,16)                                                       \
+  product(uintx, ShenandoahGenerationalMinTenuringAge, 1, EXPERIMENTAL,     \
+          "(Generational mode only) Floor for adaptive tenuring age. "      \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMaxTenuringAge, 15, EXPERIMENTAL,    \
           "(Generational mode only) Ceiling for adaptive tenuring age. "    \
-          "Setting min and max to the same value fixes the tenuring age, "  \
-          "setting both to 0 simulates Always Tenure, and setting both to " \
-          "16 simulates Never Tenure.")                                     \
-          range(0,16)                                                       \
+          "Setting floor and ceiling to the same value fixes the tenuring " \
+          "age; setting both to 1 simulates a poor approximation to "       \
+          "AlwaysTenure, and setting both to 16 simulates NeverTenure.")    \
+          range(1,16)                                                       \
                                                                             \
   product(double, ShenandoahGenerationalTenuringMortalityRateThreshold,     \
                                                          0.1, EXPERIMENTAL, \
