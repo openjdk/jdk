@@ -86,7 +86,7 @@ class JfrDeprecationManager : AllStatic {
  public:
   static void on_safepoint_clear();
   static void on_safepoint_write();
-  static void stop_enqueuing_klasses();
+  static void on_recorder_stop();
   static void prepare_type_set(JavaThread* jt);
   static void on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread);
   static void on_type_set_unload(JfrCheckpointWriter& writer);

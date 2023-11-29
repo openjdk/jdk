@@ -33,7 +33,6 @@ class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
-class Method;
 
 class JfrStackFrame {
   friend class ObjectSampleCheckpoint;

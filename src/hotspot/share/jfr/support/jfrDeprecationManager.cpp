@@ -46,7 +46,7 @@
 
 static bool _enqueue_klasses = false;
 
-void JfrDeprecationManager::stop_enqueuing_klasses() {
+void JfrDeprecationManager::on_recorder_stop() {
   _enqueue_klasses = false;
 }
 
