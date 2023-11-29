@@ -94,6 +94,9 @@ static const size_t thread_local_buffer_size = 256;
 static const size_t virtual_thread_local_buffer_prealloc_count = 0;
 static const size_t virtual_thread_local_buffer_size = 4 * K;
 
+// We expose an early initialization routine to support class unloading
+// even though the full JFR system is not yet started. It requires
+// backing of global buffers should it write a class unload type set blob.
 bool JfrCheckpointManager::initialize_early() {
   assert(_global_mspace == nullptr, "invariant");
   _global_mspace =  create_mspace<JfrCheckpointMspace, JfrCheckpointManager>(global_buffer_size, 0, 0, false, this); // post-pone preallocation
@@ -128,6 +131,7 @@ bool JfrCheckpointManager::initialize_early() {
   return true;
 }
 
+// The instance is already created and so we only complete the setup of additional subsystems.
 bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
   assert(cw != nullptr, "invariant");
   _chunkwriter = cw;
