@@ -125,13 +125,13 @@ bool JfrCheckpointManager::initialize_early() {
                                                                                         virtual_thread_local_buffer_prealloc_count)) {
     return false;
   }
-  return JfrTraceIdLoadBarrier::initialize();
+  return true;
 }
 
 bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
   assert(cw != nullptr, "invariant");
   _chunkwriter = cw;
-  return JfrTypeManager::initialize();
+  return JfrTypeManager::initialize() && JfrTraceIdLoadBarrier::initialize();
 }
 
 void JfrCheckpointManager::set_chunkwriter(JfrChunkWriter* cw) {
