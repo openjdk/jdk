@@ -334,8 +334,8 @@ void CodeCache::create_heaps(const ReservedCodeSpace& rs) {
          (heap_available(CodeBlobType::MethodProfiled) || heap_available(CodeBlobType::MethodNonProfiled)),
          "Invalid segmented CodeCache configuration");
 
-  const size_t size_alignment = rs.alignment();
-  assert(is_aligned(rs.size(), size_alignment), "The size of the reserved CodeCache memory must be multiple of rs.alignment()");
+  const size_t size_alignment = rs.page_size();
+  assert(is_aligned(rs.size(), rs.page_size()), "The size of the reserved CodeCache memory must be page aligned");
 
   // TODO: NonNMethodCodeHeapSize is usually small: ~5MB-8M. Should we align down
   //       if large pages are used.
