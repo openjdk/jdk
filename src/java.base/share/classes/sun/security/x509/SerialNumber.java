@@ -101,8 +101,9 @@ public class SerialNumber {
     /**
      * Return the SerialNumber as user readable string.
      */
-    public String toString() { return "Serial number: " +
-        HexFormat.ofDelimiter(":").withUpperCase().formatHex(serialNum.toByteArray()); }
+    public String toString() {
+        return "SerialNumber: " + Debug.toString(serialNum.toByteArray());
+    }
 
     /**
      * Encode the SerialNumber in DER form to the stream.
