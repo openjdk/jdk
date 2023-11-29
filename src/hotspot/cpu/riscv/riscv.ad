@@ -10303,13 +10303,13 @@ instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
 %}
 
 // fast ArraysSupport.vectorizedHashCode
-instruct arrays_hashcode(iRegPNoSp ary, iRegINoSp cnt, iRegINoSp result, immI basic_type,
+instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
                          iRegLNoSp tmp1, iRegINoSp tmp2,
                          iRegINoSp tmp3, iRegLNoSp tmp4, rFlagsReg cr)
 %{
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
-         USE ary, USE basic_type, KILL cr);
+         USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
 
   format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
   ins_encode %{
