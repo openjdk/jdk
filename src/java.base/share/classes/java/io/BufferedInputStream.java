@@ -644,7 +644,7 @@ public class BufferedInputStream extends FilterInputStream {
             int avail = count - pos;
             if (avail > 0) {
                 // trust all OutputStreams from java.io
-                if (out.getClass().getPackageName() == getClass().getPackageName()) {
+                if (out.getClass().getPackageName() == BufferedInputStream.class.getPackageName()) {
                     out.write(getBufIfOpen(), pos, count);
                 } else {
                     // Prevent poisoning and leaking of buf
