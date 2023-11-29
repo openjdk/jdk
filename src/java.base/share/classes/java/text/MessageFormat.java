@@ -266,7 +266,7 @@ import java.util.Objects;
  *
  * <p>
  * For more sophisticated patterns, {@link ChoiceFormat} can be used with
- * {@code MessageFormat} to produce accurate forms for singular and plural.
+ * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
  * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
  * double[] fileLimits = {0,1,2};

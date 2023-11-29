@@ -102,7 +102,7 @@ import java.util.Arrays;
  *
  * <p>
  * For more sophisticated patterns, {@code ChoiceFormat} can be used with
- * {@link MessageFormat} to produce accurate forms for singular and plural.
+ * {@link MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
  * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
  * double[] fileLimits = {0,1,2};
