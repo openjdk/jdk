@@ -147,10 +147,15 @@ static void transfer_list() {
   }
 }
 
+void JfrDeprecationManager::on_level_setting_update(int64_t new_level) {
+  JfrDeprecatedEventWriterState::on_level_setting_update(new_level);
+}
+
 void JfrDeprecationManager::on_safepoint_clear() {
   assert(!_enqueue_klasses, "invariant");
   // We are now starting JFR, so begin enqueuing tagged klasses.
   _enqueue_klasses = true;
+  JfrDeprecatedEventWriterState::on_initialization();
   transfer_list();
 }
 

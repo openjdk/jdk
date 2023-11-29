@@ -43,19 +43,19 @@ import static jdk.test.lib.Asserts.assertNotNull;
  * @library /test/lib
  * @build jdk.jfr.event.runtime.DeprecatedThing
  *
- * @run main/othervm/timeout=300 -XX:StartFlightRecording
+ * @run main/othervm/timeout=300 -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent Default
 
- * @run main/othervm/timeout=300 -Xint -XX:+UseInterpreter -XX:StartFlightRecording
+ * @run main/othervm/timeout=300 -Xint -XX:+UseInterpreter -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent Interpreter
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:-UseInterpreter -XX:StartFlightRecording
+ * @run main/othervm/timeout=300 -Xcomp -XX:-UseInterpreter -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent Compiler
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=1 -XX:-UseInterpreter -XX:StartFlightRecording
+ * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=1 -XX:-UseInterpreter -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent C1
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=4 -XX:-TieredCompilation -XX:-UseInterpreter -XX:StartFlightRecording
+ * @run main/othervm/timeout=300 -Xcomp -XX:TieredStopAtLevel=4 -XX:-TieredCompilation -XX:-UseInterpreter -XX:StartFlightRecording:settings=none,+jdk.DeprecatedInvocation#enabled=true
  *      jdk.jfr.event.runtime.TestDeprecatedEvent C2
  *
  */
@@ -85,7 +85,6 @@ public class TestDeprecatedEvent {
     private static void testDeprecatedLevelAllPreJFR() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "all");
-            System.out.println("Starting recording: level = all");
             r.start();
             r.stop();
             validateLevelAllPreJFR(r);
@@ -95,7 +94,6 @@ public class TestDeprecatedEvent {
     private static void testDeprecatedLevelAll() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "all");
-            System.out.println("Starting recording: level = all");
             r.start();
             testLevelAll();
             r.stop();
@@ -118,39 +116,36 @@ public class TestDeprecatedEvent {
     private static void testDeprecatedLevelAllRetained() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "all");
-            System.out.println("Starting recording: level = all");
             r.start();
             r.stop();
             validateLevelAll(r);
         }
     }
 
+    /*
     private static List<RecordedEvent> filter(Recording r) throws Exception {
         List<RecordedEvent> list = new ArrayList<RecordedEvent>();
         List<RecordedEvent> events = Events.fromRecording(r);
         for (RecordedEvent e : events) {
             if (EVENT_NAME.equals(e.getEventType().getName())) {
-                // System.out.println("In filter: " + e);
                 list.add(e);
             }
         }
         return list;
     }
+    */
 
     // Validates invocations that happened before JFR was started.
     private static void validateLevelAllPreJFR(Recording r) throws Exception {
-        System.out.println("validateLevelAllPreJFR");
-        List<RecordedEvent> events = filter(r);
-       // printInvocations(events, "all");
-        // System.out.println(events);
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "all");
         assertMethod(events, "getProperties", "getSecurityManager");
     }
 
     private static void validateLevelAll(Recording r) throws Exception {
-        System.out.println("validateLevelAll");
         validateLevelAllPreJFR(r);
-        List<RecordedEvent> events = filter(r);
-        // printInvocations(events, "all");
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "all");
         assertMethod(events, "testLevelAll", "deprecated1");
         assertMethod(events, "testLevelAll", "deprecatedForRemovalFast");
         assertMethod(events, "testLevelAll", "deprecatedForRemovalSlow");
@@ -170,7 +165,6 @@ public class TestDeprecatedEvent {
     private static void testDeprecatedLevelForRemoval() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "forRemoval");
-            System.out.println("Starting recording: level = forRemoval");
             r.start();
             testLevelForRemoval();
             r.stop();
@@ -184,7 +178,6 @@ public class TestDeprecatedEvent {
     private static void testDeprecatedLevelForRemovalRetained() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "forRemoval");
-            System.out.println("Starting recording: level = forRemoval");
             r.start();
             r.stop();
             validateLevelForRemoval(r);
@@ -197,11 +190,9 @@ public class TestDeprecatedEvent {
     }
 
     private static void validateLevelForRemoval(Recording r) throws Exception {
-        List<RecordedEvent> events = filter(r);
-        System.out.println("validateLevelForRemoval");
-        // printInvocations(events, "forRemoval");
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "forRemoval");
         for (RecordedEvent e : events) {
-            // System.out.println(e);
             RecordedMethod deprecatedMethod = e.getValue("method");
             if (deprecatedMethod.getName().equals("deprecated3")) {
                 assertTrue(e.getBoolean("forRemoval"), "invalid level");
@@ -225,7 +216,6 @@ public class TestDeprecatedEvent {
 
     private static void assertMethod(List<RecordedEvent> events, String caller, String method) throws Exception {
         for (RecordedEvent e : events) {
-            // System.out.println(e);
             RecordedMethod deprecatedMethod = e.getValue("method");
             boolean forRemoval = e.getValue("forRemoval");
             RecordedStackTrace stacktrace = e.getStackTrace();
@@ -251,7 +241,7 @@ public class TestDeprecatedEvent {
     private static void printInvocations(List<RecordedEvent> events, String all) {
         System.out.println("*** METHOD INVOCATION *** (" + mode + ") level = " + all + "count: " + events.size());
         for (RecordedEvent e : events) {
-           // System.out.println(e);
+            System.out.println(e);
             RecordedMethod deprecatedMethod = e.getValue("method");
             boolean forRemoval = e.getValue("forRemoval");
             RecordedStackTrace stacktrace = e.getStackTrace();

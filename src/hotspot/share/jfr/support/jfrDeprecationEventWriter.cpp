@@ -35,6 +35,34 @@
 #include "runtime/thread.inline.hpp"
 #include "jfr/writers/jfrBigEndianWriter.hpp"
 
+// This dual state machine for the level setting is because when multiple recordings are running,
+// and one of them stops, the newly calculated settings for level is updated before the chunk rotates.
+// But we need remember what the level setting was before the recording stopped.
+constexpr const int64_t uninitialized = -1;
+static int64_t _previous_level_setting = uninitialized;
+static int64_t _current_level_setting = uninitialized;
+
+void JfrDeprecatedEventWriterState::on_initialization() {
+  _previous_level_setting = uninitialized;
+  _current_level_setting = uninitialized;
+}
+
+void JfrDeprecatedEventWriterState::on_level_setting_update(int64_t new_level) {
+  _previous_level_setting = _current_level_setting;
+  _current_level_setting = new_level;
+}
+
+static inline bool level() {
+  assert(_current_level_setting != uninitialized, "invariant");
+  return _previous_level_setting == uninitialized ? _current_level_setting : _previous_level_setting;
+}
+
+static inline bool only_for_removal() {
+  assert(JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent), "invariant");
+  // level 0: forRemoval, level 1: = all
+  return level() == 0;
+}
+
 JfrDeprecatedBlobConstruction::JfrDeprecatedBlobConstruction(JavaThread* jt) : JfrDeprecatedEventWriterBase(jt) {
   assert(this->is_acquired(), "invariant");
   assert(0 == this->current_offset(), "invariant");
@@ -71,12 +99,6 @@ JfrBlobHandle JfrDeprecatedBlobConstruction::stacktrace(const JfrDeprecatedEdge*
   JfrBlobHandle blob = JfrBlob::make(this->start_pos(), this->used_size());
   this->reset();
   return blob;
-}
-
-static inline bool only_for_removal() {
-  assert(JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent), "invariant");
-  // level 0: forRemoval, level 1: = all
-  return JfrEventSetting::level(EventDeprecatedInvocation::eventId) == 1;
 }
 
 // This op will collapse all individual stacktrace blobs into a single TYPE_STACKTRACE checkpoint.
