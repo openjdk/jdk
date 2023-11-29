@@ -57,7 +57,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setFileNotification", (char*)"(J)V", (void*)jfr_set_file_notification,
       (char*)"setGlobalBufferCount", (char*)"(J)V", (void*)jfr_set_global_buffer_count,
       (char*)"setGlobalBufferSize", (char*)"(J)V", (void*)jfr_set_global_buffer_size,
-      (char*)"setMethodSamplingInterval", (char*)"(JJ)V", (void*)jfr_set_method_sampling_interval,
+      (char*)"setMethodSamplingPeriod", (char*)"(JJ)V", (void*)jfr_set_method_sampling_period,
       (char*)"setOutput", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_output,
       (char*)"setSampleThreads", (char*)"(Z)V", (void*)jfr_set_sample_threads,
       (char*)"setStackDepth", (char*)"(I)V", (void*)jfr_set_stack_depth,

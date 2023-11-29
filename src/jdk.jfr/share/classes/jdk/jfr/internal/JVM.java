@@ -266,13 +266,13 @@ public final class JVM {
     public native void setMemorySize(long size) throws IllegalArgumentException;
 
     /**
-     * Set interval for method samples, in milliseconds.
+     * Set period for method samples, in milliseconds.
      *
-     * Setting interval to 0 turns off the method sampler.
+     * Setting period to 0 turns off the method sampler.
      *
-     * @param intervalMillis the sampling interval
+     * @param periodMillis the sampling period
      */
-    public native void setMethodSamplingInterval(long type, long intervalMillis);
+    public native void setMethodSamplingPeriod(long type, long periodMillis);
 
     /**
      * Sets the file where data should be written.

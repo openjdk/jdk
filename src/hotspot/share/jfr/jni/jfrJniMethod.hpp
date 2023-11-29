@@ -83,7 +83,7 @@ void JNICALL jfr_set_global_buffer_count(JNIEnv* env, jobject jvm, jlong count);
 
 void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jobject jvm, jlong size);
 
-void JNICALL jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis);
+void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis);
 
 void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
 
