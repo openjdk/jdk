@@ -45,6 +45,7 @@
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
@@ -166,6 +167,10 @@ NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value))
   JfrEventSetting::set_miscellaneous(event_type_id, value);
+  JfrEventId typed_event_id = (JfrEventId)event_type_id;
+  if (typed_event_id == EventDeprecatedInvocation::eventId) {
+    JfrDeprecationManager::on_level_setting_update(value);
+  }
 NO_TRANSITION_END
 
 NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jclass jvm))

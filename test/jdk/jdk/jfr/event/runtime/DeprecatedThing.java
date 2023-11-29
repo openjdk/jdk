@@ -24,30 +24,29 @@ package jdk.jfr.event.runtime;
 
 @Deprecated(forRemoval = true)
 public class DeprecatedThing {
-	public int counter;
+    public int counter;
 
-	@Deprecated(forRemoval = true)
-	public void foo() {
-		for (int i = 0; i < 1_000_000; i++) {
-			bar();
-		}
-	}
-	@Deprecated(forRemoval = true)
-	public void zoo() {
-		System.out.println("Zoo invoked");
-		for (int i = 0; i < 1_000_000; i++) {
-			bar();
-		}
-	}
+    @Deprecated(forRemoval = true)
+    public void foo() {
+        for (int i = 0; i < 1_000_000; i++) {
+            bar();
+        }
+    }
+    @Deprecated(forRemoval = true)
+    public void zoo() {
+        System.out.println("Zoo invoked");
+        for (int i = 0; i < 1_000_000; i++) {
+            bar();
+        }
+    }
 
-	@Deprecated(forRemoval = true)
-	private void bar() {
-		baz();
-	}
+    @Deprecated(forRemoval = true)
+    private void bar() {
+        baz();
+    }
 
-	@Deprecated(forRemoval = true)
-	public void baz() {
-		counter++;
-	}
-
+    @Deprecated(forRemoval = true)
+    public void baz() {
+        counter++;
+    }
 }

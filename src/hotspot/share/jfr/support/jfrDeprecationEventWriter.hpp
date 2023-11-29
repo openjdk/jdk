@@ -75,4 +75,10 @@ class JfrDeprecatedEventWriter : public StackObj {
   bool process(const JfrDeprecatedEdge* edge);
 };
 
+class JfrDeprecatedEventWriterState : AllStatic {
+ public:
+  static void on_initialization();
+  static void on_level_setting_update(int64_t new_level);
+};
+
 #endif // SHARE_JFR_SUPPORT_JFRDEPRECATIONEVENTWRITER_HPP
