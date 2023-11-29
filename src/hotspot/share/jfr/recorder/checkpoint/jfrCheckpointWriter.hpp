@@ -71,6 +71,7 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   void release();
   JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
 public:
+  JfrCheckpointWriter(bool previous_epoch, bool header, Thread* thread, JfrCheckpointType type = GENERIC);
   JfrCheckpointWriter(bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   ~JfrCheckpointWriter();

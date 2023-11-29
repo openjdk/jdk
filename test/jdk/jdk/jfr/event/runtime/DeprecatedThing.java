@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.event.runtime;
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
+@Deprecated(forRemoval = true)
+public class DeprecatedThing {
+    public int counter;
 
-#include "jfr/utilities/jfrAllocation.hpp"
+    @Deprecated(forRemoval = true)
+    public void foo() {
+        for (int i = 0; i < 1_000_000; i++) {
+            bar();
+        }
+    }
+    @Deprecated(forRemoval = true)
+    public void zoo() {
+        System.out.println("Zoo invoked");
+        for (int i = 0; i < 1_000_000; i++) {
+            bar();
+        }
+    }
 
-class JfrCheckpointWriter;
+    @Deprecated(forRemoval = true)
+    private void bar() {
+        baz();
+    }
 
-class JfrTypeSet : AllStatic {
- public:
-  static void clear(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static size_t serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint);
-  static size_t on_unloading_classes(JfrCheckpointWriter* writer);
-};
-
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
+    @Deprecated(forRemoval = true)
+    public void baz() {
+        counter++;
+    }
+}
