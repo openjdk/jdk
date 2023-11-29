@@ -262,6 +262,7 @@ inline BitMap::idx_t stackChunkOopDesc::bit_index_for(address p) const {
 
 template <typename OopT>
 inline BitMap::idx_t stackChunkOopDesc::bit_index_for(OopT* p) const {
+  assert(is_aligned(p, alignof(OopT)), "should be aligned: " PTR_FORMAT, p2i(p));
   assert(p >= (OopT*)start_address(), "Address not in chunk");
   return p - (OopT*)start_address();
 }
