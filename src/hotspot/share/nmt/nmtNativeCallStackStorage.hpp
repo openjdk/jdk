@@ -25,7 +25,6 @@
 #ifndef SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
-#include "memory/resourceArea.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -100,7 +99,7 @@ public:
     return StackIndex(chunk, index);
   }
 
-  const NativeCallStack& get(StackIndex si) {
+  const inline NativeCallStack& get(StackIndex si) {
     if (si.chunk() == is_in_emergency) {
       return emergency.at(si.index());
     }
