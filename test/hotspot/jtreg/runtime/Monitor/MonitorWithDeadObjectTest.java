@@ -66,26 +66,24 @@ public class MonitorWithDeadObjectTest {
     }
 
     private static void testDetachThread() {
-        // Create an ObjectMonitor with a dead object from an
-        // attached thread. This used to provoke an assert
-        // in DetachCurrentThread.
+        // Create an ObjectMonitor with a dead object from an attached thread.
+        // This used to provoke an assert in DetachCurrentThread.
         createMonitorWithDeadObject();
     }
 
     private static void testDumpThreadsBeforeDetach() {
-        // Create an ObjectMonitor with a dead object from an
-        // attached thread and perform a thread dump before
-        // detaching the thread.
+        // Create an ObjectMonitor with a dead object from an attached thread
+        // and perform a thread dump before detaching the thread.
         createMonitorWithDeadObjectDumpThreadsBeforeDetach();
     }
 
     private static void testDumpThreadsAfterDetach() {
         createMonitorWithDeadObject();
 
-        // After createMonitorWithDeadObject has been called, there's an "owned"
-        // monitor with a dead object. The thread dumping code used to not
-        // tolerate such a monitor and would assert. Run a thread dump and make
-        // sure that it doesn't crash/assert.
+        // The thread dumping code used to not tolerate monitors with dead
+        // objects and the detach code used to not unlock these monitors, so
+        // test that we don't end up with a bug where these monitors are not
+        // unlocked and then passed to the thread dumping code.
         dumpThreadsWithLockedMonitors();
     }
 

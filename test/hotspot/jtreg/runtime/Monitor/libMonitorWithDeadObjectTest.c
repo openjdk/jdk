@@ -22,9 +22,9 @@
  */
 
 #include <jni.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #ifdef __cplusplus
@@ -110,7 +110,7 @@ static void create_monitor_with_dead_object(JNIEnv* env) {
   system_gc(env);
 }
 
-static void* create_monitor_with_dead_object_in_thread() {
+static void* create_monitor_with_dead_object_in_thread(void* arg) {
   JNIEnv* env;
   int res = (*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL);
   if (res != JNI_OK) die("AttachCurrentThread");
@@ -118,7 +118,7 @@ static void* create_monitor_with_dead_object_in_thread() {
   // Make the correct incantation to create a monitor with a dead object.
   create_monitor_with_dead_object(env);
 
-  // DetachCurrenThread will try to unlock held monitors. This has been a
+  // DetachCurrentThread will try to unlock held monitors. This has been a
   // source of at least two bugs:
   // - When the object reference in the monitor was cleared, the monitor
   //   iterator code would skip it, preventing it from being unlocked when
@@ -131,7 +131,7 @@ static void* create_monitor_with_dead_object_in_thread() {
   return NULL;
 }
 
-static void* create_monitor_with_dead_object_and_dump_threads_in_thread() {
+static void* create_monitor_with_dead_object_and_dump_threads_in_thread(void* arg) {
   JNIEnv* env;
   int res = (*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL);
   if (res != JNI_OK) die("AttachCurrentThread");

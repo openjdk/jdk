@@ -24,8 +24,10 @@
 
 /**
  * @test
- * @bug 8185164
- * @summary Checks that a contended monitor does not show up in the list of owned monitors
+ * @bug 8185164 8320515
+ * @summary Checks that a contended monitor does not show up in the list of owned monitors.
+ *          8320515 piggy-backs on this test and injects an owned monitor with a dead object,
+            and checks that that monitor isn't exposed to GetOwnedMonitorInfo.
  * @requires vm.jvmti
  * @compile GetOwnedMonitorInfoTest.java
  * @run main/othervm/native -agentlib:GetOwnedMonitorInfoTest GetOwnedMonitorInfoTest
