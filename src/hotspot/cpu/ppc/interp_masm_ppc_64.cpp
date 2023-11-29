@@ -1734,7 +1734,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr
   // Klass seen before, nothing to do (regardless of unknown bit).
   //beq(CCR1, do_nothing);
 
-  andi_(R0, klass, TypeEntries::type_unknown);
+  andi_(R0, tmp, TypeEntries::type_unknown);
   // Already unknown. Nothing to do anymore.
   //bne(CCR0, do_nothing);
   crorc(CCR0, Assembler::equal, CCR1, Assembler::equal); // cr0 eq = cr1 eq or cr0 ne
