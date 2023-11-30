@@ -77,12 +77,13 @@ public final class CompactByteArray implements Cloneable {
         values = new byte[UNICODECOUNT];
         indices = new short[INDEXCOUNT];
         hashes = new int[INDEXCOUNT];
-        for (i = 0; i < UNICODECOUNT; ++i) {
-            values[i] = defaultValue;
+        if (defaultValue != (byte)0) {
+            for (i = 0; i < UNICODECOUNT; ++i) {
+                values[i] = defaultValue;
+            }
         }
         for (i = 0; i < INDEXCOUNT; ++i) {
             indices[i] = (short)(i<<BLOCKSHIFT);
-            hashes[i] = 0;
         }
         isCompact = false;
     }
