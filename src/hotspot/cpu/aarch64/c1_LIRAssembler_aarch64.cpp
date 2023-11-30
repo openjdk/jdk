@@ -575,7 +575,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (__ operand_valid_for_float_immediate(c->as_jfloat())) {
         __ fmovs(dest->as_float_reg(), (c->as_jfloat()));
       } else {
-        __ adr(rscratch1, InternalAddress(float_constant(c->as_jfloat())));
+        __ lea(rscratch1, InternalAddress(float_constant(c->as_jfloat())));
         __ ldrs(dest->as_float_reg(), Address(rscratch1));
       }
       break;
@@ -585,7 +585,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
       if (__ operand_valid_for_float_immediate(c->as_jdouble())) {
         __ fmovd(dest->as_double_reg(), (c->as_jdouble()));
       } else {
-        __ adr(rscratch1, InternalAddress(double_constant(c->as_jdouble())));
+        __ lea(rscratch1, InternalAddress(double_constant(c->as_jdouble())));
         __ ldrd(dest->as_double_reg(), Address(rscratch1));
       }
       break;
