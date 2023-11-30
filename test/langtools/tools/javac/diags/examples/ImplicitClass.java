@@ -21,7 +21,7 @@
  * questions.
  */
 
- // key: compiler.misc.feature.unnamed.classes
+ // key: compiler.misc.feature.implicit.classes
  // key: compiler.warn.preview.feature.use.plural
  // options: -source ${jdk.version} --enable-preview -Xlint:preview
 

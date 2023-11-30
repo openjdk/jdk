@@ -2243,6 +2243,13 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
   }
   // Filter out on stack monitors collected during stack walk.
   oop obj = mon->object();
+
+  if (obj == nullptr) {
+    // This can happen if JNI code drops all references to the
+    // owning object.
+    return;
+  }
+
   bool found = false;
   for (int j = 0; j < _owned_monitors_list->length(); j++) {
     jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
