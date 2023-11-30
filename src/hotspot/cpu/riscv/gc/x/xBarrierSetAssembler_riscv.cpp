@@ -339,12 +339,8 @@ void XBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, X
     XSaveLiveRegisters save_live_registers(masm, stub);
     XSetupArguments setup_arguments(masm, stub);
 
-    Address target(stub->slow_path());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ movptr(t0, target.target(), offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ mv(t0, stub->slow_path());
+    __ jalr(t0);
   }
 
   // Stub exit
