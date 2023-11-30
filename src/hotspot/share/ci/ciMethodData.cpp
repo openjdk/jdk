@@ -109,7 +109,12 @@ void ciMethodData::prepare_metadata() {
   for (;;) {
     ResourceMark rm;
     PrepareExtraDataClosure cl(mdo);
-    mdo->clean_extra_data(&cl);
+    {
+      // We hold the extra data lock, so now don't safepoint so we don't
+      // give up the lock during cleaning.
+      NoSafepointVerifier no_safepoint;
+      mdo->clean_extra_data(&cl);
+    }
     if (cl.finish()) {
       // When encountering uncached metadata, the Compile_lock might be
       // acquired when creating ciMetadata handles, causing safepoints

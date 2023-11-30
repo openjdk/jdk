@@ -33,6 +33,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
@@ -2254,7 +2256,10 @@ public:
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
-  uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
+  uint arg_modified(int a)                       { // Lock and avoid breaking lock with Safepoint
+                                                   MutexLocker ml(extra_data_lock());
+                                                   NoSafepointVerifier no_safepoint;
+                                                   ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
                                                    return aid->arg_modified(a); }
@@ -2263,7 +2268,10 @@ public:
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
-  void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
+  void set_arg_modified(int a, uint v)           { // Lock and avoid breaking lock with Safepoint
+                                                   MutexLocker ml(extra_data_lock());
+                                                   NoSafepointVerifier no_safepoint;
+                                                   ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
                                                    aid->set_arg_modified(a, v); }
@@ -2343,7 +2351,7 @@ public:
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
                                                               parameters_size_in_bytes()); }
-  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
+  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)limit_data_position()); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.

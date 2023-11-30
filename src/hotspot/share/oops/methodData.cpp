@@ -1830,6 +1830,7 @@ void MethodData::clean_method_data(bool always_clean) {
   }
 
   CleanExtraDataKlassClosure cl(always_clean);
+  // TODO safe?
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1839,6 +1840,7 @@ void MethodData::clean_method_data(bool always_clean) {
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   CleanExtraDataMethodClosure cl;
+  // TODO safe?
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
