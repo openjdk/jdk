@@ -835,7 +835,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                                       dstDiffMinMax[i] + dstMinVal[i];
                     }
                     if (nonICCDst) {
-                        color = srcColorSpace.fromCIEXYZ(dstColor);
+                        color = dstColorSpace.fromCIEXYZ(dstColor);
                         for (int i = 0; i < dstNumComp; i++) {
                             dstColor[i] = color[i];
                         }
