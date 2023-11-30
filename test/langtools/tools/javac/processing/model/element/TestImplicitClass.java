@@ -24,19 +24,19 @@
 /*
  * @test
  * @bug 8306112 8309568
- * @summary Test basic processing of unnamed classes.
+ * @summary Test basic processing of implicitly declared classes.
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
- * @build   JavacTestingAbstractProcessor TestUnnamedClass
- * @compile         -processor TestUnnamedClass            --enable-preview --release ${jdk.version}                            Anonymous.java
+ * @build   JavacTestingAbstractProcessor TestImplicitClass
+ * @compile         -processor TestImplicitClass            --enable-preview --release ${jdk.version}                            Anonymous.java
  * @clean Nameless.java
- * @compile/process -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
+ * @compile/process -processor TestImplicitClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
  */
 
 // The first @compile line processes Anonymous.java and a
-// Nameless.java class generated using the Filer. Both of those
-// unnamed classes are then compiled down to class files.  The second
+// Nameless.java class generated using the Filer. Both of those implicitly
+// declared classes are then compiled down to class files.  The second
 // @compile line, as directed by -Xprefer:newer, builds and checks the
 // language model objects constructed from those class files, ignoring
 // any source files for those types.
@@ -52,12 +52,12 @@ import static javax.lang.model.util.ElementFilter.*;
 import javax.tools.JavaFileObject;
 
 /**
- * Test annotation processing representation of unnamed classes
+ * Test annotation processing representation of implicitly classes
  * constructed from either a source file or a class file.
  */
 @SuppressWarnings("preview")
 @SupportedOptions("classOnly")
-public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
+public class TestImplicitClass extends JavacTestingAbstractProcessor {
 
     private static int round  = 0;
     private static int checkedClassesCount = 0;
@@ -72,14 +72,14 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
 
             // Don't generate any files if testing pre-existing class files
             if (!classOnly) {
-                generateUnnamed();
+                generateImplicitClass();
             }
         } else {
             if (!roundEnv.processingOver()) { // Test generated file(s)
                 checkRoots(roundEnv);
             } else { // Should have checked at least one class before processing is over
                 if (checkedClassesCount == 0) {
-                    messager.printError("No unnamed classes checked.");
+                    messager.printError("No implicitly declared classes checked.");
                 }
             }
         }
@@ -95,11 +95,11 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
             checkUnnamedClassProperties(type);
         }
         if (checks == 0) {
-            messager.printError("No checking done of any candidate unnamed classes.");
+            messager.printError("No checking done of any candidate implicitly declared classes.");
         }
     }
 
-    private void generateUnnamed() {
+    private void generateImplicitClass() {
         try {
             String unnamedSource = """
             void main() {
@@ -117,12 +117,11 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
     }
 
     /*
-     * From JEP 445 JLS changes:
+     * From JEP 463 JLS changes:
      *
-     * "An unnamed class compilation unit implicitly declares a class that satisfies the following
-     * properties:
+     * "An implicitly declared class compilation unit implicitly declares a class that
+     * satisfies the following properties:
      * It is always a top level class.
-     * It is always an unnamed class (it has no canonical or fully qualified name (6.7)).
      * It is never abstract (8.1.1.1).
      * It is always final (8.1.1.2).
      * It is always a member of an unnamed package (7.4.2) and has package access.
@@ -130,8 +129,8 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
      * It never has any direct superinterface types (8.1.5).
      *
      * The body of the class contains every ClassMemberDeclaration
-     * from the unnamed class compilation unit. It is not possible for
-     * an unnamed class compilation unit to declare an instance
+     * from the implicitly declared class compilation unit. It is not possible for
+     * an implicitly declared class compilation unit to declare an instance
      * initializer, static initializer, or constructor.
      *
      * It has an implicitly declared default constructor (8.8.9).
@@ -141,63 +140,55 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
      *
      * It is a compile-time error if this class does not declare a candidate main method (12.1.4).
      */
-    void checkUnnamedClassProperties(TypeElement unnamedClass) {
+    void checkUnnamedClassProperties(TypeElement implicitClass) {
         checkedClassesCount++;
-        Name expectedName = unnamedClass.getSimpleName();
+        Name expectedName = implicitClass.getSimpleName();
 
         System.out.println("Checking " + expectedName);
 
-        if (unnamedClass.getNestingKind() != NestingKind.TOP_LEVEL) {
-            messager.printError("Unnamed class is not top-level.", unnamedClass);
+        if (implicitClass.getNestingKind() != NestingKind.TOP_LEVEL) {
+            messager.printError("Implicitly declared class is not top-level.", implicitClass);
         }
 
-        if (!unnamedClass.isUnnamed()) {
-            messager.printError("Unnamed class is _not_ indicated as such.", unnamedClass);
+        if (!implicitClass.getQualifiedName().equals(expectedName)) {
+            messager.printError("Implicitly declared class qualified name does not match simple name.", implicitClass);
         }
 
-        if (unnamedClass.getSimpleName().isEmpty()) {
-            messager.printError("Unnamed class has an empty simple name.", unnamedClass);
-        }
-
-        if (!unnamedClass.getQualifiedName().isEmpty()) {
-            messager.printError("Unnamed class does _not_ have an empty qualified name.", unnamedClass);
-        }
-
-        Name binaryName = elements.getBinaryName(unnamedClass);
+        Name binaryName = elements.getBinaryName(implicitClass);
         if (!expectedName.equals(binaryName)) {
-            messager.printError("Unnamed has unexpected binary name" + binaryName + ".", unnamedClass);
+            messager.printError("Implicitly declared class has unexpected binary name" + binaryName + ".", implicitClass);
         }
 
-        if (unnamedClass.getModifiers().contains(Modifier.ABSTRACT)) {
-            messager.printError("Unnamed class is abstract.", unnamedClass);
+        if (implicitClass.getModifiers().contains(Modifier.ABSTRACT)) {
+            messager.printError("Implicitly declared class is abstract.", implicitClass);
         }
 
-        if (!unnamedClass.getModifiers().contains(Modifier.FINAL)) {
-            messager.printError("Unnamed class is _not_ final.", unnamedClass);
+        if (!implicitClass.getModifiers().contains(Modifier.FINAL)) {
+            messager.printError("Implicitly declared class is _not_ final.", implicitClass);
         }
 
-        if (!elements.getPackageOf(unnamedClass).isUnnamed()) {
-            messager.printError("Unnamed class is _not_ in an unnamed package.", unnamedClass);
+        if (!elements.getPackageOf(implicitClass).isUnnamed()) {
+            messager.printError("Implicitly declared class is _not_ in an unnamed package.", implicitClass);
         }
 
-        if (unnamedClass.getModifiers().contains(Modifier.PUBLIC)  ||
-            unnamedClass.getModifiers().contains(Modifier.PRIVATE) ||
-            unnamedClass.getModifiers().contains(Modifier.PROTECTED)) {
-            messager.printError("Unnamed class does _not_ have package access.", unnamedClass);
+        if (implicitClass.getModifiers().contains(Modifier.PUBLIC)  ||
+            implicitClass.getModifiers().contains(Modifier.PRIVATE) ||
+            implicitClass.getModifiers().contains(Modifier.PROTECTED)) {
+            messager.printError("Implicitly declared class does _not_ have package access.", implicitClass);
         }
 
-        if ( !types.isSameType(unnamedClass.getSuperclass(),
+        if ( !types.isSameType(implicitClass.getSuperclass(),
                                elements.getTypeElement("java.lang.Object").asType())) {
-            messager.printError("Unnamed class does _not_ have java.lang.Object as a superclass.", unnamedClass);
+            messager.printError("Implicitly declared class does _not_ have java.lang.Object as a superclass.", implicitClass);
         }
 
-        if (!unnamedClass.getInterfaces().isEmpty()) {
-            messager.printError("Unnamed class has superinterfaces.", unnamedClass);
+        if (!implicitClass.getInterfaces().isEmpty()) {
+            messager.printError("Implicitly declared class has superinterfaces.", implicitClass);
         }
 
-        List<ExecutableElement> ctors = constructorsIn(unnamedClass.getEnclosedElements());
+        List<ExecutableElement> ctors = constructorsIn(implicitClass.getEnclosedElements());
         if (ctors.size() != 1 ) {
-            messager.printError("Did not find exactly one constructor", unnamedClass);
+            messager.printError("Did not find exactly one constructor", implicitClass);
         }
 
         if (!classOnly) {
@@ -208,7 +199,7 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
             }
         }
 
-        List<ExecutableElement> methods = methodsIn(unnamedClass.getEnclosedElements());
+        List<ExecutableElement> methods = methodsIn(implicitClass.getEnclosedElements());
         // Just look for a method named "main"; don't check the other details.
         boolean mainFound = false;
         Name mainName = elements.getName("main");
@@ -220,7 +211,7 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
         }
 
         if (!mainFound) {
-            messager.printError("No main mehtod found", unnamedClass);
+            messager.printError("No main method found", implicitClass);
         }
     }
 }

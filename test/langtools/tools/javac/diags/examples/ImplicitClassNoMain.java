@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017 SAP SE and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +21,10 @@
  * questions.
  */
 
-#include "jni.h"
+ // key: compiler.err.implicit.class.does.not.have.main.method
+ // key: compiler.note.preview.filename
+ // key: compiler.note.preview.recompile
+ // options: -source ${jdk.version} --enable-preview
 
-JNIEXPORT jint JNICALL
-Java_gc_stress_TestJNIBlockFullGC_TestJNIBlockFullGC_TestCriticalArray0(JNIEnv *env, jclass jCls, jintArray jIn) {
-  jint *bufIn = NULL;
-  jint jInLen = (*env)->GetArrayLength(env, jIn);
-  jint result = 0;
-  jint i;
-
-  if (jInLen != 0) {
-    bufIn = (jint*)(*env)->GetPrimitiveArrayCritical(env, jIn, 0);
-  }
-
-  for (i = 0; i < jInLen; ++i) {
-    result += bufIn[i]; // result = sum of all array elements
-  }
-
-  if (bufIn != NULL) {
-    (*env)->ReleasePrimitiveArrayCritical(env, jIn, bufIn, 0);
-  }
-
-  return result;
+public void ordinaryMethod() {
 }

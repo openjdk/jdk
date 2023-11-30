@@ -21,9 +21,8 @@
  * questions.
  */
 
- // key: compiler.misc.feature.unnamed.classes
- // key: compiler.warn.preview.feature.use.plural
- // options: -source ${jdk.version} --enable-preview -Xlint:preview
+// key: compiler.warn.source.no.system.modules.path
+// key: compiler.misc.source.no.system.modules.path.with.target
+// options: -source 9 -target 9
 
-public static void main(String... args) {
-}
+class SourceNoSystemModulesPath { }

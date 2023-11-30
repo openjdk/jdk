@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,14 +20,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
- // key: compiler.err.unnamed.class.should.not.have.package.declaration
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
- // options: -source ${jdk.version} --enable-preview
+#include "precompiled.hpp"
 
-package unnamed.classes;
+#ifdef _LP64
 
-public static void main(String... args) {
+#include "oops/compressedKlass.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
+
+  char* result = nullptr;
+
+  // Optimize for unscaled encoding; failing that, for zero-based encoding:
+  if (optimize_for_zero_base) {
+    result = reserve_address_space_for_unscaled_encoding(size, aslr);
+    if (result == nullptr) {
+      result = reserve_address_space_for_zerobased_encoding(size, aslr);
+    }
+  } // end: low-address reservation
+
+  // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
+  return result;
 }
+
+#endif // _LP64

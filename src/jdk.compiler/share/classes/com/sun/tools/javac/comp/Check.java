@@ -452,7 +452,8 @@ public class Check {
             }
         }
         for (Symbol sym = s.owner; sym != null; sym = sym.owner) {
-            if (sym.kind == TYP && sym.name == name && sym.name != names.error) {
+            if (sym.kind == TYP && sym.name == name && sym.name != names.error &&
+                    !sym.isImplicit()) {
                 duplicateError(pos, sym);
                 return true;
             }
@@ -2276,7 +2277,7 @@ public class Check {
         }
 
         if (!found) {
-            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
+            log.error(pos, Errors.ImplicitClassDoesNotHaveMainMethod);
         }
     }
 

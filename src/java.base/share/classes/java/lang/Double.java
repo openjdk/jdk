@@ -234,7 +234,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * equivalent of 15 to 17 digits of decimal precision. (The
  * equivalent precision varies according to the different relative
  * densities of binary and decimal values at different points along the
- * real number line).
+ * real number line.)
  *
  * <p>This representation hazard of decimal fractions is one reason to
  * use caution when storing monetary values as {@code float} or {@code

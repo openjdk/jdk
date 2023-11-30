@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,12 +20,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
+#include "precompiled.hpp"
+#include "oops/compressedKlass.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-/**
- * Exemplar unnamed class.
- */
-public void main() {
-    System.out.println("Hello, world.");
+char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
+
+  char* result = nullptr;
+
+  // Optimize for base=0 shift=0; failing that, for base=0 shift>0
+  if (optimize_for_zero_base) {
+    result = reserve_address_space_for_unscaled_encoding(size, aslr);
+    if (result == nullptr) {
+      result = reserve_address_space_for_zerobased_encoding(size, aslr);
+    }
+  }
+
+  // Optimize for a single 16-bit move: a base that has only bits set in its third quadrant [32..48).
+  if (result == nullptr) {
+    result = reserve_address_space_for_16bit_move(size, aslr);
+  }
+
+  return result;
 }
