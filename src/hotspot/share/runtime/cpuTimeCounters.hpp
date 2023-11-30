@@ -29,6 +29,7 @@
 
 
 #include "memory/iterator.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 
