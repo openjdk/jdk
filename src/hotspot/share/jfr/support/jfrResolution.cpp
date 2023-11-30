@@ -54,7 +54,7 @@ static inline bool is_unnamed_module(const ModuleEntry* module) {
   return module == nullptr || !module->is_named();
 }
 
-static inline bool should_report_deprecated_invocation(const Method* method, const Method* sender) {
+static bool should_report_deprecated_invocation(const Method* method, const Method* sender) {
   assert(method != nullptr, "invariant");
   assert(method->deprecated(), "invariant");
   assert(sender != nullptr, "invariant");
