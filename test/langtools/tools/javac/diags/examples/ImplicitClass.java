@@ -21,12 +21,9 @@
  * questions.
  */
 
- // key: compiler.err.unnamed.class.should.not.have.package.declaration
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
- // options: -source ${jdk.version} --enable-preview
-
-package unnamed.classes;
+ // key: compiler.misc.feature.implicit.classes
+ // key: compiler.warn.preview.feature.use.plural
+ // options: -source ${jdk.version} --enable-preview -Xlint:preview
 
 public static void main(String... args) {
 }

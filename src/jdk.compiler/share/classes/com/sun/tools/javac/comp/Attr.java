@@ -5507,7 +5507,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
 
-                if ((c.flags_field & Flags.UNNAMED_CLASS) != 0) {
+                if (c.isImplicit()) {
                     chk.checkHasMain(env.tree.pos(), c);
                 }
             } finally {
