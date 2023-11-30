@@ -110,6 +110,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
                 return jline.readLine(fmt.formatted(args), '\0').toCharArray();
             } catch (EndOfFileException eofe) {
                 return null;
+            } finally {
+                jline.zeroOut();
             }
         }
 
