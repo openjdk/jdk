@@ -39,6 +39,8 @@
 package sun.text;
 
 
+import java.util.Arrays;
+
 /**
  * class CompactATypeArray : use only on primitive data types
  * Provides a compact way to store information that is indexed by Unicode
@@ -78,9 +80,7 @@ public final class CompactByteArray implements Cloneable {
         indices = new short[INDEXCOUNT];
         hashes = new int[INDEXCOUNT];
         if (defaultValue != (byte)0) {
-            for (i = 0; i < UNICODECOUNT; ++i) {
-                values[i] = defaultValue;
-            }
+            Arrays.fill(values, defaultValue);
         }
         for (i = 0; i < INDEXCOUNT; ++i) {
             indices[i] = (short)(i<<BLOCKSHIFT);
