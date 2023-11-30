@@ -30,6 +30,10 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -41,27 +45,18 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import javax.imageio.ImageIO;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 /*
  * @test
  * @key headful
  * @bug 5108458
  * @summary Test to check Right alignment of JTable data
- * (Fix affects all L&F, test verifies only Metal L&F)
  * @run main JTableRightOrientationTest
  */
 
 public class JTableRightOrientationTest {
     static JFrame frame;
     static CustomTable customTableObj;
-    static volatile int allColumnWidths;
-    static volatile Point tableLocation;
-    static volatile Dimension tableSize;
+    static volatile Rectangle tableBounds;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -70,7 +65,7 @@ public class JTableRightOrientationTest {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             try {
                 SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame("Test JTable");
+                    frame = new JFrame("JTable RTL column layout");
                     JPanel panel = new JPanel(new GridBagLayout());
                     frame.setContentPane(panel);
                     customTableObj = new CustomTable();
@@ -87,26 +82,25 @@ public class JTableRightOrientationTest {
                 robot.waitForIdle();
                 robot.delay(1000);
                 SwingUtilities.invokeAndWait(() -> {
-                    allColumnWidths = 0;
+                    int allColumnWidths = 0;
                     for (int i = 0; i < customTableObj.table.getColumnCount(); i++) {
                         allColumnWidths += customTableObj.table.getTableHeader().getColumnModel()
                                 .getColumn(i)
                                 .getWidth();
                     }
-                    tableLocation = customTableObj.table.getLocationOnScreen();
-                    tableSize = customTableObj.table.getSize();
+                    Point tableLocation = customTableObj.table.getLocationOnScreen();
+                    Dimension tableSize = customTableObj.table.getSize();
+                    tableSize.width -= allColumnWidths;
+                    tableBounds = new Rectangle(tableLocation, tableSize);
                 });
 
-                BufferedImage bufferedImage = robot.createScreenCapture(
-                        new Rectangle(tableLocation.x,
-                                tableLocation.y,
-                                (int)tableSize.getWidth() - allColumnWidths,
-                                (int)tableSize.getHeight()));
+                BufferedImage bufferedImage = robot.createScreenCapture(tableBounds);
+
                 int expectedRGB = bufferedImage.getRGB(0, 0);
                 for (int x = 0; x < bufferedImage.getWidth(); x++) {
                     for (int y = 0; y < bufferedImage.getHeight(); y++) {
                         if (expectedRGB != bufferedImage.getRGB(x, y)) {
-                            saveImage(bufferedImage, "failureImage.png");
+                            saveImage(bufferedImage);
                             throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
                         }
                     }
@@ -125,9 +119,9 @@ public class JTableRightOrientationTest {
         }
     }
 
-    private static void saveImage(BufferedImage image, String fileName) {
+    private static void saveImage(BufferedImage image) {
         try {
-            ImageIO.write(image, "png", new File(fileName));
+            ImageIO.write(image, "png", new File("failureImage.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -146,11 +140,11 @@ public class JTableRightOrientationTest {
 }
 
 class CustomTable {
-    public final static int COL_FIRSTNAME = 0;
-    public final static int COL_LASTNAME = 1;
-    public final static int COL_SALARY = 2;
+    private static final int COL_FIRSTNAME = 0;
+    private static final int COL_LASTNAME = 1;
+    private static final int COL_SALARY = 2;
 
-    static final Class[] classes = {
+    static final Class<?>[] classes = {
             String.class,
             String.class,
             Float.class,
@@ -203,7 +197,7 @@ class CustomTable {
             return cols[column];
         }
 
-        public Class getColumnClass(int columnIndex) {
+        public Class<?> getColumnClass(int columnIndex) {
             return classes[columnIndex];
         }
     }
