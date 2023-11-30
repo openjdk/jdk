@@ -523,6 +523,10 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock());
+    NoSafepointVerifier no_safepoint;
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -547,6 +551,10 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock());
+    NoSafepointVerifier no_safepoint;
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {

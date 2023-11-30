@@ -1797,7 +1797,10 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   ScopeDesc* imm_scope = cvf->scope();
   MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
   if (imm_mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
     MutexLocker ml(imm_mdo->extra_data_lock());
+    NoSafepointVerifier no_safepoint;
+
     ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
       BitData* bit_data = (BitData*) pdata;
@@ -2138,8 +2141,16 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         int dcnt = trap_mdo->trap_count(reason);
         if (dcnt != 0)
           xtty->print(" count='%d'", dcnt);
-        ProfileData* pdata = trap_mdo->bci_to_data(trap_bci);
-        int dos = (pdata == nullptr)? 0: pdata->trap_state();
+
+        int dos = 0;
+        {
+          // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+          MutexLocker ml(trap_mdo->extra_data_lock());
+          NoSafepointVerifier no_safepoint;
+
+          ProfileData* pdata = trap_mdo->bci_to_data(trap_bci);
+          dos = (pdata == nullptr)? 0: pdata->trap_state();
+        }
         if (dos != 0) {
           xtty->print(" state='%s'", format_trap_state(buf, sizeof(buf), dos));
           if (trap_state_is_recompiled(dos)) {
@@ -2313,13 +2324,17 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     // to use the MDO to detect hot deoptimization points and control
     // aggressive optimization.
     bool inc_recompile_count = false;
-    ProfileData* pdata = nullptr;
     if (ProfileTraps && CompilerConfig::is_c2_or_jvmci_compiler_enabled() && update_trap_state && trap_mdo != nullptr) {
       assert(trap_mdo == get_method_data(current, profiled_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
       bool maybe_prior_recompile = false;
-      pdata = query_update_method_data(trap_mdo, trap_bci, reason, true,
+
+      // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+      MutexLocker ml(trap_mdo->extra_data_lock());
+      NoSafepointVerifier no_safepoint;
+
+      ProfileData* pdata = query_update_method_data(trap_mdo, trap_bci, reason, true,
 #if INCLUDE_JVMCI
                                    nm->is_compiled_by_jvmci() && nm->is_osr_method(),
 #endif
@@ -2385,6 +2400,15 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       if (make_not_entrant && maybe_prior_recompile && maybe_prior_trap) {
         reprofile = true;
       }
+
+      if (make_not_entrant && pdata != nullptr) {
+        // Record the recompilation event, if any.
+        int tstate0 = pdata->trap_state();
+        int tstate1 = trap_state_set_recompiled(tstate0, true);
+        if (tstate1 != tstate0) {
+          pdata->set_trap_state(tstate1);
+        }
+      }
     }
 
     // Take requested actions on the method:
@@ -2393,14 +2417,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     if (make_not_entrant) {
       if (!nm->make_not_entrant()) {
         return; // the call did not change nmethod's state
-      }
-
-      if (pdata != nullptr) {
-        // Record the recompilation event, if any.
-        int tstate0 = pdata->trap_state();
-        int tstate1 = trap_state_set_recompiled(tstate0, true);
-        if (tstate1 != tstate0)
-          pdata->set_trap_state(tstate1);
       }
 
 #if INCLUDE_RTM_OPT
@@ -2463,6 +2479,8 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
                                          uint& ret_this_trap_count,
                                          bool& ret_maybe_prior_trap,
                                          bool& ret_maybe_prior_recompile) {
+  trap_mdo->check_extra_data_locked();
+
   bool maybe_prior_trap = false;
   bool maybe_prior_recompile = false;
   uint this_trap_count = 0;
@@ -2495,10 +2513,7 @@ Deoptimization::query_update_method_data(MethodData* trap_mdo,
     // Find the profile data for this BCI.  If there isn't one,
     // try to allocate one from the MDO's set of spares.
     // This will let us detect a repeated trap at this point.
-    {
-      MutexLocker ml(trap_mdo->extra_data_lock());
-      pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
-    }
+    pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
 
     if (pdata != nullptr) {
       if (reason_is_speculate(reason) && !pdata->is_SpeculativeTrapData()) {

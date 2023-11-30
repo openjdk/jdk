@@ -258,6 +258,7 @@ class JavaThread: public Thread {
  public:
   void inc_no_safepoint_count() { _no_safepoint_count++; }
   void dec_no_safepoint_count() { _no_safepoint_count--; }
+  bool is_in_no_safepoint_scope() { return _no_safepoint_count > 0; }
 #endif // ASSERT
  public:
   // These functions check conditions before possibly going to a safepoint.

@@ -547,7 +547,11 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   if (EnableJVMCI && h_method->method_data() != nullptr) {
     ResourceMark rm(current);
     MethodData* mdo = h_method->method_data();
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
     MutexLocker ml(mdo->extra_data_lock());
+    NoSafepointVerifier no_safepoint;
+
     ProfileData* pdata = mdo->allocate_bci_to_data(current_bci, nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
       BitData* bit_data = (BitData*) pdata;

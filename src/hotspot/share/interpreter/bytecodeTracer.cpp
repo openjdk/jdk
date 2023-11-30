@@ -41,6 +41,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
@@ -589,6 +590,11 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock());
+    NoSafepointVerifier no_safepoint;
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       st->print("  %d ", mdo->dp_to_di(data->dp()));

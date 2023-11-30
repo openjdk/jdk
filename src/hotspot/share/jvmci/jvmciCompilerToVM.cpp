@@ -1889,7 +1889,11 @@ C2V_END
 
 C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method_data_pointer, jint bci))
   MethodData* mdo = (MethodData*) method_data_pointer;
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
   MutexLocker mu(mdo->extra_data_lock());
+  NoSafepointVerifier no_safepoint;
+
   DataLayout* data    = mdo->extra_data_base();
   DataLayout* end   = mdo->args_data_limit();
   for (;; data = mdo->next_extra(data)) {

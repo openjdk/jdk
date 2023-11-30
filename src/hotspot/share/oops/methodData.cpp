@@ -1366,6 +1366,8 @@ address MethodData::bci_to_dp(int bci) {
 
 // Translate a bci to its corresponding data, or null.
 ProfileData* MethodData::bci_to_data(int bci) {
+  check_extra_data_locked();
+
   DataLayout* data = data_layout_before(bci);
   for ( ; is_valid(data); data = next_data_layout(data)) {
     if (data->bci() == bci) {
@@ -1395,6 +1397,8 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
 }
 
 ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
+  check_extra_data_locked();
+
   DataLayout* end = args_data_limit();
 
   for (;; dp = next_extra(dp)) {
@@ -1438,6 +1442,8 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
 
 // Translate a bci to its corresponding extra data, or null.
 ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_missing) {
+  check_extra_data_locked();
+
   // This code assumes an entry for a SpeculativeTrapData is 2 cells
   assert(2*DataLayout::compute_size_in_bytes(BitData::static_cell_count()) ==
          DataLayout::compute_size_in_bytes(SpeculativeTrapData::static_cell_count()),
@@ -1460,10 +1466,11 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   }
 
   if (create_if_missing && dp < end) {
-    // Check again now that we have the lock. Another thread may
-    // have added extra data entries. Do it re-entrant in case
-    // we already have the lock further up.
-    ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self());
+    // TODO lock is not useless, since we require lock at the beginning of the method.
+    // // Check again now that we have the lock. Another thread may
+    // // have added extra data entries. Do it re-entrant in case
+    // // we already have the lock further up.
+    // ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self());
     ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
     if (result != nullptr || dp >= end) {
       return result;
@@ -1695,6 +1702,8 @@ void MethodData::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void MethodData::clean_extra_data_helper(DataLayout* dp, int shift, bool reset) {
+  check_extra_data_locked();
+
   if (shift == 0) {
     return;
   }
@@ -1736,6 +1745,8 @@ public:
 // Remove SpeculativeTrapData entries that reference an unloaded or
 // redefined method
 void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
@@ -1780,6 +1791,8 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
 // Verify there's no unloaded or redefined method referenced by a
 // SpeculativeTrapData entry
 void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
+  check_extra_data_locked();
+
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();

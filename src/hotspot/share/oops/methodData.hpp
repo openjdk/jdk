@@ -2312,7 +2312,8 @@ public:
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
-    assert(extra_data_lock()->owned_by_self(), "must have lock");
+    check_extra_data_locked();
+
     ProfileData* data = nullptr;
     // If m not null, try to allocate a SpeculativeTrapData entry
     if (m == nullptr) {
@@ -2335,7 +2336,10 @@ public:
   }
 
   // Add a handful of extra data records, for trap tracking.
-  DataLayout* extra_data_base() const  { return limit_data_position(); }
+  DataLayout* extra_data_base() const  {
+    check_extra_data_locked();
+    return limit_data_position();
+  }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
                                                               parameters_size_in_bytes()); }
@@ -2452,6 +2456,16 @@ public:
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
   Mutex* extra_data_lock() { return &_extra_data_lock; }
+  void check_extra_data_locked() const {
+#ifdef ASSERT
+    // Cast const away, just to be able to verify the lock
+    // Usually we only want non-const accesses on the lock,
+    // so this here is an exception.
+    MethodData* self = (MethodData*)this;
+    assert(self->extra_data_lock()->owned_by_self(), "must have lock");
+    assert(JavaThread::current()->is_in_no_safepoint_scope(), "must have NoSafepointVerifier inside lock scope");
+#endif
+  }
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP
