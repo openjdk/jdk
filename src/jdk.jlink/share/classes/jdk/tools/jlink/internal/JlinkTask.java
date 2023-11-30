@@ -74,6 +74,10 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
+import jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
+import jdk.tools.jlink.internal.plugins.SystemModulesPlugin;
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -86,6 +90,7 @@ public class JlinkTask {
 
     // Run time based link internal resources files
     private static final String OTHER_RESOURCES_FILE = "jdk/tools/jlink/internal/runlink_%s_resources";
+    private static final String OLD_CLI_FILE = "jdk/tools/jlink/internal/cli_cmd.txt";
     // jlink API ignores by default. Remove when signing is implemented.
     static final boolean IGNORE_SIGNING_DEFAULT = true;
 
@@ -559,6 +564,14 @@ public class JlinkTask {
             // Print info message when a run-image link is being performed
             if (log != null) {
                 log.println("'jmods' folder not present, performing a run-time image based link.");
+                if (verbose) {
+                    List<String> oldCli = new ArrayList<>();
+                    try (InputStream in = jdkJlink.getResourceAsStream(OLD_CLI_FILE)) {
+                        CommandLine.loadCmdFile(Objects.requireNonNull(in, "Old CLI args not being tracked in jimage"),
+                                                oldCli);
+                    }
+                    logPackagedModuleEquivalent(log, oldCli, optionsHelper.getInputCommand());
+                }
             }
         }
 
@@ -611,6 +624,58 @@ public class JlinkTask {
         return new ImageHelper(cf, mods, targetPlatform, retainModulesPath,
                                ignoreSigning, config.useModulePath(),
                                config.singleHop(), nonClassRes);
+    }
+
+    /**
+     * Log a message when a run-time image link is being performed and mention
+     * the equivalent packaged-module based link.
+     *
+     * @param logWriter The log to print to.
+     * @param oldCli The jlink CLI args used to produce the current run-time image.
+     * @param inputCommand The jlink CLI args used for the current link run.
+     */
+    private static void logPackagedModuleEquivalent(PrintWriter logWriter,
+            List<String> oldCli, String[] newCLI) {
+        // merge old and new cli args and process options.
+        List<String> combined = new ArrayList<>(oldCli);
+        for (String s: newCLI) {
+            combined.add(s);
+        }
+
+        // parse options, produce plugins maps.
+        TaskHelper scratchTaskHelper = new TaskHelper(JLINK_BUNDLE);
+        OptionsHelper<JlinkTask> scratchOptionsHelper = scratchTaskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
+        JlinkTask scratch = new JlinkTask();
+
+        Map<Plugin, List<Map<String, String>>> pluginMaps = null;
+        try {
+            scratchOptionsHelper.handleOptions(scratch, combined.toArray(new String[] {}));
+            pluginMaps = scratchTaskHelper.getPluginMaps();
+        } catch (BadArgs e) {
+            throw new AssertionError("handling of scratch options failed", e);
+        }
+        List<Plugin> forwardingPlugins = pluginMaps.keySet()
+                                                        .stream()
+                                                        .filter(p -> { return JlinkTask.isCarryingForward(p); })
+                                                        .toList();
+        logWriter.println("Equivalent jlink command using packaged modules is:");
+        // Add-modules needs to be taken from the parsed current cli stack.
+        logWriter.print("  jlink --add-modules <TODO> --output <TODO>");
+        for (Plugin p: forwardingPlugins) {
+            List<Map<String, String>> configs = pluginMaps.get(p);
+            for (Map<String, String> config: configs) {
+                logWriter.print("--" + p.getName() + " " + config.get(p.getName()));
+            }
+            logWriter.print(" ");
+        }
+        logWriter.println();
+    }
+
+    private static boolean isCarryingForward(Plugin p) {
+        if (p.getType() == Category.TRANSFORMER || p.getType() == Category.FILTER) {
+            return !(p instanceof GenerateJLIClassesPlugin) && !(p instanceof SystemModulesPlugin);
+        }
+        return false;
     }
 
     private static void collectNonClassResources(String modName,

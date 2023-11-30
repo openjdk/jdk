@@ -758,6 +758,10 @@ public final class TaskHelper {
         return pluginOptions.getPluginsConfig(output, launchers, targetPlatform, config);
     }
 
+    Map<Plugin, List<Map<String, String>>> getPluginMaps() {
+        return pluginOptions.pluginToMaps;
+    }
+
     public void showVersion(boolean full) {
         log.println(version(full ? "full" : "release"));
     }
