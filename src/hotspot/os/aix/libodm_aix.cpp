@@ -35,7 +35,7 @@
 dynamicOdm::dynamicOdm() {
   const char* libodmname = "/usr/lib/libodm.a(shr_64.o)";
   char ebuf[512];
-  void* _libhandle = os::dll_load(libodmname, ebuf, sizeof(ebuf));
+  _libhandle = os::dll_load(libodmname, ebuf, sizeof(ebuf));
 
   if (!_libhandle) {
     trcVerbose("Cannot load %s (error %s)", libodmname, ebuf);
