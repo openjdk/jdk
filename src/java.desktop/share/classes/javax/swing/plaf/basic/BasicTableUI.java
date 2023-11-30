@@ -2075,33 +2075,37 @@ public class BasicTableUI extends TableUI
         Rectangle cellRect;
         TableColumn aColumn;
         int columnWidth;
-        boolean ltrFlag = table.getComponentOrientation().isLeftToRight();
-
-        int columnStart;
-        int columnEnd;
-
-        if (ltrFlag) {
-            columnStart = cMin;
-            columnEnd = cMax;
-        } else {
-            columnStart = cMax;
-            columnEnd = cMin;
-        }
-
-        //Right-to-Left is painted from cMin to cMax
-        //Left-to-Right is painted from cMax to cMin
-        for (int row = rMin; row <= rMax; row++) {
-            cellRect = table.getCellRect(row, columnStart, false);
-            for (int column = columnStart;
-                 ltrFlag ? column <= columnEnd : column >= columnEnd;
-                 column += (ltrFlag ?  1 : -1) ) {
-                aColumn = cm.getColumn(column);
-                columnWidth = aColumn.getWidth();
-                cellRect.width = columnWidth - columnMargin;
-                if (aColumn != draggedColumn) {
-                    paintCell(g, cellRect, row, column);
+        if (table.getComponentOrientation().isLeftToRight()) {
+            for(int row = rMin; row <= rMax; row++) {
+                cellRect = table.getCellRect(row, cMin, false);
+                for(int column = cMin; column <= cMax; column++) {
+                    aColumn = cm.getColumn(column);
+                    columnWidth = aColumn.getWidth();
+                    cellRect.width = columnWidth - columnMargin;
+                    if (aColumn != draggedColumn) {
+                        paintCell(g, cellRect, row, column);
+                    }
+                    cellRect.x += columnWidth;
                 }
-                cellRect.x += columnWidth;
+            }
+        } else {
+            for(int row = rMin; row <= rMax; row++) {
+                cellRect = table.getCellRect(row, cMin, false);
+                aColumn = cm.getColumn(cMin);
+                if (aColumn != draggedColumn) {
+                    columnWidth = aColumn.getWidth();
+                    cellRect.width = columnWidth - columnMargin;
+                    paintCell(g, cellRect, row, cMin);
+                }
+                for(int column = cMin+1; column <= cMax; column++) {
+                    aColumn = cm.getColumn(column);
+                    columnWidth = aColumn.getWidth();
+                    cellRect.width = columnWidth - columnMargin;
+                    cellRect.x -= columnWidth;
+                    if (aColumn != draggedColumn) {
+                        paintCell(g, cellRect, row, column);
+                    }
+                }
             }
         }
 
@@ -2151,7 +2155,7 @@ public class BasicTableUI extends TableUI
             g.drawLine(x2, y1, x2, y2);
         }
 
-        for (int row = rMin; row <= rMax; row++) {
+        for(int row = rMin; row <= rMax; row++) {
             // Render the cell value
             Rectangle r = table.getCellRect(row, draggedColumnIndex, false);
             r.x += distance;
