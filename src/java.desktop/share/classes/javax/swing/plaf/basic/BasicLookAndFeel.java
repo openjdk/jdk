@@ -459,8 +459,6 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
     /**
      * Populates {@code table} with the defaults for the basic look and
      * feel.
-     * <p>
-     * The default margins may vary greatly depending on the L&F.
      *
      * @param table the {@code UIDefaults} to add the values to
      * @throws NullPointerException if {@code table} is {@code null}
