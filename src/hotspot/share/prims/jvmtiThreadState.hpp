@@ -231,7 +231,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
-  static bool _seen_interp_only_mode; // interp_only_mode was requested once
+  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
 
  public:
   ~JvmtiThreadState();
