@@ -2624,20 +2624,27 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   // oldv holds comparison value
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
-  Label retry_load, nope;
-  bind(retry_load);
-  // Load reserved from the memory location
-  load_reserved(tmp, addr, int64, Assembler::aqrl);
-  // Fail and exit if it is not what we expect
-  bne(tmp, oldv, nope);
-  // If the store conditional succeeds, tmp will be zero
-  store_conditional(tmp, newv, addr, int64, Assembler::rl);
-  beqz(tmp, succeed);
-  // Retry only when the store conditional failed
-  j(retry_load);
+  if (UseZacas) {
+    mv(tmp, oldv);
+    atomic_cas(tmp, newv, addr, Assembler::int64, Assembler::aq, Assembler::rl);
+    beq(tmp, oldv, succeed);
+  } else {
+    Label retry_load, nope;
+    bind(retry_load);
+    // Load reserved from the memory location
+    load_reserved(tmp, addr, int64, Assembler::aqrl);
+    // Fail and exit if it is not what we expect
+    bne(tmp, oldv, nope);
+    // If the store conditional succeeds, tmp will be zero
+    store_conditional(tmp, newv, addr, int64, Assembler::rl);
+    beqz(tmp, succeed);
+    // Retry only when the store conditional failed
+    j(retry_load);
 
-  bind(nope);
-  membar(AnyAny);
+    bind(nope);
+    membar(AnyAny);
+  }
+
   mv(oldv, tmp);
   if (fail != nullptr) {
     j(*fail);
@@ -2711,7 +2718,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   }
   sll(mask, mask, shift);
 
-  xori(not_mask, mask, -1);
+  notr(not_mask, mask);
 
   sll(expected, expected, shift);
   andr(expected, expected, mask);
@@ -2721,7 +2728,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 }
 
 // cmpxchg_narrow_value will kill t0, t1, expected, new_val and tmps.
-// It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w,
+// It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w or amocas.w,
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
@@ -2736,14 +2743,29 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   Label retry, fail, done;
 
   bind(retry);
-  lr_w(old, aligned_addr, acquire);
-  andr(tmp, old, mask);
-  bne(tmp, expected, fail);
 
-  andr(tmp, old, not_mask);
-  orr(tmp, tmp, new_val);
-  sc_w(tmp, tmp, aligned_addr, release);
-  bnez(tmp, retry);
+  if (UseZacas) {
+    lw(old, aligned_addr);
+
+    // if old & mask != expected
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+
+    atomic_cas(old, tmp, aligned_addr, size, acquire, release);
+    bne(tmp, old, retry);
+  } else {
+    lr_w(old, aligned_addr, acquire);
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+    sc_w(tmp, tmp, aligned_addr, release);
+    bnez(tmp, retry);
+  }
 
   if (result_as_bool) {
     mv(result, 1);
@@ -2783,14 +2805,28 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
   Label fail, done;
 
-  lr_w(old, aligned_addr, acquire);
-  andr(tmp, old, mask);
-  bne(tmp, expected, fail);
+  if (UseZacas) {
+    lw(old, aligned_addr);
 
-  andr(tmp, old, not_mask);
-  orr(tmp, tmp, new_val);
-  sc_w(tmp, tmp, aligned_addr, release);
-  bnez(tmp, fail);
+    // if old & mask != expected
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+
+    atomic_cas(tmp, new_val, addr, size, acquire, release);
+    bne(tmp, old, fail);
+  } else {
+    lr_w(old, aligned_addr, acquire);
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+    sc_w(tmp, tmp, aligned_addr, release);
+    bnez(tmp, fail);
+  }
 
   // Success
   mv(result, 1);
@@ -2812,6 +2848,21 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  if (UseZacas) {
+    if (result_as_bool) {
+      mv(t0, expected);
+      atomic_cas(t0, new_val, addr, size, acquire, release);
+      xorr(t0, t0, expected);
+      seqz(result, t0);
+    } else {
+      if (result != expected) {
+        mv(result, expected);
+      }
+      atomic_cas(result, new_val, addr, size, acquire, release);
+    }
+    return;
+  }
 
   Label retry_load, done, ne_done;
   bind(retry_load);
@@ -2844,6 +2895,11 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
+  if (UseZacas) {
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, false);
+    return;
+  }
+
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -2909,6 +2965,89 @@ ATOMIC_XCHGU(xchgwu, xchgw)
 ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
+
+#define ATOMIC_CAS(OP, AOP, ACQUIRE, RELEASE)                                        \
+void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) {      \
+  assert(UseZacas, "invariant");                                                     \
+  prev = prev->is_valid() ? prev : zr;                                               \
+  AOP(prev, addr, newv, (Assembler::Aqrl)(ACQUIRE | RELEASE));                       \
+  return;                                                                            \
+}
+
+ATOMIC_CAS(cas, amocas_d, Assembler::relaxed, Assembler::relaxed)
+ATOMIC_CAS(casw, amocas_w, Assembler::relaxed, Assembler::relaxed)
+ATOMIC_CAS(casl, amocas_d, Assembler::relaxed, Assembler::rl)
+ATOMIC_CAS(caslw, amocas_w, Assembler::relaxed, Assembler::rl)
+ATOMIC_CAS(casal, amocas_d, Assembler::aq, Assembler::rl)
+ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
+
+#undef ATOMIC_CAS
+
+#define ATOMIC_CASU(OP1, OP2)                                                       \
+void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
+  atomic_##OP2(prev, newv, addr);                                                    \
+  zero_extend(prev, prev, 32);                                                       \
+  return;                                                                            \
+}
+
+ATOMIC_CASU(caswu, casw)
+ATOMIC_CASU(caslwu, caslw)
+ATOMIC_CASU(casalwu, casalw)
+
+#undef ATOMIC_CASU
+
+void MacroAssembler::atomic_cas(
+    Register prev, Register newv, Register addr, enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+  switch (size) {
+    case int64:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_cas(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_casl(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casal(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    case int32:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_casw(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_caslw(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casalw(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    case uint32:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_caswu(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_caslwu(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casalwu(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
 
 void MacroAssembler::far_jump(Address entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
