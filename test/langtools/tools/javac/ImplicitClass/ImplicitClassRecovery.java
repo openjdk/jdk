@@ -1,6 +1,6 @@
 /**
  * @test /nodynamiccopyright/
- * @compile/fail/ref=UnnamedClassRecovery.out -XDrawDiagnostics --enable-preview --source ${jdk.version} UnnamedClassRecovery.java
+ * @compile/fail/ref=ImplicitClassRecovery.out -XDrawDiagnostics --enable-preview --source ${jdk.version} ImplicitClassRecovery.java
  */
 public void main() {
     //the following is intentionally missing a semicolon:

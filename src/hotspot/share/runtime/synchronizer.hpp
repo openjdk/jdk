@@ -34,6 +34,7 @@
 template <typename T> class GrowableArray;
 class LogStream;
 class ObjectMonitor;
+class ObjectMonitorDeflationSafepointer;
 class ThreadsList;
 
 class MonitorList {
@@ -46,9 +47,9 @@ private:
 
 public:
   void add(ObjectMonitor* monitor);
-  size_t unlink_deflated(Thread* current, LogStream* ls, elapsedTimer* timer_p,
-                         size_t deflated_count,
-                         GrowableArray<ObjectMonitor*>* unlinked_list);
+  size_t unlink_deflated(size_t deflated_count,
+                         GrowableArray<ObjectMonitor*>* unlinked_list,
+                         ObjectMonitorDeflationSafepointer* safepointer);
   size_t count() const;
   size_t max() const;
 
@@ -67,6 +68,7 @@ public:
 
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
+  friend class ObjectMonitorDeflationLogging;
 
  public:
   typedef enum {
@@ -148,10 +150,7 @@ class ObjectSynchronizer : AllStatic {
   static size_t deflate_idle_monitors();
 
   // Deflate idle monitors:
-  static void chk_for_block_req(JavaThread* current, const char* op_name,
-                                const char* cnt_name, size_t cnt, LogStream* ls,
-                                elapsedTimer* timer_p);
-  static size_t deflate_monitor_list(Thread* current, LogStream* ls, elapsedTimer* timer_p);
+  static size_t deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer);
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();
