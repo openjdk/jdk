@@ -27,7 +27,7 @@
 # ##########################################################
 #
 module name jdk.jfr
-header exports jdk/jfr,jdk/jfr/consumer requires name\u0020;java.base\u0020;flags\u0020;8000 target linux-amd64 moduleMainClass jdk/jfr/internal/tool/Main flags 8000
+header exports jdk/jfr,jdk/jfr/consumer requires name\u0020;java.base\u0020;flags\u0020;8000 flags 8000
 
 class name jdk/jfr/consumer/RecordedObject
 header extends java/lang/Object sealed true flags 21

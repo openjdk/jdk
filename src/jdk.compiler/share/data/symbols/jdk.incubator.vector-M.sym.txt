@@ -27,5 +27,1361 @@
 # ##########################################################
 #
 module name jdk.incubator.vector
-header exports jdk/incubator/vector requires name\u0020;java.base\u0020;flags\u0020;8000 target linux-amd64 resolution 9 flags 8000
+header exports jdk/incubator/vector requires name\u0020;java.base\u0020;flags\u0020;8000 flags 8000
+
+class name jdk/incubator/vector/AbstractVector
+header extends jdk/incubator/vector/Vector flags 420 signature <E:Ljava/lang/Object;>Ljdk/incubator/vector/Vector<TE;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Conversion outerClass jdk/incubator/vector/VectorOperators innerClassName Conversion flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name species descriptor ()Ljdk/incubator/vector/VectorSpecies;
+-method name check descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/Vector;
+-method name check descriptor (Ljava/lang/Class;)Ljdk/incubator/vector/Vector;
+-method name maskAll descriptor (Z)Ljdk/incubator/vector/VectorMask;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name convert descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;I)Ljdk/incubator/vector/Vector;
+-method name castShape descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector;
+-method name convertShape descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector;
+method name species descriptor ()Ljdk/incubator/vector/VectorSpecies; flags 11 signature ()Ljdk/incubator/vector/VectorSpecies<TE;>;
+method name check descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/Vector; flags 11 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TF;>;)Ljdk/incubator/vector/Vector<TF;>;
+method name check descriptor (Ljava/lang/Class;)Ljdk/incubator/vector/Vector; flags 11 signature <F:Ljava/lang/Object;>(Ljava/lang/Class<TF;>;)Ljdk/incubator/vector/Vector<TF;>;
+method name maskAll descriptor (Z)Ljdk/incubator/vector/VectorMask; flags 11 signature (Z)Ljdk/incubator/vector/VectorMask<TE;>;
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1
+method name convert descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;I)Ljdk/incubator/vector/Vector; flags 11 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;I)Ljdk/incubator/vector/Vector<TF;>;
+method name castShape descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector; flags 11 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TF;>;I)Ljdk/incubator/vector/Vector<TF;>;
+method name convertShape descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector; flags 401 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;Ljdk/incubator/vector/VectorSpecies<TF;>;I)Ljdk/incubator/vector/Vector<TF;>;
+
+class name jdk/incubator/vector/ByteVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Byte;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/ByteVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;B)Ljdk/incubator/vector/ByteVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;B)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BB)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BBLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;B)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name add descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name add descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name sub descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name sub descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name mul descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name mul descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name div descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name div descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name min descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name max descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name and descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name or descriptor (B)Ljdk/incubator/vector/ByteVector;
+-method name neg descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name abs descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name not descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (B)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (B)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name bitwiseBlend descriptor (BB)Ljdk/incubator/vector/ByteVector;
+-method name bitwiseBlend descriptor (BLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;B)Ljdk/incubator/vector/ByteVector;
+-method name toArray descriptor ()[B
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI)Ljdk/incubator/vector/ByteVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI[II)Ljdk/incubator/vector/ByteVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name intoArray descriptor ([BI)V
+-method name intoArray descriptor ([BILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([BI[II)V
+-method name intoArray descriptor ([BI[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI)Ljdk/incubator/vector/ByteVector;
+-method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI[II)Ljdk/incubator/vector/ByteVector;
+-method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name intoBooleanArray descriptor ([ZI)V
+-method name intoBooleanArray descriptor ([ZILjdk/incubator/vector/VectorMask;)V
+-method name intoBooleanArray descriptor ([ZI[II)V
+-method name intoBooleanArray descriptor ([ZI[IILjdk/incubator/vector/VectorMask;)V
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ByteVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;B)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;B)Ljdk/incubator/vector/ByteVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;J)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;B)Ljdk/incubator/vector/ByteVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/ByteVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BB)Ljdk/incubator/vector/ByteVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BBLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;BBLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;B)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;B)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;BLjdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name add descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name add descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name sub descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name sub descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name mul descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name mul descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name div descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name div descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name min descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name max descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name and descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name or descriptor (B)Ljdk/incubator/vector/ByteVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name not descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name eq descriptor (B)Ljdk/incubator/vector/VectorMask; flags 11 signature (B)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name lt descriptor (B)Ljdk/incubator/vector/VectorMask; flags 11 signature (B)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;
+method name blend descriptor (BLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name bitwiseBlend descriptor (BB)Ljdk/incubator/vector/ByteVector; flags 11
+method name bitwiseBlend descriptor (BLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ByteVector; flags 11 signature (BLjdk/incubator/vector/Vector<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;B)Ljdk/incubator/vector/ByteVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Byte;>;B)Ljdk/incubator/vector/ByteVector;
+method name toArray descriptor ()[B flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[BI)Ljdk/incubator/vector/ByteVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[BILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI[II)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[BI[II)Ljdk/incubator/vector/ByteVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[BI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[BI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name intoArray descriptor ([BI)V flags 11
+method name intoArray descriptor ([BILjdk/incubator/vector/VectorMask;)V flags 11 signature ([BILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V
+method name intoArray descriptor ([BI[II)V flags 11
+method name intoArray descriptor ([BI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([BI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 11 signature ()Ljdk/incubator/vector/Vector<*>;
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZI)Ljdk/incubator/vector/ByteVector;
+method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI[II)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZI[II)Ljdk/incubator/vector/ByteVector;
+method name fromBooleanArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;[ZI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name intoBooleanArray descriptor ([ZI)V flags 11
+method name intoBooleanArray descriptor ([ZILjdk/incubator/vector/VectorMask;)V flags 11 signature ([ZILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V
+method name intoBooleanArray descriptor ([ZI[II)V flags 11
+method name intoBooleanArray descriptor ([ZI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([ZI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ByteVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ByteVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Byte;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)Ljdk/incubator/vector/ByteVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Byte;>;)V
+
+class name jdk/incubator/vector/DoubleVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Double;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/DoubleVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;D)Ljdk/incubator/vector/DoubleVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;D)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DD)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DDLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;D)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name add descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name add descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name sub descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name sub descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name mul descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name mul descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name div descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name div descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name min descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name max descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name pow descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name pow descriptor (D)Ljdk/incubator/vector/DoubleVector;
+-method name neg descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name abs descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name sqrt descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (D)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (D)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name fma descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector;
+-method name fma descriptor (DD)Ljdk/incubator/vector/DoubleVector;
+-method name toArray descriptor ()[D
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI)Ljdk/incubator/vector/DoubleVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI[II)Ljdk/incubator/vector/DoubleVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name intoArray descriptor ([DI)V
+-method name intoArray descriptor ([DILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([DI[II)V
+-method name intoArray descriptor ([DI[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/LongVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/DoubleVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;D)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;D)Ljdk/incubator/vector/DoubleVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;J)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/DoubleVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DD)Ljdk/incubator/vector/DoubleVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DDLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;DDLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;D)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;D)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;DLjdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name add descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name add descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name sub descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name sub descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name mul descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name mul descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name div descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name div descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name min descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name max descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name pow descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name pow descriptor (D)Ljdk/incubator/vector/DoubleVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/DoubleVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/DoubleVector; flags 11
+method name sqrt descriptor ()Ljdk/incubator/vector/DoubleVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name eq descriptor (D)Ljdk/incubator/vector/VectorMask; flags 11 signature (D)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name lt descriptor (D)Ljdk/incubator/vector/VectorMask; flags 11 signature (D)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;
+method name blend descriptor (DLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (DLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name fma descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/DoubleVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;Ljdk/incubator/vector/Vector<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name fma descriptor (DD)Ljdk/incubator/vector/DoubleVector; flags 11
+method name toArray descriptor ()[D flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;[DI)Ljdk/incubator/vector/DoubleVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;[DILjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI[II)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;[DI[II)Ljdk/incubator/vector/DoubleVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[DI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;[DI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name intoArray descriptor ([DI)V flags 11
+method name intoArray descriptor ([DILjdk/incubator/vector/VectorMask;)V flags 11 signature ([DILjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)V
+method name intoArray descriptor ([DI[II)V flags 11
+method name intoArray descriptor ([DI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([DI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/LongVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/DoubleVector; flags 11
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/DoubleVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/DoubleVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Double;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)Ljdk/incubator/vector/DoubleVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Double;>;)V
+
+class name jdk/incubator/vector/FloatVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Float;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang/foreign/ValueLayout innerClassName OfFloat flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/FloatVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;F)Ljdk/incubator/vector/FloatVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;F)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FF)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FFLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;F)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name add descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name add descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name sub descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name sub descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name mul descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name mul descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name div descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name div descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name min descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name max descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name pow descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name pow descriptor (F)Ljdk/incubator/vector/FloatVector;
+-method name neg descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name abs descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name sqrt descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (F)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (F)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name fma descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector;
+-method name fma descriptor (FF)Ljdk/incubator/vector/FloatVector;
+-method name toArray descriptor ()[F
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI)Ljdk/incubator/vector/FloatVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI[II)Ljdk/incubator/vector/FloatVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name intoArray descriptor ([FI)V
+-method name intoArray descriptor ([FILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([FI[II)V
+-method name intoArray descriptor ([FI[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/IntVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/FloatVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;F)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;F)Ljdk/incubator/vector/FloatVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;J)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;F)Ljdk/incubator/vector/FloatVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/FloatVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FF)Ljdk/incubator/vector/FloatVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FFLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;FFLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;F)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;F)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;FLjdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name add descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name add descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name sub descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name sub descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name mul descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name mul descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name div descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name div descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name min descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name max descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name pow descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name pow descriptor (F)Ljdk/incubator/vector/FloatVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/FloatVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/FloatVector; flags 11
+method name sqrt descriptor ()Ljdk/incubator/vector/FloatVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name eq descriptor (F)Ljdk/incubator/vector/VectorMask; flags 11 signature (F)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name lt descriptor (F)Ljdk/incubator/vector/VectorMask; flags 11 signature (F)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;
+method name blend descriptor (FLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (FLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name fma descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/FloatVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;Ljdk/incubator/vector/Vector<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name fma descriptor (FF)Ljdk/incubator/vector/FloatVector; flags 11
+method name toArray descriptor ()[F flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;[FI)Ljdk/incubator/vector/FloatVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;[FILjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI[II)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;[FI[II)Ljdk/incubator/vector/FloatVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[FI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;[FI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name intoArray descriptor ([FI)V flags 11
+method name intoArray descriptor ([FILjdk/incubator/vector/VectorMask;)V flags 11 signature ([FILjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)V
+method name intoArray descriptor ([FI[II)V flags 11
+method name intoArray descriptor ([FI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([FI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/IntVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/FloatVector; flags 11
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/FloatVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/FloatVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Float;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)Ljdk/incubator/vector/FloatVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Float;>;)V
+
+class name jdk/incubator/vector/IntVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Integer;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/IntVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/IntVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;I)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;II)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;I)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name add descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name add descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name sub descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name sub descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name mul descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name mul descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name div descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name div descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name min descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name max descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name and descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name or descriptor (I)Ljdk/incubator/vector/IntVector;
+-method name neg descriptor ()Ljdk/incubator/vector/IntVector;
+-method name abs descriptor ()Ljdk/incubator/vector/IntVector;
+-method name not descriptor ()Ljdk/incubator/vector/IntVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (I)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (I)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name bitwiseBlend descriptor (II)Ljdk/incubator/vector/IntVector;
+-method name bitwiseBlend descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;I)Ljdk/incubator/vector/IntVector;
+-method name toArray descriptor ()[I
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II)Ljdk/incubator/vector/IntVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II[II)Ljdk/incubator/vector/IntVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name intoArray descriptor ([II)V
+-method name intoArray descriptor ([IILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([II[II)V
+-method name intoArray descriptor ([II[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/IntVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/IntVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;I)Ljdk/incubator/vector/IntVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;J)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;I)Ljdk/incubator/vector/IntVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/IntVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;II)Ljdk/incubator/vector/IntVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;IILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;I)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;I)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;ILjdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name add descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name add descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name sub descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name sub descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name mul descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name mul descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name div descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name div descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name min descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name max descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name and descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name or descriptor (I)Ljdk/incubator/vector/IntVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/IntVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/IntVector; flags 11
+method name not descriptor ()Ljdk/incubator/vector/IntVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name eq descriptor (I)Ljdk/incubator/vector/VectorMask; flags 11 signature (I)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name lt descriptor (I)Ljdk/incubator/vector/VectorMask; flags 11 signature (I)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;
+method name blend descriptor (ILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name bitwiseBlend descriptor (II)Ljdk/incubator/vector/IntVector; flags 11
+method name bitwiseBlend descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/IntVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;I)Ljdk/incubator/vector/IntVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Integer;>;I)Ljdk/incubator/vector/IntVector;
+method name toArray descriptor ()[I flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;[II)Ljdk/incubator/vector/IntVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;[IILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II[II)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;[II[II)Ljdk/incubator/vector/IntVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;[II[IILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name intoArray descriptor ([II)V flags 11
+method name intoArray descriptor ([IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([IILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)V
+method name intoArray descriptor ([II[II)V flags 11
+method name intoArray descriptor ([II[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([II[IILjdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/IntVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/FloatVector; flags 11
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/IntVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/IntVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Integer;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)Ljdk/incubator/vector/IntVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Integer;>;)V
+
+class name jdk/incubator/vector/LongVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Long;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/LongVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JJ)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JJLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;J)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name add descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name add descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name sub descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name sub descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name mul descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name mul descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name div descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name div descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name min descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name max descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name and descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name or descriptor (J)Ljdk/incubator/vector/LongVector;
+-method name neg descriptor ()Ljdk/incubator/vector/LongVector;
+-method name abs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name not descriptor ()Ljdk/incubator/vector/LongVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (J)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (J)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name bitwiseBlend descriptor (JJ)Ljdk/incubator/vector/LongVector;
+-method name bitwiseBlend descriptor (JLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;J)Ljdk/incubator/vector/LongVector;
+-method name toArray descriptor ()[J
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI)Ljdk/incubator/vector/LongVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI[II)Ljdk/incubator/vector/LongVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name intoArray descriptor ([JI)V
+-method name intoArray descriptor ([JILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([JI[II)V
+-method name intoArray descriptor ([JI[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/LongVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/LongVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;J)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/LongVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JJ)Ljdk/incubator/vector/LongVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JJLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;JJLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;J)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;J)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;JLjdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name add descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name add descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name sub descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name sub descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name mul descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name mul descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name div descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name div descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name min descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name max descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name and descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name or descriptor (J)Ljdk/incubator/vector/LongVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/LongVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/LongVector; flags 11
+method name not descriptor ()Ljdk/incubator/vector/LongVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;
+method name eq descriptor (J)Ljdk/incubator/vector/VectorMask; flags 11 signature (J)Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;
+method name lt descriptor (J)Ljdk/incubator/vector/VectorMask; flags 11 signature (J)Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name bitwiseBlend descriptor (JJ)Ljdk/incubator/vector/LongVector; flags 11
+method name bitwiseBlend descriptor (JLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/LongVector; flags 11 signature (JLjdk/incubator/vector/Vector<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;J)Ljdk/incubator/vector/LongVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Long;>;J)Ljdk/incubator/vector/LongVector;
+method name toArray descriptor ()[J flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;[JI)Ljdk/incubator/vector/LongVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;[JILjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI[II)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;[JI[II)Ljdk/incubator/vector/LongVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[JI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;[JI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name intoArray descriptor ([JI)V flags 11
+method name intoArray descriptor ([JILjdk/incubator/vector/VectorMask;)V flags 11 signature ([JILjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)V
+method name intoArray descriptor ([JI[II)V flags 11
+method name intoArray descriptor ([JI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([JI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/LongVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/DoubleVector; flags 11
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/LongVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/LongVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Long;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)Ljdk/incubator/vector/LongVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Long;>;)V
+
+class name jdk/incubator/vector/ShortVector
+header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Short;>;
+innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/incubator/vector/VectorOperators$Ternary outerClass jdk/incubator/vector/VectorOperators innerClassName Ternary flags 609
+innerclass innerClass jdk/incubator/vector/VectorOperators$Test outerClass jdk/incubator/vector/VectorOperators innerClassName Test flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/ShortVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;S)Ljdk/incubator/vector/ShortVector;
+-method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;S)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SS)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SSLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;S)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name add descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name add descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name sub descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name sub descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name mul descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name mul descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name div descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name div descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name min descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name max descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name and descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name or descriptor (S)Ljdk/incubator/vector/ShortVector;
+-method name neg descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name abs descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name not descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name eq descriptor (S)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask;
+-method name lt descriptor (S)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask;
+-method name blend descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name bitwiseBlend descriptor (SS)Ljdk/incubator/vector/ShortVector;
+-method name bitwiseBlend descriptor (SLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector;
+-method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;S)Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()[S
+-method name toIntArray descriptor ()[I
+-method name toLongArray descriptor ()[J
+-method name toDoubleArray descriptor ()[D
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI)Ljdk/incubator/vector/ShortVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI[II)Ljdk/incubator/vector/ShortVector;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name intoArray descriptor ([SI)V
+-method name intoArray descriptor ([SILjdk/incubator/vector/VectorMask;)V
+-method name intoArray descriptor ([SI[II)V
+-method name intoArray descriptor ([SI[IILjdk/incubator/vector/VectorMask;)V
+-method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name toString descriptor ()Ljava/lang/String;
+-method name equals descriptor (Ljava/lang/Object;)Z
+-method name hashCode descriptor ()I
+-method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector;
+-method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector;
+-method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector;
+-method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector;
+-method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector;
+-method name toArray descriptor ()Ljava/lang/Object;
+-method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector;
+-method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name abs descriptor ()Ljdk/incubator/vector/Vector;
+-method name neg descriptor ()Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector;
+-method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector;
+-method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI)Ljdk/incubator/vector/ShortVector;
+-method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI[II)Ljdk/incubator/vector/ShortVector;
+-method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name intoCharArray descriptor ([CI)V
+-method name intoCharArray descriptor ([CILjdk/incubator/vector/VectorMask;)V
+-method name intoCharArray descriptor ([CI[II)V
+-method name intoCharArray descriptor ([CI[IILjdk/incubator/vector/VectorMask;)V
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ShortVector;
+-method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector;
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V
+-method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V
+method name zero descriptor (Ljdk/incubator/vector/VectorSpecies;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;S)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;S)Ljdk/incubator/vector/ShortVector;
+method name broadcast descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;J)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;S)Ljdk/incubator/vector/ShortVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/ShortVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SS)Ljdk/incubator/vector/ShortVector; flags 11
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SSLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;SSLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;S)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;S)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Ternary;SLjdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name add descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name add descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name sub descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name sub descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name mul descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name mul descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name div descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name div descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name min descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name max descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name and descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name and descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name or descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name or descriptor (S)Ljdk/incubator/vector/ShortVector; flags 11
+method name neg descriptor ()Ljdk/incubator/vector/ShortVector; flags 11
+method name abs descriptor ()Ljdk/incubator/vector/ShortVector; flags 11
+method name not descriptor ()Ljdk/incubator/vector/ShortVector; flags 11
+method name eq descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name eq descriptor (S)Ljdk/incubator/vector/VectorMask; flags 11 signature (S)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name lt descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name lt descriptor (S)Ljdk/incubator/vector/VectorMask; flags 11 signature (S)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name compare descriptor (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/VectorMask; flags 11 signature (Ljdk/incubator/vector/VectorOperators$Comparison;JLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;
+method name blend descriptor (SLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (JLjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 11 signature (ILjdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name bitwiseBlend descriptor (SS)Ljdk/incubator/vector/ShortVector; flags 11
+method name bitwiseBlend descriptor (SLjdk/incubator/vector/Vector;)Ljdk/incubator/vector/ShortVector; flags 11 signature (SLjdk/incubator/vector/Vector<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name bitwiseBlend descriptor (Ljdk/incubator/vector/Vector;S)Ljdk/incubator/vector/ShortVector; flags 11 signature (Ljdk/incubator/vector/Vector<Ljava/lang/Short;>;S)Ljdk/incubator/vector/ShortVector;
+method name toArray descriptor ()[S flags 11
+method name toIntArray descriptor ()[I flags 11
+method name toLongArray descriptor ()[J flags 11
+method name toDoubleArray descriptor ()[D flags 11
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[SI)Ljdk/incubator/vector/ShortVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[SILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI[II)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[SI[II)Ljdk/incubator/vector/ShortVector;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[SI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[SI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name intoArray descriptor ([SI)V flags 11
+method name intoArray descriptor ([SILjdk/incubator/vector/VectorMask;)V flags 11 signature ([SILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)V
+method name intoArray descriptor ([SI[II)V flags 11
+method name intoArray descriptor ([SI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([SI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)V
+method name reinterpretAsBytes descriptor ()Ljdk/incubator/vector/ByteVector; flags 11
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/ShortVector; flags 11
+method name viewAsFloatingLanes descriptor ()Ljdk/incubator/vector/Vector; flags 11 signature ()Ljdk/incubator/vector/Vector<*>;
+method name toString descriptor ()Ljava/lang/String; flags 11
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name reinterpretAsDoubles descriptor ()Ljdk/incubator/vector/DoubleVector; flags 1041
+method name reinterpretAsFloats descriptor ()Ljdk/incubator/vector/FloatVector; flags 1041
+method name reinterpretAsLongs descriptor ()Ljdk/incubator/vector/LongVector; flags 1041
+method name reinterpretAsInts descriptor ()Ljdk/incubator/vector/IntVector; flags 1041
+method name reinterpretAsShorts descriptor ()Ljdk/incubator/vector/ShortVector; flags 1041
+method name toArray descriptor ()Ljava/lang/Object; flags 1041
+method name viewAsIntegralLanes descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (ILjdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name blend descriptor (JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name max descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name min descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name abs descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name neg descriptor ()Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name div descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name mul descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name sub descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name add descriptor (Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;JLjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041
+method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;J)Ljdk/incubator/vector/Vector; flags 1041
+method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CI)Ljdk/incubator/vector/ShortVector;
+method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI[II)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CI[II)Ljdk/incubator/vector/ShortVector;
+method name fromCharArray descriptor (Ljdk/incubator/vector/VectorSpecies;[CI[IILjdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;[CI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name intoCharArray descriptor ([CI)V flags 11
+method name intoCharArray descriptor ([CILjdk/incubator/vector/VectorMask;)V flags 11 signature ([CILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)V
+method name intoCharArray descriptor ([CI[II)V flags 11
+method name intoCharArray descriptor ([CI[IILjdk/incubator/vector/VectorMask;)V flags 11 signature ([CI[IILjdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)V
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)Ljdk/incubator/vector/ShortVector;
+method name fromMemorySegment descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/ShortVector; flags 9 signature (Ljdk/incubator/vector/VectorSpecies<Ljava/lang/Short;>;Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)Ljdk/incubator/vector/ShortVector;
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;)V flags 11
+method name intoMemorySegment descriptor (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask;)V flags 11 signature (Ljava/lang/foreign/MemorySegment;JLjava/nio/ByteOrder;Ljdk/incubator/vector/VectorMask<Ljava/lang/Short;>;)V
+
+class name jdk/incubator/vector/VectorMask
+header extends jdk/internal/vm/vector/VectorSupport$VectorMask flags 421 signature <E:Ljava/lang/Object;>Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name length descriptor ()I
+-method name fromValues descriptor (Ljdk/incubator/vector/VectorSpecies;[Z)Ljdk/incubator/vector/VectorMask;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI)Ljdk/incubator/vector/VectorMask;
+-method name fromLong descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/VectorMask;
+method name length descriptor ()I flags 11
+method name fromValues descriptor (Ljdk/incubator/vector/VectorSpecies;[Z)Ljdk/incubator/vector/VectorMask; flags 89 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;[Z)Ljdk/incubator/vector/VectorMask<TE;>;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[ZI)Ljdk/incubator/vector/VectorMask; flags 9 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;[ZI)Ljdk/incubator/vector/VectorMask<TE;>;
+method name fromLong descriptor (Ljdk/incubator/vector/VectorSpecies;J)Ljdk/incubator/vector/VectorMask; flags 9 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;J)Ljdk/incubator/vector/VectorMask<TE;>;
+
+class name jdk/incubator/vector/VectorOperators$Conversion
+-method name ofCast descriptor (Ljava/lang/Class;Ljava/lang/Class;)Ljdk/incubator/vector/VectorOperators$Conversion;
+-method name ofReinterpret descriptor (Ljava/lang/Class;Ljava/lang/Class;)Ljdk/incubator/vector/VectorOperators$Conversion;
+method name ofCast descriptor (Ljava/lang/Class;Ljava/lang/Class;)Ljdk/incubator/vector/VectorOperators$Conversion; flags 9 signature <E:Ljava/lang/Object;F:Ljava/lang/Object;>(Ljava/lang/Class<TE;>;Ljava/lang/Class<TF;>;)Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;
+method name ofReinterpret descriptor (Ljava/lang/Class;Ljava/lang/Class;)Ljdk/incubator/vector/VectorOperators$Conversion; flags 9 signature <E:Ljava/lang/Object;F:Ljava/lang/Object;>(Ljava/lang/Class<TE;>;Ljava/lang/Class<TF;>;)Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;
+
+class name jdk/incubator/vector/VectorShape
+-method name vectorBitSize descriptor ()I
+-method name preferredShape descriptor ()Ljdk/incubator/vector/VectorShape;
+method name vectorBitSize descriptor ()I flags 1
+method name preferredShape descriptor ()Ljdk/incubator/vector/VectorShape; flags 9
+
+class name jdk/incubator/vector/VectorShuffle
+-method name length descriptor ()I
+-method name fromValues descriptor (Ljdk/incubator/vector/VectorSpecies;[I)Ljdk/incubator/vector/VectorShuffle;
+-method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II)Ljdk/incubator/vector/VectorShuffle;
+-method name fromOp descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/util/function/IntUnaryOperator;)Ljdk/incubator/vector/VectorShuffle;
+-method name iota descriptor (Ljdk/incubator/vector/VectorSpecies;IIZ)Ljdk/incubator/vector/VectorShuffle;
+method name length descriptor ()I flags 11
+method name fromValues descriptor (Ljdk/incubator/vector/VectorSpecies;[I)Ljdk/incubator/vector/VectorShuffle; flags 89 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;[I)Ljdk/incubator/vector/VectorShuffle<TE;>;
+method name fromArray descriptor (Ljdk/incubator/vector/VectorSpecies;[II)Ljdk/incubator/vector/VectorShuffle; flags 9 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;[II)Ljdk/incubator/vector/VectorShuffle<TE;>;
+method name fromOp descriptor (Ljdk/incubator/vector/VectorSpecies;Ljava/util/function/IntUnaryOperator;)Ljdk/incubator/vector/VectorShuffle; flags 9 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;Ljava/util/function/IntUnaryOperator;)Ljdk/incubator/vector/VectorShuffle<TE;>;
+method name iota descriptor (Ljdk/incubator/vector/VectorSpecies;IIZ)Ljdk/incubator/vector/VectorShuffle; flags 9 signature <E:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorSpecies<TE;>;IIZ)Ljdk/incubator/vector/VectorShuffle<TE;>;
 
