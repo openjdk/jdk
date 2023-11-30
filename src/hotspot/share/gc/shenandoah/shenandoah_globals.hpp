@@ -358,9 +358,6 @@
   develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \
-  product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
-          "Attempt more loop opts after barrier expansion.")                \
-                                                                            \
 
 // end of GC_SHENANDOAH_FLAGS
 
