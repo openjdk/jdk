@@ -2171,7 +2171,12 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
   assert(is_aligned(end, VMRegImpl::stack_slot_size), "should be aligned: " PTR_FORMAT, p2i(end));
 
   // we need to clear the bits that correspond to arguments as they reside in the caller frame
-  // or they will keep objects that are otherwise unreachable alive
+  // or they will keep objects that are otherwise unreachable alive.
+
+  // Align `end` if UseCompressedOops is not set to avoid UB when calculating the bit index, since
+  // `end` could be at an odd number of stack slots from `start`, i.e might not be oop aligned.
+  // If that's the case the bit range corresponding to the last stack slot should not have bits set
+  // anyways and we assert that before returning.
   address effective_end = UseCompressedOops ? end : align_down(end, wordSize);
   log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
