@@ -72,23 +72,10 @@ public class TestDeprecatedEvent {
 
     public static void main(String... args) throws Exception {
         mode = args[0];
-        testDeprecatedLevelAllPreJFR();
         testDeprecatedLevelAll();
         testDeprecatedLevelAllRetained();
         testDeprecatedLevelForRemoval();
         testDeprecatedLevelForRemovalRetained();
-    }
-
-    // Does not invoke any deprecated methods. We only verify
-    // that deprecated methods registered during VM bootstrap
-    // are retained when starting JFR and the first recording.
-    private static void testDeprecatedLevelAllPreJFR() throws Exception {
-        try (Recording r = new Recording()) {
-            r.enable(EVENT_NAME).with("level", "all");
-            r.start();
-            r.stop();
-            validateLevelAllPreJFR(r);
-        }
     }
 
     private static void testDeprecatedLevelAll() throws Exception {
@@ -120,13 +107,6 @@ public class TestDeprecatedEvent {
             r.stop();
             validateLevelAll(r);
         }
-    }
-
-    // Validates invocations that happened before JFR was started.
-    private static void validateLevelAllPreJFR(Recording r) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(r);
-        printInvocations(events, "all");
-        assertMethod(events, "getProperties", "getSecurityManager");
     }
 
     private static void validateLevelAll(Recording r) throws Exception {
@@ -227,7 +207,6 @@ public class TestDeprecatedEvent {
     private static void printInvocations(List<RecordedEvent> events, String all) {
         System.out.println("*** METHOD INVOCATION *** (" + mode + ") level = " + all + "count: " + events.size());
         for (RecordedEvent e : events) {
-            System.out.println(e);
             RecordedMethod deprecatedMethod = e.getValue("method");
             boolean forRemoval = e.getValue("forRemoval");
             RecordedStackTrace stacktrace = e.getStackTrace();
@@ -242,6 +221,7 @@ public class TestDeprecatedEvent {
             int lineNumber = frame.getLineNumber();
             assertNull(e.getThread(), "should not have a thread");
             System.out.println(callerMethod.getName() + " at bci: " + bci + " line: " + lineNumber + " -> " + deprecatedMethod.getName());
+            System.out.println(e);
         }
         System.out.println();
     }

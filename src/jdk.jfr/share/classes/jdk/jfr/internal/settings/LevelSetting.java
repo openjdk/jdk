@@ -53,16 +53,13 @@ public class LevelSetting extends JDKSettingControl {
     public String combine(Set<String> values) {
         int maxIndex = 0;
         for (String value : values) {
-            System.out.println(" Combine : " + value);
             maxIndex = Math.max(maxIndex, indexOf(value));
         }
-        System.out.println(" Combine Selection: " + levels.get(maxIndex));
         return levels.get(maxIndex);
     }
 
     @Override
     public void setValue(String value) {
-        System.out.println("Setting level to : " + value);
         this.value = value;
         this.eventType.setLevel(indexOf(value));
     }
