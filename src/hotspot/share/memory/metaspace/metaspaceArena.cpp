@@ -250,9 +250,9 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (_fbl != nullptr && !_fbl->is_empty()) {
-    result = _fbl->remove_block(word_size);
-    if (result.is_nonempty()) {
-      wastage = result.split_off_tail(word_size);
+    MetaBlock block = _fbl->remove_block(word_size);
+    if (block.is_nonempty()) {
+      block.split(word_size, result, wastage);
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
           METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage), _fbl->count(), _fbl->total_size());
@@ -268,9 +268,8 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 #ifdef ASSERT
   STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
   constexpr size_t sizeof_fence_words = sizeof(Fence) / BytesPerWord;
-  const size_t fence_word_pos = align_up(word_size, sizeof_fence_words);
   if (Settings::use_allocation_guard()) {
-    outer_word_size = fence_word_pos + sizeof_fence_words;
+    outer_word_size = sizeof_fence_words + sizeof_fence_words;
   }
 #endif
 
@@ -278,10 +277,10 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
 #ifdef ASSERT
   if (Settings::use_allocation_guard() && result.is_nonempty()) {
-    result.split_off_tail(word_size);
     assert(result.word_size() == outer_word_size, "Sanity");
-    MetaWord* const p_fence = result.base() + fence_word_pos;
-    Fence* f = new(p_fence) Fence(_first_fence);
+    MetaBlock fenceblock;
+    result.split(word_size, result, fenceblock);
+    Fence* f = new(fenceblock.base()) Fence(_first_fence);
     _first_fence = f;
   }
 #endif
@@ -383,7 +382,8 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
   } else {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
-    UL2(trace, "returning " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
+    UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " taken from arena.",
+        METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage));
     assert(result.word_size() == word_size && is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
            "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
   }

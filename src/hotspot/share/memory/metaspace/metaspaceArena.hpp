@@ -79,8 +79,8 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // Please note that access to a metaspace arena may be shared
   // between threads and needs to be synchronized in CLMS.
 
-  const size_t _allocation_alignment_words;
   const size_t _minimum_allocation_word_size;
+  const size_t _allocation_alignment_words;
 
   // Reference to the chunk manager to allocate chunks from.
   ChunkManager* const _chunk_manager;

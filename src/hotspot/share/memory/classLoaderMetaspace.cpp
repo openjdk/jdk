@@ -74,8 +74,8 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 
   // If needed, initialize class arena
   if (Metaspace::using_class_space()) {
-    constexpr size_t class_mimumum_allocation_word_size = sizeof(Klass);
-    constexpr size_t class_alignment_words = LogKlassAlignmentInBytes;
+    constexpr size_t class_mimumum_allocation_word_size = sizeof(Klass) / BytesPerWord;
+    constexpr size_t class_alignment_words = KlassAlignmentInBytes / BytesPerWord;
     ChunkManager* const class_cm =
             ChunkManager::chunkmanager_class();
     _class_space_arena = new MetaspaceArena(

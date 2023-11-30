@@ -169,7 +169,7 @@ public:
     size_t word_size = 1 + _allocation_range.random_value();
     MetaBlock wastage;
     MetaBlock bl = _arena->allocate(word_size, wastage);
-    ASSERT_TRUE(wastage.is_empty());
+    EXPECT_TRUE(wastage.is_empty());
     if (bl.is_nonempty()) {
       EXPECT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));
 
