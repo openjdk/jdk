@@ -56,20 +56,24 @@ class CompressedKlassPointers : public AllStatic {
   //  could use this info to optimize encoding.
   static size_t _range;
 
-  static void set_base(address base);
-  static void set_range(size_t range);
-  static void set_shift(int shift);
+  // Helper function for common cases.
+  static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
+  static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
+  static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
+  static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
+
+  DEBUG_ONLY(static void assert_is_valid_encoding(address addr, size_t len, address base, int shift);)
 
 public:
 
-  // Given an address p, return true if p can be used as an encoding base.
-  //  (Some platforms have restrictions of what constitutes a valid base
-  //   address).
-  static bool is_valid_base(address p);
+  // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
+  // If optimize_for_zero_base is true, the implementation will attempt to reserve optimized for zero-based encoding.
+  static char* reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base);
 
   // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
-  // archived heap objects.
+  // archived heap objects. In this case, we don't have the freedom to choose base and shift; they are handed to
+  // us from CDS.
   static void initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift);
 
   // Given an address range [addr, addr+len) which the encoding is supposed to
