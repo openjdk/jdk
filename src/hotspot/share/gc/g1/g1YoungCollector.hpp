@@ -49,7 +49,7 @@ class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
-class G1YoungGCEvacFailureInjector;
+class G1YoungGCAllocationFailureInjector;
 class STWGCTimer;
 class WorkerThreads;
 
@@ -78,7 +78,7 @@ class G1YoungCollector {
   G1SurvivorRegions* survivor_regions() const;
   ReferenceProcessor* ref_processor_stw() const;
   WorkerThreads* workers() const;
-  G1YoungGCEvacFailureInjector* evac_failure_injector() const;
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() const;
 
   GCCause::Cause _gc_cause;
 

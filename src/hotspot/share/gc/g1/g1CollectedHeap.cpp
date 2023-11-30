@@ -1146,7 +1146,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(nullptr),
-  _evac_failure_injector(),
+  _allocation_failure_injector(),
   _verifier(nullptr),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
@@ -1434,7 +1434,7 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  evac_failure_injector()->reset();
+  allocation_failure_injector()->reset();
 
   G1InitLogger::print();
 
@@ -2950,9 +2950,6 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
   if (evacuation_failed) {
-    // Reset the G1EvacuationFailureALot counters and flags
-    evac_failure_injector()->reset();
-
     set_used(recalculate_used());
   } else {
     // The "used" of the collection set have already been subtracted

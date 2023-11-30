@@ -220,7 +220,7 @@ private:
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
-  G1YoungGCEvacFailureInjector _evac_failure_injector;
+  G1YoungGCAllocationFailureInjector _allocation_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -549,7 +549,7 @@ public:
     return _allocator;
   }
 
-  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() { return &_allocation_failure_injector; }
 
   G1HeapVerifier* verifier() {
     return _verifier;

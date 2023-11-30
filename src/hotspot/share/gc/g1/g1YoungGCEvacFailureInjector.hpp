@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,66 +22,66 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
-#define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP
+#ifndef SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_HPP
+#define SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_HPP
 
 #include "gc/g1/g1_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if EVAC_FAILURE_INJECTOR
-#define EVAC_FAILURE_INJECTOR_RETURN
-#define EVAC_FAILURE_INJECTOR_RETURN_(code)
-#define EVAC_FAILURE_INJECTOR_ONLY(code) code
+#if ALLOCATION_FAILURE_INJECTOR
+#define ALLOCATION_FAILURE_INJECTOR_RETURN
+#define ALLOCATION_FAILURE_INJECTOR_RETURN_(code)
+#define ALLOCATION_FAILURE_INJECTOR_ONLY(code) code
 #else
-#define EVAC_FAILURE_INJECTOR_RETURN { return; }
-#define EVAC_FAILURE_INJECTOR_RETURN_(code) { code }
-#define EVAC_FAILURE_INJECTOR_ONLY(code)
-#endif // EVAC_FAILURE_INJECTOR
+#define ALLOCATION_FAILURE_INJECTOR_RETURN { return; }
+#define ALLOCATION_FAILURE_INJECTOR_RETURN_(code) { code }
+#define ALLOCATION_FAILURE_INJECTOR_ONLY(code)
+#endif // ALLOCATION_FAILURE_INJECTOR
 
-// Support for injecting evacuation failures based on the G1EvacuationFailureALot*
+// Support for injecting allocation failures based on the G1AllocationFailureALot*
 // flags. Analogous to PromotionFailureALot for the other collectors.
 //
-// Every G1EvacuationFailureALotInterval collections without evacuation failure
-// in between we "arm" the injector to induce evacuation failures after
-// G1EvacuationFailureALotCount successful evacuations.
+// Every G1AllocationFailureALotInterval collections without evacuation failure
+// in between we "arm" the injector to induce allocation failures after
+// G1AllocationFailureALotCount successful evacuations.
 //
-// Available only when EVAC_FAILURE_INJECTOR is defined.
-class G1YoungGCEvacFailureInjector {
-#if EVAC_FAILURE_INJECTOR
+// Available only when ALLOCATION_FAILURE_INJECTOR is defined.
+class G1YoungGCAllocationFailureInjector {
+#if ALLOCATION_FAILURE_INJECTOR
   // Should we inject evacuation failures in the current GC.
-  bool _inject_evacuation_failure_for_current_gc;
+  bool _inject_allocation_failure_for_current_gc;
 
-  // Records the number of the last collection when evacuation failure happened.
-  // Used to determine whether evacuation failure injection should be in effect
+  // Records the number of the last collection when allocation failure happened.
+  // Used to determine whether allocation failure injection should be in effect
   // for the current GC.
-  size_t _last_collection_with_evacuation_failure;
+  size_t _last_collection_with_allocation_failure;
 
   // Records the regions that will fail evacuation.
-  CHeapBitMap _evac_failure_regions;
+  CHeapBitMap _allocation_failure_regions;
 #endif
 
   bool arm_if_needed_for_gc_type(bool for_young_only_phase,
                                  bool during_concurrent_start,
-                                 bool mark_or_rebuild_in_progress) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+                                 bool mark_or_rebuild_in_progress) ALLOCATION_FAILURE_INJECTOR_RETURN_( return false; );
 
-  // Selects the regions that will fail evacuation by G1EvacuationFailureALotCSetPercent.
-  void select_evac_failure_regions() EVAC_FAILURE_INJECTOR_RETURN;
+  // Selects the regions that will fail allocation by G1AllocationFailureALotCSetPercent.
+  void select_allocation_failure_regions() ALLOCATION_FAILURE_INJECTOR_RETURN;
 public:
 
-  G1YoungGCEvacFailureInjector() EVAC_FAILURE_INJECTOR_RETURN;
+  G1YoungGCAllocationFailureInjector() ALLOCATION_FAILURE_INJECTOR_RETURN;
 
-  // Arm the evacuation failure injector if needed for the current
+  // Arm the allocation failure injector if needed for the current
   // GC (based upon the type of GC and which command line flags are set);
-  void arm_if_needed() EVAC_FAILURE_INJECTOR_RETURN;
+  void arm_if_needed() ALLOCATION_FAILURE_INJECTOR_RETURN;
 
-  // Return true if it's time to cause an evacuation failure; the caller
+  // Return true if it's time to cause an allocation failure; the caller
   // provides the (preferably thread-local) counter to minimize performance impact.
-  bool evacuation_should_fail(size_t& counter, uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+  bool allocation_should_fail(size_t& counter, uint region_idx) ALLOCATION_FAILURE_INJECTOR_RETURN_( return false; );
 
-  // Reset the evacuation failure injection counters. Should be called at
-  // the end of an evacuation pause in which an evacuation failure occurred.
-  void reset() EVAC_FAILURE_INJECTOR_RETURN;
+  // Reset the allocation failure injection counters. Should be called at
+  // the end of an evacuation pause in which an allocation failure occurred.
+  void reset() ALLOCATION_FAILURE_INJECTOR_RETURN;
 };
 
-#endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP */
+#endif /* SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_HPP */

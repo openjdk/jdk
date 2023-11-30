@@ -122,9 +122,9 @@ public class TestVerifyGCType {
     private static void testYoungEvacFail() throws Exception {
         OutputAnalyzer output;
         output = testWithVerificationType(new String[] {"young-evac-fail"},
-                                          new String[] {"-XX:+G1EvacuationFailureALot",
-                                                        "-XX:G1EvacuationFailureALotCount=100",
-                                                        "-XX:G1EvacuationFailureALotInterval=1",
+                                          new String[] {"-XX:+G1AllocationFailureALot",
+                                                        "-XX:G1AllocationFailureALotCount=100",
+                                                        "-XX:G1AllocationFailureALotInterval=1",
                                                         "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 

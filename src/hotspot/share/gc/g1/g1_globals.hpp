@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,18 @@
 
 #include "runtime/globals_shared.hpp"
 
-// Enable evacuation failure injector by default in non-product builds.
+// Enable allocation failure injector by default in non-product builds.
 
-#ifdef EVAC_FAILURE_INJECTOR
-#error "EVAC_FAILURE_INJECTOR already defined"
+#ifdef ALLOCATION_FAILURE_INJECTOR
+#error "ALLOCATION_FAILURE_INJECTOR already defined"
 #endif
 #ifndef PRODUCT
-#define EVAC_FAILURE_INJECTOR 1
+#define ALLOCATION_FAILURE_INJECTOR 1
 #else
-#define EVAC_FAILURE_INJECTOR 0
+#define ALLOCATION_FAILURE_INJECTOR 0
 #endif
 
-#if EVAC_FAILURE_INJECTOR
+#if ALLOCATION_FAILURE_INJECTOR
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
                                        develop_pd,                          \
                                        product,                             \
@@ -47,35 +47,35 @@
                                        range,                               \
                                        constraint)                          \
                                                                             \
-  product(bool, G1EvacuationFailureALot, false,                             \
+  product(bool, G1AllocationFailureALot, false,                             \
           "Force use of evacuation failure handling during certain "        \
           "evacuation pauses")                                              \
                                                                             \
-  product(uintx, G1EvacuationFailureALotCount, 1000,                        \
+  product(uintx, G1AllocationFailureALotCount, 1000,                        \
           "Number of successful evacuations between evacuation failures "   \
           "occurring at object copying per thread")                         \
                                                                             \
-  product(uintx, G1EvacuationFailureALotInterval, 5,                        \
+  product(uintx, G1AllocationFailureALotInterval, 5,                        \
           "Total collections between forced triggering of evacuation "      \
           "failures")                                                       \
                                                                             \
-  product(bool, G1EvacuationFailureALotDuringConcMark, true,                \
+  product(bool, G1AllocationFailureALotDuringConcMark, true,                \
           "Force use of evacuation failure handling during evacuation "     \
           "pauses when marking is in progress")                             \
                                                                             \
-  product(bool, G1EvacuationFailureALotDuringConcurrentStart, true,         \
+  product(bool, G1AllocationFailureALotDuringConcurrentStart, true,         \
           "Force use of evacuation failure handling during concurrent "     \
           "start evacuation pauses")                                        \
                                                                             \
-  product(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
+  product(bool, G1AllocationFailureALotDuringYoungGC, true,                 \
           "Force use of evacuation failure handling during young "          \
           "evacuation pauses")                                              \
                                                                             \
-  product(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
+  product(bool, G1AllocationFailureALotDuringMixedGC, true,                 \
           "Force use of evacuation failure handling during mixed "          \
           "evacuation pauses")                                              \
                                                                             \
-  product(uint, G1EvacuationFailureALotCSetPercent, 100,                    \
+  product(uint, G1AllocationFailureALotCSetPercent, 100,                    \
           "The percentage of regions in the collection set starting "       \
           "from the beginning where the forced evacuation failure "         \
           "injection will be applied.")                                     \

@@ -24,7 +24,7 @@
 package gc.g1;
 
 /*
- * @test TestEvacuationFailure
+ * @test TestAllocationFailure
  * @summary Ensure the output for a minor GC with G1 that has allocation failure contains the correct strings.
  * @requires vm.gc.G1
  * @requires vm.debug
@@ -34,24 +34,24 @@ package gc.g1;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   gc.g1.TestEvacuationFailure
+ *                   gc.g1.TestAllocationFailure
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestEvacuationFailure {
+public class TestAllocationFailure {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
                                                                              "-Xmx32M",
                                                                              "-Xmn16M",
-                                                                             "-XX:+G1EvacuationFailureALot",
-                                                                             "-XX:G1EvacuationFailureALotCount=100",
-                                                                             "-XX:G1EvacuationFailureALotInterval=1",
+                                                                             "-XX:+G1AllocationFailureALot",
+                                                                             "-XX:G1AllocationFailureALotCount=100",
+                                                                             "-XX:G1AllocationFailureALotInterval=1",
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-Xlog:gc",
-                                                                             GCTestWithEvacuationFailure.class.getName());
+                                                                             GCTestWithAllocationFailure.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
@@ -59,17 +59,17 @@ public class TestEvacuationFailure {
         output.shouldHaveExitValue(0);
     }
 
-    static class GCTestWithEvacuationFailure {
+    static class GCTestWithAllocationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
-        private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
+        private static Object[] holder = new Object[200]; // Must be larger than G1AllocationFailureALotCount
 
         public static void main(String [] args) {
             largeObject = new byte[16 * 1024 * 1024];
             System.out.println("Creating garbage");
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
-            // which is larger than G1EvacuationFailureALotInterval.
+            // which is larger than G1AllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
                 holder[i % holder.length] = new byte[1024];
             }
