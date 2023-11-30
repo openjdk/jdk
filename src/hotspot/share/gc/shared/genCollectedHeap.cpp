@@ -539,7 +539,7 @@ void GenCollectedHeap::do_collection(bool           full,
 
     CodeCache::on_gc_marking_cycle_start();
 
-    DefaultClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                                      false /* lock_codeblob_free_separately */);
 
     collect_generation(_old_gen,

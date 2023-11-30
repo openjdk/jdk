@@ -2595,7 +2595,7 @@ void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
 void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjectClosure* is_alive, GCTimer* timer) {
   GCTraceTime(Debug, gc, phases) debug(description, timer);
 
-  DefaultClassUnloadingContext ctx(workers()->active_workers(),
+  ClassUnloadingContext ctx(workers()->active_workers(),
                                    false /* lock_codeblob_free_separately */);
   {
     CodeCache::UnlinkingScope scope(is_alive);

@@ -1825,7 +1825,7 @@ void ShenandoahHeap::stop() {
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
-  DefaultClassUnloadingContext ctx(_workers->active_workers(),
+  ClassUnloadingContext ctx(_workers->active_workers(),
                                    false /* lock_codeblob_free_separately */);
 
   // Unload classes and purge SystemDictionary.
