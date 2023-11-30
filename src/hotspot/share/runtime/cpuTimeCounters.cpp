@@ -45,6 +45,7 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
       return "conc_dedup";
     default:
       ShouldNotReachHere();
+      return "";
   };
 }
 
