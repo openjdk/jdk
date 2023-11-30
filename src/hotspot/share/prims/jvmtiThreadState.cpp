@@ -423,22 +423,20 @@ void
 JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_mount) {
   JavaThread* thread = JavaThread::current();
   oop vt = JNIHandles::resolve_external_guard(vthread);
+  assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
+
+  // Avoid using MonitorLocker on performance critical path, use
+  // two-level synchronization with lock-free operations on counters.
+  Atomic::inc(&_VTMS_transition_count); // Try to enter VTMS transition section optmistically.
+  java_lang_Thread::set_is_in_VTMS_transition(vt, true);
 
   if (!sync_protocol_enabled()) {
-    assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
     thread->set_is_in_VTMS_transition(true);
-    java_lang_Thread::set_is_in_VTMS_transition(vt, true);
-    Atomic::inc(&_VTMS_transition_count);
     return;
   }
   HandleMark hm(thread);
   Handle vth = Handle(thread, vt);
   int attempts = 50000;
-
-  // Avoid using MonitorLocker on performance critical path, use
-  // two-level synchronization with lock-free operations on counters.
-  Atomic::inc(&_VTMS_transition_count); // Try to enter VTMS transition section optmistically.
-  java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
 
   // Do not allow suspends inside VTMS transitions.
   // Block while transitions are disabled or there are suspend requests.
@@ -485,7 +483,6 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   }
 #endif
   // Enter VTMS transition section.
-  assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
   thread->set_is_in_VTMS_transition(true);
 }
 
