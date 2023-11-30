@@ -1883,7 +1883,7 @@ class UnmountedVThreadDumper {
   virtual void dump_vthread(oop vt, AbstractDumpWriter* segment_writer) = 0;
 };
 
-// Support class using when iterating over the heap.
+// Support class used when iterating over the heap.
 class HeapObjectDumper : public ObjectClosure {
  private:
   AbstractDumpWriter* _writer;
@@ -1932,19 +1932,24 @@ void HeapObjectDumper::do_object(oop o) {
 class DumperController : public CHeapObj<mtInternal> {
  private:
    Monitor* _lock;
+   Mutex* _global_writer_lock;
+
    const uint   _dumper_number;
    uint   _complete_number;
 
    bool   _started; // VM dumper started and acquired global writer lock
-   Mutex* _global_writer_lock;
 
  public:
    DumperController(uint number) :
+     // _lock and _global_writer_lock are used for synchronization between GC worker threads inside safepoint,
+     // so we lock with _no_safepoint_check_flag.
+     // signal_start() acquires _lock when global writer is locked,
+     // its rank must be less than _global_writer_lock rank.
      _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint - 1, "DumperController_lock")),
+     _global_writer_lock(new (std::nothrow) Mutex(Mutex::nosafepoint, "DumpWriter_lock")),
      _dumper_number(number),
      _complete_number(0),
-     _started(false),
-     _global_writer_lock(new (std::nothrow) Mutex(Mutex::nosafepoint, "DumpWriter_lock"))
+     _started(false)
    {}
 
    ~DumperController() {
@@ -2020,10 +2025,10 @@ public:
 };
 
 char* DumpMerger::get_writer_path(const char* base_path, int seq) {
-  // calculate required buffer size
+  // approximate required buffer size
   size_t buf_size = strlen(base_path)
                     + 2                 // ".p"
-                    + 1 + (seq / 10)    // number
+                    + 10                // number (that's enough for 2^32 parallel dumpers)
                     + 1;                // '\0'
 
   char* path = NEW_RESOURCE_ARRAY(char, buf_size);
