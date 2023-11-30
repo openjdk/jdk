@@ -216,4 +216,18 @@ public:
 
 };
 
+// MetaBlock handling
+
+#define CHECK_BLOCK_EMPTY(block) { \
+  EXPECT_TRUE(block.is_empty()); \
+  block.verify(); \
+}
+
+#define CHECK_BLOCK(block, expected_base, expected_size) { \
+    EXPECT_EQ(block.base(), (MetaWord*)expected_base); \
+    EXPECT_EQ((size_t)expected_size, block.word_size()); \
+    EXPECT_EQ(block.end(), expected_base + expected_size); \
+    block.verify(); \
+}
+
 #endif // GTEST_METASPACE_METASPACEGTESTCOMMON_HPP

@@ -54,12 +54,15 @@ MetaspaceTestArena::~MetaspaceTestArena() {
 
 MetaWord* MetaspaceTestArena::allocate(size_t word_size) {
   MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
-  return _arena->allocate(word_size);
+  MetaBlock result, wastage;
+  result = _arena->allocate(word_size, wastage);
+  assert(wastage.is_empty(), "did not expect wastage");
+  return result.base();
 }
 
 void MetaspaceTestArena::deallocate(MetaWord* p, size_t word_size) {
   MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
-  return _arena->deallocate(p, word_size);
+  _arena->deallocate(MetaBlock(p, word_size));
 }
 
 ///// MetaspaceTestArea //////

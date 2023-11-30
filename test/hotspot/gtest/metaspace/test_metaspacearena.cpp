@@ -28,6 +28,7 @@
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
@@ -46,6 +47,7 @@ using metaspace::ArenaGrowthPolicy;
 using metaspace::CommitLimiter;
 using metaspace::InternalStats;
 using metaspace::MemRangeCounter;
+using metaspace::MetaBlock;
 using metaspace::MetaspaceArena;
 using metaspace::SizeAtomicCounter;
 using metaspace::Settings;
@@ -151,14 +153,16 @@ public:
 
     size_t possible_expansion = limiter().possible_expansion_words();
 
-    MetaWord* p = _arena->allocate(word_size);
+    MetaBlock bl, wastage;
+    bl = _arena->allocate(word_size, wastage);
+    ASSERT_TRUE(wastage.is_empty());
 
     SOMETIMES(DEBUG_ONLY(_arena->verify();))
 
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
     usage_numbers_with_test(&used2, &committed2, &capacity2);
 
-    if (p == NULL) {
+    if (bl.is_empty()) {
       // Allocation failed.
       ASSERT_LT(possible_expansion, word_size);
       ASSERT_EQ(used, used2);
@@ -166,7 +170,7 @@ public:
       ASSERT_EQ(capacity, capacity2);
     } else {
       // Allocation succeeded. Should be correctly aligned.
-      ASSERT_TRUE(is_aligned(p, AllocationAlignmentByteSize));
+      ASSERT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));
       // used: may go up or may not (since our request may have been satisfied from the freeblocklist
       //   whose content already counts as used).
       // committed: may go up, may not
@@ -176,7 +180,7 @@ public:
       ASSERT_GE(capacity2, capacity);
     }
 
-    *p_return_value = p;
+    *p_return_value = bl.base();
   }
 
   // Allocate; it may or may not work; but caller does not care for the result value
@@ -189,7 +193,7 @@ public:
     size_t used = 0, committed = 0, capacity = 0;
     usage_numbers_with_test(&used, &committed, &capacity);
 
-    _arena->deallocate(p, word_size);
+    _arena->deallocate(MetaBlock(p, word_size));
 
     SOMETIMES(DEBUG_ONLY(_arena->verify();))
 

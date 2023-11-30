@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metachunkList.hpp"
 
 class outputStream;
@@ -78,6 +79,9 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // Please note that access to a metaspace arena may be shared
   // between threads and needs to be synchronized in CLMS.
 
+  const size_t _allocation_alignment_words;
+  const size_t _minimum_allocation_word_size;
+
   // Reference to the chunk manager to allocate chunks from.
   ChunkManager* const _chunk_manager;
 
@@ -126,10 +130,13 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
   // free block list
   FreeBlocks* fbl() const                       { return _fbl; }
-  void add_allocation_to_fbl(MetaWord* p, size_t word_size);
+  void add_allocation_to_fbl(MetaBlock bl);
 
-  // Given a chunk, add its remaining free committed space to the free block list.
-  void salvage_chunk(Metachunk* c);
+  // Returns true if we could reuse this block (large enough and correctly aligned).
+  bool could_reuse_block(MetaBlock bl) const;
+
+  // Given a chunk, return the committed remainder of this chunk.
+  MetaBlock salvage_chunk(Metachunk* c);
 
   // Allocate a new chunk from the underlying chunk manager able to hold at least
   // requested word size.
@@ -149,7 +156,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   DEBUG_ONLY(bool is_valid_area(MetaWord* p, size_t word_size) const;)
 
   // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
-  MetaWord* allocate_inner(size_t word_size);
+  MetaBlock allocate_inner(size_t word_size, MetaBlock& wastage);
 
 public:
 
@@ -157,19 +164,24 @@ public:
                  SizeAtomicCounter* total_used_words_counter,
                  const char* name);
 
+  MetaspaceArena(size_t minimum_allocation_word_size,
+                 size_t allocation_alignment_words,
+                 ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
+                 SizeAtomicCounter* total_used_words_counter,
+                 const char* name);
+
   ~MetaspaceArena();
 
   // Allocate memory from Metaspace.
-  // 1) Attempt to allocate from the dictionary of deallocated blocks.
-  // 2) Attempt to allocate from the current chunk.
-  // 3) Attempt to enlarge the current chunk in place if it is too small.
-  // 4) Attempt to get a new chunk and allocate from that chunk.
-  // At any point, if we hit a commit limit, we return null.
-  MetaWord* allocate(size_t word_size);
+  // On success, returns non-empty block of the specified word size, and
+  // possibly a wastage block that is the result of alignment operations.
+  // On failure, returns an empty block. Failure may happen if we hit a
+  // commit limit.
+  MetaBlock allocate(size_t word_size, MetaBlock& wastage);
 
   // Prematurely returns a metaspace allocation to the _block_freelists because it is not
   // needed anymore.
-  void deallocate(MetaWord* p, size_t word_size);
+  void deallocate(MetaBlock bl);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(ArenaStats* out) const;

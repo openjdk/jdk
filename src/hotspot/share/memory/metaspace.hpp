@@ -64,7 +64,9 @@ private:
 
   static const MetaspaceTracer* _tracer;
 
-  static bool _initialized;
+  // For quick pointer testing: extent of class space; nullptr if no class space.
+  static const void* _class_space_start;
+  static const void* _class_space_end;
 
 public:
 
@@ -113,8 +115,30 @@ public:
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type);
 
-  static bool contains(const void* ptr);
-  static bool contains_non_shared(const void* ptr);
+  static bool contains(const void* ptr) {
+    return is_in_shared_metaspace(ptr) || // in cds
+           is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // kept for now for backward compat reasons, but lets test if callers really need this
+  static bool contains_non_shared(const void* ptr) {
+    return is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if pointer points into one of the metaspace regions, or
+  // into the class space.
+  static bool is_in_shared_metaspace(const void* ptr);
+
+  // Returns true if pointer points into one of the non-class-space metaspace regions.
+  static bool is_in_nonclass_metaspace(const void* ptr);
+
+  // Returns true if ptr points into class space, false if it doesn't or if
+  // there is no class space.
+  static inline bool is_in_class_space(const void* ptr) {
+    return ptr < _class_space_end && ptr >= _class_space_start;
+  }
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);

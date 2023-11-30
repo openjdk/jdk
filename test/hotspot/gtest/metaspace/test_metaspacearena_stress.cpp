@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
@@ -43,6 +44,7 @@ using metaspace::ArenaGrowthPolicy;
 using metaspace::ChunkManager;
 using metaspace::IntCounter;
 using metaspace::MemRangeCounter;
+using metaspace::MetaBlock;
 using metaspace::MetaspaceArena;
 using metaspace::SizeAtomicCounter;
 using metaspace::ArenaStats;
@@ -165,13 +167,15 @@ public:
   // Allocate a random amount. Return false if the allocation failed.
   bool checked_random_allocate() {
     size_t word_size = 1 + _allocation_range.random_value();
-    MetaWord* p = _arena->allocate(word_size);
-    if (p != NULL) {
-      EXPECT_TRUE(is_aligned(p, AllocationAlignmentByteSize));
+    MetaBlock wastage;
+    MetaBlock bl = _arena->allocate(word_size, wastage);
+    ASSERT_TRUE(wastage.is_empty());
+    if (bl.is_nonempty()) {
+      EXPECT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));
 
       allocation_t* a = NEW_C_HEAP_OBJ(allocation_t, mtInternal);
       a->word_size = word_size;
-      a->p = p;
+      a->p = bl.base();
       a->mark();
       a->next = _allocations;
       _allocations = a;
@@ -195,7 +199,7 @@ public:
     }
     if (a != NULL && a->p != NULL) {
       a->verify();
-      _arena->deallocate(a->p, a->word_size);
+      _arena->deallocate(MetaBlock(a->p, a->word_size));
       _dealloc_count.add(a->word_size);
       a->p = NULL; a->word_size = 0;
       if ((_dealloc_count.count() % 20) == 0) {

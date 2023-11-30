@@ -30,16 +30,20 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "oops/klass.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 
 using metaspace::ChunkManager;
+using metaspace::MetaBlock;
 using metaspace::MetaspaceArena;
 using metaspace::ArenaGrowthPolicy;
 using metaspace::RunningCounters;
@@ -56,9 +60,13 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
+  constexpr size_t nonclass_mimumum_allocation_word_size = 1;
+  constexpr size_t nonclass_alignment_words = metaspace::AllocationAlignmentWordSize;
 
   // Initialize non-class Arena
   _non_class_space_arena = new MetaspaceArena(
+      nonclass_mimumum_allocation_word_size,
+      nonclass_alignment_words,
       non_class_cm,
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
       RunningCounters::used_nonclass_counter(),
@@ -66,9 +74,13 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 
   // If needed, initialize class arena
   if (Metaspace::using_class_space()) {
+    constexpr size_t class_mimumum_allocation_word_size = sizeof(Klass);
+    constexpr size_t class_alignment_words = LogKlassAlignmentInBytes;
     ChunkManager* const class_cm =
             ChunkManager::chunkmanager_class();
     _class_space_arena = new MetaspaceArena(
+        class_mimumum_allocation_word_size,
+        class_alignment_words,
         class_cm,
         ArenaGrowthPolicy::policy_for_space_type(space_type, true),
         RunningCounters::used_class_counter(),
@@ -90,11 +102,17 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 // Allocate word_size words from Metaspace.
 MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataType mdType) {
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
+  MetaBlock result, wastage;
   if (Metaspace::is_class_space_allocation(mdType)) {
-    return class_space_arena()->allocate(word_size);
+    result = class_space_arena()->allocate(word_size, wastage);
+    if (wastage.is_nonempty()) {
+      non_class_space_arena()->deallocate(wastage);
+    }
   } else {
-    return non_class_space_arena()->allocate(word_size);
+    result = non_class_space_arena()->allocate(word_size, wastage);
+    assert(wastage.is_empty(), "We don't expect wastage from the non-class arena");
   }
+  return result.base();
 }
 
 // Attempt to expand the GC threshold to be good for at least another word_size words
@@ -133,9 +151,10 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   if (Metaspace::using_class_space() && is_class) {
-    class_space_arena()->deallocate(ptr, word_size);
+    assert(Metaspace::is_in_class_space(ptr), "Not a class space pointer");
+    class_space_arena()->deallocate(MetaBlock(ptr, word_size));
   } else {
-    non_class_space_arena()->deallocate(ptr, word_size);
+    non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
   }
   DEBUG_ONLY(InternalStats::inc_num_deallocs();)
 }
