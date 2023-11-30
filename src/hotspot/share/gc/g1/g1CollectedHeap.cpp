@@ -1516,11 +1516,10 @@ jint G1CollectedHeap::initialize() {
 
   evac_failure_injector()->reset();
 
-  CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-  instance->create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
-  instance->create_counter(CPUTimeGroups::CPUTimeType::gc_conc_mark);
-  instance->create_counter(CPUTimeGroups::CPUTimeType::gc_conc_refine);
-  instance->create_counter(CPUTimeGroups::CPUTimeType::gc_service);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_mark);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_refine);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
 
@@ -2429,16 +2428,14 @@ void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  WorkerThreads* worker_threads = workers();
-  if (worker_threads != nullptr) {
-    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
-    // Currently parallel worker threads never terminate (JDK-8081682), so it is
-    // safe for VMThread to read their CPU times. However, if JDK-8087340 is
-    // resolved so they terminate, we should rethink if it is still safe.
-    worker_threads->threads_do(&tttc);
-  }
+  
+  ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+  // Currently parallel worker threads never terminate (JDK-8081682), so it is
+  // safe for VMThread to read their CPU times. However, if JDK-8087340 is
+  // resolved so they terminate, we should rethink if it is still safe.
+  workers()->threads_do(&tttc);
 
-  CPUTimeCounters::get_instance()->publish_gc_total_cpu_time();
+  CPUTimeCounters::publish_gc_total_cpu_time();
 }
 
 void G1CollectedHeap::start_new_collection_set() {

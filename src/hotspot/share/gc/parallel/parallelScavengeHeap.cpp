@@ -129,7 +129,7 @@ jint ParallelScavengeHeap::initialize() {
   }
 
   // Create CPU time counter
-  CPUTimeCounters::get_instance()->create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
 
   ParallelInitLogger::print();
 
@@ -902,5 +902,5 @@ void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
   // behavior, we should rethink if it is still safe.
   gc_threads_do(&tttc);
 
-  CPUTimeCounters::get_instance()->publish_gc_total_cpu_time();
+  CPUTimeCounters::publish_gc_total_cpu_time();
 }

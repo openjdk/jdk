@@ -52,11 +52,8 @@ const char* CPUTimeGroups::to_string(CPUTimeType val) {
 bool CPUTimeGroups::is_gc_counter(CPUTimeType val) {
   switch (val) {
     case CPUTimeType::gc_parallel_workers:
-      return true;
     case CPUTimeType::gc_conc_mark:
-      return true;
     case CPUTimeType::gc_conc_refine:
-      return true;
     case CPUTimeType::gc_service:
       return true;
     default:
@@ -70,61 +67,65 @@ CPUTimeCounters* CPUTimeCounters::_instance = nullptr;
 CPUTimeCounters::CPUTimeCounters() :
     _cpu_time_counters(),
     _gc_total_cpu_time_diff(0) {
-  create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
 }
 
 void CPUTimeCounters::inc_gc_total_cpu_time(jlong diff) {
-  Atomic::add(&_gc_total_cpu_time_diff, diff);
+  CPUTimeCounters* instance = CPUTimeCounters::get_instance();
+  Atomic::add(&(instance->_gc_total_cpu_time_diff), diff);
 }
 
 void CPUTimeCounters::publish_gc_total_cpu_time() {
+  CPUTimeCounters* instance = CPUTimeCounters::get_instance();
   // Ensure that we are only incrementing atomically by using Atomic::cmpxchg
   // to set the value to zero after we obtain the new CPU time difference.
   jlong old_value;
-  jlong fetched_value = Atomic::load(&_gc_total_cpu_time_diff);
+  jlong fetched_value = Atomic::load(&(instance->_gc_total_cpu_time_diff));
   jlong new_value = 0;
   do {
     old_value = fetched_value;
-    fetched_value = Atomic::cmpxchg(&_gc_total_cpu_time_diff, old_value, new_value);
+    fetched_value = Atomic::cmpxchg(&(instance->_gc_total_cpu_time_diff), old_value, new_value);
   } while (old_value != fetched_value);
   get_counter(CPUTimeGroups::CPUTimeType::gc_total)->inc(fetched_value);
 }
 
 void CPUTimeCounters::create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name) {
-  if (UsePerfData) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
-    if (os::is_thread_cpu_time_supported()) {
-      _cpu_time_counters[static_cast<int>(name)] =
-                  PerfDataManager::create_counter(ns, CPUTimeGroups::to_string(name),
-                                                  PerfData::U_Ticks, CHECK);
-    }
+    CPUTimeCounters* instance = CPUTimeCounters::get_instance();
+    instance->_cpu_time_counters[static_cast<int>(name)] =
+                PerfDataManager::create_counter(ns, CPUTimeGroups::to_string(name),
+                                                PerfData::U_Ticks, CHECK);
   }
 }
 
 void CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType group) {
-  create_counter(SUN_THREADS_CPUTIME, group);
+  CPUTimeCounters::create_counter(SUN_THREADS_CPUTIME, group);
 }
 
 PerfCounter* CPUTimeCounters::get_counter(CPUTimeGroups::CPUTimeType name) {
-  return _cpu_time_counters[static_cast<int>(name)];
+  return CPUTimeCounters::get_instance()->_cpu_time_counters[static_cast<int>(name)];
+}
+
+void CPUTimeCounters::update_counter(CPUTimeGroups::CPUTimeType name, jlong total) {
+  CPUTimeCounters* instance = CPUTimeCounters::get_instance();
+  PerfCounter* counter = instance->get_counter(name);
+  jlong prev_value = counter->get_value();
+  jlong net_cpu_time = total - prev_value;
+  counter->inc(net_cpu_time);
+  if (CPUTimeGroups::is_gc_counter(name)) {
+    instance->inc_gc_total_cpu_time(net_cpu_time);
+  }
 }
 
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
-    CPUTimeCounters* instance = CPUTimeCounters::get_instance();
-    PerfCounter* counter = instance->get_counter(_name);
-    jlong net_cpu_time = _total - counter->get_value();
-    counter->inc(net_cpu_time);
-    if (CPUTimeGroups::is_gc_counter(_name)) {
-      instance->inc_gc_total_cpu_time(net_cpu_time);
-    }
+  CPUTimeCounters::update_counter(_name, _total);
 }
 
 void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
-    // The default code path (fast_thread_cpu_time()) asserts that
-    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-    // must ensure the thread exists and has not terminated.
-    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _total += os::thread_cpu_time(thread);
+  // The default code path (fast_thread_cpu_time()) asserts that
+  // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
+  // must ensure the thread exists and has not terminated.
+  _total += os::thread_cpu_time(thread);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,6 +53,8 @@ class CPUTimeCounters: public CHeapObj<mtServiceability> {
 private:
   // CPUTimeCounters is a singleton instance.
   CPUTimeCounters();
+  NONCOPYABLE(CPUTimeCounters);
+
   static CPUTimeCounters* _instance;
 
   // An array of PerfCounters which correspond to the various counters we want
@@ -65,29 +67,27 @@ private:
   // is added to the `gc_total` CPUTimeType at the end of GC.
   volatile jlong _gc_total_cpu_time_diff;
 
-  void create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name);
+  static void create_counter(CounterNS ns, CPUTimeGroups::CPUTimeType name);
 
-public:
   static CPUTimeCounters* get_instance() {
     assert(_instance != nullptr, "no instance found");
     return _instance;
   }
+  
+  static void inc_gc_total_cpu_time(jlong diff);
 
+public:
   static void initialize() {
     assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
     _instance = new CPUTimeCounters();
+    create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
   }
 
-  // Prevent copy of singleton object.
-  CPUTimeCounters(const CPUTimeCounters& copy) = delete;
-  void operator=(const CPUTimeCounters& copy) = delete;
+  static void create_counter(CPUTimeGroups::CPUTimeType name);
+  static PerfCounter* get_counter(CPUTimeGroups::CPUTimeType name);
+  static void update_counter(CPUTimeGroups::CPUTimeType name, jlong total);
 
-  // Methods to modify and update counter for total CPU time spent doing GC.
-  void inc_gc_total_cpu_time(jlong diff);
-  void publish_gc_total_cpu_time();
-
-  void create_counter(CPUTimeGroups::CPUTimeType name);
-  PerfCounter* get_counter(CPUTimeGroups::CPUTimeType name);
+  static void publish_gc_total_cpu_time();
 };
 
 // Class to compute the total CPU time for a set of threads, then update an
@@ -98,8 +98,10 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
   CPUTimeGroups::CPUTimeType _name;
 
  public:
-  ThreadTotalCPUTimeClosure(CPUTimeGroups::CPUTimeType name) :
-      _total(0), _name(name) {}
+  ThreadTotalCPUTimeClosure(CPUTimeGroups::CPUTimeType name)
+      : _total(0), _name(name) {
+    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
+  }
 
   ~ThreadTotalCPUTimeClosure();
 

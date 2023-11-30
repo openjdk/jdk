@@ -65,7 +65,7 @@ StringDedup::Processor::Processor() : _thread(nullptr) {}
 
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
-  CPUTimeCounters::get_instance()->create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
 }
 
 void StringDedup::Processor::wait_for_requests() const {
