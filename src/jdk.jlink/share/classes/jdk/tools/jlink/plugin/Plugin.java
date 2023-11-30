@@ -25,9 +25,11 @@
 package jdk.tools.jlink.plugin;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jdk.tools.jlink.internal.plugins.ExcludePlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 
 /**
@@ -174,6 +176,19 @@ public interface Plugin {
      */
     public default boolean isHidden() {
         return false;
+    }
+
+    /**
+     * A list of exclude patterns suitable to be fed to the
+     * {@link ExcludePlugin}. The list of patterns should be such that
+     * the classes and resource list will be the same as before the
+     * plugin ran.
+     *
+     * @return A list of glob or regex patterns suitable for the
+     *         exclude-resource plugin.
+     */
+    public default List<String> getExcludePatterns() {
+        return null;
     }
 
     /**

@@ -42,13 +42,13 @@ import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
-import jdk.tools.jlink.internal.plugins.AddOptionsPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
 import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
@@ -425,7 +425,7 @@ public final class TaskHelper {
             if (!config.useModulePath()) {
                 Plugin systemModulesPlugin = null;
                 Plugin excludeResourcePlugin = null;
-                Plugin addOptionsPlugin = null;
+                List<String> excludePatterns = new ArrayList<>();
                 for (Plugin p: pluginToMaps.keySet()) {
                     if (p instanceof ExcludePlugin) {
                         excludeResourcePlugin = p;
@@ -433,26 +433,11 @@ public final class TaskHelper {
                     if (p instanceof SystemModulesPlugin) {
                         systemModulesPlugin = p;
                     }
-                    if (p instanceof AddOptionsPlugin) {
-                        addOptionsPlugin = p;
+                    if (p.getExcludePatterns() != null) {
+                        excludePatterns.addAll(p.getExcludePatterns());
                     }
                 }
-                // Certain system module classes get generated and SystemModulesMap replaced by the
-                // SystemModulesPlugin. Filter previously generated classes so the
-                // set of classes match the set of the packaged modules link.
-                String systemModulesPattern = "regex:/java\\.base/jdk/internal/module/SystemModules\\$.*\\.class";
-                // The default OpenJDK build generates JLI Species classes so they
-                // would be in the run-time image we derive from if we don't filter
-                // them. This filter corresponds to the set of classes part of the
-                // jmods.
-                String speciesPattern = "regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class";
-                // The AddResourcePlugin (used by AddOptionsPlugin)
-                String addOptionsGlob = "glob:" + AddOptionsPlugin.OPTS_FILE;
-                String saveJlinkOptsGlob = "glob:/jdk.jlink/" + JlinkTask.OPTIONS_RESOURCE;
-                String additionalPatterns = systemModulesPattern + "," +
-                                            speciesPattern + "," +
-                                            addOptionsGlob + "," +
-                                            saveJlinkOptsGlob;
+                String additionalPatterns = excludePatterns.stream().collect(Collectors.joining(","));
                 List<Map<String, String>> excludeResConfig = null;
                 if (excludeResourcePlugin == null) {
                     // no existing 'exclude-resources' setting
@@ -468,26 +453,11 @@ public final class TaskHelper {
                     lastConfig.put("exclude-resources", existingPattern + "," + additionalPatterns);
                     excludeResConfig.set(excludeResConfig.size() - 1, lastConfig);
                 }
-                // If the system modules plug-in is disabled, we add the
-                // -Djdk.system.module.finder.disableFastPath property as the
-                // SystemModulesMap class isn't guaranteed to be correct for the
-                // current module set.
+                // If the system modules plug-in is disabled, we fail the link
+                // as the SystemModulesMap class isn't guaranteed to be suitable
+                // for the to-be produced jimage.
                 if (systemModulesPlugin == null) {
-                    String disableFastPath = "-Djdk.system.module.finder.disableFastPath=true";
-                    if (addOptionsPlugin != null) {
-                        // Retrieve existing options and add the needed
-                        // property
-                        List<Map<String, String>> addOptsConfig = pluginToMaps.get(addOptionsPlugin);
-                        Map<String, String> lastOpt = addOptsConfig.get(addOptsConfig.size() - 1);
-                        String existingOpt = lastOpt.get("add-options");
-                        lastOpt.put("add-options", disableFastPath + " " + existingOpt);
-                        addOptsConfig.set(addOptsConfig.size() - 1, lastOpt);
-                    } else {
-                        addOptionsPlugin = PluginRepository.getPlugin("add-options", ModuleLayer.boot());
-                        List<Map<String, String>> addOptsConfig = new ArrayList<>();
-                        addOptsConfig.add(Map.of("add-options", disableFastPath));
-                        pluginToMaps.put(addOptionsPlugin, addOptsConfig);
-                    }
+                    throw new IllegalArgumentException("Disabling system-modules plugin for a run-time image based link is not allowed.");
                 }
             }
 

@@ -24,7 +24,9 @@
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
+import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 import tests.JImageValidator;
 
@@ -75,23 +77,35 @@ public class SystemModulesTest2 extends AbstractJmodLessTest {
         // Verify that SystemModules$all.class is there
         JImageValidator.validate(javaJmodless.resolve("lib").resolve("modules"),
                                     List.of("/java.base/jdk/internal/module/SystemModules$all.class"), Collections.emptyList());
-        // Attempt another run-time image link reducing modules to java.base only,
-        // but we don't rewrite SystemModulesMap.
-        Path finalResult = jlinkUsingImage(new JlinkSpecBuilder()
+        // The following jlink using --disable-plugin system-modules ought to
+        // fail, since the SystemModulesMap class would be incorrect if not
+        // re-generated (due to disabled system-modules plugin).
+        CapturingHandler handler = new CapturingHandler();
+        Predicate<OutputAnalyzer> exitFailPred = new Predicate<>() {
+
+            @Override
+            public boolean test(OutputAnalyzer t) {
+                return t.getExitValue() != 0; // expect failure
+            }
+        };
+        jlinkUsingImage(new JlinkSpecBuilder()
                                 .helper(helper)
                                 .imagePath(javaJmodless)
                                 .name("java.base-from-sysmod2-derived")
                                 .addModule("java.base")
                                 .extraJlinkOpt("--disable-plugin")
-                                .extraJlinkOpt("system-modules") // disable sysmods
-                                .expectedLocation("/java.base/jdk/internal/module/SystemModulesMap.class")
-                                .expectedLocation("/java.base/jdk/internal/module/SystemModules.class")
-                                .unexpectedLocation("/java.base/jdk/internal/module/SystemModules$0.class")
+                                .extraJlinkOpt("system-modules")
                                 .validatingModule("java.base")
-                                .build());
-        // Finally run --list-modules so as to verify it does not thow CNFE
-        List<String> expectedModules = List.of("java.base");
-        verifyListModules(finalResult, expectedModules);
+                                .build(), handler, exitFailPred);
+        OutputAnalyzer analyzer = handler.analyzer();
+        if (analyzer.getExitValue() == 0) {
+            throw new AssertionError("Expected jlink to fail due to disable system-modules plugin!");
+        }
+        analyzer.stdoutShouldContain("Disabling system-modules plugin for a run-time image based link is not allowed.");
+        // Verify the error message is reasonable
+        analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        analyzer.stdoutShouldNotContain("java.lang.IllegalArgumentException");
+        analyzer.stdoutShouldNotContain("java.lang.IllegalStateException");
     }
 
 }

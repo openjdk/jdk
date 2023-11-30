@@ -79,6 +79,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
     //     for symlinked resources.
     // (4) The relative file path of the resource
     private static final String TYPE_FILE_FORMAT = "%d|%d|%s|%s";
+    private static final String CLI_RESOURCE = "/jdk.jlink/jdk/tools/jlink/internal/cli_cmd.txt";
 
     private final Map<String, List<String>> nonClassResEntries;
 
@@ -103,10 +104,30 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
             Platform targetPlatform = getTargetPlatform(in);
             in.transformAndCopy(e -> recordAndFilterEntry(e, targetPlatform), out);
             addModuleResourceEntries(out);
+            addCLIResource(out);
         } else {
             in.transformAndCopy(Function.identity(), out);
         }
         return out.build();
+    }
+
+    private void addCLIResource(ResourcePoolBuilder out) {
+        out.add(ResourcePoolEntry.create(CLI_RESOURCE, getCliBytes()));
+    }
+
+    private byte[] getCliBytes() {
+        StringBuilder builder = new StringBuilder();
+        for (String s: commands) {
+            builder.append(s).append(" ");
+        }
+        builder.append("\n");
+        return builder.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    // Filter the resource we add.
+    @Override
+    public List<String> getExcludePatterns() {
+        return List.of("glob:" + CLI_RESOURCE);
     }
 
     private Platform getTargetPlatform(ResourcePool in) {
