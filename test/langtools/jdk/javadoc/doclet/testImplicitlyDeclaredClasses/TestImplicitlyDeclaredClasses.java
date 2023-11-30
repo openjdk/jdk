@@ -58,7 +58,7 @@ public class TestImplicitlyDeclaredClasses extends JavadocTester {
         for (Method main : mainMethods())
             for (Method otherMethod : otherMethods()) {
                 var methods = List.of(main, otherMethod);
-                String index = String.valueOf(i++);
+                var index = String.valueOf(i++);
                 var src = base.resolve(Path.of("src-" + index, "MyClass.java"));
                 tb.writeFile(src, methods.stream()
                         .map(Object::toString)
@@ -114,7 +114,7 @@ public class TestImplicitlyDeclaredClasses extends JavadocTester {
                 // this check passes, when it should fail: the warning for class
                 // is generated, but the warning for the first method is not.
                 // Numbers are equal, test passes.
-                checking("");
+                checking("uncommented class warning");
                 long all = Pattern.compile("warning: no comment\n")
                         .matcher(getOutput(Output.OUT))
                         .results()
