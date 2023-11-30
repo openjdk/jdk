@@ -25,22 +25,23 @@
  * @test
  * @bug 8186046
  * @summary Test bootstrap arguments for condy
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run testng CondyStaticArgumentsTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyStaticArgumentsTest
  */
 
-import jdk.experimental.bytecode.PoolHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
-import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandleInfo;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.constant.*;
+import java.lang.invoke.*;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -51,6 +52,8 @@ import static java.lang.invoke.MethodType.methodType;
 
 public class CondyStaticArgumentsTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
+    private static final DirectMethodHandleDesc bigDecimalMhDesc = directMhDesc("bigDecimal");
+    private static final DirectMethodHandleDesc mathContextMhDesc = directMhDesc("mathContext");
 
     static class BSMInfo {
         final String methodName;
@@ -65,8 +68,7 @@ public class CondyStaticArgumentsTest {
                     .get();
             try {
                 handle = MethodHandles.lookup().unreflect(m);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new Error(e);
             }
             descriptor = handle.type().toMethodDescriptorString();
@@ -103,17 +105,17 @@ public class CondyStaticArgumentsTest {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, "constant-name", String.class,
                 bi.methodName, bi.handle.type(),
-                S -> S.add(1).add(2L).add(3.0f).add(4.0d)
-                        .add("java/lang/Number", PoolHelper::putClass)
-                        .add("something", PoolHelper::putString)
-                        .add("(IJFD)V", PoolHelper::putMethodType)
-                        .add(mhi, (P, Z) -> {
-                            return P.putHandle(mhi.getReferenceKind(), "CondyStaticArgumentsTest", mhi.getName(), bi.descriptor);
-                        }));
+                1, 2L, 3.0f, 4.0d,
+                ClassDesc.ofDescriptor(Number.class.descriptorString()),
+                "something",
+                MethodTypeDesc.ofDescriptor("(IJFD)V"),
+                MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.valueOf(mhi.getReferenceKind()),
+                        ClassDesc.ofDescriptor(mhi.getDeclaringClass().descriptorString()),
+                        mhi.getName(), MethodTypeDesc.ofDescriptor(mhi.getMethodType().descriptorString()))
+        );
 
         Assert.assertEquals(mh.invoke(), "constant-name-String-1-2-3.0-4.0-Number-something-(int,long,float,double)void-11");
     }
-
 
     static MathContext mathContext(MethodHandles.Lookup l, String value, Class<?> type) {
         switch (value) {
@@ -145,22 +147,6 @@ public class CondyStaticArgumentsTest {
                 .toString();
     }
 
-    static <E> int bigDecimalPoolHelper(String value, String mc, PoolHelper<String, String, E> P) {
-        BSMInfo bi = BSMInfo.of("bigDecimal");
-        return P.putDynamicConstant("big-decimal", "Ljava/math/BigDecimal;", InstructionHelper.csym(L.lookupClass()), bi.methodName, bi.descriptor,
-                                    S -> S.add(value, PoolHelper::putString)
-                                            .add(mc, (P2, s) -> {
-                                                return mathContextPoolHelper(s, P2);
-                                            }));
-    }
-
-    static <E> int mathContextPoolHelper(String mc, PoolHelper<String, String, E> P) {
-        BSMInfo bi = BSMInfo.of("mathContext");
-        return P.putDynamicConstant(mc, "Ljava/math/MathContext;", InstructionHelper.csym(L.lookupClass()), bi.methodName, bi.descriptor,
-                                    S -> {
-                                    });
-    }
-
     @Test
     public void testCondyWithCondy() throws Throwable {
         BSMInfo bi = BSMInfo.of("condyWithCondy");
@@ -168,9 +154,18 @@ public class CondyStaticArgumentsTest {
         MethodHandle mh = InstructionHelper.ldcDynamicConstant(
                 L, "big-decimal-math-context", String.class,
                 bi.methodName, bi.handle.type(),
-                S -> S.add(null, (P, v) -> {
-                    return bigDecimalPoolHelper("3.14159265358979323846", "DECIMAL32", P);
-                }));
+                DynamicConstantDesc.ofNamed(
+                        bigDecimalMhDesc,
+                        "big-decimal",
+                        InstructionHelper.classDesc(BigDecimal.class),
+                        "3.14159265358979323846",
+                        DynamicConstantDesc.ofNamed(
+                                mathContextMhDesc,
+                                "DECIMAL32",
+                                InstructionHelper.classDesc(MathContext.class)
+                        )
+                )
+        );
         Assert.assertEquals(mh.invoke(), "big-decimal-math-context-String-3.141593-7");
     }
 
@@ -193,9 +188,27 @@ public class CondyStaticArgumentsTest {
         MethodHandle mh = InstructionHelper.invokedynamic(
                 L, "big-decimal-math-context", methodType(String.class),
                 bi.methodName, bi.handle.type(),
-                S -> S.add(null, (P, v) -> {
-                    return bigDecimalPoolHelper("3.14159265358979323846", "DECIMAL32", P);
-                }));
+                DynamicConstantDesc.ofNamed(
+                        bigDecimalMhDesc,
+                        "big-decimal",
+                        InstructionHelper.classDesc(BigDecimal.class),
+                        "3.14159265358979323846",
+                        DynamicConstantDesc.ofNamed(
+                                mathContextMhDesc,
+                                "DECIMAL32",
+                                InstructionHelper.classDesc(MathContext.class)
+                        )
+                ));
         Assert.assertEquals(mh.invoke(), "big-decimal-math-context-()Ljava/lang/String;-3.141593-7");
+    }
+
+    private static DirectMethodHandleDesc directMhDesc(String methodName) {
+        MethodHandleInfo mhi = MethodHandles.lookup().revealDirect(BSMInfo.of(methodName).handle);
+        return MethodHandleDesc.of(
+                DirectMethodHandleDesc.Kind.valueOf(mhi.getReferenceKind()),
+                ClassDesc.ofDescriptor(mhi.getDeclaringClass().descriptorString()),
+                mhi.getName(),
+                mhi.getMethodType().descriptorString()
+        );
     }
 }

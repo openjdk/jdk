@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -72,6 +73,26 @@ abstract class ShellCustomAction {
                 return Map.of();
             }
         };
+    }
+
+    static void mergeReplacementData(Map<String, String> target,
+            Map<String, String> newValues) {
+        Objects.requireNonNull(target);
+        Objects.requireNonNull(newValues);
+
+        for (var kvp : newValues.entrySet()) {
+            String newValue = kvp.getValue();
+            String existingValue = target.putIfAbsent(kvp.getKey(), newValue);
+            if (existingValue != null) {
+                if (existingValue.isEmpty()) {
+                    target.replace(kvp.getKey(), newValue);
+                } else if (!newValue.isEmpty() && !newValue.
+                        equals(existingValue)) {
+                    throw new IllegalArgumentException(String.format(
+                            "Key [%s] value mismatch", kvp.getKey()));
+                }
+            }
+        }
     }
 
     protected static String stringifyShellCommands(String... commands) {

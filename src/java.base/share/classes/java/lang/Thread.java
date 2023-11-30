@@ -189,7 +189,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * In the JDK Reference Implementation, the virtual thread scheduler may be configured
  * with the following system properties:
  * <table class="striped">
- * <caption style="display:none:">System properties</caption>
+ * <caption style="display:none">System properties</caption>
  *   <thead>
  *   <tr>
  *     <th scope="col">System property</th>

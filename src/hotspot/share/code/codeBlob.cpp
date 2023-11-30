@@ -249,7 +249,7 @@ BufferBlob::BufferBlob(const char* name, int size)
 : RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
-BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
+BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;

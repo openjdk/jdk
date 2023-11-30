@@ -560,6 +560,9 @@ public:
     return _monitoring_support;
   }
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   void resize_heap_if_necessary();
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
@@ -613,7 +616,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index());
+    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
   }
   inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
@@ -1291,9 +1294,6 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
-
-  void pin_object(JavaThread* thread, oop obj) override;
-  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

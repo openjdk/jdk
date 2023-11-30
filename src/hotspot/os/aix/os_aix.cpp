@@ -81,7 +81,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here (sorted alphabetically)
@@ -1017,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -1118,11 +1122,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(filename);
-#endif
-
   // RTLD_LAZY has currently the same behavior as RTLD_NOW
   // The dl is loaded immediately with all its dependants.
   int dflags = RTLD_LAZY;
@@ -1133,19 +1132,14 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     dflags |= RTLD_MEMBER;
   }
 
-  void * result= ::dlopen(filename, dflags);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = ::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
-
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
-
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1159,12 +1153,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
 }
@@ -1927,10 +1916,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
 }
 
 // Reserves and attaches a shared memory segment.

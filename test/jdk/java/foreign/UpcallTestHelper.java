@@ -80,7 +80,7 @@ public class UpcallTestHelper extends NativeTestHelper {
         command.add(target.getName());
         command.addAll(programArgs);
 
-        Process process = ProcessTools.createTestJvm(command).start();
+        Process process = ProcessTools.createTestJavaProcessBuilder(command).start();
 
         long timeOut = (long) (Utils.TIMEOUT_FACTOR * 1L);
         boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);

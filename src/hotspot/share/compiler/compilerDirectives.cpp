@@ -203,11 +203,22 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
 }
 
 bool DirectiveSet::should_collect_memstat() const {
-  return MemStatOption > 0;
+  // MemLimit requires the memory statistic to be active
+  return MemStatOption > 0 || MemLimitOption != 0;
 }
 
 bool DirectiveSet::should_print_memstat() const {
   return MemStatOption == (uintx)MemStatAction::print;
+}
+
+size_t DirectiveSet::mem_limit() const {
+  return MemLimitOption < 0 ? -MemLimitOption : MemLimitOption;
+}
+
+bool DirectiveSet::should_crash_at_mem_limit() const {
+  // The sign encodes the action to be taken when reaching
+  // the memory limit (+ stop - crash)
+  return MemLimitOption < 0;
 }
 
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
@@ -286,8 +297,11 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
-  _ideal_phase_name_mask = 0;
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :
+  _inlinematchers(nullptr),
+  _directive(d),
+  _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler)
+{
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
@@ -416,18 +430,17 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     compilerdirectives_c1_flags(init_default_cc)
 #undef init_default_cc
 
-    // Parse PrintIdealPhaseName and create an efficient lookup mask
+    // Parse PrintIdealPhaseName and create a lookup set
 #ifndef PRODUCT
 #ifdef COMPILER2
     if (!_modified[PrintIdealPhaseIndex]) {
-      // Parse ccstr and create mask
+      // Parse ccstr and create set
       ccstrlist option;
       if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
-        uint64_t mask = 0;
-        PhaseNameValidator validator(option, mask);
+        PhaseNameValidator validator(option);
         if (validator.is_valid()) {
-          assert(mask != 0, "Must be set");
-          set.cloned()->_ideal_phase_name_mask = mask;
+          assert(!validator.phase_name_set().is_empty(), "Phase name set must be non-empty");
+          set.cloned()->set_ideal_phase_name_set(validator.phase_name_set());
         }
       }
     }
@@ -610,7 +623,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 #undef copy_string_members_definition
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
-  set->_ideal_phase_name_mask = src->_ideal_phase_name_mask;
+  set->set_ideal_phase_name_set(src->_ideal_phase_name_set);
   return set;
 }
 

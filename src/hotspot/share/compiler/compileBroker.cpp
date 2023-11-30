@@ -331,6 +331,10 @@ void CompileQueue::add(CompileTask* task) {
     _last = task;
   }
   ++_size;
+  ++_total_added;
+  if (_size > _peak_size) {
+    _peak_size = _size;
+  }
 
   // Mark the method as being in the compile queue.
   task->method()->set_queued_for_compilation();
@@ -487,6 +491,7 @@ void CompileQueue::remove(CompileTask* task) {
     _last = task->prev();
   }
   --_size;
+  ++_total_removed;
 }
 
 void CompileQueue::remove_and_mark_stale(CompileTask* task) {
@@ -514,6 +519,14 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
   if (is_c2_compile(comp_level)) return _c2_compile_queue;
   if (is_c1_compile(comp_level)) return _c1_compile_queue;
   return nullptr;
+}
+
+CompileQueue* CompileBroker::c1_compile_queue() {
+  return _c1_compile_queue;
+}
+
+CompileQueue* CompileBroker::c2_compile_queue() {
+  return _c2_compile_queue;
 }
 
 void CompileBroker::print_compile_queues(outputStream* st) {
@@ -2211,7 +2224,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       if (env.init_error() != JNI_OK) {
-        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d)", env.init_error()), mtJVMCI);
+        const char* msg = env.init_error_msg();
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d, %s)",
+                                    env.init_error(), msg == nullptr ? "unknown" : msg), mtJVMCI);
         bool reason_on_C_heap = true;
         // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
         // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.

@@ -2830,7 +2830,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract int lane(int i);
@@ -2848,7 +2848,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract IntVector withLane(int i, int e);
@@ -3126,8 +3126,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *         if {@code offset+N*4 < 0}
      *         or {@code offset+N*4 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3183,8 +3181,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
      *         or {@code offset+N*4 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
