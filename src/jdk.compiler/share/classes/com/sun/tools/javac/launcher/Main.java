@@ -85,7 +85,7 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
 
-import jdk.internal.misc.MainMethodFinder;
+import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 
@@ -407,8 +407,8 @@ public class Main {
             throw new Fault(Errors.NoClass);
         }
         TypeElement mainClass = l.mainClass;
-        String mainClassName = (mainClass.isUnnamed() ? mainClass.getSimpleName()
-                                                      : mainClass.getQualifiedName()).toString();
+        String mainClassName = mainClass.getQualifiedName().toString();
+
         return mainClassName;
     }
 
@@ -434,26 +434,13 @@ public class Main {
             throw new Fault(Errors.CantFindClass(mainClassName));
         }
 
-        Method mainMethod;
-        try {
-            mainMethod = MainMethodFinder.findMainMethod(appClass);
-        } catch (NoSuchMethodException e) {
+        Method mainMethod = MethodFinder.findMainMethod(appClass);
+
+        if (mainMethod == null) {
             throw new Fault(Errors.CantFindMainMethod(mainClassName));
         }
 
-        int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
-        boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
-
-        if (!PreviewFeatures.isEnabled() && (!isStatic || !isPublic)) {
-            throw new Fault(Errors.MainNotPublicStatic);
-        }
-
-        if (!mainMethod.getReturnType().equals(void.class)) {
-            throw new Fault(Errors.MainNotVoid);
-        }
-
+        boolean isStatic = Modifier.isStatic(mainMethod.getModifiers());
         Object instance = null;
 
         if (!isStatic) {
@@ -478,7 +465,7 @@ public class Main {
             mainMethod.setAccessible(true);
             Object receiver = isStatic ? appClass : instance;
 
-            if (noArgs) {
+            if (mainMethod.getParameterCount() == 0) {
                 mainMethod.invoke(receiver);
             } else {
                 mainMethod.invoke(receiver, (Object)mainArgs);
