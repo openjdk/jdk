@@ -160,12 +160,12 @@ void ClassUnloadingContext::free_code_blobs() {
     for (nmethod* nm : *nmethod_set) {
       MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       CodeCache::free(nm);
-    }    
+    }
   } else {
     MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     for (nmethod* nm : *nmethod_set) {
       CodeCache::free(nm);
-    }        
+    }
   }
 
   if (is_parallel) {
