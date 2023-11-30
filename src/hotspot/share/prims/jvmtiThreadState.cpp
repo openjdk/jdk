@@ -527,7 +527,7 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
 
-  // If interp_only_mode is enabled then we must eagerly create JvmtiThreadState
+  // If interp_only_mode has been enabled then we must eagerly create JvmtiThreadState
   // objects for globally enabled virtual thread filtered events. Otherwise,
   // it is an important optimization to create JvmtiThreadState objects lazily.
   if (JvmtiThreadState::seen_interp_only_mode()) {
