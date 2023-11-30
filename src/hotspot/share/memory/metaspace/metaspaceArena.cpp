@@ -382,8 +382,12 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
   } else {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
-    UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " taken from arena.",
-        METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage));
+    if (wastage.is_empty()) {
+      UL2(trace, "returning " METABLOCKFORMAT " taken from arena.", METABLOCKFORMATARGS(result));
+    } else {
+      UL2(trace, "returning " METABLOCKFORMAT " taken from arena, with wastage " METABLOCKFORMAT,
+          METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage));
+    }
     assert(result.word_size() == word_size && is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
            "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
   }
