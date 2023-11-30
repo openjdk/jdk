@@ -69,8 +69,7 @@ public class SmallPaperPrinting
 
       try {
           job.print();
-      }
-      catch (PrinterException e) {
+      } catch (PrinterException e) {
           System.err.println("Print error:\n" + e.getMessage()); // Passing test!
       }
    }

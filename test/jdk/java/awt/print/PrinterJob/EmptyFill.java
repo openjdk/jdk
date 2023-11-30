@@ -67,8 +67,9 @@ public class EmptyFill implements Printable {
        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
        StreamPrintService svc = spfs[0].getPrintService(baos);
        if (svc == null) {
-           return;
+           throw new RuntimeException("Could not create postscript stream");
        }
+
        PrinterJob pj = PrinterJob.getPrinterJob();
        pj.setPrintService(svc);
        pj.setPrintable(new EmptyFill());

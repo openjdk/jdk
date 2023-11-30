@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4459889
- * @summary No NullPointerException should occur.
  * @key printer
+ * @summary No NullPointerException should occur.
  * @run main RemoveListener
 */
 import javax.print.*;

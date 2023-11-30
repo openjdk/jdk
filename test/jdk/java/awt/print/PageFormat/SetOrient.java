@@ -25,6 +25,7 @@
  * @bug 4186119: setting orientation does not affect printer
  * @summary Confirm that the clip and transform of the Graphics2D is
  *          affected by the landscape orientation of the PageFormat.
+ * @run applet/manual=yesno SetOrient.html
  */
 
 import java.awt.*;
