@@ -177,6 +177,12 @@ class G1CollectionSet {
   // Prepares old regions in the given set for optional collection later. Does not
   // add the region to collection set yet.
   void prepare_optional_regions(G1CollectionCandidateRegionList* regions);
+  // Moves given old regions from the marking candidates to the retained candidates.
+  // This makes sure that marking candidates will not remain there to unnecessarily
+  // prolong the mixed phase.
+  void move_pinned_marking_to_retained(G1CollectionCandidateRegionList* regions);
+  // Removes the given list of regions from the retained candidates.
+  void drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
@@ -186,8 +192,8 @@ class G1CollectionSet {
   // can use them.
   void finalize_incremental_building();
 
-  // Select the old regions of the initial collection set and determine how many optional
-  // regions we might be able to evacuate in this pause.
+  // Select the regions comprising the initial and optional collection set from marking
+  // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
 
   // Iterate the part of the collection set given by the offset and length applying the given
