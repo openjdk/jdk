@@ -625,6 +625,7 @@ final class Resolver {
             changed = false;
             for (Map.Entry<ResolvedModule, Set<ResolvedModule>> e : g1.entrySet()) {
                 ResolvedModule m1 = e.getKey();
+                // automatic module already reads all selected modules so nothing to propagate
                 if (!m1.descriptor().isAutomatic()) {
                     Set<ResolvedModule> m1Reads = e.getValue();
                     for (ResolvedModule m2 : m1Reads) {
