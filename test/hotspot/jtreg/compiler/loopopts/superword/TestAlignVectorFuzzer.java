@@ -556,17 +556,23 @@ public class TestAlignVectorFuzzer {
         tests.put("testUU_unsafe_BasIH", () -> { return testUU_unsafe_BasIH(aB.clone(), bB.clone(), cB.clone()); });
 
 
+        // Only run for 90% of the time, and subtract some margin. This ensures the shutdown has sufficient time,
+        // even for very slow runs.
         long test_time_allowance = System.currentTimeMillis() +
-                                   Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) -
-                                   20_000; // somewhat arbitrary margin
+                                   (long)(Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9) -
+                                   20_000;
+        long test_hard_timeout = System.currentTimeMillis() +
+                                Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
 
         for (int i = 1; i <= ITERATIONS_MAX; i++) {
             setRandomConstants();
             for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
                 String name = entry.getKey();
                 TestFunction test = entry.getValue();
+                long allowance = test_time_allowance - System.currentTimeMillis();
+                long until_timeout = test_hard_timeout - System.currentTimeMillis();
                 System.out.println("ITERATION " + i + " of " + ITERATIONS_MAX + ". Test " + name +
-                                   ", time allowance: " + (test_time_allowance - System.currentTimeMillis()));
+                                   ", time allowance: " + allowance + ", until timeout: " + until_timeout);
 
                 // Compute gold value, probably deopt first if constants have changed.
                 Object[] gold = test.run();
@@ -578,12 +584,17 @@ public class TestAlignVectorFuzzer {
                 }
 
                 if (System.currentTimeMillis() > test_time_allowance) {
-                    System.out.println("TEST PASSED: hit maximal time allownance during iteration " + i);
+                    allowance = test_time_allowance - System.currentTimeMillis();
+                    until_timeout = test_hard_timeout - System.currentTimeMillis();
+                    System.out.println("TEST PASSED: hit maximal time allownance during iteration " + i +
+                                       ", time allowance: " + allowance + ", until timeout: " + until_timeout);
                     return;
                 }
             }
         }
-        System.out.println("TEST PASSED");
+        long allowance = test_time_allowance - System.currentTimeMillis();
+        long until_timeout = test_hard_timeout - System.currentTimeMillis();
+        System.out.println("TEST PASSED, time allowance: " + allowance + ", until timeout: " + until_timeout);
     }
 
     // Test names:
