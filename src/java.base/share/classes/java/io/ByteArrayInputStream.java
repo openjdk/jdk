@@ -208,7 +208,8 @@ public class ByteArrayInputStream extends InputStream {
         int len = count - pos;
         if (len > 0) {
             byte[] tmp;
-            if ("java.io".equals(out.getClass().getPackageName()))
+            if (out.getClass().getPackageName().startsWith("java.") &&
+                !(out instanceof FilterOutputStream))
                 tmp = null;
             else
                 tmp = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];

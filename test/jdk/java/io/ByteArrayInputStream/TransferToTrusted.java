@@ -32,6 +32,7 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -61,24 +62,32 @@ public class TransferToTrusted {
     }
 
     public static void main(String[] args) throws IOException {
-        byte[] buf = new byte[128];
+        byte[] buf = new byte[RND.nextInt(1025)];
+        System.out.println("buf.length: " + buf.length);
         RND.nextBytes(buf);
         byte[] dup = Arrays.copyOf(buf, buf.length);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(dup);
         bais.mark(dup.length);
 
-        OutputStream baos = new ByteArrayOutputStream();
-        bais.transferTo(baos);
-        bais.reset();
-        if (!Arrays.equals(buf, bais.readAllBytes()))
-            throw new RuntimeException("Internal buffer has been modified");
+        OutputStream[] outputStreams = new OutputStream[] {
+            new ByteArrayOutputStream(),
+            new UntrustedOutputStream(),
+            new DataOutputStream(new UntrustedOutputStream())
+        };
 
-        bais.reset();
-        OutputStream out = new UntrustedOutputStream();
-        bais.transferTo(out);
-        bais.reset();
-        if (!Arrays.equals(buf, bais.readAllBytes()))
-            throw new RuntimeException("Internal buffer has been modified");
+        for (OutputStream out : outputStreams) {
+            System.err.println("out: " + out.getClass().getName());
+
+            bais.transferTo(out);
+            bais.reset();
+            try {
+                if (!Arrays.equals(buf, bais.readAllBytes()))
+                    throw new RuntimeException("Internal buffer was modified");
+            } finally {
+                out.close();
+            }
+            bais.reset();
+        }
     }
 }
