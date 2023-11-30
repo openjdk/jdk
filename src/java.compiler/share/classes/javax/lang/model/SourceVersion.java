@@ -74,7 +74,8 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
-     *  22: tbd
+     *  22: Unnamed Variables & Patterns (Statements before super(...)
+     *      in Preview)
      */
 
     /**
@@ -392,9 +393,9 @@ public enum SourceVersion {
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/440">
-     * Record Patterns</a>
+     * JEP 440: Record Patterns</a>
      * @see <a href="https://openjdk.org/jeps/441">
-     * Pattern Matching for switch</a>
+     * JEP 441: Pattern Matching for switch</a>
      */
     RELEASE_21,
 
@@ -402,11 +403,16 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 22.
      *
+     * Additions in this release include unnamed variables and unnamed
+     * patterns.
+     *
      * @since 22
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/456">
+     * JEP 456: Unnamed Variables &amp; Patterns</a>
      */
     RELEASE_22,
     ; // Reduce code churn when appending new constants

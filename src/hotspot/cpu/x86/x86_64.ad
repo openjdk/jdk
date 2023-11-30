@@ -4478,34 +4478,15 @@ instruct loadD(regD dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
-
-// Following pseudo code describes the algorithm for max[FD]:
-// Min algorithm is on similar lines
-//  btmp = (b < +0.0) ? a : b
-//  atmp = (b < +0.0) ? b : a
-//  Tmp  = Max_Float(atmp , btmp)
-//  Res  = (atmp == NaN) ? atmp : Tmp
-
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
   predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-  format %{
-     "vblendvps        $btmp,$b,$a,$b           \n\t"
-     "vblendvps        $atmp,$a,$b,$b           \n\t"
-     "vmaxss           $tmp,$atmp,$btmp         \n\t"
-     "vcmpps.unordered $btmp,$atmp,$atmp        \n\t"
-     "vblendvps        $dst,$tmp,$atmp,$btmp    \n\t"
-  %}
+  format %{ "maxF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
   ins_encode %{
-    int vector_len = Assembler::AVX_128bit;
-    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vmaxss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
- %}
+    __ vminmax_fp(Op_MaxV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -4527,20 +4508,9 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
-  format %{
-     "vblendvpd        $btmp,$b,$a,$b            \n\t"
-     "vblendvpd        $atmp,$a,$b,$b            \n\t"
-     "vmaxsd           $tmp,$atmp,$btmp          \n\t"
-     "vcmppd.unordered $btmp,$atmp,$atmp         \n\t"
-     "vblendvpd        $dst,$tmp,$atmp,$btmp     \n\t"
-  %}
+  format %{ "maxD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
   ins_encode %{
-    int vector_len = Assembler::AVX_128bit;
-    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $b$$XMMRegister, vector_len);
-    __ vmaxsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vminmax_fp(Op_MaxV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4563,20 +4533,9 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-  format %{
-     "vblendvps        $atmp,$a,$b,$a             \n\t"
-     "vblendvps        $btmp,$b,$a,$a             \n\t"
-     "vminss           $tmp,$atmp,$btmp           \n\t"
-     "vcmpps.unordered $btmp,$atmp,$atmp          \n\t"
-     "vblendvps        $dst,$tmp,$atmp,$btmp      \n\t"
-  %}
+  format %{ "minF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
   ins_encode %{
-    int vector_len = Assembler::AVX_128bit;
-    __ vblendvps($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vblendvps($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vminss($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmpps($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvps($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vminmax_fp(Op_MinV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4599,20 +4558,9 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-  format %{
-     "vblendvpd        $atmp,$a,$b,$a           \n\t"
-     "vblendvpd        $btmp,$b,$a,$a           \n\t"
-     "vminsd           $tmp,$atmp,$btmp         \n\t"
-     "vcmppd.unordered $btmp,$atmp,$atmp        \n\t"
-     "vblendvpd        $dst,$tmp,$atmp,$btmp    \n\t"
-  %}
+    format %{ "minD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
   ins_encode %{
-    int vector_len = Assembler::AVX_128bit;
-    __ vblendvpd($atmp$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vblendvpd($btmp$$XMMRegister, $b$$XMMRegister, $a$$XMMRegister, $a$$XMMRegister, vector_len);
-    __ vminsd($tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister);
-    __ vcmppd($btmp$$XMMRegister, $atmp$$XMMRegister, $atmp$$XMMRegister, Assembler::_false, vector_len);
-    __ vblendvpd($dst$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, vector_len);
+    __ vminmax_fp(Op_MinV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}

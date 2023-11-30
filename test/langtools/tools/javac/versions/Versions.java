@@ -25,7 +25,7 @@
  * @test
  * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545
  * 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
- * 8245147 8245586 8257453 8286035 8306586
+ * 8245147 8245586 8257453 8286035 8306586 8320806
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -272,8 +272,8 @@ public class Versions {
      * the uncommon program that is accepted in one version of the
      * language and rejected in a later version.)
      *
-     * When version of the language get a new, non-preview feature, a
-     * new source example enum constant should be added.
+     * When a version of the language gets a new, non-preview feature,
+     * a new source example enum constant should be added.
      */
     enum SourceExample {
         BASE(7, "Base.java", "public class Base { }\n"),
@@ -375,6 +375,20 @@ public class Versions {
              }
              """),
 
+         SOURCE_22(22, "New22.java",
+             // New feature in 22: Unnamed Variables & Patterns
+             """
+             public class New22 {
+                 public static void main(String... args) {
+                     Object o = new Object(){};
+
+                     System.out.println(switch (o) {
+                                        case Integer _ -> "Hello world.";
+                                        default        -> o.toString();
+                                        });
+                 }
+             }
+             """),
             ; // Reduce code churn when appending new constants
 
         private int sourceLevel;
