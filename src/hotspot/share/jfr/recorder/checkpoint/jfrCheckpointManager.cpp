@@ -75,6 +75,7 @@ JfrCheckpointManager* JfrCheckpointManager::create() {
 
 void JfrCheckpointManager::destroy() {
   JfrTypeManager::destroy();
+  JfrTraceIdLoadBarrier::destroy();
 }
 
 JfrCheckpointManager::JfrCheckpointManager() :
