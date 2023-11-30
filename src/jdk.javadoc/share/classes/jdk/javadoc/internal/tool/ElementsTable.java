@@ -73,7 +73,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
@@ -994,7 +994,7 @@ public class ElementsTable {
             visibleElementVisitor = new SimpleElementVisitor14<>() {
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
-                    if (!accessFilter.checkModifier(e) && !isImplicitlyDeclaredClass(e)) {
+                    if (!accessFilter.checkModifier(e) && !WorkArounds.isImplicitlyDeclaredClass(e)) {
                         return false; // it is not allowed
                     }
                     Element encl = e.getEnclosingElement();
@@ -1016,7 +1016,7 @@ public class ElementsTable {
                     if (accessFilter.checkModifier(e)) {
                         return true;
                     } else {
-                        return isImplicitlyDeclaredClass(e.getEnclosingElement())
+                        return WorkArounds.isImplicitlyDeclaredClass(e.getEnclosingElement())
                                 && e.getKind() != ElementKind.CONSTRUCTOR /* nothing interesting in that ctor */
                                 && AccessLevel.of(e.getModifiers()).compareTo(AccessLevel.PACKAGE) >= 0;
                     }
@@ -1029,16 +1029,6 @@ public class ElementsTable {
             };
         }
         return visibleElementVisitor.visit(e);
-    }
-
-    private boolean isImplicitlyDeclaredClass(Element e) {
-        var tree = toolEnv.docTrees.getTree(e);
-        if (tree == null) {
-            // `false` is always the correct answer: javadoc cannot
-            // document a class whose source is unavailable
-            return false;
-        }
-        return Utils.isImplicitlyDeclaredClass(tree);
     }
 
     private class IncludedVisitor extends SimpleElementVisitor14<Boolean, Void> {

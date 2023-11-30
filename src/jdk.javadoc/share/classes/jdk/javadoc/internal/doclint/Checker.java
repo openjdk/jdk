@@ -102,7 +102,6 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
 import jdk.javadoc.internal.doclint.HtmlTag.ElemKind;
 import static jdk.javadoc.internal.doclint.Messages.Group.*;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 
 /**
@@ -194,7 +193,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                         reportMissing("dc.default.constructor");
                     }
                 } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()
-                        && !Utils.isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
+                        && !isImplicitlyDeclaredClass(env.currPath.getLeaf())) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -1277,9 +1276,18 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private boolean isNormalClass(TreePath p) {
         return switch (p.getLeaf().getKind()) {
             case ENUM, RECORD -> false;
-            case CLASS -> !Utils.isImplicitlyDeclaredClass(p.getLeaf());
+            case CLASS -> !isImplicitlyDeclaredClass(p.getLeaf());
             default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
         };
+    }
+
+    /*
+     * If a similar query is ever added to com.sun.source.tree, use that instead.
+     */
+    private boolean isImplicitlyDeclaredClass(Tree t) {
+        return t.getKind() == Tree.Kind.CLASS
+                && t instanceof com.sun.tools.javac.tree.JCTree.JCClassDecl classDecl
+                && (classDecl.mods.flags & com.sun.tools.javac.code.Flags.IMPLICIT_CLASS) != 0;
     }
 
     void markEnclosingTag(Flag flag) {

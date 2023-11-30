@@ -112,7 +112,6 @@ import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
@@ -309,17 +308,6 @@ public class Utils {
 
     public boolean isProperty(String name) {
         return options.javafx() && name.endsWith("Property");
-    }
-
-    /*
-     * If a similar query is added to javax.lang.model, use that instead.
-     */
-    public static boolean isImplicitlyDeclaredClass(Tree e) {
-        if (e.getKind() != Tree.Kind.CLASS)
-            return false;
-        if (!(e instanceof com.sun.tools.javac.tree.JCTree.JCClassDecl classDecl))
-            return false; // this should probably never happen with jdk.compiler
-        return (classDecl.mods.flags & com.sun.tools.javac.code.Flags.IMPLICIT_CLASS) != 0;
     }
 
     public String getPropertyName(String name) {
