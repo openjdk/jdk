@@ -52,6 +52,13 @@ static inline MethodData* get_mdo(Method* method, JavaThread* jt) {
 
 static bool mark_mdo(Method* method, int bci, JavaThread* jt) {
   assert(method != nullptr, "invariant");
+  // Native methods have no mdos so we cannot mark them.
+  // An additional reason is that a native method attempting resolution
+  // must be a JDK internal implementation, for example:
+  // java/lang/invoke/MethodHandleNatives.resolve()
+  if (method->is_native()) {
+    return false;
+  }
   assert(!method->is_native(), "invariant");
   assert(jt != nullptr, "invariant");
   MethodData* mdo = get_mdo(method, jt);

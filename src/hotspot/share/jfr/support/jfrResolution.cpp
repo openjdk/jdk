@@ -69,7 +69,7 @@ static inline Method* ljf_sender_method(int& bci, u1& frame_type, JavaThread* jt
   if (!jt->has_last_Java_frame()) {
     return nullptr;
   }
-  vframeStream stream(jt, false, false);
+  vframeStream stream(jt, true, false);
   return frame_context(stream, bci, frame_type, jt);
 }
 
@@ -92,7 +92,7 @@ void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* j
   assert(jt->has_last_Java_frame(), "Invariant");
   assert(jt->last_frame().is_runtime_frame(), "invariant");
   if (jfr_is_started_on_command_line()) {
-    vframeStream stream(jt, false, false);
+    vframeStream stream(jt, true, false);
     assert(!stream.at_end(), "invariant");
     stream.next(); // now at caller
     int bci;
@@ -107,9 +107,8 @@ static inline const Method* ljf_sender_method(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   if (!jt->has_last_Java_frame()) {
     return nullptr;
-    return nullptr;
   }
-  const vframeStream ljf(jt, false, false);
+  const vframeStream ljf(jt, true, false);
   return ljf.method();
 }
 
