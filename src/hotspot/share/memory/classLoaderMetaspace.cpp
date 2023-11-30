@@ -105,11 +105,13 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   MetaBlock result, wastage;
   if (Metaspace::is_class_space_allocation(mdType)) {
     result = class_space_arena()->allocate(word_size, wastage);
+    if (wastage.is_nonempty()) {
+      non_class_space_arena()->deallocate(wastage);
+    }
   } else {
     result = non_class_space_arena()->allocate(word_size, wastage);
-  }
-  if (wastage.is_nonempty()) {
-    non_class_space_arena()->deallocate(wastage);
+    assert(wastage.is_empty(), "Unexpected wastage from non-class arena: "
+           METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
   }
   return result.base();
 }

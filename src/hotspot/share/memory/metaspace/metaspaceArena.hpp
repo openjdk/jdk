@@ -124,6 +124,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
     void verify() const;
   };
   const Fence* _first_fence;
+  STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
 #endif // ASSERT
 
   ChunkManager* chunk_manager() const           { return _chunk_manager; }

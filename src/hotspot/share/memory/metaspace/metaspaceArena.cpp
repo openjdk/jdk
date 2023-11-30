@@ -257,33 +257,40 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
       UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
           METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage), _fbl->count(), _fbl->total_size());
       // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
-      // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
-      // and can just return here.
-      return result;
+      // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner()).
     }
   }
 
-  // Fencing is done via trailing fences. Leading fences are tricky with alignment.
-  size_t outer_word_size = word_size;
-#ifdef ASSERT
-  STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
-  constexpr size_t sizeof_fence_words = sizeof(Fence) / BytesPerWord;
-  if (Settings::use_allocation_guard()) {
-    outer_word_size = sizeof_fence_words + sizeof_fence_words;
-  }
-#endif
+  if (result.is_empty()) {
+    // Free-block allocation failed; lets allocate from the arena proper.
 
-  result = allocate_inner(outer_word_size, wastage);
+    size_t outer_word_size = word_size;
+  #ifdef ASSERT
+    constexpr size_t sizeof_fence_words = sizeof(Fence) / BytesPerWord;
+    if (Settings::use_allocation_guard()) {
+      outer_word_size = word_size + sizeof_fence_words;
+    }
+  #endif
 
-#ifdef ASSERT
-  if (Settings::use_allocation_guard() && result.is_nonempty()) {
-    assert(result.word_size() == outer_word_size, "Sanity");
-    MetaBlock fenceblock;
-    result.split(word_size, result, fenceblock);
-    Fence* f = new(fenceblock.base()) Fence(_first_fence);
-    _first_fence = f;
+    result = allocate_inner(outer_word_size, wastage);
+
+  #ifdef ASSERT
+    if (Settings::use_allocation_guard() && result.is_nonempty()) {
+      assert(result.word_size() == outer_word_size, "Sanity");
+      MetaBlock fenceblock;
+      result.split(word_size, result, fenceblock);
+      Fence* f = new(fenceblock.base()) Fence(_first_fence);
+      _first_fence = f;
+    }
+  #endif
+
+  } // End: allocate from arena proper
+
+  // Repurpose wastage if this arena can use it.
+  if (wastage.is_nonempty() && could_reuse_block(wastage)) {
+    add_allocation_to_fbl(wastage);
+    wastage = MetaBlock();
   }
-#endif
 
   return result;
 }
