@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 
 #include "gc/g1/g1EvacFailureRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
 

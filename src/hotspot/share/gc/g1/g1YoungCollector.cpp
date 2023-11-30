@@ -45,7 +45,7 @@
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/g1/g1_globals.hpp"

@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_INLINE_HPP
-#define SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_INLINE_HPP
+#ifndef SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
+#define SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
 
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -48,4 +48,4 @@ inline bool G1YoungGCAllocationFailureInjector::allocation_should_fail(size_t& c
 
 #endif  // #if ALLOCATION_FAILURE_INJECTOR
 
-#endif /* SHARE_GC_G1_G1YOUNGGCEVACFAILUREINJECTOR_INLINE_HPP */
+#endif /* SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP */

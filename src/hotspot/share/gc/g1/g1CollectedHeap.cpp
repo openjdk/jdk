@@ -70,7 +70,7 @@
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"

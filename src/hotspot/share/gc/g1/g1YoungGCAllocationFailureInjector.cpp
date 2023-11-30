@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
 
 #if ALLOCATION_FAILURE_INJECTOR

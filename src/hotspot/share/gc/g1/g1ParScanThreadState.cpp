@@ -32,7 +32,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
