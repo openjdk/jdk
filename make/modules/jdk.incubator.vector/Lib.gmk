@@ -42,10 +42,10 @@ endif
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, aarch64)+$(INCLUDE_COMPILER2)+$(ENABLE_LIBSLEEF), true+true+true+true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBVMATH, \
       NAME := vmath, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBVMATH_CFLAGS) -fvisibility=default, \
+      CFLAGS := $(CFLAGS_JDKLIB) $(LIBSLEEF_CFLAGS) $(SVE_CFLAGS) -fvisibility=default, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(JDKLIB_LIBS) $(LIBVMATH_LIBS) \
+      LIBS := $(JDKLIB_LIBS) $(LIBSLEEF_LIBS) \
   ))
 
   TARGETS += $(BUILD_LIBVMATH)
