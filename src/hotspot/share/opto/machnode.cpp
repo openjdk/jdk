@@ -391,7 +391,7 @@ const class TypePtr *MachNode::adr_type() const {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_narrowklass() && CompressedKlassPointers::shift() == 0) {
+  if (t->isa_narrowklass() && UseCompressedClassPointers && CompressedKlassPointers::shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }

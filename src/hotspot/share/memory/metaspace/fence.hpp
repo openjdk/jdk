@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +23,29 @@
  *
  */
 
-/*
- * Note: This runs the metaspace utils related parts of gtest in configurations which
- *  are not tested explicitly in the standard gtests.
- *
- */
+#ifndef SHARE_MEMORY_METASPACE_FENCE_HPP
+#define SHARE_MEMORY_METASPACE_FENCE_HPP
+#ifdef ASSERT
 
-/* @test
- * @bug 8264008
- * @summary Run metaspace utils related gtests with compressed class pointers off
- * @requires vm.bits == 64
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=MetaspaceUtils* -XX:-UseCompressedClassPointers
- */
+#include "utilities/globalDefinitions.hpp"
+
+namespace metaspace {
+
+class Fence {
+  static constexpr uintx EyeCatcher =
+    NOT_LP64(0x77698465) LP64_ONLY(0x7769846577698465ULL); // "META" resp "METAMETA"
+  // Two eyecatchers to easily spot a corrupted _next pointer
+  const uintx _eye1;
+  const Fence* const _next;
+  NOT_LP64(uintx _dummy;)
+  const uintx _eye2;
+public:
+  Fence(const Fence* next) : _eye1(EyeCatcher), _next(next), _eye2(EyeCatcher) {}
+  const Fence* next() const { return _next; }
+  void verify() const;
+};
+
+} // namespace metaspace
+
+#endif // ASSERT
+#endif // SHARE_MEMORY_METASPACE_FENCE_HPP

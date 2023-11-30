@@ -42,13 +42,15 @@ import java.io.IOException;
 
 public class CompressedClassPointersEncodingScheme {
 
-    private static void test(long forceAddress, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
+    private static void test(long forceAddress, boolean tinyClassPointers, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
         String forceAddressString = String.format("0x%016X", forceAddress).toLowerCase();
         String expectedEncodingBaseString = String.format("0x%016X", expectedEncodingBase).toLowerCase();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Xshare:off", // to make CompressedClassSpaceBaseAddress work
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseCompressedOops", // keep VM from optimizing heap location
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:" + (tinyClassPointers ? "+" : "-") + "UseTinyClassPointers",
                 "-XX:CompressedClassSpaceBaseAddress=" + forceAddress,
                 "-XX:CompressedClassSpaceSize=" + classSpaceSize,
                 "-Xmx128m",
@@ -60,7 +62,8 @@ public class CompressedClassPointersEncodingScheme {
 
         // We ignore cases where we were not able to map at the force address
         if (output.contains("reserving class space failed")) {
-            throw new SkippedException("Skipping because we cannot force ccs to " + forceAddressString);
+            System.out.println("Skipping because we cannot force ccs to " + forceAddressString);
+            return;
         }
 
         output.shouldHaveExitValue(0);
@@ -73,9 +76,47 @@ public class CompressedClassPointersEncodingScheme {
     public static void main(String[] args) throws Exception {
         // Test ccs nestling right at the end of the 4G range
         // Expecting base=0, shift=0
-        test(4 * G - 128 * M, 128 * M, 0, 0);
+        test(4 * G - 128 * M, false, 128 * M, 0, 0);
 
+        // Test ccs nestling right at the end of the 32G range
+        // Expecting:
+        // - non-aarch64: base=0, shift=3
+        // - aarch64: base to start of class range, shift 0
+        if (Platform.isAArch64()) {
+            long forceAddress = 0x70000000; // make sure we have a valid EOR immediate
+            test(forceAddress, false, G, forceAddress, 0);
+        } else {
+            test(32 * G - 128 * M, false, 128 * M, 0, 3);
+        }
+
+        // Test ccs starting *below* 4G, but extending upwards beyond 4G. All platforms except aarch64 should pick
+        // zero based encoding.
+        if (Platform.isAArch64()) {
+            long forceAddress = 0xc0000000; // make sure we have a valid EOR immediate
+            test(forceAddress, false, G + (128 * M), forceAddress, 0);
+        } else {
+            test(4 * G - 128 * M, false, 2 * 128 * M, 0, 3);
+        }
         // add more...
 
+        // Tiny Classpointer mode
+        // On all platforms we expect the VM to chose the smallest possible shift value needed to cover the encoding range
+        long forceAddress = 30 * G;
+
+        long ccsSize = 128 * M;
+        int expectedShift = 6;
+        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+
+        ccsSize = 512 * M;
+        expectedShift = 8;
+        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+
+        ccsSize = G;
+        expectedShift = 9;
+        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+
+        ccsSize = 3 * G;
+        expectedShift = 10;
+        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
     }
 }

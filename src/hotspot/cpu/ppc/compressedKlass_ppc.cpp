@@ -46,3 +46,5 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   return result;
 }
+
+bool CompressedKlassPointers::pd_initialize(address addr, size_t len) { return false; }

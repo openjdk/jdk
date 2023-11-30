@@ -130,10 +130,11 @@ CDS_DUMP_FLAGS = -Xmx128M -Xms128M
 # Helper function for creating the CDS archives for the JDK and JRE
 #
 # Param1 - VM variant (e.g., server, client, zero, ...)
-# Param2 - _nocoops, or empty
+# Param2 - _nocoops, _tinycp, _nocoops_tinycp, or empty
 define CreateCDSArchive
-  $1_$2_DUMP_EXTRA_ARG := $(if $(filter _nocoops, $2),-XX:-UseCompressedOops,)
-  $1_$2_DUMP_TYPE      := $(if $(filter _nocoops, $2),-NOCOOPS,)
+  $1_$2_DUMP_EXTRA_ARG := $(if $(findstring _nocoops, $2),-XX:-UseCompressedOops,) \
+                          $(if $(findstring _tinycp, $2),-XX:+UnlockExperimentalVMOptions -XX:+UseTinyClassPointers,)
+  $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _tinycp, $2),-TINYCP,)
 
   # Only G1 supports dumping the shared heap, so explicitly use G1 if the JVM supports it.
   $1_$2_CDS_DUMP_FLAGS := $(CDS_DUMP_FLAGS) $(if $(filter g1gc, $(JVM_FEATURES_$1)),-XX:+UseG1GC)
@@ -179,6 +180,12 @@ ifeq ($(BUILD_CDS_ARCHIVE), true)
   ifeq ($(call isTargetCpuBits, 64), true)
     $(foreach v, $(JVM_VARIANTS), \
       $(eval $(call CreateCDSArchive,$v,_nocoops)) \
+    )
+    $(foreach v, $(JVM_VARIANTS), \
+      $(eval $(call CreateCDSArchive,$v,_tinycp)) \
+    )
+    $(foreach v, $(JVM_VARIANTS), \
+      $(eval $(call CreateCDSArchive,$v,_nocoops_tinycp)) \
     )
   endif
 endif

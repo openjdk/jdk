@@ -55,6 +55,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
+                "-XX:+UnlockExperimentalVMOptions", "-XX:-UseTinyClassPointers",
                 "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");

@@ -79,6 +79,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   }
   return result;
 }
+
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
   char* result = nullptr;
@@ -118,16 +119,30 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   return result;
 }
 
-void CompressedKlassPointers::initialize(address addr, size_t len) {
-  constexpr uintptr_t unscaled_max = nth_bit(32);
-  assert(len <= unscaled_max, "Klass range larger than 32 bits?");
+bool CompressedKlassPointers::pd_initialize(address addr, size_t len) {
+  bool rc = false;
+  if (!tiny_classpointer_mode()) {
+    // in legacy mode, aarch64 uses an own initialization logic that
+    // avoids zero-base shifted mode (_base=0 _shift>0), instead preferring
+    // for non-zero-based mode with shift=0
+    rc = true;
+    constexpr uintptr_t unscaled_max = nth_bit(32);
+    assert(len <= unscaled_max, "Klass range larger than 32 bits?");
 
-  // Shift is always 0 on aarch64.
-  _shift = 0;
+    _shift = 0;
 
-  // On aarch64, we don't bother with zero-based encoding (base=0 shift>0).
-  address const end = addr + len;
-  _base = (end <= (address)unscaled_max) ? nullptr : addr;
+    address const end = addr + len;
+    _base = (end <= (address)unscaled_max) ? nullptr : addr;
 
-  _range = end - _base;
+    _range = end - _base;
+
+#ifdef ASSERT
+    _klass_range_start = addr;
+    _klass_range_end = addr + len;
+    calc_lowest_highest_narrow_klass_id();
+    sanity_check_after_initialization();
+#endif
+  }
+
+  return rc;
 }

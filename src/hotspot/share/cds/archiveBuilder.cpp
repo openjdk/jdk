@@ -212,8 +212,10 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     if (!is_excluded(klass)) {
       _klasses->append(klass);
     }
-    // See RunTimeClassInfo::get_for()
-    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
+    // See RunTimeClassInfo::get_for(): make sure we have enough space for both maximum
+    // Klass alignment as well as the RuntimeInfo* pointer we will embed in front of a Klass.
+    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, CompressedKlassPointers::klass_alignment_in_bytes()) +
+        align_up(sizeof(void*), SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
@@ -626,7 +628,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   oldtop = dump_region->top();
   if (src_info->msotype() == MetaspaceObj::ClassType) {
-    // Save a pointer immediate in front of an InstanceKlass, so
+    // Allocate space for a pointer directly in front of the future InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
     // without building another hashtable. See RunTimeClassInfo::get_for()
     // in systemDictionaryShared.cpp.
@@ -635,8 +637,13 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
       dump_region->allocate(sizeof(address));
     }
+    // Allocate space for the future InstanceKlass with proper alignment
+    const size_t al = NOT_LP64(SharedSpaceObjectAlignment)
+                      LP64_ONLY(nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()));
+    dest = dump_region->allocate(bytes, al);
+  } else {
+    dest = dump_region->allocate(bytes);
   }
-  dest = dump_region->allocate(bytes);
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
@@ -667,6 +674,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
+
+  DEBUG_ONLY(_alloc_stats.verify((int)dump_region->used(), src_info->read_only()));
 }
 
 // This is used by code that hand-assembles data structures, such as the LambdaProxyClassKey, that are
@@ -828,9 +837,15 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
   k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
+  const int narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+#ifdef ASSERT
+  const size_t klass_alignment = MAX2(SharedSpaceObjectAlignment, (size_t)nth_bit(narrow_klass_shift));
+  assert(is_aligned(k, klass_alignment), "Klass " PTR_FORMAT " misaligned.", p2i(k));
+#endif
   address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
-  const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
-  return CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
+  // Note: use the "raw" version of encode that takes explicit narrow klass base and shift. Don't use any
+  // of the variants that do sanity checks, nor any of those that use the current - dump - JVM's encoding setting.
+  return CompressedKlassPointers::encode_raw(requested_k, narrow_klass_base, narrow_klass_shift);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -1360,6 +1375,24 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   MetaspaceShared::unrecoverable_writing_error();
 }
 
+#ifdef _LP64
+int ArchiveBuilder::precomputed_narrow_klass_shift() {
+  // We assume the future Klass range will not exceed 32bit. We plan for the max. possible
+  // CompressedClassSpaceSize of 3GB and the max. possible CDS archive size of 1GB.
+  //
+  // We also will, at runtime, set the encoding base directly to the start of the Klass range,
+  // therefore using the full extend of the encoding range.
+  //
+  // Legacy Mode:
+  //    We use 32 bits for narrowKlass, which should covere the full 4G Klass range. Shift can be 0.
+  // TinyClassPointer Mode:
+  //    narrowKlass is much smaller, and we need the highest possible shift value.
+  //
+  // Note that all of this may change in the future, if we decide to correct the pre-calculated
+  // narrow Klass IDs at archive load time.
+  return CompressedKlassPointers::tiny_classpointer_mode() ?  CompressedKlassPointers::max_shift() : 0;
+}
+#endif // _LP64
 
 #ifndef PRODUCT
 void ArchiveBuilder::assert_is_vm_thread() {

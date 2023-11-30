@@ -59,6 +59,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -421,6 +422,13 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       }
     }
   }
+
+#ifdef ASSERT
+    if (UseCompressedClassPointers && k != nullptr) {
+      CompressedKlassPointers::check_valid_klass(k);
+    }
+#endif
+
   return k;
 }
 
@@ -1330,7 +1338,9 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
                                                name);
   if (record != nullptr) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
-    assert(check_alignment(record->_klass), "Address not aligned");
+#ifdef _LP64
+    DEBUG_ONLY(CompressedKlassPointers::check_valid_klass(record->_klass);)
+#endif
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
     if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {

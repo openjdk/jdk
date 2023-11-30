@@ -75,6 +75,18 @@ void MetaspaceContext::print_on(outputStream* st) const {
   _cm->print_on(st);
 }
 
+size_t MetaspaceContext::used_words() const {
+  return _used_words_counter.get();
+}
+
+size_t MetaspaceContext::committed_words() const {
+  return _vslist->committed_words();
+}
+
+size_t MetaspaceContext::reserved_words() const {
+  return _vslist->reserved_words();
+}
+
 #ifdef ASSERT
 void MetaspaceContext::verify() const {
   _vslist->verify();

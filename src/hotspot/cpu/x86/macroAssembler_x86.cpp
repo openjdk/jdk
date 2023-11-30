@@ -5524,8 +5524,7 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
     subq(r, tmp);
   }
   if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(r, LogKlassAlignmentInBytes);
+    shrq(r, CompressedKlassPointers::shift());
   }
 }
 
@@ -5538,8 +5537,7 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
     movptr(dst, src);
   }
   if (CompressedKlassPointers::shift() != 0) {
-    assert (LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shrq(dst, LogKlassAlignmentInBytes);
+    shrq(dst, CompressedKlassPointers::shift());
   }
 }
 
@@ -5551,8 +5549,7 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    shlq(r, LogKlassAlignmentInBytes);
+    shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
     mov64(tmp, (int64_t)CompressedKlassPointers::base());
@@ -5574,17 +5571,28 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
     // a pointer that needs nothing but a register rename.
     movl(dst, src);
   } else {
-    if (CompressedKlassPointers::base() != nullptr) {
-      mov64(dst, (int64_t)CompressedKlassPointers::base());
+    if (CompressedKlassPointers::shift() <= Address::times_8) {
+      if (CompressedKlassPointers::base() != nullptr) {
+        mov64(dst, (int64_t)CompressedKlassPointers::base());
+      } else {
+        xorq(dst, dst);
+      }
+      if (CompressedKlassPointers::shift() != 0) {
+        assert(CompressedKlassPointers::shift() == Address::times_8, "klass not aligned on 64bits?");
+        leaq(dst, Address(dst, src, Address::times_8, 0));
+      } else {
+        addq(dst, src);
+      }
     } else {
-      xorq(dst, dst);
-    }
-    if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      assert(LogKlassAlignmentInBytes == Address::times_8, "klass not aligned on 64bits?");
-      leaq(dst, Address(dst, src, Address::times_8, 0));
-    } else {
+      if (CompressedKlassPointers::base() != nullptr) {
+        const uint64_t base_right_shifted =
+            (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
+        mov64(dst, base_right_shifted);
+      } else {
+        xorq(dst, dst);
+      }
       addq(dst, src);
+      shlq(dst, CompressedKlassPointers::shift());
     }
   }
 }

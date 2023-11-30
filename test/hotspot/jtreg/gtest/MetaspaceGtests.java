@@ -40,7 +40,7 @@
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
 
-/* @test id=balanced-with-guards
+/* @test id=MetaspaceGuardAllocations-on
  * @summary Run metaspace-related gtests with allocation guards enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -50,7 +50,7 @@
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=1 -XX:+MetaspaceGuardAllocations
  */
 
-/* @test id=balanced-no-ccs
+/* @test id=UseCompressedClassPointers-off
  * @summary Run metaspace-related gtests with compressed class pointers off
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -58,4 +58,14 @@
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-UseCompressedClassPointers
+ */
+
+/* @test id=UseTinyClassPointers
+ * @summary Run metaspace-related gtests with tiny classpointers
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @requires vm.bits == 64
+ * @requires vm.flagless
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockExperimentalVMOptions -XX:+UseTinyClassPointers
  */

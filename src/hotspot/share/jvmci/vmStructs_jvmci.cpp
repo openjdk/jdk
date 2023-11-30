@@ -446,7 +446,6 @@
   declare_constant(CompLevel_full_optimization)                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(InvocationEntryBci)                                    \
-  declare_constant(LogKlassAlignmentInBytes)                              \
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \

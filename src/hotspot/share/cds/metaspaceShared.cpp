@@ -1161,7 +1161,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 #if INCLUDE_CDS_JAVA_HEAP
           // We archived objects with pre-computed narrow Klass id. Set up encoding such that these Ids stay valid.
           address precomputed_narrow_klass_base = cds_base;
-          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+          const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
           CompressedKlassPointers::initialize_for_given_encoding(
             cds_base, ccs_end - cds_base, // Klass range
             precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
@@ -1225,7 +1225,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 //
 // If UseCompressedClassPointers=1, the range encompassing both spaces will be
 //  suitable to en/decode narrow Klass pointers: the base will be valid for
-//  encoding, the range [Base, End) not surpass KlassEncodingMetaspaceMax.
+//  encoding, the range [Base, End) and not surpass the max. range for that encoding.
 //
 // Return:
 //

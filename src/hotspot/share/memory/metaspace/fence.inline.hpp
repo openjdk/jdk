@@ -23,30 +23,23 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/metaspace/freeBlocks.hpp"
+#ifndef SHARE_MEMORY_METASPACE_FENCE_INLINE_HPP
+#define SHARE_MEMORY_METASPACE_FENCE_INLINE_HPP
+#ifdef ASSERT
+
+#include "memory/metaspace/fence.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 
-void FreeBlocks::add_block(MetaBlock bl) {
-  if (bl.word_size() > _small_blocks.MaxWordSize) {
-    _tree.add_block(bl);
-  } else {
-    _small_blocks.add_block(bl);
-  }
-}
-
-MetaBlock FreeBlocks::remove_block(size_t requested_word_size) {
-  size_t real_size = 0;
-  MetaBlock bl;
-  if (requested_word_size > _small_blocks.MaxWordSize) {
-    bl = _tree.remove_block(requested_word_size);
-  } else {
-    bl = _small_blocks.remove_block(requested_word_size);
-  }
-  return bl;
+STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
+inline void Fence::verify() const {
+  assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
+         "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
 }
 
 } // namespace metaspace
+
+#endif // ASSERT
+#endif // SHARE_MEMORY_METASPACE_FENCE_INLINE_HPP
