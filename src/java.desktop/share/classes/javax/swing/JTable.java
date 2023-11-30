@@ -3009,6 +3009,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             for(int i = 0; i < column; i++) {
                 r.x += cm.getColumn(i).getWidth();
             }
+            //x position is updated to handled the offset to which the table
+            //has to be moved towards right side in right-to-left Orientation.
             if( !getComponentOrientation().isLeftToRight() ) {
                 r.x = getWidthInRightToLeft() - r.x - cm.getColumn(column).getWidth();
             }
