@@ -1671,7 +1671,7 @@ public:
     if (_stream != nullptr) {
       _stream->print_cr("resuming %s: in_use_list stats: ceiling=" SIZE_FORMAT
                         ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT, op_name,
-                       ceiling(), count(), max());
+                        ceiling(), count(), max());
       _timer.start();
     }
   }
