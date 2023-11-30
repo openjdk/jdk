@@ -73,7 +73,7 @@ private:
     assert(_instance != nullptr, "no instance found");
     return _instance;
   }
-  
+
   static void inc_gc_total_cpu_time(jlong diff);
 
 public:
