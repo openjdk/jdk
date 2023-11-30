@@ -294,7 +294,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         /*
          * There's a very small subset of possible Gatherers which would be
          * expressible as Spliterators directly,
-         * - the Gatherer's initializer is Gatherer.defaultInitiatizer(),
+         * - the Gatherer's initializer is Gatherer.defaultInitializer(),
          * - the Gatherer's combiner is NOT Gatherer.defaultCombiner()
          * - the Gatherer's finisher is Gatherer.defaultFinisher()
          */
@@ -308,7 +308,6 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
      * operations cannot be pipelined in the ReferencePipeline implementation.
      * Overriding collect-operations overcomes this limitation.
      */
-
     @Override
     public <CR, CA> CR collect(Collector<? super R, CA, CR> c) {
         linkOrConsume(); // Important for structural integrity
