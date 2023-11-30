@@ -126,7 +126,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 kind != INSTANCE_INIT) {
                 Element enclosing = e.getEnclosingElement();
 
-                // Don't print out the constructor of an anonymous
+                // Don't print out the constructor of an anonymous class
                 if (kind == CONSTRUCTOR &&
                     enclosing != null &&
                     (NestingKind.ANONYMOUS ==

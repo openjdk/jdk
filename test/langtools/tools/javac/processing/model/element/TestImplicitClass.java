@@ -117,7 +117,7 @@ public class TestImplicitClass extends JavacTestingAbstractProcessor {
     }
 
     /*
-     * From JEP 445 JLS changes:
+     * From JEP 463 JLS changes:
      *
      * "An implicitly declared class compilation unit implicitly declares a class that
      * satisfies the following properties:
