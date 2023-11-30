@@ -211,6 +211,7 @@ public class Preview {
         return switch (feature) {
             case STRING_TEMPLATES -> true;
             case UNNAMED_CLASSES -> true;
+            case SUPER_INIT -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.

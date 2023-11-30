@@ -1392,11 +1392,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* result_mem = nullptr;
 
     Node* addr;
-    if (ShenandoahSelfFixing) {
+    {
       VectorSet visited;
       addr = get_load_addr(phase, visited, lrb);
-    } else {
-      addr = phase->igvn().zerocon(T_OBJECT);
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);
