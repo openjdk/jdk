@@ -1878,7 +1878,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   }
   int offset = __ offset();
 
-  __ _auipc(ra, 0);
+  __ auipc(ra, 0);
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");

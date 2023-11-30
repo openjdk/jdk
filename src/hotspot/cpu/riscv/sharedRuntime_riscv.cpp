@@ -1617,7 +1617,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ auipc(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lbu(t0, Address(t0, offset));
     });
     __ bnez(t0, dtrace_method_entry);
@@ -1841,7 +1841,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ auipc(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lbu(t0, Address(t0, offset));
     });
     __ bnez(t0, dtrace_method_exit);

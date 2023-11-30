@@ -340,7 +340,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     RuntimeAddress target(StubRoutines::forward_exception_entry());
     relocate(target.rspec(), [&] {
       int32_t offset;
-      auipc(t0, target, offset);
+      la(t0, target.target(), offset);
       jalr(x0, t0, offset);
     });
     bind(ok);
@@ -421,7 +421,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    auipc(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -466,7 +466,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    auipc(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -717,13 +717,35 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::la(Register Rd, const address dest) {
-  int64_t offset = dest - pc();
+void MacroAssembler::la(Register Rd, const address addr) {
+  int64_t offset = addr - pc();
   if (is_simm32(offset)) {
-    _auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
+    auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
     addi(Rd, Rd, ((int64_t)offset << 52) >> 52);
   } else {
-    movptr(Rd, dest);
+    movptr(Rd, addr);
+  }
+}
+
+void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
+  assert((uintptr_t)addr < (1ull << 48), "bad address");
+
+  unsigned long target_address = (uintptr_t)addr;
+  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
+  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
+  long offset_low = target_address - low_address;
+  long offset_high = target_address - high_address;
+
+  // RISC-V doesn't compute a page-aligned address, in order to partially
+  // compensate for the use of *signed* offsets in its base+disp12
+  // addressing mode (RISC-V's PC-relative reach remains asymmetric
+  // [-(2G + 2K), 2G - 2K).
+  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
+    int64_t distance = addr - pc();
+    auipc(Rd, (int32_t)distance + 0x800);
+    offset = ((int32_t)distance << 20) >> 20;
+  } else {
+    movptr(Rd, addr, offset);
   }
 }
 
@@ -1564,7 +1586,7 @@ void MacroAssembler::reinit_heapbase() {
       ExternalAddress target(CompressedOops::ptrs_base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        auipc(xheapbase, target, offset);
+        la(xheapbase, target.target(), offset);
         ld(xheapbase, Address(xheapbase, offset));
       });
     }
@@ -2119,7 +2141,7 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
   ExternalAddress target((address)flag_addr);
   _masm->relocate(target.rspec(), [&] {
     int32_t offset;
-    _masm->auipc(t0, target, offset);
+    _masm->la(t0, target.target(), offset);
     _masm->lbu(t0, Address(t0, offset));
   });
   if (value) {
@@ -3006,7 +3028,7 @@ void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   // Fixed length: see MacroAssembler::far_branch_size()
   relocate(entry.rspec(), [&] {
     int32_t offset;
-    auipc(tmp, entry, offset);
+    la(tmp, entry.target(), offset);
     jalr(x0, tmp, offset);
   });
 }
@@ -3023,7 +3045,7 @@ void MacroAssembler::far_call(const Address &entry, Register tmp) {
   // the code cache cannot exceed 2Gb.
   relocate(entry.rspec(), [&] {
     int32_t offset;
-    auipc(tmp, entry, offset);
+    la(tmp, entry.target(), offset);
     jalr(x1, tmp, offset); // link
   });
 }
@@ -3246,29 +3268,6 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
   mv(reg, (uint64_t)byte_map_base);
-}
-
-void MacroAssembler::auipc(Register reg, const Address &dest, int32_t &offset) {
-  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
-  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
-  unsigned long dest_address = (uintptr_t)dest.target();
-  long offset_low = dest_address - low_address;
-  long offset_high = dest_address - high_address;
-
-  assert(dest.getMode() == Address::literal, "auipc must be applied to a literal address");
-  assert((uintptr_t)dest.target() < (1ull << 48), "bad address");
-
-  // RISC-V doesn't compute a page-aligned address, in order to partially
-  // compensate for the use of *signed* offsets in its base+disp12
-  // addressing mode (RISC-V's PC-relative reach remains asymmetric
-  // [-(2G + 2K), 2G - 2K).
-  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
-    int64_t distance = dest.target() - pc();
-    _auipc(reg, (int32_t)distance + 0x800);
-    offset = ((int32_t)distance << 20) >> 20;
-  } else {
-    movptr(reg, dest.target(), offset);
-  }
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -3528,7 +3527,7 @@ void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
   relocate(src2.rspec(), [&] {
     int32_t offset;
-    auipc(t0, src2, offset);
+    la(t0, src2.target(), offset);
     ld(t0, Address(t0, offset));
   });
   beq(src1, t0, equal);

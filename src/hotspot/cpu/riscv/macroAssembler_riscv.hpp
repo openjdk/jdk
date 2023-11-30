@@ -718,7 +718,8 @@ public:
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
   void la(Register Rd, Label &label);
-  void la(Register Rd, const address dest);
+  void la(Register Rd, const address addr);
+  void la(Register Rd, const address addr, int32_t &offset);
   void la(Register Rd, const Address &adr);
 
   void li16u(Register Rd, uint16_t imm);
@@ -820,7 +821,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      _auipc(Rd, (int32_t)distance + 0x800);                                                       \
+      auipc(Rd, (int32_t)distance + 0x800);                                                       \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -877,7 +878,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      _auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -938,7 +939,7 @@ public:
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      _auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -983,7 +984,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      _auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                     \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -1084,8 +1085,6 @@ public:
     sub(t0, sp, offset);
     sd(zr, Address(t0));
   }
-
-  void auipc(Register reg, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
     mv(t1, call_site);
@@ -1461,7 +1460,7 @@ private:
       InternalAddress target(const_addr.target());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        auipc(dest, target, offset);
+        la(dest, target.target(), offset);
         ld(dest, Address(dest, offset));
       });
     }

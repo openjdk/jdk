@@ -46,7 +46,7 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
   __ relocate(safepoint_pc.rspec(), [&] {
     int32_t offset;
-    __ auipc(t0, safepoint_pc.target(), offset);
+    __ la(t0, safepoint_pc.target(), offset);
     __ addi(t0, t0, offset);
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));

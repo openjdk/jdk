@@ -402,7 +402,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ _auipc(ra, 0);
+  __ auipc(ra, 0);
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
@@ -1425,7 +1425,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   InternalAddress pc_for_athrow(__ pc());
   __ relocate(pc_for_athrow.rspec(), [&] {
     int32_t offset;
-    __ auipc(exceptionPC->as_register(), pc_for_athrow, offset);
+    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
     __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
   });
   add_call_info(pc_for_athrow_offset, info); // for exception handler

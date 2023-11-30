@@ -194,7 +194,7 @@ void InterpreterMacroAssembler::get_dispatch() {
   ExternalAddress target((address)Interpreter::dispatch_table());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    auipc(xdispatch, target, offset);
+    la(xdispatch, target.target(), offset);
     addi(xdispatch, xdispatch, offset);
   });
 }
