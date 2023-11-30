@@ -626,7 +626,7 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   // The whole thing is mitigated if Elastic TLABs are enabled.
   //
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MIN2(ShenandoahElasticTLAB ? RegionSizeWords : (RegionSizeWords / 8), HumongousThresholdWords);
+  MaxTLABSizeWords = MIN2(RegionSizeWords, HumongousThresholdWords);
   MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
