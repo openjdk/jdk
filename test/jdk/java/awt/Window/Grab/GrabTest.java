@@ -210,8 +210,8 @@ public class GrabTest {
         robot.mouseMove(loc.x + 100, loc.y + f.getSize().height + 10);
         Util.waitForIdle(robot);
 
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         if (!ungrabbed) {
