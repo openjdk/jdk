@@ -1801,6 +1801,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
+      return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1815,16 +1816,16 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       _memory_mapping_failed = true;
       return MAP_ARCHIVE_MMAP_FAILURE;
     }
+
+    if (VerifySharedSpaces && !r->check_region_crc(requested_addr)) {
+      return MAP_ARCHIVE_OTHER_FAILURE;
+    }
+
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
-  }
 
-  if (VerifySharedSpaces && !r->check_region_crc(requested_addr)) {
-    r->set_mapped_base(nullptr);
-    return MAP_ARCHIVE_OTHER_FAILURE;
+    return MAP_ARCHIVE_SUCCESS;
   }
-
-  return MAP_ARCHIVE_SUCCESS;
 }
 
 // The return value is the location of the archive relocation bitmap.
