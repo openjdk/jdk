@@ -26,6 +26,243 @@
 #include "utilities/growableArray.hpp"
 #include "unittest.hpp"
 
+
+
+// TODO: think about how to add modifications before test.
+//       Crossproduct somehow?
+//       And add more allocators
+
+
+// We have list of TestClosures, and a list of AllocationClosures.
+// For each AllocationClosure, we call dispatch with each
+// of the TestClosures. The allocation cosure then allocates its
+// array, and then passes itself into the TestClosure, which
+// runs the test.
+//
+// For one test and allocator we do:
+//   test.reset()
+//   allocator.dispatch(test);
+//   -> allocate GrowableArray
+//      test.do_test(allocator)
+//      -> call read / write ops on allocator which forwards
+//         that to the allocated GrowableArray
+//      de-allocate GrowableAray
+//   test.finish()
+
+template<typename E> class TestClosure;
+
+template<typename E>
+class AllocatorClosure {
+private:
+  GrowableArrayView<E>* _view;
+public:
+  virtual void dispatch(TestClosure<E>* t) = 0;
+
+  // at least set the view so that we do not have to repeat
+  // forwarding in the subclasses of AllocatorClosure too
+  // much.
+  void set_view(GrowableArrayView<E>* view) { _view = view; }
+
+  // forwarding to underlying array view
+  int length() const     { return _view->length(); };
+  int capacity() const   { return _view->capacity(); };
+  bool is_empty() const  { return _view->is_empty(); }
+  void clear()           { _view->clear(); }
+
+  E& at(int i)           { return _view->at(i); }
+  GrowableArrayIterator<E> begin() const { return _view->begin(); }
+  GrowableArrayIterator<E> end() const   { return _view->end(); }
+  E pop()                { return _view->pop(); }
+
+  // forwarding to underlying array with allocation
+  virtual void append(const E& e) = 0;
+  virtual void reserve(int new_capacity) = 0;
+  virtual void shrink_to_fit() = 0;
+};
+
+template<typename E>
+class TestClosure {
+public:
+  virtual void reset() {}
+  virtual void do_test(AllocatorClosure<E>* a) = 0;
+  virtual void finish() {}
+};
+
+// ------------ AllocationClosures ------------
+
+template<typename E>
+class AllocatorClosureGrowableArray : public AllocatorClosure<E> {
+private:
+  GrowableArray<E>* _array;
+
+public:
+  void set_array(GrowableArray<E>* array) {
+    this->set_view(array);
+    _array = array;
+  }
+
+  virtual void append(const E& e) override final {
+    _array->append(e);
+  }
+  virtual void reserve(int new_capacity) override final {
+    _array->reserve(new_capacity);
+  }
+  virtual void shrink_to_fit() override final {
+    _array->shrink_to_fit();
+  }
+};
+
+template<typename E>
+class AllocatorClosureStackResourceArena : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(TestClosure<E>* test) override final {
+    test->reset();
+    {
+      ResourceMark rm;
+      GrowableArray<E> array;
+      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // stack
+      ASSERT_TRUE(array.on_resource_area()); // resource arena
+      this->set_array(&array);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+// ------------ TestClosures ------------
+
+template<typename E>
+class TestClosureAppend : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(i);
+    }
+
+    // Check size
+    ASSERT_EQ(a->length(), 10);
+
+    // Check elements
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(a->at(i), i);
+    }
+  };
+};
+
+template<typename E>
+class TestClosureClear : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    // Check size
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->is_empty(), true);
+
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(i);
+    }
+
+    // Check size
+    ASSERT_EQ(a->length(), 10);
+    ASSERT_EQ(a->is_empty(), false);
+
+    // Clear elements
+    a->clear();
+
+    // Check size
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->is_empty(), true);
+
+    // Add element
+    a->append(11);
+
+    // Check size
+    ASSERT_EQ(a->length(), 1);
+    ASSERT_EQ(a->is_empty(), false);
+
+    // Clear elements
+    a->clear();
+
+    // Check size
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->is_empty(), true);
+  };
+};
+
+template<typename E>
+class TestClosureIterator : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(i);
+    }
+
+    // Iterate
+    int counter = 0;
+    for (GrowableArrayIterator<E> i = a->begin(); i != a->end(); ++i) {
+      ASSERT_EQ(*i, counter++);
+    }
+
+    // Check count
+    ASSERT_EQ(counter, 10);
+  };
+};
+
+template<typename E>
+class TestClosureCapacity : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    ASSERT_EQ(a->length(), 0);
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+    for (int i = 0; i < 50; ++i) {
+      a->append(i);
+    }
+    ASSERT_EQ(a->length(), 50);
+    ASSERT_EQ(a->capacity(), 50);
+    a->append(50);
+    ASSERT_EQ(a->length(), 51);
+    int capacity = a->capacity();
+    ASSERT_GE(capacity, 51);
+    for (int i = 0; i < 30; ++i) {
+      a->pop();
+    }
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), capacity);
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 21);
+
+    a->reserve(50);
+    ASSERT_EQ(a->length(), 21);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 50);
+
+    a->shrink_to_fit();
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 0);
+  };
+};
+
+// template<typename E>
+// class TestClosureCopy : public TestClosure<E> {
+//   virtual void do_test(AllocatorClosure<E>* a) override final {
+// 
+//   };
+// };
+// 
+// template<typename E>
+// class TestClosure : public TestClosure<E> {
+//   virtual void do_test(AllocatorClosure<E>* a) override final {
+// 
+//   };
+// };
+
+
 struct WithEmbeddedArray {
   // Array embedded in another class
   GrowableArray<int> _a;
@@ -439,7 +676,25 @@ protected:
   static void with_no_cheap_array_append1(TestNoCHeapEnum test) {
     with_no_cheap_array(Max0, Append1, test);
   }
+
+  static void xxx_test_append() {
+    AllocatorClosureStackResourceArena<int> allocator_s_r;
+
+    TestClosureAppend<int> test_append;
+    TestClosureClear<int> test_clear;
+    TestClosureIterator<int> test_iterator;
+    TestClosureCapacity<int> test_capacity;
+
+    allocator_s_r.dispatch(&test_append);
+    allocator_s_r.dispatch(&test_clear);
+    allocator_s_r.dispatch(&test_iterator);
+    allocator_s_r.dispatch(&test_capacity);
+  }
 };
+
+TEST_VM_F(GrowableArrayTest, xxx_append) {
+  xxx_test_append();
+}
 
 TEST_VM_F(GrowableArrayTest, append) {
   with_all_types_all_0(Append);
