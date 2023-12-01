@@ -28,7 +28,6 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
 #if INCLUDE_EPSILONGC
@@ -113,9 +112,6 @@
   nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
   nonstatic_field(Generation::StatRecord,      accumulated_time,                              elapsedTimer)                          \
                                                                                                                                      \
-  nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
-  nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
-                                                                                                                                     \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
                                                                                                                                      \
@@ -150,7 +146,6 @@
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-           declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
   declare_toplevel_type(Space)                                            \
            declare_type(ContiguousSpace,             Space)               \
@@ -180,7 +175,6 @@
   declare_toplevel_type(CollectedHeap*)                                   \
   declare_toplevel_type(ContiguousSpace*)                                 \
   declare_toplevel_type(DefNewGeneration*)                                \
-  declare_toplevel_type(GenCollectedHeap*)                                \
   declare_toplevel_type(Generation*)                                      \
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \

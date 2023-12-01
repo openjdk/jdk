@@ -26,7 +26,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -44,6 +43,7 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/serialHeap.hpp"
 #endif
 
 ContiguousSpace::ContiguousSpace(): Space(),
@@ -126,7 +126,9 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
     cp->space->set_compaction_top(compact_top);
     cp->space = cp->space->next_compaction_space();
     if (cp->space == nullptr) {
-      cp->gen = GenCollectedHeap::heap()->young_gen();
+#if INCLUDE_SERIALGC
+      cp->gen = SerialHeap::heap()->young_gen();
+#endif // INCLUDE_SERIALGC
       assert(cp->gen != nullptr, "compaction must succeed");
       cp->space = cp->gen->first_compaction_space();
       assert(cp->space != nullptr, "generation must have a first compaction space");
