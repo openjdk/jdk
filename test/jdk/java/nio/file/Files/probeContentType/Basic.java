@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237 8297609
+ * @modules java.base/jdk.internal.util
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
@@ -36,13 +37,25 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
+
 /**
  * Uses Files.probeContentType to probe html file, custom file type, and minimal
  * set of file extension to content type mappings.
  */
 public class Basic {
-    private static final boolean IS_UNIX =
-        ! System.getProperty("os.name").startsWith("Windows");
+    // Whether the OS is Windows with version 11 or higher
+    private static final boolean IS_WIN11_PLUS = OperatingSystem.isWindows() &&
+        (System.getProperty("os.name").endsWith("11") ||
+         new OSVersion(10, 0).compareTo(OSVersion.current()) > 0);
+
+    // Extra MIME types expected by Windows 11+
+    private static final String EXTRA_BZ2 = IS_WIN11_PLUS ? "application/x-compressed" : "";
+    private static final String EXTRA_CSV = IS_WIN11_PLUS ? "application/vnd.ms-excel" : "";
+    private static final String EXTRA_RAR = IS_WIN11_PLUS ? "application/x-compressed" : "";
+    private static final String EXTRA_RTF = IS_WIN11_PLUS ? "application/msword" : "";
+    private static final String EXTRA_7Z  = IS_WIN11_PLUS ? "application/x-compressed" : "";
 
     static Path createHtmlFile() throws IOException {
         Path file = Files.createTempFile("foo", ".html");
@@ -79,7 +92,7 @@ public class Basic {
         assert actual != null;
 
         if (!expected.equals(actual)) {
-            if (IS_UNIX) {
+            if (!OperatingSystem.isWindows()) {
                 Path userMimeTypes =
                     Path.of(System.getProperty("user.home"), ".mime.types");
                 checkMimeTypesFile(userMimeTypes);
@@ -157,9 +170,9 @@ public class Basic {
         // Verify that certain extensions are mapped to the correct type.
         var exTypes = new ExType[] {
                 new ExType("adoc", List.of("text/plain")),
-                new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip")),
+                new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip", EXTRA_BZ2)),
                 new ExType("css", List.of("text/css")),
-                new ExType("csv", List.of("text/csv")),
+                new ExType("csv", List.of("text/csv", EXTRA_CSV)),
                 new ExType("doc", List.of("application/msword")),
                 new ExType("docx", List.of("application/vnd.openxmlformats-officedocument.wordprocessingml.document")),
                 new ExType("gz", List.of("application/gzip", "application/x-gzip")),
@@ -180,13 +193,13 @@ public class Basic {
                 new ExType("ppt", List.of("application/vnd.ms-powerpoint")),
                 new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")),
                 new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")),
-                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar", "application/x-rar-compressed")),
-                new ExType("rtf", List.of("application/rtf", "text/rtf")),
+                new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar", "application/x-rar-compressed", EXTRA_RAR)),
+                new ExType("rtf", List.of("application/rtf", "text/rtf", EXTRA_RTF)),
                 new ExType("webm", List.of("video/webm")),
                 new ExType("webp", List.of("image/webp")),
                 new ExType("xls", List.of("application/vnd.ms-excel")),
                 new ExType("xlsx", List.of("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
-                new ExType("7z", List.of("application/x-7z-compressed")),
+                new ExType("7z", List.of("application/x-7z-compressed", EXTRA_7Z)),
                 new ExType("wasm", List.of("application/wasm")),
         };
         failures += checkContentTypes(exTypes);
