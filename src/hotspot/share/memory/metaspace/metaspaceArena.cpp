@@ -244,9 +244,14 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
   UL2(trace, "requested " SIZE_FORMAT " words.", word_size);
 
+  // For simplicity, we always align the size to 64-bit. This only affects 32-bit where
+  // we don't want to deal with 4-byte allocations.
+  NOT_LP64(word_size = align_up(word_size, AllocationAlignmentWordSize));
+
   assert(word_size >= _minimum_allocation_word_size, "Too small for this arena");
 
   MetaBlock result;
+  bool taken_from_fbl = false;
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (_fbl != nullptr && !_fbl->is_empty()) {
@@ -258,17 +263,19 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
           METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage), _fbl->count(), _fbl->total_size());
       // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
       // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner()).
+      taken_from_fbl = true;
     }
   }
 
   if (result.is_empty()) {
-    // Free-block allocation failed; lets allocate from the arena proper.
 
+    // Free-block allocation failed; we allocate from the arena.
+    // These allocations are fenced.
     size_t outer_word_size = word_size;
+
   #ifdef ASSERT
-    constexpr size_t sizeof_fence_words = sizeof(Fence) / BytesPerWord;
     if (Settings::use_allocation_guard()) {
-      outer_word_size = word_size + sizeof_fence_words;
+      outer_word_size = word_size + (sizeof(Fence) / BytesPerWord);
     }
   #endif
 
@@ -286,26 +293,40 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
   } // End: allocate from arena proper
 
-  // Repurpose wastage if this arena can use it.
+  // Repurpose wastage for this arena if possible.
   if (wastage.is_nonempty() && could_reuse_block(wastage)) {
     add_allocation_to_fbl(wastage);
     wastage = MetaBlock();
+  }
+
+  // Logging, sanity checks
+  if (result.is_nonempty()) {
+    stringStream ss;
+    if (wastage.is_nonempty()) {
+      ss.print("wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
+    } else {
+      ss.print("no wastage");
+    }
+    UL2(trace, "returning " METABLOCKFORMAT " taken from %s, with %s",
+                METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"), ss.base());
+    assert(result.word_size() == word_size &&
+           is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
+           "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
+  } else {
+    UL(info, "allocation failed, returned null.");
   }
 
   return result;
 }
 
 // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
-// Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
 MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
-  assert_is_aligned(word_size, metaspace::AllocationAlignmentWordSize);
 
   MetaBlock result;
   bool current_chunk_too_small = false;
   bool commit_failure = false;
 
   if (current_chunk() != nullptr) {
-
     // Attempt to satisfy the allocation from the current chunk.
 
     const MetaWord* const chunk_top = current_chunk()->top();
@@ -384,19 +405,9 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
 
   SOMETIMES(verify();)
 
-  if (result.is_empty()) {
-    UL(info, "allocation failed, returned null.");
-  } else {
+  if (result.is_nonempty()) {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
-    if (wastage.is_empty()) {
-      UL2(trace, "returning " METABLOCKFORMAT " taken from arena.", METABLOCKFORMATARGS(result));
-    } else {
-      UL2(trace, "returning " METABLOCKFORMAT " taken from arena, with wastage " METABLOCKFORMAT,
-          METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage));
-    }
-    assert(result.word_size() == word_size && is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
-           "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
   }
 
   return result;
