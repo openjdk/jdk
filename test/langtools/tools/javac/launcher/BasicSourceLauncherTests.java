@@ -93,24 +93,24 @@ class BasicSourceLauncherTests {
 
     @Test
     void launchMinifiedJavaProgram(@TempDir Path base) throws Exception {
-        var anonymous = Files.writeString(base.resolve("Anonymous.java"),
+        var hi = Files.writeString(base.resolve("Hi.java"),
                 """
                 void main() {
                   System.out.println("Hi!");
                 }
                 """);
 
-        System.setProperty("jdk.internal.javac.source", "22");
-        var run = Run.of(anonymous, List.of("--enable-preview"), List.of());
+        // Replace with plain Run.of(hi) once implict classes are out of preview
+        System.setProperty("jdk.internal.javac.source", String.valueOf(Runtime.version().feature()));
+        var run = Run.of(hi, List.of("--enable-preview"), List.of());
         System.clearProperty("jdk.internal.javac.source");
 
-        // var run = Run.of(anonymous);
         assertAll("# " + run,
                 () -> assertLinesMatch(
                         """
                         Hi!
                         """.lines(), run.stdOut().lines()),
-                () -> assertTrue(run.stdErr().contains("Anonymous.java uses preview features of Java SE 22.")),
+                () -> assertTrue(run.stdErr().isEmpty()),
                 () -> assertNull(run.exception()));
     }
 }
