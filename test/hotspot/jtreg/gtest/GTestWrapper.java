@@ -85,7 +85,7 @@ public class GTestWrapper {
         command.add("--gtest_output=xml:" + resultFile);
         command.add("--gtest_catch_exceptions=0");
         // Test-agnostic VM opts
-        command.add("-XX:-CreateCoreDumpOnCrash");
+        command.add("-XX:-CreateCoredumpOnCrash");
         command.add("-Xmx256m");
         // Test-specific VM opts
         for (String a : args) {
