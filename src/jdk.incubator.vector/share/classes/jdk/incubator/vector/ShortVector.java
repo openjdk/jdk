@@ -3372,9 +3372,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this,
-            a, offset, false,
+            a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_ + i] = e));
@@ -3520,9 +3520,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             this,
-            a, offset, false,
+            a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
@@ -3723,8 +3723,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
-            a, offset, vsp, false,
+            a, arrayAddress(a, offset), false,
+            a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
@@ -3740,8 +3740,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m, offsetInRange,
-            a, offset, vsp, false,
+            a, arrayAddress(a, offset), false, m, offsetInRange,
+            a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
@@ -3756,8 +3756,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
-            a, offset, vsp, false,
+            a, charArrayAddress(a, offset), false,
+            a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> (short) arr_[off_ + i]));
     }
@@ -3773,8 +3773,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                a, charArrayAddress(a, offset), m, offsetInRange,
-                a, offset, vsp, false,
+                a, charArrayAddress(a, offset), false, m, offsetInRange,
+                a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
     }
@@ -3822,8 +3822,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
-            this, a, offset, false,
+            a, arrayAddress(a, offset), false,
+            this, a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
                       (arr_, off_, i, e) -> arr_[off_+i] = e));
@@ -3839,8 +3839,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
-            this, m, a, offset, false,
+            a, arrayAddress(a, offset), false,
+            this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
                       (arr_, off_, i, e) -> arr_[off_ + i] = e));
@@ -3889,8 +3889,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
-            this, m, a, offset, false,
+            a, charArrayAddress(a, offset), false,
+            this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
                       (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));

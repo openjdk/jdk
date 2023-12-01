@@ -421,8 +421,8 @@ public class VectorSupport {
      S extends VectorSpecies<E>>
     VM load(Class<? extends VM> vmClass, Class<E> eClass,
             int length,
-            Object base, long offset,
-            C container, long index, S s, boolean from_ms,
+            Object base, long offset, boolean fromSegment,
+            C container, long index, S s,
             LoadOperation<C, VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s);
@@ -445,9 +445,9 @@ public class VectorSupport {
      S extends VectorSpecies<E>,
      M extends VectorMask<E>>
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
-                 int length, Object base, long offset,
+                 int length, Object base, long offset, boolean fromSegment,
                  M m, int offsetInRange,
-                 C container, long index, S s, boolean from_ms,
+                 C container, long index, S s,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s, m);
@@ -494,8 +494,8 @@ public class VectorSupport {
      V extends VectorPayload>
     void store(Class<?> vClass, Class<?> eClass,
                int length,
-               Object base, long offset,
-               V v, C container, long index, boolean from_ms,
+               Object base, long offset, boolean fromSegment,
+               V v, C container, long index,
                StoreVectorOperation<C, V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v);
@@ -515,8 +515,8 @@ public class VectorSupport {
      E>
     void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                      int length,
-                     Object base, long offset,
-                     V v, M m, C container, long index, boolean from_ms,
+                     Object base, long offset, boolean fromSegment,
+                     V v, M m, C container, long index,
                      StoreVectorMaskedOperation<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v, m);

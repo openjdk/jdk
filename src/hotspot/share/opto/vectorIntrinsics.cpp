@@ -944,30 +944,31 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
   }
 }
 
-// public static
-// <C,
-//  VM,
-//  E,
-//  S extends VectorSpecies<E>>
-// VM load(Class<? extends VM> vmClass, Class<E> elementType, int length,
-//         Object base, long offset,    // Unsafe addressing
-//         C container, long index, S s,  boolean from_ms,    // Arguments for default implementation
-//         LoadOperation<C, VM, E, S> defaultImpl)
-//
-// public static
-// <C,
-//  V extends Vector<?>>
-// void store(Class<?> vectorClass, Class<?> elementType, int length,
-//            Object base, long offset,    // Unsafe addressing
-//            V v,
-//            C container, long index, boolean from_ms, // Arguments for default implementation
-//            StoreVectorOperation<C, V> defaultImpl)
-
+//  public static
+//  <C,
+//   VM extends VectorPayload,
+//   E,
+//   S extends VectorSpecies<E>>
+//  VM load(Class<? extends VM> vmClass, Class<E> eClass,
+//          int length,
+//          Object base, long offset,            // Unsafe addressing
+//          boolean fromSegment,
+//          C container, long index, S s,        // Arguments for default implementation
+//          LoadOperation<C, VM, S> defaultImpl) {
+//  public static
+//  <C,
+//   V extends VectorPayload>
+//  void store(Class<?> vClass, Class<?> eClass,
+//             int length,
+//             Object base, long offset,        // Unsafe addressing
+//             boolean fromSegment,
+//             V v, C container, long index,    // Arguments for default implementation
+//             StoreVectorOperation<C, V> defaultImpl) {
 bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
-  const TypeInt*     from_ms      = gvn().type(argument(10))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(6))->isa_int();
 
   if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || !from_ms->is_con() ||
       vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
@@ -976,7 +977,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(10)->Opcode()]);
+                    NodeClassNames[argument(6)->Opcode()]);
     }
     return false; // not enough info for intrinsification
   }
@@ -1100,7 +1101,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
@@ -1150,33 +1151,36 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   return true;
 }
 
-// public static
-// <C,
-//  V extends Vector<?>,
-//  E,
-//  S extends VectorSpecies<E>,
-//  M extends VectorMask<E>>
-// V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
-//              int length, Object base, long offset,
-//              M m, int offsetInRange,
-//              C container, long index, S s, boolean from_m, // Arguments for default implementation
-//              LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
-// public static
-// <C,
-//  V extends Vector<E>,
-//  M extends VectorMask<E>,
-//  E>
-// void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
-//                  int length,
-//                  Object base, long offset,
-//                  V v, M m, C container, long index, boolean from_ms, // Arguments for default implementation
-//                  StoreVectorMaskedOperation<C, V, M> defaultImpl) {
+//  public static
+//  <C,
+//   V extends Vector<?>,
+//   E,
+//   S extends VectorSpecies<E>,
+//   M extends VectorMask<E>>
+//  V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+//               int length, Object base, long offset,          // Unsafe addressing
+//               boolean fromSegment,
+//               M m, int offsetInRange,
+//               C container, long index, S s,                  // Arguments for default implementation
+//               LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
+//  public static
+//  <C,
+//   V extends Vector<E>,
+//   M extends VectorMask<E>,
+//   E>
+//  void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+//                   int length,
+//                   Object base, long offset,                  // Unsafe addressing
+//                   boolean fromSegment,
+//                   V v, M m, C container, long index,         // Arguments for default implementation
+//                   StoreVectorMaskedOperation<C, V, M> defaultImpl) {
+
 bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
-  const TypeInt*     from_ms      = gvn().type(argument(is_store ? 12 : 13))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(7))->isa_int();
 
   if (vector_klass == nullptr || mask_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
       vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr || from_ms == nullptr ||
@@ -1187,7 +1191,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
                     NodeClassNames[argument(3)->Opcode()],
-                    NodeClassNames[argument(is_store ? 12 : 13)->Opcode()]);
+                    NodeClassNames[argument(7)->Opcode()]);
     }
     return false; // not enough info for intrinsification
   }
@@ -1254,7 +1258,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       needs_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
-      const TypeInt* offset_in_range = gvn().type(argument(8))->isa_int();
+      const TypeInt* offset_in_range = gvn().type(argument(9))->isa_int();
       if (!offset_in_range->is_con()) {
         if (C->print_intrinsics()) {
           tty->print_cr("  ** missing constant: offsetInRange=%s",
@@ -1332,12 +1336,12 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* mask = unbox_vector(is_store ? argument(8) : argument(7), mbox_type, elem_bt, num_elem);
+  Node* mask = unbox_vector(is_store ? argument(9) : argument(8), mbox_type, elem_bt, num_elem);
   if (mask == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** unbox failed mask=%s",
-                    is_store ? NodeClassNames[argument(8)->Opcode()]
-                             : NodeClassNames[argument(7)->Opcode()]);
+                    is_store ? NodeClassNames[argument(9)->Opcode()]
+                             : NodeClassNames[argument(8)->Opcode()]);
     }
     set_map(old_map);
     set_sp(old_sp);
@@ -1345,11 +1349,11 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed vector=%s",
-                      NodeClassNames[argument(7)->Opcode()]);
+                      NodeClassNames[argument(8)->Opcode()]);
       }
       set_map(old_map);
       set_sp(old_sp);

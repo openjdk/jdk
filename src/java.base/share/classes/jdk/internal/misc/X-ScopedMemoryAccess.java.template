@@ -355,8 +355,8 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             return VectorSupport.load(vmClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
-                    msp, offset, s, true,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
+                    msp, offset, s,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -397,8 +397,8 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, m, offsetInRange,
-                    msp, offset, s, true,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true, m, offsetInRange,
+                    msp, offset, s,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -438,9 +438,9 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             VectorSupport.store(vmClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
                     v,
-                    msp, offset, true,
+                    msp, offset,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
@@ -480,9 +480,9 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             VectorSupport.storeMasked(vmClass, maskClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
                     v, m,
-                    msp, offset, true,
+                    msp, offset,
                     defaultImpl);
         } finally {
             Reference.reachabilityFence(session);
