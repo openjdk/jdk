@@ -116,7 +116,7 @@ public class TestDeprecatedEvent {
         assertMethod(events, "testLevelAll", "deprecatedForRemovalFast");
         assertMethod(events, "testLevelAll", "deprecatedForRemovalSlow");
         assertMethod(events, "testLevelAll", "foo");
-		assertMethod(events, "testLevelAll", "zoo");
+        assertMethod(events, "testLevelAll", "zoo");
         // This is a problematic case only with the interpreter.
         // Because bar was already resolved when foo linked against it,
         // it is considered already linked also by zoo (through the cpCache).

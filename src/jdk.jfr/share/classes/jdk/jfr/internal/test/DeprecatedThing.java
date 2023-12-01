@@ -23,7 +23,7 @@
 package jdk.jfr.internal.test;
 
 public class DeprecatedThing {
-	public static int staticCounter;
+    public static int staticCounter;
     public int counter;
 
     @Deprecated
@@ -47,7 +47,7 @@ public class DeprecatedThing {
         counter++;
     }
 
-	@Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true)
     public static void deprecatedForRemovalSlow() {
         for (int i = 0; i < 1_000_000; i++) {
             deprecatedForRemovalSlow2();
