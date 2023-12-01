@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1735,21 +1735,21 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   Node* init = ReductionNode::make_identity_con_scalar(gvn(), opc, elem_bt);
-  Node* value = nullptr;
-  if (mask == nullptr) {
-    assert(!is_masked_op, "Masked op needs the mask value never null");
-    value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
-  } else {
-    if (use_predicate) {
-      value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
-      value->add_req(mask);
-      value->add_flag(Node::Flag_is_predicated_vector);
-    } else {
-      Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
-      value = gvn().transform(new VectorBlendNode(reduce_identity, opd, mask));
-      value = ReductionNode::make(opc, nullptr, init, value, elem_bt);
-    }
+  Node* value = opd;
+
+  if (mask != nullptr && !use_predicate) {
+    Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init,
+          num_elem, Type::get_const_basic_type(elem_bt)));
+    value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));
   }
+
+  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false);
+
+  if (mask != nullptr && use_predicate) {
+    value->add_req(mask);
+    value->add_flag(Node::Flag_is_predicated_vector);
+  }
+
   value = gvn().transform(value);
 
   Node* bits = nullptr;
