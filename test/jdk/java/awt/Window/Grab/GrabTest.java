@@ -49,6 +49,7 @@ import java.awt.Window;
 import java.awt.event.AWTEventListener;
 import java.awt.event.MouseAdapter;
 
+import javax.swing.SwingUtilities;
 import test.java.awt.regtesthelpers.Util;
 
 public class GrabTest {
@@ -73,8 +74,10 @@ public class GrabTest {
     public static void main(String[] args) throws Exception {
 
         robot = new Robot();
+        robot.setAutoDelay(500);
 
-        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+        SwingUtilities.invokeAndWait(() -> {
+            Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 public void eventDispatched(AWTEvent e) {
                     System.out.println(e);
                     if (e instanceof sun.awt.UngrabEvent) {
@@ -83,56 +86,55 @@ public class GrabTest {
                 }
             }, sun.awt.SunToolkit.GRAB_EVENT_MASK);
 
-        f = new Frame("Frame");
-        f.setBounds(0, 0, 300, 300);
-        f.addMouseListener(new MouseAdapter() {
+            f = new Frame("Frame");
+            f.setBounds(0, 0, 300, 300);
+            f.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     System.out.println(e);
                     framePressed = true;
                 }
             });
 
-        f1 = new Frame("OtherFrame");
-        f1.setBounds(700, 100, 300, 300);
+            f1 = new Frame("OtherFrame");
+            f1.setBounds(700, 100, 300, 300);
 
-        w = new Window(f);
-        w.setLayout(new FlowLayout());
-        b = new Button("Press");
-        b.addActionListener(new ActionListener() {
+            w = new Window(f);
+            w.setLayout(new FlowLayout());
+            b = new Button("Press");
+            b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     System.out.println(e);
                     buttonPressed = true;
                 }
             });
-        w.add(b);
-        w.setBounds(400, 100, 300, 300);
-        w.setBackground(Color.blue);
-        w.addMouseListener(new MouseAdapter() {
+            w.add(b);
+            w.setBounds(400, 100, 300, 300);
+            w.setBackground(Color.blue);
+            w.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     System.out.println(e);
                     windowPressed = true;
                 }
             });
 
-        f.setVisible(true);
-        w.setVisible(true);
+            f.setVisible(true);
+            w.setVisible(true);
+
+            frame = new Frame();
+            window1 = new Window(frame);
+            window1.setSize(200, 200);
+            window1.setLocationRelativeTo(null);
+            window1.setBackground(Color.blue);
+
+            window2 = new Window(window1);
+            window2.setSize(100, 100);
+            window2.setLocationRelativeTo(null);
+            window2.setBackground(Color.green);
+
+            tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
+        });
+
         Util.waitForIdle(robot);
-
-        frame = new Frame();
-        window1 = new Window(frame);
-        window1.setSize(200, 200);
-        window1.setLocationRelativeTo(null);
-        window1.setBackground(Color.blue);
-
-        window2 = new Window(window1);
-        window2.setSize(100, 100);
-        window2.setLocationRelativeTo(null);
-        window2.setBackground(Color.green);
-
-        tk = (sun.awt.SunToolkit)Toolkit.getDefaultToolkit();
-
-        Util.waitForIdle(robot);
-
         test();
     }
 
@@ -142,7 +144,6 @@ public class GrabTest {
         // 1. Check that button press doesn't cause ungrab
         Util.clickOnComp(b, robot);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         checkAndThrow(buttonPressed, "Error: Button can not be pressed");
         if (ungrabbed) {
@@ -164,7 +165,6 @@ public class GrabTest {
         // 3. Check that press on the frame causes ungrab, event must be dispatched
         Util.clickOnComp(f, robot);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         checkAndThrow(framePressed, "Error: Frame can't be pressed");
         if (!ungrabbed) {
@@ -191,7 +191,6 @@ public class GrabTest {
 
         Util.clickOnTitle(f1, robot);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         if (!ungrabbed) {
             passed = false;
@@ -199,27 +198,21 @@ public class GrabTest {
         }
         f.requestFocus(); // restore focus
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         if (!f.hasFocus()) {
             System.err.println("Error: Frame can't be focused");
         }
         ungrabbed = false;
         tk.grab(w);
-        robot.delay(100);
-
 
         // 6. Check that press on the outside area causes ungrab
         Point loc = f.getLocationOnScreen();
         robot.mouseMove(loc.x + 100, loc.y + f.getSize().height + 10);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(100);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         if (!ungrabbed) {
             passed = false;
@@ -244,13 +237,11 @@ public class GrabTest {
         window1.setVisible(true);
         window2.setVisible(true);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         tk.grab(window1);
 
         Util.clickOnComp(window2, robot);
         Util.waitForIdle(robot);
-        robot.delay(100);
 
         if (ungrabbed) {
             passed = false;
