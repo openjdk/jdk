@@ -33,14 +33,14 @@
 
 class StringArrayArgument : public CHeapObj<mtInternal> {
 private:
-  GrowableArray<char*>* _array;
+  GrowableArrayCHeap<char*, mtServiceability>* _array;
 public:
   StringArrayArgument();
   ~StringArrayArgument();
 
   void add(const char* str, size_t len);
 
-  GrowableArray<char*>* array() {
+  GrowableArrayCHeap<char*, mtServiceability>* array() {
     return _array;
   }
 };

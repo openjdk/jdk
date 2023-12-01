@@ -271,11 +271,11 @@ public:
 
 class ThreadStackTrace : public CHeapObj<mtInternal> {
  private:
-  JavaThread*                     _thread;
-  int                             _depth;  // number of stack frames added
-  bool                            _with_locked_monitors;
-  GrowableArray<StackFrameInfo*>* _frames;
-  GrowableArray<OopHandle>*       _jni_locked_monitors;
+  JavaThread*                                            _thread;
+  int                                                    _depth;  // number of stack frames added
+  bool                                                   _with_locked_monitors;
+  GrowableArrayCHeap<StackFrameInfo*, mtServiceability>* _frames;
+  GrowableArrayCHeap<OopHandle, mtServiceability>*       _jni_locked_monitors;
 
  public:
 
@@ -290,7 +290,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsView* monitors, bool full);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
-  GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }
+  GrowableArrayCHeap<OopHandle, mtServiceability>* jni_locked_monitors() { return _jni_locked_monitors; }
   int             num_jni_locked_monitors() { return (_jni_locked_monitors != nullptr ? _jni_locked_monitors->length() : 0); }
 
   bool            is_owned_monitor_on_stack(oop object);
@@ -304,7 +304,8 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
  private:
   Method*             _method;
   int                 _bci;
-  GrowableArray<OopHandle>* _locked_monitors; // list of object monitors locked by this frame
+  // list of object monitors locked by this frame
+  GrowableArrayCHeap<OopHandle, mtServiceability>* _locked_monitors;
   // We need to save the mirrors in the backtrace to keep the class
   // from being unloaded while we still have this stack trace.
   OopHandle           _class_holder;
@@ -318,14 +319,14 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
   void      metadata_do(void f(Metadata*));
 
   int       num_locked_monitors()       { return (_locked_monitors != nullptr ? _locked_monitors->length() : 0); }
-  GrowableArray<OopHandle>* locked_monitors() { return _locked_monitors; }
+  GrowableArrayCHeap<OopHandle, mtServiceability>* locked_monitors() { return _locked_monitors; }
 
   void      print_on(outputStream* st) const;
 };
 
 class ThreadConcurrentLocks : public CHeapObj<mtInternal> {
 private:
-  GrowableArray<OopHandle>*   _owned_locks;
+  GrowableArrayCHeap<OopHandle, mtServiceability>* _owned_locks;
   ThreadConcurrentLocks*      _next;
   // This JavaThread* is protected in one of two different ways
   // depending on the usage of the ThreadConcurrentLocks object:
@@ -342,7 +343,7 @@ private:
   void                        set_next(ThreadConcurrentLocks* n) { _next = n; }
   ThreadConcurrentLocks*      next() { return _next; }
   JavaThread*                 java_thread()                      { return _thread; }
-  GrowableArray<OopHandle>*   owned_locks()                      { return _owned_locks; }
+  GrowableArrayCHeap<OopHandle, mtServiceability>* owned_locks() { return _owned_locks; }
 };
 
 class ConcurrentLocksDump : public StackObj {
@@ -351,7 +352,7 @@ class ConcurrentLocksDump : public StackObj {
   ThreadConcurrentLocks* _last;   // Last ThreadConcurrentLocks in the map
   bool                   _retain_map_on_free;
 
-  void build_map(GrowableArray<oop>* aos_objects);
+  void build_map(GrowableArrayCHeap<oop, mtServiceability>* aos_objects);
   void add_lock(JavaThread* thread, instanceOop o);
 
  public:
@@ -401,8 +402,8 @@ class ThreadDumpResult : public StackObj {
 
 class DeadlockCycle : public CHeapObj<mtInternal> {
  private:
-  GrowableArray<JavaThread*>* _threads;
-  DeadlockCycle*              _next;
+  GrowableArrayCHeap<JavaThread*, mtServiceability>* _threads;
+  DeadlockCycle* _next;
  public:
   DeadlockCycle();
   ~DeadlockCycle();
@@ -412,7 +413,7 @@ class DeadlockCycle : public CHeapObj<mtInternal> {
   void           add_thread(JavaThread* t)  { _threads->append(t); }
   void           reset()                    { _threads->clear(); }
   int            num_threads()              { return _threads->length(); }
-  GrowableArray<JavaThread*>* threads()     { return _threads; }
+  GrowableArrayCHeap<JavaThread*, mtServiceability>* threads() { return _threads; }
   void           print_on_with(ThreadsList * t_list, outputStream* st) const;
 };
 

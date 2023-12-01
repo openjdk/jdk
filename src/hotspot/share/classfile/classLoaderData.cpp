@@ -862,7 +862,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == nullptr) {
-      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
+      _deallocate_list = new GrowableArrayCHeap<Metadata*, mtClass>(100);
     }
     _deallocate_list->append_if_missing(m);
     ResourceMark rm;

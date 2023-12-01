@@ -58,7 +58,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   size_t          _instance_words;
   int64_t         _index;
   bool            _do_print; // True if we should print this class when printing the class hierarchy.
-  GrowableArray<KlassInfoEntry*>* _subclasses;
+  GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>* _subclasses;
 
  public:
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
@@ -75,7 +75,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
   void set_words(size_t wds)     { _instance_words = wds; }
   void set_index(int64_t index)  { _index = index; }
   int64_t index()    const       { return _index; }
-  GrowableArray<KlassInfoEntry*>* subclasses() const { return _subclasses; }
+  GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>* subclasses() const { return _subclasses; }
   void add_subclass(KlassInfoEntry* cie);
   void set_do_print(bool do_print) { _do_print = do_print; }
   bool do_print() const      { return _do_print; }
@@ -147,8 +147,8 @@ class KlassInfoHisto : public StackObj {
  private:
   static const int _histo_initial_size = 1000;
   KlassInfoTable *_cit;
-  GrowableArray<KlassInfoEntry*>* _elements;
-  GrowableArray<KlassInfoEntry*>* elements() const { return _elements; }
+  GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>* _elements;
+  GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>* elements() const { return _elements; }
   static int sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2);
   void print_elements(outputStream* st) const;
   bool is_selected(const char *col_name);
@@ -202,7 +202,7 @@ class HeapInspection : public StackObj {
  public:
   void heap_inspection(outputStream* st, WorkerThreads* workers) NOT_SERVICES_RETURN;
   uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter, WorkerThreads* workers) NOT_SERVICES_RETURN_(0);
-  static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
+  static void find_instances_at_safepoint(Klass* k, GrowableArrayCHeap<oop, mtServiceability>* result) NOT_SERVICES_RETURN;
 };
 
 // Parallel heap inspection task. Parallel inspection can fail due to

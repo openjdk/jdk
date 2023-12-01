@@ -51,7 +51,7 @@ inline KlassInfoEntry::~KlassInfoEntry() {
 
 inline void KlassInfoEntry::add_subclass(KlassInfoEntry* cie) {
   if (_subclasses == nullptr) {
-    _subclasses = new (mtServiceability) GrowableArray<KlassInfoEntry*>(4, mtServiceability);
+    _subclasses = new GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>(4);
   }
   _subclasses->append(cie);
 }
@@ -279,7 +279,7 @@ int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
 
 KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit) :
   _cit(cit) {
-  _elements = new (mtServiceability) GrowableArray<KlassInfoEntry*>(_histo_initial_size, mtServiceability);
+  _elements = new GrowableArrayCHeap<KlassInfoEntry*, mtServiceability>(_histo_initial_size);
 }
 
 KlassInfoHisto::~KlassInfoHisto() {
@@ -614,10 +614,11 @@ void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
 class FindInstanceClosure : public ObjectClosure {
  private:
   Klass* _klass;
-  GrowableArray<oop>* _result;
+  GrowableArrayCHeap<oop, mtServiceability>* _result;
 
  public:
-  FindInstanceClosure(Klass* k, GrowableArray<oop>* result) : _klass(k), _result(result) {};
+  FindInstanceClosure(Klass* k, GrowableArrayCHeap<oop, mtServiceability>* result) :
+    _klass(k), _result(result) {};
 
   void do_object(oop obj) {
     if (obj->is_a(_klass)) {
@@ -630,7 +631,7 @@ class FindInstanceClosure : public ObjectClosure {
   }
 };
 
-void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) {
+void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArrayCHeap<oop, mtServiceability>* result) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
   assert(Heap_lock->is_locked(), "should have the Heap_lock");
 

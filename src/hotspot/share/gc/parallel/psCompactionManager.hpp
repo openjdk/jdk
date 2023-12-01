@@ -75,13 +75,13 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
 
-  GrowableArray<HeapWord*>*    _deferred_obj_array;
+  GrowableArrayCHeap<HeapWord*, mtGC>* _deferred_obj_array;
 
   static ParMarkBitMap* _mark_bitmap;
 
   // Contains currently free shadow regions. We use it in
   // a LIFO fashion for better data locality and utilization.
-  static GrowableArray<size_t>* _shadow_region_array;
+  static GrowableArrayCHeap<size_t, mtGC>* _shadow_region_array;
 
   // Provides mutual exclusive access of _shadow_region_array.
   // See pop/push_shadow_region_mt_safe() below

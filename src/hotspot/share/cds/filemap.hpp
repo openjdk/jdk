@@ -49,6 +49,9 @@ class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
 
+template<class E> class GrowableArray;
+template<class E, MEMFLAGS F> class GrowableArrayCHeap;
+
 class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
@@ -342,7 +345,7 @@ private:
   static FileMapInfo* _dynamic_archive_info;
   static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
-  static GrowableArray<const char*>* _non_existent_class_paths;
+  static GrowableArrayCHeap<const char*, mtClass>* _non_existent_class_paths;
 
 public:
   FileMapHeader *header() const       { return _header; }

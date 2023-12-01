@@ -127,7 +127,7 @@ void JfrTraceId::assign(const Klass* klass) {
   if (state == nullptr) {
     return;
   }
-  const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
+  const GrowableArrayCHeap<Klass*, mtClass>* const redef_klasses = state->get_classes_being_redefined();
   if (redef_klasses == nullptr || redef_klasses->is_empty()) {
     return;
   }

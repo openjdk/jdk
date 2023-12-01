@@ -45,8 +45,8 @@ class os::Linux {
 
   static bool _supports_fast_thread_cpu_time;
 
-  static GrowableArray<int>* _cpu_to_node;
-  static GrowableArray<int>* _nindex_to_node;
+  static GrowableArrayCHeap<int, mtInternal>* _cpu_to_node;
+  static GrowableArrayCHeap<int, mtInternal>* _nindex_to_node;
 
   static julong available_memory_in_container();
 
@@ -71,8 +71,8 @@ class os::Linux {
 
   static void rebuild_cpu_to_node_map();
   static void rebuild_nindex_to_node_map();
-  static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
-  static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
+  static GrowableArrayCHeap<int, mtInternal>* cpu_to_node() { return _cpu_to_node; }
+  static GrowableArrayCHeap<int, mtInternal>* nindex_to_node() { return _nindex_to_node; }
 
   static void print_process_memory_info(outputStream* st);
   static void print_system_memory_info(outputStream* st);
@@ -373,7 +373,7 @@ class os::Linux {
     }
   }
 
-  static const GrowableArray<int>* numa_nindex_to_node() {
+  static const GrowableArrayCHeap<int, mtInternal>* numa_nindex_to_node() {
     return _nindex_to_node;
   }
 

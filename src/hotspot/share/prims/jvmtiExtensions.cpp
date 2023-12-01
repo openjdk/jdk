@@ -32,10 +32,10 @@
 #include "runtime/jniHandles.inline.hpp"
 
 // the list of extension functions
-GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
+GrowableArrayCHeap<jvmtiExtensionFunctionInfo*, mtServiceability>* JvmtiExtensions::_ext_functions;
 
 // the list of extension events
-GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
+GrowableArrayCHeap<jvmtiExtensionEventInfo*, mtServiceability>* JvmtiExtensions::_ext_events;
 
 
 //
@@ -170,8 +170,8 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 // event. The function and the event are registered here.
 //
 void JvmtiExtensions::register_extensions() {
-  _ext_functions = new (mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
-  _ext_events = new (mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
+  _ext_functions = new GrowableArrayCHeap<jvmtiExtensionFunctionInfo*, mtServiceability>(1);
+  _ext_events = new GrowableArrayCHeap<jvmtiExtensionEventInfo*, mtServiceability>(1);
 
   // Register our extension functions.
   static jvmtiParamInfo func_params0[] = {

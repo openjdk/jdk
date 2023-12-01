@@ -69,9 +69,9 @@ void ProtectionDomainCacheTable::trigger_cleanup() {
 }
 
 class CleanProtectionDomainEntries : public CLDClosure {
-  GrowableArray<ProtectionDomainEntry*>* _delete_list;
+  GrowableArrayCHeap<ProtectionDomainEntry*, mtClass>* _delete_list;
  public:
-  CleanProtectionDomainEntries(GrowableArray<ProtectionDomainEntry*>* delete_list) :
+  CleanProtectionDomainEntries(GrowableArrayCHeap<ProtectionDomainEntry*, mtClass>* delete_list) :
                                _delete_list(delete_list) {}
 
   void do_cld(ClassLoaderData* data) {
@@ -82,7 +82,7 @@ class CleanProtectionDomainEntries : public CLDClosure {
   }
 };
 
-static GrowableArray<ProtectionDomainEntry*>* _delete_list = nullptr;
+static GrowableArrayCHeap<ProtectionDomainEntry*, mtClass>* _delete_list = nullptr;
 
 class HandshakeForPD : public HandshakeClosure {
  public:
@@ -120,8 +120,7 @@ void ProtectionDomainCacheTable::unlink() {
 
   // Create a list for holding deleted entries
   if (_delete_list == nullptr) {
-    _delete_list = new (mtClass)
-                       GrowableArray<ProtectionDomainEntry*>(20, mtClass);
+    _delete_list = new GrowableArrayCHeap<ProtectionDomainEntry*, mtClass>(20);
   }
 
   {

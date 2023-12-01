@@ -89,10 +89,11 @@ class CodeCache : AllStatic {
   friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache
-  static GrowableArray<CodeHeap*>* _heaps;
-  static GrowableArray<CodeHeap*>* _compiled_heaps;
-  static GrowableArray<CodeHeap*>* _nmethod_heaps;
-  static GrowableArray<CodeHeap*>* _allocable_heaps;
+  typedef GrowableArrayCHeap<CodeHeap*, mtCode> CodeHeapArray;
+  static CodeHeapArray* _heaps;
+  static CodeHeapArray* _compiled_heaps;
+  static CodeHeapArray* _nmethod_heaps;
+  static CodeHeapArray* _allocable_heaps;
 
   static address _low_bound;                                 // Lower bound of CodeHeap addresses
   static address _high_bound;                                // Upper bound of CodeHeap addresses
@@ -144,9 +145,9 @@ class CodeCache : AllStatic {
   static int code_heap_compare(CodeHeap* const &lhs, CodeHeap* const &rhs);
 
   static void add_heap(CodeHeap* heap);
-  static const GrowableArray<CodeHeap*>* heaps() { return _heaps; }
-  static const GrowableArray<CodeHeap*>* compiled_heaps() { return _compiled_heaps; }
-  static const GrowableArray<CodeHeap*>* nmethod_heaps() { return _nmethod_heaps; }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* heaps() { return _heaps; }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* compiled_heaps() { return _compiled_heaps; }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* nmethod_heaps() { return _nmethod_heaps; }
 
   // Allocation/administration
   static CodeBlob* allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure = true, CodeBlobType orig_code_blob_type = CodeBlobType::All); // allocates a new CodeBlob
@@ -444,18 +445,18 @@ private:
 
 struct CompiledMethodFilter {
   static bool apply(CodeBlob* cb) { return cb->is_compiled(); }
-  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::compiled_heaps(); }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* heaps() { return CodeCache::compiled_heaps(); }
 };
 
 
 struct NMethodFilter {
   static bool apply(CodeBlob* cb) { return cb->is_nmethod(); }
-  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::nmethod_heaps(); }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* heaps() { return CodeCache::nmethod_heaps(); }
 };
 
 struct AllCodeBlobsFilter {
   static bool apply(CodeBlob* cb) { return true; }
-  static const GrowableArray<CodeHeap*>* heaps() { return CodeCache::heaps(); }
+  static const GrowableArrayCHeap<CodeHeap*, mtCode>* heaps() { return CodeCache::heaps(); }
 };
 
 typedef CodeBlobIterator<CompiledMethod, CompiledMethodFilter, false /* is_relaxed */> CompiledMethodIterator;

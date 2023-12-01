@@ -95,7 +95,7 @@ bool JfrRecorder::on_create_vm_1() {
   return JfrTime::initialize();
 }
 
-static GrowableArray<JfrStartFlightRecordingDCmd*>* dcmd_recordings_array = nullptr;
+static GrowableArrayCHeap<JfrStartFlightRecordingDCmd*, mtTracing>* dcmd_recordings_array = nullptr;
 
 static void release_recordings() {
   if (dcmd_recordings_array != nullptr) {
@@ -128,14 +128,14 @@ static bool parse_recording_options(const char* options, JfrStartFlightRecording
 }
 
 static bool validate_recording_options(TRAPS) {
-  const GrowableArray<const char*>* options = JfrOptionSet::start_flight_recording_options();
+  const GrowableArrayCHeap<const char*, mtTracing>* options = JfrOptionSet::start_flight_recording_options();
   if (options == nullptr) {
     return true;
   }
   const int length = options->length();
   assert(length >= 1, "invariant");
   assert(dcmd_recordings_array == nullptr, "invariant");
-  dcmd_recordings_array = new (mtTracing) GrowableArray<JfrStartFlightRecordingDCmd*>(length, mtTracing);
+  dcmd_recordings_array = new GrowableArrayCHeap<JfrStartFlightRecordingDCmd*, mtTracing>(length);
   assert(dcmd_recordings_array != nullptr, "invariant");
   for (int i = 0; i < length; ++i) {
     JfrStartFlightRecordingDCmd* const dcmd_recording = new (mtTracing) JfrStartFlightRecordingDCmd(tty, true);

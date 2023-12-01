@@ -48,7 +48,7 @@ ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_q
 
 ObjectStartArray*    ParCompactionManager::_start_array = nullptr;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
-GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = nullptr;
+GrowableArrayCHeap<size_t, mtGC>* ParCompactionManager::_shadow_region_array = nullptr;
 Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 
 ParCompactionManager::ParCompactionManager() {
@@ -60,7 +60,7 @@ ParCompactionManager::ParCompactionManager() {
 
   reset_bitmap_query_cache();
 
-  _deferred_obj_array = new (mtGC) GrowableArray<HeapWord*>(10, mtGC);
+  _deferred_obj_array = new GrowableArrayCHeap<HeapWord*, mtGC>(10);
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
@@ -89,7 +89,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   assert(ParallelScavengeHeap::heap()->workers().max_workers() != 0,
     "Not initialized?");
 
-  _shadow_region_array = new (mtGC) GrowableArray<size_t >(10, mtGC);
+  _shadow_region_array = new GrowableArrayCHeap<size_t, mtGC>(10);
 
   _shadow_region_monitor = new Monitor(Mutex::nosafepoint, "CompactionManager_lock");
 }

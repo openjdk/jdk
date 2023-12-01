@@ -489,12 +489,12 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
 
 PerfDataList::PerfDataList(int length) {
 
-  _set = new (mtInternal) PerfDataArray(length, mtInternal);
+  _set = new PerfDataArray(length);
 }
 
 PerfDataList::PerfDataList(PerfDataList* p) {
 
-  _set = new (mtInternal) PerfDataArray(p->length(), mtInternal);
+  _set = new PerfDataArray(p->length());
 
   _set->appendAll(p->get_impl());
 }

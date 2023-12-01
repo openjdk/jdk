@@ -166,7 +166,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == nullptr) {
       // Lazily create a module's reads list
-      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      _reads = new GrowableArrayCHeap<ModuleEntry*, mtModule>(MODULE_READS_SIZE);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -430,7 +430,7 @@ ModuleEntry* ModuleEntry::get_archived_entry(ModuleEntry* orig_entry) {
 // This function is used to archive ModuleEntry::_reads and PackageEntry::_qualified_exports.
 // GrowableArray cannot be directly archived, as it needs to be expandable at runtime.
 // Write it out as an Array, and convert it back to GrowableArray at runtime.
-Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry*>* array) {
+Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArrayCHeap<ModuleEntry*, mtModule>* array) {
   Array<ModuleEntry*>* archived_array = nullptr;
   int length = (array == nullptr) ? 0 : array->length();
   if (length > 0) {
@@ -445,11 +445,11 @@ Array<ModuleEntry*>* ModuleEntry::write_growable_array(GrowableArray<ModuleEntry
   return archived_array;
 }
 
-GrowableArray<ModuleEntry*>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
-  GrowableArray<ModuleEntry*>* array = nullptr;
+GrowableArrayCHeap<ModuleEntry*, mtModule>* ModuleEntry::restore_growable_array(Array<ModuleEntry*>* archived_array) {
+  GrowableArrayCHeap<ModuleEntry*, mtModule>* array = nullptr;
   int length = (archived_array == nullptr) ? 0 : archived_array->length();
   if (length > 0) {
-    array = new (mtModule) GrowableArray<ModuleEntry*>(length, mtModule);
+    array = new GrowableArrayCHeap<ModuleEntry*, mtModule>(length);
     for (int i = 0; i < length; i++) {
       ModuleEntry* archived_entry = archived_array->at(i);
       array->append(archived_entry);
@@ -474,7 +474,8 @@ void ModuleEntry::init_as_archived_entry() {
     _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
-  _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
+  // TODO investigate, this looks like a terrible hack!
+  _reads = (GrowableArrayCHeap<ModuleEntry*, mtModule>*)archived_reads;
   if (_version != nullptr) {
     _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
@@ -687,7 +688,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
   java_lang_Class::set_module(Universe::void_mirror(), module_handle());
 
   // Do the fixups for classes that have already been created.
-  GrowableArray <Klass*>* list = java_lang_Class::fixup_module_field_list();
+  GrowableArrayCHeap <Klass*, mtModule>* list = java_lang_Class::fixup_module_field_list();
   int list_length = list->length();
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);

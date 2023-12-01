@@ -94,6 +94,7 @@ public:
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
 
+  // TODO should clear and trunc_to become virtual or at least abstract?
   void  clear()                 { _len = 0; }
   void  trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
@@ -188,6 +189,12 @@ public:
     _data[i] = elem;
   }
 
+  void at_swap(int i, int j) {
+    E tmp = this->at(i);
+    this->at_put(i, this->at(j));
+    this->at_put(j, tmp);
+  }
+  
   bool contains(const E& elem) const {
     for (int i = 0; i < _len; i++) {
       if (_data[i] == elem) return true;
@@ -750,13 +757,13 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity, memflags),
-          initial_capacity),
-      _metadata(memflags) {
-    init_checks();
-  }
+//  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
+//      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+//          allocate(initial_capacity, memflags),
+//          initial_capacity),
+//      _metadata(memflags) {
+//    init_checks();
+//  }
 
   GrowableArray(int initial_capacity, int initial_len, const E& filler) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
@@ -766,13 +773,13 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity, memflags),
-          initial_capacity, initial_len, filler),
-      _metadata(memflags) {
-    init_checks();
-  }
+//  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
+//      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+//          allocate(initial_capacity, memflags),
+//          initial_capacity, initial_len, filler),
+//      _metadata(memflags) {
+//    init_checks();
+//  }
 
   GrowableArray(Arena* arena, int initial_capacity, int initial_len, const E& filler) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(

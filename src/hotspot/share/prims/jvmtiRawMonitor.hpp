@@ -133,9 +133,10 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
 class JvmtiPendingMonitors : public AllStatic {
 
  private:
-  static GrowableArray<JvmtiRawMonitor*>* _monitors; // Cache raw monitor enter
+  // Cache raw monitor enter
+  static GrowableArrayCHeap<JvmtiRawMonitor*, mtServiceability>* _monitors;
 
-  inline static GrowableArray<JvmtiRawMonitor*>* monitors() { return _monitors; }
+  inline static GrowableArrayCHeap<JvmtiRawMonitor*, mtServiceability>* monitors() { return _monitors; }
 
   static void dispose() {
     delete monitors();

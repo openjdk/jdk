@@ -390,7 +390,7 @@ void HeapShared::archive_java_mirrors() {
     }
   }
 
-  GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
+  GrowableArrayCHeap<Klass*, mtClassShared>* klasses = ArchiveBuilder::current()->klasses();
   assert(klasses != nullptr, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
     Klass* orig_k = klasses->at(i);
@@ -621,8 +621,7 @@ KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
 void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
   if (_subgraph_entry_fields == nullptr) {
-    _subgraph_entry_fields =
-      new (mtClass) GrowableArray<int>(10, mtClass);
+    _subgraph_entry_fields = new GrowableArrayCHeap<int, mtClass>(10);
   }
   _subgraph_entry_fields->append(static_field_offset);
   _subgraph_entry_fields->append(HeapShared::append_root(v));
@@ -635,8 +634,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
 
   if (_subgraph_object_klasses == nullptr) {
-    _subgraph_object_klasses =
-      new (mtClass) GrowableArray<Klass*>(50, mtClass);
+    _subgraph_object_klasses = new GrowableArrayCHeap<Klass*, mtClass>(50);
   }
 
   assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");
@@ -751,7 +749,7 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   }
 
   // populate the entry fields
-  GrowableArray<int>* entry_fields = info->subgraph_entry_fields();
+  GrowableArrayCHeap<int, mtClass>* entry_fields = info->subgraph_entry_fields();
   if (entry_fields != nullptr) {
     int num_entry_fields = entry_fields->length();
     assert(num_entry_fields % 2 == 0, "sanity");
@@ -763,7 +761,7 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   }
 
   // the Klasses of the objects in the sub-graphs
-  GrowableArray<Klass*>* subgraph_object_klasses = info->subgraph_object_klasses();
+  GrowableArrayCHeap<Klass*, mtClass>* subgraph_object_klasses = info->subgraph_object_klasses();
   if (subgraph_object_klasses != nullptr) {
     int num_subgraphs_klasses = subgraph_object_klasses->length();
     _subgraph_object_klasses =
@@ -1341,7 +1339,7 @@ void HeapShared::verify_reachable_objects_from(oop obj) {
 // Make sure that these are only instances of the very few specific types
 // that we can handle.
 void HeapShared::check_default_subgraph_classes() {
-  GrowableArray<Klass*>* klasses = _default_subgraph_info->subgraph_object_klasses();
+  GrowableArrayCHeap<Klass*, mtClass>* klasses = _default_subgraph_info->subgraph_object_klasses();
   int num = klasses->length();
   for (int i = 0; i < num; i++) {
     Klass* subgraph_k = klasses->at(i);

@@ -78,7 +78,7 @@ private:
   void *_this_obj;
 
   // Array of elements in the collection
-  GrowableArray<GrowableElement *> *_elements;
+  GrowableArrayCHeap<GrowableElement*, mtServiceability> *_elements;
 
   // Parallel array of cached values
   address *_cache;

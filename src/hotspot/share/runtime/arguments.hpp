@@ -211,7 +211,7 @@ class Arguments : AllStatic {
   // --patch-module=module=<file>(<pathsep><file>)*
   // Each element contains the associated module name, path
   // string pair as specified to --patch-module.
-  static GrowableArray<ModulePatchPath*>* _patch_mod_prefix;
+  static GrowableArrayCHeap<ModulePatchPath*, mtArguments>* _patch_mod_prefix;
 
   // The constructed value of the system class path after
   // argument processing and JVMTI OnLoad additions via
@@ -492,7 +492,7 @@ class Arguments : AllStatic {
     _jdk_boot_class_path_append->append_value(value);
   }
 
-  static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
+  static GrowableArrayCHeap<ModulePatchPath*, mtArguments>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_boot_class_path() { return _boot_class_path->value(); }
   static bool has_jimage() { return _has_jimage; }
 

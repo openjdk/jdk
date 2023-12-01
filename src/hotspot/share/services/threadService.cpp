@@ -609,7 +609,7 @@ StackFrameInfo::StackFrameInfo(javaVFrame* jvf, bool with_lock_info) {
     GrowableArray<MonitorInfo*>* list = jvf->locked_monitors();
     int length = list->length();
     if (length > 0) {
-      _locked_monitors = new (mtServiceability) GrowableArray<OopHandle>(length, mtServiceability);
+      _locked_monitors = new GrowableArrayCHeap<OopHandle, mtServiceability>(length);
       for (int i = 0; i < length; i++) {
         MonitorInfo* monitor = list->at(i);
         assert(monitor->owner() != nullptr, "This monitor must have an owning object");
@@ -661,11 +661,11 @@ public:
 
 ThreadStackTrace::ThreadStackTrace(JavaThread* t, bool with_locked_monitors) {
   _thread = t;
-  _frames = new (mtServiceability) GrowableArray<StackFrameInfo*>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _frames = new GrowableArrayCHeap<StackFrameInfo*, mtServiceability>(INITIAL_ARRAY_SIZE);
   _depth = 0;
   _with_locked_monitors = with_locked_monitors;
   if (_with_locked_monitors) {
-    _jni_locked_monitors = new (mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
+    _jni_locked_monitors = new GrowableArrayCHeap<OopHandle, mtServiceability>(INITIAL_ARRAY_SIZE);
   } else {
     _jni_locked_monitors = nullptr;
   }
@@ -737,7 +737,7 @@ bool ThreadStackTrace::is_owned_monitor_on_stack(oop object) {
   for (int depth = 0; depth < num_frames; depth++) {
     StackFrameInfo* frame = stack_frame_at(depth);
     int len = frame->num_locked_monitors();
-    GrowableArray<OopHandle>* locked_monitors = frame->locked_monitors();
+    GrowableArrayCHeap<OopHandle, mtServiceability>* locked_monitors = frame->locked_monitors();
     for (int j = 0; j < len; j++) {
       oop monitor = locked_monitors->at(j).resolve();
       assert(monitor != nullptr, "must be a Java object");
@@ -796,7 +796,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   // dump all locked concurrent locks
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
-  GrowableArray<oop>* aos_objects = new (mtServiceability) GrowableArray<oop>(INITIAL_ARRAY_SIZE, mtServiceability);
+  GrowableArrayCHeap<oop, mtServiceability>* aos_objects = new GrowableArrayCHeap<oop, mtServiceability>(INITIAL_ARRAY_SIZE);
 
   // Find all instances of AbstractOwnableSynchronizer
   HeapInspection::find_instances_at_safepoint(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass(),
@@ -809,7 +809,7 @@ void ConcurrentLocksDump::dump_at_safepoint() {
 
 
 // build a map of JavaThread to all its owned AbstractOwnableSynchronizer
-void ConcurrentLocksDump::build_map(GrowableArray<oop>* aos_objects) {
+void ConcurrentLocksDump::build_map(GrowableArrayCHeap<oop, mtServiceability>* aos_objects) {
   int length = aos_objects->length();
   for (int i = 0; i < length; i++) {
     oop o = aos_objects->at(i);
@@ -854,7 +854,7 @@ ThreadConcurrentLocks* ConcurrentLocksDump::thread_concurrent_locks(JavaThread* 
 void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
   st->print_cr("   Locked ownable synchronizers:");
   ThreadConcurrentLocks* tcl = thread_concurrent_locks(t);
-  GrowableArray<OopHandle>* locks = (tcl != nullptr ? tcl->owned_locks() : nullptr);
+  GrowableArrayCHeap<OopHandle, mtServiceability>* locks = (tcl != nullptr ? tcl->owned_locks() : nullptr);
   if (locks == nullptr || locks->is_empty()) {
     st->print_cr("\t- None");
     st->cr();
@@ -870,7 +870,7 @@ void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
 
 ThreadConcurrentLocks::ThreadConcurrentLocks(JavaThread* thread) {
   _thread = thread;
-  _owned_locks = new (mtServiceability) GrowableArray<OopHandle>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _owned_locks = new GrowableArrayCHeap<OopHandle, mtServiceability>(INITIAL_ARRAY_SIZE);
   _next = nullptr;
 }
 
@@ -993,7 +993,7 @@ void ThreadSnapshot::metadata_do(void f(Metadata*)) {
 
 
 DeadlockCycle::DeadlockCycle() {
-  _threads = new (mtServiceability) GrowableArray<JavaThread*>(INITIAL_ARRAY_SIZE, mtServiceability);
+  _threads = new GrowableArrayCHeap<JavaThread*, mtServiceability>(INITIAL_ARRAY_SIZE);
   _next = nullptr;
 }
 

@@ -399,12 +399,12 @@ public:
 
 // _array_klasses and _dynamic_archive_array_klasses only hold the array klasses
 // which have element klass in the static archive.
-GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
+GrowableArrayCHeap<ObjArrayKlass*, mtClassShared>* DynamicArchive::_array_klasses = nullptr;
 Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
 
 void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
   if (_array_klasses == nullptr) {
-    _array_klasses = new (mtClassShared) GrowableArray<ObjArrayKlass*>(50, mtClassShared);
+    _array_klasses = new GrowableArrayCHeap<ObjArrayKlass*, mtClassShared>(50);
   }
   _array_klasses->append(ak);
 }

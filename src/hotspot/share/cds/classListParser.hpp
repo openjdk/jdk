@@ -107,10 +107,10 @@ private:
   int                 _line_len;              // Original length of the input line.
   int                 _line_no;               // Line number for current line being parsed
   const char*         _class_name;
-  GrowableArray<const char*>* _indy_items;    // items related to invoke dynamic for archiving lambda proxy classes
+  GrowableArrayCHeap<const char*, mtClass>* _indy_items; // items related to invoke dynamic for archiving lambda proxy classes
   int                 _id;
   int                 _super;
-  GrowableArray<int>* _interfaces;
+  GrowableArrayCHeap<int, mtClass>* _interfaces;
   bool                _interfaces_specified;
   const char*         _source;
   bool                _lambda_form_line;

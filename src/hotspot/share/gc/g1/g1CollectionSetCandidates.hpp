@@ -41,7 +41,7 @@ using G1CollectionCandidateRegionListIterator = GrowableArrayIterator<HeapRegion
 
 // A set of HeapRegion*, a thin wrapper around GrowableArray.
 class G1CollectionCandidateRegionList {
-  GrowableArray<HeapRegion*> _regions;
+  GrowableArrayCHeap<HeapRegion*, mtGC> _regions;
 
 public:
   G1CollectionCandidateRegionList();
@@ -93,7 +93,7 @@ public:
   };
 
 private:
-  GrowableArray<CandidateInfo> _candidates;
+  GrowableArrayCHeap<CandidateInfo, mtGC> _candidates;
 
 public:
   G1CollectionCandidateList();

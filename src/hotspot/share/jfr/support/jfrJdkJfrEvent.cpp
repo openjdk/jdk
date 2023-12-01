@@ -49,10 +49,11 @@ static oop new_java_util_arraylist(TRAPS) {
 
 static const int initial_array_size = 64;
 
-template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
-}
+// TODO remove?
+//template <typename T>
+//static GrowableArrayCHeap<T, mtTracing>* c_heap_allocate_array(int size = initial_array_size) {
+//  return new GrowableArrayCHeap<T, mtTracing>(size);
+//}
 
 static bool initialize(TRAPS) {
   static bool initialized = false;

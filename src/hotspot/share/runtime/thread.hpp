@@ -409,8 +409,8 @@ class Thread: public ThreadShadow {
   HandleArea* handle_area() const                { return _handle_area; }
   void set_handle_area(HandleArea* area)         { _handle_area = area; }
 
-  GrowableArray<Metadata*>* metadata_handles() const          { return _metadata_handles; }
-  void set_metadata_handles(GrowableArray<Metadata*>* handles){ _metadata_handles = handles; }
+  GrowableArrayCHeap<Metadata*, mtClass>* metadata_handles() const { return _metadata_handles; }
+  void set_metadata_handles(GrowableArrayCHeap<Metadata*, mtClass>* handles){ _metadata_handles = handles; }
 
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
@@ -529,7 +529,7 @@ protected:
 
   // Thread local handle area for allocation of handles within the VM
   HandleArea* _handle_area;
-  GrowableArray<Metadata*>* _metadata_handles;
+  GrowableArrayCHeap<Metadata*, mtClass>* _metadata_handles;
 
   // Support for stack overflow handling, get_thread, etc.
   address          _stack_base;

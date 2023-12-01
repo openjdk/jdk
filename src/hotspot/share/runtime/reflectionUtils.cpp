@@ -71,8 +71,8 @@ bool KlassStream::eos() {
 
 int FieldStream::length() { return _klass->java_fields_count(); }
 
-GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
-  new (mtServiceability) GrowableArray<FilteredField*>(3, mtServiceability);
+GrowableArrayCHeap<FilteredField*, mtServiceability> *FilteredFieldsMap::_filtered_fields =
+  new GrowableArrayCHeap<FilteredField*, mtServiceability>(3);
 
 
 void FilteredFieldsMap::initialize() {

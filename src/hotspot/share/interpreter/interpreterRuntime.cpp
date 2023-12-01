@@ -1286,8 +1286,8 @@ void SignatureHandlerLibrary::initialize() {
                                       SignatureHandlerLibrary::buffer_size);
   _buffer = bb->code_begin();
 
-  _fingerprints = new (mtCode) GrowableArray<uint64_t>(32, mtCode);
-  _handlers     = new (mtCode) GrowableArray<address>(32, mtCode);
+  _fingerprints = new GrowableArrayCHeap<uint64_t, mtCode>(32);
+  _handlers     = new GrowableArrayCHeap<address, mtCode>(32);
 }
 
 address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
@@ -1437,11 +1437,11 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
 }
 
 
-BufferBlob*              SignatureHandlerLibrary::_handler_blob = nullptr;
-address                  SignatureHandlerLibrary::_handler      = nullptr;
-GrowableArray<uint64_t>* SignatureHandlerLibrary::_fingerprints = nullptr;
-GrowableArray<address>*  SignatureHandlerLibrary::_handlers     = nullptr;
-address                  SignatureHandlerLibrary::_buffer       = nullptr;
+BufferBlob*                           SignatureHandlerLibrary::_handler_blob = nullptr;
+address                               SignatureHandlerLibrary::_handler      = nullptr;
+GrowableArrayCHeap<uint64_t, mtCode>* SignatureHandlerLibrary::_fingerprints = nullptr;
+GrowableArrayCHeap<address, mtCode>*  SignatureHandlerLibrary::_handlers     = nullptr;
+address                               SignatureHandlerLibrary::_buffer       = nullptr;
 
 
 JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* current, Method* method))

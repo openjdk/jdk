@@ -196,7 +196,7 @@ class decode_env {
 
   static SourceFileInfoTable* _src_table;
   static const char* _cached_src;
-  static GrowableArray<const char*>* _cached_src_lines;
+  static GrowableArrayCHeap<const char*, mtCode>* _cached_src_lines;
 
   static SourceFileInfoTable& src_table() {
     if (_src_table == nullptr) {
@@ -230,7 +230,7 @@ bool decode_env::_optionsParsed = false;
 
 decode_env::SourceFileInfoTable* decode_env::_src_table = nullptr;
 const char* decode_env::_cached_src = nullptr;
-GrowableArray<const char*>* decode_env::_cached_src_lines = nullptr;
+GrowableArrayCHeap<const char*, mtCode>* decode_env::_cached_src_lines = nullptr;
 
 void decode_env::hook(const char* file, int line, address pc) {
   // For simplication, we never free from this table. It's really not
@@ -265,7 +265,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           }
           _cached_src_lines->clear();
         } else {
-          _cached_src_lines = new (mtCode) GrowableArray<const char*>(0, mtCode);
+          _cached_src_lines = new GrowableArrayCHeap<const char*, mtCode>(0);
         }
 
         if ((fp = os::fopen(file, "r")) == nullptr) {

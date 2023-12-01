@@ -624,7 +624,7 @@ retry:
 }
 
 static int offset_to_node(zoffset offset) {
-  const GrowableArray<int>* mapping = os::Linux::numa_nindex_to_node();
+  const GrowableArrayCHeap<int, mtInternal>* mapping = os::Linux::numa_nindex_to_node();
   const size_t nindex = (untype(offset) >> ZGranuleSizeShift) % mapping->length();
   return mapping->at((int)nindex);
 }

@@ -63,10 +63,10 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   Klass* _k;
   // A list of classes need to be loaded and initialized before the archived
   // object sub-graphs can be accessed at runtime.
-  GrowableArray<Klass*>* _subgraph_object_klasses;
+  GrowableArrayCHeap<Klass*, mtClass>* _subgraph_object_klasses;
   // A list of _k's static fields as the entry points of archived sub-graphs.
   // For each entry field, it is a tuple of field_offset, field_value
-  GrowableArray<int>* _subgraph_entry_fields;
+  GrowableArrayCHeap<int, mtClass>* _subgraph_entry_fields;
 
   // Does this KlassSubGraphInfo belong to the archived full module graph
   bool _is_full_module_graph;
@@ -94,10 +94,10 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   };
 
   Klass* klass()            { return _k; }
-  GrowableArray<Klass*>* subgraph_object_klasses() {
+  GrowableArrayCHeap<Klass*, mtClass>* subgraph_object_klasses() {
     return _subgraph_object_klasses;
   }
-  GrowableArray<int>* subgraph_entry_fields() {
+  GrowableArrayCHeap<int, mtClass>* subgraph_entry_fields() {
     return _subgraph_entry_fields;
   }
   void add_subgraph_entry_field(int static_field_offset, oop v);

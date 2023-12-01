@@ -359,7 +359,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_locked_objects_in_frame(JavaThread *calling_thread,
                                    JavaThread* java_thread,
                                    javaVFrame *jvf,
-                                   GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
+                                   GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list,
                                    jint depth);
  public:
   static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
@@ -420,9 +420,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_current_contended_monitor(JavaThread* calling_thread, JavaThread* java_thread,
                                            jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+                                GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+                                GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
@@ -543,11 +543,11 @@ class GetOwnedMonitorInfoClosure : public JvmtiHandshakeClosure {
 private:
   JavaThread* _calling_thread;
   JvmtiEnv *_env;
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
+  GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* _owned_monitors_list;
 
 public:
   GetOwnedMonitorInfoClosure(JavaThread* calling_thread, JvmtiEnv* env,
-                             GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitor_list)
+                             GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitor_list)
     : JvmtiHandshakeClosure("GetOwnedMonitorInfo"),
       _calling_thread(calling_thread),
       _env(env),
@@ -769,13 +769,13 @@ class VirtualThreadGetOwnedMonitorInfoClosure : public HandshakeClosure {
 private:
   JvmtiEnv *_env;
   Handle _vthread_h;
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
+  GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* _owned_monitors_list;
   jvmtiError _result;
 
 public:
   VirtualThreadGetOwnedMonitorInfoClosure(JvmtiEnv* env,
                                           Handle vthread_h,
-                                          GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
+                                          GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list)
     : HandshakeClosure("VirtualThreadGetOwnedMonitorInfo"),
       _env(env),
       _vthread_h(vthread_h),
@@ -842,7 +842,7 @@ public:
 class ResourceTracker : public StackObj {
  private:
   JvmtiEnv* _env;
-  GrowableArray<unsigned char*> *_allocations;
+  GrowableArrayCHeap<unsigned char*, mtServiceability> *_allocations;
   bool _failed;
  public:
   ResourceTracker(JvmtiEnv* env);
@@ -857,13 +857,13 @@ class ResourceTracker : public StackObj {
 class JvmtiMonitorClosure: public MonitorClosure {
  private:
   JavaThread *_calling_thread;
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
+  GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* _owned_monitors_list;
   jvmtiError _error;
   JvmtiEnvBase *_env;
 
  public:
   JvmtiMonitorClosure(JavaThread *calling_thread,
-                      GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors,
+                      GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors,
                       JvmtiEnvBase *env) {
     _calling_thread = calling_thread;
     _owned_monitors_list = owned_monitors;

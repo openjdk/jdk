@@ -250,7 +250,7 @@ static int64_t file_size(fio_fd fd) {
 
 class RepositoryIterator : public StackObj {
  private:
-  GrowableArray<const char*>* _file_names;
+  GrowableArrayCHeap<const char*, mtTracing>* _file_names;
   int _path_buffer_file_name_offset;
   mutable int _iterator;
   const char* fully_qualified(const char* file_name) const;
@@ -328,7 +328,7 @@ RepositoryIterator::RepositoryIterator(const char* repository_path) :
     if (_path_buffer_file_name_offset == -1) {
       return;
     }
-    _file_names = new (mtTracing) GrowableArray<const char*>(10, mtTracing);
+    _file_names = new GrowableArrayCHeap<const char*, mtTracing>(10);
     if (_file_names == nullptr) {
       log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
       return;

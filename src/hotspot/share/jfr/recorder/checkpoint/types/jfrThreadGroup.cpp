@@ -263,7 +263,7 @@ void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group(JfrThreadGroupPointer
 }
 
 JfrThreadGroup::JfrThreadGroup() :
-  _list(new (mtTracing) GrowableArray<JfrThreadGroupEntry*>(initial_array_size, mtTracing)) {}
+  _list(new GrowableArrayCHeap<JfrThreadGroupEntry*, mtTracing>(initial_array_size)) {}
 
 JfrThreadGroup::~JfrThreadGroup() {
   if (_list != nullptr) {

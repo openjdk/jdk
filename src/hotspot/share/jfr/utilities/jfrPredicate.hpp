@@ -34,7 +34,7 @@
 template <typename T, int cmp(const T&, const T&)>
 class JfrPredicate : AllStatic {
  public:
-  static bool test(GrowableArray<T>* set, T value) {
+  static bool test(GrowableArrayView<T>* set, T value) {
     assert(set != nullptr, "invariant");
     bool found = false;
     set->template find_sorted<T, cmp>(value, found);
@@ -48,6 +48,16 @@ class JfrPredicate : AllStatic {
 template <typename T, int cmp(const T&, const T&)>
 class JfrMutablePredicate : AllStatic {
  public:
+  static bool test(GrowableArrayCHeap<T, mtTracing>* set, T value) {
+    assert(set != nullptr, "invariant");
+    bool found = false;
+    const int location = set->template find_sorted<T, cmp>(value, found);
+    if (!found) {
+      set->insert_before(location, value);
+    }
+    return found;
+  }
+  // TODO can we unify this somehow? But we need insert_before, and how do I do the WithAllocator?
   static bool test(GrowableArray<T>* set, T value) {
     assert(set != nullptr, "invariant");
     bool found = false;

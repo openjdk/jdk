@@ -510,7 +510,7 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
+  const GrowableArrayCHeap<HeapRegion*, mtGC>* survivor_regions = _g1h->survivor()->regions();
   double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
   for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
        it != survivor_regions->end();

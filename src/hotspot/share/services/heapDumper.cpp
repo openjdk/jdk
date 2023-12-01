@@ -1601,7 +1601,7 @@ private:
   JavaThread* _java_thread;
   oop _thread_oop;
 
-  GrowableArray<StackFrameInfo*>* _frames;
+  GrowableArrayCHeap<StackFrameInfo*, mtServiceability>* _frames;
   // non-null if the thread is OOM thread
   Method* _oome_constructor;
   int _thread_serial_num;
@@ -1651,7 +1651,7 @@ public:
 
   // writes HPROF_TRACE and HPROF_FRAME records
   // returns number of dumped frames
-  void dump_stack_traces(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map);
+  void dump_stack_traces(AbstractDumpWriter* writer, GrowableArrayCHeap<Klass*, mtServiceability>* klass_map);
 
   // writes HPROF_GC_ROOT_THREAD_OBJ subrecord
   void dump_thread_obj(AbstractDumpWriter* writer);
@@ -1677,7 +1677,7 @@ ThreadDumper::ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop 
     assert(_thread_oop != nullptr, "sanity");
   }
 
-  _frames = new (mtServiceability) GrowableArray<StackFrameInfo*>(10, mtServiceability);
+  _frames = new GrowableArrayCHeap<StackFrameInfo*, mtServiceability>(10);
   bool stop_at_vthread_entry = _thread_type == ThreadType::MountedVirtual;
 
   // vframes are resource allocated
@@ -1698,7 +1698,7 @@ ThreadDumper::ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop 
   }
 }
 
-void ThreadDumper::dump_stack_traces(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map) {
+void ThreadDumper::dump_stack_traces(AbstractDumpWriter* writer, GrowableArrayCHeap<Klass*, mtServiceability>* klass_map) {
   assert(_thread_serial_num != 0 && _start_frame_serial_num != 0, "serial_nums are not initialized");
 
   // write HPROF_FRAME records for this thread's stack trace
@@ -2093,7 +2093,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   JavaThread*             _oome_thread;
   Method*                 _oome_constructor;
   bool                    _gc_before_heap_dump;
-  GrowableArray<Klass*>*  _klass_map;
+  GrowableArrayCHeap<Klass*, mtServiceability>*  _klass_map;
 
   ThreadDumper**          _thread_dumpers; // platform, carrier and mounted virtual threads
   int                     _thread_dumpers_count;
@@ -2159,7 +2159,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     WorkerTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
-    _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
+    _klass_map = new GrowableArrayCHeap<Klass*, mtServiceability>(INITIAL_CLASS_COUNT);
 
     _thread_dumpers = nullptr;
     _thread_dumpers_count = 0;

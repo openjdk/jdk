@@ -29,7 +29,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
+G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2) { }
 
 void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
   assert(_candidates.is_empty(), "must be");
@@ -58,7 +58,7 @@ void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _candidates.length() - other->length();
-  GrowableArray<CandidateInfo> new_list(new_length, mtGC);
+  GrowableArrayCHeap<CandidateInfo, mtGC> new_list(new_length);
 
   uint other_idx = 0;
 
@@ -118,7 +118,7 @@ int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
   }
 }
 
-G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
+G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2) { }
 
 void G1CollectionCandidateRegionList::append(HeapRegion* r) {
   assert(!_regions.contains(r), "must be");
