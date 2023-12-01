@@ -263,9 +263,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>The default locale is provided mainly for the locale-sensitive methods if no
  * {@code Locale} is explicitly specified as an argument, such as
- * {@link DateFormat#getInstance()}. The default locale is constructed from a few
- * system properties, which are determined by the host environment at the Java
- * runtime startup. Those system properties are listed below. All but
+ * {@link DateFormat#getInstance()}. It can be queried by {@link #getDefault()} and
+ * set by {@link #setDefault(Locale)}. At the Java runtime startup, the default
+ * locale is constructed from a few system properties, which are determined by the
+ * host environment. Those system properties are listed below. All but
  * {@code user.language} are optional.
  * <table class="striped">
  * <caption style="display:none">Shows property keys and associated values</caption>
@@ -291,18 +292,25 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
  * </tbody>
  * </table>
- * Users can override these system properties by specifying them to the Java
+ * <p>Users can override these system properties by specifying them on the Java
  * launcher's command line in order to customize the default locale independent
- * of the host environment.
+ * of the host environment. Since the system properties are read only at the Java
+ * runtime startup, altering their values later with
+ * {@link System#setProperties(Properties)}/{@link System#setProperty(String, String)}
+ * will have no effect on the established default locale.
+ *
  * <p>There are also finer-grained default locales specific for each
- * {@link Locale.Category} and corresponding system properties which consist of the
- * base system properties as listed above, appended by either ".display" or ".format"
- * depending on the category. For example, setting a value to
- * {@code user.language.display} system property will have the value for the default
- * locale for {@link Locale.Category#DISPLAY} category.
- * <p>Default locales can be queried by {@link #getDefault()} and
- * {@link #getDefault(Category)}, and set by {@link #setDefault(Locale)} and
- * {@link #setDefault(Category, Locale)}.
+ * {@link Locale.Category}. These category specific default locales can also be
+ * queried by {@link #getDefault(Category)}, and set by
+ * {@link #setDefault(Category, Locale)}. Constructions of these category specific
+ * default locales are also determined by the corresponding system properties,
+ * which consist of the base system properties as listed above, appended by either
+ * ".display" or ".format" depending on the category. For example, the value to
+ * the {@code user.language.display} system property will result in the
+ * {@code language} part of the default locale for {@link Locale.Category#DISPLAY}
+ * category. In the absence of category specific system properties to construct
+ * with, they default to the "category-less" system properties, such as
+ * {@code user.language} in the previous example.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
