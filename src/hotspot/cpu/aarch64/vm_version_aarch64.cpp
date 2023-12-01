@@ -68,7 +68,6 @@ static SpinWait get_spin_wait_desc() {
 }
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;

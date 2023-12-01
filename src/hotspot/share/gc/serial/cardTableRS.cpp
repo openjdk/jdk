@@ -28,273 +28,17 @@
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/shared/space.inline.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/iterator.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/java.hpp"
-#include "runtime/os.hpp"
-#include "utilities/macros.hpp"
-
-// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
-// sub-classes). It knows how to filter out objects that are outside of the
-// _boundary.
-// (Note that because of the imprecise nature of the write barrier, this may
-// iterate over oops beyond the region.)
-//
-// Assumptions:
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-
-class DirtyCardToOopClosure: public MemRegionClosure {
-protected:
-  OopIterateClosure* _cl;
-  TenuredSpace* _sp;
-  HeapWord* _min_done;          // Need a downwards traversal to compensate
-                                // imprecise write barrier; this is the
-                                // lowest location already done (or,
-                                // alternatively, the lowest address that
-                                // shouldn't be done again.  null means infinity.)
-  NOT_PRODUCT(HeapWord* _last_bottom;)
-
-  // Get the actual top of the area on which the closure will
-  // operate, given where the top is assumed to be (the end of the
-  // memory region passed to do_MemRegion) and where the object
-  // at the top is assumed to start. For example, an object may
-  // start at the top but actually extend past the assumed top,
-  // in which case the top becomes the end of the object.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
-
-  // Walk the given memory region from bottom to (actual) top
-  // looking for objects and applying the oop closure (_cl) to
-  // them. The base implementation of this treats the area as
-  // blocks, where a block may or may not be an object. Sub-
-  // classes should override this to provide more accurate
-  // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
-
-  // Walk the given memory region, from bottom to top, applying
-  // the given oop closure to (possibly) all objects found. The
-  // given oop closure may or may not be the same as the oop
-  // closure with which this closure was created, as it may
-  // be a filtering closure which makes use of the _boundary.
-  // We offer two signatures, so the FilteringClosure static type is
-  // apparent.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               OopIterateClosure* cl);
-public:
-  DirtyCardToOopClosure(TenuredSpace* sp, OopIterateClosure* cl) :
-    _cl(cl), _sp(sp), _min_done(nullptr) {
-    NOT_PRODUCT(_last_bottom = nullptr);
-  }
-
-  void do_MemRegion(MemRegion mr) override;
-};
-
-HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
-                                                HeapWord* top_obj) {
-  if (top_obj != nullptr && top_obj < _sp->top()) {
-    if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-      // An arrayOop is starting on the dirty card - since we do exact
-      // store checks for objArrays we are done.
-    } else {
-      // Otherwise, it is possible that the object starting on the dirty
-      // card spans the entire card, and that the store happened on a
-      // later card.  Figure out where the object ends.
-      top = top_obj + cast_to_oop(top_obj)->size();
-    }
-  } else {
-    top = _sp->top();
-  }
-  return top;
-}
-
-void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
-                                            HeapWord* bottom,
-                                            HeapWord* top) {
-  // Note that this assumption won't hold if we have a concurrent
-  // collector in this space, which may have freed up objects after
-  // they were dirtied and before the stop-the-world GC that is
-  // examining cards here.
-  assert(bottom < top, "ought to be at least one obj on a dirty card.");
-
-  walk_mem_region_with_cl(mr, bottom, top, _cl);
-}
-
-// We get called with "mr" representing the dirty region
-// that we want to process. Because of imprecise marking,
-// we may need to extend the incoming "mr" to the right,
-// and scan more. However, because we may already have
-// scanned some of that extended region, we may need to
-// trim its right-end back some so we do not scan what
-// we (or another worker thread) may already have scanned
-// or planning to scan.
-void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
-  HeapWord* bottom = mr.start();
-  HeapWord* last = mr.last();
-  HeapWord* top = mr.end();
-  HeapWord* bottom_obj;
-  HeapWord* top_obj;
-
-  assert(_last_bottom == nullptr || top <= _last_bottom,
-         "Not decreasing");
-  NOT_PRODUCT(_last_bottom = mr.start());
-
-  bottom_obj = _sp->block_start(bottom);
-  top_obj    = _sp->block_start(last);
-
-  assert(bottom_obj <= bottom, "just checking");
-  assert(top_obj    <= top,    "just checking");
-
-  // Given what we think is the top of the memory region and
-  // the start of the object at the top, get the actual
-  // value of the top.
-  top = get_actual_top(top, top_obj);
-
-  // If the previous call did some part of this region, don't redo.
-  if (_min_done != nullptr && _min_done < top) {
-    top = _min_done;
-  }
-
-  // Top may have been reset, and in fact may be below bottom,
-  // e.g. the dirty card region is entirely in a now free object
-  // -- something that could happen with a concurrent sweeper.
-  bottom = MIN2(bottom, top);
-  MemRegion extended_mr = MemRegion(bottom, top);
-  assert(bottom <= top &&
-         (_min_done == nullptr || top <= _min_done),
-         "overlap!");
-
-  // Walk the region if it is not empty; otherwise there is nothing to do.
-  if (!extended_mr.is_empty()) {
-    walk_mem_region(extended_mr, bottom_obj, top);
-  }
-
-  _min_done = bottom;
-}
-
-void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
-                                                    HeapWord* bottom,
-                                                    HeapWord* top,
-                                                    OopIterateClosure* cl) {
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);
-  if (bottom < top) {
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();
-    while (next_obj < top) {
-      /* Bottom lies entirely below top, so we can call the */
-      /* non-memRegion version of oop_iterate below. */
-      cast_to_oop(bottom)->oop_iterate(cl);
-      bottom = next_obj;
-      next_obj = bottom + cast_to_oop(bottom)->size();
-    }
-    /* Last object. */
-    cast_to_oop(bottom)->oop_iterate(cl, mr);
-  }
-}
-
-class ClearNoncleanCardWrapper: public MemRegionClosure {
-  DirtyCardToOopClosure* _dirty_card_closure;
-  CardTableRS* _ct;
-
-public:
-
-  typedef CardTable::CardValue CardValue;
-private:
-  // Clears the given card, return true if the corresponding card should be
-  // processed.
-  inline bool clear_card(CardValue* entry);
-  // check alignment of pointer
-  bool is_word_aligned(CardValue* entry);
-
-public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
-  void do_MemRegion(MemRegion mr) override;
-};
-
-inline bool ClearNoncleanCardWrapper::clear_card(CardValue* entry) {
-  assert(*entry == CardTableRS::dirty_card_val(), "Only look at dirty cards.");
-  *entry = CardTableRS::clean_card_val();
-  return true;
-}
-
-ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
-  DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct) :
-    _dirty_card_closure(dirty_card_closure), _ct(ct) {
-}
-
-bool ClearNoncleanCardWrapper::is_word_aligned(CardTable::CardValue* entry) {
-  return (((intptr_t)entry) & (BytesPerWord-1)) == 0;
-}
-
-// The regions are visited in *decreasing* address order.
-// This order aids with imprecise card marking, where a dirty
-// card may cause scanning, and summarization marking, of objects
-// that extend onto subsequent cards.
-void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
-  assert(mr.word_size() > 0, "Error");
-  assert(_ct->is_aligned(mr.start()), "mr.start() should be card aligned");
-  // mr.end() may not necessarily be card aligned.
-  CardValue* cur_entry = _ct->byte_for(mr.last());
-  const CardValue* limit = _ct->byte_for(mr.start());
-  HeapWord* end_of_non_clean = mr.end();
-  HeapWord* start_of_non_clean = end_of_non_clean;
-  while (cur_entry >= limit) {
-    HeapWord* cur_hw = _ct->addr_for(cur_entry);
-    if ((*cur_entry != CardTableRS::clean_card_val()) && clear_card(cur_entry)) {
-      // Continue the dirty range by opening the
-      // dirty window one card to the left.
-      start_of_non_clean = cur_hw;
-    } else {
-      // We hit a "clean" card; process any non-empty
-      // "dirty" range accumulated so far.
-      if (start_of_non_clean < end_of_non_clean) {
-        const MemRegion mrd(start_of_non_clean, end_of_non_clean);
-        _dirty_card_closure->do_MemRegion(mrd);
-      }
-
-      // fast forward through potential continuous whole-word range of clean cards beginning at a word-boundary
-      if (is_word_aligned(cur_entry)) {
-        CardValue* cur_row = cur_entry - BytesPerWord;
-        while (cur_row >= limit && *((intptr_t*)cur_row) ==  CardTableRS::clean_card_row_val()) {
-          cur_row -= BytesPerWord;
-        }
-        cur_entry = cur_row + BytesPerWord;
-        cur_hw = _ct->addr_for(cur_entry);
-      }
-
-      // Reset the dirty window, while continuing to look
-      // for the next dirty card that will start a
-      // new dirty window.
-      end_of_non_clean = cur_hw;
-      start_of_non_clean = cur_hw;
-    }
-    // Note that "cur_entry" leads "start_of_non_clean" in
-    // its leftward excursion after this point
-    // in the loop and, when we hit the left end of "mr",
-    // will point off of the left end of the card-table
-    // for "mr".
-    cur_entry--;
-  }
-  // If the first card of "mr" was dirty, we will have
-  // been left with a dirty window, co-initial with "mr",
-  // which we now process.
-  if (start_of_non_clean < end_of_non_clean) {
-    const MemRegion mrd(start_of_non_clean, end_of_non_clean);
-    _dirty_card_closure->do_MemRegion(mrd);
-  }
-}
+#include "utilities/align.hpp"
 
 void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate(sp, urasm, cl, this);
+  if (!urasm.is_empty()) {
+    non_clean_card_iterate(sp, urasm, cl, this);
+  }
 }
 
 #ifdef ASSERT
@@ -601,20 +345,185 @@ void CardTableRS::verify() {
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   CardTable(whole_heap) { }
 
+// Implemented word-iteration to skip long consecutive clean cards.
+CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_card,
+                                                         CardValue* const end_card) {
+  using Word = uintptr_t;
+
+  CardValue* current_card = start_card;
+
+  while (!is_aligned(current_card, sizeof(Word))) {
+    if (current_card >= end_card) {
+      return end_card;
+    }
+    if (is_dirty(current_card)) {
+      return current_card;
+    }
+    ++current_card;
+  }
+
+  // Word comparison
+  while (current_card + sizeof(Word) <= end_card) {
+    Word* current_word = reinterpret_cast<Word*>(current_card);
+    if (*current_word != (Word)clean_card_row_val()) {
+      // Found a dirty card in this word; fall back to per-CardValue comparison.
+      break;
+    }
+    current_card += sizeof(Word);
+  }
+
+  // Per-CardValue comparison.
+  for (/* empty */; current_card < end_card; ++current_card) {
+    if (is_dirty(current_card)) {
+      return current_card;
+    }
+  }
+
+  return end_card;
+}
+
+// Because non-objArray objs can be imprecisely-marked (only obj-start card is
+// dirty instead of the part containing old-to-young pointers), if the
+// obj-start of a non-objArray is dirty, all cards that obj completely resides
+// on are considered as dirty, since that obj will be iterated (scanned for
+// old-to-young pointers) as a whole.
+template<typename Func>
+CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
+                                                         CardValue* const end_card,
+                                                         CardTableRS* ct,
+                                                         Func& object_start) {
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    if (is_dirty(current_card)) {
+      current_card++;
+      continue;
+    }
+
+    // A potential candidate.
+    HeapWord* addr = ct->addr_for(current_card);
+    HeapWord* obj_start_addr = object_start(addr);
+
+    if (obj_start_addr == addr) {
+      return current_card;
+    }
+
+    // Final obj in dirty-chunk crosses card-boundary.
+    oop obj = cast_to_oop(obj_start_addr);
+    if (obj->is_objArray()) {
+      // ObjArrays are always precisely-marked so we are not allowed to jump to
+      // the end of the current object.
+      return current_card;
+    }
+
+    // Card occupied by next obj.
+    CardValue* next_obj_card = ct->byte_for(obj_start_addr + obj->size());
+    if (is_clean(next_obj_card)) {
+      return next_obj_card;
+    }
+
+    // Continue the search after this known-dirty card...
+    current_card = next_obj_card + 1;
+  }
+
+  return end_card;
+}
+
+void CardTableRS::clear_cards(CardValue* start, CardValue* end) {
+  size_t num_cards = pointer_delta(end, start, sizeof(CardValue));
+  memset(start, clean_card_val(), num_cards);
+}
+
+static void prefetch_write(void *p) {
+  if (PrefetchScanIntervalInBytes >= 0) {
+    Prefetch::write(p, PrefetchScanIntervalInBytes);
+  }
+}
+
+static void scan_obj_with_limit(oop obj,
+                                OopIterateClosure* cl,
+                                HeapWord* start,
+                                HeapWord* end) {
+  if (!obj->is_typeArray()) {
+    prefetch_write(start);
+    obj->oop_iterate(cl, MemRegion(start, end));
+  }
+}
+
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
                                          OopIterateClosure* cl,
-                                         CardTableRS* ct)
-{
-  if (mr.is_empty()) {
-    return;
+                                         CardTableRS* ct) {
+  struct {
+    HeapWord* start_addr;
+    HeapWord* end_addr;
+  } cached_obj { nullptr, mr.start() };
+
+  auto object_start = [&] (const HeapWord* const addr) {
+    if (addr < cached_obj.end_addr) {
+      assert(cached_obj.start_addr != nullptr, "inv");
+      return cached_obj.start_addr;
+    }
+    HeapWord* result = sp->block_start_const(addr);
+
+    cached_obj.start_addr = result;
+    cached_obj.end_addr = result + cast_to_oop(result)->size();
+
+    return result;
+  };
+
+  CardValue* const start_card = ct->byte_for(mr.start());
+  CardValue* const end_card = ct->byte_for(mr.last()) + 1;
+
+  // if mr.end() is not card-aligned, that final card should not be cleared
+  // because it can be annotated dirty due to old-to-young pointers in
+  // newly-promoted objs on that card.
+  CardValue* const clear_limit_card = is_card_aligned(mr.end()) ? end_card - 1
+                                                                : end_card - 2;
+
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    CardValue* const dirty_l = find_first_dirty_card(current_card, end_card);
+
+    if (dirty_l == end_card) {
+      // No dirty cards to iterate.
+      return;
+    }
+
+    HeapWord* const addr_l = ct->addr_for(dirty_l);
+    HeapWord* obj_addr = object_start(addr_l);
+
+    CardValue* const dirty_r = find_first_clean_card(dirty_l + 1,
+                                                     end_card,
+                                                     ct,
+                                                     object_start);
+    assert(dirty_l < dirty_r, "inv");
+    HeapWord* const addr_r = dirty_r == end_card ? mr.end()
+                                                 : ct->addr_for(dirty_r);
+
+    clear_cards(MIN2(dirty_l, clear_limit_card),
+                MIN2(dirty_r, clear_limit_card));
+
+    while (true) {
+      assert(obj_addr < addr_r, "inv");
+
+      oop obj = cast_to_oop(obj_addr);
+      const bool is_obj_array = obj->is_objArray();
+      HeapWord* const obj_end_addr = obj_addr + obj->size();
+
+      if (is_obj_array) {
+        // ObjArrays are always precise-marked.
+        scan_obj_with_limit(obj, cl, addr_l, addr_r);
+      } else {
+        scan_obj_with_limit(obj, cl, addr_l, obj_end_addr);
+      }
+
+      if (obj_end_addr >= addr_r) {
+        current_card = dirty_r + 1;
+        break;
+      }
+
+      // Move to next obj inside this dirty chunk.
+      obj_addr = obj_end_addr;
+    }
   }
-  // clear_cl finds contiguous dirty ranges of cards to process and clear.
-
-  DirtyCardToOopClosure dcto_cl{sp, cl};
-  ClearNoncleanCardWrapper clear_cl(&dcto_cl, ct);
-
-  clear_cl.do_MemRegion(mr);
 }
 
 bool CardTableRS::is_in_young(const void* p) const {

@@ -286,6 +286,7 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
       initial_gvn()->hash_find_insert(use);
     }
     record_for_igvn(use);
+    PhaseIterGVN::add_users_of_use_to_worklist(nn, use, *_igvn_worklist);
     i -= uses_found;    // we deleted 1 or more copies of this edge
   }
 }
@@ -589,10 +590,12 @@ void Compile::print_ideal_ir(const char* phase_name) {
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
-    xtty->print("%s", ss.as_string()); // print to tty would use xml escape encoding
+  }
+
+  tty->print("%s", ss.as_string());
+
+  if (xtty != nullptr) {
     xtty->tail("ideal");
-  } else {
-    tty->print("%s", ss.as_string());
   }
 }
 #endif
@@ -838,7 +841,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
-  if (StressLCM || StressGCM || StressIGVN || StressCCP) {
+  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining) {
     if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
       _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
       FLAG_SET_ERGO(StressSeed, _stress_seed);
@@ -2261,7 +2264,7 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
-    if (AlwaysIncrementalInline) {
+    if (AlwaysIncrementalInline || StressIncrementalInlining) {
       inline_incrementally(igvn);
     }
 
@@ -5140,7 +5143,7 @@ void Compile::end_method() {
 
 bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+  if (_directive->should_print_phase(cpt)) {
     return true;
   }
 #endif
