@@ -1252,6 +1252,11 @@
     <Field type="string" name="path" label="Path" description="The path of the library" />
   </Event>
 
+  <Event name="DeprecatedInvocation" description= "A unique invocation of a method or class that is annotated with @Deprecated. Packages and modules that are deprecated are ignored." category="Java Application, Statistics" label="Deprecated Method Invocation" thread="false" stackTrace="true" startTime="false" level="forRemoval,all">
+    <Field type="Method" name="method" label="Deprecated Method" />
+    <Field type="boolean" name="forRemoval" label="Method Deprecated For Removal" />
+  </Event>
+
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
     <Field type="string" name="reason" label="Reason" />
   </Type>

@@ -74,6 +74,20 @@ JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, Jf
   }
 }
 
+JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, bool header, Thread* thread, JfrCheckpointType type /* GENERIC */) :
+  JfrCheckpointWriterBase(JfrCheckpointManager::lease_global(thread, previous_epoch), thread),
+  _time(JfrTicks::now()),
+  _offset(0),
+  _count(0),
+  _type(type),
+  _header(header) {
+  assert(this->is_acquired(), "invariant");
+  assert(0 == this->current_offset(), "invariant");
+  if (_header) {
+    reserve(sizeof(JfrCheckpointEntry));
+  }
+}
+
 static void write_checkpoint_header(u1* pos, int64_t size, jlong time, u4 checkpoint_type, u4 type_count) {
   assert(pos != nullptr, "invariant");
   JfrBigEndianWriter be_writer(pos, sizeof(JfrCheckpointEntry));
