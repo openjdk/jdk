@@ -549,12 +549,12 @@ public class IRNode {
     // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
     static {
-        trapNodes(INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,"intrinsic_or_type_checked_inlining");
+        trapNodes(INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, "intrinsic_or_type_checked_inlining");
     }
 
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
     static {
-        trapNodes(INTRINSIC_TRAP,"intrinsic");
+        trapNodes(INTRINSIC_TRAP, "intrinsic");
     }
 
     // Is only supported on riscv64.
@@ -1040,12 +1040,12 @@ public class IRNode {
 
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
     static {
-        trapNodes(NULL_ASSERT_TRAP,"null_assert");
+        trapNodes(NULL_ASSERT_TRAP, "null_assert");
     }
 
     public static final String NULL_CHECK_TRAP = PREFIX + "NULL_CHECK_TRAP" + POSTFIX;
     static {
-        trapNodes(NULL_CHECK_TRAP,"null_check");
+        trapNodes(NULL_CHECK_TRAP, "null_check");
     }
 
     public static final String OR_VB = VECTOR_PREFIX + "OR_VB" + POSTFIX;
@@ -1129,12 +1129,12 @@ public class IRNode {
 
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
-        trapNodes(PREDICATE_TRAP,"predicate");
+        trapNodes(PREDICATE_TRAP, "predicate");
     }
 
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
     static {
-        trapNodes(RANGE_CHECK_TRAP,"range_check");
+        trapNodes(RANGE_CHECK_TRAP, "range_check");
     }
 
     public static final String REPLICATE_B = VECTOR_PREFIX + "REPLICATE_B" + POSTFIX;
@@ -1486,7 +1486,7 @@ public class IRNode {
 
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
     static {
-        trapNodes(TRAP,"reason");
+        trapNodes(TRAP, "reason");
     }
 
     public static final String UDIV_I = PREFIX + "UDIV_I" + POSTFIX;
@@ -1521,12 +1521,17 @@ public class IRNode {
 
     public static final String UNHANDLED_TRAP = PREFIX + "UNHANDLED_TRAP" + POSTFIX;
     static {
-        trapNodes(UNHANDLED_TRAP,"unhandled");
+        trapNodes(UNHANDLED_TRAP, "unhandled");
     }
 
     public static final String UNSTABLE_IF_TRAP = PREFIX + "UNSTABLE_IF_TRAP" + POSTFIX;
     static {
-        trapNodes(UNSTABLE_IF_TRAP,"unstable_if");
+        trapNodes(UNSTABLE_IF_TRAP, "unstable_if");
+    }
+
+    public static final String UNREACHED_TRAP = PREFIX + "UNREACHED_TRAP" + POSTFIX;
+    static {
+        trapNodes(UNREACHED_TRAP, "unreached");
     }
 
     public static final String URSHIFT = PREFIX + "URSHIFT" + POSTFIX;

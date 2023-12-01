@@ -3566,6 +3566,56 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
   }
 }
 
+// Vector float blend
+// vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
+void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
+  // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
+  if (blend_emulation && scratch_available && dst_available) {
+    if (compute_mask) {
+      vpsrad(scratch, mask, 32, vector_len);
+      mask = scratch;
+    }
+    if (dst == src1) {
+      vpandn(dst,     mask, src1, vector_len); // if mask == 0, src1
+      vpand (scratch, mask, src2, vector_len); // if mask == 1, src2
+    } else {
+      vpand (dst,     mask, src2, vector_len); // if mask == 1, src2
+      vpandn(scratch, mask, src1, vector_len); // if mask == 0, src1
+    }
+    vpor(dst, dst, scratch, vector_len);
+  } else {
+    Assembler::vblendvps(dst, src1, src2, mask, vector_len);
+  }
+}
+
+// vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
+void MacroAssembler::vblendvpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
+  // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst && (!compute_mask || scratch != mask);
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
+  if (blend_emulation && scratch_available && dst_available) {
+    if (compute_mask) {
+      vpxor(scratch, scratch, scratch, vector_len);
+      vpcmpgtq(scratch, scratch, mask, vector_len);
+      mask = scratch;
+    }
+    if (dst == src1) {
+      vpandn(dst,     mask, src1, vector_len); // if mask == 0, src
+      vpand (scratch, mask, src2, vector_len); // if mask == 1, src2
+    } else {
+      vpand (dst,     mask, src2, vector_len); // if mask == 1, src2
+      vpandn(scratch, mask, src1, vector_len); // if mask == 0, src
+    }
+    vpor(dst, dst, scratch, vector_len);
+  } else {
+    Assembler::vblendvpd(dst, src1, src2, mask, vector_len);
+  }
+}
+
 void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
