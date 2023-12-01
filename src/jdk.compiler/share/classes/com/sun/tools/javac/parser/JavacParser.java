@@ -3980,7 +3980,7 @@ public class JavacParser implements Parser {
                 defs.appendList(semiList.toList());
                 boolean isTopLevelMethodOrField = false;
 
-                // Do to a significant number of existing negative tests
+                // Due to a significant number of existing negative tests
                 // this code speculatively tests to see if a top level method
                 // or field can parse. If the method or field can parse then
                 // it is parsed. Otherwise, parsing continues as though
