@@ -2933,8 +2933,8 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImage extends CssValue {
-        private boolean    loadedImage;
-        private ImageIcon  image;
+        private volatile boolean loadedImage;
+        private ImageIcon image;
 
         Object parseCssValue(String value) {
             BackgroundImage retValue = new BackgroundImage();
