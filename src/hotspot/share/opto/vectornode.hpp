@@ -205,7 +205,9 @@ class ReductionNode : public Node {
     init_class_id(Class_Reduction);
   }
 
-  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
+  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
+                             // Currently, this only effects floating-point add reductions.
+                             bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
@@ -227,47 +229,75 @@ class ReductionNode : public Node {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
-};
 
-//---------------------------UnorderedReductionNode-------------------------------------
-// Order of reduction does not matter. Example int add. Not true for float add.
-class UnorderedReductionNode : public ReductionNode {
-public:
-  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
-    init_class_id(Class_UnorderedReduction);
-  }
+  // Floating-point addition and multiply are non-associative, so
+  // AddReductionVF/D and MulReductionVF/D require strict-ordering
+  // in auto-vectorization. Currently, Vector API can generate
+  // AddReductionVF/D without strict-ordering, which can benefit some
+  // platforms.
+  //
+  // Other reductions don't need strict-ordering.
+  virtual bool requires_strict_order() const {
+    return false;
+  };
 };
 
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
-class AddReductionVINode : public UnorderedReductionNode {
+class AddReductionVINode : public ReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
-class AddReductionVLNode : public UnorderedReductionNode {
+class AddReductionVLNode : public ReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
+private:
+  bool _requires_strict_order; // false in Vector API.
 public:
-  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order== ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddReductionVDNode--------------------------------------
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
+private:
+  bool _requires_strict_order; // false in Vector API.
 public:
-  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order== ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------SubVBNode--------------------------------------
@@ -402,17 +432,17 @@ public:
 
 //------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
-class MulReductionVINode : public UnorderedReductionNode {
+class MulReductionVINode : public ReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
-class MulReductionVLNode : public UnorderedReductionNode {
+class MulReductionVLNode : public ReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -422,6 +452,9 @@ class MulReductionVFNode : public ReductionNode {
 public:
   MulReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+
+  // Since no real case can benefit from the ordering, return true currently.
+  virtual bool requires_strict_order() const { return true; }
 };
 
 //------------------------------MulReductionVDNode--------------------------------------
@@ -430,6 +463,9 @@ class MulReductionVDNode : public ReductionNode {
 public:
   MulReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
+
+  // Since no real case can benefit from the ordering, return true currently.
+  virtual bool requires_strict_order() const { return true; }
 };
 
 //------------------------------DivVFNode--------------------------------------
@@ -755,9 +791,9 @@ class AndVNode : public VectorNode {
 
 //------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
-class AndReductionVNode : public UnorderedReductionNode {
+class AndReductionVNode : public ReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -772,9 +808,9 @@ class OrVNode : public VectorNode {
 
 //------------------------------OrReductionVNode--------------------------------------
 // Vector xor byte, short, int, long as a reduction
-class OrReductionVNode : public UnorderedReductionNode {
+class OrReductionVNode : public ReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -789,25 +825,25 @@ class XorVNode : public VectorNode {
 
 //------------------------------XorReductionVNode--------------------------------------
 // Vector and int, long as a reduction
-class XorReductionVNode : public UnorderedReductionNode {
+class XorReductionVNode : public ReductionNode {
  public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MinReductionVNode : public UnorderedReductionNode {
+class MinReductionVNode : public ReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MaxReductionVNode : public UnorderedReductionNode {
+class MaxReductionVNode : public ReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
