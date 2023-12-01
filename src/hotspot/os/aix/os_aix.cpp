@@ -189,6 +189,20 @@ int       os::Aix::_extshm = -1;
 ////////////////////////////////////////////////////////////////////////////////
 // local variables
 
+// variables needed to emulate linux behavior in os::dll_load() if library is loaded twice
+static pthread_mutex_t g_handletable_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct handletableentry{
+    void   *handle;
+    ino64_t inode;
+    dev64_t devid;
+    uint    refcount;
+};
+constexpr int max_handletable = 1024;
+static int g_handletable_used = 0;
+static struct handletableentry g_handletable[max_handletable] = {{0,0,0,0}};
+
+
 static volatile jlong max_real_time = 0;
 
 // Process break recorded at startup.
@@ -1118,7 +1132,9 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
     return nullptr;
   }
 
@@ -1134,7 +1150,54 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = ::dlopen(filename, dflags);
+  {
+    pthread_mutex_lock ( &g_handletable_mutex);
+    int i = 0;
+    struct stat64x libstat;
+    if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
+      pthread_mutex_unlock ( &g_handletable_mutex);
+      assert(false, "dll_load: file with filename %s could not be found", filename);
+      if (ebuf != nullptr && ebuflen > 0) {
+        snprintf(ebuf, ebuflen - 1, "dll_load: file with filename %s could not be found",
+                 filename);
+      }
+      return nullptr;
+    }
+    // check if library belonging to filename is already loaded.
+    // If yes use stored handle from previous ::dlopen() and increase refcount
+    for (i = 0; i < g_handletable_used; i++) {
+      if (g_handletable[i].handle &&
+          g_handletable[i].inode == libstat.st_ino &&
+          g_handletable[i].devid == libstat.st_dev) {
+        g_handletable[i].refcount++;
+        result = g_handletable[i].handle;
+        break;
+      }
+    }
+    if (i == g_handletable_used) {
+      // library not still loaded. Check if there is space left in array
+      // to store new ::dlopen() handle
+      if (g_handletable_used == max_handletable) {
+        // Array is already full. No place for new handle. Cry and give up.
+        pthread_mutex_unlock ( &g_handletable_mutex);
+        assert(false, "max_handletable reached");
+        ::strncpy(ebuf, "dll_load: max_handletable reached", ebuflen - 1);
+        return nullptr;
+      }
+      // library not still loaded and still place in array, so load library
+      // and if successful, create new entry at end of array
+      // to store handle, inode/devid with refcount=1
+      result = ::dlopen(filename, dflags);
+      if (result != nullptr) {
+        g_handletable_used++;
+        g_handletable[i].handle = result;
+        g_handletable[i].inode = libstat.st_ino;
+        g_handletable[i].devid = libstat.st_dev;
+        g_handletable[i].refcount = 1;
+      }
+    }
+    pthread_mutex_unlock ( &g_handletable_mutex);
+  }
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1157,6 +1220,42 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   return nullptr;
 }
+
+// specific AIX version for ::dlclose(), which handles the struct g_handletable
+// filled by os::dll_load()
+int os::Aix::dlclose(void* lib) {
+  int i = 0, res;
+  pthread_mutex_lock(&g_handletable_mutex);
+  // try to find handle in array, which means library was loaded by os::dll_load() call
+  for (i = 0; i < g_handletable_used; i++) {
+    if (g_handletable[i].handle == lib) {
+      // handle found, decrease refcount
+      g_handletable[i].refcount--;
+      if (g_handletable[i].refcount > 0) {
+        // if refcount is still >0 then we have to keep library and return
+        pthread_mutex_unlock(&g_handletable_mutex);
+        return 0;
+      }
+      // refcount == 0, so we have to ::dlclose() the lib
+      // and delete the entry from the array.
+      res = ::dlclose(lib);
+      g_handletable_used--;
+      // If the entry was the last one of the array, the previous g_handletable_used--
+      // is sufficient to remove the entry from the array, otherwise we move the last
+      // entry of the array to the place of the entry we want to remove and overwrite it
+      if (i < g_handletable_used) {
+        g_handletable[i] = g_handletable[g_handletable_used];
+      }
+      pthread_mutex_unlock(&g_handletable_mutex);
+      return res;
+    }
+  }
+  pthread_mutex_unlock(&g_handletable_mutex);
+  // if we reach this point, the library was not created by os::dll_load()
+  // so nag and perform the plain ::dlclose();
+  assert(false, "os::AIX::dlclose() library was not loaded by os::dll_load()");
+  return ::dlclose(lib);
+} // end: os::AIX::dlclose()
 
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
@@ -3033,29 +3132,46 @@ void os::jfr_report_memory_info() {}
 
 // Simulate the library search algorithm of dlopen() (in os::dll_load)
 int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
-  if (path[0] == '/' ||
-      (path[0] == '.' && (path[1] == '/' ||
-                          (path[1] == '.' && path[2] == '/')))) {
-    return stat64x(path, stat);
+  if (path == nullptr)
+    return -1;
+
+  char *path2 = strdup (path);
+  // if exist, strip off trailing (shr_64.o) or similar
+  int idx = strlen(path2) - 1;
+  if (path2[idx] == ')') {
+    while (path2[idx] != '(' && idx > 0) idx--;
+    if (idx > 0)
+      path2[idx] = 0;
+  }
+
+  int ret = -1;
+  if (path2[0] == '/' ||
+      (path2[0] == '.' && (path2[1] == '/' ||
+                          (path2[1] == '.' && path2[2] == '/')))) {
+    ret = stat64x(path2, stat);
+    free (path2);
+    return ret;
   }
 
   const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0)
+  if (env == nullptr || *env == 0) {
+    free (path2);
     return -1;
+  }
 
-  int ret = -1;
   size_t libpathlen = strlen(env);
   char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path2) + 1, mtServiceability);
   char *saveptr, *token;
   strcpy(libpath, env);
   for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
-    sprintf(combined, "%s/%s", token, path);
+    sprintf(combined, "%s/%s", token, path2);
     if (0 == (ret = stat64x(combined, stat)))
       break;
   }
 
   FREE_C_HEAP_ARRAY(char*, combined);
   FREE_C_HEAP_ARRAY(char*, libpath);
+  free (path2);
   return ret;
 }

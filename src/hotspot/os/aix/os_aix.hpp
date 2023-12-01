@@ -177,6 +177,10 @@ class os::Aix {
 
   // Simulate the library search algorithm of dlopen() (in os::dll_load)
   static int stat64x_via_LIBPATH(const char* path, struct stat64x* stat);
+
+  // specific AIX version for ::dlclose(), which handles the struct g_handletable
+  // filled by os::dll_load()
+  static int dlclose(void* lib);
 };
 
 #endif // OS_AIX_OS_AIX_HPP
