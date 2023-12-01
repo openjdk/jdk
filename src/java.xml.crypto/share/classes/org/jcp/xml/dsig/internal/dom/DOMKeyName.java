@@ -64,6 +64,7 @@ public final class DOMKeyName extends DOMStructure implements KeyName {
         name = knElem.getFirstChild().getNodeValue();
     }
 
+    @Override
     public String getName() {
         return name;
     }

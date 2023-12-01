@@ -46,6 +46,7 @@ public final class PlatformEventType extends Type {
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
+    private long startFilterId = -1;
 
     // default values
     private boolean largeSize = false;
@@ -338,5 +339,17 @@ public final class PlatformEventType extends Type {
 
     public boolean isMethodSampling() {
         return isMethodSampling;
+    }
+
+    public void setStackFilterId(long id) {
+        startFilterId = id;
+    }
+
+    public boolean hasStackFilters() {
+        return startFilterId >= 0;
+    }
+
+    public long getStackFilterId() {
+        return startFilterId;
     }
 }

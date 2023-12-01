@@ -291,6 +291,7 @@ public final class JdkConstants {
 
     /**
      * System Property for the DTD property
+     * @since 22
      */
     public static final String DTD_PROPNAME = "jdk.xml.dtd.support";
 
@@ -298,6 +299,17 @@ public final class JdkConstants {
     public static final int ALLOW = 0;
     public static final int IGNORE = 1;
     public static final int DENY = 2;
+
+    /**
+     * System Property for the JDKCatalog' RESOLVE property
+     * @since 22
+     */
+    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
+
+    // Catalog Resolve Integer mappings for String values
+    public static final int CONTINUE = 0;
+    //public static final int IGNORE = 1; // same as that of DTD
+    public static final int STRICT = 2;
 
     /**
      * Values for a feature

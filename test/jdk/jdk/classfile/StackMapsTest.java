@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990
+ * @bug 8305990 8320222 8320618
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -43,7 +43,6 @@ import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
-import java.util.List;
 import java.lang.reflect.AccessFlag;
 
 /**
@@ -237,6 +236,18 @@ class StackMapsTest {
                               .verify(null));
     }
 
+    @Test
+    void testInvalidAALOADStack() {
+        Classfile.of().build(ClassDesc.of("Test"), clb
+                -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
+                        -> cob.bipush(10)
+                              .anewarray(ConstantDescs.CD_Object)
+                              .lconst_1() //long on stack caused NPE, see 8320618
+                              .aaload()
+                              .astore(2)
+                              .return_()));
+    }
+
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     private static void testTransformedStackMaps(String classPath, Classfile.Option... options) throws Exception {
@@ -261,5 +272,45 @@ class StackMapsTest {
 
         //then verify transformed bytecode
         assertEmpty(cc.parse(transformedBytes).verify(null));
+    }
+
+    @Test
+    void testInvalidStack() throws Exception {
+        //stack size mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                Classfile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       Classfile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0d);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
+        //stack content mismatch
+        assertThrows(IllegalArgumentException.class, () ->
+                Classfile.of().build(ClassDesc.of("Test"), clb ->
+                    clb.withMethodBody("test",
+                                       MethodTypeDesc.ofDescriptor("(Z)V"),
+                                       Classfile.ACC_STATIC,
+                                       cb -> {
+                                           Label target = cb.newLabel();
+                                           Label next = cb.newLabel();
+                                           cb.iload(0);
+                                           cb.ifeq(next);
+                                           cb.constantInstruction(0.0f);
+                                           cb.goto_(target);
+                                           cb.labelBinding(next);
+                                           cb.constantInstruction(0);
+                                           cb.labelBinding(target);
+                                           cb.pop();
+                                       })));
     }
 }

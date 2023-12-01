@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
@@ -173,10 +174,10 @@ void G1Arguments::initialize() {
     vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", nullptr);
   }
 
-  // When dumping the CDS archive we want to reduce fragmentation by
+  // When dumping the CDS heap we want to reduce fragmentation by
   // triggering a full collection. To get as low fragmentation as
   // possible we only use one worker thread.
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
