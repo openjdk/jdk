@@ -1554,7 +1554,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
             apiComplete();
-            if (owner.kind == PCK) // Handles implicit classes as well
+            if (owner.kind == PCK) // Handles implicitly declared classes as well
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
                 return NestingKind.ANONYMOUS;

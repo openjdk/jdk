@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,23 @@
  * questions.
  */
 
-/**
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+
+/*
  * @test
- * @bug 6574117
- * @key printer
- * @summary Verify no NPE testing service support of SheetCollate
- * @run main CollateAttr
+ * @bug 8312560
+ * @summary Annotation on Decomposed Record Component in Enhanced For Loop Fails Compilation
+ * @compile T8312560.java
  */
+public class T8312560 {
+    void m(Object o) {
+        if (o instanceof R(@A var x)) {}
+    }
 
-import javax.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
+    @interface A {
+    }
 
-public class CollateAttr {
-
-   public static void main(String args[]) throws Exception {
-
-      PrintService[] services =
-            PrintServiceLookup.lookupPrintServices(null,null);
-      for (int i=0; i<services.length; i++) {
-          if (services[i].isAttributeCategorySupported(SheetCollate.class)) {
-              System.out.println("Testing " + services[i]);
-              services[i].isAttributeValueSupported(SheetCollate.COLLATED,
-                                                    null, null);
-              services[i].getSupportedAttributeValues(SheetCollate.class,
-                                                      null,null);
-          }
-      }
-   }
+    record R(Integer x) {
+    }
 }

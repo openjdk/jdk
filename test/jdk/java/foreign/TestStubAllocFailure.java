@@ -25,34 +25,38 @@
  * @test
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCriticalUpcall
+ * @run testng/othervm/native
+ *   --enable-native-access=ALL-UNNAMED
+ *   TestStubAllocFailure
  */
+
+import java.lang.foreign.*;
+import java.io.IOException;
+import java.util.List;
 
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
-
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-public class TestCriticalUpcall extends UpcallTestHelper {
+public class TestStubAllocFailure extends UpcallTestHelper {
 
     @Test
-    public void testUpcallFailure() throws IOException, InterruptedException {
-        // test to see if we catch a trivial downcall doing an upcall
-        runInNewProcess(Runner.class, true).assertFailed().assertStdOutContains("wrong thread state for upcall");
+    public void testUpcallAllocFailure() throws IOException, InterruptedException {
+        runInNewProcess(UpcallRunner.class, true, List.of("-XX:ReservedCodeCacheSize=3M"), List.of())
+                .assertSuccess();
     }
 
-    public static class Runner extends NativeTestHelper {
+    public static class UpcallRunner extends NativeTestHelper {
         public static void main(String[] args) throws Throwable {
-            System.loadLibrary("Critical");
-
-            MethodHandle mh = downcallHandle("do_upcall", FunctionDescriptor.ofVoid(C_POINTER), Linker.Option.critical(false));
-            MemorySegment stub = upcallStub(Runner.class, "target", FunctionDescriptor.ofVoid());
-            mh.invokeExact(stub);
+            try (Arena arena = Arena.ofConfined()) {
+                while (true) {
+                    // allocate stubs until we crash
+                    upcallStub(UpcallRunner.class, "target", FunctionDescriptor.ofVoid(), arena);
+                }
+            } catch (OutOfMemoryError e) {
+                assertTrue(e.getMessage().contains("Failed to allocate upcall stub"));
+            }
         }
 
         public static void target() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,33 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/**
+/*
  * @test
- * @bug 6574117
- * @key printer
- * @summary Verify no NPE testing service support of SheetCollate
- * @run main CollateAttr
+ * @bug 8320145
+ * @summary Compiler should accept final variable in Record Pattern
+ * @compile T8320145.java
  */
+public class T8320145 {
+    record ARecord(String aComponent) {}
+    record BRecord(ARecord aComponent) {}
+    record CRecord(ARecord aComponent1, ARecord aComponent2) {}
 
-import javax.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
-
-public class CollateAttr {
-
-   public static void main(String args[]) throws Exception {
-
-      PrintService[] services =
-            PrintServiceLookup.lookupPrintServices(null,null);
-      for (int i=0; i<services.length; i++) {
-          if (services[i].isAttributeCategorySupported(SheetCollate.class)) {
-              System.out.println("Testing " + services[i]);
-              services[i].isAttributeValueSupported(SheetCollate.COLLATED,
-                                                    null, null);
-              services[i].getSupportedAttributeValues(SheetCollate.class,
-                                                      null,null);
-          }
-      }
-   }
+    public String match(Object o) {
+        return switch(o) {
+            case ARecord(final String s) -> s;
+            case BRecord(ARecord(final String s)) -> s;
+            case CRecord(ARecord(String s), ARecord(final String s2)) -> s;
+            default -> "No match";
+        };
+    }
 }
