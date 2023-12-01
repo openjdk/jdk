@@ -25,11 +25,9 @@
 
 package sun.security.util;
 
+import java.io.IOException;
 import java.math.BigInteger;
-import java.security.AlgorithmParameters;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -405,5 +403,38 @@ public final class KeyUtil {
         return t;
     }
 
+    /**
+     * Finds the hash algorithm from an HSS/LMS public key.
+     *
+     * @param publicKey the HSS/LMS public key
+     * @return the hash algorithm
+     * @throws NoSuchAlgorithmException if key is from an unknown configuration
+     */
+    public static String hashAlgFromHSS(PublicKey publicKey)
+            throws NoSuchAlgorithmException {
+        try {
+            DerValue val = new DerValue(publicKey.getEncoded());
+            val.data.getDerValue();
+            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            // According to https://www.rfc-editor.org/rfc/rfc8554.html:
+            // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
+            // is the LMS public key for the top-level tree.
+            // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
+            // Section 8: type is the numeric identifier for an LMS specification.
+            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
+            if (rawKey.length < 8) {
+                throw new NoSuchAlgorithmException("Cannot decode public key");
+            }
+            int num = ((rawKey[4] & 0xff) << 24) + ((rawKey[5] & 0xff) << 16)
+                    + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
+            return switch (num) {
+                // RFC 8554 only supports SHA_256 hash algorithm
+                case 5, 6, 7, 8, 9 -> "SHA-256";
+                default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
+            };
+        } catch (IOException e) {
+            throw new NoSuchAlgorithmException("Cannot decode public key", e);
+        }
+    }
 }
 

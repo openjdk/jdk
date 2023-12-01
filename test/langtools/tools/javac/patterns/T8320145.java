@@ -20,13 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * @test
+ * @bug 8320145
+ * @summary Compiler should accept final variable in Record Pattern
+ * @compile T8320145.java
+ */
+public class T8320145 {
+    record ARecord(String aComponent) {}
+    record BRecord(ARecord aComponent) {}
+    record CRecord(ARecord aComponent1, ARecord aComponent2) {}
 
- // key: compiler.err.unnamed.class.should.not.have.package.declaration
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
- // options: -source ${jdk.version} --enable-preview
-
-package unnamed.classes;
-
-public static void main(String... args) {
+    public String match(Object o) {
+        return switch(o) {
+            case ARecord(final String s) -> s;
+            case BRecord(ARecord(final String s)) -> s;
+            case CRecord(ARecord(String s), ARecord(final String s2)) -> s;
+            default -> "No match";
+        };
+    }
 }

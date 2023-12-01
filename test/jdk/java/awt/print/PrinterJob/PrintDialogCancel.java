@@ -25,7 +25,7 @@
   @test
   @bug 4398231
   @summary  Confirm that the print dialog returns false when cancelled.
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual PrintDialogCancel
 */
 
