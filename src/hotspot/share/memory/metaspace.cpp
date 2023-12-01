@@ -36,6 +36,7 @@
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
+#include "memory/metaspace/fence.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
@@ -823,7 +824,8 @@ void Metaspace::post_initialize() {
 }
 
 size_t Metaspace::max_allocation_word_size() {
-  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
+  constexpr size_t guard_size = sizeof(metaspace::Fence) / BytesPerWord;
+  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE - sizeof(metaspace::Fence);
 }
 
 // This version of Metaspace::allocate does not throw OOM but simply returns null, and

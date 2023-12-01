@@ -28,6 +28,7 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/fence.inline.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/metablock.hpp"
@@ -119,7 +120,8 @@ void MetaspaceArena::add_allocation_to_fbl(MetaBlock bl) {
 MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                                SizeAtomicCounter* total_used_words_counter,
                                const char* name)
-: MetaspaceArena(chunk_manager, growth_policy, total_used_words_counter, name)
+: MetaspaceArena(Metaspace::min_allocation_word_size, AllocationAlignmentWordSize,
+                 chunk_manager, growth_policy, total_used_words_counter, name)
 {}
 
 MetaspaceArena::MetaspaceArena(size_t minimum_allocation_word_size,
@@ -483,11 +485,6 @@ void MetaspaceArena::verify() const {
   if (_fbl != nullptr) {
     _fbl->verify();
   }
-}
-
-void MetaspaceArena::Fence::verify() const {
-  assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
-         "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
 }
 
 void MetaspaceArena::verify_allocation_guards() const {
