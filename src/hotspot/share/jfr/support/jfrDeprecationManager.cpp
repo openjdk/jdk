@@ -350,17 +350,19 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
 // Secondly, we serialize all event blobs to the chunk.
 // Thirdly, the type set blobs are written into the JfrCheckpoint system, to be serialized to the chunk
 // just after we return from here.
-static void write_edges(JfrChunkWriter& cw, Thread* thread) {
+static void write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error) {
   write_stacktraces(cw);
   if (write_events(cw)) {
-    JfrCheckpointWriter writer(true, false, thread);
+    JfrCheckpointWriter writer(!on_error, false, thread);
     write_type_set_blobs(writer);
   }
 }
 
-void JfrDeprecationManager::write_events(JfrChunkWriter& cw, Thread* thread) {
+void JfrDeprecationManager::write_events(JfrChunkWriter& cw, Thread* thread, bool on_error /* false */) {
   if (JfrEventSetting::is_enabled(JfrDeprecatedInvocationEvent)) {
-    write_edges(cw, thread);
+    if (_resolved_list.is_nonempty()) {
+      write_edges(cw, thread, on_error);
+    }
   }
 }
 
@@ -369,7 +371,7 @@ void JfrDeprecationManager::on_type_set(JfrCheckpointWriter& writer, JfrChunkWri
   if (writer.has_data() && _pending_head != nullptr) {
     save_type_set_blob(writer);
   }
-  if (cw != nullptr && _resolved_list.is_nonempty()) {
+  if (cw != nullptr) {
     write_events(*cw, thread);
   }
 }

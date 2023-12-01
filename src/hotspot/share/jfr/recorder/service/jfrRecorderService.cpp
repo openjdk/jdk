@@ -509,7 +509,7 @@ void JfrRecorderService::vm_error_rotation() {
     Thread* const thread = Thread::current();
     _storage.flush_regular_buffer(thread->jfr_thread_local()->native_buffer(), thread);
     _chunkwriter.mark_chunk_final();
-    JfrDeprecationManager::write_events(_chunkwriter, thread);
+    JfrDeprecationManager::write_events(_chunkwriter, thread, true);
     invoke_flush();
     _chunkwriter.set_time_stamp();
     _repository.close_chunk();

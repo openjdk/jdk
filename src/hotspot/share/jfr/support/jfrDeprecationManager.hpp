@@ -90,7 +90,7 @@ class JfrDeprecationManager : AllStatic {
   static void prepare_type_set(JavaThread* jt);
   static void on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
-  static void write_events(JfrChunkWriter& cw, Thread* thread);
+  static void write_events(JfrChunkWriter& cw, Thread* thread, bool on_error = false);
   static void on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* thread);
   static void on_level_setting_update(int64_t new_level);
 };
