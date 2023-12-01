@@ -79,6 +79,20 @@
  *
  */
 
+/**
+ * @test
+ * @bug 8320682
+ * @requires vm.debug
+ * @requires os.family == "linux"
+ * @summary Test flag with large value and specific compilation.
+ *
+ * @run main/othervm -XX:NMethodSizeLimit=224001703
+ *                   -XX:CompileOnly=java.util.HashMap::putMapEntries
+ *                   -Xcomp
+ *                   compiler.arguments.TestC1Globals
+ *
+ */
+
 package compiler.arguments;
 
 public class TestC1Globals {
