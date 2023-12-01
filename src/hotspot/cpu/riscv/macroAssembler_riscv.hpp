@@ -821,7 +821,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(Rd, (int32_t)distance + 0x800);                                                       \
+      auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -878,7 +878,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -939,7 +939,7 @@ public:
     assert_different_registers(Rs, temp);                                                          \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
@@ -984,7 +984,7 @@ public:
     assert_cond(dest != nullptr);                                                                  \
     int64_t distance = dest - pc();                                                                \
     if (is_simm32(distance)) {                                                                     \
-      auipc(temp, (int32_t)distance + 0x800);                                                     \
+      auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
       int32_t offset = 0;                                                                          \
