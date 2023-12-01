@@ -1476,7 +1476,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   case T_BYTE:    BLOCK_COMMENT("arrays_hashcode(byte) {");          break;
   case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
   case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
-  default:        BLOCK_COMMENT("arrays_hashcode {");                break;
+  default:
     ShouldNotReachHere();
   }
 
