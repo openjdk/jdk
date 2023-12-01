@@ -190,21 +190,21 @@ import sun.reflect.misc.ReflectUtil;
  * a class or interface is hidden has no bearing on the characteristics
  * exposed by the methods of class {@code Class}.
  *
- * <h2><a id=implicitClasses>Implicit Classes</a></h2>
+ * <h2><a id=implicitClasses>Implicitly Declared Classes</a></h2>
  *
  * Conventionally, a Java compiler, starting from a source file for an
- * implicit class, say {@code HelloWorld.java}, creates a
+ * implicitly declared class, say {@code HelloWorld.java}, creates a
  * similarly-named {@code class} file, {@code HelloWorld.class}, where
  * the class stored in that {@code class} file is named {@code
  * "HelloWorld"}, matching the base names of the source and {@code
  * class} files.
  *
- * For the {@code Class} object of an implicit class {@code
+ * For the {@code Class} object of an implicitly declared class {@code
  * HelloWorld}, the methods to get the {@linkplain #getName name} and
  * {@linkplain #getTypeName type name} return results
  * equal to {@code "HelloWorld"}. The {@linkplain #getSimpleName
- * simple name} of such an implicit class is {@code "HelloWorld"} and the
- * {@linkplain #getCanonicalName canonical name} is {@code "HelloWorld"}.
+ * simple name} of such an implicitly declared class is {@code "HelloWorld"} and
+ * the {@linkplain #getCanonicalName canonical name} is {@code "HelloWorld"}.
  *
  * @param <T> the type of the class modeled by this {@code Class}
  * object.  For example, the type of {@code String.class} is {@code

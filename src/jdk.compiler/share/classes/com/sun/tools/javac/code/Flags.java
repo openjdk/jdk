@@ -123,7 +123,7 @@ public class Flags {
      */
     public static final int HASINIT          = 1<<18;
 
-    /** Class is a implicit top level class.
+    /** Class is an implicitly declared top level class.
      */
     public static final int IMPLICIT_CLASS    = 1<<19;
 
