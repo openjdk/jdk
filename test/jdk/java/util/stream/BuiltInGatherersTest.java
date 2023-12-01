@@ -253,7 +253,8 @@ public class BuiltInGatherersTest {
         }
 
         // Test cancellation after exception during processing
-        if (config.streamSize > 2) { // We need streams of a minimum size to test this
+        // Only use reasonably sized streams to avoid excessive thread creation
+        if (config.streamSize > 2 && config.streamSize < 100) {
             final var tasksToCancel = config.streamSize - 2;
             final var throwerReady = new CountDownLatch(1);
             final var initiateThrow = new CountDownLatch(1);
@@ -308,7 +309,8 @@ public class BuiltInGatherersTest {
         }
 
         // Test cancellation during short-circuiting
-        if (config.streamSize > 2) {
+        // Only use reasonably sized streams to avoid excessive thread creation
+        if (config.streamSize > 2 && config.streamSize < 100) {
             final var tasksToCancel = config.streamSize - 2;
             final var firstReady = new CountDownLatch(1);
             final var lastDone = new CountDownLatch(1);
