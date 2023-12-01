@@ -71,6 +71,7 @@ import java.util.function.Supplier;
 
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.DEFERRED;
+import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.METHOD;
 import static com.sun.tools.javac.code.TypeTag.VOID;
