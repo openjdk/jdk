@@ -3009,12 +3009,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             for(int i = 0; i < column; i++) {
                 r.x += cm.getColumn(i).getWidth();
             }
-            //Table columns are laid out from right to left when component
-            //orientation is set to ComponentOrientation.RIGHT_TO_LEFT,
-            //adjust the x coordinate for this case.
+            // Table columns are laid out from right to left when component
+            // orientation is set to ComponentOrientation.RIGHT_TO_LEFT,
+            // adjust the x coordinate for this case.
             final int columnWidth = cm.getColumn(column).getWidth();
             if( !getComponentOrientation().isLeftToRight() ) {
-                r.x = getWidthInRightToLeft() - r.x - columnWidth;
+                r.x = getWidth() - r.x - columnWidth;
             }
             r.width = columnWidth;
         }
@@ -9802,12 +9802,4 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         } // inner class AccessibleJTableHeaderCell
 
     }  // inner class AccessibleJTable
-
-    private int getWidthInRightToLeft() {
-        if (getAutoResizeMode() != JTable.AUTO_RESIZE_OFF) {
-            return getWidth();
-        }
-        return super.getWidth();
-    }
-
 }  // End of Class JTable
