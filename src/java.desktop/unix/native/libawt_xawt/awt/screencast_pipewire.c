@@ -43,8 +43,8 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
                                       (*env)->ExceptionDescribe(env); \
                                    }
 
-static volatile gboolean hasPipewireFailed = FALSE;
-static volatile gboolean sessionClosed = TRUE;
+static gboolean hasPipewireFailed = FALSE;
+static gboolean sessionClosed = TRUE;
 static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
@@ -926,6 +926,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
         fp_pw_thread_loop_wait(pw.loop);
         if (hasPipewireFailed) {
             fp_pw_thread_loop_unlock(pw.loop);
+            doCleanup();
             releaseToken(env, jtoken, token);
             return RESULT_ERROR;
         }
