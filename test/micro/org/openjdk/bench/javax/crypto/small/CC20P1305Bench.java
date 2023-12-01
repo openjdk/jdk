@@ -40,11 +40,6 @@ public class CC20P1305Bench extends
     @Param({"1024"})
     int dataSize;
 
-    AlgorithmParameterSpec getNewSpec() {
-        iv_index = (iv_index + 1) % IV_MODULO;
-        return new IvParameterSpec(iv, iv_index, 12);
-    }
-
     @Setup
     public void setup() throws Exception {
         init("ChaCha20-Poly1305/None/NoPadding", 256, dataSize);

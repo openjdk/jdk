@@ -39,21 +39,13 @@ import java.util.HexFormat;
  * point to an array while `count` equals zero.
  */
 final class AEADBufferedStream extends ByteArrayOutputStream {
-    /**
-     * Create an instance with no buffer
-     */
-    public AEADBufferedStream() {
-        buf = null;
-        count = 0;
-    }
 
     /**
      * Create an instance with the specified buffer
      */
 
     public AEADBufferedStream(int len) {
-        buf = new byte[len];
-        count = 0;
+        super(len);
     }
 
     /**
@@ -64,7 +56,7 @@ final class AEADBufferedStream extends ByteArrayOutputStream {
      * @return internal or new byte array of non-blocksize data.
      */
     @Override
-    public synchronized byte[] toByteArray() {
+    public byte[] toByteArray() {
         if (buf.length > count) {
             return Arrays.copyOfRange(buf, 0, count);
         }

@@ -36,9 +36,11 @@ import javax.crypto.spec.IvParameterSpec;
 
 public class CC20P1305ByteBuffer extends ByteBufferBase {
 
-    AlgorithmParameterSpec getNewSpec() {
+    public static final int IV_MODULO = 12;
+
+    public AlgorithmParameterSpec getNewSpec() {
         iv_index = (iv_index + 1) % IV_MODULO;
-        return new IvParameterSpec(iv, iv_index, 12);
+        return new IvParameterSpec(iv, iv_index, IV_MODULO);
     }
 
     @Setup

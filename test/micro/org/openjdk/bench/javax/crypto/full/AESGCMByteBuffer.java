@@ -39,9 +39,11 @@ public class AESGCMByteBuffer extends ByteBufferBase {
     @Param({"128"})
     int keyLength;
 
-    AlgorithmParameterSpec getNewSpec() {
+    public static final int IV_MODULO = 16;
+
+    public AlgorithmParameterSpec getNewSpec() {
         iv_index = (iv_index + 1) % IV_MODULO;
-        return new GCMParameterSpec(96, iv, iv_index, 12);
+        return new GCMParameterSpec(128, iv, iv_index, IV_MODULO);
     }
 
     @Setup

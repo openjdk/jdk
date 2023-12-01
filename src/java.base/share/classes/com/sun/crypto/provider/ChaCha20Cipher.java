@@ -648,7 +648,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             engine.doUpdate(in, inOfs, inLen, out, 0);
         } catch (ShortBufferException | KeyException exc) {
-            throw new RuntimeException(exc);
+            throw new ProviderException(exc);
         }
 
         return out;
@@ -679,7 +679,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             bytesUpdated = engine.doUpdate(in, inOfs, inLen, out, outOfs);
         } catch (KeyException ke) {
-            throw new RuntimeException(ke);
+            throw new ProviderException(ke);
         }
         return bytesUpdated;
     }
@@ -696,10 +696,16 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *
      * @throws ShortBufferException if the buffer {@code out} does not have
      *      enough space to hold the resulting data.
-     */    @Override
+     */
+    @Override
     protected int engineUpdate(ByteBuffer input, ByteBuffer output)
         throws ShortBufferException {
-        return bufferCrypt(input, output, true);
+        try {
+            return bufferCrypt(input, output, true);
+        } catch (AEADBadTagException e) {
+            // exception is never thrown by update ops
+            return 0;
+        }
     }
 
     /**
@@ -784,7 +790,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     @Override
     protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
-        throws ShortBufferException {
+        throws ShortBufferException, AEADBadTagException {
         return bufferCrypt(input, output, false);
     }
 
@@ -793,7 +799,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * ByteBuffers send to the engine code.
      */
     private int bufferCrypt(ByteBuffer input, ByteBuffer output,
-        boolean isUpdate) throws ShortBufferException {
+        boolean isUpdate) throws ShortBufferException, AEADBadTagException {
         if ((input == null) || (output == null)) {
             throw new NullPointerException
                 ("Input and output buffers must not be null");
@@ -837,11 +843,13 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 }
                 try {
                     if (isUpdate) {
-                        total = engine.doUpdate(inArray, inOfs, inLen, outArray, outOfs);
+                        total = engine.doUpdate(inArray, inOfs, inLen, outArray,
+                            outOfs);
                     } else {
-                        total = engine.doFinal(inArray, inOfs, inLen, outArray, outOfs);
+                        total = engine.doFinal(inArray, inOfs, inLen, outArray,
+                            outOfs);
                     }
-                } catch (BadPaddingException | KeyException e) {
+                } catch (KeyException e) {
                     throw new ProviderException(e);
                 }
                 if (useTempOut) {
@@ -854,11 +862,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 if (isUpdate) {
                     outArray = engineUpdate(inArray, inOfs, inLen);
                 } else {
-                    try {
-                        outArray = engineDoFinal(inArray, inOfs, inLen);
-                    } catch (BadPaddingException e) {
-                        throw new ProviderException(e);
-                    }
+                    outArray = engineDoFinal(inArray, inOfs, inLen);
                 }
                 if (outArray != null && outArray.length != 0) {
                     output.put(outArray);
@@ -873,7 +877,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                     return engine.doUpdate(input, output);
                 }
                 return engine.doFinal(input, output);
-            } catch (BadPaddingException | KeyException e) {
+            } catch (KeyException e) {
                 throw new ProviderException(e);
             }
         }
@@ -1374,8 +1378,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
         int doFinal(byte[] in, int inOff, int inLen, byte[] out, int outOff)
                 throws ShortBufferException, AEADBadTagException, KeyException;
 
-        int doUpdate(ByteBuffer input, ByteBuffer output) throws ShortBufferException, KeyException;
-        int doFinal(ByteBuffer input, ByteBuffer output) throws ShortBufferException, KeyException, AEADBadTagException;
+        int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException;
+        int doFinal(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException, AEADBadTagException;
     }
 
     private final class EngineStreamOnly implements ChaChaEngine {
@@ -1420,13 +1426,13 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
 
         @Override
-        public int doUpdate(ByteBuffer input, ByteBuffer output) throws ShortBufferException, KeyException {
-            byte[] in = new byte[input.remaining()];
-            input.get(in);
-            byte[] out = new byte[in.length];
-            doUpdate(in, 0, in.length, out, out.length);
-            output.put(out);
-            return out.length;
+        public int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            byte[] data = new byte[input.remaining()];
+            input.get(data);
+            doUpdate(data, 0, data.length, data, 0);
+            output.put(data);
+            return data.length;
         }
 
         @Override
@@ -1499,23 +1505,24 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
 
         @Override
-        public int doUpdate(ByteBuffer input, ByteBuffer output) throws ShortBufferException, KeyException {
-            byte[] in = new byte[input.remaining()];
-            input.get(in);
-            byte[] out = new byte[in.length];
-            doUpdate(in, 0, in.length, out, 0);
-            output.put(out);
-            return out.length;
+        public int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            byte[] data = new byte[input.remaining()];
+            input.get(data);
+            doUpdate(data, 0, data.length, data, 0);
+            output.put(data);
+            return data.length;
         }
 
         @Override
-        public int doFinal(ByteBuffer input, ByteBuffer output) throws ShortBufferException, KeyException {
-            byte[] in = new byte[input.remaining()];
-            input.get(in);
-            byte[] out = new byte[in.length + TAG_LENGTH];
-            doFinal(in, 0, in.length, out, 0);
-            output.put(out);
-            return out.length;
+        public int doFinal(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            int len = input.remaining();
+            byte[] data = new byte[len + TAG_LENGTH];
+            input.get(data, 0, len);
+            doFinal(data, 0, len, data, 0);
+            output.put(data);
+            return data.length;
         }
     }
 
@@ -1648,8 +1655,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
             int inLen = input.remaining();
             byte[] ct, buf = (getBufferedLength() == 0 ? null : cipherBuf.toByteArray());
             int ctLen = getBufferedLength() + inLen;
-            if (ctLen == 0) {
-                throw new AEADBadTagException("Tag mismatch");
+            if (ctLen < TAG_LENGTH) {
+                throw new AEADBadTagException("Input too short - need tag");
             }
             if (inLen == 0) {
                 ct = buf;

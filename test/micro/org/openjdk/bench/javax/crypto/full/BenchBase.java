@@ -48,16 +48,16 @@ public abstract class BenchBase extends CryptoBase {
     @Param({"1024", "1500", "4096", "16384"})
     int dataSize;
 
-    static final int IV_BUFFER_SIZE = 24;
-    public static final int IV_MODULO = 12;
+    static final int IV_BUFFER_SIZE = 36;
     public byte[] iv;
     public int iv_index = 0;
-    int updateLen = 0;
+    private int updateLen = 0;
 
     private Cipher encryptCipher, decryptCipher;
-    byte[] encryptedData, in, out;
-    SecretKeySpec ks;
-    AlgorithmParameterSpec spec;
+    private byte[] encryptedData, in, out;
+    private SecretKeySpec ks;
+    // Used for decryption to avoid repeated getParameter() calls
+    private AlgorithmParameterSpec spec;
 
     abstract AlgorithmParameterSpec getNewSpec();
 
@@ -90,8 +90,7 @@ public abstract class BenchBase extends CryptoBase {
         encryptCipher = makeCipher(prov, algorithm);
         encryptCipher.init(Cipher.ENCRYPT_MODE, ks, spec);
         decryptCipher = makeCipher(prov, algorithm);
-        decryptCipher.init(Cipher.DECRYPT_MODE, ks,
-            encryptCipher.getParameters(). getParameterSpec(spec.getClass()));
+        decryptCipher.init(Cipher.DECRYPT_MODE, ks, spec);
 
         // Setup input/output buffers
         in = fillRandom(new byte[dataSize]);
@@ -118,17 +117,13 @@ public abstract class BenchBase extends CryptoBase {
 
     @Benchmark
     public void decrypt() throws Exception {
-        decryptCipher.init(Cipher.DECRYPT_MODE, ks,
-            encryptCipher.getParameters().
-                getParameterSpec(spec.getClass()));
+        decryptCipher.init(Cipher.DECRYPT_MODE, ks, spec);
         decryptCipher.doFinal(encryptedData, 0, encryptedData.length, out, 0);
     }
 
     @Benchmark
     public void decryptMultiPart() throws Exception {
-        decryptCipher.init(Cipher.DECRYPT_MODE, ks,
-            encryptCipher.getParameters().
-                getParameterSpec(spec.getClass()));
+        decryptCipher.init(Cipher.DECRYPT_MODE, ks, spec);
         decryptCipher.update(encryptedData, 0, updateLen, out, 0);
         decryptCipher.doFinal(encryptedData, updateLen,
             encryptedData.length - updateLen, out, 0);

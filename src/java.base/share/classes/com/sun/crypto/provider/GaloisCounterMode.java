@@ -247,7 +247,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     protected AlgorithmParameters engineGetParameters() {
         GCMParameterSpec spec;
         spec = new GCMParameterSpec(tagLenBytes * 8,
-            iv == null ? createIv(random) : iv.clone());
+            iv == null ? createIv(random) : iv);  // iv.clone() not necessary
         try {
             AlgorithmParameters params =
                 AlgorithmParameters.getInstance("GCM",
