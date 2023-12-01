@@ -42,10 +42,10 @@ import static org.junit.jupiter.api.Assumptions.*;
  * @test
  * @summary Testing the built-in Gatherer implementations and their contracts
  * @enablePreview
- * @run junit GatherersTest
+ * @run junit BuiltInGatherersTest
  */
 
-public class GatherersTest {
+public class BuiltInGatherersTest {
 
     record Config(int streamSize, boolean parallel) {
         Stream<Integer> stream() {
@@ -227,6 +227,14 @@ public class GatherersTest {
         assertEquals(expectedResult, result);
     }
 
+    private static void awaitSensibly(CountDownLatch latch) {
+        try {
+            assertTrue(latch.await(20, java.util.concurrent.TimeUnit.SECONDS));
+        } catch (InterruptedException ie) {
+            throw new IllegalStateException(ie);
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("configurations")
     public void testMapConcurrentAPIandContract(Config config) throws InterruptedException {
@@ -246,9 +254,12 @@ public class GatherersTest {
 
         // Test cancellation after exception during processing
         if (config.streamSize > 2) { // We need streams of a minimum size to test this
-            final var firstLatch = new CountDownLatch(1);
-            final var secondLatch = new CountDownLatch(1);
-            final var cancellationLatch = new CountDownLatch(config.streamSize - 2); // all but two will get cancelled
+            final var tasksToCancel = config.streamSize - 2;
+            final var throwerReady = new CountDownLatch(1);
+            final var initiateThrow = new CountDownLatch(1);
+            final var tasksCancelled = new CountDownLatch(tasksToCancel);
+
+            final var tasksWaiting = new Semaphore(0);
 
             try {
                 config.stream()
@@ -256,23 +267,28 @@ public class GatherersTest {
                             Gatherers.mapConcurrent(config.streamSize(), i -> {
                                 switch (i) {
                                     case 1 -> {
-                                        try {
-                                            firstLatch.await(); // the first waits for the last element to start
-                                        } catch (InterruptedException ie) {
-                                            throw new IllegalStateException(ie);
-                                        }
+                                        throwerReady.countDown();
+                                        awaitSensibly(initiateThrow);
                                         throw new TestException("expected");
                                     }
 
-                                    case Integer n when n == config.streamSize - 1 -> { // last element
-                                        firstLatch.countDown(); // ensure that the first element can now proceed
+                                    case Integer n when n == config.streamSize - 1 -> {
+                                        awaitSensibly(throwerReady);
+                                        while(tasksWaiting.getQueueLength() < tasksToCancel) {
+                                            try {
+                                                Thread.sleep(10);
+                                            } catch (InterruptedException ie) {
+                                                // Ignore
+                                            }
+                                        }
+                                        initiateThrow.countDown();
                                     }
 
                                     default -> {
                                         try {
-                                            secondLatch.await(); // These should all get interrupted
+                                            tasksWaiting.acquire();
                                         } catch (InterruptedException ie) {
-                                            cancellationLatch.countDown(); // used to ensure that they all were interrupted
+                                            tasksCancelled.countDown(); // used to ensure that they all were interrupted
                                         }
                                     }
                                 }
@@ -282,10 +298,9 @@ public class GatherersTest {
                       )
                       .toList();
                 fail("This should not be reached");
-            } catch (RuntimeException re) {
-                assertSame(TestException.class, re.getClass());
-                assertEquals("expected", re.getMessage());
-                cancellationLatch.await();
+            } catch (TestException te) {
+                assertEquals("expected", te.getMessage());
+                awaitSensibly(tasksCancelled);
                 return;
             }
 
@@ -294,43 +309,51 @@ public class GatherersTest {
 
         // Test cancellation during short-circuiting
         if (config.streamSize > 2) {
-            final var firstLatch = new CountDownLatch(1);
-            final var secondLatch = new CountDownLatch(1);
-            final var cancellationLatch = new CountDownLatch(config.streamSize - 2); // all but two will get cancelled
+            final var tasksToCancel = config.streamSize - 2;
+            final var firstReady = new CountDownLatch(1);
+            final var lastDone = new CountDownLatch(1);
+            final var tasksCancelled = new CountDownLatch(tasksToCancel);
+
+            final var tasksWaiting = new Semaphore(0);
 
             final var result =
                 config.stream()
-                      .gather(
+                    .gather(
                             Gatherers.mapConcurrent(config.streamSize(), i -> {
                                 switch (i) {
                                     case 1 -> {
-                                        try {
-                                            firstLatch.await(); // the first waits for the last element to start
-                                        } catch (InterruptedException ie) {
-                                            throw new IllegalStateException(ie);
-                                        }
+                                        firstReady.countDown();
+                                        awaitSensibly(lastDone);
                                     }
 
-                                    case Integer n when n == config.streamSize - 1 -> { // last element
-                                        firstLatch.countDown(); // ensure that the first element can now proceed
+                                    case Integer n when n == config.streamSize - 1 -> {
+                                        awaitSensibly(firstReady);
+                                        while(tasksWaiting.getQueueLength() < tasksToCancel) {
+                                            try {
+                                                Thread.sleep(10);
+                                            } catch (InterruptedException ie) {
+                                                // Ignore
+                                            }
+                                        }
+                                        lastDone.countDown();
                                     }
 
                                     default -> {
                                         try {
-                                            secondLatch.await(); // These should all get interrupted
+                                            tasksWaiting.acquire();
                                         } catch (InterruptedException ie) {
-                                            cancellationLatch.countDown(); // used to ensure that they all were interrupted
+                                            tasksCancelled.countDown(); // used to ensure that they all were interrupted
                                         }
                                     }
                                 }
 
                                 return i;
                             })
-                      )
-                      .limit(2)
-                      .toList();
-            cancellationLatch.await(); // If this hangs, then we didn't cancel and interrupt the tasks
-            assertEquals(List.of(1,2), result);
+                    )
+                    .limit(1)
+                    .toList();
+            awaitSensibly(tasksCancelled);
+            assertEquals(List.of(1), result);
         }
 
         for (var concurrency : List.of(1, 2, 3, 10, 1000)) {
