@@ -489,9 +489,9 @@ public class ZipFile implements ZipConstants, Closeable {
     /**
      * {@return a string identifying this {@code ZipFile}, for debugging}
      *
-     * The string returned is given in the following format: The underlying ZIP file base name
-     * followed by '@' and a hex representation of the identity hash for this {@code ZipFile}.
-     * The exact details of this format are subject to change.
+     * The string returned is given in the following format: The underlying ZIP
+     * file base name followed by '@' and a hex representation of the identity
+     * hash for this {@code ZipFile}.
      */
     @Override
     public String toString() {
