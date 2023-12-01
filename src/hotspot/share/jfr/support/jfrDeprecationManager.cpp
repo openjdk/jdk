@@ -154,7 +154,6 @@ static inline bool is_unnamed_module(const ModuleEntry* module) {
 }
 
 static inline bool is_jdk_module(const ModuleEntry* module, JavaThread* jt) {
-  assert(module != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
   if (is_unnamed_module(module)) {
     return false;
