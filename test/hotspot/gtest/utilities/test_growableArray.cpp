@@ -28,21 +28,27 @@
 
 
 
-// TODO: think about how to add modifications before test.
-//       Crossproduct somehow?
+// TODO: Add more modifications
 //       And add more allocators
+//       Add more types E, and check ctor dtor counts etc
 
 
-// We have list of TestClosures, and a list of AllocationClosures.
+// We have a list of each:
+//  - ModifyClosure
+//  - TestClosure
+//  - AllocatorClosure
+//
 // For each AllocationClosure, we call dispatch with each
-// of the TestClosures. The allocation cosure then allocates its
-// array, and then passes itself into the TestClosure, which
-// runs the test.
+// of the ModifyClosuresi and each TestClosures. The allocation
+// cosure allocates its array, and then passes itself into the
+// ModifyClosure which does some first modificaions and
+// subsequently into the TestClosure, which runs the test.
 //
 // For one test and allocator we do:
 //   test.reset()
-//   allocator.dispatch(test);
+//   allocator.dispatch(modification, test);
 //   -> allocate GrowableArray
+//      modification.do_modify(allocator)
 //      test.do_test(allocator)
 //      -> call read / write ops on allocator which forwards
 //         that to the allocated GrowableArray
@@ -50,13 +56,14 @@
 //   test.finish()
 
 template<typename E> class TestClosure;
+template<typename E> class ModifyClosure;
 
 template<typename E>
 class AllocatorClosure {
 private:
   GrowableArrayView<E>* _view;
 public:
-  virtual void dispatch(TestClosure<E>* t) = 0;
+  virtual void dispatch(ModifyClosure<E>* m, TestClosure<E>* t) = 0;
 
   // at least set the view so that we do not have to repeat
   // forwarding in the subclasses of AllocatorClosure too
@@ -88,6 +95,12 @@ public:
   virtual void finish() {}
 };
 
+template<typename E>
+class ModifyClosure {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a) = 0;
+};
+
 // ------------ AllocationClosures ------------
 
 template<typename E>
@@ -115,7 +128,7 @@ public:
 template<typename E>
 class AllocatorClosureStackResourceArena : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(TestClosure<E>* test) override final {
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
     test->reset();
     {
       ResourceMark rm;
@@ -123,10 +136,28 @@ public:
       ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // stack
       ASSERT_TRUE(array.on_resource_area()); // resource arena
       this->set_array(&array);
+      modify->do_modify(this);
       test->do_test(this);
     }
     test->finish();
   };
+};
+
+// ------------ ModifyClosures ------------
+
+template<typename E>
+class ModifyClosureAppend : public ModifyClosure<E> {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a) override final {
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(i);
+    }
+
+    ASSERT_EQ(a->length(), 10);
+  }
 };
 
 // ------------ TestClosures ------------
@@ -134,6 +165,7 @@ public:
 template<typename E>
 class TestClosureAppend : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -154,6 +186,7 @@ class TestClosureAppend : public TestClosure<E> {
 template<typename E>
 class TestClosureClear : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
     // Check size
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->is_empty(), true);
@@ -193,6 +226,7 @@ class TestClosureClear : public TestClosure<E> {
 template<typename E>
 class TestClosureIterator : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
     // Add elements
     for (int i = 0; i < 10; i++) {
       a->append(i);
@@ -212,6 +246,7 @@ class TestClosureIterator : public TestClosure<E> {
 template<typename E>
 class TestClosureCapacity : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
     ASSERT_EQ(a->length(), 0);
     a->reserve(50);
     ASSERT_EQ(a->length(), 0);
@@ -680,15 +715,17 @@ protected:
   static void xxx_test_append() {
     AllocatorClosureStackResourceArena<int> allocator_s_r;
 
+    ModifyClosureAppend<int> modify_append;
+
     TestClosureAppend<int> test_append;
     TestClosureClear<int> test_clear;
     TestClosureIterator<int> test_iterator;
     TestClosureCapacity<int> test_capacity;
 
-    allocator_s_r.dispatch(&test_append);
-    allocator_s_r.dispatch(&test_clear);
-    allocator_s_r.dispatch(&test_iterator);
-    allocator_s_r.dispatch(&test_capacity);
+    allocator_s_r.dispatch(&modify_append, &test_append);
+    allocator_s_r.dispatch(&modify_append, &test_clear);
+    allocator_s_r.dispatch(&modify_append, &test_iterator);
+    allocator_s_r.dispatch(&modify_append, &test_capacity);
   }
 };
 
