@@ -229,7 +229,7 @@ void THPSupport::print_on(outputStream* os) {
 }
 
 ShmemTHPSupport::ShmemTHPSupport() :
-    _initialized(false), _mode(ShmemTHPMode::never) {}
+    _initialized(false), _mode(ShmemTHPMode::unknown) {}
 
 ShmemTHPMode ShmemTHPSupport::mode() const {
   assert(_initialized, "Not initialized");
@@ -251,7 +251,7 @@ bool ShmemTHPSupport::is_disabled() const {
 void ShmemTHPSupport::scan_os() {
   // Scan /sys/kernel/mm/transparent_hugepage/shmem_enabled
   // see mm/huge_memory.c
-  _mode = ShmemTHPMode::never;
+  _mode = ShmemTHPMode::unknown;
   const char* filename = "/sys/kernel/mm/transparent_hugepage/shmem_enabled";
   FILE* f = ::fopen(filename, "r");
   if (f != nullptr) {
@@ -272,12 +272,10 @@ void ShmemTHPSupport::scan_os() {
       _mode = ShmemTHPMode::force;
     } else {
       assert(false, "Weird content of %s: %s", filename, buf);
-      _mode = ShmemTHPMode::unknown;
     }
     fclose(f);
   }
 
-  // Scan large page size for THP from hpage_pmd_size
   _initialized = true;
 
   LogTarget(Info, pagesize) lt;
@@ -289,7 +287,7 @@ void ShmemTHPSupport::scan_os() {
 
 const char* ShmemTHPSupport::mode_to_string(ShmemTHPMode mode) {
   switch (mode) {
-    case  ShmemTHPMode::always:     return "always";
+    case ShmemTHPMode::always:      return "always";
     case ShmemTHPMode::advise:      return "advise";
     case ShmemTHPMode::within_size: return "within_size";
     case ShmemTHPMode::never:       return "never";
