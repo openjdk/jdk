@@ -240,6 +240,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
+  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+
  public:
   ~JvmtiThreadState();
 
@@ -258,6 +260,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* env_thread_state(JvmtiEnvBase *env);
 
   static void periodic_clean_up();
+
+  // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
+  static bool seen_interp_only_mode() {
+    return _seen_interp_only_mode;
+  }
 
   void add_env(JvmtiEnvBase *env);
 
