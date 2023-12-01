@@ -1676,6 +1676,20 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
+void C2_MacroAssembler::signum_fp_v(VectorRegister dst, BasicType bt, int vlen,
+                                    VectorRegister zero, VectorRegister one) {
+  vsetvli_helper(bt, vlen);
+
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  vfclass_v(v0, dst);
+  mv(t0, fclass_mask::zero | fclass_mask::nan);
+  vand_vx(v0, v0, t0);
+  vmseq_vv(v0, v0, zero);
+
+  // use floating-point 1.0 with a sign of input
+  vfsgnj_vv(dst, one, dst, v0_t);
+}
+
 void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
   Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
   // intrinsic is enabled when MaxVectorSize >= 16
