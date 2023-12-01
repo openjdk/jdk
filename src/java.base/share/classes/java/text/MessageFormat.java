@@ -293,9 +293,15 @@ import java.util.Objects;
  * }
  *
  * <p>
- * <strong>Note:</strong> As we see above, the string produced
- * by a {@code ChoiceFormat} in {@code MessageFormat} is treated as special;
- * occurrences of '{' are used to indicate subformats, and cause recursion.
+ * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
+ * the string produced by a {@code ChoiceFormat} in {@code MessageFormat} is
+ * treated as special; occurrences of '{' are used to indicate subformats, and
+ * cause recursion. A limitation to this behavior is that, if a {@code MessageFormat}
+ * {@code FormatElement} is defined in the {@code ChoiceFormat} pattern, it will only
+ * be formatted according to the {@code FormatType} and {@code FormatStyle}
+ * pattern provided. The associated subformats of the {@code MessageFormat} will
+ * not be applied to the {@code FormatElement} defined in the {@code ChoiceFormat}
+ * pattern, even if the {@code ArgumentIndex} has an associated subformat.
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.

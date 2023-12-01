@@ -118,6 +118,8 @@ import java.util.Arrays;
  * The disk "MyDisk" contains one file.
  * The disk "MyDisk" contains 1,273 files.
  * </pre></blockquote>
+ * See {@link MessageFormat##pattern_caveats MessageFormat} for caveats regarding
+ * {@code MessageFormat} patterns within a {@code ChoiceFormat} pattern.
  *
  * <h2><a id="patterns">Patterns</a></h2>
  * A {@code ChoiceFormat} pattern has the following syntax:
