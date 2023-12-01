@@ -24,7 +24,6 @@
 package jdk.jfr.api.event;
 
 import java.util.List;
-
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
