@@ -120,7 +120,7 @@ public interface OutputBuffer {
     private final StreamTask outTask;
     private final StreamTask errTask;
     private final Process p;
-    private volatile Integer processExitCode; // null implies we don't yet know
+    private volatile Integer processExitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
         System.out.println("[" + Instant.now().toString() + "] " + state
@@ -147,18 +147,18 @@ public interface OutputBuffer {
 
     @Override
     public int getExitValue() {
-      Integer exitCode = this.processExitCode;
-      if (exitCode != null) {
-        return exitCode;
+      Integer exitValue = this.processExitValue;
+      if (exitValue != null) {
+        return exitValue;
       }
       try {
           logProgress("Waiting for completion");
           boolean aborted = true;
           try {
-              this.processExitCode = exitCode = p.waitFor();
+              this.processExitValue = exitValue = p.waitFor();
               logProgress("Waiting for completion finished");
               aborted = false;
-              return exitCode;
+              return exitValue;
           } finally {
               if (aborted) {
                   logProgress("Waiting for completion FAILED");
