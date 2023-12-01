@@ -60,7 +60,7 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
-  constexpr size_t nonclass_mimumum_allocation_word_size = 1;
+  constexpr size_t nonclass_mimumum_allocation_word_size = Metaspace::min_allocation_word_size;
   constexpr size_t nonclass_alignment_words = metaspace::AllocationAlignmentWordSize;
 
   // Initialize non-class Arena
@@ -101,6 +101,7 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 
 // Allocate word_size words from Metaspace.
 MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataType mdType) {
+  word_size = align_up(word_size, Metaspace::min_allocation_word_size);
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   MetaBlock result, wastage;
   if (Metaspace::is_class_space_allocation(mdType)) {
@@ -150,14 +151,17 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
-  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
-  if (Metaspace::using_class_space() && is_class) {
-    assert(Metaspace::is_in_class_space(ptr), "Not a class space pointer");
-    class_space_arena()->deallocate(MetaBlock(ptr, word_size));
-  } else {
-    non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
+  NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
+  if (word_size >= Metaspace::min_allocation_word_size) {
+    MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
+    if (Metaspace::using_class_space() && is_class) {
+      assert(Metaspace::is_in_class_space(ptr), "Not a class space pointer");
+      class_space_arena()->deallocate(MetaBlock(ptr, word_size));
+    } else {
+      non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
+    }
+    DEBUG_ONLY(InternalStats::inc_num_deallocs();)
   }
-  DEBUG_ONLY(InternalStats::inc_num_deallocs();)
 }
 
 // Update statistics. This walks all in-use chunks.

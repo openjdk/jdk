@@ -119,7 +119,7 @@ void MetaspaceArena::add_allocation_to_fbl(MetaBlock bl) {
 MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                                SizeAtomicCounter* total_used_words_counter,
                                const char* name)
-: MetaspaceArena(1, AllocationAlignmentWordSize, chunk_manager, growth_policy, total_used_words_counter, name)
+: MetaspaceArena(chunk_manager, growth_policy, total_used_words_counter, name)
 {}
 
 MetaspaceArena::MetaspaceArena(size_t minimum_allocation_word_size,
@@ -139,7 +139,11 @@ MetaspaceArena::MetaspaceArena(size_t minimum_allocation_word_size,
   , _first_fence(nullptr)
 #endif
 {
-  assert(is_power_of_2(_allocation_alignment_words), "Invalid alignment");
+  assert(is_power_of_2(_allocation_alignment_words), "Invalid alignment (%zu)",
+         _allocation_alignment_words);
+  assert(_minimum_allocation_word_size >= Metaspace::min_allocation_word_size &&
+         _minimum_allocation_word_size <= Metaspace::max_allocation_word_size(),
+         "Invalid minimum allocation size (%zu", _minimum_allocation_word_size);
 
   // Requiring arena allocation alignment to be smaller or equal the smallest chunk size allows
   // us to allocate from a fresh chunk without having to align the result pointer.
@@ -244,10 +248,7 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
   UL2(trace, "requested " SIZE_FORMAT " words.", word_size);
 
-  // For simplicity, we always align the size to 64-bit. This only affects 32-bit where
-  // we don't want to deal with 4-byte allocations.
-  NOT_LP64(word_size = align_up(word_size, AllocationAlignmentWordSize));
-
+  NOT_LP64(assert(is_aligned(word_size, Metaspace::min_allocation_word_size), "Bad block size");)
   assert(word_size >= _minimum_allocation_word_size, "Too small for this arena");
 
   MetaBlock result;
@@ -325,13 +326,14 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
   MetaBlock result;
   bool current_chunk_too_small = false;
   bool commit_failure = false;
+  size_t alignment_gap_size = 0;
 
   if (current_chunk() != nullptr) {
     // Attempt to satisfy the allocation from the current chunk.
 
     const MetaWord* const chunk_top = current_chunk()->top();
-    const size_t alignment_gap_words = align_up(chunk_top, _allocation_alignment_words * BytesPerWord) - chunk_top;
-    const size_t word_size_plus_alignment = word_size + alignment_gap_words;
+    alignment_gap_size = align_up(chunk_top, _allocation_alignment_words * BytesPerWord) - chunk_top;
+    const size_t word_size_plus_alignment = word_size + alignment_gap_size;
 
     // If the current chunk is too small to hold the requested size, attempt to enlarge it.
     // If that fails, retire the chunk.
@@ -358,10 +360,11 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
     if (!current_chunk_too_small && !commit_failure) {
       MetaWord* const p_gap = current_chunk()->allocate(word_size_plus_alignment);
       assert(p_gap != nullptr, "Allocation from chunk failed.");
-      MetaWord* const p_user_allocation = p_gap + alignment_gap_words;
+      MetaWord* const p_user_allocation = p_gap + alignment_gap_size;
       result = MetaBlock(p_user_allocation, word_size);
-      if (alignment_gap_words > 0) {
-        wastage = MetaBlock(p_gap, alignment_gap_words);
+      if (alignment_gap_size > 0) {
+        NOT_LP64(assert(alignment_gap_size >= AllocationAlignmentWordSize, "Sanity"));
+        wastage = MetaBlock(p_gap, alignment_gap_size);
       }
     }
   }
@@ -417,6 +420,7 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
 // because it is not needed anymore (requires CLD lock to be active).
 void MetaspaceArena::deallocate(MetaBlock block) {
   // At this point a current chunk must exist since we only deallocate if we did allocate before.
+  NOT_LP64(assert(is_aligned(block.word_size(), Metaspace::min_allocation_word_size), "Bad block size");)
   assert(could_reuse_block(block), "Block " METABLOCKFORMAT " not usable by this arena. ", METABLOCKFORMATARGS(block));
   assert(current_chunk() != nullptr, "stray deallocation?");
 
