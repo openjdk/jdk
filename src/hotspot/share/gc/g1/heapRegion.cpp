@@ -105,7 +105,7 @@ void HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
+  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -122,7 +122,7 @@ void HeapRegion::hr_clear(bool clear_space) {
   set_free();
   reset_pre_dummy_top();
 
-  rem_set()->clear_locked();
+  rem_set()->clear();
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -205,7 +205,7 @@ void HeapRegion::clear_humongous() {
 }
 
 void HeapRegion::prepare_remset_for_scan() {
-  return _rem_set->reset_table_scanner();
+  _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -232,7 +232,8 @@ HeapRegion::HeapRegion(uint hrm_index,
   _young_index_in_cset(-1),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
-  _node_index(G1NUMA::UnknownNodeIndex)
+  _node_index(G1NUMA::UnknownNodeIndex),
+  _pinned_object_count(0)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -275,24 +276,15 @@ void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
 
 // Code roots support
 void HeapRegion::add_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root(nm);
-}
-
-void HeapRegion::add_code_root_locked(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_code_root_locked(nm);
+  rem_set()->add_code_root(nm);
 }
 
 void HeapRegion::remove_code_root(nmethod* nm) {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_code_root(nm);
+  rem_set()->remove_code_root(nm);
 }
 
 void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->code_roots_do(blk);
+  rem_set()->code_roots_do(blk);
 }
 
 class VerifyCodeRootOopClosure: public OopClosure {
@@ -432,6 +424,7 @@ void HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
+  st->print("|%3u", Atomic::load(&_pinned_object_count));
   st->print_cr("");
 }
 
@@ -735,9 +728,20 @@ void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, boo
 void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
   size_t range_size = pointer_delta(end, start);
 
-  // Fill the dead range with objects. G1 might need to create two objects if
-  // the range is larger than half a region, which is the max_fill_size().
-  CollectedHeap::fill_with_objects(start, range_size);
+  // We must be a bit careful with regions that contain pinned objects. While the
+  // ranges passed in here corresponding to the space between live objects, it is
+  // possible that there is a pinned object that is not any more referenced by
+  // Java code (only by native).
+  //
+  // In this case we must not zap contents of such an array but we can overwrite
+  // the header; since only pinned typearrays are allowed, this fits nicely with
+  // putting filler arrays into the dead range as the object header sizes match and
+  // no user data is overwritten.
+  //
+  // In particular String Deduplication might change the reference to the character
+  // array of the j.l.String after native code obtained a raw reference to it (via
+  // GetStringCritical()).
+  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
   HeapWord* current = start;
   do {
     // Update the BOT if the a threshold is crossed.

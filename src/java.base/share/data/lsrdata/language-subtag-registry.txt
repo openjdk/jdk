@@ -1,4 +1,4 @@
-File-Date: 2023-08-02
+File-Date: 2023-10-16
 %%
 Type: language
 Subtag: aa
@@ -44880,6 +44880,11 @@ Description: Cherokee
 Added: 2005-10-16
 %%
 Type: script
+Subtag: Chis
+Description: Chisoi
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Chrs
 Description: Chorasmian
 Added: 2019-09-11
@@ -44975,6 +44980,11 @@ Description: Ge'ez
 Added: 2005-10-16
 %%
 Type: script
+Subtag: Gara
+Description: Garay
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Geok
 Description: Khutsuri (Asomtavruli and Nuskhuri)
 Added: 2005-10-16
@@ -45018,6 +45028,11 @@ Type: script
 Subtag: Gujr
 Description: Gujarati
 Added: 2005-10-16
+%%
+Type: script
+Subtag: Gukh
+Description: Gurung Khema
+Added: 2023-10-16
 %%
 Type: script
 Subtag: Guru
@@ -45188,6 +45203,11 @@ Type: script
 Subtag: Kpel
 Description: Kpelle
 Added: 2010-04-10
+%%
+Type: script
+Subtag: Krai
+Description: Kirat Rai
+Added: 2023-10-16
 %%
 Type: script
 Subtag: Kthi
@@ -45437,6 +45457,11 @@ Description: Santali
 Added: 2006-07-21
 %%
 Type: script
+Subtag: Onao
+Description: Ol Onal
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Orkh
 Description: Old Turkic
 Description: Orkhon Runic
@@ -45616,6 +45641,11 @@ Description: Siddhamātṛkā
 Added: 2013-12-02
 %%
 Type: script
+Subtag: Sidt
+Description: Sidetic
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Sind
 Description: Khudawadi
 Description: Sindhi
@@ -45719,6 +45749,11 @@ Description: Tai Viet
 Added: 2007-12-05
 %%
 Type: script
+Subtag: Tayo
+Description: Tai Yo
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Telu
 Description: Telugu
 Added: 2005-10-16
@@ -45767,9 +45802,24 @@ Description: Tangsa
 Added: 2021-03-05
 %%
 Type: script
+Subtag: Todr
+Description: Todhri
+Added: 2023-10-16
+%%
+Type: script
+Subtag: Tols
+Description: Tolong Siki
+Added: 2023-10-16
+%%
+Type: script
 Subtag: Toto
 Description: Toto
 Added: 2020-05-12
+%%
+Type: script
+Subtag: Tutg
+Description: Tulu-Tigalari
+Added: 2023-10-16
 %%
 Type: script
 Subtag: Ugar

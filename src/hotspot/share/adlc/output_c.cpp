@@ -726,7 +726,6 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
   fprintf(fp_cpp, "#endif\n\n");
 #endif
-  fprintf(fp_cpp, "  assert(this, \"null pipeline info\");\n");
   fprintf(fp_cpp, "  assert(pred, \"null predecessor pipline info\");\n\n");
   fprintf(fp_cpp, "  if (pred->hasFixedLatency())\n    return (pred->fixedLatency());\n\n");
   fprintf(fp_cpp, "  // If this is not an operand, then assume a dependence with 0 latency\n");
@@ -3100,39 +3099,6 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
   }
 }
 
-//
-// Construct the method to copy _idx, inputs and operands to new node.
-static void define_fill_new_machnode(bool used, FILE *fp_cpp) {
-  fprintf(fp_cpp, "\n");
-  fprintf(fp_cpp, "// Copy _idx, inputs and operands to new node\n");
-  fprintf(fp_cpp, "void MachNode::fill_new_machnode(MachNode* node) const {\n");
-  if( !used ) {
-    fprintf(fp_cpp, "  // This architecture does not have cisc or short branch instructions\n");
-    fprintf(fp_cpp, "  ShouldNotCallThis();\n");
-    fprintf(fp_cpp, "}\n");
-  } else {
-    // New node must use same node index for access through allocator's tables
-    fprintf(fp_cpp, "  // New node must use same node index\n");
-    fprintf(fp_cpp, "  node->set_idx( _idx );\n");
-    // Copy machine-independent inputs
-    fprintf(fp_cpp, "  // Copy machine-independent inputs\n");
-    fprintf(fp_cpp, "  for( uint j = 0; j < req(); j++ ) {\n");
-    fprintf(fp_cpp, "    node->add_req(in(j));\n");
-    fprintf(fp_cpp, "  }\n");
-    // Copy machine operands to new MachNode
-    fprintf(fp_cpp, "  // Copy my operands, except for cisc position\n");
-    fprintf(fp_cpp, "  int nopnds = num_opnds();\n");
-    fprintf(fp_cpp, "  assert( node->num_opnds() == (uint)nopnds, \"Must have same number of operands\");\n");
-    fprintf(fp_cpp, "  MachOper **to = node->_opnds;\n");
-    fprintf(fp_cpp, "  for( int i = 0; i < nopnds; i++ ) {\n");
-    fprintf(fp_cpp, "    if( i != cisc_operand() ) \n");
-    fprintf(fp_cpp, "      to[i] = _opnds[i]->clone();\n");
-    fprintf(fp_cpp, "  }\n");
-    fprintf(fp_cpp, "}\n");
-  }
-  fprintf(fp_cpp, "\n");
-}
-
 //------------------------------defineClasses----------------------------------
 // Define members of MachNode and MachOper classes based on
 // operand and instruction lists
@@ -3228,7 +3194,6 @@ void ArchDesc::defineClasses(FILE *fp) {
     defineOut_RegMask(_CPP_MISC_file._fp, instr->_ident, reg_mask(*instr));
   }
 
-  bool used = false;
   // Output the definitions for expand rules & peephole rules
   _instructions.reset();
   for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
@@ -3247,14 +3212,11 @@ void ArchDesc::defineClasses(FILE *fp) {
       definePeephole(_CPP_PEEPHOLE_file._fp, instr);
 
     // Output code to convert to the cisc version, if applicable
-    used |= instr->define_cisc_version(*this, fp);
+    instr->define_cisc_version(*this, fp);
 
     // Output code to convert to the short branch version, if applicable
-    used |= instr->define_short_branch_methods(*this, fp);
+    instr->define_short_branch_methods(*this, fp);
   }
-
-  // Construct the method called by cisc_version() to copy inputs and operands.
-  define_fill_new_machnode(used, fp);
 
   // Output the definitions for labels
   _instructions.reset();
@@ -4072,7 +4034,7 @@ void InstructForm::declare_cisc_version(ArchDesc &AD, FILE *fp_hpp) {
 
 //---------------------------define_cisc_version-------------------------------
 // Build CISC version of this instruction
-bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
+void InstructForm::define_cisc_version(ArchDesc& AD, FILE* fp_cpp) {
   InstructForm *inst_cisc = this->cisc_spill_alternate();
   if( AD.can_cisc_spill() && (inst_cisc != nullptr) ) {
     const char   *name      = inst_cisc->_ident;
@@ -4118,9 +4080,7 @@ bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
     fprintf(fp_cpp, "  return node;\n");
     fprintf(fp_cpp, "}\n");
     fprintf(fp_cpp, "\n");
-    return true;
   }
-  return false;
 }
 
 //---------------------------declare_short_branch_methods----------------------
@@ -4133,7 +4093,7 @@ void InstructForm::declare_short_branch_methods(FILE *fp_hpp) {
 
 //---------------------------define_short_branch_methods-----------------------
 // Build definitions for short branch methods
-bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
+void InstructForm::define_short_branch_methods(ArchDesc& AD, FILE* fp_cpp) {
   if (has_short_branch_form()) {
     InstructForm *short_branch = short_branch_form();
     const char   *name         = short_branch->_ident;
@@ -4162,9 +4122,7 @@ bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
     fprintf(fp_cpp, "  return node;\n");
     fprintf(fp_cpp, "}\n");
     fprintf(fp_cpp,"\n");
-    return true;
   }
-  return false;
 }
 
 

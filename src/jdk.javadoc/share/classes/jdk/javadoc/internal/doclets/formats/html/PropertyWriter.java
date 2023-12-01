@@ -78,13 +78,13 @@ public class PropertyWriter extends AbstractMemberWriter {
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
                 Content propertyContent = getPropertyHeaderContent(currentProperty);
-
-                buildSignature(propertyContent);
-                buildDeprecationInfo(propertyContent);
-                buildPreviewInfo(propertyContent);
-                buildPropertyComments(propertyContent);
-                buildTagInfo(propertyContent);
-
+                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildPropertyComments(div);
+                buildTagInfo(div);
+                propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);

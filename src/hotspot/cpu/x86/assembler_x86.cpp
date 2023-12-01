@@ -1332,6 +1332,11 @@ void Assembler::addb(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::addb(Register dst, int imm8) {
+  (void) prefix_and_encode(dst->encoding(), true);
+  emit_arith_b(0x80, 0xC0, dst, imm8);
+}
+
 void Assembler::addw(Register dst, Register src) {
   emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
@@ -3412,6 +3417,27 @@ void Assembler::evmovdquq(XMMRegister dst, KRegister mask, Address src, bool mer
   emit_operand(dst, src, 0);
 }
 
+void Assembler::evmovntdquq(Address dst, XMMRegister src, int vector_len) {
+  // Unmasked instruction
+  evmovntdquq(dst, k0, src, /*merge*/ true, vector_len);
+}
+
+void Assembler::evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "");
+  assert(src != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  attributes.set_is_evex_instruction();
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0xE7);
+  emit_operand(src, dst, 0);
+}
+
 void Assembler::evmovdquq(Address dst, XMMRegister src, int vector_len) {
   // Unmasked instruction
   evmovdquq(dst, k0, src, /*merge*/ true, vector_len);
@@ -5317,6 +5343,18 @@ void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = simd_prefix_and_encode(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16(0x00, (0xC0 | encode));
+}
+
+void Assembler::vpshufb(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+         vector_len == AVX_256bit ? VM_Version::supports_avx2() :
+         vector_len == AVX_512bit ? VM_Version::supports_avx512bw() : 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  simd_prefix(dst, nds, src, VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x00);
+  emit_operand(dst, src, 0);
 }
 
 void Assembler::pshufb(XMMRegister dst, Address src) {
@@ -13431,17 +13469,6 @@ void Assembler::movsbq(Register dst, Address src) {
 void Assembler::movsbq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int24(0x0F, (unsigned char)0xBE, (0xC0 | encode));
-}
-
-void Assembler::movslq(Register dst, int32_t imm32) {
-  // dbx shows movslq(rcx, 3) as movq     $0x0000000049000000,(%rbx)
-  // and movslq(r8, 3); as movl     $0x0000000048000000,(%rbx)
-  // as a result we shouldn't use until tested at runtime...
-  ShouldNotReachHere();
-  InstructionMark im(this);
-  int encode = prefixq_and_encode(dst->encoding());
-  emit_int8(0xC7 | encode);
-  emit_int32(imm32);
 }
 
 void Assembler::movslq(Address dst, int32_t imm32) {

@@ -133,7 +133,9 @@ G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab
 // Calculates plab size for current number of gc worker threads.
 size_t G1EvacStats::desired_plab_size(uint no_of_gc_workers) const {
   if (!ResizePLAB) {
-      return _default_plab_size;
+    // There is a circular dependency between the heap and PLAB initialization,
+    // so _default_plab_size can have an unaligned value.
+    return align_object_size(_default_plab_size);
   }
   return align_object_size(clamp(_desired_net_plab_size / no_of_gc_workers, min_size(), max_size()));
 }

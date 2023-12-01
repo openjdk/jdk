@@ -2839,6 +2839,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     mov(result, expected);
     lse_cas(result, new_val, addr, size, acquire, release, /*not_pair*/ true);
     compare_eq(result, expected, size);
+#ifdef ASSERT
+    // Poison rscratch1 which is written on !UseLSE branch
+    mov(rscratch1, 0x1f1f1f1f1f1f1f1f);
+#endif
   } else {
     Label retry_load, done;
     prfm(Address(addr), PSTL1STRM);
@@ -6315,7 +6319,7 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - t1, t2: temporary registers, will be destroyed
 void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  assert_different_registers(obj, hdr, t1, t2, rscratch1);
 
   // Check if we would have space on lock-stack for the object.
   ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
@@ -6327,6 +6331,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, R
   // Clear lock-bits, into t2
   eor(t2, hdr, markWord::unlocked_value);
   // Try to swing header from unlocked to locked
+  // Clobbers rscratch1 when UseLSE is false
   cmpxchg(/*addr*/ obj, /*expected*/ hdr, /*new*/ t2, Assembler::xword,
           /*acquire*/ true, /*release*/ true, /*weak*/ false, t1);
   br(Assembler::NE, slow);
@@ -6347,7 +6352,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, R
 // - t1, t2: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  assert_different_registers(obj, hdr, t1, t2, rscratch1);
 
 #ifdef ASSERT
   {
@@ -6387,6 +6392,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1,
   orr(t1, hdr, markWord::unlocked_value);
 
   // Try to swing header from locked to unlocked
+  // Clobbers rscratch1 when UseLSE is false
   cmpxchg(obj, hdr, t1, Assembler::xword,
           /*acquire*/ true, /*release*/ true, /*weak*/ false, t2);
   br(Assembler::NE, slow);

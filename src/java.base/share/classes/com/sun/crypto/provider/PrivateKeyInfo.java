@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ final class PrivateKeyInfo {
     private static final BigInteger VERSION = BigInteger.ZERO;
 
     // the private-key algorithm
-    private AlgorithmId algid;
+    private final AlgorithmId algid;
 
     // the private-key value
-    private byte[] privkey;
+    private final byte[] privkey;
 
     /**
      * Constructs a PKCS#8 PrivateKeyInfo from its ASN.1 encoding.

@@ -187,10 +187,19 @@ class StubGenerator: public StubCodeGenerator {
                                     Register index, Register temp,
                                     bool use64byteVector, Label& L_entry, Label& L_exit);
 
+  void arraycopy_avx3_special_cases_256(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp, Label& L_exit);
+
   void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
                                              Register to, Register start_index, Register end_index,
                                              Register count, int shift, Register temp,
                                              bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
+                            Register temp3, Register temp4, Register count,
+                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                            XMMRegister xmm4, int shift);
 
   void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   int shift = Address::times_1, int offset = 0);
@@ -198,6 +207,9 @@ class StubGenerator: public StubCodeGenerator {
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
+                                XMMRegister xmm3, XMMRegister xmm4, int shift, int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
@@ -327,6 +339,10 @@ class StubGenerator: public StubCodeGenerator {
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
                       Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
+  // AVX2 AES Galois Counter Mode implementation
+  address generate_avx2_galoisCounterMode_AESCrypt();
+  void aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
+                   Register state, Register subkeyHtbl, Register counter);
 
  // Vector AES Counter implementation
   address generate_counterMode_VectorAESCrypt();
@@ -353,6 +369,17 @@ class StubGenerator: public StubCodeGenerator {
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
+  // AVX2 AES-GCM related functions
+  void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
+                           Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
+  void gfmul_avx2(XMMRegister GH, XMMRegister HK);
+  void generateHtbl_8_block_avx2(Register htbl);
+  void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
+                                     Register out, Register ct, Register pos, bool out_order, Register rounds,
+                                     XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                                     XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
+  void ghash_last_8_avx2(Register subkeyHtbl);
+
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
@@ -549,6 +576,9 @@ class StubGenerator: public StubCodeGenerator {
                                    address runtime_entry,
                                    Register arg1 = noreg,
                                    Register arg2 = noreg);
+
+  // shared exception handler for FFM upcall stubs
+  address generate_upcall_stub_exception_handler();
 
   void create_control_words();
 
