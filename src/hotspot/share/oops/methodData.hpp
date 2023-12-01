@@ -491,10 +491,11 @@ protected:
   enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
-      null_seen_flag              = DataLayout::first_flag + 0
+      null_seen_flag              = DataLayout::first_flag + 0,
+      exception_handler_entered_flag     = null_seen_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = null_seen_flag + 1
+    , exception_seen_flag         = exception_handler_entered_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -524,6 +525,10 @@ public:
   bool exception_seen() { return flag_at(exception_seen_flag); }
   void set_exception_seen() { set_flag_at(exception_seen_flag); }
 #endif
+
+  // true if a ex handler block at this bci was entered
+  bool exception_handler_entered() { return flag_at(exception_handler_entered_flag); }
+  void set_exception_handler_entered() { set_flag_at(exception_handler_entered_flag); }
 
   // Code generation support
   static u1 null_seen_byte_constant() {
@@ -2063,7 +2068,11 @@ private:
   enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
 
+  // data index of exception handler profiling data
+  int _exception_handler_data_di;
+
   // Beginning of the data entries
+  // See comment in ciMethodData::load_data
   intptr_t _data[1];
 
   // Helper for size computation
@@ -2076,6 +2085,22 @@ private:
   DataLayout* data_layout_at(int data_index) const {
     assert(data_index % sizeof(intptr_t) == 0, "unaligned");
     return (DataLayout*) (((address)_data) + data_index);
+  }
+
+  static int single_exception_handler_data_cell_count() {
+    return BitData::static_cell_count();
+  }
+
+  static int single_exception_handler_data_size() {
+    return DataLayout::compute_size_in_bytes(single_exception_handler_data_cell_count());
+  }
+
+  DataLayout* exception_handler_data_at(int exception_handler_index) const {
+    return data_layout_at(_exception_handler_data_di + (exception_handler_index * single_exception_handler_data_size()));
+  }
+
+  int num_exception_handler_data() const {
+    return exception_handlers_data_size() / single_exception_handler_data_size();
   }
 
   // Initialize an individual data segment.  Returns the size of
@@ -2142,6 +2167,8 @@ private:
 
   void clean_extra_data_helper(DataLayout* dp, int shift, bool reset = false);
   void verify_extra_data_clean(CleanExtraDataClosure* cl);
+
+  DataLayout* exception_handler_bci_to_data_helper(int bci);
 
 public:
   void clean_extra_data(CleanExtraDataClosure* cl);
@@ -2279,8 +2306,11 @@ public:
   }
 
   int parameters_size_in_bytes() const {
-    ParametersTypeData* param = parameters_type_data();
-    return param == nullptr ? 0 : param->size_in_bytes();
+    return pointer_delta_as_int((address) parameters_data_limit(), (address) parameters_data_base());
+  }
+
+  int exception_handlers_data_size() const {
+    return pointer_delta_as_int((address) exception_handler_data_limit(), (address) exception_handler_data_base());
   }
 
   // Accessors
@@ -2333,11 +2363,26 @@ public:
     return bci_to_extra_data(bci, nullptr, true);
   }
 
+  BitData* exception_handler_bci_to_data_or_null(int bci);
+  BitData exception_handler_bci_to_data(int bci);
+
   // Add a handful of extra data records, for trap tracking.
+  // Only valid after 'set_size' is called at the end of MethodData::initialize
   DataLayout* extra_data_base() const  { return limit_data_position(); }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
-  DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
-                                                              parameters_size_in_bytes()); }
+  // pointers to sections in extra data
+  DataLayout* args_data_limit() const  { return parameters_data_base(); }
+  DataLayout* parameters_data_base() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di) : parameters_data_limit();
+  }
+  DataLayout* parameters_data_limit() const {
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return exception_handler_data_base();
+  }
+  DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handler_data_di); }
+  DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
+
   int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
   static DataLayout* next_extra(DataLayout* dp);
 
@@ -2385,8 +2430,12 @@ public:
   }
 
   int parameters_type_data_di() const {
-    assert(_parameters_type_data_di != parameters_uninitialized && _parameters_type_data_di != no_parameters, "no args type data");
-    return _parameters_type_data_di;
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? _parameters_type_data_di : exception_handlers_data_di();
+  }
+
+  int exception_handlers_data_di() const {
+    return _exception_handler_data_di;
   }
 
   // Support for code generation
