@@ -68,6 +68,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Certificate cert;
         long certRef;  // SecCertificateRef for this key
+        boolean isReadOnly; // kSecTrustSettingsDomainSystem certificates
 
         // Each KeyStore.TrustedCertificateEntry has 2 attributes:
         // 1. "trustSettings" -> trustSettings.toString()
@@ -137,6 +138,14 @@ public final class KeychainStore extends KeyStoreSpi {
         }
     }
 
+    private void readOnlyCheck(String alias) throws KeyStoreException {
+        String lowerAlias = alias.toLowerCase();
+        if (entries.get(lowerAlias) instanceof TrustedCertEntry oldEntry) {
+            if (oldEntry.isReadOnly) {
+                throw new KeyStoreException("Trusted entry <" + alias + "> can not be modified");
+            }
+        }
+    }
 
     /**
      * Verify the Apple provider in the constructor.
@@ -402,6 +411,8 @@ public final class KeychainStore extends KeyStoreSpi {
 
         synchronized(entries) {
             try {
+                readOnlyCheck(alias);
+
                 KeyEntry entry = new KeyEntry();
                 entry.date = new Date();
 
@@ -434,6 +445,8 @@ public final class KeychainStore extends KeyStoreSpi {
 
                 entries.put(lowerAlias, entry);
                 addedEntries.put(lowerAlias, entry);
+            } catch (KeyStoreException kse) {
+                throw kse;
             } catch (Exception nsae) {
                 KeyStoreException ke = new KeyStoreException("Key protection algorithm not found: " + nsae);
                 ke.initCause(nsae);
@@ -472,6 +485,8 @@ public final class KeychainStore extends KeyStoreSpi {
         permissionCheck();
 
         synchronized(entries) {
+            readOnlyCheck(alias);
+
             // key must be encoded as EncryptedPrivateKeyInfo as defined in
             // PKCS#8
             KeyEntry entry = new KeyEntry();
@@ -523,6 +538,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
         String lowerAlias = alias.toLowerCase(Locale.ROOT);
         synchronized(entries) {
+            readOnlyCheck(alias);
             Object entry = entries.remove(lowerAlias);
             deletedEntries.put(lowerAlias, entry);
         }
@@ -793,7 +809,7 @@ public final class KeychainStore extends KeyStoreSpi {
      * null (end if trust_n)
      */
     private void createTrustedCertEntry(String alias, List<String> inputTrust,
-            long keychainItemRef, long creationDate, byte[] derStream) {
+            long keychainItemRef, long creationDate, boolean isReadOnly, byte[] derStream) {
         TrustedCertEntry tce = new TrustedCertEntry();
 
         try {
@@ -803,6 +819,7 @@ public final class KeychainStore extends KeyStoreSpi {
             input.close();
             tce.cert = cert;
             tce.certRef = keychainItemRef;
+            tce.isReadOnly = isReadOnly;
 
             // Check whether a certificate with same alias already exists and is the same
             // If yes, we can return here - the existing entry must have the same

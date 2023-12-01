@@ -421,7 +421,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     OSErr searchResult = noErr;
     SecTrustSettingsDomain domains[] = {kSecTrustSettingsDomainUser, kSecTrustSettingsDomainAdmin, kSecTrustSettingsDomainSystem};
     int numDomains = (int)sizeof(domains);
-
+    CFArrayRef currAnchors = NULL;
 
     jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
     if (jc_KeychainStore == NULL) {
@@ -429,7 +429,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     }
 
     jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
-            env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
+            env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJZ[B)V");
     if (jm_createTrustedCertEntry == NULL) {
         goto errOut;
     }
@@ -498,7 +498,7 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
+            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, JNI_FALSE, certData);
             if ((*env)->ExceptionCheck(env)) {
                 goto errOut;
             }
@@ -506,11 +506,10 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
     } while (searchResult == noErr);
 
     // Read Trust Anchors
-    CFArrayRef currAnchors;
     if(SecTrustCopyAnchorCertificates(&currAnchors) == errSecSuccess) {
-        CFIndex ncerts = CFArrayGetCount(currAnchors);
+        CFIndex i, nAnchors = CFArrayGetCount(currAnchors);
 
-        for (int i = 0; i < ncerts; i++) {
+        for (i = 0; i < nAnchors; i++) {
             SecCertificateRef certRef = (SecCertificateRef)CFArrayGetValueAtIndex(currAnchors, i);
             CSSM_DATA currCertificate;
             err = SecCertificateGetData(certRef, &currCertificate);
@@ -554,21 +553,21 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
-            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
+            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, JNI_TRUE, certData);
             if ((*env)->ExceptionCheck(env)) {
                 goto errOut;
             }
+            CFRetain(certRef);
         }
 
-    }
-
-    if (currAnchors != NULL) {
-        CFRelease(currAnchors);
     }
 
 errOut:
     if (keychainItemSearch != NULL) {
         CFRelease(keychainItemSearch);
+    }
+    if (currAnchors != NULL) {
+        CFRelease(currAnchors);
     }
 }
 
