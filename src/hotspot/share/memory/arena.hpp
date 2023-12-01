@@ -205,4 +205,8 @@ private:
 #define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)
 
+#ifdef ASSERT
+bool Arena_contains(const Arena* arena, const void* ptr);
+#endif // ASSERT
+
 #endif // SHARE_MEMORY_ARENA_HPP

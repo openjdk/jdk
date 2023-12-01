@@ -46,17 +46,20 @@ struct WithEmbeddedArray {
 class GrowableArrayTest : public ::testing::Test {
 protected:
   // friend -> private accessors
-  template <typename E>
-  static bool elements_on_C_heap(const GrowableArray<E>* array) {
-    return array->on_C_heap();
-  }
+  ///  template <typename E>
+  ///  static bool elements_on_C_heap(const GrowableArray<E>* array) {
+  ///    return array->on_C_heap();
+  ///  }
   template <typename E>
   static bool elements_on_resource_area(const GrowableArray<E>* array) {
     return array->on_resource_area();
   }
+
+  // TODO remove
   template <typename E>
   static bool elements_on_arena(const GrowableArray<E>* array) {
-    return array->on_arena();
+    return !array->on_resource_area();
+    //return array->on_arena();
   }
 
   template <typename ArrayClass>

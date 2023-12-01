@@ -27,10 +27,12 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 
 // A growable array.
 
@@ -58,7 +60,7 @@
 /*    ...                                                                */
 /* }                                                                     */
 /*                                                                       */
-/* If the GrowableArrays you are creating is C_Heap allocated then it    */
+/* If you are using a GrowableArraysCHeap (allocates on CHeap) then it   */
 /* should not hold handles since the handles could trivially try and     */
 /* outlive their HandleMark. In some situations you might need to do     */
 /* this and it would be legal but be very careful and see if you can do  */
@@ -66,9 +68,7 @@
 /*                                                                       */
 /*************************************************************************/
 
-// Non-template base class responsible for handling the length and max.
-
-
+// Non-template base class responsible for handling the length and capacity.
 class GrowableArrayBase : public AnyObj {
   friend class VMStructs;
 
@@ -386,6 +386,7 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E> {
 protected:
   GrowableArrayWithAllocator(E* data, int capacity) :
       GrowableArrayView<E>(data, capacity, 0) {
+    // TODO remove this!
     for (int i = 0; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
@@ -511,6 +512,7 @@ public:
   // Reduce capacity to length.
   void shrink_to_fit();
 
+  // TODO maybe move to CHeap
   void clear_and_deallocate();
 };
 
@@ -578,11 +580,6 @@ void GrowableArrayWithAllocator<E, Derived>::clear_and_deallocate() {
   this->shrink_to_fit();
 }
 
-class GrowableArrayResourceAllocator {
-public:
-  static void* allocate(int max, int element_size);
-};
-
 // Arena allocator
 class GrowableArrayArenaAllocator {
 public:
@@ -597,206 +594,128 @@ public:
 };
 
 #ifdef ASSERT
-
 // Checks resource allocation nesting
 class GrowableArrayNestingCheck {
   // resource area nesting at creation
   int _nesting;
+  bool _on_resource_area;
 
 public:
   GrowableArrayNestingCheck(bool on_resource_area);
 
-  void on_resource_area_alloc() const;
+  void on_allocate() const;
 };
-
 #endif // ASSERT
 
-// Encodes where the backing array is allocated
-// and performs necessary checks.
-class GrowableArrayMetadata {
-  uintptr_t _bits;
 
-  // resource area nesting at creation
-  debug_only(GrowableArrayNestingCheck _nesting_check;)
-
-  // Resource allocation
-  static uintptr_t bits() {
-    return 0;
-  }
-
-  // CHeap allocation
-  static uintptr_t bits(MEMFLAGS memflags) {
-    assert(memflags != mtNone, "Must provide a proper MEMFLAGS");
-    return (uintptr_t(memflags) << 1) | 1;
-  }
-
-  // Arena allocation
-  static uintptr_t bits(Arena* arena) {
-    assert((uintptr_t(arena) & 1) == 0, "Required for on_C_heap() to work");
-    return uintptr_t(arena);
-  }
-
-public:
-  // Resource allocation
-  GrowableArrayMetadata() :
-      _bits(bits())
-      debug_only(COMMA _nesting_check(true)) {
-  }
-
-  // Arena allocation
-  GrowableArrayMetadata(Arena* arena) :
-      _bits(bits(arena))
-      debug_only(COMMA _nesting_check(false)) {
-  }
-
-  // CHeap allocation
-  GrowableArrayMetadata(MEMFLAGS memflags) :
-      _bits(bits(memflags))
-      debug_only(COMMA _nesting_check(false)) {
-  }
-
-#ifdef ASSERT
-  GrowableArrayMetadata(const GrowableArrayMetadata& other) :
-      _bits(other._bits),
-      _nesting_check(other._nesting_check) {
-    assert(!on_C_heap(), "Copying of CHeap arrays not supported");
-    assert(!other.on_C_heap(), "Copying of CHeap arrays not supported");
-  }
-
-  GrowableArrayMetadata& operator=(const GrowableArrayMetadata& other) {
-    _bits = other._bits;
-    _nesting_check = other._nesting_check;
-    assert(!on_C_heap(), "Assignment of CHeap arrays not supported");
-    assert(!other.on_C_heap(), "Assignment of CHeap arrays not supported");
-    return *this;
-  }
-
-  void init_checks(const GrowableArrayBase* array) const;
-  void on_resource_area_alloc_check() const;
-#endif // ASSERT
-
-  bool on_C_heap() const        { return (_bits & 1) == 1; }
-  bool on_resource_area() const { return _bits == 0; }
-  bool on_arena() const         { return (_bits & 1) == 0 && _bits != 0; }
-
-  Arena* arena() const      { return (Arena*)_bits; }
-  MEMFLAGS memflags() const { return MEMFLAGS(_bits >> 1); }
-};
-
-// THE GrowableArray.
+// The GrowableArray internal data is allocated from either:
+//  - Resrouce area (default)
+//  - Arena
 //
-// Supports multiple allocation strategies:
-//  - Resource stack allocation: if no extra argument is provided
-//  - CHeap allocation: if memflags is provided
-//  - Arena allocation: if an arena is provided
+// Itself, it can be embedded, on stack, resource_arena or arena allocated.
 //
-// There are some drawbacks of using GrowableArray, that are removed in some
-// of the other implementations of GrowableArrayWithAllocator sub-classes:
-//
-// Memory overhead: The multiple allocation strategies uses extra metadata
-//  embedded in the instance.
+// For C-Heap allocation use GrowableArrayCHeap.
 //
 // Strict allocation locations: There are rules about where the GrowableArray
 //  instance is allocated, that depends on where the data array is allocated.
 //  See: init_checks.
+//
+// TODO talk about deallocation / deconstruction of elements
+// TODO talk about shallow-copy
 
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
-  friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
-  friend class GrowableArrayTest;
+  //friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
+  //friend class GrowableArrayTest;
 
-  static E* allocate(int max) {
-    return (E*)GrowableArrayResourceAllocator::allocate(max, sizeof(E));
-  }
+private:
+  Arena* _arena;
 
-  static E* allocate(int max, MEMFLAGS memflags) {
-    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), memflags);
-  }
-
-  static E* allocate(int max, Arena* arena) {
-    return (E*)GrowableArrayArenaAllocator::allocate(max, sizeof(E), arena);
-  }
-
-  GrowableArrayMetadata _metadata;
-
-  void init_checks() const { debug_only(_metadata.init_checks(this);) }
-
-  // Where are we going to allocate memory?
-  bool on_C_heap() const        { return _metadata.on_C_heap(); }
-  bool on_resource_area() const { return _metadata.on_resource_area(); }
-  bool on_arena() const         { return _metadata.on_arena(); }
-
-  E* allocate() {
-    if (on_resource_area()) {
-      debug_only(_metadata.on_resource_area_alloc_check());
-      return allocate(this->_capacity);
-    }
-
-    if (on_C_heap()) {
-      return allocate(this->_capacity, _metadata.memflags());
-    }
-
-    assert(on_arena(), "Sanity");
-    return allocate(this->_capacity, _metadata.arena());
-  }
-
-  void deallocate(E* mem) {
-    if (on_C_heap()) {
-      GrowableArrayCHeapAllocator::deallocate(mem);
-    }
-  }
+  // Check for insidious allocation bug: if a GrowableArray reallocates _data,
+  // this must be done under the same ResourceMark as the original.
+  // Otherwise, the _data array will be deallocated too early.
+  DEBUG_ONLY(GrowableArrayNestingCheck _nesting_check;)
 
 public:
-  GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
+  GrowableArray() :
+      GrowableArray(Thread::current()->resource_area()) {}
+
+  explicit GrowableArray(Arena* arena) :
+      GrowableArray(arena, 2 /* initial_capacity */) {}
 
   explicit GrowableArray(int initial_capacity) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity),
-          initial_capacity),
-      _metadata() {
-    init_checks();
-  }
+    GrowableArray(Thread::current()->resource_area(), initial_capacity) {}
 
-//  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
-//      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-//          allocate(initial_capacity, memflags),
-//          initial_capacity),
-//      _metadata(memflags) {
-//    init_checks();
-//  }
+  GrowableArray(Arena* arena, int initial_capacity) :
+      GrowableArrayWithAllocator<E, GrowableArray<E> >(
+          allocate(arena, initial_capacity),
+          initial_capacity),
+      _arena(arena)
+      DEBUG_ONLY(COMMA _nesting_check(on_resource_area()))
+  {
+    DEBUG_ONLY( init_checks(); )
+  }
 
   GrowableArray(int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity),
-          initial_capacity, initial_len, filler),
-      _metadata() {
-    init_checks();
-  }
-
-//  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
-//      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-//          allocate(initial_capacity, memflags),
-//          initial_capacity, initial_len, filler),
-//      _metadata(memflags) {
-//    init_checks();
-//  }
+      GrowableArray(Thread::current()->resource_area(), initial_capacity, initial_len, filler) {}
 
   GrowableArray(Arena* arena, int initial_capacity, int initial_len, const E& filler) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity, arena),
+          allocate(arena, initial_capacity),
           initial_capacity, initial_len, filler),
-      _metadata(arena) {
-    init_checks();
+      _arena(arena)
+      DEBUG_ONLY(COMMA _nesting_check(on_resource_area()))
+  {
+    DEBUG_ONLY( init_checks(); )
   }
 
-  ~GrowableArray() {
-    if (on_C_heap()) {
-      this->clear_and_deallocate();
+  ~GrowableArray() {}
+
+  bool on_resource_area() const {
+    return _arena == (Arena*)Thread::current()->resource_area();
+  };
+
+  E* allocate() {
+    DEBUG_ONLY(_nesting_check.on_allocate(); )
+    return allocate(_arena, this->_capacity);
+  }
+
+  void deallocate(E* mem) {
+    // We have arena allocation, so we just abandon the memory.
+  }
+
+private:
+  E* allocate(Arena* arena, int capacity) {
+    return (E*)GrowableArrayArenaAllocator::allocate(capacity, sizeof(E), arena);
+  }
+
+#ifdef ASSERT
+  void init_checks() const {
+    if (this->allocated_on_stack_or_embedded()) {
+      return;
+    } else if (this->allocated_on_res_area()) {
+      assert(on_resource_area(),
+             "The elements must be resource area allocated if the GrowableArray itself is");
+    } else if (this->allocated_on_arena()) {
+      assert(Arena_contains(_arena, this),
+             "if GrowableArray is arena allocated, then the elements must be from the same arena");
+    } else if (this->allocated_on_C_heap()) {
+      // We should not allocate GrowableArray on the C-Heap, while the internal
+      // memory is allocated on an Arena. Otherwise, the data pointer can outlive
+      // the arena scope.
+      assert(false, "GrowableArray cannot be C heap allocated");
+    } else {
+      assert(false, "GrowableArray has unhandled allocation state");
     }
   }
+#endif // ASSERT
 };
 
-// Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MEMFLAGS.
+// The GrowableArrayCHeap internal data is allocated from C-Heap, 
+// with compile-time decided MEMFLAGS.
+//
+// TODO verify that it is not arena allocated?
+// TODO talk about deallocation / deconstruction of elements
 template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
