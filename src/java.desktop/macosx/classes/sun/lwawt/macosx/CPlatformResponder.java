@@ -143,6 +143,7 @@ final class CPlatformResponder {
 
         int jeventType = KeyEvent.KEY_PRESSED;
         int jkeyCode = KeyEvent.VK_UNDEFINED;
+        int jextendedkeyCode = -1;
         int jkeyLocation = KeyEvent.KEY_LOCATION_UNKNOWN;
         boolean postsTyped = false;
         boolean spaceKeyTyped = false;
@@ -173,7 +174,7 @@ final class CPlatformResponder {
                     charsIgnoringModifiers.charAt(0) : KeyEvent.CHAR_UNDEFINED;
 
             int[] in = new int[] {testCharIgnoringModifiers, isDeadChar ? 1 : 0, modifierFlags, keyCode};
-            int[] out = new int[3]; // [jkeyCode, jkeyLocation, deadChar]
+            int[] out = new int[4]; // [jkeyCode, jkeyLocation, deadChar, extendedKeyCode]
 
             postsTyped = NSEvent.nsToJavaKeyInfo(in, out);
             if (!postsTyped) {
@@ -201,6 +202,7 @@ final class CPlatformResponder {
             }
 
             jkeyCode = out[0];
+            jextendedkeyCode = out[3];
             jkeyLocation = out[1];
             jeventType = isNpapiCallback ? NSEvent.npToJavaEventType(eventType) :
                                            NSEvent.nsToJavaEventType(eventType);
@@ -221,7 +223,7 @@ final class CPlatformResponder {
             lastKeyPressCode = jkeyCode;
         }
         eventNotifier.notifyKeyEvent(jeventType, when, jmodifiers,
-                jkeyCode, javaChar, jkeyLocation);
+                jkeyCode, javaChar, jkeyLocation, jextendedkeyCode);
 
         // Current browser may be sending input events, so don't
         // post the KEY_TYPED here.
@@ -241,12 +243,12 @@ final class CPlatformResponder {
             }
             eventNotifier.notifyKeyEvent(KeyEvent.KEY_TYPED, when, jmodifiers,
                     KeyEvent.VK_UNDEFINED, javaChar,
-                    KeyEvent.KEY_LOCATION_UNKNOWN);
+                    KeyEvent.KEY_LOCATION_UNKNOWN, jextendedkeyCode);
             //If events come from Firefox, released events should also be generated.
             if (needsKeyReleased) {
                 eventNotifier.notifyKeyEvent(KeyEvent.KEY_RELEASED, when, jmodifiers,
                         jkeyCode, javaChar,
-                        KeyEvent.KEY_LOCATION_UNKNOWN);
+                        KeyEvent.KEY_LOCATION_UNKNOWN, jextendedkeyCode);
             }
         }
     }
@@ -260,13 +262,13 @@ final class CPlatformResponder {
                 eventNotifier.notifyKeyEvent(KeyEvent.KEY_TYPED,
                         System.currentTimeMillis(),
                         0, KeyEvent.VK_UNDEFINED, c,
-                        KeyEvent.KEY_LOCATION_UNKNOWN);
+                        KeyEvent.KEY_LOCATION_UNKNOWN, -1);
                 index++;
             }
             eventNotifier.notifyKeyEvent(KeyEvent.KEY_RELEASED,
                     System.currentTimeMillis(),
                     0, lastKeyPressCode, c,
-                    KeyEvent.KEY_LOCATION_UNKNOWN);
+                    KeyEvent.KEY_LOCATION_UNKNOWN, -1);
         }
     }
 

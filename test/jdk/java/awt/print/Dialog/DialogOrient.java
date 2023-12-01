@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6594374
+  @key printer
   @summary  Confirm that the orientation is as specified.
   @run main/manual DialogOrient
 */
