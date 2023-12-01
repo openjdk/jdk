@@ -2600,7 +2600,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     Unimplemented();
   }
 
-  // Volatile load may be followed by Unsafe CAS.
+  // There might be a volatile load before this Unsafe CAS.
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ sync();
   } else {
@@ -2981,7 +2981,7 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     }
   }
 
-  // Volatile load may be followed by Unsafe OP.
+  // There might be a volatile load before this Unsafe OP.
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ sync();
   } else {

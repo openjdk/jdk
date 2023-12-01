@@ -53,7 +53,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler *masm) {
     __ encode_heap_oop(new_val, new_val);
   }
 
-  // Volatile load may be followed by Unsafe CAS.
+  // There might be a volatile load before this Unsafe CAS.
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ sync();
   } else {
