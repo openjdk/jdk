@@ -63,24 +63,20 @@ class JfrEvent {
  private:
   jlong _start_time;
   jlong _end_time;
-  bool _started;
   bool _untimed;
   bool _should_commit;
   bool _evaluated;
 
  protected:
   JfrEvent(EventStartTime timing=TIMED) : _start_time(0), _end_time(0),
-                                          _started(false), _untimed(timing == UNTIMED),
+                                          _untimed(timing == UNTIMED),
                                           _should_commit(false), _evaluated(false)
 #ifdef ASSERT
   , _verifier()
 #endif
   {
-    if (T::is_enabled()) {
-      _started = true;
-      if (TIMED == timing && !T::isInstant) {
-        set_starttime(JfrTicks::now());
-      }
+    if (!T::isInstant && !_untimed && is_enabled()) {
+      set_starttime(JfrTicks::now());
     }
   }
 
@@ -146,19 +142,16 @@ class JfrEvent {
     return T::hasStackTrace;
   }
 
-  bool is_started() const {
-    return _started;
+  bool is_started() {
+    return is_instant() || _start_time != 0 || _untimed;
   }
 
   bool should_commit() {
-    if (!_started) {
+    if (!is_enabled()) {
       return false;
     }
     if (_untimed) {
       return true;
-    }
-    if (_evaluated) {
-      return _should_commit;
     }
     _should_commit = evaluate();
     _evaluated = true;
@@ -167,11 +160,16 @@ class JfrEvent {
 
  private:
   bool should_write() {
-    return _started && (_evaluated ? _should_commit : evaluate());
+    if (_evaluated) {
+      return _should_commit;
+    }
+    if (!is_enabled()) {
+      return false;
+    }
+    return evaluate();
   }
 
   bool evaluate() {
-    assert(_started, "invariant");
     if (_start_time == 0) {
       set_starttime(JfrTicks::now());
     } else if (_end_time == 0) {
