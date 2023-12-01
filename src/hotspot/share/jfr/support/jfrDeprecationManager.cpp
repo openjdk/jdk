@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -39,10 +40,14 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
+
+// for strstr
+#include <string.h>
 
 static bool _enqueue_klasses = false;
 
@@ -128,6 +133,59 @@ static void create_edge(const Method* method, Method* sender, int bci, u1 frame_
   _list.add(edge);
 }
 
+static inline bool jfr_is_started_on_command_line() {
+  return JfrRecorder::is_started_on_commandline();
+}
+
+/*
+ * Two cases for JDK modules as outlined by JEP 200: The Modular JDK.
+ *
+ * The modular structure of the JDK implements the following principles:
+ * 1. Standard modules, whose specifications are governed by the JCP, have names starting with the string "java.".
+ * 2. All other modules are merely part of the JDK, and have names starting with the string "jdk.".
+ * */
+static inline bool is_jdk_module(const char* module_name) {
+  assert(module_name != nullptr, "invariant");
+  return strstr(module_name, "java.") == module_name || strstr(module_name, "jdk.") == module_name;
+}
+
+static inline bool is_unnamed_module(const ModuleEntry* module) {
+  return module == nullptr || !module->is_named();
+}
+
+static inline bool is_jdk_module(const ModuleEntry* module, JavaThread* jt) {
+  assert(module != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(!is_unnamed_module(module), "invariant");
+  ResourceMark rm(jt);
+  const Symbol* const module_symbol = module->name();
+  assert(module_symbol != nullptr, "invariant");
+  const char* const module_name = module_symbol->as_C_string();
+  return is_jdk_module(module_name);
+}
+
+static bool should_report(const Method* method, const Method* sender, JavaThread* jt) {
+  assert(method != nullptr, "invariant");
+  assert(method->deprecated(), "invariant");
+  assert(sender != nullptr, "invariant");
+  assert(!sender->is_native(), "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(jfr_is_started_on_command_line(), "invariant");
+  const ModuleEntry* const sender_module = sender->method_holder()->module();
+  if (is_unnamed_module(sender_module)) {
+    return true;
+  }
+  if (is_jdk_module(sender_module, jt)) {
+    return false;
+  }
+  const ModuleEntry* const deprecated_module = method->method_holder()->module();
+  if (is_unnamed_module(deprecated_module)) {
+    return true;
+  }
+  // Two named non-JDK modules Is this a cross-module invocation?
+  return sender_module != deprecated_module;
+}
+
 // This is the entry point for newly discovered edges in JfrResolution.cpp.
 void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   assert(method != nullptr, "invariant");
@@ -135,8 +193,17 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(sender != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
+  if (sender->is_native()) {
+    // Native methods have no mdo bit data so we cannot mark them.
+    // An additional reason is that a native method attempting resolution
+    // must be a JDK internal implementation, for example:
+    // java/lang/invoke/MethodHandleNatives.resolve()
+    return;
+  }
   if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
-    create_edge(method, sender, bci, frame_type, jt);
+    if (should_report(method, sender, jt)) {
+      create_edge(method, sender, bci, frame_type, jt);
+    }
   }
 }
 

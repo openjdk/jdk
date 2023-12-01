@@ -52,7 +52,7 @@ static inline MethodData* get_mdo(Method* method, JavaThread* jt) {
 
 static bool mark_mdo(Method* method, int bci, JavaThread* jt) {
   assert(method != nullptr, "invariant");
-  assert(!method->is_native(), "invariant");
+  assert(!method->is_native(), "native methods have no MDO bit data");
   assert(jt != nullptr, "invariant");
   MethodData* mdo = get_mdo(method, jt);
   assert(mdo != nullptr, "invariant");

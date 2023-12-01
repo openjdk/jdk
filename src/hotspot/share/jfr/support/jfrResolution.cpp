@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
-#include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -50,34 +49,6 @@ static inline bool jfr_is_started_on_command_line() {
   return JfrRecorder::is_started_on_commandline();
 }
 
-static inline bool is_unnamed_module(const ModuleEntry* module) {
-  return module == nullptr || !module->is_named();
-}
-
-static bool should_report_deprecated_invocation(const Method* method, const Method* sender) {
-  assert(method != nullptr, "invariant");
-  assert(method->deprecated(), "invariant");
-  assert(sender != nullptr, "invariant");
-  assert(jfr_is_started_on_command_line(), "invariant");
-  if (sender->is_native()) {
-    // Native methods have no mdos so we cannot mark them.
-    // An additional reason is that a native method attempting resolution
-    // must be a JDK internal implementation, for example:
-    // java/lang/invoke/MethodHandleNatives.resolve()
-    return false;
-  }
-  const ModuleEntry* const sender_module = sender->method_holder()->module();
-  if (is_unnamed_module(sender_module)) {
-    return true;
-  }
-  const ModuleEntry* const deprecated_module = method->method_holder()->module();
-  if (is_unnamed_module(deprecated_module)) {
-    return true;
-  }
-  // Two named modules. Is this a cross-module invocation?
-  return sender_module != deprecated_module;
-}
-
 static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_type, JavaThread* jt) {
   bci = stream.bci();
   frame_type = stream.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
@@ -93,7 +64,6 @@ static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_ty
 }
 
 static inline Method* ljf_sender_method(int& bci, u1& frame_type, JavaThread* jt) {
-  ResourceMark rm(jt);
   assert(jt != nullptr, "invariant");
   if (!jt->has_last_Java_frame()) {
     return nullptr;
@@ -113,9 +83,7 @@ static inline void on_runtime_deprecated(const Method* method, JavaThread* jt) {
     if (sender == nullptr) {
       return;
     }
-    if (should_report_deprecated_invocation(method, sender)) {
-      JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
-    }
+    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
   }
 }
 
@@ -130,9 +98,7 @@ void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* j
     u1 frame_type;
     Method* const sender = frame_context(stream, bci, frame_type, jt);
     assert(sender != nullptr, "invariant");
-    if (should_report_deprecated_invocation(method, sender)) {
-      JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
-    }
+    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
   }
 }
 
@@ -212,9 +178,7 @@ static inline void on_compiler_resolve_deprecated(const ciMethod* target, int bc
     const Method* const method = target->get_Method();
     assert(method != nullptr, "Invariant");
     assert(method->deprecated(), "invariant");
-    if (should_report_deprecated_invocation(method, sender)) {
-      JfrDeprecationManager::on_link(method, sender, bci, JfrStackFrame::FRAME_JIT, JavaThread::current());
-    }
+    JfrDeprecationManager::on_link(method, sender, bci, JfrStackFrame::FRAME_JIT, JavaThread::current());
   }
 }
 
