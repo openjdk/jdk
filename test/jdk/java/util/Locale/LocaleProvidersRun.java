@@ -28,6 +28,7 @@
  *      8150432 8215913 8220227 8228465 8232871 8232860 8236495 8245241
  *      8246721 8248695 8257964 8261919
  * @summary tests for "java.locale.providers" system property
+ * @requires vm.flagless
  * @library /test/lib
  * @build LocaleProviders
  *        providersrc.spi.src.tznp
@@ -179,8 +180,8 @@ public class LocaleProvidersRun {
     private static void testRun(String prefList, String methodName,
             String param1, String param2, String param3) throws Throwable {
 
-        // Build process (with VM flags)
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+        // Build process (without VM flags)
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASS_PATH,
                 "-Djava.util.logging.config.class=LocaleProviders$LogConfig",
