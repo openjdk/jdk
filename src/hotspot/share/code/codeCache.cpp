@@ -1800,12 +1800,6 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-CodeCache::DefaultPerfMapFile::DefaultPerfMapFile() {
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
-  // It is used as the default file name.
-  jio_snprintf(_name, sizeof(_name), "/tmp/perf-%d.map", os::current_process_id());
-}
-
 void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
@@ -1826,6 +1820,14 @@ void CodeCache::write_perf_map(const char* filename) {
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
                 method_name);
   }
+}
+
+void CodeCache::write_default_perf_map() {
+  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // It is used as the default file name.
+  char fname[32];
+  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+  write_perf_map(fname);
 }
 #endif // LINUX
 
