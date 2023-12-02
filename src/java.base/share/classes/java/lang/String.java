@@ -2177,10 +2177,14 @@ public final class String
         if (len <= 0) {
            return true;
         }
+        byte coder = coder();
+        byte otherCoder = other.coder();
         byte[] tv = value;
         byte[] ov = other.value;
-        byte coder = coder();
-        if (coder == other.coder()) {
+        if (coder == otherCoder) {
+            if (ooffset == 0 && toffset == 0 && len == (tv.length >> coder) && ov.length == tv.length) {
+                return StringLatin1.equals(tv, ov);
+            }
             if (coder == UTF16) {
                 toffset <<= UTF16;
                 ooffset <<= UTF16;
