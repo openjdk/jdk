@@ -1232,6 +1232,9 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   bool mismatched_ms = from_ms->get_con() && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
+  if (mismatched_ms BIG_ENDIAN_ONLY(&& true)) {
+    return false;
+  }
   // If there is no consistency between array and vector element types, it must be special byte array case
   if (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, mismatched_ms)) {
     if (C->print_intrinsics()) {
