@@ -97,8 +97,8 @@ int CDSConfig::num_archives(const char* archive_path) {
 }
 
 void CDSConfig::extract_shared_archive_paths(const char* archive_path,
-                                         char** base_archive_path,
-                                         char** top_archive_path) {
+                                             char** base_archive_path,
+                                             char** top_archive_path) {
   char* begin_ptr = (char*)archive_path;
   char* end_ptr = strchr((char*)archive_path, os::path_separator()[0]);
   if (end_ptr == nullptr || end_ptr == begin_ptr) {
