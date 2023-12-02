@@ -26,15 +26,11 @@ package jdk.jfr.api.consumer;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
+import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
-import jdk.jfr.consumer.RecordedClassLoader;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.Event;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
@@ -46,47 +42,47 @@ import jdk.test.lib.jfr.TestClassLoader;
  */
 public class TestRecordedClass {
 
-    static class TestEvent extends Event {
-    	Class<?> typeA;
-    	Class<?> typeB;
-    }
-	
-    private static class TypeA {
-    }
-    
-    public final static class TypeB {
-    }
+	static class TestEvent extends Event {
+		Class<?> typeA;
+		Class<?> typeB;
+	}
 
-    public static void main(String[] args) throws Exception {
-        try (Recording recording = new Recording()) {
-        	recording.start();
-        	TestEvent event = new TestEvent();
-        	event.typeA = TypeA.class;
-        	event.typeB = TypeB.class;
-        	event.commit();
-            recording.stop();
+	private static class TypeA {
+	}
 
-            List<RecordedEvent> events = Events.fromRecording(recording);
-            Events.hasEvents(events);
-            for (RecordedEvent recordedEvent : events) {
-            	RecordedClass typeA = recordedEvent.getClass("typeA");
-            	RecordedClass typeB = recordedEvent.getClass("typeB");
-            	System.out.println(typeA);
-            	// Disabled until fixed. See JDK-8321220
-            	// assertModifiers(typeA, TypeA.class);
-            	// assertModifiers(typeB, TypeB.class);
-            	assertName(typeA, TypeA.class);
-            	assertName(typeB, TypeB.class);
-               	assertClassLoader(typeA, TypeA.class.getClassLoader());
-               	assertClassLoader(typeB, TypeB.class.getClassLoader());
-               	assertId(typeA);
-               	assertId(typeB);
-               	if (typeA.getId() == typeB.getId()) {
-               		throw new Exception("Same ID for different classes");
-               	}
-            }
-        }
-    }
+	public final static class TypeB {
+	}
+
+	public static void main(String[] args) throws Exception {
+		try (Recording recording = new Recording()) {
+			recording.start();
+			TestEvent event = new TestEvent();
+			event.typeA = TypeA.class;
+			event.typeB = TypeB.class;
+			event.commit();
+			recording.stop();
+
+			List<RecordedEvent> events = Events.fromRecording(recording);
+			Events.hasEvents(events);
+			for (RecordedEvent recordedEvent : events) {
+				RecordedClass typeA = recordedEvent.getClass("typeA");
+				RecordedClass typeB = recordedEvent.getClass("typeB");
+				System.out.println(typeA);
+				// Disabled until fixed. See JDK-8321220
+				// assertModifiers(typeA, TypeA.class);
+				// assertModifiers(typeB, TypeB.class);
+				assertName(typeA, TypeA.class);
+				assertName(typeB, TypeB.class);
+				assertClassLoader(typeA, TypeA.class.getClassLoader());
+				assertClassLoader(typeB, TypeB.class.getClassLoader());
+				assertId(typeA);
+				assertId(typeB);
+				if (typeA.getId() == typeB.getId()) {
+					throw new Exception("Same ID for different classes");
+				}
+			}
+		}
+	}
 
 	private static void assertId(RecordedClass recordedClass) throws Exception {
 		long id = recordedClass.getId();
@@ -110,7 +106,7 @@ public class TestRecordedClass {
 		}
 	}
 
-	private static void assertModifiers(RecordedClass recordedClass, Class<?> clazz) throws Exception {
+	public static void assertModifiers(RecordedClass recordedClass, Class<?> clazz) throws Exception {
 		int modifiers = clazz.getModifiers();
 		if (modifiers != recordedClass.getModifiers()) {
 			String expected = Modifier.toString(modifiers);
