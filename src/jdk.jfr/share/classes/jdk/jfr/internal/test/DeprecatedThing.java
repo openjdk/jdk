@@ -63,7 +63,7 @@ public class DeprecatedThing {
     public static void deprecatedForRemovalFast() {
         staticCounter++;
     }
-    
+
     @Deprecated
     public static void deprecated1() {
         staticCounter++;
