@@ -62,10 +62,10 @@ import java.util.Set;
  * they can be written by a file manager and subsequently used by
  * a class loader.
  *
- * <p><b>This is NOT part of any supported API.
+ * <p><strong>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ * or deletion without notice.</strong></p>
  */
 final class MemoryContext {
     private final PrintWriter out;

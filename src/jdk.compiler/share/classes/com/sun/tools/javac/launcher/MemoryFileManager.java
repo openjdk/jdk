@@ -44,10 +44,10 @@ import java.util.Map;
  * {@link StandardLocation#CLASS_OUTPUT} will be written to an in-memory cache.
  * All other file manager operations will be delegated to a specified file manager.
  *
- * <p><b>This is NOT part of any supported API.
+ * <p><strong>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ * or deletion without notice.</strong></p>
  */
 final class MemoryFileManager extends ForwardingJavaFileManager<JavaFileManager> {
     private final Map<String, byte[]> map;

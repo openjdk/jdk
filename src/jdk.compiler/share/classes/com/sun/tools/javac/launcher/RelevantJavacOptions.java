@@ -35,10 +35,10 @@ import java.util.List;
 /**
  * Represents runtime arguments that are relevant to {@code javac}.
  *
- * <p><b>This is NOT part of any supported API.
+ * <p><strong>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
  * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ * or deletion without notice.</strong></p>
  */
 record RelevantJavacOptions(List<String> forProgramCompilation,
                             List<String> forSubsequentCompilations) {
