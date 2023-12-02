@@ -750,9 +750,4 @@ public interface LineReader {
     void setAutosuggestion(SuggestionType type);
 
     SuggestionType getAutosuggestion();
-
-    // JDK specific modification
-    default void zeroOut() {
-        getBuffer().zeroOut();
-    }
 }

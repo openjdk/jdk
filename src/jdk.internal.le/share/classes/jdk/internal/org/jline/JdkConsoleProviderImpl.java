@@ -114,7 +114,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
             } catch (EndOfFileException eofe) {
                 return null;
             } finally {
-                jline.zeroOut();
+                jline.getBuffer().zeroOut();
             }
         }
 
