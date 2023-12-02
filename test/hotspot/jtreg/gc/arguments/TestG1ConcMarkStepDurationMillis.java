@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.arguments;
 
 /*
  * @test TestG1ConcMarkStepDurationMillis
- * @requires vm.gc.G1
+ * @requires vm.gc.G1 & vm.opt.G1ConcMarkStepDurationMillis == null
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
  * @library /test/lib
  * @library /
@@ -78,7 +78,7 @@ public class TestG1ConcMarkStepDurationMillis {
 
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:G1ConcMarkStepDurationMillis="+expectedValue, "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(vmOpts);
+    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(vmOpts);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     output.shouldHaveExitValue(expectedResult == PASS ? 0 : 1);

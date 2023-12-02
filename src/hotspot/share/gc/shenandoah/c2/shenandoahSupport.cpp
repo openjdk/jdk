@@ -63,6 +63,7 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
       C->clear_major_progress();
 
       C->process_for_post_loop_opts_igvn(igvn);
+      if (C->failing()) return false;
     }
     C->set_post_loop_opts_phase(); // now for real!
   }
@@ -1391,11 +1392,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* result_mem = nullptr;
 
     Node* addr;
-    if (ShenandoahSelfFixing) {
+    {
       VectorSet visited;
       addr = get_load_addr(phase, visited, lrb);
-    } else {
-      addr = phase->igvn().zerocon(T_OBJECT);
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ public class MonitorUsedDeflationThresholdTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             // Without args we invoke the test in a java sub-process:
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 // Test doesn't need much Java heap:
                 "-Xmx100M",
                 // AvgMonitorsPerThreadEstimate == 1 means we'll start with

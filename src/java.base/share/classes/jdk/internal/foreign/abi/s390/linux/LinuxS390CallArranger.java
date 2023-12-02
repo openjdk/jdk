@@ -37,19 +37,15 @@ import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.s390.linux.TypeClass.*;
 import static jdk.internal.foreign.abi.s390.S390Architecture.*;
 import static jdk.internal.foreign.abi.s390.S390Architecture.Regs.*;
 
@@ -86,8 +82,8 @@ public class LinuxS390CallArranger {
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CLinux, forUpcall, options);
 
-        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
-        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
+        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, options.allowsHeapAccess());
+        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, false) : new BoxBindingCalculator(false);
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
@@ -203,8 +199,11 @@ public class LinuxS390CallArranger {
 
     // Compute recipe for transferring arguments / return values to C from Java.
     static class UnboxBindingCalculator extends BindingCalculator {
-        UnboxBindingCalculator(boolean forArguments) {
+            private final boolean useAddressPairs;
+
+            UnboxBindingCalculator(boolean forArguments, boolean useAddressPairs) {
             super(forArguments);
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -235,8 +234,16 @@ public class LinuxS390CallArranger {
                 }
                 case POINTER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
-                    bindings.unboxAddress()
-                            .vmStore(storage, long.class);
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
                 }
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.

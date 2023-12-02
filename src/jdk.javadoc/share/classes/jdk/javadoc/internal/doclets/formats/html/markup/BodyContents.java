@@ -43,20 +43,20 @@ import java.util.Objects;
 public class BodyContents extends Content {
 
     private final List<Content> mainContents = new ArrayList<>();
-    private HtmlTree header = null;
-    private HtmlTree footer = null;
+    private Content header = null;
+    private Content footer = null;
 
     public BodyContents addMainContent(Content content) {
         mainContents.add(content);
         return this;
     }
 
-    public BodyContents setHeader(HtmlTree header) {
+    public BodyContents setHeader(Content header) {
         this.header = Objects.requireNonNull(header);
         return this;
     }
 
-    public BodyContents setFooter(HtmlTree footer) {
+    public BodyContents setFooter(Content footer) {
         this.footer = footer;
         return this;
     }
@@ -87,14 +87,9 @@ public class BodyContents extends Content {
         if (header == null)
             throw new NullPointerException();
 
-        HtmlTree flexHeader = header.addStyle(HtmlStyle.flexHeader);
-
-        var flexContent = HtmlTree.DIV(HtmlStyle.flexContent)
+        return new ContentBuilder()
+                .add(header)
                 .add(HtmlTree.MAIN().add(mainContents))
                 .add(footer == null ? Text.EMPTY : footer);
-
-        return HtmlTree.DIV(HtmlStyle.flexBox)
-                .add(flexHeader)
-                .add(flexContent);
     }
 }

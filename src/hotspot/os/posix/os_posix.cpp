@@ -27,20 +27,20 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
-#include "runtime/globals_extension.hpp"
-#include "runtime/osThread.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
@@ -51,7 +51,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 #ifdef AIX
@@ -156,13 +156,10 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
       stack[frame_idx ++] = fr.pc();
     }
     if (fr.fp() == nullptr || fr.cb() != nullptr ||
-        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) break;
-
-    if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
-      fr = os::get_sender_for_C_frame(&fr);
-    } else {
+        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) {
       break;
     }
+    fr = os::get_sender_for_C_frame(&fr);
   }
   num_of_frames = frame_idx;
   for (; frame_idx < frames; frame_idx ++) {
@@ -346,9 +343,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 }
 
 static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -728,10 +726,7 @@ void os::dll_unload(void *lib) {
   }
 #endif  // LINUX
 
-#if INCLUDE_JFR
-  EventNativeLibraryUnload event;
-  event.set_name(l_path);
-#endif
+  JFR_ONLY(NativeLibraryUnloadEvent unload_event(l_path);)
 
   if (l_path == nullptr) {
     l_path = "<not available>";
@@ -742,11 +737,7 @@ void os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_result(true);)
   } else {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -757,11 +748,7 @@ void os::dll_unload(void *lib) {
                             l_path, p2i(lib), error_report);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_error_msg(error_report);)
   }
   // Update the dll cache
   AIX_ONLY(LoadedLibraries::reload());

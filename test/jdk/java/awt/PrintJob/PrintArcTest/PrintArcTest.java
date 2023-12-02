@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4105609
  * @summary Test printing of drawArc preceded by drawString
- * @author robi.khan
  */
 
 import java.awt.*;

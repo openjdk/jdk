@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class TestShrinkAuxiliaryData {
     }
 
     private void performTest(List<String> opts) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(opts);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(opts);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());

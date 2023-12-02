@@ -319,6 +319,10 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         /* Pixbuf */
         fp_gdk_pixbuf_new = dl_symbol("gdk_pixbuf_new");
+        fp_gdk_pixbuf_new_from_data = dl_symbol("gdk_pixbuf_new_from_data");
+        fp_gdk_pixbuf_scale_simple = dl_symbol("gdk_pixbuf_scale_simple");
+        fp_gdk_pixbuf_copy_area = dl_symbol("gdk_pixbuf_copy_area");
+
         fp_gdk_pixbuf_new_from_file =
                 dl_symbol("gdk_pixbuf_new_from_file");
         fp_gdk_pixbuf_get_from_drawable =
@@ -1252,7 +1256,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_NOTEBOOK_TYPE]))
             {
                 gtk3_widgets[_GTK_NOTEBOOK_TYPE] =
-                    (*fp_gtk_notebook_new)(NULL);
+                    (*fp_gtk_notebook_new)();
             }
             result = gtk3_widgets[_GTK_NOTEBOOK_TYPE];
             break;
@@ -1260,7 +1264,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE]))
             {
                 gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE] =
-                    (*fp_gtk_toggle_button_new)(NULL);
+                    (*fp_gtk_toggle_button_new)();
             }
             result = gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE];
             break;
@@ -1269,7 +1273,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOOLBAR_TYPE]))
             {
                 gtk3_widgets[_GTK_TOOLBAR_TYPE] =
-                    (*fp_gtk_toolbar_new)(NULL);
+                    (*fp_gtk_toolbar_new)();
             }
             result = gtk3_widgets[_GTK_TOOLBAR_TYPE];
             break;
@@ -3123,4 +3127,10 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_main_context_iteration = fp_g_main_context_iteration;
     gtk->g_error_free = fp_g_error_free;
     gtk->g_unix_fd_list_get = fp_g_unix_fd_list_get;
+
+    gtk->gdk_pixbuf_new = fp_gdk_pixbuf_new;
+    gtk->gdk_pixbuf_new_from_data = fp_gdk_pixbuf_new_from_data;
+    gtk->gdk_pixbuf_scale_simple = fp_gdk_pixbuf_scale_simple;
+    gtk->gdk_pixbuf_get_pixels = fp_gdk_pixbuf_get_pixels;
+    gtk->gdk_pixbuf_copy_area = fp_gdk_pixbuf_copy_area;
 }

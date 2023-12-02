@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -500,6 +501,10 @@ static Monitor* create_init_monitor(const char* name) {
   return new Monitor(Mutex::safepoint, name);
 }
 
+InstanceKlass::InstanceKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
+
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, ReferenceType reference_type) :
   Klass(kind),
   _nest_members(nullptr),
@@ -702,7 +707,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   SystemDictionaryShared::handle_class_unloading(this);
 
 #if INCLUDE_CDS_JAVA_HEAP
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     HeapShared::remove_scratch_objects(this);
   }
 #endif
@@ -821,8 +826,8 @@ bool InstanceKlass::link_class_or_fail(TRAPS) {
 }
 
 bool InstanceKlass::link_class_impl(TRAPS) {
-  if (DumpSharedSpaces && SystemDictionaryShared::has_class_failed_verification(this)) {
-    // This is for CDS dumping phase only -- we use the in_error_state to indicate that
+  if (CDSConfig::is_dumping_static_archive() && SystemDictionaryShared::has_class_failed_verification(this)) {
+    // This is for CDS static dump only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
     // a convenient way to stop repeat attempts to verify the same (bad) class.
     //
@@ -1874,7 +1879,7 @@ NOINLINE int linear_search(const Array<Method*>* methods, const Symbol* name) {
 
 inline int InstanceKlass::quick_search(const Array<Method*>* methods, const Symbol* name) {
   if (_disable_method_binary_search) {
-    assert(DynamicDumpSharedSpaces, "must be");
+    assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
     // At the final stage of dynamic dumping, the methods array may not be sorted
     // by ascending addresses of their names, so we can't use binary search anymore.
     // However, methods with the same name are still laid out consecutively inside the
@@ -2502,10 +2507,11 @@ void InstanceKlass::clean_implementors_list() {
     assert (ClassUnloading, "only called for ClassUnloading");
     for (;;) {
       // Use load_acquire due to competing with inserts
-      InstanceKlass* impl = Atomic::load_acquire(adr_implementor());
+      InstanceKlass* volatile* iklass = adr_implementor();
+      assert(iklass != nullptr, "Klass must not be null");
+      InstanceKlass* impl = Atomic::load_acquire(iklass);
       if (impl != nullptr && !impl->is_loader_alive()) {
         // null this field, might be an unloaded instance klass or null
-        InstanceKlass* volatile* iklass = adr_implementor();
         if (Atomic::cmpxchg(iklass, impl, (InstanceKlass*)nullptr) == impl) {
           // Successfully unlinking implementor.
           if (log_is_enabled(Trace, class, unload)) {
@@ -2689,21 +2695,22 @@ void InstanceKlass::remove_java_mirror() {
 }
 
 void InstanceKlass::init_shared_package_entry() {
+  assert(CDSConfig::is_dumping_archive(), "must be");
 #if !INCLUDE_CDS_JAVA_HEAP
   _package_entry = nullptr;
 #else
-  if (!MetaspaceShared::use_full_module_graph()) {
-    _package_entry = nullptr;
-  } else if (DynamicDumpSharedSpaces) {
-    if (!MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
-      _package_entry = nullptr;
-    }
-  } else {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     if (is_shared_unregistered_class()) {
       _package_entry = nullptr;
     } else {
       _package_entry = PackageEntry::get_archived_entry(_package_entry);
     }
+  } else if (CDSConfig::is_dumping_dynamic_archive() &&
+             CDSConfig::is_loading_full_module_graph() &&
+             MetaspaceShared::is_in_shared_metaspace(_package_entry)) {
+    // _package_entry is an archived package in the base archive. Leave it as is.
+  } else {
+    _package_entry = nullptr;
   }
   ArchivePtrMarker::mark_pointer((address**)&_package_entry);
 #endif
@@ -3025,7 +3032,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, PackageEntry* pkg_
   }
 
   if (is_shared() && _package_entry != nullptr) {
-    if (MetaspaceShared::use_full_module_graph() && _package_entry == pkg_entry) {
+    if (CDSConfig::is_loading_full_module_graph() && _package_entry == pkg_entry) {
       // we can use the saved package
       assert(MetaspaceShared::is_in_shared_metaspace(_package_entry), "must be");
       return;
@@ -4087,7 +4094,7 @@ void InstanceKlass::verify_on(outputStream* st) {
     Array<int>* method_ordering = this->method_ordering();
     int length = method_ordering->length();
     if (JvmtiExport::can_maintain_original_method_order() ||
-        ((UseSharedSpaces || Arguments::is_dumping_archive()) && length != 0)) {
+        ((UseSharedSpaces || CDSConfig::is_dumping_archive()) && length != 0)) {
       guarantee(length == methods()->length(), "invalid method ordering length");
       jlong sum = 0;
       for (int j = 0; j < length; j++) {
@@ -4218,6 +4225,23 @@ bool InstanceKlass::should_clean_previous_versions_and_reset() {
   return ret;
 }
 
+// This nulls out jmethodIDs for all methods in 'klass'
+// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
+// during class unloading.
+// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
+void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+  Array<Method*>* method_refs = klass->methods();
+  for (int k = 0; k < method_refs->length(); k++) {
+    Method* method = method_refs->at(k);
+    if (method != nullptr && method->is_obsolete()) {
+      method->clear_jmethod_id();
+    }
+  }
+}
+
 // Purge previous versions before adding new previous versions of the class and
 // during class unloading.
 void InstanceKlass::purge_previous_version_list() {
@@ -4261,6 +4285,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
+      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(nullptr);   // point next to null
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't

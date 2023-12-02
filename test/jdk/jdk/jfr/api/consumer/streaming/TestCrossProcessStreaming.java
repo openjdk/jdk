@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class TestCrossProcessStreaming {
 
         static Process start() throws Exception {
             String[] args = {"-XX:StartFlightRecording", EventProducer.class.getName()};
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             return ProcessTools.startProcess("Event-Producer", pb,
                                              line -> line.contains(MAIN_STARTED),
                                              0, TimeUnit.SECONDS);

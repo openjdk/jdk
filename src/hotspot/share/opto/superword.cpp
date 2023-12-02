@@ -1261,50 +1261,24 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 //------------------------------isomorphic---------------------------
 // Are s1 and s2 similar?
 bool SuperWord::isomorphic(Node* s1, Node* s2) {
-  if (s1->Opcode() != s2->Opcode()) return false;
-  if (s1->req() != s2->req()) return false;
-  if (!same_velt_type(s1, s2)) return false;
-  if (s1->is_Bool() && s1->as_Bool()->_test._test != s2->as_Bool()->_test._test) return false;
+  if (s1->Opcode() != s2->Opcode() ||
+      s1->req() != s2->req() ||
+      !same_velt_type(s1, s2) ||
+      (s1->is_Bool() && s1->as_Bool()->_test._test != s2->as_Bool()->_test._test)) {
+    return false;
+  }
+
   Node* s1_ctrl = s1->in(0);
   Node* s2_ctrl = s2->in(0);
   // If the control nodes are equivalent, no further checks are required to test for isomorphism.
   if (s1_ctrl == s2_ctrl) {
     return true;
   } else {
-    bool s1_ctrl_inv = ((s1_ctrl == nullptr) ? true : lpt()->is_invariant(s1_ctrl));
-    bool s2_ctrl_inv = ((s2_ctrl == nullptr) ? true : lpt()->is_invariant(s2_ctrl));
     // If the control nodes are not invariant for the loop, fail isomorphism test.
-    if (!s1_ctrl_inv || !s2_ctrl_inv) {
-      return false;
-    }
-    if(s1_ctrl != nullptr && s2_ctrl != nullptr) {
-      if (s1_ctrl->is_Proj()) {
-        s1_ctrl = s1_ctrl->in(0);
-        assert(lpt()->is_invariant(s1_ctrl), "must be invariant");
-      }
-      if (s2_ctrl->is_Proj()) {
-        s2_ctrl = s2_ctrl->in(0);
-        assert(lpt()->is_invariant(s2_ctrl), "must be invariant");
-      }
-      if (!s1_ctrl->is_RangeCheck() || !s2_ctrl->is_RangeCheck()) {
-        return false;
-      }
-    }
-    // Control nodes are invariant. However, we have no way of checking whether they resolve
-    // in an equivalent manner. But, we know that invariant range checks are guaranteed to
-    // throw before the loop (if they would have thrown). Thus, the loop would not have been reached.
-    // Therefore, if the control nodes for both are range checks, we accept them to be isomorphic.
-    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-      Node* t1 = s1->fast_out(i);
-      for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
-        Node* t2 = s2->fast_out(j);
-        if (VectorNode::is_muladds2i(t1) && VectorNode::is_muladds2i(t2)) {
-          return true;
-        }
-      }
-    }
+    const bool s1_ctrl_inv = (s1_ctrl == nullptr) || lpt()->is_invariant(s1_ctrl);
+    const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
+    return s1_ctrl_inv && s2_ctrl_inv;
   }
-  return false;
 }
 
 //------------------------------independent---------------------------
@@ -2712,7 +2686,7 @@ bool SuperWord::output() {
           C->record_failure(C2Compiler::retry_no_superword());
           return false; // bailout
         }
-        if (VectorNode::is_invariant_vector(in1) && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
+        if (in1->Opcode() == Op_Replicate && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
           // Move invariant vector input into second position to avoid register spilling.
           Node* tmp = in1;
           in1 = in2;

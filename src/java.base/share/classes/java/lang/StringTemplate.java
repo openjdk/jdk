@@ -595,6 +595,7 @@ public interface StringTemplate {
          *
          * @implNote This interface is sealed to only allow standard processors.
          *
+         * @sealedGraph
          * @since 21
          */
         @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
