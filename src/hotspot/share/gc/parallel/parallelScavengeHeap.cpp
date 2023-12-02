@@ -896,11 +896,16 @@ void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
-  // Currently parallel worker threads in GCTaskManager never terminate, so it
-  // is safe for VMThread to read their CPU times. If upstream changes this
-  // behavior, we should rethink if it is still safe.
-  gc_threads_do(&tttc);
+
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads in GCTaskManager never terminate, so it
+    // is safe for VMThread to read their CPU times. If upstream changes this
+    // behavior, we should rethink if it is still safe.
+    gc_threads_do(&tttc);
+  }
 
   CPUTimeCounters::publish_gc_total_cpu_time();
 }

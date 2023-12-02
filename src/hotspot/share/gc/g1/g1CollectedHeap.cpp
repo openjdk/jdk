@@ -2326,11 +2326,15 @@ void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
     return;
   }
 
-  ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
-  // Currently parallel worker threads never terminate (JDK-8081682), so it is
-  // safe for VMThread to read their CPU times. However, if JDK-8087340 is
-  // resolved so they terminate, we should rethink if it is still safe.
-  workers()->threads_do(&tttc);
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads never terminate (JDK-8081682), so it is
+    // safe for VMThread to read their CPU times. However, if JDK-8087340 is
+    // resolved so they terminate, we should rethink if it is still safe.
+    workers()->threads_do(&tttc);
+  }
 
   CPUTimeCounters::publish_gc_total_cpu_time();
 }
