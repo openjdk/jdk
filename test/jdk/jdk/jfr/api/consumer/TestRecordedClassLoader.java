@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,13 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.TestRecordedClass
+ * @run main/othervm jdk.jfr.api.consumer.TestRecordedClassLoader
  */
-public class TestRecordedClass {
+public class TestRecordedClassLoader {
 
-    static class MyTestEvent extends Event {
-    	public Class<?> type;
-    }
-	
+    private final static String TEST_CLASS_NAME = "jdk.jfr.api.consumer.TestRecordedClassLoader$MyTestClass";
+    private final static String EVENT_NAME = EventNames.ClassDefine;
+
     static class MyTestClass {
     }
 
