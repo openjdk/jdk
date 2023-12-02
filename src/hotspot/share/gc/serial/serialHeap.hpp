@@ -43,6 +43,8 @@ class MemoryPool;
 class OopIterateClosure;
 class TenuredGeneration;
 
+// SerialHeap is the implementation of CollectedHeap for Serial GC.
+//
 // The heap is reserved up-front in a single contiguous block, split into two
 // parts, the young and old generation. The young generation resides at lower
 // addresses, the old generation at higher addresses. The boundary address
