@@ -80,8 +80,10 @@ private:
 public:
   static void initialize() {
     assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
-    _instance = new CPUTimeCounters();
-    create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+    if (UsePerfData && os::is_thread_cpu_time_supported()) {
+      _instance = new CPUTimeCounters();
+      create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+    }
   }
 
   static void create_counter(CPUTimeGroups::CPUTimeType name);
