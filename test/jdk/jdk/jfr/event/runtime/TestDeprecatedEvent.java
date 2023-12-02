@@ -69,6 +69,7 @@ public class TestDeprecatedEvent {
  */
     public static String EVENT_NAME = EventNames.DeprecatedInvocation;
     private static String mode;
+    public static long threadId;
 
     public static void main(String... args) throws Exception {
         mode = args[0];
@@ -76,6 +77,8 @@ public class TestDeprecatedEvent {
         testDeprecatedLevelAllRetained();
         testDeprecatedLevelForRemoval();
         testDeprecatedLevelForRemovalRetained();
+        testReflectionAll();
+        testReflectionForRemovalRetained();
     }
 
     private static void testDeprecatedLevelAll() throws Exception {
@@ -137,6 +140,46 @@ public class TestDeprecatedEvent {
 
     private static void testLevelForRemoval() throws Exception {
         DeprecatedThing.deprecated2();
+    }
+
+    private static void testReflectionAll() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(EVENT_NAME).with("level", "all");
+            r.start();
+            threadId = (long) Thread.class.getMethod("getId").invoke(Thread.currentThread());
+            DeprecatedThing.class.getMethod("reflection").invoke(null);
+            DeprecatedThing.class.getMethod("reflectionForRemoval").invoke(null);
+            r.stop();
+            validateReflectionLevelAll(r);
+        }
+    }
+
+    private static void validateReflectionLevelAll(Recording r) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "all");
+        assertMethod(events, "testReflectionAll", "getId");
+        assertTrue(threadId != 0, "invariant");
+        assertMethod(events, "testReflectionAll", "reflection");
+        assertMethod(events, "testReflectionAll", "reflectionForRemoval");
+    }
+
+    // Does not invoke any deprecated methods. We only verify
+    // that all previously invoked methods are still retained
+    // when starting and stopping a subsequent recording.
+    private static void testReflectionForRemovalRetained() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(EVENT_NAME).with("level", "forRemoval");
+            r.start();
+            r.stop();
+            validateReflectionLevelForRemoval(r);
+        }
+    }
+
+
+    private static void validateReflectionLevelForRemoval(Recording r) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "forRemoval");
+        assertMethod(events, "testReflectionAll", "reflectionForRemoval");
     }
 
     // Does not invoke any deprecated methods. We only verify

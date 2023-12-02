@@ -78,4 +78,15 @@ public class DeprecatedThing {
     public static void deprecated3() {
         staticCounter++;
     }
+
+    @Deprecated
+    public static void reflection() {
+        staticCounter++;
+    }
+
+    @Deprecated(forRemoval = true)
+    public static void reflectionForRemoval() {
+        staticCounter++;
+    }
+
 }

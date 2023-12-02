@@ -43,16 +43,78 @@
 #include "opto/parse.hpp"
 #endif
 
+ // for strstr
+#include <string.h>
+
+static constexpr const int NUM_FILTERS = 4;
+
+static constexpr const char* filters[NUM_FILTERS] = {
+                                                      "java/lang/invoke/",
+                                                      "jdk/internal/reflect/",
+                                                      "java/lang/reflect/",
+                                                      "sun/invoke/"
+                                                    };
+
 static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
+
+static inline bool match(const char* str, const char* sub_str) {
+  assert(str != nullptr, "invariant");
+  assert(sub_str != nullptr, "invariant");
+  return strstr(str, sub_str) == str;
+}
+
+static inline bool exclude(const Method* method) {
+  assert(method != nullptr, "invariant");
+  // exclude native methods.
+  if (method->is_native()) {
+    return true;
+  }
+  const Klass* const klass = method->method_holder();
+  assert(klass != nullptr, "invariant");
+  const Symbol* const klass_sym = klass->name();
+  assert(klass_sym != nullptr, "invariant");
+  const char* const klass_name = klass_sym->as_C_string();
+  assert(klass_name != nullptr, "invariant");
+  for (int i = 0; i < NUM_FILTERS; ++i) {
+    if (match(klass_name, filters[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// If the caller into resolution is native, it must be java/lang/invoke/MethodHandleNatives.resolve().
+// Find the real caller.
+static Method* locate_real_caller(vframeStream& stream, JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  assert(stream.method()->is_native(), "invariant");
+  ResourceMark rm(jt);
+  assert(strcmp(stream.method()->name()->as_C_string(), "resolve") == 0, "invariant");
+  assert(strcmp(stream.method()->method_holder()->name()->as_C_string(), "java/lang/invoke/MethodHandleNatives") == 0, "invariant");
+  stream.next();
+  while (!stream.at_end()) {
+    if (!exclude(stream.method())) {
+      break;
+    }
+    stream.next();
+  }
+  return stream.method();
+}
 
 static inline bool jfr_is_started_on_command_line() {
   return JfrRecorder::is_started_on_commandline();
 }
 
 static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_type, JavaThread* jt) {
+  Method* method = stream.method();
+  assert(method != nullptr, "invariant");
+  if (method->is_native()) {
+    method = locate_real_caller(stream, jt);
+  }
+  assert(method != nullptr, "invariant");
+  assert(!method->is_native(), "invariant");
   bci = stream.bci();
   frame_type = stream.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
-  Method* method = stream.method();
   if (frame_type == JfrStackFrame::FRAME_JIT) {
     const intptr_t* const id = stream.frame_id();
     stream.next();
@@ -97,7 +159,9 @@ void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* j
     int bci;
     u1 frame_type;
     Method* const sender = frame_context(stream, bci, frame_type, jt);
-    assert(sender != nullptr, "invariant");
+    if (sender == nullptr) {
+      return;
+    }
     JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
   }
 }

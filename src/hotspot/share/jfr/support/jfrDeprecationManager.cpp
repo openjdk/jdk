@@ -187,15 +187,9 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(method != nullptr, "invariant");
   assert(method->deprecated(), "invariant");
   assert(sender != nullptr, "invariant");
+  assert(!sender->is_native(), "invariant");
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
-  if (sender->is_native()) {
-    // Native methods have no mdo bit data so we cannot mark them.
-    // An additional reason is that a native method attempting resolution
-    // must be a JDK internal implementation, for example:
-    // java/lang/invoke/MethodHandleNatives.resolve()
-    return;
-  }
   if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
     if (should_report(method, sender, jt)) {
       create_edge(method, sender, bci, frame_type, jt);
