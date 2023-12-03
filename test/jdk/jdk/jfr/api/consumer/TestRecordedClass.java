@@ -67,10 +67,8 @@ public class TestRecordedClass {
             for (RecordedEvent recordedEvent : events) {
                 RecordedClass typeA = recordedEvent.getClass("typeA");
                 RecordedClass typeB = recordedEvent.getClass("typeB");
-                System.out.println(typeA);
-                // Disabled until fixed. See JDK-8321220
-                // assertModifiers(typeA, TypeA.class);
-                // assertModifiers(typeB, TypeB.class);
+                assertModifiers(typeA, TypeA.class);
+                assertModifiers(typeB, TypeB.class);
                 assertName(typeA, TypeA.class);
                 assertName(typeB, TypeB.class);
                 assertClassLoader(typeA, TypeA.class.getClassLoader());
