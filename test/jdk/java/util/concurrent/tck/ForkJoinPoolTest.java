@@ -627,6 +627,22 @@ public class ForkJoinPoolTest extends JSR166TestCase {
     }
 
     /**
+     * invoke throws a RuntimeException if task throws unchecked exception
+     */
+    public void testInvokeUncheckedException() throws Throwable {
+        ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            try {
+                p.invoke(ForkJoinTask.adapt(new Callable<Object>() {
+                        public Object call() { throw new ArithmeticException(); }}));
+                shouldThrow();
+            } catch (RuntimeException success) {
+                assertTrue(success.getCause() instanceof ArithmeticException);
+            }
+        }
+    }
+
+    /**
      * invokeAny(null) throws NullPointerException
      */
     public void testInvokeAny1() throws Throwable {
