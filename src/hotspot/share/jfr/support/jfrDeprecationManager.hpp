@@ -30,8 +30,8 @@
 #include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
-class JfrChunkWriter;
 class JfrCheckpointWriter;
+class JfrChunkWriter;
 class Method;
 class Thread;
 
