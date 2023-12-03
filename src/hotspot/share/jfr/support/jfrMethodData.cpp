@@ -54,7 +54,7 @@ static bool mark_mdo(Method* method, int bci, JavaThread* jt) {
   assert(method != nullptr, "invariant");
   assert(!method->is_native(), "native methods have no MDO bit data");
   assert(jt != nullptr, "invariant");
-  MethodData* mdo = get_mdo(method, jt);
+  MethodData* const mdo = get_mdo(method, jt);
   assert(mdo != nullptr, "invariant");
   // Get the datalayout for the invocation bci.
   BitData* const bit_data = get_bit_data(mdo, bci);
