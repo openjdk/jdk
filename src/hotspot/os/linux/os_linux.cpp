@@ -2456,6 +2456,15 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
+size_t os::get_rss() {
+  size_t result = 0;
+  os::Linux::meminfo_t mi;
+  if (os::Linux::query_process_memory_info(&mi) && mi.vmrss != -1) {
+    result = (size_t)mi.vmrss * K;
+  }
+  return result;
+}
+
 // Print the first "model name" line and the first "flags" line
 // that we find and nothing more. We assume "model name" comes
 // before "flags" so if we find a second "model name", then the

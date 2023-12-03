@@ -167,6 +167,7 @@ class outputStream;
   LOG_TAG(reloc) \
   LOG_TAG(remset) \
   LOG_TAG(resolve) \
+  LOG_TAG(rss) \
   LOG_TAG(safepoint) \
   LOG_TAG(sampling) \
   LOG_TAG(scavenge) \

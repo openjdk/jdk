@@ -1462,6 +1462,18 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
+size_t os::get_rss() {
+  size_t result = 0;
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+  if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count); == KERN_SUCCESS) {
+    result = info.resident_size;
+  }
+#endif // __APPLE__
+  return result;
+}
+
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
 // Find the full path to the current module, libjvm

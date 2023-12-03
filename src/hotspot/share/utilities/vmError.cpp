@@ -851,6 +851,9 @@ void VMError::report(outputStream* st, bool _verbose) {
           return;  // that's enough for the screen
         }
         break;
+      case OOM_INTERNAL_LIMIT_ERROR:
+        st->print_cr("# Native Memory allocation: hit internal limit.");
+        break;
       case INTERNAL_ERROR:
       default:
         break;

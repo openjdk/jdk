@@ -2005,7 +2005,21 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, ProfileExceptionHandlers, true,                             \
           "Profile exception handlers")                                     \
-
+                                                                            \
+  product(ccstr, RssLimit, nullptr, DIAGNOSTIC,                             \
+          "Limit to Resident Set Size. The JVM will periodically "          \
+          "check if that limit had been reached and, if true, "             \
+          "generate a fatal error. The limit can be either given as a "     \
+          "memory size (e.g. \"-XX:RssLimit=2G\") or as a percentage of "   \
+          "the total available memory on this machine or in this "          \
+          "container (e.g. \"-XX:RssLimit=80%%\"). A value of 0 (default) " \
+          "disables this feature.")                                         \
+                                                                            \
+  product(uint, RssLimitCheckInterval, 5000, DIAGNOSTIC,                    \
+          "If RssLimit is set, interval, in ms, at which the JVM will "     \
+          "check the process' resident set size."                           \
+          range(0, UINT_MAX))                                               \
+                                                                            \
 // end of RUNTIME_FLAGS
 
 DECLARE_FLAGS(LP64_RUNTIME_FLAGS)

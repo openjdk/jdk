@@ -2028,6 +2028,17 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
+size_t os::get_rss() {
+  size_t result = 0;
+  PROCESS_MEMORY_COUNTERS pm;
+  ZeroMemory(&pm, sizeof(pm));
+  pm.cb = sizeof(pm);
+  if (GetProcessMemoryInfo(GetCurrentProcess(), &pm, sizeof(pm))) {
+    result = pm.WorkingSetSize;
+  }
+  return result;
+}
+
 bool os::signal_sent_by_kill(const void* siginfo) {
   // TODO: Is this possible?
   return false;

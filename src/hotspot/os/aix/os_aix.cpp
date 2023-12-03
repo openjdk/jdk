@@ -1296,6 +1296,9 @@ void os::print_memory_info(outputStream* st) {
   vmembk_print_on(st);
 }
 
+// Unimplemented
+size_t os::get_rss() { return 0; }
+
 // Get a string for the cpuinfo that is a summary of the cpu type
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
