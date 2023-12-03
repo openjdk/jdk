@@ -22,16 +22,14 @@
  */
 package jdk.jfr.internal.test;
 
+@Deprecated(since = "0")
 public class DeprecatedThing {
-    public static int staticCounter;
     public int counter;
 
-    @Deprecated
     public void foo() {
         bar();
     }
 
-    @Deprecated
     public void zoo() {
         System.out.println("Zoo invoked");
         for (int i = 0; i < 1_000_000; i++) {
@@ -44,49 +42,22 @@ public class DeprecatedThing {
     }
 
     public void baz() {
+        inc();
+    }
+
+    private void inc() {
         counter++;
     }
 
     @Deprecated(forRemoval = true)
-    public static void deprecatedForRemovalSlow() {
+    public void instanceDeprecatedForRemoval() {
         for (int i = 0; i < 1_000_000; i++) {
-            deprecatedForRemovalSlow2();
+           inc();
         }
     }
 
-    @Deprecated(forRemoval = true)
-    public static void deprecatedForRemovalSlow2() {
-        staticCounter++;
+    @Deprecated(since = "0", forRemoval = true)
+    public void instanceDeprecatedSinceForRemoval() {
+        counter++;
     }
-
-    @Deprecated(forRemoval = true)
-    public static void deprecatedForRemovalFast() {
-        staticCounter++;
-    }
-
-    @Deprecated
-    public static void deprecated1() {
-        staticCounter++;
-    }
-
-    @Deprecated(forRemoval = true)
-    public static void deprecated2() {
-        staticCounter++;
-    }
-
-    @Deprecated(forRemoval = true)
-    public static void deprecated3() {
-        staticCounter++;
-    }
-
-    @Deprecated
-    public static void reflection() {
-        staticCounter++;
-    }
-
-    @Deprecated(forRemoval = true)
-    public static void reflectionForRemoval() {
-        staticCounter++;
-    }
-
 }

@@ -46,16 +46,13 @@
  // for strstr
 #include <string.h>
 
-static constexpr const int NUM_FILTERS = 4;
-
-static constexpr const char* filters[NUM_FILTERS] = {
-                                                      "java/lang/invoke/",
-                                                      "jdk/internal/reflect/",
-                                                      "java/lang/reflect/",
-                                                      "sun/invoke/"
-                                                    };
-
-static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
+// The following packages are internal implmentation details used by reflection.
+// We exclude matching frames on the stack in a manner similar to StackWalker.
+static constexpr const int NUM_EXCLUDED_PACKAGES = 4;
+static constexpr const char* excluded_packages[NUM_EXCLUDED_PACKAGES] = { "java/lang/invoke/",
+                                                                          "jdk/internal/reflect/",
+                                                                          "java/lang/reflect/",
+                                                                          "sun/invoke/" };
 
 static inline bool match(const char* str, const char* sub_str) {
   assert(str != nullptr, "invariant");
@@ -63,7 +60,8 @@ static inline bool match(const char* str, const char* sub_str) {
   return strstr(str, sub_str) == str;
 }
 
-static inline bool exclude(const Method* method) {
+// Caller requires ResourceMark.
+static inline bool exclude_frame(const Method* method) {
   assert(method != nullptr, "invariant");
   // exclude native methods.
   if (method->is_native()) {
@@ -75,8 +73,8 @@ static inline bool exclude(const Method* method) {
   assert(klass_sym != nullptr, "invariant");
   const char* const klass_name = klass_sym->as_C_string();
   assert(klass_name != nullptr, "invariant");
-  for (int i = 0; i < NUM_FILTERS; ++i) {
-    if (match(klass_name, filters[i])) {
+  for (int i = 0; i < NUM_EXCLUDED_PACKAGES; ++i) {
+    if (match(klass_name,excluded_packages[i])) {
       return true;
     }
   }
@@ -84,8 +82,7 @@ static inline bool exclude(const Method* method) {
 }
 
 // If the caller into resolution is native, it must be java/lang/invoke/MethodHandleNatives.resolve().
-// Find the real caller.
-static Method* locate_real_caller(vframeStream& stream, JavaThread* jt) {
+static Method* find_real_caller(vframeStream& stream, JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   assert(stream.method()->is_native(), "invariant");
   ResourceMark rm(jt);
@@ -93,7 +90,7 @@ static Method* locate_real_caller(vframeStream& stream, JavaThread* jt) {
   assert(strcmp(stream.method()->method_holder()->name()->as_C_string(), "java/lang/invoke/MethodHandleNatives") == 0, "invariant");
   stream.next();
   while (!stream.at_end()) {
-    if (!exclude(stream.method())) {
+    if (!exclude_frame(stream.method())) {
       break;
     }
     stream.next();
@@ -109,7 +106,7 @@ static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_ty
   Method* method = stream.method();
   assert(method != nullptr, "invariant");
   if (method->is_native()) {
-    method = locate_real_caller(stream, jt);
+    method = find_real_caller(stream, jt);
   }
   assert(method != nullptr, "invariant");
   assert(!method->is_native(), "invariant");
@@ -174,6 +171,8 @@ static inline const Method* ljf_sender_method(JavaThread* jt) {
   const vframeStream ljf(jt, true, false);
   return ljf.method();
 }
+
+static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
 
 void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   assert(info.selected_method() != nullptr, "invariant");

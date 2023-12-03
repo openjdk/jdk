@@ -29,6 +29,7 @@ import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.internal.test.DeprecatedMethods;
 import jdk.jfr.internal.test.DeprecatedThing;
 import jdk.jfr.Recording;
 import jdk.test.lib.jfr.EventNames;
@@ -69,16 +70,13 @@ public class TestDeprecatedEvent {
  */
     public static String EVENT_NAME = EventNames.DeprecatedInvocation;
     private static String mode;
-    public static long threadId;
 
     public static void main(String... args) throws Exception {
         mode = args[0];
         testDeprecatedLevelAll();
         testDeprecatedLevelAllRetained();
-        testDeprecatedLevelForRemoval();
-        testDeprecatedLevelForRemovalRetained();
         testReflectionAll();
-        testReflectionForRemovalRetained();
+        testDeprecatedLevelForRemovalRetained();
     }
 
     private static void testDeprecatedLevelAll() throws Exception {
@@ -92,12 +90,31 @@ public class TestDeprecatedEvent {
     }
 
     private static void testLevelAll() throws Exception {
-        DeprecatedThing.deprecated1();
-        DeprecatedThing.deprecatedForRemovalFast();
-        DeprecatedThing.deprecatedForRemovalSlow();
+        // Methods individually decorated.
+        DeprecatedMethods.deprecated();
+        DeprecatedMethods.deprecatedSince();
+        DeprecatedMethods.deprecatedForRemoval();
+        DeprecatedMethods.deprecatedSinceForRemoval();
+        // Class level @deprecated annotation
+        // @Deprecated(since = "0")
         DeprecatedThing t = new DeprecatedThing();
+        t.instanceDeprecatedForRemoval();
+        t.instanceDeprecatedSinceForRemoval();
         t.foo();
         t.zoo();
+    }
+
+    private static void validateLevelAll(Recording r) throws Exception {
+        List<RecordedEvent> events = Events.fromRecording(r);
+        printInvocations(events, "all");
+        assertMethod(events, "testLevelAll", "deprecated");
+        assertMethod(events, "testLevelAll", "deprecatedSince");
+        assertMethod(events, "testLevelAll", "deprecatedForRemoval");
+        assertMethod(events, "testLevelAll", "deprecatedSinceForRemoval");
+        assertMethod(events, "testLevelAll", "instanceDeprecatedForRemoval");
+        assertMethod(events, "testLevelAll", "instanceDeprecatedSinceForRemoval");
+        assertMethod(events, "testLevelAll", "foo");
+        assertMethod(events, "testLevelAll", "zoo");
     }
 
     // Does not invoke any deprecated methods. We only verify
@@ -112,43 +129,14 @@ public class TestDeprecatedEvent {
         }
     }
 
-    private static void validateLevelAll(Recording r) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(r);
-        printInvocations(events, "all");
-        assertMethod(events, "testLevelAll", "deprecated1");
-        assertMethod(events, "testLevelAll", "deprecatedForRemovalFast");
-        assertMethod(events, "testLevelAll", "deprecatedForRemovalSlow");
-        assertMethod(events, "testLevelAll", "foo");
-        assertMethod(events, "testLevelAll", "zoo");
-        // This is a problematic case only with the interpreter.
-        // Because bar was already resolved when foo linked against it,
-        // it is considered already linked also by zoo (through the cpCache).
-        // Therefore the hook will not be issued when zoo -> bar.
-        // assertMethod(events, "zoo", "bar");
-    }
-
-
-    private static void testDeprecatedLevelForRemoval() throws Exception {
-        try (Recording r = new Recording()) {
-            r.enable(EVENT_NAME).with("level", "forRemoval");
-            r.start();
-            testLevelForRemoval();
-            r.stop();
-            validateLevelForRemoval(r);
-        }
-    }
-
-    private static void testLevelForRemoval() throws Exception {
-        DeprecatedThing.deprecated2();
-    }
-
     private static void testReflectionAll() throws Exception {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME).with("level", "all");
             r.start();
-            threadId = (long) Thread.class.getMethod("getId").invoke(Thread.currentThread());
-            DeprecatedThing.class.getMethod("reflection").invoke(null);
-            DeprecatedThing.class.getMethod("reflectionForRemoval").invoke(null);
+            DeprecatedMethods.class.getMethod("reflectionDeprecated").invoke(null);
+            DeprecatedMethods.class.getMethod("reflectionDeprecatedSince").invoke(null);
+            DeprecatedMethods.class.getMethod("reflectionDeprecatedForRemoval").invoke(null);
+            DeprecatedMethods.class.getMethod("reflectionDeprecatedSinceForRemoval").invoke(null);
             r.stop();
             validateReflectionLevelAll(r);
         }
@@ -156,30 +144,11 @@ public class TestDeprecatedEvent {
 
     private static void validateReflectionLevelAll(Recording r) throws Exception {
         List<RecordedEvent> events = Events.fromRecording(r);
-        printInvocations(events, "all");
-        assertMethod(events, "testReflectionAll", "getId");
-        assertTrue(threadId != 0, "invariant");
-        assertMethod(events, "testReflectionAll", "reflection");
-        assertMethod(events, "testReflectionAll", "reflectionForRemoval");
-    }
-
-    // Does not invoke any deprecated methods. We only verify
-    // that all previously invoked methods are still retained
-    // when starting and stopping a subsequent recording.
-    private static void testReflectionForRemovalRetained() throws Exception {
-        try (Recording r = new Recording()) {
-            r.enable(EVENT_NAME).with("level", "forRemoval");
-            r.start();
-            r.stop();
-            validateReflectionLevelForRemoval(r);
-        }
-    }
-
-
-    private static void validateReflectionLevelForRemoval(Recording r) throws Exception {
-        List<RecordedEvent> events = Events.fromRecording(r);
-        printInvocations(events, "forRemoval");
-        assertMethod(events, "testReflectionAll", "reflectionForRemoval");
+        printInvocations(events, "reflectionAll");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecated");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecatedSince");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecatedForRemoval");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecatedSinceForRemoval");
     }
 
     // Does not invoke any deprecated methods. We only verify
@@ -197,27 +166,13 @@ public class TestDeprecatedEvent {
     private static void validateLevelForRemoval(Recording r) throws Exception {
         List<RecordedEvent> events = Events.fromRecording(r);
         printInvocations(events, "forRemoval");
-        for (RecordedEvent e : events) {
-            RecordedMethod deprecatedMethod = e.getValue("method");
-            if (deprecatedMethod.getName().equals("deprecated2")) {
-                assertTrue(e.getBoolean("forRemoval"), "invalid level");
-                RecordedStackTrace stacktrace = e.getStackTrace();
-                assertNotNull(stacktrace, "should have a stacktrace");
-                assertTrue(stacktrace.isTruncated(), "invariant");
-                List<RecordedFrame> frames = stacktrace.getFrames();
-                assertTrue(frames.size() == 1, "invariant");
-                RecordedFrame frame = frames.getFirst();
-                assertTrue(frame.isJavaFrame(), "invariant");
-                RecordedMethod callerMethod = frame.getMethod();
-                assertNotNull(callerMethod, "invariant");
-                if (callerMethod.getName().equals("testLevelForRemoval")) {
-                    return;
-                }
-            }
-        }
-        throw new Exception("Could not find invocation forRemvoval");
+        assertMethod(events, "testLevelAll", "deprecatedForRemoval");
+        assertMethod(events, "testLevelAll", "deprecatedSinceForRemoval");
+        assertMethod(events, "testLevelAll", "instanceDeprecatedForRemoval");
+        assertMethod(events, "testLevelAll", "instanceDeprecatedSinceForRemoval");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecatedForRemoval");
+        assertMethod(events, "testReflectionAll", "reflectionDeprecatedSinceForRemoval");
     }
-
 
     private static void assertMethod(List<RecordedEvent> events, String caller, String method) throws Exception {
         for (RecordedEvent e : events) {
@@ -235,6 +190,9 @@ public class TestDeprecatedEvent {
             int bci = frame.getBytecodeIndex();
             int lineNumber = frame.getLineNumber();
             assertNull(e.getThread(), "should not have a thread");
+            if (forRemoval) {
+                assertTrue(deprecatedMethod.getName().endsWith("ForRemoval"), "wrong filtering?");
+            }
             if (deprecatedMethod.getName().equals(method) && callerMethod.getName().equals(caller)){
                 return;
             }
@@ -244,7 +202,7 @@ public class TestDeprecatedEvent {
 
 
     private static void printInvocations(List<RecordedEvent> events, String all) {
-        System.out.println("*** METHOD INVOCATION *** (" + mode + ") level = " + all + " count: " + events.size());
+        System.out.println("*** METHOD INVOCATION *** (" + mode + ") level = " + all + " count: " + events.size() + " ***\n");
         for (RecordedEvent e : events) {
             RecordedMethod deprecatedMethod = e.getValue("method");
             boolean forRemoval = e.getValue("forRemoval");
