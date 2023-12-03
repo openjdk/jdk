@@ -1800,20 +1800,20 @@ public class CreateSymbols {
                 }
 
                 if (includedClasses.addAll(thisClassIncludedClasses)) {
-                    for (String includedClass : thisClassIncludedClasses) {
-                        int lastSlash = includedClass.lastIndexOf('/');
-                        String pack;
-                        if (lastSlash != (-1)) {
-                            pack = includedClass.substring(0, lastSlash)
-                                                .replace('.', '/');
-                        } else {
-                            pack = "";
-                        }
-                        package2ModulesUsingIt.computeIfAbsent(pack, p -> new HashSet<>())
-                                              .add(package2Module.get(clazz.packge()));
-                    }
-
                     modified |= true;
+                }
+
+                for (String includedClass : thisClassIncludedClasses) {
+                    int lastSlash = includedClass.lastIndexOf('/');
+                    String pack;
+                    if (lastSlash != (-1)) {
+                        pack = includedClass.substring(0, lastSlash)
+                                            .replace('.', '/');
+                    } else {
+                        pack = "";
+                    }
+                    package2ModulesUsingIt.computeIfAbsent(pack, p -> new HashSet<>())
+                                          .add(package2Module.get(clazz.packge()));
                 }
             }
         } while (modified);
