@@ -593,8 +593,8 @@ void JfrCheckpointManager::clear_type_set() {
   JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
   // We placed a blob in the Deprecated subsystem by copying the information
   // in the leakp writer. For the real writer, the data will not be
-  // committed, because it has not yet been started. Therefore,
-  // both writers are cancelled before their destructors are run.
+  // committed, because the JFR system has not yet been started.
+  // Therefore, both writers are cancelled before their destructors are run.
   writer.cancel();
   leakp_writer.cancel();
 }
