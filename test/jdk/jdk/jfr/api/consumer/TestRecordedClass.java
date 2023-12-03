@@ -104,7 +104,7 @@ public class TestRecordedClass {
         }
     }
 
-    public static void assertModifiers(RecordedClass recordedClass, Class<?> clazz) throws Exception {
+    private static void assertModifiers(RecordedClass recordedClass, Class<?> clazz) throws Exception {
         int modifiers = clazz.getModifiers();
         if (modifiers != recordedClass.getModifiers()) {
             String expected = Modifier.toString(modifiers);
