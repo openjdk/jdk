@@ -3133,6 +3133,7 @@ void AwtWindow::_ModalDisable(void *param) {
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
+    PDATA pData = JNI_GET_PDATA(self);
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
@@ -3166,6 +3167,7 @@ void AwtWindow::_ModalEnable(void *param) {
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
+    PDATA pData = JNI_GET_PDATA(self);
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
