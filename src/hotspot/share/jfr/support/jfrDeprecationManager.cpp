@@ -316,7 +316,6 @@ static void save_type_set_blob(JfrCheckpointWriter& writer) {
 }
 
 void JfrDeprecationManager::on_type_set_unload(JfrCheckpointWriter& writer) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (writer.has_data()) {
     save_type_set_blob(writer);
   }

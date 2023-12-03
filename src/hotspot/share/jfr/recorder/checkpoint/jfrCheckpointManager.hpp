@@ -73,7 +73,6 @@ class JfrCheckpointManager : public JfrCHeapObj {
   static void destroy();
 
   JfrChunkWriter& chunkwriter();
-  void set_chunkwriter(JfrChunkWriter* cw);
 
   static BufferPtr get_virtual_thread_local(Thread* thread);
   static void set_virtual_thread_local(Thread* thread, BufferPtr buffer);

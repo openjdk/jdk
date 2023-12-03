@@ -23,45 +23,45 @@
 package jdk.jfr.internal.test;
 
 public class DeprecatedMethods {
-    public static int staticCounter;
+    public static int counter;
 
     @Deprecated
     public static void deprecated() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(since = "0")
     public static void deprecatedSince() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(forRemoval = true)
     public static void deprecatedForRemoval() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(since = "0", forRemoval = true)
     public static void deprecatedSinceForRemoval() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated
     public static void reflectionDeprecated() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(since = "0")
     public static void reflectionDeprecatedSince() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(forRemoval = true)
     public static void reflectionDeprecatedForRemoval() {
-        staticCounter++;
+        counter++;
     }
 
     @Deprecated(since = "0", forRemoval = true)
     public static void reflectionDeprecatedSinceForRemoval() {
-        staticCounter++;
+        counter++;
     }
 }

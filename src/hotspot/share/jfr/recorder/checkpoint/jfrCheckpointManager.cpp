@@ -139,10 +139,6 @@ bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
   return JfrTypeManager::initialize() && JfrTraceIdLoadBarrier::initialize();
 }
 
-void JfrCheckpointManager::set_chunkwriter(JfrChunkWriter* cw) {
-  _chunkwriter = cw;
-}
-
 JfrChunkWriter& JfrCheckpointManager::chunkwriter() {
   assert(_chunkwriter != nullptr, "invariant");
   return *_chunkwriter;
@@ -584,17 +580,21 @@ void JfrCheckpointManager::clear_type_set() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
   // can safepoint here
   ThreadInVMfromNative transition(thread);
-  MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
-  JfrDeprecationManager::prepare_type_set(thread); // marks leakp
   JfrCheckpointWriter leakp_writer(true, thread);
   JfrCheckpointWriter writer(true, thread);
   {
-    MutexLocker module_lock(Module_lock);
-    JfrTypeSet::clear(&writer, &leakp_writer);
+    MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+    JfrDeprecationManager::prepare_type_set(thread); // marks leakp
+    {
+      MutexLocker module_lock(Module_lock);
+      JfrTypeSet::clear(&writer, &leakp_writer);
+    }
   }
   JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
-  // This data is not committed to the system,
-  // because it has not started yet.
+  // We placed a blob in the Deprecated subsystem by copying the information
+  // in the leakp writer. For the real writer, the data will not be
+  // committed, because it has not yet been started. Therefore,
+  // both writers are cancelled before their destructors are run.
   writer.cancel();
   leakp_writer.cancel();
 }
@@ -605,16 +605,23 @@ void JfrCheckpointManager::write_type_set() {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
     ThreadInVMfromNative transition(thread);
-    MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
-    MutexLocker module_lock(thread, Module_lock);
     JfrCheckpointWriter leakp_writer(true, thread);
     JfrCheckpointWriter writer(true, thread);
-    JfrDeprecationManager::prepare_type_set(thread);
-    JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
-    JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
+    {
+      MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+      JfrDeprecationManager::prepare_type_set(thread);
+      {
+        MutexLocker module_lock(thread, Module_lock);
+        JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
+      }
+    }
     if (LeakProfiler::is_running()) {
       ObjectSampleCheckpoint::on_type_set(leakp_writer);
     }
+    JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
+    // We placed blobs in both the LeakProfiler and Deprecation
+    // subsystems.by copying the information in the leakp writer.
+    // It is now is cancelled before destruction.
     leakp_writer.cancel();
   }
   write();
@@ -624,10 +631,10 @@ void JfrCheckpointManager::on_unloading_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrCheckpointWriter writer(Thread::current());
   JfrTypeSet::on_unloading_classes(&writer);
-  JfrDeprecationManager::on_type_set_unload(writer);
   if (LeakProfiler::is_running()) {
     ObjectSampleCheckpoint::on_type_set_unload(writer);
   }
+  JfrDeprecationManager::on_type_set_unload(writer);
 }
 
 static size_t flush_type_set(Thread* thread) {
