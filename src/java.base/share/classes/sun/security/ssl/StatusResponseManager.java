@@ -41,6 +41,7 @@ import sun.security.provider.certpath.OCSPResponse;
 import sun.security.provider.certpath.ResponderId;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.Cache;
+import sun.security.util.Debug;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.SerialNumber;
 import static sun.security.ssl.CertStatusExtension.*;
@@ -324,8 +325,8 @@ final class StatusResponseManager {
 
         if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
             SSLLogger.fine(
-                    "Check cache for SN" + cid.getSerialNumber() + ": " +
-                    (respEntry != null ? "HIT" : "MISS"));
+                    "Check cache for SN" + Debug.toString(cid.getSerialNumber().toByteArray())
+                        + ": " + (respEntry != null ? "HIT" : "MISS"));
         }
         return respEntry;
     }
@@ -391,7 +392,7 @@ final class StatusResponseManager {
         public String toString() {
             return "StatusInfo:" + "\n\tCert: " +
                    this.cert.getSubjectX500Principal() +
-                   "\n\tSerial: " + this.cert.getSerialNumber() +
+                   "\n\tSerial: " + Debug.toString(this.cert.getSerialNumber().toByteArray()) +
                    "\n\tResponder: " + this.responder +
                    "\n\tResponse data: " +
                    (this.responseData != null ?
@@ -437,7 +438,7 @@ final class StatusResponseManager {
                 } else {
                     throw new IOException(
                             "Unable to find SingleResponse for SN " +
-                            cid.getSerialNumber());
+                            Debug.toString(cid.getSerialNumber().toByteArray()));
                 }
             } else {
                 nextUpdate = null;
@@ -488,7 +489,7 @@ final class StatusResponseManager {
             if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
                 SSLLogger.fine(
                     "Starting fetch for SN " +
-                    statInfo.cid.getSerialNumber());
+                    Debug.toString(statInfo.cid.getSerialNumber().toByteArray()));
             }
             try {
                 ResponseCacheEntry cacheEntry;
@@ -573,7 +574,7 @@ final class StatusResponseManager {
                 if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
                     SSLLogger.fine(
                         "Added response for SN " +
-                        certId.getSerialNumber() +
+                        Debug.toString(certId.getSerialNumber().toByteArray()) +
                         " to cache");
                 }
             }

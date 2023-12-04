@@ -33,6 +33,7 @@ import java.security.cert.X509Certificate;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.X509CertificateEvent;
 import sun.security.util.KeyUtil;
+import sun.security.util.Debug;
 
 /**
  * Collection of static utility methods used by the security framework.
@@ -104,7 +105,7 @@ public final class JCAUtil {
                 (cert instanceof X509Certificate x509)) {
             PublicKey pKey = x509.getPublicKey();
             String algId = x509.getSigAlgName();
-            String serNum = x509.getSerialNumber().toString(16);
+            String serNum = Debug.toString(x509.getSerialNumber().toByteArray());
             String subject = x509.getSubjectX500Principal().toString();
             String issuer = x509.getIssuerX500Principal().toString();
             String keyType = pKey.getAlgorithm();
