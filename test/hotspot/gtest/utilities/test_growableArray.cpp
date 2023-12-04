@@ -31,6 +31,7 @@
 // TODO: Add more modifications
 //       And add more allocators
 //       Add more types E, and check ctor dtor counts etc
+//       Talk about value factory
 
 
 // We have a list of each:
@@ -143,6 +144,30 @@ public:
   };
 };
 
+// ------------  ValueFactor  -------------
+
+template<typename E>
+E value_factory(int i) {
+  return E(i);
+}
+
+class Point {
+private:
+  int _x;
+  int _y;
+public:
+  Point(int x, int y) : _x(x), _y(y) {}
+  Point() : _x(0), _y(0) {} // TODO remove?
+  bool operator==(const Point& other) const {
+    return _x == other._x && _y == other._y;
+  }
+};
+
+template<>
+Point value_factory(int i) {
+  return Point(i, -i);
+}
+
 // ------------ ModifyClosures ------------
 
 template<typename E>
@@ -161,7 +186,7 @@ public:
 
     // Add elements
     for (int i = 0; i < 10; i++) {
-      a->append(i);
+      a->append(value_factory<E>(i));
     }
 
     ASSERT_EQ(a->length(), 10);
@@ -178,7 +203,7 @@ class TestClosureAppend : public TestClosure<E> {
 
     // Add elements
     for (int i = 0; i < 10; i++) {
-      a->append(i);
+      a->append(value_factory<E>(i));
     }
 
     // Check size
@@ -186,7 +211,7 @@ class TestClosureAppend : public TestClosure<E> {
 
     // Check elements
     for (int i = 0; i < 10; i++) {
-      EXPECT_EQ(a->at(i), i);
+      EXPECT_EQ(a->at(i), value_factory<E>(i));
     }
   };
 };
@@ -201,7 +226,7 @@ class TestClosureClear : public TestClosure<E> {
 
     // Add elements
     for (int i = 0; i < 10; i++) {
-      a->append(i);
+      a->append(value_factory<E>(i));
     }
 
     // Check size
@@ -216,7 +241,7 @@ class TestClosureClear : public TestClosure<E> {
     ASSERT_EQ(a->is_empty(), true);
 
     // Add element
-    a->append(11);
+    a->append(value_factory<E>(11));
 
     // Check size
     ASSERT_EQ(a->length(), 1);
@@ -237,13 +262,13 @@ class TestClosureIterator : public TestClosure<E> {
     a->clear();
     // Add elements
     for (int i = 0; i < 10; i++) {
-      a->append(i);
+      a->append(value_factory<E>(i));
     }
 
     // Iterate
     int counter = 0;
     for (GrowableArrayIterator<E> i = a->begin(); i != a->end(); ++i) {
-      ASSERT_EQ(*i, counter++);
+      ASSERT_EQ(*i, value_factory<E>(counter++));
     }
 
     // Check count
@@ -260,11 +285,11 @@ class TestClosureCapacity : public TestClosure<E> {
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->capacity(), 50);
     for (int i = 0; i < 50; ++i) {
-      a->append(i);
+      a->append(value_factory<E>(i));
     }
     ASSERT_EQ(a->length(), 50);
     ASSERT_EQ(a->capacity(), 50);
-    a->append(50);
+    a->append(value_factory<E>(50));
     ASSERT_EQ(a->length(), 51);
     int capacity = a->capacity();
     ASSERT_GE(capacity, 51);
@@ -730,7 +755,7 @@ protected:
 
   template<typename E>
   static void run_test_modify(TestClosure<E>* test) {
-    ModifyClosureEmpty<int> modify_empty;
+    ModifyClosureEmpty<E> modify_empty;
     run_test_modify_allocate<E>(test, &modify_empty);
 
     ModifyClosureAppend<E> modify_append;
@@ -769,16 +794,32 @@ TEST_VM_F(GrowableArrayTest, xxx_append_int) {
   run_test_append<int>();
 }
 
+TEST_VM_F(GrowableArrayTest, xxx_append_point) {
+  run_test_append<Point>();
+}
+
 TEST_VM_F(GrowableArrayTest, xxx_clear_int) {
   run_test_clear<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_clear_point) {
+  run_test_clear<Point>();
 }
 
 TEST_VM_F(GrowableArrayTest, xxx_iterator_int) {
   run_test_iterator<int>();
 }
 
+TEST_VM_F(GrowableArrayTest, xxx_iterator_point) {
+  run_test_iterator<Point>();
+}
+
 TEST_VM_F(GrowableArrayTest, xxx_capacity_int) {
   run_test_capacity<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_capacity_point) {
+  run_test_capacity<Point>();
 }
 
 TEST_VM_F(GrowableArrayTest, append) {
