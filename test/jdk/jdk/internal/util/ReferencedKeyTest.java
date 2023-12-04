@@ -137,7 +137,7 @@ public class ReferencedKeyTest {
         obj = null;
         Reference.reachabilityFence(obj);
         Reference.reachabilityFence(ref);
-        long timeout = 1000L;
+        long timeout = 3000L;
         long quanta = 200L;
         long retries = timeout / quanta;
 

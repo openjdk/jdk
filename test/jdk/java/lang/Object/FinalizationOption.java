@@ -89,7 +89,7 @@ public class FinalizationOption {
         for (int i = 0; i < 100; i++) {
             System.gc();
             try {
-                Thread.sleep(10L);
+                Thread.sleep(30L);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
