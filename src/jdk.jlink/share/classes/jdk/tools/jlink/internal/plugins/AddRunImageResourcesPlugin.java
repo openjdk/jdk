@@ -38,6 +38,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import jdk.internal.util.OperatingSystem;
@@ -66,6 +68,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
     // RunImageArchive for further processing.
     private static final String RESPATH = RESPATH_PREFIX + "%s_resources";
     private static final String JLINK_MOD_NAME = "jdk.jlink";
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
 
     // Type file format:
     // '<type>|{0,1}|<sha-sum>|<file-path>'
@@ -118,7 +121,16 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
     private byte[] getCliBytes() {
         StringBuilder builder = new StringBuilder();
         for (String s: commands) {
-            builder.append(s).append(" ");
+            Matcher m = WHITESPACE_PATTERN.matcher(s);
+            if (m.matches()) {
+                // Quote arguments containing whitespace
+                builder.append("\"");
+                builder.append(s);
+                builder.append("\"");
+            } else {
+                builder.append(s);
+            }
+            builder.append(" ");
         }
         builder.append("\n");
         return builder.toString().getBytes(StandardCharsets.UTF_8);

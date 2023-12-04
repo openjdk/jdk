@@ -63,6 +63,11 @@ public final class ImagePluginConfiguration {
     private ImagePluginConfiguration() {
     }
 
+    public static ImagePluginStack parseConfiguration(Jlink.PluginsConfiguration pluginsConfiguration)
+            throws Exception {
+        return parseConfiguration(pluginsConfiguration, null);
+    }
+
     /*
      * Create a stack of plugins from a configuration.
      */

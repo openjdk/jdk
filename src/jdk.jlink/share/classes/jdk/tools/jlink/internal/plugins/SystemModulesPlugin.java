@@ -196,6 +196,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         return List.of("regex:/java\\.base/jdk/internal/module/SystemModules\\$.*\\.class");
     }
 
+    // This plugin doesn't persist, since generated classes are filtered for
+    // run-time image based links and running without --system-modules on a
+    // run-time image based link is not allowed.
+    @Override
+    public boolean runTimeImageLinkPersistent() {
+        return false;
+    }
+
     /**
      * Validates and transforms the module-info.class files in the modules, adding
      * the ModulePackages class file attribute if needed.

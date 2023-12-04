@@ -74,10 +74,8 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.plugins.GenerateJLIClassesPlugin;
-import jdk.tools.jlink.internal.plugins.SystemModulesPlugin;
+import jdk.tools.jlink.internal.plugins.LegalNoticeFilePlugin;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Plugin.Category;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -368,6 +366,7 @@ public class JlinkTask {
                                     false,
                                     null,
                                     false,
+                                    new OptionsValues(),
                                     null);
 
         // Then create the Plugin Stack
@@ -427,6 +426,7 @@ public class JlinkTask {
                                                         options.bindServices,
                                                         options.endian,
                                                         options.verbose,
+                                                        options,
                                                         log);
 
         // Then create the Plugin Stack
@@ -536,6 +536,7 @@ public class JlinkTask {
                                                    boolean bindService,
                                                    ByteOrder endian,
                                                    boolean verbose,
+                                                   OptionsValues opts,
                                                    PrintWriter log)
             throws IOException
     {
@@ -570,7 +571,7 @@ public class JlinkTask {
                         CommandLine.loadCmdFile(Objects.requireNonNull(in, "Old CLI args not being tracked in jimage"),
                                                 oldCli);
                     }
-                    logPackagedModuleEquivalent(log, oldCli, optionsHelper.getInputCommand());
+                    logPackagedModuleEquivalent(log, oldCli, optionsHelper.getInputCommand(), opts);
                 }
             }
         }
@@ -630,12 +631,20 @@ public class JlinkTask {
      * Log a message when a run-time image link is being performed and mention
      * the equivalent packaged-module based link.
      *
-     * @param logWriter The log to print to.
-     * @param oldCli The jlink CLI args used to produce the current run-time image.
-     * @param inputCommand The jlink CLI args used for the current link run.
+     * @param logWriter
+     *            The log to print to.
+     * @param oldCli
+     *            The jlink command line arguments used for producing the
+     *            current run-time image (including jdk.jlink module).
+     * @param newCLI
+     *            The current jlink command line arguments
+     * @param inputCommand
+     *            The jlink CLI args used for the current link run.
+     * @param opts
+     *            The parsed options of the current command line arguments.
      */
     private static void logPackagedModuleEquivalent(PrintWriter logWriter,
-            List<String> oldCli, String[] newCLI) {
+            List<String> oldCli, String[] newCLI, OptionsValues opts) {
         // merge old and new cli args and process options.
         List<String> combined = new ArrayList<>(oldCli);
         for (String s: newCLI) {
@@ -656,26 +665,61 @@ public class JlinkTask {
         }
         List<Plugin> forwardingPlugins = pluginMaps.keySet()
                                                         .stream()
-                                                        .filter(p -> { return JlinkTask.isCarryingForward(p); })
+                                                        .filter(p -> p.runTimeImageLinkPersistent())
                                                         .toList();
+        List<String> jlinkCmd = new ArrayList<>();
+        jlinkCmd.add("jlink");
+        // Iterate over recognized opts to figure out options used
+        if (opts.bindServices) {
+            jlinkCmd.add("--bind-services");
+        }
+        if (opts.suggestProviders) {
+            jlinkCmd.add("--suggest-providers");
+        }
+        if (opts.ignoreSigning) {
+            jlinkCmd.add("--ignore-signing");
+        }
+        // --add-modules is a required option, but the JLink API calls this with
+        // dummy options
+        if (!opts.addMods.isEmpty()) {
+            jlinkCmd.add("--add-modules");
+            jlinkCmd.add(opts.addMods.stream().collect(Collectors.joining(",")));
+        }
+        if (!opts.limitMods.isEmpty()) {
+            jlinkCmd.add("--limit-modules");
+            jlinkCmd.add(opts.limitMods.stream().collect(Collectors.joining(",")));
+        }
+        // Launchers carry forward, so we need to use the scratch JlinkTask
+        if (!scratch.options.launchers.isEmpty()) {
+            for (Map.Entry<String, String> entry: scratch.options.launchers.entrySet()) {
+                jlinkCmd.add("--launcher");
+                jlinkCmd.add(entry.getKey() + "=" + entry.getValue());
+            }
+        }
+        if (opts.output != null) {
+            jlinkCmd.add("--output");
+            jlinkCmd.add(opts.output.toString());
+        }
         logWriter.println("Equivalent jlink command using packaged modules is:");
-        // Add-modules needs to be taken from the parsed current cli stack.
-        logWriter.print("  jlink --add-modules <TODO> --output <TODO>");
+        logWriter.print("  ");
+        logWriter.print(jlinkCmd.stream().collect(Collectors.joining(" ")));
         for (Plugin p: forwardingPlugins) {
             List<Map<String, String>> configs = pluginMaps.get(p);
             for (Map<String, String> config: configs) {
-                logWriter.print("--" + p.getName() + " " + config.get(p.getName()));
+                String value = config.get(p.getName());
+                // Work-around for --dedup-legal-notices which auto-enables,
+                // carries forward and doesn't allow to be run without argument
+                // value from the CLI.
+                if (p instanceof LegalNoticeFilePlugin && value == null) {
+                    continue;
+                }
+                logWriter.print(" --" + p.getName());
+                if (value != null) {
+                    logWriter.print(" " + value);
+                }
             }
-            logWriter.print(" ");
         }
         logWriter.println();
-    }
-
-    private static boolean isCarryingForward(Plugin p) {
-        if (p.getType() == Category.TRANSFORMER || p.getType() == Category.FILTER) {
-            return !(p instanceof GenerateJLIClassesPlugin) && !(p instanceof SystemModulesPlugin);
-        }
-        return false;
     }
 
     private static void collectNonClassResources(String modName,

@@ -164,6 +164,13 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
         return List.of("regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class");
     }
 
+    // This plugin doesn't persist, since generated classes are filtered for
+    // run-time image based links.
+    @Override
+    public boolean runTimeImageLinkPersistent() {
+        return false;
+    }
+
     private static final String DIRECT_METHOD_HOLDER_ENTRY =
             "/java.base/java/lang/invoke/DirectMethodHandle$Holder.class";
     private static final String DELEGATING_METHOD_HOLDER_ENTRY =
