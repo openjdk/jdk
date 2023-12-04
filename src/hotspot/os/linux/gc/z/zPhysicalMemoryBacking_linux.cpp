@@ -448,7 +448,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_tmpfs(zoffset offset, size_
   }
 
   // Maybe madvise the mapping to use transparent huge pages
-  if (HugePages::should_madvise_shmem_thps()) {
+  if (os::Linux::should_madvise_shmem_thps()) {
     os::Linux::madvise_transparent_huge_pages(addr, length);
   }
 

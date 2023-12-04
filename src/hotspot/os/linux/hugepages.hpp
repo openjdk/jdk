@@ -126,9 +126,6 @@ class HugePages : public AllStatic {
   static THPSupport _thp_support;
   static ShmemTHPSupport _shmem_thp_support;
 
-  static bool _huge_pages_requested;
-  static bool _thp_requested;
-
 public:
 
   static const StaticHugePageSupport& static_info() { return _static_hugepage_support; }
@@ -143,10 +140,8 @@ public:
   static size_t thp_pagesize()                  { return _thp_support.pagesize(); }
 
   static bool supports_shmem_thp()              { return _shmem_thp_support.is_enabled(); }
+  static ShmemTHPMode shmem_thp_mode()          { return _shmem_thp_support.mode(); }
   static bool forced_shmem_thp()                { return _shmem_thp_support.is_forced(); }
-  static bool thp_requested()                   { return _thp_requested; }
-  static bool should_madvise_anonymous_thps()   { return _thp_requested && _thp_support.mode() == THPMode::madvise; }
-  static bool should_madvise_shmem_thps()       { return _thp_requested && _shmem_thp_support.mode() == ShmemTHPMode::advise; }
 
   static void initialize();
   static void print_on(outputStream* os);

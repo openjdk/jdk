@@ -310,15 +310,11 @@ void ShmemTHPSupport::print_on(outputStream* os) {
 StaticHugePageSupport HugePages::_static_hugepage_support;
 THPSupport HugePages::_thp_support;
 ShmemTHPSupport HugePages::_shmem_thp_support;
-bool HugePages::_thp_requested{false};
 
 void HugePages::initialize() {
   _static_hugepage_support.scan_os();
   _thp_support.scan_os();
   _shmem_thp_support.scan_os();
-
-  const bool huge_pages_turned_off = !FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages;
-  _thp_requested = UseTransparentHugePages && !huge_pages_turned_off;
 }
 
 void HugePages::print_on(outputStream* os) {

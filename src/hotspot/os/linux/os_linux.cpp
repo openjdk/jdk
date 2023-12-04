@@ -174,6 +174,8 @@ bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
 
+bool os::Linux::_thp_requested{false};
+
 #ifdef __GLIBC__
 // We want to be buildable and runnable on older and newer glibcs, so resolve both
 // mallinfo and mallinfo2 dynamically.
@@ -2883,7 +2885,7 @@ void os::Linux::madvise_transparent_huge_pages(void* addr, size_t bytes) {
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  if (HugePages::should_madvise_anonymous_thps() && alignment_hint > vm_page_size()) {
+  if (Linux::should_madvise_anonymous_thps() && alignment_hint > vm_page_size()) {
     Linux::madvise_transparent_huge_pages(addr, bytes);
   }
 }
@@ -3714,7 +3716,7 @@ static void warn_thp_not_configured() {
     return;
   }
 
-  if (UseZGC && HugePages::thp_requested() && HugePages::supports_shmem_thp()) {
+  if (UseZGC && os::Linux::thp_requested() && HugePages::supports_shmem_thp()) {
     // ZGC uses shared memory THPs; don't warn if those are configured
     return;
   }
@@ -3741,16 +3743,24 @@ struct LargePageInitializationLoggerMark {
   static bool uses_zgc_shmem_thp() {
     return UseZGC &&
         // If user requested THP
-        ((HugePages::thp_requested() && HugePages::supports_shmem_thp()) ||
+        ((os::Linux::thp_requested() && HugePages::supports_shmem_thp()) ||
         // If OS forced THP
          HugePages::forced_shmem_thp());
   }
 };
 
 void os::large_page_init() {
+  Linux::large_page_init();
+}
+
+void os::Linux::large_page_init() {
   LargePageInitializationLoggerMark logger;
 
-  // Query OS information first and store flag values before changing their values.
+  // Decide if the user asked for THPs before we update UseTransparentHugePages.
+  const bool large_pages_turned_off = !FLAG_IS_DEFAULT(UseLargePages) && !UseLargePages;
+  _thp_requested = UseTransparentHugePages && !large_pages_turned_off;
+
+  // Query OS information first.
   HugePages::initialize();
 
   // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
@@ -3867,6 +3877,18 @@ void os::large_page_init() {
   }
 
   set_coredump_filter(LARGEPAGES_BIT);
+}
+
+bool os::Linux::thp_requested() {
+  return _thp_requested;
+}
+
+bool os::Linux::should_madvise_anonymous_thps() {
+  return _thp_requested && HugePages::thp_mode() == THPMode::madvise;
+}
+
+bool os::Linux::should_madvise_shmem_thps() {
+  return _thp_requested && HugePages::shmem_thp_mode() == ShmemTHPMode::advise;
 }
 
 static void log_on_commit_special_failure(char* req_addr, size_t bytes,
