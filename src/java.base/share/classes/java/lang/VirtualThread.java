@@ -191,15 +191,7 @@ final class VirtualThread extends BaseVirtualThread {
         protected void onPinned(Continuation.Pinned reason) {
             if (TRACE_PINNING_MODE > 0) {
                 boolean printAll = (TRACE_PINNING_MODE == 1);
-                VirtualThread vthread = (VirtualThread) Thread.currentThread();
-                int oldState = vthread.state();
-                try {
-                    // avoid printing when in transition states
-                    vthread.setState(RUNNING);
-                    PinnedThreadPrinter.printStackTrace(System.out, printAll);
-                } finally {
-                    vthread.setState(oldState);
-                }
+                PinnedThreadPrinter.printStackTrace(System.out, printAll);
             }
         }
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
