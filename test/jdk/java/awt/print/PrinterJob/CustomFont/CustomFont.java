@@ -25,7 +25,7 @@
   @test
   @bug 4386025 8231243
   @summary fonts not in win32 font directory print incorrectly.
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual CustomFont
 */
 import java.io.*;
