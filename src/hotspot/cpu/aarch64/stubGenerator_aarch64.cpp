@@ -7330,8 +7330,8 @@ class StubGenerator: public StubCodeGenerator {
     RegPair _reg_pairs[3];
     RegPairs(RegSetIterator<Register> &it, int n) {
       for (int i = 0; i < n; i++) {
-	RegPair r(*it++, *it++);
-	_reg_pairs[i] = r;
+        RegPair r(*it++, *it++);
+        _reg_pairs[i] = r;
       }
     }
     operator RegPair*() { return _reg_pairs; }
@@ -7458,51 +7458,51 @@ class StubGenerator: public StubCodeGenerator {
       __ align(OptoLoopAlignment);
       __ bind(LOOP);
       {
-	constexpr int COLS = 4;
-	AsmGenerator gen[COLS];
+        constexpr int COLS = 4;
+        AsmGenerator gen[COLS];
 
-	__ poly1305_step(gen[0], S0, u0, input_start);
-	__ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
+        __ poly1305_step(gen[0], S0, u0, input_start);
+        __ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
 
-	__ poly1305_step(gen[1], S1, u1, input_start);
-	__ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
+        __ poly1305_step(gen[1], S1, u1, input_start);
+        __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
-	__ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
-	__ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
-				   vregs.remaining());
+        __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
+        __ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
+                                   vregs.remaining());
 
-	__ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
-	__ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
-				   vregs.remaining());
+        __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
+        __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
+                                   vregs.remaining());
 
-	AsmGenerator::Iterator it[COLS];
-	int len[COLS];
+        AsmGenerator::Iterator it[COLS];
+        int len[COLS];
 
-	int l_max = INT_MIN;
-	for (int col = 0; col < COLS; col++) {
-	  it[col] = gen[col].iterator();
-	  len[col] = gen[col].length();
-	  l_max = MAX2(l_max, len[col]);
-	}
+        int l_max = INT_MIN;
+        for (int col = 0; col < COLS; col++) {
+          it[col] = gen[col].iterator();
+          len[col] = gen[col].length();
+          l_max = MAX2(l_max, len[col]);
+        }
 
-	int err[COLS];
-	for (int col = 0; col < COLS; col++) {
-	  err[col] = 0;
-	}
+        int err[COLS];
+        for (int col = 0; col < COLS; col++) {
+          err[col] = 0;
+        }
 
-	for (int i = 0; i < l_max; i++) {
-	  for (int col = 0; col < COLS; col++) {
-	    err[col] -= len[col];
-	    if (err[col] < 0) {
-	      err[col] += l_max;
-	      (it[col]++)();
-	    }
-	  }
-	}
+        for (int i = 0; i < l_max; i++) {
+          for (int col = 0; col < COLS; col++) {
+            err[col] -= len[col];
+            if (err[col] < 0) {
+              err[col] += l_max;
+              (it[col]++)();
+            }
+          }
+        }
 
-	for (int col = 0; col < COLS; col++) {
-	  assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
-	}
+        for (int col = 0; col < COLS; col++) {
+          assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+        }
       }
 
       __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
