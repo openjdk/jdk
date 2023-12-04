@@ -42,7 +42,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void testHelloWorldInTwoCompilationUnits(@TempDir Path base) throws Exception {
         var hello = Files.writeString(base.resolve("Hello.java"),
-                """
+                    """
                     public class Hello {
                       public static void main(String... args) {
                         System.out.println("Hello " + new World("Terra"));
@@ -71,7 +71,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void testLoadingOfEnclosedTypes(@TempDir Path base) throws Exception {
         var hello = Files.writeString(base.resolve("Hello.java"),
-                """
+                    """
                     public class Hello {
                       public static void main(String... args) throws Exception {
                         System.out.println(Class.forName("World$Core"));
@@ -87,7 +87,7 @@ class MultiFileSourceLauncherTests {
                     """);
         var pq = Files.createDirectories(base.resolve("p/q"));
         Files.writeString(pq.resolve("Unit.java"),
-                """
+                    """
                     package p.q;
                     record Unit() {
                       record First() {
@@ -113,7 +113,7 @@ class MultiFileSourceLauncherTests {
     void testMultiplePackages(@TempDir Path base) throws Exception {
         var packageA = Files.createDirectories(base.resolve("a"));
         var hello = Files.writeString(packageA.resolve("Hello.java"),
-                """
+                    """
                     package a;
                     import b.World;
                     public class Hello {
@@ -124,7 +124,7 @@ class MultiFileSourceLauncherTests {
                     """);
         var packageB = Files.createDirectories(base.resolve("b"));
         Files.writeString(packageB.resolve("World.java"),
-                """
+                    """
                     package b;
                     public record World(String name) {}
                     """);
@@ -142,7 +142,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void testMissingSecondUnit(@TempDir Path base) throws Exception {
         var program = Files.writeString(base.resolve("Program.java"),
-                """
+                    """
                     public class Program {
                       public static void main(String... args) {
                         System.out.println("Hello " + new MissingSecondUnit());
@@ -170,7 +170,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void testSecondUnitWithSyntaxError(@TempDir Path base) throws Exception {
         var program = Files.writeString(base.resolve("Program.java"),
-                """
+                    """
                     public class Program {
                       public static void main(String... args) {
                         System.out.println("Hello " + new BrokenSecondUnit());
@@ -178,7 +178,7 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         var broken = Files.writeString(base.resolve("BrokenSecondUnit.java"),
-                """
+                    """
                     record BrokenSecondUnit {}
                     """);
 
@@ -198,7 +198,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void onlyJavaFilesReferencedByTheProgramAreCompiled(@TempDir Path base) throws Exception {
         var prog = Files.writeString(base.resolve("Prog.java"),
-                """
+                    """
                     class Prog {
                       public static void main(String... args) {
                         Helper.run();
@@ -206,7 +206,7 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         Files.writeString(base.resolve("Helper.java"),
-                """
+                    """
                     class Helper {
                       static void run() {
                         System.out.println("Hello!");
@@ -215,7 +215,7 @@ class MultiFileSourceLauncherTests {
                     """);
 
         var old = Files.writeString(base.resolve("OldProg.java"),
-                """
+                    """
                     class OldProg {
                       public static void main(String... args) {
                         Helper.run()
@@ -282,7 +282,7 @@ class MultiFileSourceLauncherTests {
     @Test
     void duplicateDeclarationOfClassFails(@TempDir Path base) throws Exception {
         var prog = Files.writeString(base.resolve("Prog.java"),
-                """
+                    """
                     class Prog {
                       public static void main(String... args) {
                         Helper.run();
@@ -294,7 +294,7 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         var helper = Files.writeString(base.resolve("Helper.java"),
-                """
+                    """
                     class Helper {
                       static void run() {}
                     }

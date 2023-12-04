@@ -38,7 +38,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
+import java.util.spi.ToolProvider;
 
 class ModuleSourceLauncherTests {
     @Test
@@ -155,5 +157,65 @@ class ModuleSourceLauncherTests {
                     """.lines(),
                     reader.list());
         }
+    }
+
+    @Test
+    void testUserModuleOnModulePath(@TempDir Path base) throws Exception {
+        Files.createDirectories(base.resolve("foo", "foo"));
+        Files.writeString(base.resolve("foo", "module-info.java"),
+                """
+                module foo {
+                  exports foo;
+                }
+                """);
+        Files.writeString(base.resolve("foo", "foo", "Foo.java"),
+                """
+                package foo;
+                public record Foo() {}
+                """);
+        var javac = ToolProvider.findFirst("javac").orElseThrow();
+        javac.run(System.out, System.err, "--module-source-path", base.toString(), "--module", "foo", "-d", base.toString());
+
+        Files.createDirectories(base.resolve("bar", "bar"));
+        Files.writeString(base.resolve("bar", "module-info.java"),
+                """
+                module bar {
+                  requires foo;
+                }
+                """);
+        Files.writeString(base.resolve("bar", "bar","Prog1.java"),
+                """
+                package bar;
+                
+                class Prog1 {
+                  public static void main(String... args) {
+                    System.out.println(new foo.Foo());
+                  }
+                }
+                """);
+
+        var command = List.of(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-p", ".",
+                "bar/bar/Prog1.java");
+        var redirectedOut = base.resolve("out.redirected");
+        var redirectedErr = base.resolve("err.redirected");
+        var process = new ProcessBuilder(command)
+                .directory(base.toFile())
+                .redirectOutput(redirectedOut.toFile())
+                .redirectError(redirectedErr.toFile())
+                .start();
+        var code = process.waitFor();
+        var out = Files.readAllLines(redirectedOut);
+        var err = Files.readAllLines(redirectedErr);
+
+        assertAll(
+                () -> assertEquals(0, code),
+                () -> assertLinesMatch(
+                      """
+                      Foo[]
+                      """.lines(), out.stream()),
+                () -> assertTrue(err.isEmpty())
+        );
     }
 }
