@@ -98,8 +98,6 @@ public class GatherersScanTest {
                 .gather(Gatherers.scan(() -> 0L, (acc, next) -> acc + next))
                 .toList();
 
-        System.out.println(expectedResult);
-        System.out.println(result);
         assertEquals(expectedResult, result);
     }
 }

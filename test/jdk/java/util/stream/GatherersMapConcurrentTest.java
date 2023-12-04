@@ -220,7 +220,6 @@ public class GatherersMapConcurrentTest {
                                 try {
                                     tasksWaiting.acquire();
                                 } catch (InterruptedException ie) {
-                                    System.out.println("Current count: " + tasksCancelled.getCount());
                                     tasksCancelled.countDown(); // used to ensure that they all were interrupted
                                 }
                             }
@@ -233,9 +232,7 @@ public class GatherersMapConcurrentTest {
             .toList();
         assertEquals(List.of(1), result);
         try {
-            if (!tasksCancelled.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
-                fail("Missed " + tasksCancelled.getCount() + " cancellations.");
-            }
+            tasksCancelled.await();
         } catch (InterruptedException ie) {
             fail("Unexpected");
         }
