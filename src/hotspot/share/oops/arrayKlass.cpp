@@ -121,6 +121,7 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
   java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
 }
 
+
 ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
@@ -130,26 +131,26 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
 
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
+    auto test = [&] () { return higher_dimension_acquire() == nullptr; };
+    bool claim = claim_array_alloc(THREAD, test);
 
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
+    // This thread is the creator.
+    if (claim) {
+      // Create multi-dim klass object and link them together
+      ObjArrayKlass* ak =
+          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, THREAD);
+      // use 'release' to pair with lock-free load
+      release_set_higher_dimension(ak);
 
-        // Create multi-dim klass object and link them together
-        ObjArrayKlass* ak =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
+      release_array_alloc(THREAD);
+    }
+    if (HAS_PENDING_EXCEPTION) {
+      return nullptr;
     }
   }
 
-  ObjArrayKlass *ak = higher_dimension();
+  ObjArrayKlass* ak = higher_dimension();
+  assert(ak != nullptr, "should be set");
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }

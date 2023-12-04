@@ -63,33 +63,18 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
     Klass* element_super = element_klass->super();
     if (element_super != nullptr) {
       // The element type has a direct super.  E.g., String[] has direct super of Object[].
-      super_klass = element_super->array_klass_or_null();
-      bool supers_exist = super_klass != nullptr;
       // Also, see if the element has secondary supertypes.
-      // We need an array type for each.
+      // We need an array type for each before creating this array type.
+      super_klass = element_super->array_klass(CHECK_NULL);
       const Array<Klass*>* element_supers = element_klass->secondary_supers();
-      for( int i = element_supers->length()-1; i >= 0; i-- ) {
+      for (int i = element_supers->length()-1; i >= 0; i-- ) {
         Klass* elem_super = element_supers->at(i);
-        if (elem_super->array_klass_or_null() == nullptr) {
-          supers_exist = false;
-          break;
-        }
-      }
-      if (!supers_exist) {
-        // Oops.  Not allocated yet.  Back out, allocate it, and retry.
-        Klass* ek = nullptr;
-        {
-          MutexUnlocker mu(MultiArray_lock);
-          super_klass = element_super->array_klass(CHECK_NULL);
-          for( int i = element_supers->length()-1; i >= 0; i-- ) {
-            Klass* elem_super = element_supers->at(i);
-            elem_super->array_klass(CHECK_NULL);
-          }
-          // Now retry from the beginning
-          ek = element_klass->array_klass(n, CHECK_NULL);
-        }  // re-lock
-        return ObjArrayKlass::cast(ek);
-      }
+        elem_super->array_klass(CHECK_NULL);
+      }  // fall through, because we hold the claim token.
+      // Because inheritance is acyclic, we hold the global token and allocate all the arrays.
+      // per-klass locks would be more scalable and this would still work for that but jvmti would have
+      // to query all the klasses for allocation for any held.
+      assert(claim_array_allocate_token() == THREAD, "we allocate all the arrays");
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
       super_klass = vmClasses::Object_klass();
@@ -149,6 +134,10 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   assert(bk != nullptr && (bk->is_instance_klass() || bk->is_typeArray_klass()), "invalid bottom klass");
   set_bottom_klass(bk);
   set_class_loader_data(bk->class_loader_data());
+
+  if (element_klass->is_array_klass()) {
+    set_lower_dimension(ArrayKlass::cast(element_klass));
+  }
 
   set_layout_helper(array_layout_helper(T_OBJECT));
   assert(is_array_klass(), "sanity");

@@ -55,6 +55,23 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
+// Since we can't allocate arrays inside a mutex, winning thread claims the right to allocate
+JavaThread* Klass::_claim_array_allocate_token = nullptr;
+// It's a recursive lock
+uint _claim_array_allocate_token_refcount = 0;
+
+void Klass::set_claim_array_allocate_token(JavaThread* thread) {
+  if (thread == nullptr) {
+    _claim_array_allocate_token_refcount--;
+    if (_claim_array_allocate_token_refcount == 0) {
+      Atomic::release_store(&_claim_array_allocate_token, thread);
+    }
+  } else {
+    _claim_array_allocate_token_refcount++;
+    Atomic::release_store(&_claim_array_allocate_token, thread);
+  }
+}
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");

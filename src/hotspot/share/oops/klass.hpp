@@ -553,6 +553,18 @@ protected:
 
   inline oop klass_holder() const;
 
+ private:
+  static JavaThread* _claim_array_allocate_token;
+  static void set_claim_array_allocate_token(JavaThread* thread);
+
+ protected:
+  static JavaThread* claim_array_allocate_token()                { return Atomic::load_acquire(&_claim_array_allocate_token); }
+ public:
+  template<typename Function>
+  static bool claim_array_alloc(JavaThread* current, Function function);
+  static bool try_claim_array_alloc(JavaThread* current);
+  static void release_array_alloc(JavaThread* current);
+
  protected:
 
   // Error handling when length > max_length or length < 0

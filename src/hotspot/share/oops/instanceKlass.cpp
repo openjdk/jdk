@@ -1545,23 +1545,28 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
 ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
-    ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD;
-    {
-      // Atomic creation of array_klasses
-      MutexLocker ma(THREAD, MultiArray_lock);
 
-      // Check if update has already taken place
-      if (array_klasses() == nullptr) {
-        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
-        // use 'release' to pair with lock-free load
-        release_set_array_klasses(k);
-      }
+    auto test = [&] () { return array_klasses_acquire() == nullptr; };
+    bool claim = claim_array_alloc(THREAD, test);
+
+    // This thread is the creator.
+    if (claim) {
+      ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, THREAD);
+      // use 'release' to pair with lock-free load
+      release_set_array_klasses(k);
+
+      // Release allocateion token
+      release_array_alloc(THREAD);
+    }
+    if (HAS_PENDING_EXCEPTION) {
+      return nullptr;
     }
   }
+
   // array_klasses() will always be set at this point
-  ObjArrayKlass* oak = array_klasses();
-  return oak->array_klass(n, THREAD);
+  ObjArrayKlass* ak = array_klasses();
+  assert(ak != nullptr, "should be set");
+  return ak->array_klass(n, THREAD);
 }
 
 ArrayKlass* InstanceKlass::array_klass_or_null(int n) {

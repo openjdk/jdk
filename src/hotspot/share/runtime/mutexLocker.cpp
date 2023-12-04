@@ -86,7 +86,7 @@ Monitor* Compilation_lock             = nullptr;
 Mutex*   CompileTaskAlloc_lock        = nullptr;
 Mutex*   CompileStatistics_lock       = nullptr;
 Mutex*   DirectivesStack_lock         = nullptr;
-Mutex*   MultiArray_lock              = nullptr;
+Monitor* MultiArray_lock              = nullptr;
 Monitor* Terminator_lock              = nullptr;
 Monitor* InitCompleted_lock           = nullptr;
 Monitor* BeforeExit_lock              = nullptr;
@@ -269,7 +269,7 @@ void mutex_init() {
   MUTEX_DEFN(MethodCompileQueue_lock         , PaddedMonitor, safepoint);
   MUTEX_DEFN(CompileStatistics_lock          , PaddedMutex  , safepoint);
   MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(MultiArray_lock                 , PaddedMutex  , safepoint);
+  MUTEX_DEFN(MultiArray_lock                 , PaddedMonitor, safepoint);
 
   MUTEX_DEFN(JvmtiThreadState_lock           , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI

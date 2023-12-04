@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
+#include "runtime/mutexLocker.hpp"
 
 // This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
@@ -74,6 +75,43 @@ inline vtableEntry* Klass::start_of_vtable() const {
 
 inline ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
+}
+
+template<typename Function>
+inline bool Klass::claim_array_alloc(JavaThread* current, Function function) {
+  // Ensure atomic creation of array_klasses or higher dimensions
+  MonitorLocker ma(current, MultiArray_lock);
+  JavaThread* winner = claim_array_allocate_token();
+  while (winner != nullptr && winner != current) {
+    ma.wait();
+    winner = claim_array_allocate_token();  // check again
+  }
+
+  // Check if update has already taken place
+  if (function()) {
+    set_claim_array_allocate_token(current);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline bool Klass::try_claim_array_alloc(JavaThread* current) {
+  MonitorLocker ma(current, MultiArray_lock);
+  // Check if update has already taken place under MultiArray_lock
+  JavaThread* winner = claim_array_allocate_token();
+  if (winner == nullptr || winner == current) {
+    set_claim_array_allocate_token(current);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline void Klass::release_array_alloc(JavaThread* current) {
+  MonitorLocker ma(current, MultiArray_lock);
+  set_claim_array_allocate_token(nullptr);
+  ma.notify_all();
 }
 
 #endif // SHARE_OOPS_KLASS_INLINE_HPP

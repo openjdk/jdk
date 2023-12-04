@@ -1782,6 +1782,15 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
     return;
   }
 
+  // If any thread is trying to allocate an ObjArray and fails due to OOM, don't post the event unless
+  // we hold the claim token, otherwise any array allocation in Java code from the event will hang.
+  // The claim token is like a reentrant lock, so this thread will be able to allocate arrays in the Java
+  // code if it wants.
+  bool claim = Klass::try_claim_array_alloc(thread);
+  if (!claim) {
+    return;
+  }
+
   EVT_TRIG_TRACE(JVMTI_EVENT_RESOURCE_EXHAUSTED, ("Trg resource exhausted event triggered" ));
 
   JvmtiEnvIterator it;
@@ -1798,6 +1807,7 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
       }
     }
   }
+  Klass::release_array_alloc(thread);
 }
 
 void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame current_frame) {
