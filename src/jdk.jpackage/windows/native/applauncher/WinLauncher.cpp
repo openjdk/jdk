@@ -155,24 +155,34 @@ public:
     static DWORD apply(const Executor& exec) {
         RunExecutorWithMsgLoop instance(exec);
 
-        if (!CreateThread(NULL, 0, worker, static_cast<LPVOID>(&instance),
-                                                                  0, NULL)) {
-            JP_THROW(SysError(tstrings::any()
-                                  << "CreateThread() failed", CreateThread));
+        UniqueHandle threadHandle = UniqueHandle(CreateThread(NULL, 0, worker,
+                                    static_cast<LPVOID>(&instance), 0, NULL));
+        if (threadHandle.get() == NULL) {
+            JP_THROW(SysError("CreateThread() failed", CreateThread));
         }
 
         MSG msg;
         BOOL bRet;
         while((bRet = GetMessage(&msg, instance.hwnd, 0, 0 )) != 0) {
             if (bRet == -1) {
-                JP_THROW(SysError(tstrings::any()
-                                      << "GetMessage() failed", GetMessage));
+                JP_THROW(SysError("GetMessage() failed", GetMessage));
             } else {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
         }
 
+        // Wait for worker thread to terminate to guarantee it will not linger
+        // around after the thread running a message loop terminates.
+        const DWORD res = ::WaitForSingleObject(threadHandle.get(), INFINITE);
+        if (WAIT_FAILED ==  res) {
+            JP_THROW(SysError("WaitForSingleObject() failed",
+                                                        WaitForSingleObject));
+        }
+
+        LOG_TRACE(tstrings::any()
+                            << "Executor worker thread terminated. Exit code="
+                            << instance.exitCode);
         return instance.exitCode;
     }
 
@@ -180,11 +190,11 @@ private:
     RunExecutorWithMsgLoop(const Executor& v): exec(v) {
         exitCode = 1;
 
+        // Message-only window.
         hwnd = CreateWindowEx(0, _T("STATIC"), _T(""), 0, 0, 0, 0, 0,
                               HWND_MESSAGE, NULL, GetModuleHandle(NULL), NULL);
         if (!hwnd) {
-            JP_THROW(SysError(tstrings::any()
-                              << "CreateWindowEx() failed", CreateWindowEx));
+            JP_THROW(SysError("CreateWindowEx() failed", CreateWindowEx));
         }
     }
 
@@ -200,12 +210,12 @@ private:
 
         JP_TRY;
         if (!PostMessage(hwnd, WM_QUIT, 0, 0)) {
-            JP_THROW(SysError(tstrings::any()
-                              << "PostMessage(WM_QUIT) failed", PostMessage));
+            JP_THROW(SysError("PostMessage(WM_QUIT) failed", PostMessage));
         }
         return;
         JP_CATCH_ALL;
 
+        // All went wrong, PostMessage() failed. Just terminate with error code.
         exit(1);
     }
 
