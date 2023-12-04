@@ -412,7 +412,8 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
         }
         if (time_differs) {
           log_warning(cds)("%s timestamp has changed.", name);
-        } else {
+        }
+        if (size_differs) {
           log_warning(cds)("%s size has changed.", name);
         }
       }
