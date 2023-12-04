@@ -76,11 +76,6 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
-  product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
-          "Unload the classes every Nth cycle. Normally affects concurrent "\
-          "GC cycles, as degenerated and full GCs would try to unload "     \
-          "classes regardless. Set to zero to disable class unloading.")    \
-                                                                            \
   product(uintx, ShenandoahGarbageThreshold, 25, EXPERIMENTAL,              \
           "How much garbage a region has to contain before it would be "    \
           "taken for collection. This a guideline only, as GC heuristics "  \
@@ -360,15 +355,12 @@
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
-  develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
+  develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \
   product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
           "Attempt more loop opts after barrier expansion.")                \
                                                                             \
-  product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
-          "Fix references with load reference barrier. Disabling this "     \
-          "might degrade performance.")
 
 // end of GC_SHENANDOAH_FLAGS
 

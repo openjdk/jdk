@@ -256,6 +256,9 @@ private:
   // NUMA node.
   uint _node_index;
 
+  // Number of objects in this region that are currently pinned.
+  volatile uint _pinned_object_count;
+
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
   template <class Closure, bool in_gc_pause>
@@ -298,6 +301,9 @@ public:
 
   static uint   LogOfHRGrainBytes;
   static uint   LogCardsPerRegion;
+
+  inline void increment_pinned_object_count();
+  inline void decrement_pinned_object_count();
 
   static size_t GrainBytes;
   static size_t GrainWords;
@@ -401,6 +407,9 @@ public:
   bool is_old() const { return _type.is_old(); }
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
+
+  uint pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();
 

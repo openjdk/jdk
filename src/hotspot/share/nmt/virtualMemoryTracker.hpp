@@ -42,21 +42,17 @@ class VirtualMemory {
   size_t     _reserved;
   size_t     _committed;
 
-#ifdef ASSERT
   volatile size_t _peak_size;
   void update_peak(size_t size);
-#endif // ASSERT
 
  public:
-  VirtualMemory() : _reserved(0), _committed(0) {
-    DEBUG_ONLY(_peak_size  = 0;)
-  }
+  VirtualMemory() : _reserved(0), _committed(0), _peak_size(0) {}
 
   inline void reserve_memory(size_t sz) { _reserved += sz; }
   inline void commit_memory (size_t sz) {
     _committed += sz;
-    DEBUG_ONLY(update_peak(sz);)
     assert(_committed <= _reserved, "Sanity check");
+    update_peak(_committed);
   }
 
   inline void release_memory (size_t sz) {
@@ -72,7 +68,7 @@ class VirtualMemory {
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
   inline size_t peak_size() const {
-    return DEBUG_ONLY(Atomic::load(&_peak_size)) NOT_DEBUG(0);
+    return Atomic::load(&_peak_size);
   }
 };
 
@@ -85,10 +81,9 @@ class VirtualMemoryAllocationSite : public AllocationSite {
 
   inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
-  inline void uncommit_memory(size_t sz) { _c.uncommit_memory(sz); }
-  inline void release_memory(size_t sz)  { _c.release_memory(sz);  }
   inline size_t reserved() const  { return _c.reserved(); }
   inline size_t committed() const { return _c.committed(); }
+  inline size_t peak_size() const { return _c.peak_size(); }
 };
 
 class VirtualMemorySummary;

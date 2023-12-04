@@ -21,18 +21,14 @@
  * questions.
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.*;
+import static java.lang.classfile.TypeAnnotation.TargetType.*;
 
 /*
  * @test
  * @bug 8042451 8044009 8044010
  * @summary Test population of reference info for nested types
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java NestedTypes.java
  * @run main Driver NestedTypes
