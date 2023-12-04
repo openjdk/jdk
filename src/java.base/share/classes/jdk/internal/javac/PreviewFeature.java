@@ -77,6 +77,8 @@ public @interface PreviewFeature {
         SCOPED_VALUES,
         @JEP(number=462, title="Structured Concurrency", status="Second Preview")
         STRUCTURED_CONCURRENCY,
+        @JEP(number=457, title="ClassFile API", status="Preview")
+        CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
         /**

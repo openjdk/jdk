@@ -1573,38 +1573,6 @@ class VectorCastD2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-class RoundVFNode : public VectorNode {
- public:
-  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastB2XNode : public VectorCastNode {
- public:
-  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
-  }
-  virtual int Opcode() const;
-};
-
-class RoundVDNode : public VectorNode {
- public:
-  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastS2XNode : public VectorCastNode {
- public:
-  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
-  }
-  virtual int Opcode() const;
-};
-
 class VectorCastHF2FNode : public VectorCastNode {
  public:
   VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1621,10 +1589,50 @@ class VectorCastF2HFNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// So far, VectorUCastNode can only be used in Vector API unsigned extensions
+// between integral types. E.g., extending byte to float is not supported now.
+class VectorUCastB2XNode : public VectorCastNode {
+ public:
+  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+    assert(vt->element_basic_type() == T_SHORT ||
+           vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastS2XNode : public VectorCastNode {
+ public:
+  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
+    assert(vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVFNode : public VectorNode {
+ public:
+  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVDNode : public VectorNode {
+ public:
+  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
   }
   virtual int Opcode() const;
 };
