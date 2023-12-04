@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Util.
+ * @summary Testing ClassFile Util.
  * @run junit UtilTest
  */
 import java.lang.constant.MethodTypeDesc;

@@ -27,16 +27,12 @@
  * @summary Test for an interface using condy with default overpass methods
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @run testng CondyInterfaceWithOverpassMethods
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyInterfaceWithOverpassMethods
  */
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
@@ -80,11 +76,11 @@ public class CondyInterfaceWithOverpassMethods {
         String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class,
                 String.class, Class.class).toMethodDescriptorString();
 
-        byte[] byteArray = Classfile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
-                .withFlags(Classfile.ACC_INTERFACE + Classfile.ACC_ABSTRACT)
+        byte[] byteArray = ClassFile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
+                .withFlags(ClassFile.ACC_INTERFACE + ClassFile.ACC_ABSTRACT)
                 .withSuperclass(ConstantDescs.CD_Object)
                 .withInterfaceSymbols(InstructionHelper.classDesc(A.class))
-                .withMethod("y", MethodTypeDesc.of(ConstantDescs.CD_String), Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder
+                .withMethod("y", MethodTypeDesc.of(ConstantDescs.CD_String), ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
                         .withCode(codeBuilder -> codeBuilder
                                 .ldc(DynamicConstantDesc.ofNamed(
                                                 MethodHandleDesc.of(
