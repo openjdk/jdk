@@ -508,13 +508,6 @@ public:
 
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
-
-  // Reduce capacity to length.
-  // TODO maybe move to CHeap
-  void shrink_to_fit();
-
-  // TODO maybe move to CHeap
-  void clear_and_deallocate();
 };
 
 template <typename E, typename Derived>
@@ -545,40 +538,6 @@ void GrowableArrayWithAllocator<E, Derived>::reserve(int new_capacity) {
   if (new_capacity > this->_capacity) {
     expand_to(new_capacity);
   }
-}
-
-template <typename E, typename Derived>
-void GrowableArrayWithAllocator<E, Derived>::shrink_to_fit() {
-  int old_capacity = this->_capacity;
-  int len = this->_len;
-  assert(len <= old_capacity, "invariant");
-
-  // If already at full capacity, nothing to do.
-  if (len == old_capacity) {
-    return;
-  }
-
-  // If not empty, allocate new, smaller, data, and copy old data to it.
-  E* old_data = this->_data;
-  E* new_data = nullptr;
-  this->_capacity = len;        // Must preceed allocate().
-  if (len > 0) {
-    new_data = static_cast<Derived*>(this)->allocate();
-    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
-  }
-  // Destroy contents of old data, and deallocate it.
-  for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
-  if (old_data != nullptr) {
-    static_cast<Derived*>(this)->deallocate(old_data);
-  }
-  // Install new data, which might be nullptr.
-  this->_data = new_data;
-}
-
-template <typename E, typename Derived>
-void GrowableArrayWithAllocator<E, Derived>::clear_and_deallocate() {
-  this->clear();
-  this->shrink_to_fit();
 }
 
 // Arena allocator
@@ -766,7 +725,43 @@ public:
   void operator delete(void *p) {
     AnyObj::operator delete(p);
   }
+
+  // Reduce capacity to length.
+  void shrink_to_fit();
+
+  void clear_and_deallocate() {
+    this->clear();
+    this->shrink_to_fit();
+  }
 };
+
+template <typename E, MEMFLAGS F>
+void GrowableArrayCHeap<E, F>::shrink_to_fit() {
+  int old_capacity = this->_capacity;
+  int len = this->_len;
+  assert(len <= old_capacity, "invariant");
+
+  // If already at full capacity, nothing to do.
+  if (len == old_capacity) {
+    return;
+  }
+
+  // If not empty, allocate new, smaller, data, and copy old data to it.
+  E* old_data = this->_data;
+  E* new_data = nullptr;
+  this->_capacity = len;        // Must preceed allocate().
+  if (len > 0) {
+    new_data = this->allocate();
+    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
+  }
+  // Destroy contents of old data, and deallocate it.
+  for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
+  if (old_data != nullptr) {
+    this->deallocate(old_data);
+  }
+  // Install new data, which might be nullptr.
+  this->_data = new_data;
+}
 
 // Custom STL-style iterator to iterate over GrowableArrays
 // It is constructed by invoking GrowableArray::begin() and GrowableArray::end()
