@@ -7312,7 +7312,7 @@ class StubGenerator: public StubCodeGenerator {
     RegType _regs[5];
     Regs(RegSetIterator<RegType> &it, int n) {
       for (int i = 0; i < n; i++) {
-	_regs[i] = *it++;
+        _regs[i] = *it++;
       }
     }
     Regs(RegType R0, RegType R1, RegType R2) {
