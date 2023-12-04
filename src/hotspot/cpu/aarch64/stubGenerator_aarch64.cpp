@@ -1,4 +1,4 @@
-/*
+g/*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,10 +77,6 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
-
-typedef __uint128_t u128;
-typedef uint64_t u64;
-typedef uint32_t u32;
 
 // Stub Code definitions
 
