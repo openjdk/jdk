@@ -677,7 +677,7 @@ public class ZipFile implements ZipConstants, Closeable {
         e.method = CENHOW(cen, pos);
         if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
             // read all bits in this field, including sym link attributes
-            e.extraAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
+            e.externalAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
         }
 
         if (elen != 0) {
@@ -1145,12 +1145,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     return zip.entryNameStream();
                 }
                 @Override
-                public int getExtraAttributes(ZipEntry ze) {
-                    return ze.extraAttributes;
+                public int getExternalAttributes(ZipEntry ze) {
+                    return ze.externalAttributes;
                 }
                 @Override
-                public void setExtraAttributes(ZipEntry ze, int extraAttrs) {
-                    ze.extraAttributes = extraAttrs;
+                public void setExternalAttributes(ZipEntry ze, int externalAttrs) {
+                    ze.externalAttributes = externalAttrs;
                 }
 
              }

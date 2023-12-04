@@ -539,7 +539,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * to a version value.
      */
     private int versionMadeBy(ZipEntry e, int version) {
-        return (e.extraAttributes < 0) ? version :
+        return (e.externalAttributes < 0) ? version :
                 VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
     }
 
@@ -635,7 +635,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
         // extra file attributes, used for storing posix permissions etc.
-        writeInt(e.extraAttributes > 0 ? e.extraAttributes << 16 : 0);
+        writeInt(e.externalAttributes > 0 ? e.externalAttributes << 16 : 0);
         writeInt(offset);           // relative offset of local header
         writeBytes(nameBytes, 0, nameBytes.length);
 

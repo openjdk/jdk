@@ -492,7 +492,7 @@ public final class JarSigner {
     private final String tSADigestAlg;
     private final boolean sectionsonly; // do not "sign" the whole manifest
     private final boolean internalsf; // include the .SF inside the PKCS7 block
-    private boolean extraAttrsDetected;
+    private boolean externalAttrsDetected;
 
     private JarSigner(JarSigner.Builder builder) {
 
@@ -936,12 +936,12 @@ public final class JarSigner {
         ze2.setTime(ze.getTime());
         ze2.setComment(ze.getComment());
         ze2.setExtra(ze.getExtra());
-        int extraAttrs = JUZFA.getExtraAttributes(ze);
-        if (!extraAttrsDetected && extraAttrs != -1) {
-            extraAttrsDetected = true;
+        int externalAttrs = JUZFA.getExternalAttributes(ze);
+        if (!externalAttrsDetected && externalAttrs != -1) {
+            externalAttrsDetected = true;
             Event.report(Event.ReporterCategory.ZIPFILEATTRS, "detected");
         }
-        JUZFA.setExtraAttributes(ze2, extraAttrs);
+        JUZFA.setExternalAttributes(ze2, externalAttrs);
         if (ze.getMethod() == ZipEntry.STORED) {
             ze2.setSize(ze.getSize());
             ze2.setCrc(ze.getCrc());
