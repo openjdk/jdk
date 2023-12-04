@@ -748,7 +748,7 @@ JRT_ENTRY(void, Runtime1::throw_incompatible_class_change_error(JavaThread* curr
 JRT_END
 
 
-JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock))
+JRT_ENTRY_NO_ASYNC(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
     _monitorenter_slowcase_cnt++;

@@ -29,9 +29,13 @@
 
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/markWord.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (LockingMode == LM_LIGHTWEIGHT) {
@@ -50,7 +54,12 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
 }
 
 inline markWord ObjectMonitor::header() const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Lightweight locking does not use header");
   return Atomic::load(&_header);
+}
+
+inline uintptr_t ObjectMonitor::header_value() const {
+  return Atomic::load(&_header).value();
 }
 
 inline volatile markWord* ObjectMonitor::header_addr() {
@@ -58,7 +67,18 @@ inline volatile markWord* ObjectMonitor::header_addr() {
 }
 
 inline void ObjectMonitor::set_header(markWord hdr) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Lightweight locking does not use header");
   Atomic::store(&_header, hdr);
+}
+
+inline intptr_t ObjectMonitor::hash_lightweight() const {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only used by lightweight locking");
+  return Atomic::load(&_header).hash();
+}
+
+inline void ObjectMonitor::set_hash_lightweight(intptr_t hash) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only used by lightweight locking");
+  Atomic::store(&_header, markWord::zero().copy_set_hash(hash));
 }
 
 inline int ObjectMonitor::waiters() const {
@@ -178,6 +198,37 @@ inline ObjectMonitor* ObjectMonitor::next_om() const {
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
+}
+
+inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* monitor)
+  : _monitor(monitor) {
+  _monitor->add_to_contentions(1);
+}
+
+inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
+  _monitor->add_to_contentions(-1);
+}
+
+inline oop ObjectMonitor::object_peek() const {
+  if (_object.is_null()) {
+    return nullptr;
+  }
+  return _object.peek();
+}
+
+inline bool ObjectMonitor::object_is_dead() const {
+  return object_peek() == nullptr;
+}
+
+inline bool ObjectMonitor::object_is_cleared() const {
+  return _object.is_null();
+}
+
+inline bool ObjectMonitor::object_refers_to(oop obj) const {
+  if (_object.is_null()) {
+    return false;
+  }
+  return _object.peek() == obj;
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

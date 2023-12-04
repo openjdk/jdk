@@ -153,10 +153,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   //   and small values encode much better.
   // - We test for anonymous owner by testing for the lowest bit, therefore
   //   DEFLATER_MARKER must *not* have that bit set.
-  #define DEFLATER_MARKER reinterpret_cast<void*>(2)
+  static const uintptr_t DEFLATER_MARKER_VALUE = 2;
+  #define DEFLATER_MARKER reinterpret_cast<void*>(DEFLATER_MARKER_VALUE)
 public:
   // NOTE: Typed as uintptr_t so that we can pick it up in SA, via vmStructs.
   static const uintptr_t ANONYMOUS_OWNER = 1;
+  static const uintptr_t ANONYMOUS_OWNER_OR_DEFLATER_MARKER = ANONYMOUS_OWNER | DEFLATER_MARKER_VALUE;
 
 private:
   static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
@@ -235,12 +237,19 @@ private:
   // stall so the helper macro adjusts the offset value that is returned
   // to the ObjectMonitor reference manipulation code:
   //
+  // Lightweight locking fetches ObjectMonitor references from a cache
+  // instead of the markWord and doesn't work with tagged values.
+  //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
+    ((in_bytes(ObjectMonitor::f ## _offset())) - (LockingMode == LM_LIGHTWEIGHT ? 0 : checked_cast<int>(markWord::monitor_value)))
 
   markWord           header() const;
+  uintptr_t          header_value() const;
   volatile markWord* header_addr();
   void               set_header(markWord hdr);
+
+  intptr_t           hash_lightweight() const;
+  void               set_hash_lightweight(intptr_t hash);
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
@@ -251,6 +260,15 @@ private:
     }
     if (!owner_is_DEFLATER_MARKER()) {
       ret_code |= intptr_t(owner_raw());
+    }
+    return ret_code != 0;
+  }
+  bool is_busy_anon() const {
+    // precond (uintptr_t)owner_raw() == ANONYMOUS_OWNER
+    intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
+    int cnts = contentions(); // read once
+    if (cnts > 0) {
+      ret_code |= intptr_t(cnts);
     }
     return ret_code != 0;
   }
@@ -311,6 +329,9 @@ private:
 
   oop       object() const;
   oop       object_peek() const;
+  bool      object_is_cleared() const;
+  bool      object_is_dead() const;
+  bool      object_refers_to(oop obj) const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
@@ -334,6 +355,7 @@ private:
     void operator()(JavaThread* current);
   };
  public:
+  bool      try_enter(JavaThread* current);
   bool      enter(JavaThread* current);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
@@ -363,8 +385,21 @@ private:
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
-  bool      deflate_monitor();
+  bool      deflate_monitor(Thread* current);
+public:
+  bool      deflate_anon_monitor(JavaThread* current);
+private:
   void      install_displaced_markword_in_object(const oop obj);
+};
+
+// RAII object to ensure that ObjectMonitor::is_being_async_deflated() is
+// stable within the context of this mark.
+class ObjectMonitorContentionMark {
+  ObjectMonitor* _monitor;
+
+public:
+  ObjectMonitorContentionMark(ObjectMonitor* monitor);
+  ~ObjectMonitorContentionMark();
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

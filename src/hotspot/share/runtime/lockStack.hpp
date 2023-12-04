@@ -31,15 +31,18 @@
 #include "utilities/sizes.hpp"
 
 class JavaThread;
+class ObjectMonitor;
 class OopClosure;
 class outputStream;
+class Thread;
 
 class LockStack {
   friend class LockStackTest;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
-private:
+public:
   static const int CAPACITY = 8;
+private:
 
   // TODO: It would be very useful if JavaThread::lock_stack_offset() and friends were constexpr,
   // but this is currently not the case because we're using offset_of() which is non-constexpr,
@@ -52,6 +55,7 @@ private:
   // We do this instead of a simple index into the array because this allows for
   // efficient addressing in generated code.
   uint32_t _top;
+  bool _wait_was_inflated;
   // The _bad_oop_sentinel acts as a sentinel value to elide underflow checks in generated code.
   // The correct layout is statically asserted in the constructor.
   const uintptr_t _bad_oop_sentinel = badOopVal;
@@ -79,6 +83,9 @@ public:
   static uint32_t start_offset();
   static uint32_t end_offset();
 
+  // Return true if we have room to push n oops onto this lock-stack, false otherwise.
+  inline bool can_push(int n) const;
+
   // Returns true if the lock-stack is full. False otherwise.
   inline bool is_full() const;
 
@@ -91,6 +98,9 @@ public:
 
   // Is the lock-stack empty.
   inline bool is_empty() const;
+
+  // Get the oldest oop in the stack
+  inline oop top();
 
   // Check if object is recursive.
   // Precondition: This lock-stack must contain the oop.
@@ -114,8 +124,35 @@ public:
   // GC support
   inline void oops_do(OopClosure* cl);
 
+  bool wait_was_inflated() const { return _wait_was_inflated; };
+  void set_wait_was_inflated() { _wait_was_inflated = true; };
+  void clear_wait_was_inflated() { _wait_was_inflated = false; };
+
   // Printing
   void print_on(outputStream* st);
+};
+
+class OMCache {
+  friend class VMStructs;
+public:
+  static constexpr int CAPACITY = 8;
+
+private:
+  oop _oops[CAPACITY];
+  const oop _null_sentinel;
+  ObjectMonitor* _monitors[CAPACITY];
+
+public:
+  static ByteSize oops_offset() { return byte_offset_of(OMCache, _oops); }
+  static ByteSize monitors_offset() { return byte_offset_of(OMCache, _monitors); }
+  static ByteSize oop_to_monitor_difference() { return monitors_offset() - oops_offset(); }
+
+  explicit OMCache(JavaThread* jt) : _oops(), _null_sentinel(nullptr), _monitors() {};
+
+  inline ObjectMonitor* get_monitor(oop o);
+  inline void set_monitor(ObjectMonitor* monitor);
+  inline void clear();
+
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

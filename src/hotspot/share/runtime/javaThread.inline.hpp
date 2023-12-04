@@ -30,6 +30,8 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -37,8 +39,11 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/synchronizer.hpp"
+#include "utilities/sizes.hpp"
 
 inline void JavaThread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;
@@ -237,6 +242,78 @@ inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
 
 inline InstanceKlass* JavaThread::class_to_be_initialized() const {
   return _class_to_be_initialized;
+}
+
+inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
+  assert(this == current(), "only set own thread locals");
+
+  _om_cache.set_monitor(monitor);
+}
+
+inline void JavaThread::om_clear_monitor_cache() {
+
+  _om_cache.clear();
+
+  LogTarget(Info, monitorinflation) lt;
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  ResourceMark rm;
+
+  if (_unlocked_inflation != 0 ||
+      _recursive_inflation != 0 ||
+      _contended_recursive_inflation != 0 ||
+      _contended_inflation != 0 ||
+      _wait_inflation != 0 ||
+      _lock_stack_inflation != 0) {
+    log_info(monitorinflation)("Mon: %8zu Rec: %8zu CRec: %8zu Cont: %8zu Wait: %8zu Stack: %8zu Thread: %s",
+                              _unlocked_inflation,
+                              _recursive_inflation,
+                              _contended_recursive_inflation,
+                              _contended_inflation,
+                              _wait_inflation,
+                              _lock_stack_inflation,
+                              name());
+  }
+  _unlocked_inflation            = 0;
+  _recursive_inflation           = 0;
+  _contended_recursive_inflation = 0;
+  _contended_inflation           = 0;
+  _wait_inflation                = 0;
+  _lock_stack_inflation          = 0;
+
+  if (_wait_deflation != 0 ||
+      _exit_deflation != 0) {
+    log_info(monitorinflation)("Wait: %8zu Exit: %8zu Thread: %s",
+                              _wait_deflation,
+                              _exit_deflation,
+                              name());
+  }
+  _wait_deflation = 0;
+  _exit_deflation = 0;
+
+  if (_lock_lookup != 0 ||
+      _unlock_lookup != 0) {
+    const double lock_hit_rate = (double)_lock_hit / (double)_lock_lookup * 100;
+    const double unlock_hit_rate = (double)_unlock_hit / (double)_unlock_lookup * 100;
+    log_info(monitorinflation)("Lock: %3.2lf %% [%6zu / %6zu] Unlock: %3.2lf %% [%6zu / %6zu] Thread: %s",
+                              lock_hit_rate, _lock_hit, _lock_lookup,
+                              unlock_hit_rate, _unlock_hit, _unlock_lookup,
+                              name());
+  }
+  _lock_hit = 0;
+  _lock_lookup = 0;
+  _unlock_hit = 0;
+  _unlock_lookup = 0;
+}
+
+inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {
+  assert(obj != nullptr, "do not look for null objects");
+  assert(this == current(), "only get own thread locals");
+  return _om_cache.get_monitor(obj);
 }
 
 #endif // SHARE_RUNTIME_JAVATHREAD_INLINE_HPP

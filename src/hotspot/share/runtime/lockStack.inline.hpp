@@ -29,12 +29,15 @@
 #include "runtime/lockStack.hpp"
 
 #include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/synchronizer.hpp"
 
 inline int LockStack::to_index(uint32_t offset) {
   assert(is_aligned(offset, oopSize), "Bad alignment: %u", offset);
@@ -48,6 +51,10 @@ JavaThread* LockStack::get_thread() const {
 
 inline bool LockStack::is_full() const {
   return to_index(_top) == CAPACITY;
+}
+
+inline bool LockStack::can_push(int n) const {
+  return (CAPACITY - to_index(_top)) >= n;
 }
 
 inline bool LockStack::is_owning_thread() const {
@@ -75,6 +82,11 @@ inline void LockStack::push(oop o) {
 inline oop LockStack::bottom() const {
   assert(to_index(_top) > 0, "must contain an oop");
   return _base[0];
+}
+
+inline oop LockStack::top() {
+  assert(to_index(_top) > 0, "may only call with at least one element in the stack");
+  return _base[to_index(_top) - 1];
 }
 
 inline bool LockStack::is_empty() const {
@@ -162,6 +174,7 @@ inline size_t LockStack::remove(oop o) {
 }
 
 inline bool LockStack::contains(oop o) const {
+  assert(o != nullptr, "Catch me!");
   verify("pre-contains");
 
   // Can't poke around in thread oops without having started stack watermark processing.
@@ -185,6 +198,68 @@ inline void LockStack::oops_do(OopClosure* cl) {
     cl->do_oop(&_base[i]);
   }
   verify("post-oops-do");
+}
+
+inline void OMCache::set_monitor(ObjectMonitor *monitor) {
+  const int end = OMCacheSize - 1;
+  if (end < 0) {
+    return;
+  }
+
+  oop obj = monitor->object_peek();
+  assert(obj != nullptr, "must be alive");
+  assert(monitor == LightweightSynchronizer::read_monitor(JavaThread::current(), obj), "must be exist in table");
+
+  oop cmp_obj = obj;
+  for (int i = 0; i < end; ++i) {
+    if (_oops[i] == cmp_obj ||
+        _monitors[i] == nullptr ||
+        _monitors[i]->is_being_async_deflated()) {
+      _oops[i] = obj;
+      _monitors[i] = monitor;
+      return;
+    }
+    // Remember Most Recent Values
+    oop tmp_oop = obj;
+    ObjectMonitor* tmp_mon = monitor;
+    // Set next pair to the next most recent
+    obj = _oops[i];
+    monitor = _monitors[i];
+    // Store most recent values
+    _oops[i] = tmp_oop;
+    _monitors[i] = tmp_mon;
+  }
+  _oops[end] = obj;
+  _monitors[end] = monitor;
+}
+
+inline ObjectMonitor* OMCache::get_monitor(oop o) {
+  for (int i = 0; i < OMCacheSize; ++i) {
+    if (_oops[i] == o) {
+      assert(_monitors[i] != nullptr, "monitor must exist");
+      if (_monitors[i]->is_being_async_deflated()) {
+        // Bad monitor
+        // Shift down rest
+        for (; i < OMCacheSize - 1; ++i) {
+          _oops[i] = _oops[i + 1];
+          _monitors[i] =  _monitors[i + 1];
+        }
+        // i == CAPACITY - 1
+        _oops[i] = nullptr;
+        _monitors[i] = nullptr;
+        return nullptr;
+      }
+      return _monitors[i];
+    }
+  }
+  return nullptr;
+}
+
+inline void OMCache::clear() {
+  for (size_t i = 0 , r = 0; i < CAPACITY; ++i) {
+    _oops[i] = nullptr;
+    _monitors[i] = nullptr;
+  }
 }
 
 #endif // SHARE_RUNTIME_LOCKSTACK_INLINE_HPP

@@ -74,6 +74,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -1637,17 +1638,19 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             }
           }
         }
+        BasicLock* lock = mon_info->lock();
         if (LockingMode == LM_LIGHTWEIGHT && exec_mode == Unpack_none) {
           // We have lost information about the correct state of the lock stack.
-          // Inflate the locks instead. Enter then inflate to avoid races with
-          // deflation.
-          ObjectSynchronizer::enter(obj, nullptr, deoptee_thread);
+          // Inflate the locks instead. LightweightSynchronizer::enter will inflate
+          // the monitor when the locking_thread and the current thread are different.
+          // TODO: Clean this up.
+          ObjectSynchronizer::enter(obj, lock, deoptee_thread, thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
-          ObjectMonitor* mon = ObjectSynchronizer::inflate(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
-          assert(mon->owner() == deoptee_thread, "must be");
+          assert(obj->mark().has_monitor(), "must be");
+          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+          assert(LightweightSynchronizer::read_monitor(thread, obj())->owner() == deoptee_thread, "must be");
         } else {
-          BasicLock* lock = mon_info->lock();
-          ObjectSynchronizer::enter(obj, lock, deoptee_thread);
+          ObjectSynchronizer::enter(obj, lock, deoptee_thread, thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
         }
       }

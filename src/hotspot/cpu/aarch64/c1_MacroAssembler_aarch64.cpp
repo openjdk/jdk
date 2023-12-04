@@ -84,6 +84,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
+    str(zr, Address(disp_hdr, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::displaced_header_offset_in_bytes()))));
     lightweight_lock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;

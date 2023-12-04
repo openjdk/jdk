@@ -156,6 +156,16 @@ public class Mark extends VMObject {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(hasMonitor(), "check");
     }
+    if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
+      Iterator it = ObjectSynchronizer.objectMonitorIterator();
+      while (it != null && it.hasNext()) {
+        ObjectMonitor mon = (ObjectMonitor)it.next();
+        if (getAddress().equals(mon.object())) {
+          return mon;
+        }
+      }
+      return null;
+    }
     // Use xor instead of &~ to provide one extra tag-bit check.
     Address monAddr = valueAsAddress().xorWithMask(monitorValue);
     return new ObjectMonitor(monAddr);

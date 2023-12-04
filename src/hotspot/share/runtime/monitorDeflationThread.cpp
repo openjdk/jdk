@@ -60,26 +60,28 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
   //      Backup deflation heuristic checks the conditions at this interval.
   //      See is_async_deflation_needed().
   //
-  intx wait_time = max_intx;
+  intx deflation_interval = max_intx;
   if (GuaranteedSafepointInterval > 0) {
-    wait_time = MIN2(wait_time, GuaranteedSafepointInterval);
+    deflation_interval = MIN2(deflation_interval, GuaranteedSafepointInterval);
   }
   if (AsyncDeflationInterval > 0) {
-    wait_time = MIN2(wait_time, AsyncDeflationInterval);
+    deflation_interval = MIN2(deflation_interval, AsyncDeflationInterval);
   }
   if (GuaranteedAsyncDeflationInterval > 0) {
-    wait_time = MIN2(wait_time, GuaranteedAsyncDeflationInterval);
+    deflation_interval = MIN2(deflation_interval, GuaranteedAsyncDeflationInterval);
   }
 
   // If all options are disabled, then wait time is not defined, and the deflation
   // is effectively disabled. In that case, exit the thread immediately after printing
   // a warning message.
-  if (wait_time == max_intx) {
+  if (deflation_interval == max_intx) {
     warning("Async deflation is disabled");
+    LightweightSynchronizer::set_table_max(jt);
     return;
   }
 
   while (true) {
+    intx time_to_wait = deflation_interval;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -90,7 +92,24 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
       while (!ObjectSynchronizer::is_async_deflation_needed()) {
         // Wait until notified that there is some work to do.
-        ml.wait(wait_time);
+        ml.wait(time_to_wait);
+
+        // Handle LightweightSynchronizer Hash Table Resizing
+        // TODO: Maybe should not be done in TBIVM.
+        if (LightweightSynchronizer::needs_resize(jt)) {
+          if (LightweightSynchronizer::resize_table(jt)) {
+            if (ObjectSynchronizer::time_since_last_async_deflation_ms() < (jlong)deflation_interval) {
+              // Still time left on the clock and the resize was successful
+              time_to_wait = deflation_interval - checked_cast<intx>(ObjectSynchronizer::time_since_last_async_deflation_ms());
+            } else {
+              // Timer is passed, reset to deflation_interval
+              time_to_wait = deflation_interval;
+            }
+          } else {
+            // Resize failed, try again in 250 ms
+            time_to_wait = 250;
+          }
+        }
       }
     }
 

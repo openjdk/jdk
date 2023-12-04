@@ -414,7 +414,11 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* current) {
   return continuation;
 }
 
-JRT_BLOCK_ENTRY(void, JVMCIRuntime::monitorenter(JavaThread* current, oopDesc* obj, BasicLock* lock))
+// NO_ASYNC required because an async exception on the state transition destructor
+// would leave you with the lock held and it would never be released.
+// The normal monitorenter NullPointerException is thrown without acquiring a lock
+// and the model is that an exception implies the method failed.
+JRT_ENTRY_NO_ASYNC(void, JVMCIRuntime::monitorenter(JavaThread* current, oopDesc* obj, BasicLock* lock))
   SharedRuntime::monitor_enter_helper(obj, lock, current);
 JRT_END
 

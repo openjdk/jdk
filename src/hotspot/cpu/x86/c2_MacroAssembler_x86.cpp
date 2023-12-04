@@ -33,13 +33,18 @@
 #include "opto/output.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/basicLock.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/sizes.hpp"
+#include "utilities/macros.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -908,14 +913,13 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jmpb  (DONE_LABEL);
 
 #endif
-  if (LockingMode == LM_LEGACY) {
+  if (LockingMode != LM_MONITOR) {
     bind  (Stacked);
     movptr(tmpReg, Address (boxReg, 0));      // re-fetch
     lock();
     cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
     // Intentional fall-thru into DONE_LABEL
   }
-
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -949,6 +953,9 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // Finish fast lock unsuccessfully. MUST jump with ZF == 0
   Label slow_path;
 
+  // Clear box. TODO: Is this neccesarry? May also defer this to not write twice.
+  movptr(Address(box, BasicLock::displaced_header_offset_in_bytes()), 0);
+
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(rax_reg, obj, t);
     movl(rax_reg, Address(rax_reg, Klass::access_flags_offset()));
@@ -967,12 +974,12 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // Load the mark.
     movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-    // Prefetch top.
-    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
-
     // Check for monitor (0b10).
     testptr(mark, markWord::monitor_value);
     jcc(Assembler::notZero, inflated);
+
+    // Prefetch top.
+    movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
 
     // Check if lock-stack is full.
     cmpl(top, LockStack::end_offset() - 1);
@@ -999,19 +1006,67 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   { // Handle inflated monitor.
     bind(inflated);
 
-    const Register tagged_monitor = mark;
+    const Register monitor = t;
 
-    // CAS owner (null => current thread).
-    xorptr(rax_reg, rax_reg);
-    lock(); cmpxchgptr(thread, Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    jccb(Assembler::equal, locked);
+    if (!OMUseC2Cache) {
+      jmp(slow_path);
+    } else {
+      if (OMCacheHitRate) increment(Address(thread, JavaThread::lock_lookup_offset()));
 
-    // Check if recursive.
-    cmpptr(thread, rax_reg);
-    jccb(Assembler::notEqual, slow_path);
+      // Fetch ObjectMonitor* from the cache or take the slow-path.
+      Label monitor_found, loop;
+      // Load cache address
+      lea(t, Address(thread, JavaThread::om_cache_oops_offset()));
 
-    // Recursive.
-    increment(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+      // Search for obj in cache.
+      bind(loop);
+
+      // Check for match.
+      cmpptr(obj, Address(t));
+      jccb(Assembler::equal, monitor_found);
+
+      // Search until null encountered, guaranteed _null_sentinel at end.
+      cmpptr(Address(t), 1);
+      jcc(Assembler::below, slow_path); // 0 check, but with ZF=0 when *t == 0
+      increment(t, oopSize);
+      jmpb(loop);
+
+      // Cache hit.
+      bind(monitor_found);
+      movptr(monitor, Address(t, OMCache::oop_to_monitor_difference()));
+      if (OMCacheHitRate) increment(Address(thread, JavaThread::lock_hit_offset()));
+
+      Label monitor_locked;
+      // Lock the monitor.
+      Label recursion;
+      if (OMRecursiveFastPath) {
+        // Check owner for recursion first.
+        cmpptr(thread, Address(monitor, ObjectMonitor::owner_offset()));
+        jccb(Assembler::equal, recursion);
+      }
+
+      // CAS owner (null => current thread).
+      xorptr(rax, rax);
+      lock(); cmpxchgptr(thread, Address(monitor, ObjectMonitor::owner_offset()));
+      jccb(Assembler::equal, monitor_locked);
+
+      if (OMRecursiveFastPath) {
+        // Recursion already checked.
+        jmpb(slow_path);
+      } else {
+        // Check if recursive.
+        cmpptr(thread, rax);
+        jccb(Assembler::notEqual, slow_path);
+      }
+
+      // Recursive.
+      bind(recursion);
+      increment(Address(monitor, ObjectMonitor::recursions_offset()));
+
+      bind(monitor_locked);
+      // Cache the monitor for unlock
+      movptr(Address(box, BasicLock::displaced_header_offset_in_bytes()), monitor);
+    }
   }
 
   bind(locked);
@@ -1050,26 +1105,26 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   decrement(Address(thread, JavaThread::held_monitor_count_offset()));
 
   const Register mark = t;
-  const Register top = reg_rax;
+  const Register monitor = t;
+  const Register top = t;
+  const Register box = reg_rax;
 
   Label dummy;
   C2FastUnlockLightweightStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, monitor, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
   Label& push_and_slow_path = stub == nullptr ? dummy : stub->push_and_slow_path();
   Label& check_successor = stub == nullptr ? dummy : stub->check_successor();
+  Label& slow_path = stub == nullptr ? dummy : stub->slow_path();
 
   { // Lightweight Unlock
 
     // Load top.
     movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
-
-    // Prefetch mark.
-    movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Check if obj is top of lock-stack.
     cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
@@ -1085,6 +1140,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     jcc(Assembler::equal, unlocked);
 
     // We elide the monitor check, let the CAS fail instead.
+
+    // Load mark.
+    movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
@@ -1107,6 +1165,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     jccb(Assembler::notEqual, inflated_check_lock_stack);
     stop("Fast Unlock lock on stack");
     bind(check_done);
+    const Register mark = t;
+    movptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     testptr(mark, markWord::monitor_value);
     jccb(Assembler::notZero, inflated);
     stop("Fast Unlock not monitor");
@@ -1114,43 +1174,54 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
     bind(inflated);
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register monitor = mark;
+    if (!OMUseC2Cache) {
+      jmp(slow_path);
+    } else {
+      if (OMCacheHitRate) increment(Address(thread, JavaThread::unlock_lookup_offset()));
+      movptr(monitor, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      // TODO: Figure out the correctness surrounding the owner field here. Obj is not on the lock stack
+      //       but this means this thread must have locked on the inflated monitor at some point. So it
+      //       should not be anonymous.
+      cmpptr(monitor, 2);
+      jcc(Assembler::below, slow_path);
 
+      if (OMCacheHitRate) increment(Address(thread, JavaThread::unlock_hit_offset()));
 #ifndef _LP64
-    // Check if recursive.
-    xorptr(reg_rax, reg_rax);
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    jcc(Assembler::notZero, check_successor);
+        // TODO: Unify 32 with 64. Should just be a straight up use 64 on 32. We have the registers here.
+        // Check if recursive.
+        xorptr(reg_rax, reg_rax);
+        orptr(reg_rax, Address(monitor, ObjectMonitor::recursions_offset()));
+        jcc(Assembler::notZero, check_successor);
 
-    // Check if the entry lists are empty.
-    movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    jcc(Assembler::notZero, check_successor);
+        // Check if the entry lists are empty.
+        movptr(reg_rax, Address(monitor, ObjectMonitor::EntryList_offset()));
+        orptr(reg_rax, Address(monitor, ObjectMonitor::cxq_offset()));
+        jcc(Assembler::notZero, check_successor);
 
-    // Release lock.
-    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
+        // Release lock.
+        movptr(Address(monitor, ObjectMonitor::owner_offset()), NULL_WORD);
 #else // _LP64
-    Label recursive;
+        Label recursive;
 
-    // Check if recursive.
-    cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
-    jccb(Assembler::notEqual, recursive);
+        // Check if recursive.
+        cmpptr(Address(monitor,ObjectMonitor::recursions_offset()),0);
+        jccb(Assembler::notEqual, recursive);
 
-    // Check if the entry lists are empty.
-    movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    jcc(Assembler::notZero, check_successor);
+        // Check if the entry lists are empty.
+        movptr(reg_rax, Address(monitor, ObjectMonitor::cxq_offset()));
+        orptr(reg_rax, Address(monitor, ObjectMonitor::EntryList_offset()));
+        jcc(Assembler::notZero, check_successor);
 
-    // Release lock.
-    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-    jmpb(unlocked);
+        // Release lock.
+        movptr(Address(monitor, ObjectMonitor::owner_offset()), NULL_WORD);
+        jmpb(unlocked);
 
-    // Recursive unlock.
-    bind(recursive);
-    decrement(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    xorl(t, t);
+        // Recursive unlock.
+        bind(recursive);
+        decrement(Address(monitor, ObjectMonitor::recursions_offset()));
+        xorl(t, t);
 #endif
+    }
   }
 
   bind(unlocked);

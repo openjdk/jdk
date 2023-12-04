@@ -1186,6 +1186,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
+      movptr(Address(lock_reg, mark_offset), 0);
 #ifdef _LP64
       const Register thread = r15_thread;
 #else

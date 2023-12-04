@@ -75,6 +75,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/xmlstream.hpp"
@@ -2225,26 +2226,18 @@ JRT_LEAF(void, SharedRuntime::reguard_yellow_pages())
 JRT_END
 
 void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
-  if (!SafepointSynchronize::is_synchronizing()) {
-    // Only try quick_enter() if we're not trying to reach a safepoint
-    // so that the calling thread reaches the safepoint more quickly.
-    if (ObjectSynchronizer::quick_enter(obj, current, lock)) {
-      return;
-    }
-  }
-  // NO_ASYNC required because an async exception on the state transition destructor
-  // would leave you with the lock held and it would never be released.
-  // The normal monitorenter NullPointerException is thrown without acquiring a lock
-  // and the model is that an exception implies the method failed.
-  JRT_BLOCK_NO_ASYNC
-  Handle h_obj(THREAD, obj);
+  Handle h_obj(current, obj);
   ObjectSynchronizer::enter(h_obj, lock, current);
-  assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
-  JRT_BLOCK_END
+  assert(!current->has_pending_exception(), "Should have no exception here");
 }
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
-JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
+//
+// NO_ASYNC required because an async exception on the state transition destructor
+// would leave you with the lock held and it would never be released.
+// The normal monitorenter NullPointerException is thrown without acquiring a lock
+// and the model is that an exception implies the method failed.
+JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   SharedRuntime::monitor_enter_helper(obj, lock, current);
 JRT_END
 
@@ -3271,6 +3264,8 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
         }
         // Now the displaced header is free to move because the
         // object's header no longer refers to it.
+        buf[i] = (intptr_t)lock->displaced_header().value();
+      } else if (LockingMode == LM_LIGHTWEIGHT) {
         buf[i] = (intptr_t)lock->displaced_header().value();
       }
 #ifdef ASSERT

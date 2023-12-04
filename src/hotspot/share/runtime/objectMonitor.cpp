@@ -39,6 +39,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -51,8 +52,11 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #if INCLUDE_JFR
@@ -284,10 +288,6 @@ oop ObjectMonitor::object() const {
   return _object.resolve();
 }
 
-oop ObjectMonitor::object_peek() const {
-  return _object.peek();
-}
-
 void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   if (current->is_suspended()) {
     _om->_recursions = 0;
@@ -309,8 +309,29 @@ void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
   }
 }
 
+#define assert_mark_word_concistency()                                                 \
+  assert(LockingMode == LM_LIGHTWEIGHT || object()->mark() == markWord::encode(this),  \
+         "object mark must match encoded this: mark=" INTPTR_FORMAT                    \
+         ", encoded this=" INTPTR_FORMAT, object()->mark().value(),                    \
+         markWord::encode(this).value());
+
 // -----------------------------------------------------------------------------
 // Enter support
+bool ObjectMonitor::try_enter(JavaThread* current) {
+  void* cur = try_set_owner_from(nullptr, current);
+  if (cur == nullptr) {
+    assert(_recursions == 0, "invariant");
+    return true;
+  }
+
+  if (cur == current) {
+    // TODO-FIXME: check for integer overflow!  BUGID 6557169.
+    _recursions++;
+    return true;
+  }
+
+  return false;
+}
 
 bool ObjectMonitor::enter(JavaThread* current) {
   // The following code is ordered to check the most common cases first
@@ -347,10 +368,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   if (TrySpin(current) > 0) {
     assert(owner_raw() == current, "must be current: owner=" INTPTR_FORMAT, p2i(owner_raw()));
     assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
-    assert(object()->mark() == markWord::encode(this),
-           "object mark must match encoded this: mark=" INTPTR_FORMAT
-           ", encoded this=" INTPTR_FORMAT, object()->mark().value(),
-           markWord::encode(this).value());
+    assert_mark_word_concistency();
     current->_Stalled = 0;
     return true;
   }
@@ -367,7 +385,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     // above lost the race to async deflation. Undo the work and
     // force the caller to retry.
     const oop l_object = object();
-    if (l_object != nullptr) {
+    if (LockingMode != LM_LIGHTWEIGHT && l_object != nullptr) {
       // Attempt to restore the header/dmw to the object's header so that
       // we only retry once if the deflater thread happens to be slow.
       install_displaced_markword_in_object(l_object);
@@ -441,7 +459,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   assert(_recursions == 0, "invariant");
   assert(owner_raw() == current, "invariant");
   assert(_succ != current, "invariant");
-  assert(object()->mark() == markWord::encode(this), "invariant");
+  assert_mark_word_concistency();
 
   // The thread -- now the owner -- is back in vm mode.
   // Report the glorious news via TI,DTrace and jvmstat.
@@ -503,10 +521,17 @@ int ObjectMonitor::TryLock(JavaThread* current) {
 //   (contentions < 0)
 // Contending threads that see that condition know to retry their operation.
 //
-bool ObjectMonitor::deflate_monitor() {
+bool ObjectMonitor::deflate_monitor(Thread* current) {
   if (is_busy()) {
     // Easy checks are first - the ObjectMonitor is busy so no deflation.
     return false;
+  }
+
+  if (LockingMode == LM_LIGHTWEIGHT && is_being_async_deflated()) {
+    // This happens when a locked monitor is deflated by a java thread
+    // returning itself to fast_locked
+    assert(is_owner_anonymous(), "must stay anonymous when the java thread deflates");
+    return true;
   }
 
   const oop obj = object_peek();
@@ -574,12 +599,94 @@ bool ObjectMonitor::deflate_monitor() {
                                   p2i(obj), obj->mark().value(),
                                   obj->klass()->external_name());
     }
+  }
 
-    // Install the old mark word if nobody else has already done it.
-    install_displaced_markword_in_object(obj);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    LightweightSynchronizer::deflate_monitor(current, obj, this);
+  } else {
+    if (obj != nullptr) {
+      // Install the old mark word if nobody else has already done it.
+      install_displaced_markword_in_object(obj);
+    }
   }
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
+  // to force any racing threads to retry.
+  return true;  // Success, ObjectMonitor has been deflated.
+}
+
+bool ObjectMonitor::deflate_anon_monitor(JavaThread* current) {
+  assert(owner_raw() == current, "must be");
+  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+
+  LockStack& lock_stack = current->lock_stack();
+
+  if (!VM_Version::supports_recursive_lightweight_locking() && _recursions > 0) {
+    // !VM_Version::supports_recursive_lightweight_locking(), lightweight locking cannot handle recursive locks.
+    return false;
+  }
+
+  if (!lock_stack.can_push(1 + _recursions)) {
+    // Will not be able to push the oop on the lock stack.
+    return false;
+  }
+
+  if (is_busy_anon()) {
+    // Easy checks are first - the ObjectMonitor is busy so no deflation.
+    return false;
+  }
+
+  // Make sure if a thread sees contentions() < 0 they also see owner == ANONYMOUS_OWNER
+  set_owner_from(current, reinterpret_cast<void*>(ANONYMOUS_OWNER));
+
+    // Recheck after setting owner
+  bool cleanup = is_busy_anon();
+
+
+  if (!cleanup) {
+    // Make a zero contentions field negative to force any contending threads
+    // to retry. Because this is only called while holding the lock, the owner
+    // is anonymous and contentions is held over enter in inflate_and_enter
+    // it means that if the cas succeeds then we can have no other thread
+    // racily inserting themselves on the _waiters or _cxq lists, the
+    // entry list is protected by the lock (_waiter technically too, only
+    // removals are done outside the lock)
+    // TODO: Double check _succ and _responsible invariants
+    if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
+      // Contentions was no longer 0 so we lost the race.
+      cleanup = true;
+    }
+  }
+
+  if (cleanup) {
+    // Could not deflate
+    set_owner_from_anonymous(current);
+    return false;
+  }
+
+  // Sanity checks for the races:
+  guarantee(is_owner_anonymous(), "must be");
+  guarantee(contentions() < 0, "must be negative: contentions=%d",
+            contentions());
+  guarantee(_waiters == 0, "must be 0: waiters=%d", _waiters);
+  guarantee(_cxq == nullptr, "must be no contending threads: cxq="
+            INTPTR_FORMAT, p2i(_cxq));
+  guarantee(_EntryList == nullptr,
+            "must be no entering threads: EntryList=" INTPTR_FORMAT,
+            p2i(_EntryList));
+
+  oop obj = object();
+
+  LightweightSynchronizer::deflate_anon_monitor(current, obj, this);
+
+  // We are deflated, restore the correct lock_stack
+  lock_stack.push(obj);
+  for (int i = 0; i < _recursions; i++) {
+    bool entered = lock_stack.try_recursive_enter(obj);
+    assert(entered, "must have entered here");
+  }
+
+  // We leave owner == ANONYMOUS_OWNER and contentions < 0
   // to force any racing threads to retry.
   return true;  // Success, ObjectMonitor has been deflated.
 }
@@ -590,6 +697,7 @@ bool ObjectMonitor::deflate_monitor() {
 // monitor and by other threads that have detected a race with the
 // deflation process.
 void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Lightweight has no dmw");
   // This function must only be called when (owner == DEFLATER_MARKER
   // && contentions <= 0), but we can't guarantee that here because
   // those values could change when the ObjectMonitor gets moved from
@@ -922,12 +1030,11 @@ void ObjectMonitor::EnterI(JavaThread* current) {
 
 void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
   assert(current != nullptr, "invariant");
+  assert(current->thread_state() != _thread_blocked, "invariant");
   assert(currentNode != nullptr, "invariant");
   assert(currentNode->_thread == current, "invariant");
   assert(_waiters > 0, "invariant");
-  assert(object()->mark() == markWord::encode(this), "invariant");
-
-  assert(current->thread_state() != _thread_blocked, "invariant");
+  assert_mark_word_concistency();
 
   int nWakeups = 0;
   for (;;) {
@@ -984,7 +1091,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
   // In addition, current.TState is stable.
 
   assert(owner_raw() == current, "invariant");
-  assert(object()->mark() == markWord::encode(this), "invariant");
+  assert_mark_word_concistency();
   UnlinkAfterAcquire(current, currentNode);
   if (_succ == current) _succ = nullptr;
   assert(_succ != current, "invariant");
@@ -1612,10 +1719,19 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   current->inc_held_monitor_count(relock_count); // Deopt never entered these counts.
   _waiters--;             // decrement the number of waiters
 
+  bool deflated = false;
+
+  if (LockingMode == LM_LIGHTWEIGHT && OMDeflateAfterWait && current->lock_stack().wait_was_inflated()) {
+    if (deflate_anon_monitor(current)) {
+      current->_wait_deflation++;
+      deflated = true;
+    }
+  }
+
   // Verify a few postconditions
-  assert(owner_raw() == current, "invariant");
+  assert(deflated || owner_raw() == current, "invariant");
   assert(_succ != current, "invariant");
-  assert(object()->mark() == markWord::encode(this), "invariant");
+  assert_mark_word_concistency();
 
   // check if the notification happened
   if (!WasNotified) {
@@ -2007,6 +2123,9 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
 int ObjectMonitor::NotRunnable(JavaThread* current, JavaThread* ox) {
   // Check ox->TypeTag == 2BAD.
   if (ox == nullptr) return 0;
+  if ((uintptr_t)ox == ANONYMOUS_OWNER) {
+    return 0;
+  }
 
   // Avoid transitive spinning ...
   // Say T1 spins or blocks trying to acquire L.  T1._Stalled is set to L.
@@ -2202,7 +2321,7 @@ void ObjectMonitor::print() const { print_on(tty); }
 //
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
-  st->print_cr("  _header = " INTPTR_FORMAT, header().value());
+  st->print_cr("  _header = " INTPTR_FORMAT, header_value());
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
