@@ -590,10 +590,12 @@ void Compile::print_ideal_ir(const char* phase_name) {
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
-    xtty->print("%s", ss.as_string()); // print to tty would use xml escape encoding
+  }
+
+  tty->print("%s", ss.as_string());
+
+  if (xtty != nullptr) {
     xtty->tail("ideal");
-  } else {
-    tty->print("%s", ss.as_string());
   }
 }
 #endif
@@ -5141,7 +5143,7 @@ void Compile::end_method() {
 
 bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+  if (_directive->should_print_phase(cpt)) {
     return true;
   }
 #endif

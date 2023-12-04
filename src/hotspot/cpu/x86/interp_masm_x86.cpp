@@ -54,15 +54,28 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
   Label update, next, none;
 
+#ifdef _LP64
+  assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+  assert_different_registers(obj, mdo_addr.base(), mdo_addr.index());
+#endif
+
   interp_verify_oop(obj, atos);
 
   testptr(obj, obj);
   jccb(Assembler::notZero, update);
+  testptr(mdo_addr, TypeEntries::null_seen);
+  jccb(Assembler::notZero, next); // null already seen. Nothing to do anymore.
+  // atomic update to prevent overwriting Klass* with 0
+  lock();
   orptr(mdo_addr, TypeEntries::null_seen);
   jmpb(next);
 
   bind(update);
   load_klass(obj, obj, rscratch1);
+#ifdef _LP64
+  mov(rscratch1, obj);
+#endif
 
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
@@ -77,12 +90,15 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   jccb(Assembler::equal, none);
   cmpptr(mdo_addr, TypeEntries::null_seen);
   jccb(Assembler::equal, none);
+#ifdef _LP64
   // There is a chance that the checks above (re-reading profiling
   // data from memory) fail if another thread has just set the
   // profiling to this obj's klass
+  mov(obj, rscratch1);
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
   jccb(Assembler::zero, next);
+#endif
 
   // different than before. Cannot keep accurate profile.
   orptr(mdo_addr, TypeEntries::type_unknown);
@@ -91,6 +107,10 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(none);
   // first time here. Set profile type.
   movptr(mdo_addr, obj);
+#ifdef ASSERT
+  andptr(obj, TypeEntries::type_klass_mask);
+  verify_klass_ptr(obj);
+#endif
 
   bind(next);
 }

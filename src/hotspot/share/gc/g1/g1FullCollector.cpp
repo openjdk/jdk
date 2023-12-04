@@ -171,6 +171,7 @@ public:
   PrepareRegionsClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* hr) {
+    hr->prepare_for_full_gc();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
     return false;
@@ -256,9 +257,9 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_humongous()) {
-    // Humongous objects will never be moved in the "main" compaction phase, but
-    // afterwards in a special phase if needed.
+  } else if (hr->is_humongous() || hr->has_pinned_objects()) {
+    // Humongous objects or pinned regions will never be moved in the "main"
+    // compaction phase, but non-pinned regions might afterwards in a special phase.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.
@@ -453,10 +454,16 @@ void G1FullCollector::phase2d_prepare_humongous_compaction() {
       region_index++;
       continue;
     } else if (hr->is_starts_humongous()) {
-      uint num_regions = humongous_cp->forward_humongous(hr);
-      region_index += num_regions; // Skip over the continues humongous regions.
+      size_t obj_size = cast_to_oop(hr->bottom())->size();
+      uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
+      // Even during last-ditch compaction we should not move pinned humongous objects.
+      if (!hr->has_pinned_objects()) {
+        humongous_cp->forward_humongous(hr);
+      }
+      region_index += num_regions; // Advance over all humongous regions.
       continue;
     } else if (is_compaction_target(region_index)) {
+      assert(!hr->has_pinned_objects(), "pinned regions should not be compaction targets");
       // Add the region to the humongous compaction point.
       humongous_cp->add(hr);
     }

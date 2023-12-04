@@ -33,7 +33,6 @@ public:
   static void push_raw(LockStack& ls, oop obj) {
     ls._base[ls.to_index(ls._top)] = obj;
     ls._top += oopSize;
-
   }
 
   static void pop_raw(LockStack& ls) {

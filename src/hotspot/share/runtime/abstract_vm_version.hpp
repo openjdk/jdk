@@ -59,7 +59,9 @@ class Abstract_VM_Version: AllStatic {
   static const char* _features_string;
 
   // These are set by machine-dependent initializations
+#ifndef SUPPORTS_NATIVE_CX8
   static bool         _supports_cx8;
+#endif
   static bool         _supports_atomic_getset4;
   static bool         _supports_atomic_getset8;
   static bool         _supports_atomic_getadd4;
@@ -133,6 +135,8 @@ class Abstract_VM_Version: AllStatic {
   static void print_platform_virtualization_info(outputStream*) { }
 
   // does HW support an 8-byte compare-exchange operation?
+  // Required to be true but still dynamically checked at runtime
+  // for platforms that don't set SUPPORTS_NATIVE_CX8
   static bool supports_cx8()  {
 #ifdef SUPPORTS_NATIVE_CX8
     return true;
