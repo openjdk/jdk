@@ -51,18 +51,19 @@ class CompiledICHolder;
 class ICStub: public Stub {
  private:
   // ICStub_from_destination_address looks up Stub* address from code entry address,
-  // which means all code entry and stub alignments should agree. Setting code entry
+  // which means code entry and stub alignments should agree. Setting code entry
   // alignment to CodeEntryAlignment would waste a lot of memory in ICBuffer.
   // Aligning the code section is normally done for performance reasons, which is not
   // required for ICStubs, as these stubs are transitional.
   //
   // However, for extra correctness/safety, we want to make sure that each ICStub is
   // in a separate instruction cache line. This would allow for piggybacking on instruction
-  // cache coherency on some architectures to order the updates to ICStub and the setting
+  // cache coherency on some architectures to order the updates to ICStub and setting
   // the destination to the ICStub.
   //
-  // Since we align the stub first, and then the code section, then we can align both
-  // to half of the cache line size.
+  // Since we align the stub first, and then the code section, we can align both
+  // to half of the cache line size, reaching the full stub size to be aligned to full
+  // cache line.
   static const int IC_STUB_ALIGN = DEFAULT_CACHE_LINE_SIZE / 2;
 
   int                 _size;       // total size of the stub incl. code
