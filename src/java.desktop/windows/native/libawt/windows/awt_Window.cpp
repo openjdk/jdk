@@ -3299,7 +3299,6 @@ void AwtWindow::_SetFullScreenExclusiveModeState(void *param)
     jboolean state = data->isFSEMState;
 
     PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
     if (self == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "self");
