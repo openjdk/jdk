@@ -262,6 +262,22 @@ static bool is_directory_secure(const char* path) {
   }
 }
 
+// return the file name of the backing store file for the named
+// shared memory region for the given user name and vmid.
+//
+// the caller is expected to free the allocated memory.
+//
+static char* get_sharedmem_filename(const char* dirname, int vmid) {
+
+  // add 2 for the file separator and a null terminator.
+  size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
+
+  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
+  _snprintf(name, nbytes, "%s\\%d", dirname, vmid);
+
+  return name;
+}
+
 // return the user name for the owner of this process
 //
 // the caller is expected to free the allocated memory.
@@ -353,59 +369,50 @@ static char* get_user_name_slow(int vmid) {
       continue;
     }
 
-    struct dirent* udentry;
     errno = 0;
-    while ((udentry = os::readdir(subdirp)) != nullptr) {
-
-      if (filename_to_pid(udentry->d_name) == vmid) {
-        struct stat statbuf;
-
-        char* filename = NEW_C_HEAP_ARRAY(char,
-           strlen(usrdir_name) + strlen(udentry->d_name) + 2, mtInternal);
-
-        strcpy(filename, usrdir_name);
-        strcat(filename, "\\");
-        strcat(filename, udentry->d_name);
-
-        if (::stat(filename, &statbuf) == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
-           continue;
-        }
-
-        // skip over files that are not regular files.
-        if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
-          FREE_C_HEAP_ARRAY(char, filename);
-          continue;
-        }
-
-        // If we found a matching file with a newer creation time, then
-        // save the user name. The newer creation time indicates that
-        // we found a newer incarnation of the process associated with
-        // vmid. Due to the way that Windows recycles pids and the fact
-        // that we can't delete the file from the file system namespace
-        // until last close, it is possible for there to be more than
-        // one hsperfdata file with a name matching vmid (diff users).
-        //
-        // We no longer ignore hsperfdata files where (st_size == 0).
-        // In this function, all we're trying to do is determine the
-        // name of the user that owns the process associated with vmid
-        // so the size doesn't matter. Very rarely, we have observed
-        // hsperfdata files where (st_size == 0) and the st_size field
-        // later becomes the expected value.
-        //
-        if (statbuf.st_ctime > latest_ctime) {
-          char* user = strchr(dentry->d_name, '_') + 1;
-
-          FREE_C_HEAP_ARRAY(char, latest_user);
-          latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
-
-          strcpy(latest_user, user);
-          latest_ctime = statbuf.st_ctime;
-        }
-
-        FREE_C_HEAP_ARRAY(char, filename);
-      }
+    // the filename corresponding to the vmid
+    const char* filename = get_sharedmem_filename(usrdir_name, vmid);
+    struct stat statbuf;
+    // check if it exists
+    if (::stat(filename, &statbuf) == OS_ERR) {
+      FREE_C_HEAP_ARRAY(char, filename);
+      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      os::closedir(subdirp);
+      continue;
     }
+    // skip over files that are not regular files.
+    if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
+      FREE_C_HEAP_ARRAY(char, filename);
+      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      os::closedir(subdirp);
+      continue;
+    }
+
+    // If we found a matching file with a newer creation time, then
+    // save the user name. The newer creation time indicates that
+    // we found a newer incarnation of the process associated with
+    // vmid. Due to the way that Windows recycles pids and the fact
+    // that we can't delete the file from the file system namespace
+    // until last close, it is possible for there to be more than
+    // one hsperfdata file with a name matching vmid (diff users).
+    //
+    // We no longer ignore hsperfdata files where (st_size == 0).
+    // In this function, all we're trying to do is determine the
+    // name of the user that owns the process associated with vmid
+    // so the size doesn't matter. Very rarely, we have observed
+    // hsperfdata files where (st_size == 0) and the st_size field
+    // later becomes the expected value.
+    //
+    if (statbuf.st_ctime > latest_ctime) {
+      char* user = strchr(dentry->d_name, '_') + 1;
+
+      FREE_C_HEAP_ARRAY(char, latest_user);
+      latest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
+
+      strcpy(latest_user, user);
+      latest_ctime = statbuf.st_ctime;
+    }
+    FREE_C_HEAP_ARRAY(char, filename);
     os::closedir(subdirp);
     FREE_C_HEAP_ARRAY(char, usrdir_name);
   }
@@ -456,22 +463,6 @@ static char *get_sharedmem_objectname(const char* user, int vmid) {
   nbytes += UINT_CHARS;
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
   _snprintf(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
-
-  return name;
-}
-
-// return the file name of the backing store file for the named
-// shared memory region for the given user name and vmid.
-//
-// the caller is expected to free the allocated memory.
-//
-static char* get_sharedmem_filename(const char* dirname, int vmid) {
-
-  // add 2 for the file separator and a null terminator.
-  size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
-
-  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  _snprintf(name, nbytes, "%s\\%d", dirname, vmid);
 
   return name;
 }

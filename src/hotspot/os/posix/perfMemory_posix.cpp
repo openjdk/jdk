@@ -428,6 +428,23 @@ static bool is_file_secure(int fd, const char *filename) {
   return true;
 }
 
+// return the file name of the backing store file for the named
+// shared memory region for the given user name and vmid.
+//
+// the caller is expected to free the allocated memory.
+//
+static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
+
+  int pid = LINUX_ONLY((nspid == -1) ? vmid : nspid) NOT_LINUX(vmid);
+
+  // add 2 for the file separator and a null terminator.
+  size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
+
+  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
+  snprintf(name, nbytes, "%s/%d", dirname, pid);
+
+  return name;
+}
 
 // return the user name for the given user id
 //
@@ -510,7 +527,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // directory search
   char* oldest_user = nullptr;
   time_t oldest_ctime = 0;
-  int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
 #if defined(LINUX)
   char buffer[MAXPATHLEN + 1];
@@ -518,15 +534,10 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
   // On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
   // containing nspid, otherwise just look for vmid in /tmp.
-  if (nspid == -1) {
-    searchpid = vmid;
-  } else {
+  if (nspid != -1) {
     jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
     tmpdirname = buffer;
-    searchpid = nspid;
   }
-#else
-  searchpid = vmid;
 #endif
 
   // open the temp directory
@@ -578,52 +589,41 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
       continue;
     }
 
-    struct dirent* udentry;
     errno = 0;
-    while ((udentry = os::readdir(subdirp)) != nullptr) {
+    // the filename corresponding to the vmid (or nspid)
+    const char* filename = get_sharedmem_filename(usrdir_name, vmid, nspid);
+    struct stat statbuf;
+    int result;
+    // check if it exists; don't follow symbolic links for the file
+    RESTARTABLE(::lstat(filename, &statbuf), result);
+    if (result == OS_ERR) {
+      FREE_C_HEAP_ARRAY(char, filename);
+      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      os::closedir(subdirp);
+      continue;
+    }
+    // skip over files that are not regular files.
+    if (!S_ISREG(statbuf.st_mode)) {
+      FREE_C_HEAP_ARRAY(char, filename);
+      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      os::closedir(subdirp);
+      continue;
+    }
+    FREE_C_HEAP_ARRAY(char, filename);
+    // compare and save filename with latest creation time
+    if (statbuf.st_size > 0 && statbuf.st_ctime > oldest_ctime) {
 
-      if (filename_to_pid(udentry->d_name) == searchpid) {
-        struct stat statbuf;
-        int result;
+      if (statbuf.st_ctime > oldest_ctime) {
+        char* user = strchr(dentry->d_name, '_') + 1;
 
-        char* filename = NEW_C_HEAP_ARRAY(char,
-                                          strlen(usrdir_name) + strlen(udentry->d_name) + 2,
-                                          mtInternal);
+        FREE_C_HEAP_ARRAY(char, oldest_user);
+        oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
-        strcpy(filename, usrdir_name);
-        strcat(filename, "/");
-        strcat(filename, udentry->d_name);
-
-        // don't follow symbolic links for the file
-        RESTARTABLE(::lstat(filename, &statbuf), result);
-        if (result == OS_ERR) {
-           FREE_C_HEAP_ARRAY(char, filename);
-           continue;
-        }
-
-        // skip over files that are not regular files.
-        if (!S_ISREG(statbuf.st_mode)) {
-          FREE_C_HEAP_ARRAY(char, filename);
-          continue;
-        }
-
-        // compare and save filename with latest creation time
-        if (statbuf.st_size > 0 && statbuf.st_ctime > oldest_ctime) {
-
-          if (statbuf.st_ctime > oldest_ctime) {
-            char* user = strchr(dentry->d_name, '_') + 1;
-
-            FREE_C_HEAP_ARRAY(char, oldest_user);
-            oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
-
-            strcpy(oldest_user, user);
-            oldest_ctime = statbuf.st_ctime;
-          }
-        }
-
-        FREE_C_HEAP_ARRAY(char, filename);
+        strcpy(oldest_user, user);
+        oldest_ctime = statbuf.st_ctime;
       }
     }
+    // done with this sub-directory, move on to next eligible one
     os::closedir(subdirp);
     FREE_C_HEAP_ARRAY(char, usrdir_name);
   }
@@ -648,25 +648,6 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
 #endif
   return result;
 }
-
-// return the file name of the backing store file for the named
-// shared memory region for the given user name and vmid.
-//
-// the caller is expected to free the allocated memory.
-//
-static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
-
-  int pid = LINUX_ONLY((nspid == -1) ? vmid : nspid) NOT_LINUX(vmid);
-
-  // add 2 for the file separator and a null terminator.
-  size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
-
-  char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  snprintf(name, nbytes, "%s/%d", dirname, pid);
-
-  return name;
-}
-
 
 // remove file
 //
