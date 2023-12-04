@@ -71,8 +71,6 @@ class aarch64 {
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
 
-  static address _method_entry_barrier;
-
   static address _spin_wait;
 
   static bool _completed;
@@ -177,10 +175,6 @@ class aarch64 {
 
   static address large_byte_array_inflate() {
       return _large_byte_array_inflate;
-  }
-
-  static address method_entry_barrier() {
-    return _method_entry_barrier;
   }
 
   static address spin_wait() {

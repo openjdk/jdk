@@ -778,13 +778,28 @@ class DumperSupport : AllStatic {
   // fixes up the current dump record and writes HPROF_HEAP_DUMP_END record
   static void end_of_dump(AbstractDumpWriter* writer);
 
-  static oop mask_dormant_archived_object(oop o) {
-    if (o != nullptr && o->klass()->java_mirror() == nullptr) {
+  static oop mask_dormant_archived_object(oop o, oop ref_obj) {
+    if (o != nullptr && o->klass()->java_mirror_no_keepalive() == nullptr) {
       // Ignore this object since the corresponding java mirror is not loaded.
       // Might be a dormant archive object.
+      report_dormant_archived_object(o, ref_obj);
       return nullptr;
     } else {
       return o;
+    }
+  }
+
+  static void report_dormant_archived_object(oop o, oop ref_obj) {
+    if (log_is_enabled(Trace, cds, heap)) {
+      ResourceMark rm;
+      if (ref_obj != nullptr) {
+        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
+                  p2i(o), o->klass()->external_name(),
+                  p2i(ref_obj), ref_obj->klass()->external_name());
+      } else {
+        log_trace(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)",
+                  p2i(o), o->klass()->external_name());
+      }
     }
   }
 };
@@ -974,13 +989,7 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
     case JVM_SIGNATURE_CLASS :
     case JVM_SIGNATURE_ARRAY : {
       oop o = obj->obj_field_access<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>(offset);
-      if (o != nullptr && log_is_enabled(Debug, cds, heap) && mask_dormant_archived_object(o) == nullptr) {
-        ResourceMark rm;
-        log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
-                             p2i(o), o->klass()->external_name(),
-                             p2i(obj), obj->klass()->external_name());
-      }
-      o = mask_dormant_archived_object(o);
+      o = mask_dormant_archived_object(o, obj);
       assert(oopDesc::is_oop_or_null(o), "Expected an oop or nullptr at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
       break;
@@ -1312,13 +1321,7 @@ void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop ar
   // [id]* elements
   for (int index = 0; index < length; index++) {
     oop o = array->obj_at(index);
-    if (o != nullptr && log_is_enabled(Debug, cds, heap) && mask_dormant_archived_object(o) == nullptr) {
-      ResourceMark rm;
-      log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s) referenced by " INTPTR_FORMAT " (%s)",
-                           p2i(o), o->klass()->external_name(),
-                           p2i(array), array->klass()->external_name());
-    }
-    o = mask_dormant_archived_object(o);
+    o = mask_dormant_archived_object(o, array);
     writer->write_objectID(o);
   }
 
@@ -1885,8 +1888,7 @@ void HeapObjectDumper::do_object(oop o) {
     }
   }
 
-  if (DumperSupport::mask_dormant_archived_object(o) == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o), o->klass()->external_name());
+  if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
     return;
   }
 

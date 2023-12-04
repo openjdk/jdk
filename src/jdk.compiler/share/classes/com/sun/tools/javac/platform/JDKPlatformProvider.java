@@ -27,7 +27,6 @@ package com.sun.tools.javac.platform;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -48,8 +47,6 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.Processor;
 import javax.tools.ForwardingJavaFileObject;
@@ -70,8 +67,6 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** PlatformProvider for JDK N.
  *
@@ -173,17 +168,8 @@ public class JDKPlatformProvider implements PlatformProvider {
                                                                  "",
                                                                  fileName + ".sig");
 
-                        if (result == null) {
-                            //in jrt://, the classfile may have the .class extension:
-                            result = (JavaFileObject) getFileForInput(location,
-                                                                      "",
-                                                                      fileName + ".class");
-                        }
-
                         if (result != null) {
                             return new SigJavaFileObject(result);
-                        } else {
-                            return null;
                         }
                     }
 
@@ -262,7 +248,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                     Path root = fs.getRootDirectories().iterator().next();
                     boolean hasModules =
                             Feature.MODULES.allowedInSource(Source.lookup(sourceVersion));
-                    Path systemModules = root.resolve(ctSymVersion).resolve("system-modules");
 
                     if (!hasModules) {
                         List<Path> paths = new ArrayList<>();
@@ -281,18 +266,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                         }
 
                         fm.setLocationFromPaths(StandardLocation.PLATFORM_CLASS_PATH, paths);
-                    } else if (Files.isRegularFile(systemModules)) {
-                        fm.handleOption("--system", Arrays.asList("none").iterator());
-
-                        Path jrtModules =
-                                FileSystems.getFileSystem(URI.create("jrt:/"))
-                                           .getPath("modules");
-                        try (Stream<String> lines =
-                                Files.lines(systemModules, UTF_8)) {
-                            lines.map(line -> jrtModules.resolve(line))
-                                 .filter(mod -> Files.exists(mod))
-                                 .forEach(mod -> setModule(fm, mod));
-                        }
                     } else {
                         Map<String, List<Path>> module2Paths = new HashMap<>();
 
@@ -324,16 +297,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                 }
             } else {
                 throw new IllegalStateException("Cannot find ct.sym!");
-            }
-        }
-
-        private static void setModule(StandardJavaFileManager fm, Path mod) {
-            try {
-                fm.setLocationForModule(StandardLocation.SYSTEM_MODULES,
-                                        mod.getFileName().toString(),
-                                        Collections.singleton(mod));
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
             }
         }
 

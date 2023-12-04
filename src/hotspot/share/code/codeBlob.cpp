@@ -249,7 +249,7 @@ BufferBlob::BufferBlob(const char* name, int size)
 : RuntimeBlob(name, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, /*locs_size:*/ 0)
 {}
 
-BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
+BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   BufferBlob* blob = nullptr;
@@ -759,6 +759,10 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
   }
+  if (blob == nullptr) {
+    return nullptr; // caller must handle this
+  }
+
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 

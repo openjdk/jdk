@@ -727,7 +727,7 @@ void InterpreterMacroAssembler::remove_activation(
 //
 // Kills:
 //      x10
-//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, .. (param regs)
+//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, .. (param regs)
 //      t0, t1 (temp regs)
 void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
@@ -742,6 +742,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     const Register swap_reg = x10;
     const Register tmp = c_rarg2;
     const Register obj_reg = c_rarg3; // Will contain the oop
+    const Register tmp2 = c_rarg4;
+    const Register tmp3 = c_rarg5;
 
     const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
     const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
@@ -762,7 +764,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      lightweight_lock(obj_reg, tmp, t0, t1, slow_case);
+      lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -826,7 +828,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 //
 // Kills:
 //      x10
-//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ... (param regs)
+//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, ... (param regs)
 //      t0, t1 (temp regs)
 void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 {
@@ -840,6 +842,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     const Register swap_reg   = x10;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
     const Register obj_reg    = c_rarg3;  // Will contain the oop
+    const Register tmp_reg    = c_rarg4;  // Temporary used by lightweight_unlock
 
     save_bcp(); // Save in case of exception
 
@@ -875,7 +878,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
       bnez(t0, slow_case);
-      lightweight_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
       j(count);
 
       bind(slow_case);
@@ -1624,8 +1627,8 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(update);
   load_klass(obj, obj);
 
-  ld(t0, mdo_addr);
-  xorr(obj, obj, t0);
+  ld(tmp, mdo_addr);
+  xorr(obj, obj, tmp);
   andi(t0, obj, TypeEntries::type_klass_mask);
   beqz(t0, next); // klass seen before, nothing to
                   // do. The unknown bit may have been
@@ -1635,15 +1638,15 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bnez(t0, next);
   // already unknown. Nothing to do anymore.
 
-  ld(t0, mdo_addr);
-  beqz(t0, none);
-  mv(tmp, (u1)TypeEntries::null_seen);
-  beq(t0, tmp, none);
-  // There is a chance that the checks above (re-reading profiling
-  // data from memory) fail if another thread has just set the
+  beqz(tmp, none);
+  mv(t0, (u1)TypeEntries::null_seen);
+  beq(tmp, t0, none);
+  // There is a chance that the checks above
+  // fail if another thread has just set the
   // profiling to this obj's klass
-  ld(t0, mdo_addr);
-  xorr(obj, obj, t0);
+  xorr(obj, obj, tmp); // get back original value before XOR
+  ld(tmp, mdo_addr);
+  xorr(obj, obj, tmp);
   andi(t0, obj, TypeEntries::type_klass_mask);
   beqz(t0, next);
 
@@ -1654,6 +1657,10 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(none);
   // first time here. Set profile type.
   sd(obj, mdo_addr);
+#ifdef ASSERT
+  andi(obj, obj, TypeEntries::type_mask);
+  verify_klass_ptr(obj);
+#endif
 
   bind(next);
 }
