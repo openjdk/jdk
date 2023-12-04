@@ -1150,19 +1150,18 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  {
-    pthread_mutex_lock ( &g_handletable_mutex);
-    int i = 0;
-    struct stat64x libstat;
-    if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
-      pthread_mutex_unlock ( &g_handletable_mutex);
-      assert(false, "dll_load: file with filename %s could not be found", filename);
-      if (ebuf != nullptr && ebuflen > 0) {
-        snprintf(ebuf, ebuflen - 1, "dll_load: file with filename %s could not be found",
-                 filename);
-      }
-      return nullptr;
+
+  struct stat64x libstat;
+  if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
+    // file with filename does not exist
+    result = ::dlopen(filename, dflags);
+    if (result != nullptr) {
+      assert(false, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
     }
+  }
+  else {
+    int i = 0;
+    pthread_mutex_lock ( &g_handletable_mutex);
     // check if library belonging to filename is already loaded.
     // If yes use stored handle from previous ::dlopen() and increase refcount
     for (i = 0; i < g_handletable_used; i++) {
