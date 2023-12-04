@@ -34,6 +34,7 @@
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -47,7 +48,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
@@ -85,14 +85,6 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
   CollectedHeap(),
   _young_gen(nullptr),
   _old_gen(nullptr),
-  _young_gen_spec(new GenerationSpec(young,
-                                     NewSize,
-                                     MaxNewSize,
-                                     GenAlignment)),
-  _old_gen_spec(new GenerationSpec(old,
-                                   OldSize,
-                                   MaxOldSize,
-                                   GenAlignment)),
   _rem_set(nullptr),
   _soft_ref_policy(),
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
@@ -115,8 +107,8 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
-  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
 
   _rem_set = create_rem_set(heap_rs.region());
   _rem_set->initialize(young_rs.base(), old_rs.base());
@@ -125,8 +117,8 @@ jint GenCollectedHeap::initialize() {
   bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
-  _young_gen = _young_gen_spec->init(young_rs, rem_set());
-  _old_gen = _old_gen_spec->init(old_rs, rem_set());
+  _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
+  _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
 
   GCInitLogger::print();
 
@@ -143,8 +135,8 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
   assert(alignment % pageSize == 0, "Must be");
 
   // Check for overflow.
-  size_t total_reserved = _young_gen_spec->max_size() + _old_gen_spec->max_size();
-  if (total_reserved < _young_gen_spec->max_size()) {
+  size_t total_reserved = MaxNewSize + MaxOldSize;
+  if (total_reserved < MaxNewSize) {
     vm_exit_during_initialization("The size of the object heap + VM data exceeds "
                                   "the maximum representable size");
   }
@@ -197,14 +189,6 @@ PreGenGCValues GenCollectedHeap::get_pre_gc_values() const {
                         def_new_gen->from()->capacity(),
                         old_gen()->used(),
                         old_gen()->capacity());
-}
-
-GenerationSpec* GenCollectedHeap::young_gen_spec() const {
-  return _young_gen_spec;
-}
-
-GenerationSpec* GenCollectedHeap::old_gen_spec() const {
-  return _old_gen_spec;
 }
 
 size_t GenCollectedHeap::capacity() const {

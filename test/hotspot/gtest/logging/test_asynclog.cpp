@@ -69,21 +69,22 @@ LOG_LEVEL_LIST
     log_debug(logging)("log_debug-test");
   }
 
+  // Caveat: BufferUpdater is not MT-safe. We use it only for testing.
+  // We would observe missing loglines if we interleaved buffers.
+  // Emit all logs between constructor and destructor of BufferUpdater.
   void test_asynclog_drop_messages() {
-    auto writer = AsyncLogWriter::instance();
-    if (writer != nullptr) {
-      const size_t sz = 2000;
+    const size_t sz = 2000;
 
-      // shrink async buffer.
-      AsyncLogWriter::BufferUpdater saver(1024);
-      LogMessage(logging) lm;
+    // shrink async buffer.
+    AsyncLogWriter::BufferUpdater saver(1024);
+    test_asynclog_ls(); // roughly 200 bytes.
+    LogMessage(logging) lm;
 
-      // write more messages than its capacity in burst
-      for (size_t i = 0; i < sz; ++i) {
-        lm.debug("a lot of log...");
-      }
-      lm.flush();
+    // write more messages than its capacity in burst
+    for (size_t i = 0; i < sz; ++i) {
+      lm.debug("a lot of log...");
     }
+    lm.flush();
   }
 
   // stdout/stderr support
@@ -93,8 +94,7 @@ LOG_LEVEL_LIST
     if (f != NULL) {
       size_t sz = output.size();
       size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
-      // at least see "header"
-      return fclose(f) == 0 && sz == written && sz >= 6;
+      return fclose(f) == 0 && sz == written;
     }
 
     return false;
@@ -244,67 +244,69 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
+  if (AsyncLogWriter::instance() == nullptr) {
+    return;
+  }
+
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
-
-  AsyncLogWriter::flush();
-  if (AsyncLogWriter::instance() != nullptr) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
-  }
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
 }
 
 TEST_VM_F(AsyncLogTest, stdoutOutput) {
   testing::internal::CaptureStdout();
-  fprintf(stdout, "header");
 
   if (!set_log_config("stdout", "logging=debug")) {
     return;
   }
 
-  test_asynclog_ls();
-  test_asynclog_drop_messages();
+  bool async = AsyncLogWriter::instance() != nullptr;
+  if (async) {
+    test_asynclog_drop_messages();
+    AsyncLogWriter::flush();
+  } else {
+    test_asynclog_ls();
+  }
 
-  AsyncLogWriter::flush();
   fflush(nullptr);
-
   if (!write_to_file(testing::internal::GetCapturedStdout())) {
     return;
   }
 
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "header"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
+  if (async) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }
 
 TEST_VM_F(AsyncLogTest, stderrOutput) {
   testing::internal::CaptureStderr();
-  fprintf(stderr, "header");
 
   if (!set_log_config("stderr", "logging=debug")) {
     return;
   }
 
-  test_asynclog_ls();
-  test_asynclog_drop_messages();
+  bool async = AsyncLogWriter::instance() != nullptr;
+  if (async) {
+    test_asynclog_drop_messages();
+    AsyncLogWriter::flush();
+  } else {
+    test_asynclog_ls();
+  }
 
-  AsyncLogWriter::flush();
   fflush(nullptr);
-
   if (!write_to_file(testing::internal::GetCapturedStderr())) {
     return;
   }
 
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "header"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  if (AsyncLogWriter::instance() != nullptr) {
+  if (async) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }
