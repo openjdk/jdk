@@ -3157,7 +3157,6 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
                                      ParCompactionManager* cm,
                                      PSParallelCompact::SpaceId space_id) :
   ParMarkBitMapClosure(mbm, cm),
-  _space_id(space_id),
   _start_array(PSParallelCompact::start_array(space_id))
 {
 }
