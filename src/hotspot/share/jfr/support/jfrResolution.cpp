@@ -81,13 +81,10 @@ static inline bool exclude_frame(const Method* method) {
   return false;
 }
 
-// If the caller into resolution is native, it must be java/lang/invoke/MethodHandleNatives.resolve().
 static Method* find_real_caller(vframeStream& stream, JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   assert(stream.method()->is_native(), "invariant");
   ResourceMark rm(jt);
-  assert(strcmp(stream.method()->name()->as_C_string(), "resolve") == 0, "invariant");
-  assert(strcmp(stream.method()->method_holder()->name()->as_C_string(), "java/lang/invoke/MethodHandleNatives") == 0, "invariant");
   stream.next();
   while (!stream.at_end()) {
     if (!exclude_frame(stream.method())) {
