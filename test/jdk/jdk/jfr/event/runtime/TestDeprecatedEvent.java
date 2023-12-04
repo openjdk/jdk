@@ -70,6 +70,7 @@ public class TestDeprecatedEvent {
  */
     public static String EVENT_NAME = EventNames.DeprecatedInvocation;
     private static String mode;
+    public static int counter;
 
     public static void main(String... args) throws Exception {
         mode = args[0];
@@ -89,6 +90,11 @@ public class TestDeprecatedEvent {
         }
     }
 
+    @Deprecated(forRemoval = true)
+    public static void userDeprecatedForRemoval() {
+        counter++;
+    }
+
     private static void testLevelAll() throws Exception {
         // Methods individually decorated.
         DeprecatedMethods.deprecated();
@@ -102,6 +108,10 @@ public class TestDeprecatedEvent {
         t.instanceDeprecatedSinceForRemoval();
         t.foo();
         t.zoo();
+        // Invoke a deprecated method in the users code
+        // to verify the negative case, i.e. that this
+        // invocation is not reported.
+        userDeprecatedForRemoval();
     }
 
     private static void validateLevelAll(Recording r) throws Exception {
@@ -115,6 +125,13 @@ public class TestDeprecatedEvent {
         assertMethod(events, "testLevelAll", "instanceDeprecatedSinceForRemoval");
         assertMethod(events, "testLevelAll", "foo");
         assertMethod(events, "testLevelAll", "zoo");
+        // Negative case
+        try {
+            assertMethod(events, "testLevelAll", "userDeprecatedForRemoval");
+            throw new RuntimeException("Invocation of a deprecated method in user code should not be reported");
+        } catch (Exception e) {
+            // Expected
+        }
     }
 
     // Does not invoke any deprecated methods. We only verify
@@ -187,8 +204,6 @@ public class TestDeprecatedEvent {
             RecordedFrame frame = frames.getFirst();
             assertTrue(frame.isJavaFrame(), "invariant");
             RecordedMethod callerMethod = frame.getMethod();
-            int bci = frame.getBytecodeIndex();
-            int lineNumber = frame.getLineNumber();
             assertNull(e.getThread(), "should not have a thread");
             if (forRemoval) {
                 assertTrue(deprecatedMethod.getName().endsWith("ForRemoval"), "wrong filtering?");

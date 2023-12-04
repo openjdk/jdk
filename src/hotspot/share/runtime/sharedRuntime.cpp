@@ -1395,7 +1395,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
       }
     }
   } // unlock CompiledICLocker
-  JFR_ONLY(if (patched_caller && callee_method()->deprecated()) Jfr::on_backpatching_deprecated_invocation(callee_method(), THREAD);)
+  JFR_ONLY(if (patched_caller) Jfr::on_backpatching(callee_method(), THREAD);)
   return true;
 }
 

@@ -38,10 +38,9 @@ class Thread;
 class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
   template<typename, typename>
   friend class JfrLinkedList;
+  friend class JfrDeprecatedStackTraceWriter;
  private:
-  JfrTicks _starttime;
-  JfrBlobHandle _event;
-  JfrBlobHandle _event_no_stacktrace;
+  JfrTicks _invocation_time;
   JfrBlobHandle _stacktrace;
   JfrDeprecatedEdge* _next;
   InstanceKlass* _deprecated_ik;
@@ -54,6 +53,8 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
   u1 _frame_type;
   bool _for_removal;
 
+  void set_stacktrace(const JfrBlobHandle& blob);
+
  public:
   JfrDeprecatedEdge(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt);
 
@@ -65,7 +66,7 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
   const JfrBlobHandle& event_no_stacktrace() const;
   bool has_stacktrace() const;
   const JfrBlobHandle& stacktrace() const;
-  void install_blobs(JavaThread* jt);
+  void install_stacktrace_blob(JavaThread* jt);
 
   const InstanceKlass* deprecated_ik() const { return _deprecated_ik; }
   traceid deprecated_methodid() const { return _deprecated_methodid; }
@@ -73,7 +74,7 @@ class JfrDeprecatedEdge : public CHeapObj<mtTracing> {
   const InstanceKlass* sender_ik() const { return _sender_ik; }
   traceid sender_methodid() const { return _sender_methodid; }
 
-  const JfrTicks& starttime() const { return _starttime; }
+  const JfrTicks& invocation_time() const { return _invocation_time; }
   traceid stacktrace_id() const { return _stack_trace_id; }
 
   int bci() const { return _bci; }
@@ -90,7 +91,7 @@ class JfrDeprecationManager : AllStatic {
   static void prepare_type_set(JavaThread* jt);
   static void on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
-  static void write_events(JfrChunkWriter& cw, Thread* thread, bool on_error = false);
+  static void write_edges(JfrChunkWriter& cw, Thread* thread, bool on_error = false);
   static void on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* thread);
   static void on_level_setting_update(int64_t new_level);
 };

@@ -580,23 +580,22 @@ void JfrCheckpointManager::clear_type_set() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
   // can safepoint here
   ThreadInVMfromNative transition(thread);
+  MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+  // Marks leakp. Place prepare_type_set before writer construction.
+  JfrDeprecationManager::prepare_type_set(thread);
   JfrCheckpointWriter leakp_writer(true, thread);
   JfrCheckpointWriter writer(true, thread);
   {
-    MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
-    JfrDeprecationManager::prepare_type_set(thread); // marks leakp
-    {
-      MutexLocker module_lock(Module_lock);
-      JfrTypeSet::clear(&writer, &leakp_writer);
-    }
+    MutexLocker module_lock(Module_lock);
+    JfrTypeSet::clear(&writer, &leakp_writer);
   }
   JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
-  // We placed a blob in the Deprecated subsystem by copying the information
-  // in the leakp writer. For the real writer, the data will not be
-  // committed, because the JFR system has not yet been started.
-  // Therefore, both writers are cancelled before their destructors are run.
+  // We placed a blob in the Deprecated subsystem by moving the information
+  // from the leakp writer. For the real writer, the data will not be
+  // committed, because the JFR system is yet to be started.
+  // Therefore, the writer is cancelled before its destructor is run,
+  // to avoid writing unnecessary inforamation into the checkpoint system.
   writer.cancel();
-  leakp_writer.cancel();
 }
 
 void JfrCheckpointManager::write_type_set() {
@@ -605,24 +604,20 @@ void JfrCheckpointManager::write_type_set() {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
     // can safepoint here
     ThreadInVMfromNative transition(thread);
+    MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+    // Marks leakp. Place prepare_type_set before writer construction.
+    JfrDeprecationManager::prepare_type_set(thread);
     JfrCheckpointWriter leakp_writer(true, thread);
     JfrCheckpointWriter writer(true, thread);
     {
-      MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
-      JfrDeprecationManager::prepare_type_set(thread);
-      {
-        MutexLocker module_lock(thread, Module_lock);
-        JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
-      }
+      MutexLocker module_lock(thread, Module_lock);
+      JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
     }
     if (LeakProfiler::is_running()) {
       ObjectSampleCheckpoint::on_type_set(leakp_writer);
     }
+    // Place this call after ObjectSampleCheckpoint::on_type_set.
     JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
-    // We placed blobs in both the LeakProfiler and Deprecation
-    // subsystems.by copying the information in the leakp writer.
-    // It is now is cancelled before destruction.
-    leakp_writer.cancel();
   }
   write();
 }

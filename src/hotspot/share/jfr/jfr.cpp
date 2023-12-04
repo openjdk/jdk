@@ -102,8 +102,8 @@ void Jfr::on_resolution(const CallInfo& info, TRAPS) {
   JfrResolution::on_runtime_resolution(info, THREAD);
 }
 
-void Jfr::on_backpatching_deprecated_invocation(const Method* deprecated_method, JavaThread* jt) {
-  JfrResolution::on_backpatching_deprecated_invocation(deprecated_method, jt);
+void Jfr::on_backpatching(const Method* callee_method, JavaThread* jt) {
+  JfrResolution::on_backpatching(callee_method, jt);
 }
 
 #ifdef COMPILER1

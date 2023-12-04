@@ -81,18 +81,18 @@ static inline bool exclude_frame(const Method* method) {
   return false;
 }
 
-static Method* find_real_caller(vframeStream& stream, JavaThread* jt) {
+static Method* find_real_sender(vframeStream& stream, JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   assert(stream.method()->is_native(), "invariant");
   ResourceMark rm(jt);
-  stream.next();
   while (!stream.at_end()) {
-    if (!exclude_frame(stream.method())) {
-      break;
-    }
     stream.next();
+    Method* method = stream.method();
+    if (!exclude_frame(method)) {
+      return method;
+    }
   }
-  return stream.method();
+  return nullptr;
 }
 
 static inline bool jfr_is_started_on_command_line() {
@@ -103,7 +103,10 @@ static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_ty
   Method* method = stream.method();
   assert(method != nullptr, "invariant");
   if (method->is_native()) {
-    method = find_real_caller(stream, jt);
+    method = find_real_sender(stream, jt);
+    if (method == nullptr) {
+      return nullptr;
+    }
   }
   assert(method != nullptr, "invariant");
   assert(!method->is_native(), "invariant");
@@ -136,17 +139,18 @@ static inline void on_runtime_deprecated(const Method* method, JavaThread* jt) {
     int bci;
     u1 frame_type;
     Method* const sender = ljf_sender_method(bci, frame_type, jt);
-    if (sender == nullptr) {
-      return;
+    if (sender != nullptr) {
+      JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
     }
-    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
   }
 }
 
 // We can circumvent the need to hook into backpatching if ciMethod is made aware
 // of the deprecated annotation as part of parsing bytecodes of the callee method.
-void JfrResolution::on_backpatching_deprecated_invocation(const Method* method, JavaThread* jt) {
-  assert(jt->has_last_Java_frame(), "Invariant");
+static void on_backpatching_deprecated(const Method* deprecated_method, JavaThread* jt) {
+  assert(deprecated_method != nullptr, "invariant");
+  assert(deprecated_method->deprecated(), "invariant");
+  assert(jt->has_last_Java_frame(), "invariant");
   assert(jt->last_frame().is_runtime_frame(), "invariant");
   if (jfr_is_started_on_command_line()) {
     vframeStream stream(jt, true, false);
@@ -155,10 +159,17 @@ void JfrResolution::on_backpatching_deprecated_invocation(const Method* method, 
     int bci;
     u1 frame_type;
     Method* const sender = frame_context(stream, bci, frame_type, jt);
-    if (sender == nullptr) {
-      return;
+    if (sender != nullptr) {
+      JfrDeprecationManager::on_link(deprecated_method, sender, bci, frame_type, jt);
     }
-    JfrDeprecationManager::on_link(method, sender, bci, frame_type, jt);
+  }
+}
+
+void JfrResolution::on_backpatching(const Method* callee_method, JavaThread* jt) {
+  assert(callee_method != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  if (callee_method->deprecated()) {
+    on_backpatching_deprecated(callee_method, jt);
   }
 }
 
@@ -248,12 +259,12 @@ static inline void on_compiler_resolve_deprecated(const ciMethod* target, int bc
 // C1
 void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target) {
   Method* const sender = builder->method()->get_Method();
-  if (target->deprecated()) {
-    on_compiler_resolve_deprecated(target, builder->bci(), sender);
-    return;
-  }
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(sender)) {
     builder->bailout(link_error_msg);
+    return;
+  }
+  if (target->deprecated()) {
+    on_compiler_resolve_deprecated(target, builder->bci(), sender);
   }
 }
 #endif
@@ -262,12 +273,12 @@ void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass
 // C2
 void JfrResolution::on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target) {
   Method* const sender = parse->method()->get_Method();
-  if (target->deprecated()) {
-    on_compiler_resolve_deprecated(target, parse->bci(), sender);
-    return;
-  }
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(sender)) {
     parse->C->record_failure(link_error_msg);
+    return;
+  }
+  if (target->deprecated()) {
+    on_compiler_resolve_deprecated(target, parse->bci(), sender);
   }
 }
 #endif

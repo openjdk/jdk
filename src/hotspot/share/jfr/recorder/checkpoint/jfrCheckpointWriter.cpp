@@ -176,8 +176,10 @@ const u1* JfrCheckpointWriter::session_data(size_t* size, bool move /* false */,
   }
   *size = this->used_size();
   assert(this->start_pos() + *size == this->current_pos(), "invariant");
-  write_checkpoint_header(const_cast<u1*>(this->start_pos()), this->used_offset(), _time, (u4)_type, count());
-  _header = false; // the header was just written
+  if (_header) {
+    write_checkpoint_header(const_cast<u1*>(this->start_pos()), this->used_offset(), _time, (u4)_type, count());
+    _header = false; // the header was just written
+  }
   if (move) {
     this->seek(_offset);
   }

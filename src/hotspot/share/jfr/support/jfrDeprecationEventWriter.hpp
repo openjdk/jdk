@@ -27,24 +27,11 @@
 
 #include "memory/allocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
-#include "jfr/writers/jfrEventWriterHost.inline.hpp"
-#include "jfr/writers/jfrMemoryWriterHost.inline.hpp"
-#include "jfr/writers/jfrStorageAdapter.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 
+class JfrCheckpointWriter;
 class JfrChunkWriter;
 class JfrDeprecatedEdge;
-
-typedef AcquireReleaseMemoryWriterHost<MallocAdapter<>, StackObj> JfrTransactionalDeprecatedEventWriter;
-typedef EventWriterHost<BigEndianEncoder, CompressedIntegerEncoder, JfrTransactionalDeprecatedEventWriter> JfrDeprecatedEventWriterBase;
-
-class JfrDeprecatedBlobConstruction : public JfrDeprecatedEventWriterBase {
- private:
-  uint64_t _size_pos;
- public:
-  JfrDeprecatedBlobConstruction(JavaThread* jt);
-  JfrBlobHandle stacktrace(const JfrDeprecatedEdge* edge);
-  JfrBlobHandle event(const JfrDeprecatedEdge* edge, bool stacktrace);
-};
 
 // This writer will collapse all individual stacktrace blobs into a single TYPE_STACKTRACE checkpoint.
 class JfrDeprecatedStackTraceWriter : public StackObj{
@@ -61,10 +48,13 @@ class JfrDeprecatedStackTraceWriter : public StackObj{
   size_t elements() const { return _elements; }
   size_t processed() const { return _processed; }
   bool process(const JfrDeprecatedEdge* edge);
+
+  static void install_stacktrace_blob(JfrDeprecatedEdge* edge, JfrCheckpointWriter& writer, JavaThread* jt);
 };
 
 class JfrDeprecatedEventWriter : public StackObj {
  private:
+  JfrTicks _now;
   JfrChunkWriter& _cw;
   bool _for_removal;
   bool _stacktrace;

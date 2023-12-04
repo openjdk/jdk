@@ -23,17 +23,14 @@
 */
 
 #include "precompiled.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
-#include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfrfiles/jfrEventIds.hpp"
+#include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/support/jfrDeprecationEventWriter.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
-#include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/thread.inline.hpp"
-#include "jfr/writers/jfrBigEndianWriter.hpp"
 
 // This dual state machine for the level setting is because when multiple recordings are running,
 // and one of them stops, the newly calculated settings for level is updated before the chunk rotates.
@@ -63,42 +60,19 @@ static inline bool only_for_removal() {
   return level() == 0;
 }
 
-JfrDeprecatedBlobConstruction::JfrDeprecatedBlobConstruction(JavaThread* jt) : JfrDeprecatedEventWriterBase(jt) {
-  assert(this->is_acquired(), "invariant");
-  assert(0 == this->current_offset(), "invariant");
-  assert(this->available_size() > 255, "invariant");
-}
-
-JfrBlobHandle JfrDeprecatedBlobConstruction::event(const JfrDeprecatedEdge* edge, bool stacktrace) {
+void JfrDeprecatedStackTraceWriter::install_stacktrace_blob(JfrDeprecatedEdge* edge, JfrCheckpointWriter& writer, JavaThread* jt) {
   assert(edge != nullptr, "invariant");
-  assert(this->used_offset() == 0, "invariant");
-  _size_pos = this->reserve(sizeof(u1));
-  this->write(JfrDeprecatedInvocationEvent);
-  this->write(JfrTicks::now());
-  this->write(stacktrace ? edge->stacktrace_id() : 0);
-  this->write(edge->deprecated_methodid());
-  this->write(edge->for_removal());
-  const size_t event_size = this->used_size();
-  assert(event_size < 255, "invariant");
-  write_at_offset(event_size, _size_pos);
-  JfrBlobHandle blob = JfrBlob::make(this->start_pos(), event_size);
-  this->reset();
-  return blob;
-}
-
-JfrBlobHandle JfrDeprecatedBlobConstruction::stacktrace(const JfrDeprecatedEdge* edge) {
-  assert(edge != nullptr, "invariant");
-  assert(this->used_offset() == 0, "invariant");
-  this->write(edge->stacktrace_id());
-  this->write(true); // truncated
-  this->write(1); // number of frames
-  this->write(edge->sender_methodid());
-  this->write<u4>(edge->linenumber());
-  this->write<u4>(edge->bci());
-  this->write<u1>(edge->frame_type());
-  JfrBlobHandle blob = JfrBlob::make(this->start_pos(), this->used_size());
-  this->reset();
-  return blob;
+  assert(!edge->has_stacktrace(), "invariant");
+  assert(writer.used_offset() == 0, "invariant");
+  writer.write(edge->stacktrace_id());
+  writer.write(true); // truncated
+  writer.write(1); // number of frames
+  writer.write(edge->sender_methodid());
+  writer.write<u4>(edge->linenumber());
+  writer.write<u4>(edge->bci());
+  writer.write<u1>(edge->frame_type());
+  JfrBlobHandle blob = writer.move();
+  edge->set_stacktrace(blob);
 }
 
 // This op will collapse all individual stacktrace blobs into a single TYPE_STACKTRACE checkpoint.
@@ -142,25 +116,37 @@ bool JfrDeprecatedStackTraceWriter::process(const JfrDeprecatedEdge* edge) {
   return true;
 }
 
-static inline void write_event(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, bool has_stacktrace) {
+JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, bool stacktrace) :
+  _now(JfrTicks::now()),_cw(cw), _for_removal(only_for_removal()), _stacktrace(stacktrace), _did_write(false) {}
+
+static size_t calculate_event_size(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const JfrTicks& now, bool stacktrace) {
   assert(edge != nullptr, "invariant");
-  assert(edge->has_event(), "invariant");
-  if (has_stacktrace) {
-    edge->event()->write(cw);
-    return;
-  }
-  edge->event_no_stacktrace()->write(cw);
+  size_t bytes = cw.size_in_bytes(JfrDeprecatedInvocationEvent);
+  bytes += cw.size_in_bytes(now); // starttime
+  bytes += cw.size_in_bytes(stacktrace ? edge->stacktrace_id() : 0); // stacktrace
+  bytes += cw.size_in_bytes(edge->deprecated_methodid());
+  bytes += cw.size_in_bytes(edge->invocation_time());
+  bytes += cw.size_in_bytes(edge->for_removal());
+  return bytes + cw.size_in_bytes(bytes + cw.size_in_bytes(bytes));
 }
 
-JfrDeprecatedEventWriter::JfrDeprecatedEventWriter(JfrChunkWriter& cw, bool stacktrace) :
-  _cw(cw), _for_removal(only_for_removal()), _stacktrace(stacktrace), _did_write(false) {}
+static void write_event(const JfrDeprecatedEdge* edge, JfrChunkWriter& cw, const JfrTicks& now, bool stacktrace) {
+  assert(edge != nullptr, "invariant");
+  cw.write(calculate_event_size(edge, cw, now, stacktrace));
+  cw.write(JfrDeprecatedInvocationEvent);
+  cw.write(now);
+  cw.write(stacktrace ? edge->stacktrace_id() : 0);
+  cw.write(edge->deprecated_methodid());
+  cw.write(edge->invocation_time());
+  cw.write(edge->for_removal());
+}
 
 bool JfrDeprecatedEventWriter::process(const JfrDeprecatedEdge* edge) {
   assert(edge != nullptr, "invariant");
   if (_for_removal && !edge->for_removal()) {
     return true;
   }
-  write_event(edge, _cw, _stacktrace);
+  write_event(edge, _cw,_now, _stacktrace);
   if (!_did_write) {
     _did_write = true;
   }

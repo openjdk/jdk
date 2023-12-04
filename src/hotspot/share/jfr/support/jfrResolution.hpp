@@ -41,7 +41,7 @@ class JfrResolution : AllStatic {
   static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
   static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
   static void on_jvmci_resolution(const Method* caller, const Method* target, TRAPS);
-  static void on_backpatching_deprecated_invocation(const Method* deprecated_method, JavaThread* jt);
+  static void on_backpatching(const Method* callee_method, JavaThread* jt);
 };
 
 #endif // SHARE_SUPPORT_JFRRESOLUTION_HPP
