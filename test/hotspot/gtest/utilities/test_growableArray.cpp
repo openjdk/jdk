@@ -33,13 +33,13 @@
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
 
-// TODO do some bad combinations with allocation!
-
 // TODO initial_capacity? initial_size and fill?
 
 // TODO delete CHeap - and verify!
 
 // TODO negative tests for CHeap allocation (first verify)
+
+// TODO assignment operator and copy constructor
 
 // We have a list of each:
 //  - ModifyClosure
@@ -608,6 +608,9 @@ class TestClosureFindIf : public TestClosure<E> {
     for (int i = 0; i < 10; i++) {
       a->append(value_factory<E>(i));
     }
+    a->append(value_factory<E>(20));
+    a->append(value_factory<E>(20));
+    a->append(value_factory<E>(42));
 
     for (int i = 0; i < 10; i++) {
       int index = a->find_if([&](const E& elem) {
@@ -616,7 +619,12 @@ class TestClosureFindIf : public TestClosure<E> {
       ASSERT_EQ(index, i);
     }
 
-    // TODO: example where up is different to down!
+    {
+      int index = a->find_if([&](const E& elem) {
+        return elem == value_factory<E>(20);
+      });
+      ASSERT_EQ(index, 10);
+    }
 
     {
       int index = a->find_if([&](const E& elem) {
@@ -634,6 +642,51 @@ class TestClosureFindIf : public TestClosure<E> {
   };
 };
 
+template<typename E>
+class TestClosureFindFromEndIf : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(value_factory<E>(i));
+    }
+    a->append(value_factory<E>(20));
+    a->append(value_factory<E>(20));
+    a->append(value_factory<E>(42));
+
+    for (int i = 0; i < 10; i++) {
+      int index = a->find_from_end_if([&](const E& elem) {
+        return elem == value_factory<E>(i);
+      });
+      ASSERT_EQ(index, i);
+    }
+
+    {
+      int index = a->find_from_end_if([&](const E& elem) {
+        return elem == value_factory<E>(20);
+      });
+      ASSERT_EQ(index, 11);
+    }
+
+    {
+      int index = a->find_from_end_if([&](const E& elem) {
+        return elem == value_factory<E>(100);
+      });
+      ASSERT_EQ(index, -1);
+    }
+
+    {
+      int index = a->find_from_end_if([&](const E& elem) {
+        return elem == value_factory<E>(-100);
+      });
+      ASSERT_EQ(index, -1);
+    }
+  };
+};
+
+// TODO
 // template<typename E>
 // class TestClosureCopy : public TestClosure<E> {
 //   virtual void do_test(AllocatorClosure<E>* a) override final {
@@ -648,115 +701,9 @@ class TestClosureFindIf : public TestClosure<E> {
 //   };
 // };
 
-
-struct WithEmbeddedArray {
-  // Array embedded in another class
-  GrowableArray<int> _a;
-
-  // Resource allocated data array
-  WithEmbeddedArray(int initial_max) : _a(initial_max) {}
-  // Arena allocated data array
-  WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
-  // TODO allocate CHeap directly!
-  //// // CHeap allocated data array
-  //// WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
-  ////   assert(memflags != mtNone, "test requirement");
-  //// }
-  WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}
-};
-
 // Test fixture to work with TEST_VM_F
 class GrowableArrayTest : public ::testing::Test {
 protected:
-  // friend -> private accessors
-  ///  template <typename E>
-  ///  static bool elements_on_C_heap(const GrowableArray<E>* array) {
-  ///    return array->on_C_heap();
-  ///  }
-  template <typename E>
-  static bool elements_on_resource_area(const GrowableArray<E>* array) {
-    return array->on_resource_area();
-  }
-
-  // TODO remove
-  template <typename E>
-  static bool elements_on_arena(const GrowableArray<E>* array) {
-    return !array->on_resource_area();
-    //return array->on_arena();
-  }
-
-  template <typename ArrayClass>
-  static void test_copy1(ArrayClass* a) {
-    ASSERT_EQ(a->length(), 1);
-    ASSERT_EQ(a->at(0), 1);
-
-    // Only allowed to copy to stack and embedded ResourceObjs
-
-    // Copy to stack
-    {
-      GrowableArray<int> c(*a);
-
-      ASSERT_EQ(c.length(), 1);
-      ASSERT_EQ(c.at(0), 1);
-    }
-
-    // Copy to embedded
-    {
-      WithEmbeddedArray c(*a);
-
-      ASSERT_EQ(c._a.length(), 1);
-      ASSERT_EQ(c._a.at(0), 1);
-    }
-  }
-
-  template <typename ArrayClass>
-  static void test_assignment1(ArrayClass* a) {
-    ASSERT_EQ(a->length(), 1);
-    ASSERT_EQ(a->at(0), 1);
-
-    // Only allowed to assign to stack and embedded ResourceObjs
-
-    // Copy to embedded/resource
-    {
-      ResourceMark rm;
-      GrowableArray<int> c(1);
-      c = *a;
-
-      ASSERT_EQ(c.length(), 1);
-      ASSERT_EQ(c.at(0), 1);
-    }
-
-    // Copy to embedded/arena
-    {
-      Arena arena(mtTest);
-      GrowableArray<int> c(&arena, 1, 0, 0);
-      c = *a;
-
-      ASSERT_EQ(c.length(), 1);
-      ASSERT_EQ(c.at(0), 1);
-    }
-
-    // Copy to embedded/resource
-    {
-      ResourceMark rm;
-      WithEmbeddedArray c(1);
-      c._a = *a;
-
-      ASSERT_EQ(c._a.length(), 1);
-      ASSERT_EQ(c._a.at(0), 1);
-    }
-
-    // Copy to embedded/arena
-    {
-      Arena arena(mtTest);
-      WithEmbeddedArray c(&arena, 1);
-      c._a = *a;
-
-      ASSERT_EQ(c._a.length(), 1);
-      ASSERT_EQ(c._a.at(0), 1);
-    }
-  }
-
   template<typename E>
   static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
     AllocatorClosureStackResourceArea<E> allocator_s_r;
@@ -835,66 +782,70 @@ protected:
     run_test_modify<E>(&test);
   }
 
-  // TODO more tests
+  template<typename E>
+  static void run_test_find_from_end_if() {
+    TestClosureFindFromEndIf<E> test;
+    run_test_modify<E>(&test);
+  }
 };
 
-TEST_VM_F(GrowableArrayTest, xxx_append_int) {
+TEST_VM_F(GrowableArrayTest, append_int) {
   run_test_append<int>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_append_ptr) {
+TEST_VM_F(GrowableArrayTest, append_ptr) {
   run_test_append<int*>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_append_point) {
+TEST_VM_F(GrowableArrayTest, append_point) {
   run_test_append<Point>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_clear_int) {
+TEST_VM_F(GrowableArrayTest, clear_int) {
   run_test_clear<int>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_clear_ptr) {
+TEST_VM_F(GrowableArrayTest, clear_ptr) {
   run_test_clear<int*>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_clear_point) {
+TEST_VM_F(GrowableArrayTest, clear_point) {
   run_test_clear<Point>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_iterator_int) {
+TEST_VM_F(GrowableArrayTest, iterator_int) {
   run_test_iterator<int>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_iterator_ptr) {
+TEST_VM_F(GrowableArrayTest, iterator_ptr) {
   run_test_iterator<int*>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_iterator_point) {
+TEST_VM_F(GrowableArrayTest, iterator_point) {
   run_test_iterator<Point>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_capacity_int) {
+TEST_VM_F(GrowableArrayTest, capacity_int) {
   run_test_capacity<int>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_capacity_ptr) {
+TEST_VM_F(GrowableArrayTest, capacity_ptr) {
   run_test_capacity<int*>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_capacity_point) {
+TEST_VM_F(GrowableArrayTest, capacity_point) {
   run_test_capacity<Point>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_find_if_int) {
+TEST_VM_F(GrowableArrayTest, find_if_int) {
   run_test_find_if<int>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_find_if_ptr) {
+TEST_VM_F(GrowableArrayTest, find_if_ptr) {
   run_test_find_if<int*>();
 }
 
-TEST_VM_F(GrowableArrayTest, xxx_find_if_point) {
+TEST_VM_F(GrowableArrayTest, find_if_point) {
   run_test_find_if<Point>();
 }
 
@@ -938,64 +889,3 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, unallowed_alloc_arena_arena,
 }
 #endif
 
-TEST(GrowableArrayCHeap, find_if) {
-  struct Element {
-    int value;
-  };
-  GrowableArrayCHeap<Element, mtTest> array;
-  array.push({1});
-  array.push({2});
-  array.push({3});
-
-  {
-    int index = array.find_if([&](const Element& elem) {
-      return elem.value == 1;
-    });
-    ASSERT_EQ(index, 0);
-  }
-
-  {
-    int index = array.find_if([&](const Element& elem) {
-      return elem.value > 1;
-    });
-    ASSERT_EQ(index, 1);
-  }
-
-  {
-    int index = array.find_if([&](const Element& elem) {
-      return elem.value == 4;
-    });
-    ASSERT_EQ(index, -1);
-  }
-}
-
-TEST(GrowableArrayCHeap, find_from_end_if) {
-  struct Element {
-    int value;
-  };
-  GrowableArrayCHeap<Element, mtTest> array;
-  array.push({1});
-  array.push({2});
-  array.push({3});
-
-  {
-    int index = array.find_from_end_if([&](const Element& elem) {
-      return elem.value == 1;
-    });
-    ASSERT_EQ(index, 0);
-  }
-
-  {
-    int index = array.find_from_end_if([&](const Element& elem) {
-      return elem.value > 1;
-    });
-    ASSERT_EQ(index, 2);
-  }
-
-  {
-    int index = array.find_from_end_if([&](const Element& elem) {
-      return elem.value == 4;
-    });
-    ASSERT_EQ(index, -1);
-  }
-}
