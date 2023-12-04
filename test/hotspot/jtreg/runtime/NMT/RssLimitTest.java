@@ -43,6 +43,26 @@
  * @run driver RssLimitTest test-relative-limit
  */
 
+/*
+ * @test id=test-high-interval
+ * @summary Verify -XX:RssLimit with an absolute limit
+ * @requires vm.flagless
+ * @requires os.family != "aix"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver RssLimitTest test-absolute-limit
+ */
+
+/*
+ * @test id=test-default-interval
+ * @summary Verify -XX:RssLimit with an absolute limit
+ * @requires vm.flagless
+ * @requires os.family != "aix"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver RssLimitTest test-absolute-limit
+ */
+
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -69,13 +89,10 @@ public class RssLimitTest {
 
     private static void testAbsoluteLimit() throws IOException {
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=100m",
-                "-XX:RssLimitCheckInterval=500",
-                "-Xmx100m",
-                "-Xms100m",
-                "-XX:+AlwaysPreTouch");
+                "-XX:RssLimit=100m,100ms",
+                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
         o.shouldNotHaveExitValue(0);
-        o.shouldContain("RssWatcher task: interval=500ms, limit=100M");
+        o.shouldContain("RssWatcher task: interval=100ms, limit=100M");
         o.shouldMatch("# +Error: Resident Set Size \\(\\d+ bytes\\) reached RssLimit \\(104857600 bytes\\)");
     }
 
@@ -86,22 +103,12 @@ public class RssLimitTest {
         char dot = format.getDecimalFormatSymbols().getDecimalSeparator();
         String limitPercent = "0" + dot + "01%";
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=" + limitPercent,
-                "-XX:RssLimitCheckInterval=500",
-                "-Xmx100m",
-                "-Xms100m",
-                "-XX:+AlwaysPreTouch");
-        o.shouldContain("RssWatcher task: interval=500ms, limit=" + limitPercent + " of total memory");
-        String pat = "Setting RssWatcher limit to (\\d+) bytes \\(0.01% of total memory of (\\d+) bytes\\)";
+                "-XX:RssLimit=" + limitPercent + ",100ms",
+                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
+        o.shouldContain("RssWatcher task: interval=100ms, limit=" + limitPercent + " of total memory");
+        String pat = "Setting RssWatcher limit to (\\d+) bytes \\(0.01% of total memory of \\d+ bytes\\)";
         String limitString = o.firstMatch(pat, 1);
-        String totalString = o.firstMatch(pat, 2);
         long limit = Long.parseLong(limitString);
-        long total = Long.parseLong(totalString);
-        long fudge = 100;
-        long expectedLimit = total / 10000;
-        if (limit > expectedLimit + fudge && limit < expectedLimit - fudge) {
-            throw new RuntimeException("strange limit");
-        }
         if (limit < 100 * 1024 * 1024) {
             o.shouldNotHaveExitValue(0);
         }
@@ -110,16 +117,43 @@ public class RssLimitTest {
         }
     }
 
+    private static void testLimitWithVeryHighInterval() throws IOException {
+        OutputAnalyzer o = runWithSettings(
+                "-XX:RssLimit=100m,120s",
+                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
+        o.shouldNotHaveExitValue(0);
+        o.shouldContain("RssWatcher task: interval=120000ms, limit=100M");
+        o.shouldNotContain("Error");
+        o.shouldHaveExitValue(0);
+    }
+
+    private static void testPercentageWithDefaultInterval() throws IOException {
+        // Default interval is 10 s
+        OutputAnalyzer o = runWithSettings(
+                "-XX:RssLimit=99%",
+                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
+        o.shouldNotHaveExitValue(0);
+        o.shouldContain("RssWatcher task: interval=10000ms, limit=99% of total memory");
+        o.shouldNotContain("Error");
+        o.shouldHaveExitValue(0);
+    }
+
     public static void main(String args[]) throws Exception {
         switch (args[0]) {
             case "sleep":
-                Thread.sleep(4000);
+                Thread.sleep(1000);
                 throw new RuntimeException("Did not expect to live at this point.");
             case "test-absolute-limit":
                 testAbsoluteLimit();
                 break;
             case "test-relative-limit":
                 testRelativeLimit();
+                break;
+            case "test-high-interval":
+                testLimitWithVeryHighInterval();
+                break;
+            case "test-default-interval":
+                testPercentageWithDefaultInterval();
                 break;
             default:
                 throw new RuntimeException("Invalid argument (" + args[0] + ")");

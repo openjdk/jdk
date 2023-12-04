@@ -34,7 +34,7 @@
 
 struct RssWatcher: public AllStatic {
 
-  static void initialize(const char* limit_option, unsigned interval_ms);
+  static void initialize(const char* limit_option);
 
 };
 

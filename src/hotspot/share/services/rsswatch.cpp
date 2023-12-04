@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 
 #include "logging/log.hpp"
-#include "runtime/os.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "services/rsswatch.hpp"
 #include "utilities/parseInteger.hpp"
@@ -38,8 +38,7 @@ static void check_rss(size_t limit) {
   const size_t rss = os::get_rss();
   log_trace(os, rss)("Rss=%zu", rss);
   if (rss >= limit) {
-    vm_exit_out_of_memory(0, OOM_INTERNAL_LIMIT_ERROR,
-                          "Resident Set Size (%zu bytes) reached RssLimit (%zu bytes).", rss, limit);
+    fatal("Resident Set Size (%zu bytes) reached RssLimit (%zu bytes).", rss, limit);
   }
 }
 
@@ -84,28 +83,87 @@ public:
   }
 };
 
-void RssWatcher::initialize(const char* limit_option, unsigned interval_ms) {
-  assert(limit_option != nullptr && interval_ms > 0, "Invalid arguments");
-  // Limit can be given as either absolute number or as a percentage of the available
-  // memory on that machine.
-  PeriodicTask* task = nullptr;
-
-  // Percentage?
-  double perc = 0;
+static bool parse_percentage(const char* s, const char** tail, double* percentage) {
+  double v = 0;
   char sign;
-  if (sscanf(limit_option, "%lf%c", &perc, &sign) == 2 && sign == '%') {
-    if (perc > 100) {
+  int chars_read = 0;
+  if (sscanf(s, "%lf%c%n", &v, &sign, &chars_read) >= 2 && sign == '%') {
+    if (v > 100.0) {
       vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid percentage");
     }
-    task = new RssRelativeLimitTask(perc, interval_ms);
+    *percentage = v;
+    *tail = s + chars_read;
+    return true;
+  }
+  return false;
+}
+
+static void parse_interval(const char* s, unsigned* interval) {
+  char* tail;
+  unsigned v = 0;
+  if (!parse_integer_impl<unsigned>(s + 1, &tail, 10, &v)) {
+    vm_exit_during_initialization("Failed to parse RssLimit", "Invalid interval");
+  }
+  if (strcmp(tail, "s") == 0) {
+    v *= 1000;
+  } else if (strcmp(tail, "ms") == 0) {
+    // okay, ignored
   } else {
-    size_t limit = 0;
-    if (!parse_integer(limit_option, &limit) || limit == 0) {
+    vm_exit_during_initialization("Failed to parse RssLimit", "Invalid or missing interval unit");
+  }
+  // PeriodicTask has some limitations:
+  // - minimum task time
+  // - task time aligned to (non-power-of-2) alignment.
+  // For convenience, we just adjust the interval.
+  unsigned v2 = v;
+  v2 /= PeriodicTask::interval_gran;
+  v2 *= PeriodicTask::interval_gran;
+  v2 = MAX2(v2, (unsigned)PeriodicTask::min_interval);
+  if (v2 != v) {
+    log_warning(os, rss)("RssLimit interval has been adjusted to %ums", v2);
+  }
+  (*interval) = v2;
+}
+
+void RssWatcher::initialize(const char* limit_option) {
+  assert(limit_option != nullptr, "Invalid argument");
+
+  // Format:
+  // RssLimit=<size>[,<check frequency>]
+  // <size>:              <percentage limit>|<absolute limit>
+  // <percentage limit>:  <number between 0 and 100>%
+  // <absolute limit>:    <memory size>
+  // <check frequency>:   <number><unit>
+  // <unit>:              "ms"|"s"
+
+  // Examples:
+  // RssLimit=100m
+  // RssLimit=80%
+  // RssLimit=80%,100ms
+  // RssLimit=2g,30s
+  static constexpr unsigned default_interval = MIN2((unsigned)PeriodicTask::max_interval, 10000u);
+  unsigned interval = default_interval;
+  bool is_absolute = true;
+  size_t limit = 0;
+  double percentage = 0;
+  const char* s = limit_option;
+
+  if (parse_percentage(s, &s, &percentage)) {
+    is_absolute = false;
+  } else {
+    if (!parse_integer(s, (char**)&s, &limit) || limit == 0) {
       vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid limit size");
     }
-    task = new RssAbsoluteLimitTask(limit, interval_ms);
   }
-  if (task != nullptr) {
-    task->enroll();
+  if (s[0] != '\0') {
+    if (s[0] != ',') {
+      vm_exit_during_initialization("Failed to parse RssLimit", "Expected comma");
+    }
+    parse_interval(s, &interval);
   }
+
+  PeriodicTask* const task = (is_absolute) ?
+       (PeriodicTask*) new RssAbsoluteLimitTask(limit, interval) :
+       (PeriodicTask*) new RssRelativeLimitTask(percentage, interval);
+  task->enroll();
 }

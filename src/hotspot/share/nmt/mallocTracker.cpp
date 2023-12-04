@@ -35,7 +35,6 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/java.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
@@ -93,11 +92,11 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   }
 
 #define FORMATTED \
-  "Reached MallocLimit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
-    vm_exit_out_of_memory(0, OOM_INTERNAL_LIMIT_ERROR, FORMATTED);
+    fatal(FORMATTED);
   } else {
     log_warning(nmt)(FORMATTED);
   }
@@ -114,11 +113,11 @@ bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so
   }
 
 #define FORMATTED \
-  "Reached MallocLimit for category \"%s\" (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
+  "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
-    vm_exit_out_of_memory(0, OOM_INTERNAL_LIMIT_ERROR, FORMATTED);
+    fatal(FORMATTED);
   } else {
     log_warning(nmt)(FORMATTED);
   }
