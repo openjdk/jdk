@@ -219,6 +219,15 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
     return false;
   }
 
+#ifdef ASSERT
+  {
+    ICStub* rev_stub = ICStub_from_destination_address(ic_stub->code_begin());
+    assert(ic_stub == rev_stub,
+           "ICStub mapping is reversible: stub=" PTR_FORMAT ", code=" PTR_FORMAT ", rev_stub=" PTR_FORMAT,
+           p2i(ic_stub), p2i(ic_stub->code_begin()), p2i(rev_stub));
+  }
+#endif
+
   // If an transition stub is already associate with the inline cache, then we remove the association.
   if (ic->is_in_transition_state()) {
     ICStub* old_stub = ICStub_from_destination_address(ic->stub_address());

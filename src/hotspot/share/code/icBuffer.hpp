@@ -50,13 +50,6 @@ class CompiledICHolder;
 
 class ICStub: public Stub {
  private:
-  // ICStub_from_destination_address looks up Stub* address from code entry address,
-  // which means all code entry and stub alignments should agree. Setting it to
-  // CodeEntryAlignment would waste a lot of memory in ICBuffer. Aligning the code
-  // section is normally done for performance reasons, which do not apply to ICStubs,
-  // as these stubs are transitional. Align everything to the machine word size instead.
-  static const int IC_STUB_ALIGN = HeapWordSize;
-
   int                 _size;       // total size of the stub incl. code
   address             _ic_site;    // points at call instruction of owning ic-buffer
   /* stub code follows here */
@@ -69,14 +62,21 @@ class ICStub: public Stub {
   // General info
   int     size() const                           { return _size; }
 
-  static  int alignment()                        { return IC_STUB_ALIGN; }
+  // For extra correctness/safety, we want to make sure that each ICStub is in a separate
+  // instruction cache line. This would rely on instruction cache coherency to order
+  // the updates to ICStub and the setting the destination to the ICStub.
+  //
+  // Note that we align the actual code_begin at smaller alignment, which saves lots
+  // of memory in ICBuffer. Aligning the code section is normally done for performance
+  // reasons, which do not apply to ICStubs, as these stubs are transitional.
+  static  int alignment()                        { return DEFAULT_CACHE_LINE_SIZE; }
 
  public:
   // Creation
   void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
-  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), IC_STUB_ALIGN); }
+  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), HeapWordSize); }
   address code_end() const                       { return (address)this + size(); }
 
   // Call site info
@@ -98,7 +98,7 @@ class ICStub: public Stub {
 
 // ICStub Creation
 inline ICStub* ICStub_from_destination_address(address destination_address) {
-  ICStub* stub = (ICStub*) (destination_address - align_up(sizeof(ICStub), ICStub::IC_STUB_ALIGN));
+  ICStub* stub = (ICStub*) align_down(destination_address - sizeof(ICStub), HeapWordSize);
   #ifdef ASSERT
   stub->verify();
   #endif
