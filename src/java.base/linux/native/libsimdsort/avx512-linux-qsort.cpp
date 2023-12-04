@@ -21,6 +21,8 @@
  * questions.
  *
  */
+#include "simdsort-support.hpp"
+#ifdef __SIMDSORT_SUPPORTED_LINUX
 
 #pragma GCC target("avx512dq", "avx512f")
 #include "avx512-32bit-qsort.hpp"
@@ -69,3 +71,5 @@ extern "C" {
     }
 
 }
+
+#endif

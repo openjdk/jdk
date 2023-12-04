@@ -22,6 +22,9 @@
  *
  */
 
+#include "simdsort-support.hpp"
+#ifdef __SIMDSORT_SUPPORTED_LINUX
+
 #pragma GCC target("avx2")
 #include "avx2-32bit-qsort.hpp"
 #include "classfile_constants.h"
@@ -55,3 +58,5 @@ extern "C" {
     }
 
 }
+
+#endif
