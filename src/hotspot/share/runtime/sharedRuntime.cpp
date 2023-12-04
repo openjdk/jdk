@@ -1345,7 +1345,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     CompiledStaticCall::compute_entry(callee_method, is_nmethod, static_call_info);
   }
 
-  bool patched_caller = false;
+  JFR_ONLY(bool patched_caller = false;)
   // grab lock, check for deoptimization and potentially patch caller
   {
     CompiledICLocker ml(caller_nm);
@@ -1375,7 +1375,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
           if (!inline_cache->set_to_monomorphic(virtual_call_info)) {
             return false;
           }
-          patched_caller = true;
+          JFR_ONLY(patched_caller = true;)
         }
       } else {
         if (VM_Version::supports_fast_class_init_checks() &&
@@ -1390,7 +1390,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
         }
         if (ssc->is_clean()) {
           ssc->set(static_call_info);
-          patched_caller = true;
+          JFR_ONLY(patched_caller = true;)
         }
       }
     }
