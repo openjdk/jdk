@@ -26,8 +26,6 @@
 #include "utilities/growableArray.hpp"
 #include "unittest.hpp"
 
-
-
 // TODO:
 //       Add more types E, and check ctor dtor counts etc
 //       Talk about value factory
@@ -38,6 +36,8 @@
 // TODO do some bad combinations with allocation!
 
 // TODO initial_capacity? initial_size and fill?
+
+// TODO delete CHeap - and verify!
 
 // We have a list of each:
 //  - ModifyClosure
@@ -377,6 +377,22 @@ public:
   };
 };
 
+template<typename E>
+class AllocatorClosureCHeapCHeapNoThrow : public AllocatorClosureGrowableArrayCHeap<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>();
+      ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+      this->set_array(array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
 // ------------ ModifyClosures ------------
 
 template<typename E>
@@ -397,6 +413,7 @@ public:
     for (int i = 0; i < 1000; i++) {
       a->append(value_factory<E>(i * 100));
     }
+    ASSERT_FALSE(a->is_empty());
 
     ASSERT_EQ(a->length(), 1000);
   }
@@ -727,6 +744,9 @@ protected:
 
     AllocatorClosureCHeapCHeap<E> allocator_c_c;
     allocator_c_c.dispatch(modify, test);
+
+    AllocatorClosureCHeapCHeapNoThrow<E> allocator_c_c_nt;
+    allocator_c_c_nt.dispatch(modify, test);
   }
 
   template<typename E>
@@ -857,49 +877,6 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, unallowed_alloc_arena_arena,
   GrowableArray<int>* array = new (&arena1) GrowableArray<int>(&arena2);
 }
 #endif
-
-TEST(GrowableArrayCHeap, sanity) {
-  // Stack/CHeap
-  {
-    GrowableArrayCHeap<int, mtTest> a(0);
-#ifdef ASSERT
-    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
-#endif
-    ASSERT_TRUE(a.is_empty());
-
-    a.append(1);
-    ASSERT_FALSE(a.is_empty());
-    ASSERT_EQ(a.at(0), 1);
-  }
-
-  // CHeap/CHeap
-  {
-    GrowableArrayCHeap<int, mtTest>* a = new GrowableArrayCHeap<int, mtTest>(0);
-#ifdef ASSERT
-    ASSERT_TRUE(a->allocated_on_C_heap());
-#endif
-    ASSERT_TRUE(a->is_empty());
-
-    a->append(1);
-    ASSERT_FALSE(a->is_empty());
-    ASSERT_EQ(a->at(0), 1);
-    delete a;
-  }
-
-  // CHeap/CHeap - nothrow new operator
-  {
-    GrowableArrayCHeap<int, mtTest>* a = new (std::nothrow) GrowableArrayCHeap<int, mtTest>(0);
-#ifdef ASSERT
-    ASSERT_TRUE(a->allocated_on_C_heap());
-#endif
-    ASSERT_TRUE(a->is_empty());
-
-    a->append(1);
-    ASSERT_FALSE(a->is_empty());
-    ASSERT_EQ(a->at(0), 1);
-    delete a;
-  }
-}
 
 TEST(GrowableArrayCHeap, find_if) {
   struct Element {
