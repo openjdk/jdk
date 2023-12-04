@@ -83,7 +83,6 @@
  * @test
  * @bug 8320682
  * @requires vm.debug
- * @requires os.family == "linux"
  * @summary Test flag with large value and specific compilation.
  *
  * @run main/othervm -XX:NMethodSizeLimit=224001703
