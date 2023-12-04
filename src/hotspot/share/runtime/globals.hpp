@@ -2014,6 +2014,10 @@ const int ObjectAlignmentInBytes = 8;
           "the total available memory on this machine or in this "          \
           "container (e.g. \"-XX:RssLimit=80%%\"). A value of 0 (default) " \
           "disables this feature.")                                         \
+   product(uint, RssLimitCheckInterval, 5000, DIAGNOSTIC,                   \
+          "If RssLimit is set, interval, in ms, at which the JVM will "     \
+          "check the process' resident set size."                           \
+          range(10, UINT_MAX))                                              \
                                                                             \
 // end of RUNTIME_FLAGS
 

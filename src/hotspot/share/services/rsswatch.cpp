@@ -98,51 +98,9 @@ static bool parse_percentage(const char* s, const char** tail, double* percentag
   return false;
 }
 
-static void parse_interval(const char* s, unsigned* interval) {
-  char* tail;
-  unsigned v = 0;
-  if (!parse_integer_impl<unsigned>(s + 1, &tail, 10, &v)) {
-    vm_exit_during_initialization("Failed to parse RssLimit", "Invalid interval");
-  }
-  if (strcmp(tail, "s") == 0) {
-    v *= 1000;
-  } else if (strcmp(tail, "ms") == 0) {
-    // okay, ignored
-  } else {
-    vm_exit_during_initialization("Failed to parse RssLimit", "Invalid or missing interval unit");
-  }
-  // PeriodicTask has some limitations:
-  // - minimum task time
-  // - task time aligned to (non-power-of-2) alignment.
-  // For convenience, we just adjust the interval.
-  unsigned v2 = v;
-  v2 /= PeriodicTask::interval_gran;
-  v2 *= PeriodicTask::interval_gran;
-  v2 = MAX2(v2, (unsigned)PeriodicTask::min_interval);
-  if (v2 != v) {
-    log_warning(os, rss)("RssLimit interval has been adjusted to %ums", v2);
-  }
-  (*interval) = v2;
-}
-
 void RssWatcher::initialize(const char* limit_option) {
   assert(limit_option != nullptr, "Invalid argument");
 
-  // Format:
-  // RssLimit=<size>[,<check frequency>]
-  // <size>:              <percentage limit>|<absolute limit>
-  // <percentage limit>:  <number between 0 and 100>%
-  // <absolute limit>:    <memory size>
-  // <check frequency>:   <number><unit>
-  // <unit>:              "ms"|"s"
-
-  // Examples:
-  // RssLimit=100m
-  // RssLimit=80%
-  // RssLimit=80%,100ms
-  // RssLimit=2g,30s
-  static constexpr unsigned default_interval = MIN2((unsigned)PeriodicTask::max_interval, 10000u);
-  unsigned interval = default_interval;
   bool is_absolute = true;
   size_t limit = 0;
   double percentage = 0;
@@ -155,13 +113,18 @@ void RssWatcher::initialize(const char* limit_option) {
       vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid limit size");
     }
   }
-  if (s[0] != '\0') {
-    if (s[0] != ',') {
-      vm_exit_during_initialization("Failed to parse RssLimit", "Expected comma");
-    }
-    parse_interval(s, &interval);
-  }
 
+  // PeriodicTask has some limitations:
+  // - minimum task time
+  // - task time aligned to (non-power-of-2) alignment.
+  // For convenience, we just adjust the interval.
+  unsigned interval = RssLimitCheckInterval;
+  interval /= PeriodicTask::interval_gran;
+  interval *= PeriodicTask::interval_gran;
+  interval = MAX2(interval, (unsigned)PeriodicTask::min_interval);
+  if (interval != RssLimitCheckInterval) {
+    log_warning(os, rss)("RssLimit interval has been adjusted to %ums", interval);
+  }
   PeriodicTask* const task = (is_absolute) ?
        (PeriodicTask*) new RssAbsoluteLimitTask(limit, interval) :
        (PeriodicTask*) new RssRelativeLimitTask(percentage, interval);

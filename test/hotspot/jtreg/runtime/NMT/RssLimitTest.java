@@ -50,7 +50,7 @@
  * @requires os.family != "aix"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver RssLimitTest test-absolute-limit
+ * @run driver RssLimitTest test-high-interval
  */
 
 /*
@@ -60,7 +60,7 @@
  * @requires os.family != "aix"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver RssLimitTest test-absolute-limit
+ * @run driver RssLimitTest test-default-interval
  */
 
 import jdk.test.lib.Platform;
@@ -89,11 +89,11 @@ public class RssLimitTest {
 
     private static void testAbsoluteLimit() throws IOException {
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=100m,100ms",
+                "-XX:RssLimit=100m", "-XX:RssLimitCheckInterval=100",
                 "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
         o.shouldNotHaveExitValue(0);
         o.shouldContain("RssWatcher task: interval=100ms, limit=100M");
-        o.shouldMatch("# +Error: Resident Set Size \\(\\d+ bytes\\) reached RssLimit \\(104857600 bytes\\)");
+        o.shouldMatch("#  fatal error: Resident Set Size \\(\\d+ bytes\\) reached RssLimit \\(104857600 bytes\\)");
     }
 
     private static void testRelativeLimit() throws IOException {
@@ -103,7 +103,7 @@ public class RssLimitTest {
         char dot = format.getDecimalFormatSymbols().getDecimalSeparator();
         String limitPercent = "0" + dot + "01%";
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=" + limitPercent + ",100ms",
+                "-XX:RssLimit=" + limitPercent, "-XX:RssLimitCheckInterval=100",
                 "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
         o.shouldContain("RssWatcher task: interval=100ms, limit=" + limitPercent + " of total memory");
         String pat = "Setting RssWatcher limit to (\\d+) bytes \\(0.01% of total memory of \\d+ bytes\\)";
@@ -113,27 +113,24 @@ public class RssLimitTest {
             o.shouldNotHaveExitValue(0);
         }
         if (o.getExitValue() != 0) {
-            o.shouldMatch("# +Error: Resident Set Size \\(\\d+ bytes\\) reached RssLimit \\(" + limit + " bytes\\).*");
+            o.shouldMatch("#  fatal error: Resident Set Size \\(\\d+ bytes\\) reached RssLimit \\(" + limit + " bytes\\).*");
         }
     }
 
     private static void testLimitWithVeryHighInterval() throws IOException {
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=100m,120s",
+                "-XX:RssLimit=100m", "-XX:RssLimitCheckInterval=120000",
                 "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
-        o.shouldNotHaveExitValue(0);
         o.shouldContain("RssWatcher task: interval=120000ms, limit=100M");
         o.shouldNotContain("Error");
         o.shouldHaveExitValue(0);
     }
 
     private static void testPercentageWithDefaultInterval() throws IOException {
-        // Default interval is 10 s
         OutputAnalyzer o = runWithSettings(
                 "-XX:RssLimit=99%",
                 "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
-        o.shouldNotHaveExitValue(0);
-        o.shouldContain("RssWatcher task: interval=10000ms, limit=99% of total memory");
+        o.shouldContain("RssWatcher task: interval=5000ms, limit=99.00% of total memory");
         o.shouldNotContain("Error");
         o.shouldHaveExitValue(0);
     }
@@ -142,7 +139,7 @@ public class RssLimitTest {
         switch (args[0]) {
             case "sleep":
                 Thread.sleep(1000);
-                throw new RuntimeException("Did not expect to live at this point.");
+                break;
             case "test-absolute-limit":
                 testAbsoluteLimit();
                 break;
