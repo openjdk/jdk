@@ -31,12 +31,8 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.stream.Stream;
-import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {
@@ -51,41 +47,10 @@ class VerifierSelfTest {
                     .flatMap(p -> p)
                     .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
                         try {
-                            ClassFile.of().parse(path).verify(null);
+                            ClassFile.of().verify(path);
                         } catch (IOException e) {
                             throw new AssertionError(e);
                         }
                     });
-    }
-
-    @Test
-    void testFailedDump() throws IOException {
-        Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
-                className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
-        var classModel = cc.parse(path);
-        byte[] brokenClassBytes = cc.transform(classModel,
-                (clb, cle) -> {
-                    if (cle instanceof MethodModel mm) {
-                        clb.transformMethod(mm, (mb, me) -> {
-                            if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
-                            }
-                            else
-                                mb.with(me);
-                        });
-                    }
-                    else
-                        clb.with(cle);
-                });
-        StringBuilder sb = new StringBuilder();
-        if (ClassFile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
-            throw new AssertionError("expected verification failure");
-        }
-        String output = sb.toString();
-        if (!output.contains("- method name: ")) {
-            System.out.println(output);
-            throw new AssertionError("failed method not dumped to output");
-        }
     }
 }
