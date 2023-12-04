@@ -23,28 +23,28 @@
 
 /*
  * @test
- * @summary Testing Classfile LDC instructions.
+ * @summary Testing ClassFile LDC instructions.
  * @run junit LDCTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.StringEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.StringEntry;
 import java.lang.reflect.AccessFlag;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.TypeKind.VoidType;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.TypeKind.VoidType;
+import java.lang.classfile.instruction.ConstantInstruction;
 
 class LDCTest {
     @Test
     void testLDCisConvertedToLDCW() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
