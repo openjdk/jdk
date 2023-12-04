@@ -143,7 +143,9 @@ static inline void on_runtime_deprecated(const Method* method, JavaThread* jt) {
   }
 }
 
-void JfrResolution::on_deprecated_invocation(const Method* method, JavaThread* jt) {
+// We can circumvent the need to hook into backpatching if ciMethod is made aware
+// of the deprecated annotation as part of parsing bytecodes of the callee method.
+void JfrResolution::on_backpatching_deprecated_invocation(const Method* method, JavaThread* jt) {
   assert(jt->has_last_Java_frame(), "Invariant");
   assert(jt->last_frame().is_runtime_frame(), "invariant");
   if (jfr_is_started_on_command_line()) {

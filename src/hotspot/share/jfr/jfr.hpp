@@ -70,7 +70,7 @@ class Jfr : AllStatic {
   static void on_vm_error_report(outputStream* st);
   static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
-  static void on_deprecated_invocation(const Method* deprecated_method, JavaThread* jt);
+  static void on_backpatching_deprecated_invocation(const Method* deprecated_method, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_JFR_HPP
