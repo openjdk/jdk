@@ -115,7 +115,7 @@ public class TestImplicitlyDeclaredClasses extends JavadocTester {
                 // is generated, but the warning for the first method is not.
                 // Numbers are equal, test passes.
                 checking("uncommented class warning");
-                long all = Pattern.compile("warning: no comment\n")
+                long all = Pattern.compile("warning: no comment")
                         .matcher(getOutput(Output.OUT))
                         .results()
                         .count();
