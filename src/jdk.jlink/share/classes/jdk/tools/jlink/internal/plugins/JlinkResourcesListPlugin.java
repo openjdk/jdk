@@ -56,7 +56,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * Plugin to collect resources from jmod which aren't classes or
  * resources. Needed for the the run-time image based jlink.
  */
-public final class AddRunImageResourcesPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
+public final class JlinkResourcesListPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
 
     private static final int SYMLINKED_RES = 1;
     private static final int REGULAR_RES = 0;
@@ -88,7 +88,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
 
     private List<String> commands;
 
-    public AddRunImageResourcesPlugin() {
+    public JlinkResourcesListPlugin() {
         super(NAME);
         this.nonClassResEntries = new ConcurrentHashMap<>();
     }
