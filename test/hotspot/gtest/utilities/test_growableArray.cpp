@@ -28,11 +28,13 @@
 
 
 
-// TODO: Add more modifications
+// TODO:
 //       And add more allocators
 //       Add more types E, and check ctor dtor counts etc
 //       Talk about value factory
 
+// TODO go through GA and GACH and see what ops are not tested yet
+// -> add to modify and test
 
 // We have a list of each:
 //  - ModifyClosure
@@ -131,16 +133,70 @@ public:
 };
 
 template<typename E>
-class AllocatorClosureStackResourceArena : public AllocatorClosureGrowableArray<E> {
+class AllocatorClosureStackResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
     test->reset();
     {
       ResourceMark rm;
       GrowableArray<E> array;
-      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // stack
-      ASSERT_TRUE(array.on_resource_area()); // resource arena
+      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+      ASSERT_TRUE(array.on_resource_area()); // data: resource area
       this->set_array(&array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureResourceAreaResourceArea : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      ResourceMark rm;
+      GrowableArray<E>* array = new GrowableArray<E>();
+      ASSERT_TRUE(array->allocated_on_res_area()); // itself: resource arena
+      ASSERT_TRUE(array->on_resource_area()); // data: resource area
+      this->set_array(array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureStackArena : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      Arena arena(mtTest);
+      GrowableArray<E> array(&arena);
+      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+      ASSERT_TRUE(!array.on_resource_area()); // data: arena
+      this->set_array(&array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureArenaArena : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      Arena arena(mtTest);
+      GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena);
+      ASSERT_TRUE(array->allocated_on_arena()); // itself: arena
+      ASSERT_TRUE(!array->on_resource_area()); // data: arena
+      this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
     }
@@ -801,8 +857,18 @@ protected:
 
   template<typename E>
   static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
-    AllocatorClosureStackResourceArena<E> allocator_s_r;
+    AllocatorClosureStackResourceArea<E> allocator_s_r;
     allocator_s_r.dispatch(modify, test);
+
+    AllocatorClosureResourceAreaResourceArea<E> allocator_r_r;
+    allocator_r_r.dispatch(modify, test);
+
+    AllocatorClosureStackArena<E> allocator_s_a;
+    allocator_s_a.dispatch(modify, test);
+
+    AllocatorClosureArenaArena<E> allocator_a_a;
+    allocator_a_a.dispatch(modify, test);
+
 
     // TODO more allocators
   }
@@ -820,8 +886,6 @@ protected:
 
     ModifyClosureClearAndDeallocate<E> modify_deallocate;
     run_test_modify_allocate<E>(test, &modify_deallocate);
-
-    // TODO more modify
   }
 
   template<typename E>
