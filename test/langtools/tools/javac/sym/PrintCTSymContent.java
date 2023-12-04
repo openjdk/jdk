@@ -65,7 +65,7 @@ import toolbox.ToolBox;
 
 /**
  * Dump content of ct.sym for specified releases to a specified directory.
- * 
+ *
  * Usage: adjust the `@run main PrintCTSymContent` tag to include the starting and
  * ending versions, and a target directory where the API snapshot should be written:
  *
