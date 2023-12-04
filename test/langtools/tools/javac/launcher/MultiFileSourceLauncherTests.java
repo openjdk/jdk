@@ -52,7 +52,7 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         Files.writeString(base.resolve("World.java"),
-                """
+                    """
                     record World(String name) {}
                     """);
 
@@ -80,7 +80,7 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         Files.writeString(base.resolve("World.java"),
-                """
+                    """
                     record World(String name) {
                       record Core() {}
                     }

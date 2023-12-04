@@ -186,7 +186,6 @@ class ModuleSourceLauncherTests {
         Files.writeString(base.resolve("bar", "bar","Prog1.java"),
                 """
                 package bar;
-                
                 class Prog1 {
                   public static void main(String... args) {
                     System.out.println(new foo.Foo());
