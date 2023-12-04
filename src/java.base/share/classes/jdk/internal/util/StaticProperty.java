@@ -57,6 +57,22 @@ public final class StaticProperty {
     private static final String OS_NAME;
     private static final String OS_ARCH;
     private static final String OS_VERSION;
+    private static final String USER_LANGUAGE;
+    private static final String USER_LANGUAGE_DISPLAY;
+    private static final String USER_LANGUAGE_FORMAT;
+    private static final String USER_SCRIPT;
+    private static final String USER_SCRIPT_DISPLAY;
+    private static final String USER_SCRIPT_FORMAT;
+    private static final String USER_COUNTRY;
+    private static final String USER_COUNTRY_DISPLAY;
+    private static final String USER_COUNTRY_FORMAT;
+    private static final String USER_REGION;
+    private static final String USER_VARIANT;
+    private static final String USER_VARIANT_DISPLAY;
+    private static final String USER_VARIANT_FORMAT;
+    private static final String USER_EXTENSIONS;
+    private static final String USER_EXTENSIONS_DISPLAY;
+    private static final String USER_EXTENSIONS_FORMAT;
 
     private StaticProperty() {}
 
@@ -79,6 +95,22 @@ public final class StaticProperty {
         OS_NAME = getProperty(props, "os.name");
         OS_ARCH = getProperty(props, "os.arch");
         OS_VERSION = getProperty(props, "os.version");
+        USER_LANGUAGE = getProperty(props, "user.language", "en");
+        USER_LANGUAGE_DISPLAY = getProperty(props, "user.language.display", USER_LANGUAGE);
+        USER_LANGUAGE_FORMAT = getProperty(props, "user.language.format", USER_LANGUAGE);
+        USER_SCRIPT = getProperty(props, "user.script", "");
+        USER_SCRIPT_DISPLAY = getProperty(props, "user.script.display", USER_SCRIPT);
+        USER_SCRIPT_FORMAT = getProperty(props, "user.script.format", USER_SCRIPT);
+        USER_COUNTRY = getProperty(props, "user.country", "");
+        USER_COUNTRY_DISPLAY = getProperty(props, "user.country.display", USER_COUNTRY);
+        USER_COUNTRY_FORMAT = getProperty(props, "user.country.format", USER_COUNTRY);
+        USER_REGION = getProperty(props, "user.region", "");
+        USER_VARIANT = getProperty(props, "user.variant", "");
+        USER_VARIANT_DISPLAY = getProperty(props, "user.variant.display", USER_VARIANT);
+        USER_VARIANT_FORMAT = getProperty(props, "user.variant.format", USER_VARIANT);
+        USER_EXTENSIONS = getProperty(props, "user.extensions", "");
+        USER_EXTENSIONS_DISPLAY = getProperty(props, "user.extensions.display", USER_EXTENSIONS);
+        USER_EXTENSIONS_FORMAT = getProperty(props, "user.extensions.format", USER_EXTENSIONS);
     }
 
     private static String getProperty(Properties props, String key) {
@@ -276,4 +308,109 @@ public final class StaticProperty {
      public static String osVersion() {
          return OS_VERSION;
      }
+
+    /**
+     * {@return the {@code user.language} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @param category locale category. 0 for the base property,
+     *                 {@code Locale.Category.ordinal() + 1} for the category
+     *                 specific property
+     */
+    public static String userLanguage(int category) {
+        return switch (category) {
+            case 0 -> USER_LANGUAGE;
+            case 1 -> USER_LANGUAGE_DISPLAY;
+            case 2 -> USER_LANGUAGE_FORMAT;
+            default -> throw new InternalError();
+        };
+    }
+
+    /**
+     * {@return the {@code user.script} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @param category locale category. 0 for the base property,
+     *                 {@code Locale.Category.ordinal() + 1} for the category
+     *                 specific property
+     */
+    public static String userScript(int category) {
+        return switch (category) {
+            case 0 -> USER_SCRIPT;
+            case 1 -> USER_SCRIPT_DISPLAY;
+            case 2 -> USER_SCRIPT_FORMAT;
+            default -> throw new InternalError();
+        };
+    }
+
+    /**
+     * {@return the {@code user.country} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @param category locale category. 0 for the base property,
+     *                 {@code Locale.Category.ordinal() + 1} for the category
+     *                 specific property
+     */
+    public static String userCountry(int category) {
+        return switch (category) {
+            case 0 -> USER_COUNTRY;
+            case 1 -> USER_COUNTRY_DISPLAY;
+            case 2 -> USER_COUNTRY_FORMAT;
+            default -> throw new InternalError();
+        };
+    }
+
+    /**
+     * {@return the {@code user.region} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     */
+    public static String userRegion() {
+        return USER_REGION;
+    }
+
+    /**
+     * {@return the {@code user.variant} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @param category locale category. 0 for the base property,
+     *                 {@code Locale.Category.ordinal() + 1} for the category
+     *                 specific property
+     */
+    public static String userVariant(int category) {
+        return switch (category) {
+            case 0 -> USER_VARIANT;
+            case 1 -> USER_VARIANT_DISPLAY;
+            case 2 -> USER_VARIANT_FORMAT;
+            default -> throw new InternalError();
+        };
+    }
+
+    /**
+     * {@return the {@code user.extensions} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @param category locale category. 0 for the base property,
+     *                 {@code Locale.Category.ordinal() + 1} for the category
+     *                 specific property
+     */
+    public static String userExtensions(int category) {
+        return switch (category) {
+            case 0 -> USER_EXTENSIONS;
+            case 1 -> USER_EXTENSIONS_DISPLAY;
+            case 2 -> USER_EXTENSIONS_FORMAT;
+            default -> throw new InternalError();
+        };
+    }
 }
