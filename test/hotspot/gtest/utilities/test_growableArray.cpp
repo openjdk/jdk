@@ -86,6 +86,7 @@ public:
   virtual void append(const E& e) = 0;
   virtual void reserve(int new_capacity) = 0;
   virtual void shrink_to_fit() = 0;
+  virtual void clear_and_deallocate() = 0;
 };
 
 template<typename E>
@@ -123,6 +124,9 @@ public:
   }
   virtual void shrink_to_fit() override final {
     _array->shrink_to_fit();
+  }
+  virtual void clear_and_deallocate() override final {
+    _array->clear_and_deallocate();
   }
 };
 
@@ -191,11 +195,54 @@ public:
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
-    for (int i = 0; i < 10; i++) {
-      a->append(value_factory<E>(i));
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(i * 100));
     }
 
-    ASSERT_EQ(a->length(), 10);
+    ASSERT_EQ(a->length(), 1000);
+  }
+};
+
+template<typename E>
+class ModifyClosureClear : public ModifyClosure<E> {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a) override final {
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(i * 100));
+    }
+
+    ASSERT_EQ(a->length(), 1000);
+    int old_capacity = a->capacity();
+
+    // Clear
+    a->clear();
+
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), old_capacity);
+  }
+};
+
+template<typename E>
+class ModifyClosureClearAndDeallocate : public ModifyClosure<E> {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a) override final {
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(i * 100));
+    }
+
+    ASSERT_EQ(a->length(), 1000);
+
+    // Clear
+    a->clear_and_deallocate();
+
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(a->capacity(), 0);
   }
 };
 
@@ -286,15 +333,16 @@ template<typename E>
 class TestClosureCapacity : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    int old_capacity = a->capacity();
     ASSERT_EQ(a->length(), 0);
     a->reserve(50);
     ASSERT_EQ(a->length(), 0);
-    ASSERT_EQ(a->capacity(), 50);
+    ASSERT_EQ(a->capacity(), MAX2(50, old_capacity));
     for (int i = 0; i < 50; ++i) {
       a->append(value_factory<E>(i));
     }
     ASSERT_EQ(a->length(), 50);
-    ASSERT_EQ(a->capacity(), 50);
+    ASSERT_EQ(a->capacity(), MAX2(50, old_capacity));
     a->append(value_factory<E>(50));
     ASSERT_EQ(a->length(), 51);
     int capacity = a->capacity();
@@ -766,6 +814,12 @@ protected:
 
     ModifyClosureAppend<E> modify_append;
     run_test_modify_allocate<E>(test, &modify_append);
+
+    ModifyClosureClear<E> modify_clear;
+    run_test_modify_allocate<E>(test, &modify_clear);
+
+    ModifyClosureClearAndDeallocate<E> modify_deallocate;
+    run_test_modify_allocate<E>(test, &modify_deallocate);
 
     // TODO more modify
   }

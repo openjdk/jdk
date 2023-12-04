@@ -510,6 +510,7 @@ public:
   void reserve(int new_capacity);
 
   // Reduce capacity to length.
+  // TODO maybe move to CHeap
   void shrink_to_fit();
 
   // TODO maybe move to CHeap
