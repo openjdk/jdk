@@ -174,7 +174,6 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     RetryableAllocationMark ram(current, null_on_fail);
     obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   }
-  current->set_vm_result(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -182,7 +181,8 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     // Alternate between deoptimizing and raising an error (which will also cause a deopt)
     if (deopts++ % 2 == 0) {
       if (null_on_fail) {
-        return;
+        // Drop the allocation
+        obj = nullptr;
       } else {
         ResourceMark rm(current);
         THROW(vmSymbols::java_lang_OutOfMemoryError());
@@ -191,6 +191,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
       deopt_caller();
     }
   }
+  current->set_vm_result(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
@@ -743,9 +744,10 @@ JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* current, int 
 JRT_END
 
 
-// private static JVMCIRuntime JVMCI.initializeRuntime()
-JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
-  JNI_JVMCIENV(thread, env);
+// Implementation of JVMCI.initializeRuntime()
+// When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
+JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *libjvmciOrHotspotEnv, jclass c))
+  JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG_NULL(InternalError, "JVMCI is not enabled");
   }
@@ -754,9 +756,10 @@ JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   return JVMCIENV->get_jobject(runtime);
 JVM_END
 
-// private static long Services.readSystemPropertiesInfo(int[] offsets)
+// Implementation of Services.readSystemPropertiesInfo(int[] offsets)
+// When called from libjvmci, `env` is a libjvmci env so use JVM_ENTRY_NO_ENV.
 JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
-  JNI_JVMCIENV(thread, env);
+  JVMCIENV_FROM_JNI(thread, env);
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
   }
@@ -770,7 +773,8 @@ JVM_END
 
 
 void JVMCIRuntime::call_getCompiler(TRAPS) {
-  THREAD_JVMCIENV(JavaThread::current());
+  JVMCIENV_FROM_THREAD(THREAD);
+  JVMCIENV->check_init(CHECK);
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
   initialize(JVMCI_CHECK);
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
@@ -820,10 +824,10 @@ oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm, bool phantom_ref) {
 }
 
 void JVMCINMethodData::set_nmethod_mirror(nmethod* nm, oop new_mirror) {
-  assert(_nmethod_mirror_index != -1, "cannot set JVMCI mirror for nmethod");
+  guarantee(_nmethod_mirror_index != -1, "cannot set JVMCI mirror for nmethod");
   oop* addr = nm->oop_addr_at(_nmethod_mirror_index);
-  assert(new_mirror != nullptr, "use clear_nmethod_mirror to clear the mirror");
-  assert(*addr == nullptr, "cannot overwrite non-null mirror");
+  guarantee(new_mirror != nullptr, "use clear_nmethod_mirror to clear the mirror");
+  guarantee(*addr == nullptr, "cannot overwrite non-null mirror");
 
   *addr = new_mirror;
 
@@ -882,6 +886,13 @@ jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   _oop_handles.append(ptr);
   return reinterpret_cast<jlong>(ptr);
 }
+
+#ifdef ASSERT
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
+  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+}
+#endif
 
 int JVMCIRuntime::release_and_clear_oop_handles() {
   guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
@@ -971,7 +982,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
 
       // Truncate oop handles to only those with a non-null referent
-      JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+      JVMCI_event_2("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
       _oop_handles.trunc_to(num_alive);
       // Example: HHH
 
@@ -1242,15 +1253,17 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
   return destroyed_javavm;
 }
 
-JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
+JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err, const char** err_msg) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
+#ifdef ASSERT
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceEnomemOnLibjvmciInit");
     if (val != nullptr && strcmp(val, "true") == 0) {
       *create_JavaVM_err = JNI_ENOMEM;
       return nullptr;
     }
+#endif
 
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
@@ -1267,7 +1280,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     JavaVMInitArgs vm_args;
     vm_args.version = JNI_VERSION_1_2;
     vm_args.ignoreUnrecognized = JNI_TRUE;
-    JavaVMOption options[5];
+    JavaVMOption options[6];
     jlong javaVM_id = 0;
 
     // Protocol: JVMCI shared library JavaVM should support a non-standard "_javavm_id"
@@ -1284,6 +1297,8 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
     options[3].extraInfo = (void*) _fatal;
     options[4].optionString = (char*) "_fatal_log";
     options[4].extraInfo = (void*) _fatal_log;
+    options[5].optionString = (char*) "_createvm_errorstr";
+    options[5].extraInfo = (void*) err_msg;
 
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;
@@ -1522,9 +1537,10 @@ JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
   return _HotSpotJVMCIRuntime_instance;
 }
 
-// private static void CompilerToVM.registerNatives()
-JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
-  JNI_JVMCIENV(thread, env);
+// Implementation of CompilerToVM.registerNatives()
+// When called from libjvmci, `libjvmciOrHotspotEnv` is a libjvmci env so use JVM_ENTRY_NO_ENV.
+JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *libjvmciOrHotspotEnv, jclass c2vmClass))
+  JVMCIENV_FROM_JNI(thread, libjvmciOrHotspotEnv);
 
   if (!EnableJVMCI) {
     JVMCI_THROW_MSG(InternalError, "JVMCI is not enabled");
@@ -1539,7 +1555,7 @@ JVM_ENTRY_NO_ENV(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
 
     // Ensure _non_oop_bits is initialized
     Universe::non_oop_word();
-
+    JNIEnv *env = libjvmciOrHotspotEnv;
     if (JNI_OK != env->RegisterNatives(c2vmClass, CompilerToVM::methods, CompilerToVM::methods_count())) {
       if (!env->ExceptionCheck()) {
         for (int i = 0; i < CompilerToVM::methods_count(); i++) {
@@ -1559,11 +1575,14 @@ JVM_END
 
 void JVMCIRuntime::shutdown() {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
-    bool jni_enomem_is_fatal = true;
     JVMCI_event_1("shutting down HotSpotJVMCIRuntime for JVMCI runtime %d", _id);
-    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
+    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(),__FILE__, __LINE__);
     JVMCIEnv* JVMCIENV = &__stack_jvmci_env__;
-    JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
+    if (JVMCIENV->init_error() == JNI_OK) {
+      JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
+    } else {
+      JVMCI_event_1("Error in JVMCIEnv for shutdown (err: %d)", JVMCIENV->init_error());
+    }
     if (_num_attached_threads == cannot_be_attached) {
       // Only when no other threads are attached to this runtime
       // is it safe to reset these fields.
@@ -1608,7 +1627,8 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
 
 void JVMCIRuntime::bootstrap_finished(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
-    THREAD_JVMCIENV(JavaThread::current());
+    JVMCIENV_FROM_THREAD(THREAD);
+    JVMCIENV->check_init(CHECK);
     JVMCIENV->call_HotSpotJVMCIRuntime_bootstrapFinished(_HotSpotJVMCIRuntime_instance, JVMCIENV);
   }
 }
@@ -1797,57 +1817,6 @@ Klass* JVMCIRuntime::get_klass_by_index(const constantPoolHandle& cpool,
   ResourceMark rm;
   Klass* result = get_klass_by_index_impl(cpool, index, is_accessible, accessor);
   return result;
-}
-
-// ------------------------------------------------------------------
-// Implementation of get_field_by_index.
-//
-// Implementation note: the results of field lookups are cached
-// in the accessor klass.
-void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor& field_desc,
-                                        int index, Bytecodes::Code bc) {
-  JVMCI_EXCEPTION_CONTEXT;
-
-  assert(klass->is_linked(), "must be linked before using its constant-pool");
-
-  constantPoolHandle cpool(thread, klass->constants());
-
-  // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index, bc);
-
-  int nt_index = cpool->name_and_type_ref_index_at(index, bc);
-  int sig_index = cpool->signature_ref_index_at(nt_index);
-  Symbol* signature = cpool->symbol_at(sig_index);
-
-  // Get the field's declared holder.
-  int holder_index = cpool->klass_ref_index_at(index, bc);
-  bool holder_is_accessible;
-  Klass* declared_holder = get_klass_by_index(cpool, holder_index,
-                                               holder_is_accessible,
-                                               klass);
-
-  // The declared holder of this field may not have been loaded.
-  // Bail out with partial field information.
-  if (!holder_is_accessible) {
-    return;
-  }
-
-
-  // Perform the field lookup.
-  Klass*  canonical_holder =
-    InstanceKlass::cast(declared_holder)->find_field(name, signature, &field_desc);
-  if (canonical_holder == nullptr) {
-    return;
-  }
-
-  assert(canonical_holder == field_desc.field_holder(), "just checking");
-}
-
-// ------------------------------------------------------------------
-// Get a field by index from a klass's constant pool.
-void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index, Bytecodes::Code bc) {
-  ResourceMark rm;
-  return get_field_by_index_impl(accessor, fd, index, bc);
 }
 
 // ------------------------------------------------------------------
@@ -2061,12 +2030,14 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
+#ifdef ASSERT
   if (JVMCIENV->has_pending_exception()) {
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.compileMethodExceptionIsFatal");
     if (val != nullptr && strcmp(val, "true") == 0) {
       fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
     }
   }
+#endif
 
   if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
     return;

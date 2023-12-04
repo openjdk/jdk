@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -221,7 +222,7 @@ public:
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= val;
+    target |= (unsigned)val;
     *(unsigned *)a = target;
   }
 
@@ -229,14 +230,14 @@ public:
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn at " INTPTR_FORMAT, p2i(a));
-    unsigned uval = val;
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     uval <<= lsb;
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= uval;
+    target |= (unsigned)uval;
     *(unsigned *)a = target;
   }
 
@@ -262,10 +263,10 @@ public:
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
-    unsigned uval = val;
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
-    f(uval, lsb + nbits - 1, lsb);
+    f((unsigned)uval, lsb + nbits - 1, lsb);
   }
 
   void rf(Register r, int lsb) {
@@ -553,7 +554,7 @@ class Address {
           i->sf(offset(), 20, 12);
         } else {
           i->f(0b01, 25, 24);
-          i->f(offset() >> size, 21, 10);
+          i->f(checked_cast<unsigned>(offset() >> size), 21, 10);
         }
       }
       break;
@@ -573,7 +574,7 @@ class Address {
         if (size == 0) // It's a byte
           i->f(ext().shift() >= 0, 12);
         else {
-          assert(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
+          guarantee(ext().shift() <= 0 || ext().shift() == (int)size, "bad shift");
           i->f(ext().shift() > 0, 12);
         }
         i->f(0b10, 11, 10);
@@ -653,8 +654,9 @@ class Address {
   static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
-      int sve_offset = offset / vl;
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int64_t sve_offset = offset / vl;
+      int32_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }
@@ -1086,8 +1088,8 @@ public:
 #undef INSN
 
   // we only provide mrs and msr for the special purpose system
-  // registers where op1 (instr[20:19]) == 11 and, (currently) only
-  // use it for FPSR n.b msr has L (instr[21]) == 0 mrs has L == 1
+  // registers where op1 (instr[20:19]) == 11
+  // n.b msr has L (instr[21]) == 0 mrs has L == 1
 
   void msr(int op1, int CRn, int CRm, int op2, Register rt) {
     starti;
@@ -2194,41 +2196,20 @@ public:
 
 #undef INSN
 
-  enum sign_kind { SIGNED, UNSIGNED };
-
 private:
-  void _xcvtf_scalar_integer(sign_kind sign, unsigned sz,
-                             FloatRegister Rd, FloatRegister Rn) {
-    starti;
-    f(0b01, 31, 30), f(sign == SIGNED ? 0 : 1, 29);
-    f(0b111100, 27, 23), f((sz >> 1) & 1, 22), f(0b100001110110, 21, 10);
-    rf(Rn, 5), rf(Rd, 0);
-  }
-
-public:
-#define INSN(NAME, sign, sz)                        \
-  void NAME(FloatRegister Rd, FloatRegister Rn) {   \
-    _xcvtf_scalar_integer(sign, sz, Rd, Rn);        \
-  }
-
-  INSN(scvtfs, SIGNED, 0);
-  INSN(scvtfd, SIGNED, 1);
-
-#undef INSN
-
-private:
-  void _xcvtf_vector_integer(sign_kind sign, SIMD_Arrangement T,
+  void _xcvtf_vector_integer(bool is_unsigned, SIMD_Arrangement T,
                              FloatRegister Rd, FloatRegister Rn) {
     assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
     starti;
-    f(0, 31), f(T & 1, 30), f(sign == SIGNED ? 0 : 1, 29);
+    f(0, 31), f(T & 1, 30), f(is_unsigned ? 1 : 0, 29);
     f(0b011100, 28, 23), f((T >> 1) & 1, 22), f(0b100001110110, 21, 10);
     rf(Rn, 5), rf(Rd, 0);
   }
 
 public:
+
   void scvtfv(SIMD_Arrangement T, FloatRegister Rd, FloatRegister Rn) {
-    _xcvtf_vector_integer(SIGNED, T, Rd, Rn);
+    _xcvtf_vector_integer(/* is_unsigned */ false, T, Rd, Rn);
   }
 
   // Floating-point compare
@@ -2412,7 +2393,7 @@ public:
       ld_st(Vt, T, a.base(), op1, op2);
       break;
     case Address::post:
-      ld_st(Vt, T, a.base(), a.offset(), op1, op2, regs);
+      ld_st(Vt, T, a.base(), checked_cast<int>(a.offset()), op1, op2, regs);
       break;
     case Address::post_reg:
       ld_st(Vt, T, a.base(), a.index(), op1, op2);
@@ -2989,8 +2970,8 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-private:
-  void _xshll(sign_kind sign, FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
+protected:
+  void _xshll(bool is_unsigned, FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, SIMD_Arrangement Tb, int shift) {
     starti;
     /* The encodings for the immh:immb fields (bits 22:16) are
      *   0001 xxx       8H, 8B/16B shift = xxx
@@ -3000,7 +2981,7 @@ private:
      */
     assert((Tb >> 1) + 1 == (Ta >> 1), "Incompatible arrangement");
     assert((1 << ((Tb>>1)+3)) > shift, "Invalid shift value");
-    f(0, 31), f(Tb & 1, 30), f(sign == SIGNED ? 0 : 1, 29), f(0b011110, 28, 23);
+    f(0, 31), f(Tb & 1, 30), f(is_unsigned ? 1 : 0, 29), f(0b011110, 28, 23);
     f((1 << ((Tb>>1)+3))|shift, 22, 16);
     f(0b101001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
@@ -3008,12 +2989,12 @@ private:
 public:
   void ushll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xshll(UNSIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ true, Vd, Ta, Vn, Tb, shift);
   }
 
   void ushll2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xshll(UNSIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ true, Vd, Ta, Vn, Tb, shift);
   }
 
   void uxtl(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb) {
@@ -3022,12 +3003,12 @@ public:
 
   void sshll(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xshll(SIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ false, Vd, Ta, Vn, Tb, shift);
   }
 
   void sshll2(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb, int shift) {
     assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xshll(SIGNED, Vd, Ta, Vn, Tb, shift);
+    _xshll(/* is_unsigned */ false, Vd, Ta, Vn, Tb, shift);
   }
 
   void sxtl(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn,  SIMD_Arrangement Tb) {
@@ -3522,7 +3503,7 @@ private:
               int op1, int type, int imm_op2, int scalar_op2) {
     switch (a.getMode()) {
     case Address::base_plus_offset:
-      sve_ld_st1(Zt, a.base(), a.offset(), Pg, T, op1, type, imm_op2);
+      sve_ld_st1(Zt, a.base(), checked_cast<int>(a.offset()), Pg, T, op1, type, imm_op2);
       break;
     case Address::base_plus_offset_reg:
       sve_ld_st1(Zt, a.base(), a.index(), Pg, T, op1, type, scalar_op2);
@@ -3860,18 +3841,25 @@ public:
   }
 
 // SVE unpack vector elements
-#define INSN(NAME, op) \
-  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) { \
-    starti;                                                          \
-    assert(T != B && T != Q, "invalid size");                        \
-    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1100, 21, 18);          \
-    f(op, 17, 16), f(0b001110, 15, 10), rf(Zn, 5), rf(Zd, 0);        \
+protected:
+  void _sve_xunpk(bool is_unsigned, bool is_high, FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {
+    starti;
+    assert(T != B && T != Q, "invalid size");
+    f(0b00000101, 31, 24), f(T, 23, 22), f(0b1100, 21, 18);
+    f(is_unsigned ? 1 : 0, 17), f(is_high ? 1 : 0, 16),
+    f(0b001110, 15, 10), rf(Zn, 5), rf(Zd, 0);
   }
 
-  INSN(sve_uunpkhi, 0b11); // Signed unpack and extend half of vector - high half
-  INSN(sve_uunpklo, 0b10); // Signed unpack and extend half of vector - low half
-  INSN(sve_sunpkhi, 0b01); // Unsigned unpack and extend half of vector - high half
-  INSN(sve_sunpklo, 0b00); // Unsigned unpack and extend half of vector - low half
+public:
+#define INSN(NAME, is_unsigned, is_high)                                  \
+  void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn) {      \
+    _sve_xunpk(is_unsigned, is_high, Zd, T, Zn);                          \
+  }
+
+  INSN(sve_uunpkhi, true,  true ); // Unsigned unpack and extend half of vector - high half
+  INSN(sve_uunpklo, true,  false); // Unsigned unpack and extend half of vector - low half
+  INSN(sve_sunpkhi, false, true ); // Signed unpack and extend half of vector - high half
+  INSN(sve_sunpklo, false, false); // Signed unpack and extend half of vector - low half
 #undef INSN
 
 // SVE unpack predicate elements
@@ -4211,7 +4199,7 @@ Instruction_aarch64::~Instruction_aarch64() {
 #undef starti
 
 // Invert a condition
-inline const Assembler::Condition operator~(const Assembler::Condition cond) {
+inline Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
 

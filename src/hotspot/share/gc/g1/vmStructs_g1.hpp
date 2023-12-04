@@ -35,12 +35,13 @@
                         static_field)                                         \
                                                                               \
   static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
                                                                               \
   nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
+  nonstatic_field(HeapRegion, _pinned_object_count, volatile uint)            \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \

@@ -169,7 +169,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-static const int entry_barrier_offset(nmethod* nm) {
+static int entry_barrier_offset(nmethod* nm) {
 #ifdef _LP64
   if (nm->is_compiled_by_c2()) {
     return -14;

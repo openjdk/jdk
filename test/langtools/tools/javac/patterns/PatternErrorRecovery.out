@@ -1,2 +1,4 @@
+PatternErrorRecovery.java:17:27: compiler.err.illegal.start.of.type
 PatternErrorRecovery.java:11:18: compiler.err.pattern.expected
-1 error
+PatternErrorRecovery.java:17:18: compiler.err.incorrect.number.of.nested.patterns: java.lang.String, java.lang.String,<any>
+3 errors

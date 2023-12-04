@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseVal
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc = AllocateNode::Ideal_allocation(base, phase);
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base);
 
   if (offset == Type::OffsetBot) {
     return false; // cannot unalias unless there are precise offsets
@@ -149,7 +149,7 @@ bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseVal
 
       if (st_base != base
           && MemNode::detect_ptr_independence(base, alloc, st_base,
-                                              AllocateNode::Ideal_allocation(st_base, phase),
+                                              AllocateNode::Ideal_allocation(st_base),
                                               phase)) {
         // Success:  The bases are provably independent.
         mem = mem->in(MemNode::Memory);
@@ -530,7 +530,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
 Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   // 1: non-reference load, no additional barrier is needed
   if (!access.is_oop()) {
-    return BarrierSetC2::load_at_resolved(access, val_type);;
+    return BarrierSetC2::load_at_resolved(access, val_type);
   }
 
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);

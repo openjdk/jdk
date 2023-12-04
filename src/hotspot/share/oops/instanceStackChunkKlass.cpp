@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -49,6 +51,10 @@ void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
   f->do_int(&_offset_of_stack);
 }
 #endif
+
+InstanceStackChunkKlass::InstanceStackChunkKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
 
 InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
   : InstanceKlass(parser, Kind) {

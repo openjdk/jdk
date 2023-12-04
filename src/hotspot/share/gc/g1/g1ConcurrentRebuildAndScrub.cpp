@@ -59,6 +59,8 @@
 //
 // We need to scrub and scan objects to rebuild remembered sets until parsable_bottom;
 // we need to scan objects to rebuild remembered sets until tars.
+// Regions might have been reclaimed while scrubbing them after having yielded for
+// a pause.
 class G1RebuildRSAndScrubTask : public WorkerTask {
   G1ConcurrentMark* _cm;
   HeapRegionClaimer _hr_claimer;
@@ -101,15 +103,15 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     // Based on the results of G1RemSetTrackingPolicy::needs_scan_for_rebuild(),
     // the value may be changed to null during rebuilding if the region has either:
     //  - been allocated after rebuild start, or
-    //  - been eagerly reclaimed by a young collection (only humongous)
+    //  - been reclaimed by a collection.
     bool should_rebuild_or_scrub(HeapRegion* hr) const {
       return _cm->top_at_rebuild_start(hr->hrm_index()) != nullptr;
     }
 
     // Helper used by both humongous objects and when chunking an object larger than the
-    // G1RebuildRemSetChunkSize. The heap region is needed to ensure a humongous object
-    // is not eagerly reclaimed during yielding.
-    // Returns whether marking has been aborted.
+    // G1RebuildRemSetChunkSize. The heap region is needed check whether the region has
+    // been reclaimed during yielding.
+    // Returns true if marking has been aborted or false if completed.
     bool scan_large_object(HeapRegion* hr, const oop obj, MemRegion scan_range) {
       HeapWord* start = scan_range.start();
       HeapWord* limit = scan_range.end();
@@ -124,13 +126,13 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         if (mark_aborted) {
           return true;
         } else if (!should_rebuild_or_scrub(hr)) {
-          // We need to check should_rebuild_or_scrub() again (for humongous objects)
-          // because the region might have been eagerly reclaimed during the yield.
-          log_trace(gc, marking)("Rebuild aborted for eagerly reclaimed humongous region: %u", hr->hrm_index());
+          // We need to check should_rebuild_or_scrub() again because the region might
+          // have been reclaimed during above yield/safepoint.
+          log_trace(gc, marking)("Rebuild aborted for reclaimed region: %u", hr->hrm_index());
           return false;
         }
 
-        // Step to next chunk of the humongous object
+        // Step to next chunk of the large object.
         start = mr.end();
       } while (start < limit);
       return false;
@@ -191,6 +193,11 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         bool mark_aborted = yield_if_necessary();
         if (mark_aborted) {
           return true;
+        } else if (!should_rebuild_or_scrub(hr)) {
+          // We need to check should_rebuild_or_scrub() again because the region might
+          // have been reclaimed during above yield/safepoint.
+          log_trace(gc, marking)("Scan and scrub aborted for reclaimed region: %u", hr->hrm_index());
+          return false;
         }
       }
       return false;
@@ -206,6 +213,11 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         bool mark_aborted = yield_if_necessary();
         if (mark_aborted) {
           return true;
+        } else if (!should_rebuild_or_scrub(hr)) {
+          // We need to check should_rebuild_or_scrub() again because the region might
+          // have been reclaimed during above yield/safepoint.
+          log_trace(gc, marking)("Scan aborted for reclaimed region: %u", hr->hrm_index());
+          return false;
         }
       }
       return false;
@@ -216,14 +228,19 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     bool scan_and_scrub_region(HeapRegion* hr, HeapWord* const pb) {
       assert(should_rebuild_or_scrub(hr), "must be");
 
-      log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
+      log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
+                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())), p2i(hr->top_at_mark_start()));
 
       if (scan_and_scrub_to_pb(hr, hr->bottom(), pb)) {
         log_trace(gc, marking)("Scan and scrub aborted for region: %u", hr->hrm_index());
         return true;
       }
 
+      // Yielding during scrubbing and scanning might have reclaimed the region, so need to
+      // re-check after above.
+      if (!should_rebuild_or_scrub(hr)) {
+        return false;
+      }
       // Scrubbing completed for this region - notify that we are done with it, resetting
       // pb to bottom.
       hr->note_end_of_scrubbing();

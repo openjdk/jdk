@@ -53,7 +53,7 @@ class RetTableEntry : public ResourceObj {
  private:
   static int _init_nof_jsrs;                      // Default size of jsrs list
   int _target_bci;                                // Target PC address of jump (bytecode index)
-  GrowableArray<intptr_t> * _jsrs;                     // List of return addresses  (bytecode index)
+  GrowableArray<int> * _jsrs;                     // List of return addresses  (bytecode index)
   RetTableEntry *_next;                           // Link to next entry
  public:
    RetTableEntry(int target, RetTableEntry *next);
@@ -441,7 +441,7 @@ class GenerateOopMap {
   bool is_aload                             (BytecodeStream *itr, int *index);
 
   // List of bci's where a return address is on top of the stack
-  GrowableArray<intptr_t> *_ret_adr_tos;
+  GrowableArray<int>* _ret_adr_tos;
 
   bool stack_top_holds_ret_addr             (int bci);
   void compute_ret_adr_at_TOS               ();

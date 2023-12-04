@@ -47,4 +47,3 @@ public class TestMinInitialErgonomics {
     TestMaxHeapSizeTools.checkMinInitialErgonomics(gcName);
   }
 }
-

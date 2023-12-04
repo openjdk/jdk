@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestByteBuffer
+ * @run testng/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
 import java.lang.foreign.*;
@@ -70,9 +69,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.HeapMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
 import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
@@ -82,7 +78,7 @@ import static org.testng.Assert.*;
 
 public class TestByteBuffer {
 
-    static Path tempPath;
+    static final Path tempPath;
 
     static {
         try {
@@ -109,21 +105,21 @@ public class TestByteBuffer {
                     BB_FLOAT.withName("value")
             ));
 
-    static SequenceLayout bytes = MemoryLayout.sequenceLayout(100, JAVA_BYTE);
-    static SequenceLayout chars = MemoryLayout.sequenceLayout(100, BB_CHAR);
-    static SequenceLayout shorts = MemoryLayout.sequenceLayout(100, BB_SHORT);
-    static SequenceLayout ints = MemoryLayout.sequenceLayout(100, BB_INT);
-    static SequenceLayout floats = MemoryLayout.sequenceLayout(100, BB_FLOAT);
-    static SequenceLayout longs = MemoryLayout.sequenceLayout(100, BB_LONG);
-    static SequenceLayout doubles = MemoryLayout.sequenceLayout(100, BB_DOUBLE);
+    static final SequenceLayout bytes = MemoryLayout.sequenceLayout(100, JAVA_BYTE);
+    static final SequenceLayout chars = MemoryLayout.sequenceLayout(100, BB_CHAR);
+    static final SequenceLayout shorts = MemoryLayout.sequenceLayout(100, BB_SHORT);
+    static final SequenceLayout ints = MemoryLayout.sequenceLayout(100, BB_INT);
+    static final SequenceLayout floats = MemoryLayout.sequenceLayout(100, BB_FLOAT);
+    static final SequenceLayout longs = MemoryLayout.sequenceLayout(100, BB_LONG);
+    static final SequenceLayout doubles = MemoryLayout.sequenceLayout(100, BB_DOUBLE);
 
-    static VarHandle indexHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("index"));
-    static VarHandle valueHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("value"));
+    static final VarHandle indexHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("index"));
+    static final VarHandle valueHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("value"));
 
     static void initTuples(MemorySegment base, long count) {
         for (long i = 0; i < count ; i++) {
-            indexHandle.set(base, i, (int)i);
-            valueHandle.set(base, i, (float)(i / 500f));
+            indexHandle.set(base, 0L, i, (int)i);
+            valueHandle.set(base, 0L, i, (float)(i / 500f));
         }
     }
 
@@ -131,8 +127,8 @@ public class TestByteBuffer {
         for (long i = 0; i < count ; i++) {
             int index;
             float value;
-            assertEquals(index = bb.getInt(), (int)indexHandle.get(base, i));
-            assertEquals(value = bb.getFloat(), (float)valueHandle.get(base, i));
+            assertEquals(index = bb.getInt(), (int)indexHandle.get(base, 0L, i));
+            assertEquals(value = bb.getFloat(), (float)valueHandle.get(base, 0L, i));
             assertEquals(value, index / 500f);
         }
     }
@@ -338,7 +334,7 @@ public class TestByteBuffer {
         }
     }
 
-    static final long LARGE_SIZE = 3L * 1024L * 1024L * 1024L; // 3GB
+    static final long LARGE_SIZE = (2L * 1024L + 512L) * 1024L * 1024L; // 2.5 GiB
 
     @Test
     public void testLargeMappedSegment() throws Throwable {
@@ -988,9 +984,9 @@ public class TestByteBuffer {
 
     @DataProvider(name = "bufferSources")
     public static Object[][] bufferSources() {
-        Predicate<MemorySegment> heapTest = segment -> segment instanceof HeapMemorySegmentImpl;
-        Predicate<MemorySegment> nativeTest = segment -> segment instanceof NativeMemorySegmentImpl;
-        Predicate<MemorySegment> mappedTest = segment -> segment instanceof MappedMemorySegmentImpl;
+        Predicate<MemorySegment> heapTest = segment -> !segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> nativeTest = segment -> segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> mappedTest = segment -> segment.isNative() && segment.isMapped();
         try (FileChannel channel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             return new Object[][]{
                     { ByteBuffer.wrap(new byte[256]), heapTest },
@@ -1002,7 +998,7 @@ public class TestByteBuffer {
                     { ByteBuffer.allocate(256).asReadOnlyBuffer(), heapTest },
                     { ByteBuffer.allocateDirect(256).asReadOnlyBuffer(), nativeTest },
                     { channel.map(FileChannel.MapMode.READ_WRITE, 0L, 256).asReadOnlyBuffer(),
-                            nativeTest /* this seems to be an existing bug in the BB implementation */ }
+                            mappedTest }
             };
         } catch (IOException ex) {
             throw new ExceptionInInitializerError(ex);

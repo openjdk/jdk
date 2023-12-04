@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,6 @@
  * @moduleGraph
  * @since 9
  */
+@Deprecated(since="22", forRemoval = true)
 module jdk.crypto.ec {
-    provides java.security.Provider with sun.security.ec.SunEC;
 }

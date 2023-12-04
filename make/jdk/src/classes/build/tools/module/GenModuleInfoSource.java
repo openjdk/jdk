@@ -473,6 +473,11 @@ public class GenModuleInfoSource {
                     if (parser.peekToken() != null) {  // must be EOF
                         throw parser.newError("is malformed");
                     }
+                } else if (token.equals("import")) {
+                    nextIdentifier(parser);
+                    skipTokenOrThrow(parser, ";", "missing semicolon");
+                } else if (token.startsWith("@")) {
+                    continue;
                 } else {
                     throw parser.newError("missing keyword");
                 }

@@ -54,10 +54,9 @@ public class DeterministicDump {
         baseArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
-            // These options are available only on 64-bit.
+            // This option is available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
             baseArgs.add("-XX:" + sign + "UseCompressedOops");
-            baseArgs.add("-XX:" + sign + "UseCompressedClassPointers");
         }
 
         String baseArchive = dump(baseArgs);
@@ -80,8 +79,9 @@ public class DeterministicDump {
         String archiveName = logName + ".jsa";
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
+            .addPrefix("-Xint") // Override any -Xmixed/-Xcomp flags from jtreg -vmoptions
             .addPrefix("-Xlog:cds=debug")
-            .addPrefix("-Xlog:cds+map=trace:file=" + mapName + ":none:filesize=0")
+            .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)
             .addSuffix(more);

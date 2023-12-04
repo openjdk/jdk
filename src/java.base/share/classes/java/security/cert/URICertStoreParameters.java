@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,8 @@ public final class URICertStoreParameters implements CertStoreParameters {
     }
 
     /**
-     * Returns a hash code value for this parameters object.
+     * {@return a hash code value for this parameters object}
      * The hash code is generated using the URI supplied at construction.
-     *
-     * @return a hash code value for this parameters object.
      */
     @Override
     public int hashCode() {

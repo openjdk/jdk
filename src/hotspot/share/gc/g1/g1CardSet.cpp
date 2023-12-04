@@ -110,7 +110,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _max_cards_in_howl_bitmap(G1CardSetHowl::bitmap_size(_max_cards_in_card_set, _num_buckets_in_howl)),
   _cards_in_howl_bitmap_threshold(_max_cards_in_howl_bitmap * cards_in_bitmap_threshold_percent),
   _log2_max_cards_in_howl_bitmap(log2i_exact(_max_cards_in_howl_bitmap)),
-  _bitmap_hash_mask(~(~(0) << _log2_max_cards_in_howl_bitmap)),
+  _bitmap_hash_mask((1U << _log2_max_cards_in_howl_bitmap) - 1),
   _log2_card_regions_per_heap_region(log2_card_regions_per_heap_region),
   _log2_cards_per_card_region(log2i_exact(_max_cards_in_card_set)) {
 
@@ -258,9 +258,12 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
 
     uintx get_hash() const { return G1CardSetHashTable::get_hash(_region_idx); }
 
-    bool equals(G1CardSetHashTableValue* value, bool* is_dead) {
-      *is_dead = false;
+    bool equals(G1CardSetHashTableValue* value) {
       return value->_region_idx == _region_idx;
+    }
+
+    bool is_dead(G1CardSetHashTableValue*) {
+      return false;
     }
   };
 

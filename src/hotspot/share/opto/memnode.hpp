@@ -93,7 +93,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
-  ArrayCopyNode* find_array_copy_clone(PhaseValues* phase, Node* ld_alloc, Node* mem) const;
+  ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -199,7 +199,7 @@ private:
   // this field.
   const MemOrd _mo;
 
-  AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
+  AllocateNode* is_new_object_mark_load() const;
 
 protected:
   virtual bool cmp(const Node &n) const;
@@ -244,8 +244,11 @@ public:
   // try to hook me up to the exact initializing store.
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
+  // Return true if it's possible to split the Load through a Phi merging the bases
+  bool can_split_through_phi_base(PhaseGVN *phase);
+
   // Split instance field load through Phi.
-  Node* split_through_phi(PhaseGVN *phase);
+  Node* split_through_phi(PhaseGVN *phase, bool ignore_missing_instance_id = false);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);

@@ -306,20 +306,20 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    public interface VecExtractOp<V extends Vector<?>> {
-        long apply(V v, int i);
+    public interface VecExtractOp<VM extends VectorPayload> {
+        long apply(VM vm, int i);
     }
 
     @IntrinsicCandidate
     public static
-    <V extends Vector<E>,
+    <VM extends VectorPayload,
      E>
-    long extract(Class<? extends V> vClass, Class<E> eClass,
+    long extract(Class<? extends VM> vClass, Class<E> eClass,
                  int length,
-                 V v, int i,
-                 VecExtractOp<V> defaultImpl) {
+                 VM vm, int i,
+                 VecExtractOp<VM> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(v, i);
+        return defaultImpl.apply(vm, i);
     }
 
     /* ============================================================================ */

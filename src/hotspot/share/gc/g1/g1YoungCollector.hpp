@@ -126,11 +126,17 @@ class G1YoungCollector {
   void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
                                G1EvacInfo* evacuation_info);
 
+  // Enqueue collection set candidates as root regions.
+  void enqueue_candidates_as_root_regions();
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
-  // True iff an evacuation has failed in the most-recent collection.
+  // True iff an evacuation failure of any kind occurred in the most-recent collection.
   bool evacuation_failed() const;
+  // True iff an evacuation had pinned regions in the most-recent collection.
+  bool evacuation_pinned() const;
+  // True iff an evacuation had allocation failures in the most-recent collection.
+  bool evacuation_alloc_failed() const;
 
 public:
   G1YoungCollector(GCCause::Cause gc_cause);

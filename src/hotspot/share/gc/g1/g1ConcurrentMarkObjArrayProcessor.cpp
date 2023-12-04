@@ -74,7 +74,7 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
 
   objArrayOop objArray = objArrayOop(cast_to_oop(start_address));
 
-  size_t already_scanned = slice - start_address;
+  size_t already_scanned = pointer_delta(slice, start_address);
   size_t remaining = objArray->size() - already_scanned;
 
   return process_array_slice(objArray, slice, remaining);

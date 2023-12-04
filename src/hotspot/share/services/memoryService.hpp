@@ -67,10 +67,10 @@ public:
   static MemoryPool*    get_memory_pool(instanceHandle pool);
   static MemoryManager* get_memory_manager(instanceHandle mgr);
 
-  static const int num_memory_pools() {
+  static int num_memory_pools() {
     return _pools_list->length();
   }
-  static const int num_memory_managers() {
+  static int num_memory_managers() {
     return _managers_list->length();
   }
 

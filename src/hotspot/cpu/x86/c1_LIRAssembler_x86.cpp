@@ -1695,9 +1695,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     assert(data != nullptr,                "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
-  Label profile_cast_success, profile_cast_failure;
-  Label *success_target = op->should_profile() ? &profile_cast_success : success;
-  Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
+  Label* success_target = success;
+  Label* failure_target = failure;
 
   if (obj == k_RInfo) {
     k_RInfo = dst;
@@ -1713,18 +1712,28 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-  __ cmpptr(obj, NULL_WORD);
+  __ testptr(obj, obj);
   if (op->should_profile()) {
     Label not_null;
-    __ jccb(Assembler::notEqual, not_null);
-    // Object is null; update MDO and exit
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
+    __ jccb(Assembler::notEqual, not_null);
+    // Object is null; update MDO and exit
     Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
     int header_bits = BitData::null_seen_byte_constant();
     __ orb(data_addr, header_bits);
     __ jmp(*obj_is_null);
     __ bind(not_null);
+
+    Label update_done;
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj, tmp_load_klass);
+    type_profile_helper(mdo, md, data, recv, &update_done);
+
+    Address nonprofiled_receiver_count_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment);
+
+    __ bind(update_done);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1792,7 +1801,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ pop(klass_RInfo);
         __ pop(klass_RInfo);
         // result is a boolean
-        __ cmpl(klass_RInfo, 0);
+        __ testl(klass_RInfo, klass_RInfo);
         __ jcc(Assembler::equal, *failure_target);
         // successful cast, fall through to profile or jump
       }
@@ -1806,24 +1815,10 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ pop(klass_RInfo);
       __ pop(k_RInfo);
       // result is a boolean
-      __ cmpl(k_RInfo, 0);
+      __ testl(k_RInfo, k_RInfo);
       __ jcc(Assembler::equal, *failure_target);
       // successful cast, fall through to profile or jump
     }
-  }
-  if (op->should_profile()) {
-    Register mdo  = klass_RInfo, recv = k_RInfo;
-    __ bind(profile_cast_success);
-    __ mov_metadata(mdo, md->constant_encoding());
-    __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv, success);
-    __ jmp(*success);
-
-    __ bind(profile_cast_failure);
-    __ mov_metadata(mdo, md->constant_encoding());
-    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ subptr(counter_addr, DataLayout::counter_increment);
-    __ jmp(*failure);
   }
   __ jmp(*success);
 }
@@ -1855,22 +1850,31 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data != nullptr,                "need data for type check");
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
-    Label profile_cast_success, profile_cast_failure, done;
-    Label *success_target = op->should_profile() ? &profile_cast_success : &done;
-    Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+    Label done;
+    Label* success_target = &done;
+    Label* failure_target = stub->entry();
 
-    __ cmpptr(value, NULL_WORD);
+    __ testptr(value, value);
     if (op->should_profile()) {
       Label not_null;
-      __ jccb(Assembler::notEqual, not_null);
-      // Object is null; update MDO and exit
       Register mdo  = klass_RInfo;
       __ mov_metadata(mdo, md->constant_encoding());
+      __ jccb(Assembler::notEqual, not_null);
+      // Object is null; update MDO and exit
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
       int header_bits = BitData::null_seen_byte_constant();
       __ orb(data_addr, header_bits);
       __ jmp(done);
       __ bind(not_null);
+
+      Label update_done;
+      Register recv = k_RInfo;
+      __ load_klass(recv, value, tmp_load_klass);
+      type_profile_helper(mdo, md, data, recv, &update_done);
+
+      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+      __ addptr(counter_addr, DataLayout::counter_increment);
+      __ bind(update_done);
     } else {
       __ jcc(Assembler::equal, done);
     }
@@ -1890,24 +1894,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ pop(klass_RInfo);
     __ pop(k_RInfo);
     // result is a boolean
-    __ cmpl(k_RInfo, 0);
+    __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
     // fall through to the success case
-
-    if (op->should_profile()) {
-      Register mdo  = klass_RInfo, recv = k_RInfo;
-      __ bind(profile_cast_success);
-      __ mov_metadata(mdo, md->constant_encoding());
-      __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv, &done);
-      __ jmpb(done);
-
-      __ bind(profile_cast_failure);
-      __ mov_metadata(mdo, md->constant_encoding());
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ subptr(counter_addr, DataLayout::counter_increment);
-      __ jmp(*stub->entry());
-    }
 
     __ bind(done);
   } else
@@ -1940,7 +1929,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  if (LP64_ONLY(false &&) op->code() == lir_cas_long && VM_Version::supports_cx8()) {
+  if (LP64_ONLY(false &&) op->code() == lir_cas_long) {
     assert(op->cmp_value()->as_register_lo() == rax, "wrong register");
     assert(op->cmp_value()->as_register_hi() == rdx, "wrong register");
     assert(op->new_value()->as_register_lo() == rbx, "wrong register");
@@ -2047,7 +2036,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
   } else {
     Label skip;
-    __ jcc (acond, skip);
+    __ jccb(acond, skip);
     if (opr2->is_cpu_register()) {
       reg2reg(opr2, result);
     } else if (opr2->is_stack()) {
@@ -2664,13 +2653,18 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       // cpu register - constant
       LIR_Const* c = opr2->as_constant_ptr();
       if (c->type() == T_INT) {
-        __ cmpl(reg1, c->as_jint());
+        jint i = c->as_jint();
+        if (i == 0) {
+          __ testl(reg1, reg1);
+        } else {
+          __ cmpl(reg1, i);
+        }
       } else if (c->type() == T_METADATA) {
         // All we need for now is a comparison with null for equality.
         assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
         Metadata* m = c->as_metadata();
         if (m == nullptr) {
-          __ cmpptr(reg1, NULL_WORD);
+          __ testptr(reg1, reg1);
         } else {
           ShouldNotReachHere();
         }
@@ -2678,7 +2672,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         // In 64bit oops are single register
         jobject o = c->as_jobject();
         if (o == nullptr) {
-          __ cmpptr(reg1, NULL_WORD);
+          __ testptr(reg1, reg1);
         } else {
           __ cmpoop(reg1, o, rscratch1);
         }
@@ -3146,7 +3140,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #endif // _LP64
 
-    __ cmpl(rax, 0);
+    __ testl(rax, rax);
     __ jcc(Assembler::equal, *stub->continuation());
 
     __ mov(tmp, rax);
@@ -3288,7 +3282,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ pop(dst);
       __ pop(src);
 
-      __ cmpl(src, 0);
+      __ testl(src, src);
       __ jcc(Assembler::notEqual, cont);
 
       __ bind(slow);
@@ -3635,13 +3629,33 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
   __ verify_oop(obj);
 
-  if (tmp != obj) {
-    __ mov(tmp, obj);
+#ifdef ASSERT
+  if (obj == tmp) {
+#ifdef _LP64
+    assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, mdo_addr.base(), mdo_addr.index());
+#endif
+  } else {
+#ifdef _LP64
+    assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, tmp, mdo_addr.base(), mdo_addr.index());
+#endif
   }
+#endif
   if (do_null) {
-    __ testptr(tmp, tmp);
+    __ testptr(obj, obj);
     __ jccb(Assembler::notZero, update);
     if (!TypeEntries::was_null_seen(current_klass)) {
+      __ testptr(mdo_addr, TypeEntries::null_seen);
+#ifndef ASSERT
+      __ jccb(Assembler::notZero, next); // already set
+#else
+      __ jcc(Assembler::notZero, next); // already set
+#endif
+      // atomic update to prevent overwriting Klass* with 0
+      __ lock();
       __ orptr(mdo_addr, TypeEntries::null_seen);
     }
     if (do_update) {
@@ -3652,7 +3666,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ jmp(next);
     }
   } else {
-    __ testptr(tmp, tmp);
+    __ testptr(obj, obj);
     __ jcc(Assembler::notZero, update);
     __ stop("unexpected null obj");
 #endif
@@ -3664,7 +3678,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #ifdef ASSERT
     if (exact_klass != nullptr) {
       Label ok;
-      __ load_klass(tmp, tmp, tmp_load_klass);
+      __ load_klass(tmp, obj, tmp_load_klass);
       __ push(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
@@ -3679,9 +3693,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         if (exact_klass != nullptr) {
           __ mov_metadata(tmp, exact_klass->constant_encoding());
         } else {
-          __ load_klass(tmp, tmp, tmp_load_klass);
+          __ load_klass(tmp, obj, tmp_load_klass);
         }
-
+#ifdef _LP64
+        __ mov(rscratch1, tmp); // save original value before XOR
+#endif
         __ xorptr(tmp, mdo_addr);
         __ testptr(tmp, TypeEntries::type_klass_mask);
         // klass seen before, nothing to do. The unknown bit may have been
@@ -3692,23 +3708,23 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          __ cmpptr(mdo_addr, 0);
-          __ jccb(Assembler::equal, none);
-          __ cmpptr(mdo_addr, TypeEntries::null_seen);
-          __ jccb(Assembler::equal, none);
+          __ testptr(mdo_addr, TypeEntries::type_mask);
+          __ jccb(Assembler::zero, none);
+#ifdef _LP64
           // There is a chance that the checks above (re-reading profiling
           // data from memory) fail if another thread has just set the
           // profiling to this obj's klass
+          __ mov(tmp, rscratch1); // get back original value before XOR
           __ xorptr(tmp, mdo_addr);
           __ testptr(tmp, TypeEntries::type_klass_mask);
           __ jccb(Assembler::zero, next);
+#endif
         }
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
 
-        __ movptr(tmp, mdo_addr);
-        __ testptr(tmp, TypeEntries::type_unknown);
+        __ testptr(mdo_addr, TypeEntries::type_unknown);
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
       }
 
@@ -3721,6 +3737,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ bind(none);
         // first time here. Set profile type.
         __ movptr(mdo_addr, tmp);
+#ifdef ASSERT
+        __ andptr(tmp, TypeEntries::type_klass_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       }
     } else {
       // There's a single possible klass at this profile point
@@ -3735,10 +3755,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         {
           Label ok;
           __ push(tmp);
-          __ cmpptr(mdo_addr, 0);
-          __ jcc(Assembler::equal, ok);
-          __ cmpptr(mdo_addr, TypeEntries::null_seen);
-          __ jcc(Assembler::equal, ok);
+          __ testptr(mdo_addr, TypeEntries::type_mask);
+          __ jcc(Assembler::zero, ok);
           // may have been set by another thread
           __ mov_metadata(tmp, exact_klass->constant_encoding());
           __ xorptr(tmp, mdo_addr);
@@ -3754,20 +3772,22 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
         // first time here. Set profile type.
         __ movptr(mdo_addr, tmp);
+#ifdef ASSERT
+        __ andptr(tmp, TypeEntries::type_klass_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
 
-        __ movptr(tmp, mdo_addr);
-        __ testptr(tmp, TypeEntries::type_unknown);
+        __ testptr(mdo_addr, TypeEntries::type_unknown);
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         __ orptr(mdo_addr, TypeEntries::type_unknown);
       }
     }
-
-    __ bind(next);
   }
+  __ bind(next);
 }
 
 void LIR_Assembler::emit_delay(LIR_OpDelay*) {

@@ -209,6 +209,16 @@ do {                                                                            
   report_vm_out_of_memory(__FILE__, __LINE__, size, vm_err_type, __VA_ARGS__);    \
 } while (0)
 
+#define check_with_errno(check_type, cond, msg)                                   \
+  do {                                                                            \
+    int err = errno;                                                              \
+    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),         \
+               os::errno_name(err));                                              \
+} while (false)
+
+#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
+#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
+
 #define ShouldNotCallThis()                                                       \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
@@ -235,12 +245,13 @@ do {                                                                            
 
 
 // types of VM error - originally in vmError.hpp
-enum VMErrorType {
+enum VMErrorType : unsigned int {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
   OOM_MMAP_ERROR   = 0xe0000002,
   OOM_MPROTECT_ERROR = 0xe0000003,
-  OOM_JAVA_HEAP_FATAL = 0xe0000004
+  OOM_JAVA_HEAP_FATAL = 0xe0000004,
+  OOM_HOTSPOT_ARENA = 0xe0000005
 };
 
 // error reporting helper functions

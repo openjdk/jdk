@@ -468,7 +468,7 @@ TEST_VM_F(ResourceHashtablePrintTest, print_test) {
   const char* strings[] = {
       "Number of buckets", "Number of entries", "300", "Number of literals", "Average bucket size", "Maximum bucket size" };
   for (const auto& str : strings) {
-    ASSERT_TRUE(strstr(st.as_string(), str) != nullptr) << "string not present " << str;
+    ASSERT_THAT(st.base(), testing::HasSubstr(str));
   }
   // Cleanup: need to delete pointers in entries
   TableDeleter deleter;

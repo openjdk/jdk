@@ -177,7 +177,7 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 
 // JVM compiled with -fno-omit-frame-pointer, so RFP is saved on the stack.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
 NOINLINE frame os::current_frame() {
@@ -191,15 +191,6 @@ NOINLINE frame os::current_frame() {
   } else {
     return os::get_sender_for_C_frame(&myframe);
   }
-}
-
-ATTRIBUTE_PRINTF(6, 7)
-static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...) {
-  va_list va;
-  va_start(va, detail_fmt);
-  VMError::report_and_die(thread, context, filename, lineno, message, detail_fmt, va);
-  va_end(va);
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
@@ -288,7 +279,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&
@@ -354,13 +345,13 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
-
-static void current_stack_region(address * bottom, size_t * size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  void *stacktop = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
-  *bottom = (address) stacktop - *size;
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
@@ -368,8 +359,9 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
-  *size   = ss.ss_size;
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -384,30 +376,17 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
-    pthread_attr_getstacksize(&attr, size) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -477,7 +456,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, 4/*native instruction size*/);
+  print_instructions(st, pc);
   st->cr();
 }
 

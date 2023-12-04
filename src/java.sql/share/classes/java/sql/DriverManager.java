@@ -652,10 +652,9 @@ public class DriverManager {
     private static Connection getConnection(
         String url, java.util.Properties info, Class<?> caller) throws SQLException {
         /*
-         * When callerCl is null, we should check the application's
-         * (which is invoking this class indirectly)
-         * classloader, so that the JDBC driver class outside rt.jar
-         * can be loaded from here.
+         * If the caller is defined to the bootstrap or platform class loader then use
+         * the Thread CCL as the initiating class loader so that a JDBC on the class path,
+         * or bundled with an application, is found.
          */
         ClassLoader callerCL = caller != null ? caller.getClassLoader() : null;
         if (callerCL == null || callerCL == ClassLoader.getPlatformClassLoader()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Calculates a hash code value for the object.  Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return getRFC2253CanonicalName().hashCode();
     }
@@ -404,6 +405,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      *
      * @return true iff the names are identical.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;

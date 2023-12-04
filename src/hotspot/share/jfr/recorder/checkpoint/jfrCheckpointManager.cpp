@@ -38,6 +38,7 @@
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
+#include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
@@ -108,6 +109,9 @@ bool JfrCheckpointManager::initialize() {
   // preallocate buffer count to each of the epoch live lists
   for (size_t i = 0; i < global_buffer_prealloc_count * 2; ++i) {
     Buffer* const buffer = mspace_allocate(global_buffer_size, _global_mspace);
+    if (buffer == nullptr) {
+      return false;
+    }
     _global_mspace->add_to_live_list(buffer, i % 2 == 0);
   }
   assert(_global_mspace->free_list_is_empty(), "invariant");
@@ -311,7 +315,7 @@ static const size_t payload_offset = types_offset + sizeof(uint32_t);
 
 template <typename Return>
 static Return read_data(const u1* data) {
-  return JfrBigEndian::read<Return>(data);
+  return JfrBigEndian::read<Return, Return>(data);
 }
 
 static size_t total_size(const u1* data) {
@@ -493,6 +497,7 @@ void JfrCheckpointManager::end_epoch_shift() {
   debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::end_epoch_shift();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
+  JfrStringPool::on_epoch_shift();
 }
 
 size_t JfrCheckpointManager::write() {

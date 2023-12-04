@@ -53,6 +53,9 @@
   product(bool, StressCCP, false, DIAGNOSTIC,                               \
           "Randomize worklist traversal in CCP")                            \
                                                                             \
+  product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
+          "Randomize the incremental inlining decision")                    \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
@@ -96,7 +99,7 @@
                                                                             \
   notproduct(intx, IndexSetWatch, 0,                                        \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
-          range(-1, 0)                                                      \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
@@ -181,9 +184,6 @@
   product_pd(bool,  SuperWordLoopUnrollAnalysis,                            \
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
-                                                                            \
-  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
-           "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
@@ -344,9 +344,6 @@
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
-  product(bool, DoReserveCopyInSuperWord, true,                             \
-          "Create reserve copy of graph in SuperWord.")                     \
-                                                                            \
   notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
                                                                             \
@@ -368,10 +365,10 @@
           "Level of detail of the ideal graph printout. "                   \
           "System-wide value, -1=printing is disabled, "                    \
           "0=print nothing except IGVPrintLevel directives, "               \
-          "4=all details printed. "                                         \
+          "5=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
-          range(-1, 4)                                                      \
+          range(-1, 5)                                                      \
                                                                             \
   notproduct(intx, PrintIdealGraphPort, 4444,                               \
           "Ideal graph printer to network port")                            \
@@ -469,6 +466,15 @@
                                                                             \
   develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
           " register allocation.")                                          \
+                                                                            \
+  product(bool, ReduceAllocationMerges, true, DIAGNOSTIC,                   \
+          "Try to simplify allocation merges before Scalar Replacement")    \
+                                                                            \
+  notproduct(bool, TraceReduceAllocationMerges, false,                      \
+             "Trace decision for simplifying allocation merges.")           \
+                                                                            \
+  develop(bool, VerifyReduceAllocationMerges, true,                         \
+          "Verify reduce allocation merges in escape analysis")             \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
@@ -771,6 +777,14 @@
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
+                                                                            \
+  product(intx, TypeProfileSubTypeCheckCommonThreshold, 50,                 \
+          "Use profile data at type check if profiled types account for"    \
+          "more than this threshold")                                       \
+          range(0, 100)                                                     \
+                                                                            \
+  develop(bool, StressPrunedExceptionHandlers, false,                       \
+          "Always prune exception handlers")                                \
 
 // end of C2_FLAGS
 

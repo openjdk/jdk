@@ -38,4 +38,4 @@ public:
   static void register_jfr_type_serializers();
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHJFRSUPPORT_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHJFRSUPPORT_HPP

@@ -40,6 +40,12 @@ class RiscvHwprobe;
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
  private:
+
+  // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
+  enum VendorId {
+    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+  };
+
   class RVFeatureValue {
     const char* const _pretty;
     const bool        _feature_string;
@@ -55,9 +61,9 @@ class VM_Version : public Abstract_VM_Version {
       _enabled = true;
       _value = value;
     }
-    const char* const pretty()   { return _pretty; }
-    const uint64_t feature_bit() { return _feature_bit; }
-    const bool feature_string()  { return _feature_string; }
+    const char* pretty()         { return _pretty; }
+    uint64_t feature_bit()       { return _feature_bit; }
+    bool feature_string()        { return _feature_string; }
     bool enabled()               { return _enabled; }
     int64_t value()              { return _value; }
     virtual void update_flag() = 0;
@@ -134,6 +140,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
+  decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))        \
   decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
   decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \

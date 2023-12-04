@@ -27,10 +27,10 @@
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/lambdaFormInvokers.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -89,6 +89,7 @@ public:
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
   void write_archive(char* serialized_data);
+  void gather_array_klasses();
 
 public:
   DynamicArchiveBuilder() : ArchiveBuilder() { }
@@ -119,6 +120,7 @@ public:
 
     init_header();
     gather_source_objs();
+    gather_array_klasses();
     reserve_buffer();
 
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
@@ -140,11 +142,11 @@ public:
 
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
+      DynamicArchive::dump_array_klasses();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
-      SymbolTable::serialize_shared_table_header(&wc, false);
-      SystemDictionaryShared::serialize_dictionary_headers(&wc, false);
+      ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
@@ -161,6 +163,7 @@ public:
 
     write_archive(serialized_data);
     release_header();
+    DynamicArchive::post_dump();
 
     post_dump();
 
@@ -171,6 +174,30 @@ public:
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
+    iterate_primitive_array_klasses(it);
+  }
+
+  void iterate_primitive_array_klasses(MetaspaceClosure* it) {
+    for (int i = T_BOOLEAN; i <= T_LONG; i++) {
+      assert(is_java_primitive((BasicType)i), "sanity");
+      Klass* k = Universe::typeArrayKlassObj((BasicType)i);  // this give you "[I", etc
+      assert(MetaspaceShared::is_shared_static((void*)k),
+        "one-dimensional primitive array should be in static archive");
+      ArrayKlass* ak = ArrayKlass::cast(k);
+      while (ak != nullptr && ak->is_shared()) {
+        Klass* next_k = ak->array_klass_or_null();
+        if (next_k != nullptr) {
+          ak = ArrayKlass::cast(next_k);
+        } else {
+          ak = nullptr;
+        }
+      }
+      if (ak != nullptr) {
+        assert(ak->dimension() > 1, "sanity");
+        // this is the lowest dimension that's not in the static archive
+        it->push(&ak);
+      }
+    }
   }
 };
 
@@ -329,6 +356,26 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());
 }
 
+void DynamicArchiveBuilder::gather_array_klasses() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    if (klasses()->at(i)->is_objArray_klass()) {
+      ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
+      Klass* elem = oak->element_klass();
+      if (MetaspaceShared::is_shared_static(elem)) {
+        // Only capture the array klass whose element_klass is in the static archive.
+        // During run time, setup (see DynamicArchive::setup_array_klasses()) is needed
+        // so that the element_klass can find its array klasses from the dynamic archive.
+        DynamicArchive::append_array_klass(oak);
+      } else {
+        // The element_klass and its array klasses are in the same archive.
+        assert(!MetaspaceShared::is_shared_static(oak),
+          "we should not gather klasses that are already in the static archive");
+      }
+    }
+  }
+  log_debug(cds)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
+}
+
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
   DynamicArchiveBuilder _builder;
 public:
@@ -346,12 +393,84 @@ public:
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {
-    LambdaFormInvokers::cleanup_regenerated_classes();
+    RegeneratedClasses::cleanup();
   }
 };
 
+// _array_klasses and _dynamic_archive_array_klasses only hold the array klasses
+// which have element klass in the static archive.
+GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
+Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
+
+void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
+  if (_array_klasses == nullptr) {
+    _array_klasses = new (mtClassShared) GrowableArray<ObjArrayKlass*>(50, mtClassShared);
+  }
+  _array_klasses->append(ak);
+}
+
+void DynamicArchive::dump_array_klasses() {
+  assert(CDSConfig::is_dumping_dynamic_archive(), "sanity");
+  if (_array_klasses != nullptr) {
+    ArchiveBuilder* builder = ArchiveBuilder::current();
+    int num_array_klasses = _array_klasses->length();
+    _dynamic_archive_array_klasses =
+        ArchiveBuilder::new_ro_array<ObjArrayKlass*>(num_array_klasses);
+    for (int i = 0; i < num_array_klasses; i++) {
+      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), _array_klasses->at(i));
+    }
+  }
+}
+
+void DynamicArchive::setup_array_klasses() {
+  if (_dynamic_archive_array_klasses != nullptr) {
+    for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
+      ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
+      assert(!oak->is_typeArray_klass(), "all type array classes must be in static archive");
+
+      Klass* elm = oak->element_klass();
+      assert(MetaspaceShared::is_shared_static((void*)elm), "must be");
+
+      if (elm->is_instance_klass()) {
+        assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
+        InstanceKlass::cast(elm)->set_array_klasses(oak);
+      } else {
+        assert(elm->is_array_klass(), "sanity");
+        assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
+        ArrayKlass::cast(elm)->set_higher_dimension(oak);
+      }
+    }
+    log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
+  }
+}
+
+void DynamicArchive::serialize_array_klasses(SerializeClosure* soc) {
+  soc->do_ptr(&_dynamic_archive_array_klasses);
+}
+
+void DynamicArchive::make_array_klasses_shareable() {
+  if (_array_klasses != nullptr) {
+    int num_array_klasses = _array_klasses->length();
+    for (int i = 0; i < num_array_klasses; i++) {
+      ObjArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
+      k->remove_unshareable_info();
+    }
+  }
+}
+
+void DynamicArchive::post_dump() {
+  if (_array_klasses != nullptr) {
+    delete _array_klasses;
+    _array_klasses = nullptr;
+  }
+}
+
+int DynamicArchive::num_array_klasses() {
+  return _array_klasses != nullptr ? _array_klasses->length() : 0;
+}
+
 void DynamicArchive::check_for_dynamic_dump() {
-  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive() && !UseSharedSpaces) {
     // This could happen if SharedArchiveFile has failed to load:
     // - -Xshare:off was specified
     // - SharedArchiveFile points to an non-existent file.
@@ -367,7 +486,7 @@ void DynamicArchive::check_for_dynamic_dump() {
       log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
     }
 #undef __THEMSG
-    DynamicDumpSharedSpaces = false;
+    CDSConfig::disable_dumping_dynamic_archive();
   }
 }
 
@@ -375,7 +494,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   ExceptionMark em(current);
   ResourceMark rm(current);
 
-  if (!DynamicDumpSharedSpaces || archive_name == nullptr) {
+  if (!CDSConfig::is_dumping_dynamic_archive() || archive_name == nullptr) {
     return;
   }
 
@@ -398,14 +517,14 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   log_error(cds)("%s: %s", ex->klass()->external_name(),
                  java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
   CLEAR_PENDING_EXCEPTION;
-  DynamicDumpSharedSpaces = false;  // Just for good measure
+  CDSConfig::disable_dumping_dynamic_archive();  // Just for good measure
 }
 
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
-  assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
+  assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");
   MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
   // copy shared path table to saved.
   VM_PopulateDynamicDumpSharedSpace op(archive_name);

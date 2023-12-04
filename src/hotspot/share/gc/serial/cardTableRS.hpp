@@ -29,7 +29,6 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
-class DirtyCardToOopClosure;
 class Generation;
 class Space;
 class TenuredSpace;
@@ -41,9 +40,27 @@ class CardTableRS : public CardTable {
   friend class VMStructs;
   // Below are private classes used in impl.
   friend class VerifyCTSpaceClosure;
-  friend class ClearNoncleanCardWrapper;
 
   void verify_space(Space* s, HeapWord* gen_start);
+
+  static bool is_dirty(const CardValue* const v) {
+    return !is_clean(v);
+  }
+
+  static bool is_clean(const CardValue* const v) {
+    return *v == clean_card_val();
+  }
+
+  static void clear_cards(CardValue* start, CardValue* end);
+
+  static CardValue* find_first_dirty_card(CardValue* start_card,
+                                          CardValue* end_card);
+
+  template<typename Func>
+  CardValue* find_first_clean_card(CardValue* start_card,
+                                   CardValue* end_card,
+                                   CardTableRS* ct,
+                                   Func& object_start);
 
 public:
   CardTableRS(MemRegion whole_heap);
@@ -55,10 +72,6 @@ public:
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = dirty_card_val();
-  }
-
-  bool is_aligned(HeapWord* addr) {
-    return is_card_aligned(addr);
   }
 
   void verify();
@@ -78,25 +91,6 @@ public:
                               CardTableRS* ct);
 
   bool is_in_young(const void* p) const override;
-};
-
-class ClearNoncleanCardWrapper: public MemRegionClosure {
-  DirtyCardToOopClosure* _dirty_card_closure;
-  CardTableRS* _ct;
-
-public:
-
-  typedef CardTable::CardValue CardValue;
-private:
-  // Clears the given card, return true if the corresponding card should be
-  // processed.
-  inline bool clear_card(CardValue* entry);
-  // check alignment of pointer
-  bool is_word_aligned(CardValue* entry);
-
-public:
-  ClearNoncleanCardWrapper(DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct);
-  void do_MemRegion(MemRegion mr) override;
 };
 
 #endif // SHARE_GC_SERIAL_CARDTABLERS_HPP

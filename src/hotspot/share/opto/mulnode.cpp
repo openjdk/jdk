@@ -888,7 +888,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Special case C1 == C2, which just masks off low bits
     if (add1Con > 0 && con == add1Con) {
       // Convert to "(x & -(1 << C2))"
-      return new AndINode(add1->in(1), phase->intcon(-(1 << con)));
+      return new AndINode(add1->in(1), phase->intcon(java_negate(jint(1 << con))));
     } else {
       // Wait until the right shift has been sharpened to the correct count
       if (add1Con > 0 && add1Con < BitsPerJavaInteger) {
@@ -898,7 +898,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
           if (con > add1Con) {
             // Creates "(x << (C2 - C1)) & -(1 << C2)"
             Node* lshift = phase->transform(new LShiftINode(add1->in(1), phase->intcon(con - add1Con)));
-            return new AndINode(lshift, phase->intcon(-(1 << con)));
+            return new AndINode(lshift, phase->intcon(java_negate(jint(1 << con))));
           } else {
             assert(con < add1Con, "must be (%d < %d)", con, add1Con);
             // Creates "(x >> (C1 - C2)) & -(1 << C2)"
@@ -911,7 +911,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
               rshift = phase->transform(new URShiftINode(add1->in(1), phase->intcon(add1Con - con)));
             }
 
-            return new AndINode(rshift, phase->intcon(-(1 << con)));
+            return new AndINode(rshift, phase->intcon(java_negate(jint(1 << con))));
           }
         } else {
           phase->record_for_igvn(this);
@@ -1064,7 +1064,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Special case C1 == C2, which just masks off low bits
     if (add1Con > 0 && con == add1Con) {
       // Convert to "(x & -(1 << C2))"
-      return new AndLNode(add1->in(1), phase->longcon(-(CONST64(1) << con)));
+      return new AndLNode(add1->in(1), phase->longcon(java_negate(jlong(CONST64(1) << con))));
     } else {
       // Wait until the right shift has been sharpened to the correct count
       if (add1Con > 0 && add1Con < BitsPerJavaLong) {
@@ -1074,7 +1074,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           if (con > add1Con) {
             // Creates "(x << (C2 - C1)) & -(1 << C2)"
             Node* lshift = phase->transform(new LShiftLNode(add1->in(1), phase->intcon(con - add1Con)));
-            return new AndLNode(lshift, phase->longcon(-(CONST64(1) << con)));
+            return new AndLNode(lshift, phase->longcon(java_negate(jlong(CONST64(1) << con))));
           } else {
             assert(con < add1Con, "must be (%d < %d)", con, add1Con);
             // Creates "(x >> (C1 - C2)) & -(1 << C2)"
@@ -1087,7 +1087,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               rshift = phase->transform(new URShiftLNode(add1->in(1), phase->intcon(add1Con - con)));
             }
 
-            return new AndLNode(rshift, phase->longcon(-(CONST64(1) << con)));
+            return new AndLNode(rshift, phase->longcon(java_negate(jlong(CONST64(1) << con))));
           }
         } else {
           phase->record_for_igvn(this);
@@ -1297,15 +1297,12 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeInt::INT;
 
-  if (t2 == TypeInt::INT)
-    return TypeInt::INT;
-
   const TypeInt *r1 = t1->is_int(); // Handy access
   const TypeInt *r2 = t2->is_int(); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
     // Shift by a multiple of 32 does nothing:
@@ -1327,11 +1324,22 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
     return ti;
   }
 
-  if( !r1->is_con() || !r2->is_con() )
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeInt::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeInt::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
     return TypeInt::INT;
+  }
 
   // Signed shift right
-  return TypeInt::make( r1->get_con() >> (r2->get_con()&31) );
+  return TypeInt::make(r1->get_con() >> (r2->get_con() & 31));
 }
 
 //=============================================================================
@@ -1359,15 +1367,12 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeLong::LONG;
 
-  if (t2 == TypeInt::INT)
-    return TypeLong::LONG;
-
   const TypeLong *r1 = t1->is_long(); // Handy access
   const TypeInt  *r2 = t2->is_int (); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 63, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= (2*BitsPerJavaInteger)-1;  // semantics of Java shifts
     // Shift by a multiple of 64 does nothing:
@@ -1389,7 +1394,21 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     return tl;
   }
 
-  return TypeLong::LONG;                // Give up
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeLong::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeLong::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
+    return TypeLong::LONG;
+  }
+
+  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
 }
 
 //=============================================================================
@@ -1709,6 +1728,20 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   }
 
   return TypeLong::LONG;                // Give up
+}
+
+//=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* FmaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
+  // This reduces the number of rules in the matcher, as we only need to check
+  // for negations on the second argument, and not the symmetric case where
+  // the first argument is negated.
+  if (in(1)->is_Neg() && !in(2)->is_Neg()) {
+    swap_edges(1, 2);
+    return this;
+  }
+  return nullptr;
 }
 
 //=============================================================================

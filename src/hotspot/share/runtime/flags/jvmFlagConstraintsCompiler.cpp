@@ -67,18 +67,6 @@ JVMFlag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose) {
-  if (value < 0 || value > 512) {
-    JVMFlag::printError(verbose,
-                        "AllocatePrefetchDistance (" INTX_FORMAT ") must be "
-                        "between 0 and %d\n",
-                        AllocatePrefetchDistance, 512);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
 JVMFlag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
   if (AllocatePrefetchStyle == 3) {
     if (value % wordSize != 0) {

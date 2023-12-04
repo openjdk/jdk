@@ -331,9 +331,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy = nullptr;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
@@ -463,7 +461,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 
   // Try to decode the instructions.

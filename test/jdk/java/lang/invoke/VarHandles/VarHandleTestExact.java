@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.access.foreign
  * @modules java.base/jdk.internal.foreign.layout
  *
@@ -171,7 +170,7 @@ public class VarHandleTestExact {
 
     @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
-        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(ValueLayouts.valueLayout(carrier, ByteOrder.nativeOrder()));
+        VarHandle vh = ValueLayouts.valueLayout(carrier, ByteOrder.nativeOrder()).varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(8);
             doTest(vh,

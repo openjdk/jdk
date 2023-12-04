@@ -1535,11 +1535,11 @@ void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaTh
   Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
   Symbol* name = cp->name_ref_at(index, Bytecodes::_invokehandle);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
-    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-    if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+    ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(index);
+    if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
       // process the adapter
-      Method* adapter = cp_cache_entry->f1_as_method();
-      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      Method* adapter = method_entry->method();
+      oop appendix = cp->cache()->appendix_if_resolved(method_entry);
       record_call_site_method(thread, adapter);
       // process the appendix
       {
@@ -1591,7 +1591,7 @@ void ciEnv::find_dynamic_call_sites() {
               process_invokedynamic(pool, index, thread);
             } else {
               assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
-              int cp_cache_index = bcs.get_index_u2_cpcache();
+              int cp_cache_index = bcs.get_index_u2();
               process_invokehandle(pool, cp_cache_index, thread);
             }
             break;
@@ -1710,6 +1710,7 @@ void ciEnv::dump_replay_data(int compile_id) {
         tty->print_cr("# Compiler replay data is saved as: %s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump replay data.");
+        close(fd);
       }
     }
   }
@@ -1734,6 +1735,7 @@ void ciEnv::dump_inline_data(int compile_id) {
         tty->print_cr("%s", buffer);
       } else {
         tty->print_cr("# Can't open file to dump inline data.");
+        close(fd);
       }
     }
   }

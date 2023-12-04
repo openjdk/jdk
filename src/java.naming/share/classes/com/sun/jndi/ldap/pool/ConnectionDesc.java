@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.jndi.ldap.pool;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Represents a description of PooledConnection in Connections.
  * Contains a PooledConnection, its state (busy, idle, expired), and idle time.
@@ -46,6 +48,8 @@ final class ConnectionDesc {
     private byte state = IDLE;  // initial state
     private long idleSince;
     private long useCount = 0;  // for stats & debugging only
+    // ConnectionDesc instance lock
+    private final ReentrantLock lock = new ReentrantLock();
 
     ConnectionDesc(PooledConnection conn) {
         this.conn = conn;
@@ -82,15 +86,20 @@ final class ConnectionDesc {
      * records the current time so that we will know how long it has been idle.
      * @return true if state change occurred.
      */
-    synchronized boolean release() {
-        d("release()");
-        if (state == BUSY) {
-            state = IDLE;
+    boolean release() {
+        lock.lock();
+        try {
+            d("release()");
+            if (state == BUSY) {
+                state = IDLE;
 
-            idleSince = System.currentTimeMillis();
-            return true;  // Connection released, ready for reuse
-        } else {
-            return false; // Connection wasn't busy to begin with
+                idleSince = System.currentTimeMillis();
+                return true;  // Connection released, ready for reuse
+            } else {
+                return false; // Connection wasn't busy to begin with
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -100,16 +109,21 @@ final class ConnectionDesc {
      *
      * @return ConnectionDesc's PooledConnection if it was idle; null otherwise.
      */
-    synchronized PooledConnection tryUse() {
-        d("tryUse()");
+    PooledConnection tryUse() {
+        lock.lock();
+        try {
+            d("tryUse()");
 
-        if (state == IDLE) {
-            state = BUSY;
-            ++useCount;
-            return conn;
+            if (state == IDLE) {
+                state = BUSY;
+                ++useCount;
+                return conn;
+            }
+
+            return null;
+        } finally {
+            lock.unlock();
         }
-
-        return null;
     }
 
     /**
@@ -121,18 +135,23 @@ final class ConnectionDesc {
      *
      * @return true if entry is idle and has expired; false otherwise.
      */
-    synchronized boolean expire(long threshold) {
-        if (state == IDLE && idleSince < threshold) {
+    boolean expire(long threshold) {
+        lock.lock();
+        try {
+            if (state == IDLE && idleSince < threshold) {
 
-            d("expire(): expired");
+                d("expire(): expired");
 
-            state = EXPIRED;
-            conn.closeConnection();  // Close real connection
+                state = EXPIRED;
+                conn.closeConnection();  // Close real connection
 
-            return true;  // Expiration successful
-        } else {
-            d("expire(): not expired");
-            return false; // Expiration did not occur
+                return true;  // Expiration successful
+            } else {
+                d("expire(): not expired");
+                return false; // Expiration did not occur
+            }
+        } finally {
+            lock.unlock();
         }
     }
 

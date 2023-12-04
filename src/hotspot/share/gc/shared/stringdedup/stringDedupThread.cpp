@@ -49,4 +49,3 @@ void StringDedupThread::thread_entry(JavaThread* thread, TRAPS) {
 bool StringDedupThread::is_hidden_from_external_view() const {
   return true;
 }
-

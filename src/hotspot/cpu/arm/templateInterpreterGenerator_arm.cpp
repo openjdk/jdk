@@ -34,9 +34,10 @@
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
@@ -373,12 +374,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
-
-    __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-    __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
     __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
   }
 
   __ convert_retval_to_tos(state);
@@ -531,7 +531,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const Register RmaxStack = R2;
 
   // monitor entry size
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved registers, thru expr stack bottom).
   // be sure to change this if you add/subtract anything to/from the overhead area
@@ -570,7 +570,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
 
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   assert ((entry_size % StackAlignmentInBytes) == 0, "should keep stack alignment");
 
   #ifdef ASSERT

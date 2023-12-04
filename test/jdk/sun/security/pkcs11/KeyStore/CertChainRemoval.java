@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8301154
+ * @bug 8301154 8309214
  * @summary test cert chain deletion logic w/ NSS PKCS11 KeyStore
  * @library /test/lib ..
  * @run testng/othervm CertChainRemoval
@@ -38,6 +38,8 @@ import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.cert.Certificate;
 
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -74,7 +76,11 @@ public class CertChainRemoval extends PKCS11Test {
 
     @Test
     public void test() throws Exception {
-        main(new CertChainRemoval());
+        try {
+            main(new CertChainRemoval());
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     private static void printKeyStore(String header, KeyStore ks)

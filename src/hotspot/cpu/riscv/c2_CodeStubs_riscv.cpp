@@ -60,10 +60,13 @@ int C2EntryBarrierStub::max_size() const {
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
+  RuntimeAddress target(StubRoutines::method_entry_barrier());
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, target, offset);
+    __ jalr(ra, t0, offset);
+  });
 
-  int32_t offset = 0;
-  __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  __ jalr(ra, t0, offset);
   __ j(continuation());
 
   // make guard value 4-byte aligned so that it can be accessed by atomic instructions on RISC-V

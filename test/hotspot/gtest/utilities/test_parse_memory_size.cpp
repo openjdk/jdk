@@ -66,7 +66,7 @@ static void do_test_valid(T expected_value, const char* pattern) {
   ASSERT_TRUE(rc);
   ASSERT_EQ(value, expected_value);
   ASSERT_EQ(end, ss.base() + strlen(pattern));
-  ASSERT_EQ(strcmp(end, ":-)"), 0);
+  EXPECT_STREQ(end, ":-)");
 
   rc = parse_integer(ss.base(), &value);
   ASSERT_FALSE(rc);

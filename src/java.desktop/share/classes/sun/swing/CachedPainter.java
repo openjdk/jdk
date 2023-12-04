@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,8 +314,9 @@ public abstract class CachedPainter {
 
         @Override
         public Image getResolutionVariant(double destWidth, double destHeight) {
-            int w = (int) Math.ceil(destWidth);
-            int h = (int) Math.ceil(destHeight);
+            int w = (int) Math.floor(destWidth + 0.5);
+            int h = (int) Math.floor(destHeight + 0.5);
+
             return getImage(PainterMultiResolutionCachedImage.class,
                     c, baseWidth, baseHeight, w, h, args);
         }

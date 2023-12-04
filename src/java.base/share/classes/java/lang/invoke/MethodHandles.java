@@ -26,8 +26,6 @@
 package java.lang.invoke;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.Utils;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -45,10 +43,6 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -175,8 +169,6 @@ public class MethodHandles {
      * Also, it cannot access
      * <a href="MethodHandles.Lookup.html#callsens">caller sensitive methods</a>.
      * @return a lookup object which is trusted minimally
-     *
-     * @revised 9
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
@@ -1437,8 +1429,6 @@ public class MethodHandles {
      * so that there can be a secure foundation for lookups.
      * Nearly all other methods in the JSR 292 API rely on lookup
      * objects to check access requests.
-     *
-     * @revised 9
      */
     public static final
     class Lookup {
@@ -1621,8 +1611,6 @@ public class MethodHandles {
          *  @return the lookup modes, which limit the kinds of access performed by this lookup object
          *  @see #in
          *  @see #dropLookupMode
-         *
-         *  @revised 9
          */
         public int lookupModes() {
             return allowedModes & ALL_MODES;
@@ -1703,7 +1691,6 @@ public class MethodHandles {
          * @throws IllegalArgumentException if {@code requestedLookupClass} is a primitive type or void or array class
          * @throws NullPointerException if the argument is null
          *
-         * @revised 9
          * @see #accessClass(Class)
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
@@ -2599,8 +2586,6 @@ public class MethodHandles {
          * because it requires a direct subclass relationship between
          * caller and callee.)
          * @see #in
-         *
-         * @revised 9
          */
         @Override
         public String toString() {
@@ -2844,10 +2829,16 @@ assertEquals("[x, y, z]", pb.command().toString());
          * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
+         * For a class or an interface, the name is the {@linkplain ClassLoader##binary-name binary name}.
+         * For an array class of {@code n} dimensions, the name begins with {@code n} occurrences
+         * of {@code '['} and followed by the element type as encoded in the
+         * {@linkplain Class##nameFormat table} specified in {@link Class#getName}.
+         * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
          * its class loader, and the {@linkplain #lookupModes() lookup modes}.
          *
-         * @param targetName the fully qualified name of the class to be looked up.
+         * @param targetName the {@linkplain ClassLoader##binary-name binary name} of the class
+         *                   or the string representing an array class
          * @return the requested class.
          * @throws SecurityException if a security manager is present and it
          *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
@@ -3528,6 +3519,33 @@ return mh1;
             return lookup.getDirectConstructorNoSecurityManager(ctor.getDeclaringClass(), ctor);
         }
 
+        /*
+         * Produces a method handle that is capable of creating instances of the given class
+         * and instantiated by the given constructor.  No security manager check.
+         *
+         * This method should only be used by ReflectionFactory::newConstructorForSerialization.
+         */
+        /* package-private */ MethodHandle serializableConstructor(Class<?> decl, Constructor<?> c) throws IllegalAccessException {
+            MemberName ctor = new MemberName(c);
+            assert(ctor.isConstructor() && constructorInSuperclass(decl, c));
+            checkAccess(REF_newInvokeSpecial, decl, ctor);
+            assert(!MethodHandleNatives.isCallerSensitive(ctor));  // maybeBindCaller not relevant here
+            return DirectMethodHandle.makeAllocator(decl, ctor).setVarargs(ctor);
+        }
+
+        private static boolean constructorInSuperclass(Class<?> decl, Constructor<?> ctor) {
+            if (decl == ctor.getDeclaringClass())
+                return true;
+
+            Class<?> cl = decl;
+            while ((cl = cl.getSuperclass()) != null) {
+                if (cl == ctor.getDeclaringClass()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /**
          * Produces a method handle giving read access to a reflected field.
          * The type of the method handle will have a return type of the field's
@@ -3843,7 +3861,7 @@ return mh1;
 
         /**
          * Perform steps 1 and 2b <a href="MethodHandles.Lookup.html#secmgr">access checks</a>
-         * for ensureInitialzed, findClass or accessClass.
+         * for ensureInitialized, findClass or accessClass.
          */
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
@@ -4201,7 +4219,7 @@ return mh1;
                 }
                 refc = lookupClass();
             }
-            return VarHandles.makeFieldHandle(getField, refc, getField.getFieldType(),
+            return VarHandles.makeFieldHandle(getField, refc,
                                               this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
         }
         /** Check access and get the requested constructor. */
@@ -7955,85 +7973,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
-     * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
-     * at a given byte offset, using the provided value layout.
-     *
-     * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
-     * the {@linkplain ValueLayout#byteSize() byte size},
-     * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
-     * associated with the returned var handle.
-     *
-     * <p>The list of coordinate types associated with the returned var handle is {@code (MemorySegment, long)},
-     * where the {@code long} coordinate type corresponds to byte offset into the given memory segment coordinate.
-     * Thus, the returned var handle accesses bytes at an offset in a given memory segment, composing bytes to or from
-     * a value of the var handle type. Moreover, the access operation will honor the endianness and the
-     * alignment constraints expressed in the provided layout.
-     *
-     * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
-     * {@snippet lang="java" :
-     *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(4),
-     *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
-     *     );
-     * }
-     * To access the member layout named {@code value}, we can construct a memory segment view var handle as follows:
-     * {@snippet lang="java" :
-     *     VarHandle handle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)); //(MemorySegment, long) -> int
-     *     handle = MethodHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
-     * }
-     *
-     * @apiNote The resulting var handle features certain <i>access mode restrictions</i>,
-     * which are common to all memory segment view var handles. A memory segment view var handle is associated
-     * with an access size {@code S} and an alignment constraint {@code B}
-     * (both expressed in bytes). We say that a memory access operation is <em>fully aligned</em> if it occurs
-     * at a memory address {@code A} which is compatible with both alignment constraints {@code S} and {@code B}.
-     * If access is fully aligned then following access modes are supported and are
-     * guaranteed to support atomic access:
-     * <ul>
-     * <li>read write access modes for all {@code T}, with the exception of
-     *     access modes {@code get} and {@code set} for {@code long} and
-     *     {@code double} on 32-bit platforms.
-     * <li>atomic update access modes for {@code int}, {@code long},
-     *     {@code float}, {@code double} or {@link MemorySegment}.
-     *     (Future major platform releases of the JDK may support additional
-     *     types for certain currently unsupported access modes.)
-     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
-     *     (Future major platform releases of the JDK may support additional
-     *     numeric types for certain currently unsupported access modes.)
-     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
-     *     (Future major platform releases of the JDK may support additional
-     *     numeric types for certain currently unsupported access modes.)
-     * </ul>
-     *
-     * If {@code T} is {@code float}, {@code double} or {@link MemorySegment} then atomic
-     * update access modes compare values using their bitwise representation
-     * (see {@link Float#floatToRawIntBits},
-     * {@link Double#doubleToRawLongBits} and {@link MemorySegment#address()}, respectively).
-     * <p>
-     * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
-     * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
-     * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
-     * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
-     * <p>
-     * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
-     * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
-     * <p>
-     * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
-     * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
-     *
-     * @param layout the value layout for which a memory access handle is to be obtained.
-     * @return the new memory segment view var handle.
-     * @throws NullPointerException if {@code layout} is {@code null}.
-     * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
-     * @since 19
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public static VarHandle memorySegmentViewVarHandle(ValueLayout layout) {
-        Objects.requireNonNull(layout);
-        return Utils.makeSegmentViewVarHandle(layout);
-    }
-
-    /**
      * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of filter functions.
      * <p>
      * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where
@@ -8063,9 +8002,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
      * or if it's determined that either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
         return VarHandles.filterValue(target, filterToTarget, filterFromTarget);
     }
@@ -8099,9 +8037,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
      * or if it's determined that any of the filters throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code filters} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
         return VarHandles.filterCoordinates(target, pos, filters);
     }
@@ -8131,9 +8068,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * other than {@code T1, T2 ... Tn }, where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos}
      * of the target var handle.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code values} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
         return VarHandles.insertCoordinates(target, pos, values);
     }
@@ -8174,9 +8110,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
      * the target var handle and in {@code newCoordinates} are not identical.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code newCoordinates} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
         return VarHandles.permuteCoordinates(target, newCoordinates, reorder);
     }
@@ -8188,19 +8123,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * filter function and the target var handle is then called on the modified (usually shortened)
      * coordinate list.
      * <p>
-     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
-     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
-     * any coordinate not passed to the filter.
-     * No coordinates are reordered, and the result returned from the filter
-     * replaces (in order) the whole subsequence of coordinates originally
-     * passed to the adapter.
-     * <p>
-     * The argument types (if any) of the filter
-     * replace zero or one coordinate types of the target var handle, at position {@code pos},
-     * in the resulting adapted var handle.
-     * The return type of the filter must be identical to the
-     * coordinate type of the target var handle at position {@code pos}, and that target var handle
-     * coordinate is supplied by the return value of the filter.
+     * If {@code R} is the return type of the filter, then:
+     * <ul>
+     * <li>if {@code R} <em>is not</em> {@code void}, the target var handle must have a coordinate of type {@code R} in
+     * position {@code pos}. The parameter types of the filter will replace the coordinate type at position {@code pos}
+     * of the target var handle. When the returned var handle is invoked, it will be as if the filter is invoked first,
+     * and its result is passed in place of the coordinate at position {@code pos} in a downstream invocation of the
+     * target var handle.</li>
+     * <li> if {@code R} <em>is</em> {@code void}, the parameter types (if any) of the filter will be inserted in the
+     * coordinate type list of the target var handle at position {@code pos}. In this case, when the returned var handle
+     * is invoked, the filter essentially acts as a side effect, consuming some of the coordinate values, before a
+     * downstream invocation of the target var handle.</li>
+     * </ul>
      * <p>
      * If any of the filters throws a checked exception when invoked, the resulting var handle will
      * throw an {@link IllegalStateException}.
@@ -8209,19 +8143,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * atomic access guarantees as those featured by the target var handle.
      *
      * @param target the var handle to invoke after the coordinates have been filtered
-     * @param pos the position of the coordinate to be filtered
+     * @param pos the position in the coordinate list of the target var handle where the filter is to be inserted
      * @param filter the filter method handle
      * @return an adapter var handle which filters the incoming coordinate values,
      * before calling the target var handle
      * @throws IllegalArgumentException if the return type of {@code filter}
-     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * is not void, and it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
      * or if it's determined that {@code filter} throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
         return VarHandles.collectCoordinates(target, pos, filter);
     }
@@ -8245,9 +8178,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *         before calling the target var handle
      * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code valueTypes} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
         return VarHandles.dropCoordinates(target, pos, valueTypes);
     }

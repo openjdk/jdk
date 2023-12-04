@@ -38,6 +38,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/virtualizationSupport.hpp"
 
@@ -815,7 +816,6 @@ void VM_Version::get_processor_features() {
     _L1_data_cache_line_size = L1_line_size();
   }
 
-  _supports_cx8 = supports_cmpxchg8();
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -855,6 +855,12 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
+
+  // Check if processor has Intel Ecore
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
+    (_model == 0x97 || _model == 0xAC || _model == 0xAF)) {
+    FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
+  }
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
@@ -1805,7 +1811,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Allocation prefetch settings
-  intx cache_line_size = prefetch_data_size();
+  int cache_line_size = checked_cast<int>(prefetch_data_size());
   if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
       (cache_line_size > AllocatePrefetchStepSize)) {
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
@@ -1913,9 +1919,9 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        log->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        log->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
 
@@ -3169,7 +3175,7 @@ bool VM_Version::is_intel_tsc_synched_at_init() {
   return false;
 }
 
-intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
+int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // Hardware prefetching (distance/size in bytes):
   // Pentium 3 -  64 /  32
   // Pentium 4 - 256 / 128
@@ -3229,4 +3235,3 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
-

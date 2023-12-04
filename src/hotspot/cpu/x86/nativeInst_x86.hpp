@@ -171,7 +171,7 @@ class NativeCall: public NativeInstruction {
     intptr_t disp = dest - return_address();
     guarantee(disp == (intptr_t)(jint)disp, "must be 32-bit offset");
 #endif // AMD64
-    set_int_at(displacement_offset, dest - return_address());
+    set_int_at(displacement_offset, (int)(dest - return_address()));
   }
   // Returns whether the 4-byte displacement operand is 4-byte aligned.
   bool  is_displacement_aligned();

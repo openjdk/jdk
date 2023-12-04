@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>                /* for cos(), sin(), etc */
+
 #include "jni_util.h"
 #include "awt.h"
 #include "sun_java2d_windows_GDIRenderer.h"
@@ -34,8 +36,6 @@
 #include "awt_Brush.h"
 
 #include "GraphicsPrimitiveMgr.h"
-
-#include <math.h>                /* for cos(), sin(), etc */
 
 #define MAX_CLAMP_BND (1<<26)
 #define MIN_CLAMP_BND (-MAX_CLAMP_BND)

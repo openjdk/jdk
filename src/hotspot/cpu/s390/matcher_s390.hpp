@@ -35,7 +35,7 @@
   // Whether this platform implements the scalable vector feature
   static const bool implements_scalable_vector = false;
 
-  static constexpr const bool supports_scalable_vector() {
+  static constexpr bool supports_scalable_vector() {
     return false;
   }
 
@@ -64,10 +64,10 @@
   }
 
   // Suppress CMOVL. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-  static const int long_cmove_cost() { return ConditionalMoveLimit; }
+  static int long_cmove_cost() { return ConditionalMoveLimit; }
 
   // Suppress CMOVF. Conditional move available on z/Architecture only from z196 onwards. Not exploited yet.
-  static const int float_cmove_cost() { return ConditionalMoveLimit; }
+  static int float_cmove_cost() { return ConditionalMoveLimit; }
 
   // Set this as clone_shift_expressions.
   static bool narrow_oop_use_complex_address() {

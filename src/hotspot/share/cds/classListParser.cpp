@@ -73,6 +73,7 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode) : _id2k
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
   _line_no = 0;
+  _token = _line;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
   _indy_items = new (mtClass) GrowableArray<const char*>(9, mtClass);
   _parse_mode = parse_mode;
@@ -413,7 +414,7 @@ void ClassListParser::print_actual_interfaces(InstanceKlass* ik) {
 void ClassListParser::error(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  int error_index = _token - _line;
+  int error_index = pointer_delta_as_int(_token, _line);
   if (error_index >= _line_len) {
     error_index = _line_len - 1;
   }

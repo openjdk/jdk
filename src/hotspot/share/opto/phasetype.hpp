@@ -25,12 +25,17 @@
 #ifndef SHARE_OPTO_PHASETYPE_HPP
 #define SHARE_OPTO_PHASETYPE_HPP
 
+#include "utilities/bitMap.inline.hpp"
+
 #define COMPILER_PHASES(flags) \
   flags(BEFORE_STRINGOPTS,            "Before StringOpts") \
   flags(AFTER_STRINGOPTS,             "After StringOpts") \
   flags(BEFORE_REMOVEUSELESS,         "Before RemoveUseless") \
   flags(AFTER_PARSING,                "After Parsing") \
+  flags(BEFORE_ITER_GVN,              "Before Iter GVN") \
   flags(ITER_GVN1,                    "Iter GVN 1") \
+  flags(AFTER_ITER_GVN_STEP,          "After Iter GVN Step") \
+  flags(AFTER_ITER_GVN,               "After Iter GVN") \
   flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
   flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
   flags(INCREMENTAL_INLINE,           "Incremental Inline") \
@@ -97,9 +102,6 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
-  static uint64_t to_bitmask(CompilerPhaseType cpt) {
-    return (UINT64_C(1) << cpt);
-  }
 };
 
 static CompilerPhaseType find_phase(const char* str) {
@@ -154,11 +156,16 @@ class PhaseNameIter {
 
 class PhaseNameValidator {
  private:
+  CHeapBitMap _phase_name_set;
   bool _valid;
   char* _bad;
 
  public:
-  PhaseNameValidator(ccstrlist option, uint64_t& mask) : _valid(true), _bad(nullptr) {
+  PhaseNameValidator(ccstrlist option) :
+    _phase_name_set(PHASE_NUM_TYPES, mtCompiler),
+    _valid(true),
+    _bad(nullptr)
+  {
     for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
@@ -169,10 +176,10 @@ class PhaseNameValidator {
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
-        mask = ~(UINT64_C(0));
+        _phase_name_set.set_range(0, PHASE_NUM_TYPES);
       } else {
-        assert(cpt < 64, "out of bounds");
-        mask |= CompilerPhaseTypeHelper::to_bitmask(cpt);
+        assert(cpt < PHASE_NUM_TYPES, "out of bounds");
+        _phase_name_set.set_bit(cpt);
       }
     }
   }
@@ -181,6 +188,11 @@ class PhaseNameValidator {
     if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
+  }
+
+  const BitMap& phase_name_set() const {
+    assert(is_valid(), "Use of invalid phase name set");
+    return _phase_name_set;
   }
 
   bool is_valid() const {

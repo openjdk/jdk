@@ -27,13 +27,13 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -222,7 +222,7 @@ static bool is_directory_secure(const char* path) {
     else {
       // unexpected error, declare the path insecure
       if (PrintMiscellaneous && Verbose) {
-        warning("could not get attributes for file %s: ",
+        warning("could not get attributes for file %s: "
                 " lasterror = %d\n", path, lasterror);
       }
       return false;

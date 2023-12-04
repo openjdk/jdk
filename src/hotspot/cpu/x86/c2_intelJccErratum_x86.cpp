@@ -146,5 +146,6 @@ IntelJccErratumAlignment::~IntelJccErratumAlignment() {
     return;
   }
 
+  assert(pc() - _start_pc > 0, "No instruction aligned");
   assert(!IntelJccErratum::is_crossing_or_ending_at_32_byte_boundary(_start_pc, pc()), "Invalid jcc_size estimate");
 }

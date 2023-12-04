@@ -46,7 +46,6 @@ RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
   nullptr};
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -96,6 +95,17 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseZihintpause)) {
       FLAG_SET_DEFAULT(UseZihintpause, true);
+    }
+  }
+
+  // Enable vendor specific features
+
+  if (mvendorid.enabled()) {
+    // Rivos
+    if (mvendorid.value() == RIVOS) {
+      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
+        FLAG_SET_DEFAULT(UseConservativeFence, false);
+      }
     }
   }
 
@@ -171,19 +181,25 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("VectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (UseRVV) {
-    if (!ext_V.enabled()) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVC && !ext_C.enabled()) {
@@ -203,6 +219,21 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
     }
   }
+
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() == MISALIGNED_FAST);
+  }
+
+#ifdef __riscv_ztso
+  // Hotspot is compiled with TSO support, it will only run on hardware which
+  // supports Ztso
+  if (FLAG_IS_DEFAULT(UseZtso)) {
+    FLAG_SET_DEFAULT(UseZtso, true);
+  }
+#endif
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -224,9 +255,34 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
+  if (UseRVV) {
+    if (!ext_V.enabled()) {
+      warning("RVV is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseRVV, false);
+    } else {
+      // read vector length from vector CSR vlenb
+      _initial_vector_length = cpu_vector_length();
+    }
+  }
+
 #ifdef COMPILER2
   c2_initialize();
 #endif // COMPILER2
+
+  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
+    }
+  } else if (UseChaCha20Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
 }
 
 #ifdef COMPILER2
@@ -240,31 +296,22 @@ void VM_Version::c2_initialize() {
   }
 
   if (!UseRVV) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
-  }
-
-  if (!UseRVV && MaxVectorSize) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  }
-
-  if (!UseRVV) {
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
-  }
-
-  if (UseRVV) {
+  } else {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
+    } else if (!is_power_of_2(MaxVectorSize)) {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
+    } else if (MaxVectorSize > _initial_vector_length) {
+      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
+              _initial_vector_length, _initial_vector_length);
+      MaxVectorSize = _initial_vector_length;
+    }
+    if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-      }
-      MaxVectorSize = _initial_vector_length;
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
   }
 
@@ -275,7 +322,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
   } else {
     // Limit AllocatePrefetchDistance so that it does not exceed the
-    // constraint in AllocatePrefetchDistanceConstraintFunc.
+    // static constraint of 512 defined in runtime/globals.hpp.
     if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
       FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
     }

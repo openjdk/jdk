@@ -27,6 +27,7 @@
 
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/compressedOops.hpp"
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
@@ -319,50 +320,50 @@ public:
   RegMask *_calling_convention_mask; // Array of RegMasks per argument
 
   // Does matcher have a match rule for this ideal node?
-  static const bool has_match_rule(int opcode);
+  static bool has_match_rule(int opcode);
   static const bool _hasMatchRule[_last_opcode];
 
   // Does matcher have a match rule for this ideal node and is the
   // predicate (if there is one) true?
   // NOTE: If this function is used more commonly in the future, ADLC
   // should generate this one.
-  static const bool match_rule_supported(int opcode);
+  static bool match_rule_supported(int opcode);
 
   // Identify extra cases that we might want to vectorize automatically
   // And exclude cases which are not profitable to auto-vectorize.
-  static const bool match_rule_supported_superword(int opcode, int vlen, BasicType bt);
+  static bool match_rule_supported_superword(int opcode, int vlen, BasicType bt);
 
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
-  static const bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
+  static bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
-  static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
+  static bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
-  static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
+  static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 
   // Vector width in bytes
-  static const int vector_width_in_bytes(BasicType bt);
+  static int vector_width_in_bytes(BasicType bt);
 
   // Limits on vector size (number of elements).
-  static const int max_vector_size(const BasicType bt);
-  static const int min_vector_size(const BasicType bt);
-  static const bool vector_size_supported(const BasicType bt, int size) {
+  static int max_vector_size(const BasicType bt);
+  static int min_vector_size(const BasicType bt);
+  static bool vector_size_supported(const BasicType bt, int size) {
     return (Matcher::max_vector_size(bt) >= size &&
             Matcher::min_vector_size(bt) <= size);
   }
   // Limits on max vector size (number of elements) for auto-vectorization.
-  static const int superword_max_vector_size(const BasicType bt);
+  static int superword_max_vector_size(const BasicType bt);
 
   // Actual max scalable vector register length.
-  static const int scalable_vector_reg_size(const BasicType bt);
+  static int scalable_vector_reg_size(const BasicType bt);
   // Actual max scalable predicate register length.
-  static const int scalable_predicate_reg_slots();
+  static int scalable_predicate_reg_slots();
 
   // Vector ideal reg
-  static const uint vector_ideal_reg(int len);
+  static uint vector_ideal_reg(int len);
 
   // Vector length
   static uint vector_length(const Node* n);
@@ -375,6 +376,9 @@ public:
   // Vector element basic type
   static BasicType vector_element_basic_type(const Node* n);
   static BasicType vector_element_basic_type(const MachNode* use, const MachOper* opnd);
+
+  // Vector element basic type is non double word integral type.
+  static bool is_non_long_integral_vector(const Node* n);
 
   // Check if given booltest condition is unsigned or not
   static inline bool is_unsigned_booltest_pred(int bt) {
@@ -449,7 +453,7 @@ public:
   static RegMask c_frame_ptr_mask;
 
   // Java-Native vector calling convention
-  static const bool supports_vector_calling_convention();
+  static bool supports_vector_calling_convention();
   static OptoRegPair vector_return_value(uint ideal_reg);
 
   // Is this branch offset small enough to be addressed by a short branch?

@@ -560,6 +560,9 @@ public:
     return _monitoring_support;
   }
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   void resize_heap_if_necessary();
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
@@ -613,7 +616,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index());
+    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
   }
   inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
@@ -684,6 +687,8 @@ public:
   // at the same time.
   void free_region(HeapRegion* hr, FreeRegionList* free_list);
 
+  // Add the given region to the retained regions collection set candidates.
+  void retain_region(HeapRegion* hr);
   // It dirties the cards that cover the block so that the post
   // write barrier never queues anything when updating objects on this
   // block. It is assumed (and in fact we assert) that the block
@@ -1028,7 +1033,7 @@ public:
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Assumes that the reference points into the heap.
-  inline bool is_in_cset(const HeapRegion *hr) const;
+  inline bool is_in_cset(const HeapRegion* hr) const;
   inline bool is_in_cset(oop obj) const;
   inline bool is_in_cset(HeapWord* addr) const;
 
@@ -1289,9 +1294,6 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
-
-  void pin_object(JavaThread* thread, oop obj) override;
-  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

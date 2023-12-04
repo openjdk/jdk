@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class ReportOnImportedModuleAnnotation {
         fileManager.setLocationFromPaths(StandardLocation.CLASS_OUTPUT, List.of(testOutputPath));
 
         final StringWriter outputWriter = new StringWriter();
-        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod"), null, null).call();
+        compiler.getTask(outputWriter, fileManager, null, List.of("-XDrawDiagnostics", "--module", "mod", "-proc:full"), null, null).call();
 
         String actualOutput = outputWriter.toString();
         String expectedOutput = Files.readString(testBasePath.resolve("ReportOnImportedModuleAnnotation.out"));
