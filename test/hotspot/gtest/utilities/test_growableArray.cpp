@@ -146,6 +146,14 @@ public:
 // ------------ ModifyClosures ------------
 
 template<typename E>
+class ModifyClosureEmpty : public ModifyClosure<E> {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a) override final {
+    // empty
+  }
+};
+
+template<typename E>
 class ModifyClosureAppend : public ModifyClosure<E> {
 public:
   virtual void do_modify(AllocatorClosure<E>* a) override final {
@@ -712,25 +720,65 @@ protected:
     with_no_cheap_array(Max0, Append1, test);
   }
 
-  static void xxx_test_append() {
-    AllocatorClosureStackResourceArena<int> allocator_s_r;
+  template<typename E>
+  static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
+    AllocatorClosureStackResourceArena<E> allocator_s_r;
+    allocator_s_r.dispatch(modify, test);
 
-    ModifyClosureAppend<int> modify_append;
-
-    TestClosureAppend<int> test_append;
-    TestClosureClear<int> test_clear;
-    TestClosureIterator<int> test_iterator;
-    TestClosureCapacity<int> test_capacity;
-
-    allocator_s_r.dispatch(&modify_append, &test_append);
-    allocator_s_r.dispatch(&modify_append, &test_clear);
-    allocator_s_r.dispatch(&modify_append, &test_iterator);
-    allocator_s_r.dispatch(&modify_append, &test_capacity);
+    // TODO more allocators
   }
+
+  template<typename E>
+  static void run_test_modify(TestClosure<E>* test) {
+    ModifyClosureEmpty<int> modify_empty;
+    run_test_modify_allocate<E>(test, &modify_empty);
+
+    ModifyClosureAppend<E> modify_append;
+    run_test_modify_allocate<E>(test, &modify_append);
+
+    // TODO more modify
+  }
+
+  template<typename E>
+  static void run_test_append() {
+    TestClosureAppend<E> test;
+    run_test_modify<E>(&test);
+  }
+
+  template<typename E>
+  static void run_test_clear() {
+    TestClosureClear<E> test;
+    run_test_modify<E>(&test);
+  }
+
+  template<typename E>
+  static void run_test_iterator() {
+    TestClosureIterator<E> test;
+    run_test_modify<E>(&test);
+  }
+
+  template<typename E>
+  static void run_test_capacity() {
+    TestClosureCapacity<E> test;
+    run_test_modify<E>(&test);
+  }
+  // TODO more tests
 };
 
-TEST_VM_F(GrowableArrayTest, xxx_append) {
-  xxx_test_append();
+TEST_VM_F(GrowableArrayTest, xxx_append_int) {
+  run_test_append<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_clear_int) {
+  run_test_clear<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_iterator_int) {
+  run_test_iterator<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_capacity_int) {
+  run_test_capacity<int>();
 }
 
 TEST_VM_F(GrowableArrayTest, append) {
