@@ -3907,10 +3907,10 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
 }
 
 void StubGenerator::create_control_words() {
-  // Round to nearest, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_std = 0x1F80;
-  // Round to zero, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_rz = 0x7F80;
+  // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_rz = EnableX86ECoreOpts ? 0x7FBF : 0x7F80;
 }
 
 // Initialization
@@ -4052,7 +4052,7 @@ void StubGenerator::generate_final_stubs() {
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {
-    StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
   }
 
   if (UseVectorizedMismatchIntrinsic) {

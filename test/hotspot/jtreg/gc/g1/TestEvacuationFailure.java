@@ -25,7 +25,7 @@ package gc.g1;
 
 /*
  * @test TestEvacuationFailure
- * @summary Ensure the output for a minor GC with G1 that has evacuation failure contains the correct strings.
+ * @summary Ensure the output for a minor GC with G1 that has allocation failure contains the correct strings.
  * @requires vm.gc.G1
  * @requires vm.debug
  * @library /test/lib
@@ -55,7 +55,7 @@ public class TestEvacuationFailure {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
-        output.shouldContain("(Evacuation Failure)");
+        output.shouldContain("(Evacuation Failure:");
         output.shouldHaveExitValue(0);
     }
 

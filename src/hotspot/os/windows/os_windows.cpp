@@ -80,6 +80,7 @@
 #include "windbghelp.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 #ifdef _DEBUG
@@ -1246,33 +1247,22 @@ void  os::dll_unload(void *lib) {
     snprintf(name, MAX_PATH, "<not available>");
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryUnload event;
-  event.set_name(name);
-#endif
+  JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
 
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_result(true);)
   } else {
     const DWORD errcode = ::GetLastError();
     char buf[500];
     size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
-#if INCLUDE_JFR
-    event.set_success(false);
     if (tl == 0) {
       os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
-    event.set_errorMessage(buf);
-    event.commit();
-#endif
+    JFR_ONLY(unload_event.set_error_msg(buf);)
   }
 }
 
@@ -1408,6 +1398,9 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return _getcwd(buf, n);
 }
 
+void os::prepare_native_symbols() {
+}
+
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
 #ifdef _WIN64
@@ -1541,21 +1534,14 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(name);
-#endif
-  void * result = LoadLibrary(name);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
+  result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1569,11 +1555,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(ebuf);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(ebuf);)
     return nullptr;
   }
 
@@ -1584,11 +1566,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("open on dll file did not work");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("open on dll file did not work");)
     return nullptr;
   }
 
@@ -1615,11 +1593,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("failed to get lib architecture");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("failed to get lib architecture");)
     return nullptr;
   }
 
@@ -1664,11 +1638,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage("lib architecture matches, but other error occured");
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg("lib architecture matches, but other error occured");)
     return nullptr;
   }
 
@@ -1682,12 +1652,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
-#if INCLUDE_JFR
-  event.set_success(false);
-  event.set_errorMessage(ebuf);
-  event.commit();
-#endif
-
+  JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
 }
 
@@ -3366,9 +3331,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
-         "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3861,11 +3827,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
 }
 
 char* os::non_memory_address_word() {

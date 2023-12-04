@@ -68,7 +68,6 @@ static SpinWait get_spin_wait_desc() {
 }
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -205,8 +204,9 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse N1, N2 and V1
-  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) || model_is(0xd40))) {
+  // Neoverse N1, N2, V1, V2
+  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
+                          model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }

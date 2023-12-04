@@ -1196,6 +1196,18 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    private boolean noClassDefIn(JCTree tree) {
+        var scanner = new TreeScanner() {
+            boolean noClassDef = true;
+            @Override
+            public void visitClassDef(JCClassDecl tree) {
+                noClassDef = false;
+            }
+        };
+        scanner.scan(tree);
+        return scanner.noClassDef;
+    }
+
     private void addPrunedInfo(JCTree tree) {
         List<JCTree> infoList = prunedTree.get(currentClass);
         infoList = (infoList == null) ? List.of(tree) : infoList.prepend(tree);
@@ -1847,7 +1859,7 @@ public class Lower extends TreeTranslator {
                 ot = ots.head;
             } while (ot.owner != otc);
             if (otc.owner.kind != PCK && !otc.hasOuterInstance()) {
-                chk.earlyRefError(pos, c);
+                log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
                 Assert.error(); // should have been caught in Attr
                 return makeNull();
             }
@@ -1887,7 +1899,6 @@ public class Lower extends TreeTranslator {
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
             log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
-            Assert.error();
             return makeNull();
         }
         VarSymbol ot = ots.head;
@@ -1899,7 +1910,6 @@ public class Lower extends TreeTranslator {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
                     log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
-                    Assert.error();
                     return tree;
                 }
                 ot = ots.head;
@@ -2339,17 +2349,19 @@ public class Lower extends TreeTranslator {
             tree.defs = tree.defs.prepend(l.head);
             enterSynthetic(tree.pos(), l.head.sym, currentClass.members());
         }
-        // If this$n was accessed, add the field definition and
-        // update initial constructors to initialize it
+        // If this$n was accessed, add the field definition and prepend
+        // initializer code to any super() invocation to initialize it
         if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
             tree.defs = tree.defs.prepend(otdef);
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
 
-           for (JCTree def : tree.defs) {
-                if (TreeInfo.isInitialConstructor(def)) {
-                  JCMethodDecl mdef = (JCMethodDecl) def;
-                  mdef.body.stats = mdef.body.stats.prepend(
-                      initOuterThis(mdef.body.pos, mdef.params.head.sym));
+            for (JCTree def : tree.defs) {
+                if (TreeInfo.isConstructor(def)) {
+                    JCMethodDecl mdef = (JCMethodDecl)def;
+                    if (TreeInfo.hasConstructorCall(mdef, names._super)) {
+                        List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                        TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
+                    }
                 }
             }
         }
@@ -2814,19 +2826,18 @@ public class Lower extends TreeTranslator {
                 tree.params = tree.params.prepend(otdef);
             }
 
-            // If this is an initial constructor, i.e., it does not start with
-            // this(...), insert initializers for this$n and proxies
-            // before (pre-1.4, after) the call to superclass constructor.
-            JCStatement selfCall = translate(tree.body.stats.head);
+            // Determine whether this constructor has a super() invocation
+            boolean invokesSuper = TreeInfo.hasConstructorCall(tree, names._super);
 
-            List<JCStatement> added = List.nil();
+            // Create initializers for this$n and proxies
+            ListBuffer<JCStatement> added = new ListBuffer<>();
             if (fvs.nonEmpty()) {
                 List<Type> addedargtypes = List.nil();
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
                     m.capturedLocals =
                         m.capturedLocals.prepend((VarSymbol)
                                                 (proxies.get(l.head)));
-                    if (TreeInfo.isInitialConstructor(tree)) {
+                    if (invokesSuper) {
                         added = added.prepend(
                           initField(tree.body.pos, proxies.get(l.head), prevProxies.get(l.head)));
                     }
@@ -2840,13 +2851,18 @@ public class Lower extends TreeTranslator {
                     syms.methodClass);
             }
 
+            // Recursively translate existing local statements
+            tree.body.stats = translate(tree.body.stats);
+
+            // Prepend initializers in front of super() call
+            if (added.nonEmpty()) {
+                List<JCStatement> initializers = added.toList();
+                TreeInfo.mapSuperCalls(tree.body, supercall -> make.Block(0, initializers.append(supercall)));
+            }
+
             // pop local variables from proxy stack
             proxies = prevProxies;
 
-            // recursively translate following local statements and
-            // combine with this- or super-call
-            List<JCStatement> stats = translate(tree.body.stats.tail);
-            tree.body.stats = stats.prepend(selfCall).prependList(added);
             outerThisStack = prevOuterThisStack;
         } else {
             Map<Symbol, Symbol> prevLambdaTranslationMap =
@@ -3030,10 +3046,10 @@ public class Lower extends TreeTranslator {
     @Override
     public void visitConditional(JCConditional tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (isTrue(cond)) {
+        if (isTrue(cond) && noClassDefIn(tree.falsepart)) {
             result = convert(translate(tree.truepart, tree.type), tree.type);
             addPrunedInfo(cond);
-        } else if (isFalse(cond)) {
+        } else if (isFalse(cond) && noClassDefIn(tree.truepart)) {
             result = convert(translate(tree.falsepart, tree.type), tree.type);
             addPrunedInfo(cond);
         } else {
@@ -3057,10 +3073,10 @@ public class Lower extends TreeTranslator {
      */
     public void visitIf(JCIf tree) {
         JCTree cond = tree.cond = translate(tree.cond, syms.booleanType);
-        if (isTrue(cond)) {
+        if (isTrue(cond) && noClassDefIn(tree.elsepart)) {
             result = translate(tree.thenpart);
             addPrunedInfo(cond);
-        } else if (isFalse(cond)) {
+        } else if (isFalse(cond) && noClassDefIn(tree.thenpart)) {
             if (tree.elsepart != null) {
                 result = translate(tree.elsepart);
             } else {
