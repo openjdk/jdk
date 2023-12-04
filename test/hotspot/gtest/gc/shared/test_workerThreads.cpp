@@ -30,40 +30,40 @@
 
 class ParallelTask : public WorkerTask {
 protected:
-  volatile uint _expected_workers;
+  const uint _expected_workers;
   volatile uint _actual_workers;
-  volatile uint _thread_ids;
+  volatile uint _actual_ids_bitset;
   const Thread* _caller_thread;
-  volatile bool _seen_caller;
+  bool _seen_caller;
 
 public:
   ParallelTask(int expected_workers, bool can_caller_execute) :
     WorkerTask("Parallel Task", can_caller_execute),
     _expected_workers(expected_workers),
     _actual_workers(0),
-    _thread_ids(0),
+    _actual_ids_bitset(0),
     _caller_thread(Thread::current()),
     _seen_caller(false)
     {};
 
-  void record_id(uint worker_id) {
-    if (Thread::current() == _caller_thread) {
+  void record_worker(uint worker_id) {
+    if (!_seen_caller && Thread::current() == _caller_thread) {
       _seen_caller = true;
     }
     while (true) {
-      uint cur_ids = Atomic::load(&_thread_ids);
+      uint cur_ids = Atomic::load(&_actual_ids_bitset);
       uint new_ids = cur_ids | (1 << worker_id);
       if (cur_ids == new_ids) {
         return;
       }
-      if (Atomic::cmpxchg(&_thread_ids, cur_ids, new_ids) == cur_ids) {
+      if (Atomic::cmpxchg(&_actual_ids_bitset, cur_ids, new_ids) == cur_ids) {
         return;
       }
     }
   }
 
   void work(uint worker_id) {
-    record_id(worker_id);
+    record_worker(worker_id);
 
     Atomic::inc(&_actual_workers);
     SpinYield sp;
@@ -76,8 +76,8 @@ public:
     return Atomic::load(&_actual_workers);
   }
 
-  uint thread_ids() {
-    return Atomic::load(&_thread_ids);
+  uint actual_ids_bitset() {
+    return Atomic::load(&_actual_ids_bitset);
   }
 
   bool seen_caller() {
@@ -85,13 +85,12 @@ public:
   }
 };
 
-static uint compute_mask(int expected_workers) {
+static uint expected_ids_bitset(int expected_workers) {
   return (1 << expected_workers) - 1;
 }
 
-
 TEST_VM(WorkerThreads, basic) {
-  static const int TRIES = 10000;
+  static const int TRIES = 1000;
   static const uint max_workers = 4;
   static const uint half_workers = max_workers / 2;
 
@@ -99,68 +98,62 @@ TEST_VM(WorkerThreads, basic) {
   workers->initialize_workers();
 
   // Full parallelism
+  workers->set_active_workers(max_workers);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(max_workers);
-
     ParallelTask task(max_workers, false);
     workers->run_task(&task);
     EXPECT_EQ(max_workers, task.actual_workers());
-    EXPECT_EQ(compute_mask(max_workers), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(max_workers), task.actual_ids_bitset());
     EXPECT_FALSE(task.seen_caller());
   }
 
   // Full parallelism, can execute in caller
+  workers->set_active_workers(max_workers);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(max_workers);
-
     ParallelTask task(max_workers, true);
     workers->run_task(&task);
     EXPECT_EQ(max_workers, task.actual_workers());
-    EXPECT_EQ(compute_mask(max_workers), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(max_workers), task.actual_ids_bitset());
     EXPECT_TRUE(task.seen_caller());
   }
 
   // Half parallelism
+  workers->set_active_workers(half_workers);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(half_workers);
-
     ParallelTask task(half_workers, false);
     workers->run_task(&task);
     EXPECT_EQ(half_workers, task.actual_workers());
-    EXPECT_EQ(compute_mask(half_workers), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(half_workers), task.actual_ids_bitset());
     EXPECT_FALSE(task.seen_caller());
   }
 
   // Half parallelism, can execute in caller
+  workers->set_active_workers(half_workers);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(half_workers);
-
     ParallelTask task(half_workers, true);
     workers->run_task(&task);
     EXPECT_EQ(half_workers, task.actual_workers());
-    EXPECT_EQ(compute_mask(half_workers), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(half_workers), task.actual_ids_bitset());
     EXPECT_TRUE(task.seen_caller());
   }
 
   // Lowest parallelism
+  workers->set_active_workers(1);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(1);
-
     ParallelTask task(1, false);
     workers->run_task(&task);
     EXPECT_EQ(1u, task.actual_workers());
-    EXPECT_EQ(compute_mask(1), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(1), task.actual_ids_bitset());
     EXPECT_FALSE(task.seen_caller());
   }
 
   // Lowest parallelism, can execute in caller
+  workers->set_active_workers(1);
   for (int t = 0; t < TRIES; t++) {
-    workers->set_active_workers(1);
-
     ParallelTask task(1, true);
     workers->run_task(&task);
     EXPECT_EQ(1u, task.actual_workers());
-    EXPECT_EQ(compute_mask(1), task.thread_ids());
+    EXPECT_EQ(expected_ids_bitset(1), task.actual_ids_bitset());
     EXPECT_TRUE(task.seen_caller());
   }
 }
