@@ -681,7 +681,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * task would otherwise be blocked waiting for completion of
      * another, basically, just by running that task or one of its
      * subtasks if not already taken. These mechanics are disabled for
-     * InterruptibleTasks, that guarantee that callers do not executed
+     * InterruptibleTasks, that guarantee that callers do not execute
      * submitted tasks.
      *
      * The basic structure of joining is an extended spin/block scheme
@@ -1323,7 +1323,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                     updateArray(newArray);            // fully fenced
                 }
-                a = null;
+                a = null;                             // always signal
             }
             if (!internal)
                 unlockPhase();
@@ -1951,9 +1951,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Reactivates the given worker, and possibly interrupts others if
-     * not top of ctl stack. Called only during shutdown to ensure release
-     * on termination.
+     * Reactivates the given worker, and possibly others if not top of
+     * ctl stack. Called only during shutdown to ensure release on
+     * termination.
      */
     private void reactivate(WorkQueue w) {
         for (long c = ctl;;) {
@@ -1965,16 +1965,11 @@ public class ForkJoinPool extends AbstractExecutorService {
             if (c == (c = compareAndExchangeCtl(
                           c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
                               (v.stackPred & LMASK))))) {
-                Thread t = v.owner;
                 v.phase = sp;
-                if (v.parking != 0&& t != null) {
-                    try {
-                        t.interrupt();
-                    } catch (Throwable ignore) {
-                    }
-                }
                 if (v == w)
                     break;
+                if (v.parking != 0)
+                    U.unpark(v.owner);
             }
         }
     }
@@ -2824,7 +2819,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
         }
     }
-
 
     /**
      * Returns termination signal, constructing if necessary
