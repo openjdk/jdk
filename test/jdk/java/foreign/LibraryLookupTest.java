@@ -104,6 +104,7 @@ public class LibraryLookupTest {
                 Path p = customFs.getPath(".");
                 try {
                     SymbolLookup.libraryLookup(p, arena);
+                    fail("Did not throw IAE");
                 } catch (IllegalArgumentException iae) {
                     assertTrue(iae.getMessage().contains("not in default file system"));
                 }
