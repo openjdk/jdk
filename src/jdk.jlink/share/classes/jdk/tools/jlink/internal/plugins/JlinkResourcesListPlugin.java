@@ -58,16 +58,19 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  */
 public final class JlinkResourcesListPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
 
+    public static final String RESPATH_PREFIX = "jdk/tools/jlink/internal/fs_";
+    public static final String RESPATH_SUFFIX = "_resources";
+    public static final String CLI_RESOURCE_FILE = "jdk/tools/jlink/internal/cli_cmd.txt";
     private static final int SYMLINKED_RES = 1;
     private static final int REGULAR_RES = 0;
     private static final String BIN_DIRNAME = "bin";
     private static final String LIB_DIRNAME = "lib";
     private static final String NAME = "add-run-image-resources";
-    private static final String RESPATH_PREFIX = "/jdk.jlink/jdk/tools/jlink/internal/runlink_";
+    private static final String JLINK_MOD_NAME = "jdk.jlink";
     // This resource is being used in JLinkTask which passes its contents to
     // RunImageArchive for further processing.
-    private static final String RESPATH = RESPATH_PREFIX + "%s_resources";
-    private static final String JLINK_MOD_NAME = "jdk.jlink";
+    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PREFIX + "%s" + RESPATH_SUFFIX;
+    private static final String CLI_RESOURCE = "/" + JLINK_MOD_NAME + "/" + CLI_RESOURCE_FILE;
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
 
     // Type file format:
@@ -82,7 +85,6 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
     //     for symlinked resources.
     // (4) The relative file path of the resource
     private static final String TYPE_FILE_FORMAT = "%d|%d|%s|%s";
-    private static final String CLI_RESOURCE = "/jdk.jlink/jdk/tools/jlink/internal/cli_cmd.txt";
 
     private final Map<String, List<String>> nonClassResEntries;
 
@@ -139,7 +141,8 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
     // Filter the resource we add.
     @Override
     public List<String> getExcludePatterns() {
-        return List.of("glob:" + CLI_RESOURCE);
+        return List.of("glob:" + CLI_RESOURCE,
+                       "regex:/jdk\\.jlink/" + RESPATH_PREFIX + ".*" + RESPATH_SUFFIX);
     }
 
     private Platform getTargetPlatform(ResourcePool in) {
@@ -174,13 +177,6 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
             String resPathWithoutMod = resPathWithoutModule(entry, platform);
             String sha512 = computeSha512(entry, platform);
             moduleResources.add(String.format(TYPE_FILE_FORMAT, type, isSymlink, sha512, resPathWithoutMod));
-        } else if (entry.moduleName().equals(JLINK_MOD_NAME) &&
-                   entry.type() == ResourcePoolEntry.Type.CLASS_OR_RESOURCE &&
-                   entry.path().startsWith(RESPATH_PREFIX)) {
-            // Filter internal runtime image based link resource file which we
-            // create later on-the-fly
-            // TODO: Use the same filter technique than for other plugins
-            return null;
         }
         return entry;
     }

@@ -74,6 +74,7 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
+import jdk.tools.jlink.internal.plugins.JlinkResourcesListPlugin;
 import jdk.tools.jlink.internal.plugins.LegalNoticeFilePlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
@@ -87,8 +88,9 @@ public class JlinkTask {
     public static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
     // Run time based link internal resources files
-    private static final String OTHER_RESOURCES_FILE = "jdk/tools/jlink/internal/runlink_%s_resources";
-    private static final String OLD_CLI_FILE = "jdk/tools/jlink/internal/cli_cmd.txt";
+    private static final String OTHER_RESOURCES_FILE = JlinkResourcesListPlugin.RESPATH_PREFIX +
+                                                       "%s" + JlinkResourcesListPlugin.RESPATH_SUFFIX;
+    private static final String OLD_CLI_FILE = JlinkResourcesListPlugin.CLI_RESOURCE_FILE;
     // jlink API ignores by default. Remove when signing is implemented.
     static final boolean IGNORE_SIGNING_DEFAULT = true;
 
@@ -286,6 +288,11 @@ public class JlinkTask {
                 }
             }
 
+            // Currently run-time image based jlinks are only used when
+            // the module path is empty. I.e. not specified on the command line
+            // and the 'jmods' folder in JAVA_HOME is not present. This restriction
+            // is so because cases with an external jimage as run-time image base
+            // have not been considered at this point.
             boolean useModulePath = !options.modulePath.isEmpty();
             JlinkConfiguration config = initJlinkConfig(useModulePath);
             outputPath = config.getOutput();
