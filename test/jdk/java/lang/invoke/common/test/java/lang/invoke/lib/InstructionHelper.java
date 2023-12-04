@@ -23,9 +23,9 @@
 
 package test.java.lang.invoke.lib;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
 
 import java.lang.constant.*;
 import java.lang.invoke.MethodHandle;
@@ -43,7 +43,7 @@ public class InstructionHelper {
         classBuilder
                 .withVersion(55, 0)
                 .withSuperclass(ConstantDescs.CD_Object)
-                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
+                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC,
                         methodBuilder -> methodBuilder
                                 .withCode(codeBuilder -> codeBuilder
                                         .aload(0)
@@ -55,11 +55,11 @@ public class InstructionHelper {
     public static MethodHandle invokedynamic(MethodHandles.Lookup l, String name, MethodType type, String bsmMethodName,
                                              MethodType bsmType, ConstantDesc... boostrapArgs) throws Exception {
         ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
-        byte[] byteArray = Classfile.of().build(genClassDesc, classBuilder -> {
+        byte[] byteArray = ClassFile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
             classBuilder
                     .withMethod("m", MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
-                            Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+                            ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
                                     .withCode(codeBuilder -> {
                                         for (int i = 0; i < type.parameterCount(); i++) {
                                             codeBuilder.loadInstruction(TypeKind.from(type.parameterType(i)), i);
@@ -102,10 +102,10 @@ public class InstructionHelper {
             throws IllegalAccessException, NoSuchMethodException {
         String methodType = "()" + type;
         ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
-        byte[] bytes = Classfile.of().build(genClassDesc, classBuilder -> {
+        byte[] bytes = ClassFile.of().build(genClassDesc, classBuilder -> {
             commonBuild(classBuilder);
             classBuilder.withMethod("m", MethodTypeDesc.of(ClassDesc.ofDescriptor(type)),
-                    Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+                    ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
                             .withCode(codeBuilder -> codeBuilder
                                     .ldc(DynamicConstantDesc.ofNamed(
                                             MethodHandleDesc.ofMethod(
