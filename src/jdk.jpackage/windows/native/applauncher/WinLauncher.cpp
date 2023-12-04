@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,72 @@ void addCfgFileLookupDirForEnvVariable(
 }
 
 
+class RunExecutorWithMsgLoop {
+public:
+    static DWORD apply(const Executor& exec) {
+        RunExecutorWithMsgLoop instance(exec);
+
+        if (!CreateThread(NULL, 0, worker, static_cast<LPVOID>(&instance),
+                                                                  0, NULL)) {
+            JP_THROW(SysError(tstrings::any()
+                                  << "CreateThread() failed", CreateThread));
+        }
+
+        MSG msg;
+        BOOL bRet;
+        while((bRet = GetMessage(&msg, instance.hwnd, 0, 0 )) != 0) {
+            if (bRet == -1) {
+                JP_THROW(SysError(tstrings::any()
+                                      << "GetMessage() failed", GetMessage));
+            } else {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+
+        return instance.exitCode;
+    }
+
+private:
+    RunExecutorWithMsgLoop(const Executor& v): exec(v) {
+        exitCode = 1;
+
+        hwnd = CreateWindowEx(0, _T("STATIC"), _T(""), 0, 0, 0, 0, 0,
+                              HWND_MESSAGE, NULL, GetModuleHandle(NULL), NULL);
+        if (!hwnd) {
+            JP_THROW(SysError(tstrings::any()
+                              << "CreateWindowEx() failed", CreateWindowEx));
+        }
+    }
+
+    static DWORD WINAPI worker(LPVOID param) {
+        static_cast<RunExecutorWithMsgLoop*>(param)->run();
+        return 0;
+    }
+
+    void run() {
+        JP_TRY;
+        exitCode = static_cast<DWORD>(exec.execAndWaitForExit());
+        JP_CATCH_ALL;
+
+        JP_TRY;
+        if (!PostMessage(hwnd, WM_QUIT, 0, 0)) {
+            JP_THROW(SysError(tstrings::any()
+                              << "PostMessage(WM_QUIT) failed", PostMessage));
+        }
+        return;
+        JP_CATCH_ALL;
+
+        exit(1);
+    }
+
+private:
+    const Executor& exec;
+    DWORD exitCode;
+    HWND hwnd;
+};
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -203,7 +269,7 @@ void launchApp() {
             exec.arg(arg);
         });
 
-        DWORD exitCode = static_cast<DWORD>(exec.execAndWaitForExit());
+        DWORD exitCode = RunExecutorWithMsgLoop::apply(exec);
 
         exit(exitCode);
         return;
