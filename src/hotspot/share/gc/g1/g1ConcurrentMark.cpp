@@ -1253,6 +1253,12 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    // Unload Klasses, String, Code Cache, etc.
+    if (ClassUnloadingWithConcurrentMark) {
+      G1CMIsAliveClosure is_alive(_g1h);
+      _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
+    }
+
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of the marking cycle, we're expected all
@@ -1671,15 +1677,10 @@ void G1ConcurrentMark::weak_refs_work() {
 
   assert(_global_mark_stack.is_empty(), "Marking should have completed");
 
-  G1CMIsAliveClosure is_alive(_g1h);
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
+    G1CMIsAliveClosure is_alive(_g1h);
     WeakProcessor::weak_oops_do(_g1h->workers(), &is_alive, &do_nothing_cl, 1);
-  }
-
-  // Unload Klasses, String, Code Cache, etc.
-  if (ClassUnloadingWithConcurrentMark) {
-    _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
   }
 }
 
