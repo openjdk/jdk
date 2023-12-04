@@ -180,7 +180,7 @@ public class Basic {
         exTypes.add(new ExType("php", List.of("text/plain", "text/php", "application/x-php")));
         exTypes.add(new ExType("png", List.of("image/png")));
         exTypes.add(new ExType("ppt", List.of("application/vnd.ms-powerpoint")));
-        exTypes.add(new ExType("pptx",List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")));
+        exTypes.add(new ExType("pptx", List.of("application/vnd.openxmlformats-officedocument.presentationml.presentation")));
         exTypes.add(new ExType("py", List.of("text/plain", "text/x-python", "text/x-python-script")));
         exTypes.add(new ExType("webm", List.of("video/webm")));
         exTypes.add(new ExType("webp", List.of("image/webp")));
@@ -193,11 +193,11 @@ public class Basic {
             (System.getProperty("os.name").endsWith("11") ||
                 new OSVersion(10, 0).compareTo(OSVersion.current()) > 0)) {
             System.out.println("Windows 11+ detected: using different types");
-            exTypes.add(new ExType("bz2", List.of("application/x-compressed")));
-            exTypes.add(new ExType("csv", List.of("application/vnd.ms-excel")));
-            exTypes.add(new ExType("rar", List.of("application/x-compressed")));
-            exTypes.add(new ExType("rtf", List.of("application/msword")));
-            exTypes.add(new ExType("7z", List.of("application/x-compressed")));
+            exTypes.add(new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip", "application/x-compressed")));
+            exTypes.add(new ExType("csv", List.of("text/csv", "application/vnd.ms-excel")));
+            exTypes.add(new ExType("rar", List.of("application/rar", "application/vnd.rar", "application/x-rar", "application/x-rar-compressed", "application/x-compressed")));
+            exTypes.add(new ExType("rtf", List.of("application/rtf", "text/rtf", "application/msword")));
+            exTypes.add(new ExType("7z", List.of("application/x-7z-compressed", "application/x-compressed")));
         } else {
             exTypes.add(new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip")));
             exTypes.add(new ExType("csv", List.of("text/csv")));
