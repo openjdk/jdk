@@ -83,6 +83,7 @@ public class DefaultButtonTest {
 
     public void runTest() throws Exception {
         Robot robot = new Robot();
+        robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(100);
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             try {
@@ -100,6 +101,8 @@ public class DefaultButtonTest {
                     createUI();
                 });
                 robot.waitForIdle();
+                robot.delay(1000);
+
                 robot.keyPress(KeyEvent.VK_ENTER);
                 robot.keyRelease(KeyEvent.VK_ENTER);
                 robot.waitForIdle();

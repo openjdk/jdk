@@ -109,6 +109,10 @@ public class Test8003400 {
 
                 Robot robot = new Robot();
                 robot.setAutoDelay(100);
+                robot.setAutoWaitForIdle(true);
+                robot.waitForIdle();
+                robot.delay(500);
+
                 SwingUtilities.invokeAndWait(() -> {
                     point = tree.getLocationOnScreen();
                     rect = tree.getBounds();

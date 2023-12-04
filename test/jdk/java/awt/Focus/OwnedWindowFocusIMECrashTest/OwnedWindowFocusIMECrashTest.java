@@ -64,6 +64,7 @@ public class OwnedWindowFocusIMECrashTest {
         window.setVisible(true);
 
         Util.waitForIdle(robot);
+        robot.delay(1000);
 
         test();
 

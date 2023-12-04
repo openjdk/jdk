@@ -120,6 +120,7 @@ public class MultiResolutionSplashTest {
     static void testFocus() throws Exception {
 
         Robot robot = new Robot();
+        robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(50);
 
         Frame frame = new Frame();
@@ -130,6 +131,7 @@ public class MultiResolutionSplashTest {
         frame.add(textField);
         frame.setVisible(true);
         robot.waitForIdle();
+        robot.delay(1000);
 
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
