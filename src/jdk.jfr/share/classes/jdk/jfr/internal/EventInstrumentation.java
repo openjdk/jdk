@@ -37,20 +37,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeBuilder.BlockCodeBuilder;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeBuilder.BlockCodeBuilder;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
 import jdk.jfr.Enabled;
@@ -190,7 +190,7 @@ final class EventInstrumentation {
     }
 
     private ClassModel createClassModel(byte[] bytes) {
-        return Classfile.of().parse(bytes);
+        return ClassFile.of().parse(bytes);
     }
 
     boolean isRegistered() {
@@ -396,7 +396,7 @@ final class EventInstrumentation {
     }
 
     byte[] toByteArray() {
-        return Classfile.of().build(classModel.thisClass().asSymbol(), classBuilder -> {
+        return ClassFile.of().build(classModel.thisClass().asSymbol(), classBuilder -> {
             for (ClassElement ce : classModel) {
                 boolean updated = false;
                 if (ce instanceof MethodModel method) {
