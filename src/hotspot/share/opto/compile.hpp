@@ -532,6 +532,7 @@ private:
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
+  void reset_igv_phase_iter(CompilerPhaseType cpt) { _igv_phase_iter[cpt] = 0; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
