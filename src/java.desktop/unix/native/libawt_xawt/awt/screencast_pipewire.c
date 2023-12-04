@@ -43,7 +43,8 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
                                       (*env)->ExceptionDescribe(env); \
                                    }
 
-static volatile gboolean sessionClosed = TRUE;
+static gboolean hasPipewireFailed = FALSE;
+static gboolean sessionClosed = TRUE;
 static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
@@ -171,6 +172,7 @@ static gboolean initScreencast(const gchar *token,
     }
 
     gtk->g_string_printf(activeSessionToken, "%s", token);
+    hasPipewireFailed = FALSE;
     sessionClosed = FALSE;
     return TRUE;
 }
@@ -338,6 +340,8 @@ static void onStreamProcess(void *userdata) {
 
     DEBUG_SCREEN_PREFIX(screen, "data ready\n", NULL);
     fp_pw_stream_queue_buffer(data->stream, pwBuffer);
+
+    fp_pw_thread_loop_signal(pw.loop, FALSE);
 }
 
 static void onStreamStateChanged(
@@ -351,6 +355,12 @@ static void onStreamStateChanged(
                      old, fp_pw_stream_state_as_string(old),
                      state, fp_pw_stream_state_as_string(state),
                      error);
+    if (state == PW_STREAM_STATE_ERROR
+        || state == PW_STREAM_STATE_UNCONNECTED) {
+
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
+    }
 }
 
 static const struct pw_stream_events streamEvents = {
@@ -473,14 +483,17 @@ static gboolean connectStream(int index) {
 
     while (!data->hasFormat) {
         fp_pw_thread_loop_wait(pw.loop);
+        fp_pw_thread_loop_accept(pw.loop);
+        if (hasPipewireFailed) {
+            fp_pw_thread_loop_unlock(pw.loop);
+            return FALSE;
+        }
     }
 
     DEBUG_SCREEN_PREFIX(data->screenProps,
             "frame size: %dx%d\n",
             data->rawFormat.size.width, data->rawFormat.size.height
     );
-
-    fp_pw_thread_loop_accept(pw.loop);
 
     return TRUE;
 }
@@ -539,7 +552,12 @@ static void onCoreError(
             "!!! pipewire error: id %u, seq: %d, res: %d (%s): %s\n",
             id, seq, res, strerror(res), message
     );
-    fp_pw_thread_loop_unlock(pw.loop);
+    if (id == PW_ID_CORE) {
+        fp_pw_thread_loop_lock(pw.loop);
+        hasPipewireFailed = TRUE;
+        fp_pw_thread_loop_signal(pw.loop, FALSE);
+        fp_pw_thread_loop_unlock(pw.loop);
+    }
 }
 
 static const struct pw_core_events coreEvents = {
@@ -904,7 +922,15 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     }
 
     while (!isAllDataReady()) {
+        fp_pw_thread_loop_lock(pw.loop);
         fp_pw_thread_loop_wait(pw.loop);
+        if (hasPipewireFailed) {
+            fp_pw_thread_loop_unlock(pw.loop);
+            doCleanup();
+            releaseToken(env, jtoken, token);
+            return RESULT_ERROR;
+        }
+        fp_pw_thread_loop_unlock(pw.loop);
     }
 
     DEBUG_SCREENCAST("\nall data ready\n", NULL);
