@@ -84,7 +84,7 @@ char* CompressedKlassPointers::reserve_address_space_for_16bit_move(size_t size,
   return reserve_address_space_X(nth_bit(32), nth_bit(48), size, nth_bit(32), aslr);
 }
 
-#ifndef AARCH64
+#if !defined(AARCH64) || defined(ZERO)
 // On aarch64 we have an own version; all other platforms use the default version
 void CompressedKlassPointers::initialize(address addr, size_t len) {
   // The default version of this code tries, in order of preference:
@@ -115,7 +115,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
 }
-#endif // !AARCH64
+#endif // !AARCH64 || ZERO
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "

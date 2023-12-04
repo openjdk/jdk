@@ -347,6 +347,12 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
       return;
     }
 
+    if (monitor->object_peek() == nullptr) {
+      // JNI code doesn't necessarily keep the monitor object
+      // alive. Filter out monitors with dead objects.
+      return;
+    }
+
     add(monitor);
   }
 

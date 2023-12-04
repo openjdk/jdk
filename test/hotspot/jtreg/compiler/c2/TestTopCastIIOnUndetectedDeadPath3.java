@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,38 @@
  * questions.
  */
 
- // key: compiler.misc.feature.unnamed.classes
- // key: compiler.warn.preview.feature.use.plural
- // options: -source ${jdk.version} --enable-preview -Xlint:preview
+/*
+ * @test
+ * @bug 8319372
+ * @summary CastII because of condition guarding it becomes top
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestTopCastIIOnUndetectedDeadPath3::* -XX:-TieredCompilation TestTopCastIIOnUndetectedDeadPath3
+ */
 
-public static void main(String... args) {
+public class TestTopCastIIOnUndetectedDeadPath3 {
+
+    static long test() {
+        int x = 6, y = 5;
+        int[] iArr = new int[200];
+        for (int i = 129; i > 5; i -= 2) { // OSR compiled
+            try {
+                y = iArr[i - 1];
+                x = iArr[i + 1];
+                x = 1 / i;
+            } catch (ArithmeticException a_e) {
+            }
+        }
+        Foo.empty();
+        return x + y;
+    }
+
+    public static void main(String[] strArr) {
+        new TestTopCastIIOnUndetectedDeadPath3();
+        for (int i = 0; i < 2000; i++) {
+            test();
+        }
+    }
+}
+
+class Foo {
+    public static void empty() {}
 }
