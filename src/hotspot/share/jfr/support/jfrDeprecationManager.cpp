@@ -282,7 +282,7 @@ void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
   _pending_tail = nullptr;
   if (_pending_list.is_nonempty()) {
     JfrKlassUnloading::sort(true);
-    JfrCheckpointWriter writer(true, false, jt);
+    JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);
     assert(_pending_head != nullptr, "invariant");
@@ -304,9 +304,9 @@ static inline void write_type_set_blobs(JfrCheckpointWriter& writer) {
   type_set_blobs->write(writer);
 }
 
-static void save_type_set_blob(JfrCheckpointWriter& writer) {
+static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
   assert(writer.has_data(), "invariant");
-  const JfrBlobHandle blob = writer.move();
+  const JfrBlobHandle blob = copy ? writer.copy() : writer.move();
   if (type_set_blobs.valid()) {
     type_set_blobs->set_next(blob);
   } else {
@@ -316,7 +316,7 @@ static void save_type_set_blob(JfrCheckpointWriter& writer) {
 
 void JfrDeprecationManager::on_type_set_unload(JfrCheckpointWriter& writer) {
   if (writer.has_data()) {
-    save_type_set_blob(writer);
+    save_type_set_blob(writer, true);
   }
 }
 
@@ -338,7 +338,7 @@ static inline void write_stacktraces(JfrChunkWriter& cw) {
 }
 
 static inline void write_type_sets(Thread* thread, bool on_error) {
-  JfrCheckpointWriter writer(!on_error, false, thread);
+  JfrCheckpointWriter writer(!on_error, thread, false);
   write_type_set_blobs(writer);
 }
 

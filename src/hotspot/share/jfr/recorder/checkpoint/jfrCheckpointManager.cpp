@@ -544,7 +544,7 @@ size_t JfrCheckpointManager::clear() {
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
   assert(thread != nullptr, "invariant");
-  JfrCheckpointWriter writer(true, thread, STATICS);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread, true /* header */, STATICS);
   JfrTypeManager::write_static_types(writer);
   return writer.used_size();
 }
@@ -555,7 +555,7 @@ size_t JfrCheckpointManager::write_threads(JavaThread* thread) {
   ThreadInVMfromNative transition(thread);
   ResourceMark rm(thread);
   HandleMark hm(thread);
-  JfrCheckpointWriter writer(true, thread, THREADS);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread, true /* header */, THREADS);
   JfrTypeManager::write_threads(writer);
   return writer.used_size();
 }
@@ -583,8 +583,8 @@ void JfrCheckpointManager::clear_type_set() {
   MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
   // Marks leakp. Place prepare_type_set before writer construction.
   JfrDeprecationManager::prepare_type_set(thread);
-  JfrCheckpointWriter leakp_writer(true, thread);
-  JfrCheckpointWriter writer(true, thread);
+  JfrCheckpointWriter leakp_writer(true /* prev epoch */, thread);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread);
   {
     MutexLocker module_lock(Module_lock);
     JfrTypeSet::clear(&writer, &leakp_writer);
@@ -607,8 +607,8 @@ void JfrCheckpointManager::write_type_set() {
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
     // Marks leakp. Place prepare_type_set before writer construction.
     JfrDeprecationManager::prepare_type_set(thread);
-    JfrCheckpointWriter leakp_writer(true, thread);
-    JfrCheckpointWriter writer(true, thread);
+    JfrCheckpointWriter leakp_writer(true /* prev epoch */, thread);
+    JfrCheckpointWriter writer(true /* prev epoch */, thread);
     {
       MutexLocker module_lock(thread, Module_lock);
       JfrTypeSet::serialize(&writer, &leakp_writer, false, false);

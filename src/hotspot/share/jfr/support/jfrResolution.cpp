@@ -112,10 +112,10 @@ static inline Method* frame_context(vframeStream& stream, int& bci, u1& frame_ty
   assert(!method->is_native(), "invariant");
   bci = stream.bci();
   frame_type = stream.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
-  if (frame_type == JfrStackFrame::FRAME_JIT) {
+  if (frame_type == JfrStackFrame::FRAME_JIT && !stream.at_end()) {
     const intptr_t* const id = stream.frame_id();
     stream.next();
-    if (!stream.at_end() && id == stream.frame_id()) {
+    if (id == stream.frame_id()) {
       frame_type = JfrStackFrame::FRAME_INLINE;
     }
   }

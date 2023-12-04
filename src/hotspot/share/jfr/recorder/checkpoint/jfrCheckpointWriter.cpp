@@ -60,21 +60,7 @@ JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */,
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type /* GENERIC */) :
-  JfrCheckpointWriterBase(JfrCheckpointManager::lease_global(thread, previous_epoch), thread),
-  _time(JfrTicks::now()),
-  _offset(0),
-  _count(0),
-  _type(type),
-  _header(true) {
-  assert(this->is_acquired(), "invariant");
-  assert(0 == this->current_offset(), "invariant");
-  if (_header) {
-    reserve(sizeof(JfrCheckpointEntry));
-  }
-}
-
-JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, bool header, Thread* thread, JfrCheckpointType type /* GENERIC */) :
+JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
   JfrCheckpointWriterBase(JfrCheckpointManager::lease_global(thread, previous_epoch), thread),
   _time(JfrTicks::now()),
   _offset(0),
