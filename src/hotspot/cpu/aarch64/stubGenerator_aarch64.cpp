@@ -7255,6 +7255,58 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Poly1305, vectorized
+
+  // Vectorizing Poly1305 is quite tricky. We already have a highly-
+  // efficient scalar Poly1305 implementation that runs on the core integer
+  // unit, but it's highly serialized, so it does not make make good use of
+  // the parallelism available.
+
+  // The scalar implementation takes advantage of some particular features
+  // of the Poly1305 keys. In particular, certain bits of r, the secret
+  // key, are required to be 0. These make it possible to use a full
+  // 64-bit-wide multiply-accumulate operation without needing to process
+  // carries between partial products,
+
+  // While this works well for a serial implementation, a parallel
+  // implementation cannot do this because rather than multiplying by r,
+  // each step multiplies by some integer power of r, modulo
+  // 2^130-5. Here we process six message blocks in parallel.
+
+  // In order to avoid processing carries between partial products we use a
+  // redundant representation, in which each 130-bit integer is encoded
+  // either as a 5-digit integer in base 2^26 or as a 3-digit integer in
+  // base 2^52, depending on whether we are using a 64- or 32-bit
+  // multiply-accumulate.
+
+  // In AArch64 Advanced SIMD, there is no 64-bit multiply-accumulate
+  // operation available to us, so we must use 32*32 -> 64-bit operations.
+
+  // In order to achieve maximum performance we'd like to get close to the
+  // processor's decode bandwidth, so that every clock cycle does something
+  // useful. In a typical high-end AArch64 implementation, the core integer
+  // unit has a fast 64-bit multiplier pipeline and the ASIMD unit has a
+  // fast(ish) two-way 32-bit multiplier, which may be slower than than the
+  // core integer unit's. It is not at all obvious whether it's best to use
+  // ASIMD or core instructions.
+
+  // Fortunately, if we have a wide-bandwidth instruction decode, we can do
+  // both at the same time, by feeding alternating instructions to the core
+  // and the ASIMD units. This also allows us to make good use of all of
+  // the available core and ASIMD registers, in parallel.
+
+  // To do this we use generators, which here are a kind of iterator that
+  // emits a group of instructions each time it is called. In this case we
+  // 4 parallel generators, and by calling them alternately we interleave
+  // the ASIMD and the core instructions. We also take care to ensure that
+  // each generator finishes at about the same time, to maximize the
+  // distance between instructions which generate and consume data.
+
+  // See Goll and Gueron, ‘Vectorization of Poly1305 message
+  // authentication code’. 2015 12th Int. Conf. on Information
+  // Technology – New Generations, Las Vegas, NV, USA, April 2015,
+  // pp. 145–150, doi: 10.1109/ITNG.2015.28
+
 typedef AbstractRegSet<FloatRegister> vRegSet;
 
 template <typename RegType>
@@ -7263,7 +7315,7 @@ public:
   RegType _regs[5];
   Regs(RegSetIterator<RegType> &it, int n) {
     for (int i = 0; i < n; i++) {
-      _regs[i] = *it++;
+	_regs[i] = *it++;
     }
   }
   Regs(RegType R0, RegType R1, RegType R2) {
@@ -7281,8 +7333,8 @@ public:
   RegPair _reg_pairs[3];
   RegPairs(RegSetIterator<Register> &it, int n) {
     for (int i = 0; i < n; i++) {
-      RegPair r(*it++, *it++);
-      _reg_pairs[i] = r;
+	RegPair r(*it++, *it++);
+	_reg_pairs[i] = r;
     }
   }
   operator RegPair*() { return _reg_pairs; }
@@ -7304,11 +7356,11 @@ address generate_poly1305_processBlocks2() {
   RegSet callee_saved = RegSet::range(r19, r28);
   __ push(callee_saved, sp);
 
-  auto regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
-  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
-
   // Arguments
-  const Register input_start = *regs++, length = *regs++, acc_start = *regs++, r_start = *regs++;
+  const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
+
+  auto regs = (RegSet::range(c_rarg4, r28) - r18_tls - rscratch1 - rscratch2 + lr).begin();
+  auto vregs = (vRegSet::range(v0, v7) + vRegSet::range(v16, v31)).begin();
 
   // Rn is the key, packed into three registers
   CoreRegs R(regs, 3);
@@ -7409,54 +7461,51 @@ address generate_poly1305_processBlocks2() {
     __ align(OptoLoopAlignment);
     __ bind(LOOP);
     {
-      // __ poly1305_load(S0, input_start);
-      // __ poly1305_load(S1, input_start);
+	constexpr int COLS = 4;
+	AsmGenerator gen[COLS];
 
-      constexpr int COLS = 4;
-      AsmGenerator gen[COLS];
+	__ poly1305_step(gen[0], S0, u0, input_start);
+	__ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
 
-      __ poly1305_step(gen[0], S0, u0, input_start);
-      __ poly1305_field_multiply(gen[0], u0, S0, R, RR2, regs);
+	__ poly1305_step(gen[1], S1, u1, input_start);
+	__ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
 
-      __ poly1305_step(gen[1], S1, u1, input_start);
-      __ poly1305_field_multiply(gen[1], u1, S1, R, RR2, regs);
+	__ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
+	__ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
+				   vregs.remaining());
 
-      __ poly1305_step_vec(gen[2], v_s0, v_u0, zero, input_start);
-      __ poly1305_field_multiply(gen[2], v_u0, v_s0, r_v, rr_v, zero,
-                                 vregs.remaining());
+	__ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
+	__ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
+				   vregs.remaining());
 
-      __ poly1305_step_vec(gen[3], v_s1, v_u1, zero, input_start);
-      __ poly1305_field_multiply(gen[3], v_u1, v_s1, r_v, rr_v, zero,
-                                 vregs.remaining());
+	AsmGenerator::Iterator it[COLS];
+	int len[COLS];
 
-      AsmGenerator::Iterator it[COLS];
-      int len[COLS];
+	int l_max = INT_MIN;
+	for (int col = 0; col < COLS; col++) {
+	  it[col] = gen[col].iterator();
+	  len[col] = gen[col].length();
+	  l_max = MAX2(l_max, len[col]);
+	}
 
-      int l_max = INT_MIN;
-      for (int col = 0; col < COLS; col++) {
-        it[col] = gen[col].iterator();
-        len[col] = gen[col].length();
-        l_max = MAX2(l_max, len[col]);
-      }
+	int err[COLS];
+	for (int col = 0; col < COLS; col++) {
+	  err[col] = 0;
+	}
 
-      int err[COLS];
-      for (int col = 0; col < COLS; col++) {
-        err[col] = 0;
-      }
+	for (int i = 0; i < l_max; i++) {
+	  for (int col = 0; col < COLS; col++) {
+	    err[col] -= len[col];
+	    if (err[col] < 0) {
+	      err[col] += l_max;
+	      (it[col]++)();
+	    }
+	  }
+	}
 
-      for (int i = 0; i < l_max; i++) {
-        for (int col = 0; col < COLS; col++) {
-          err[col] -= len[col];
-          if (err[col] < 0) {
-            err[col] += l_max;
-            (it[col]++)();
-          }
-        }
-      }
-
-      for (int col = 0; col < COLS; col++) {
-        assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
-      }
+	for (int col = 0; col < COLS; col++) {
+	  assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
+	}
     }
 
     __ subw(length, length, POLY1305_BLOCK_LENGTH * BLOCKS_PER_ITERATION);
@@ -7540,7 +7589,7 @@ address generate_poly1305_processBlocks2() {
   __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
 
   __ pop(callee_saved, sp);
-  // __ reset_last_Java_frame(true);
+
   __ leave();
   __ ret(lr);
 
