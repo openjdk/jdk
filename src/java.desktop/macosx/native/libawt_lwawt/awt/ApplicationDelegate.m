@@ -116,8 +116,9 @@ AWT_ASSERT_APPKIT_THREAD;
 
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
+    BOOL overrideDelegate = (getenv("AWT_OVERRIDE_NSDELEGATE") != NULL);
     if (NSApp != nil) {
-        if ([NSApp isMemberOfClass:[NSApplication class]]) shouldInstall = YES;
+        if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
         if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
     }
     checked = YES;
@@ -409,6 +410,19 @@ AWT_ASSERT_APPKIT_THREAD;
     return NSTerminateLater;
 }
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
+    static BOOL checked = NO;
+    static BOOL supportsSecureState = YES;
+
+    if (checked == NO) {
+        checked = YES;
+        if (getenv("AWT_DISABLE_NSDELEGATE_SECURE_SAVE") != NULL) {
+            supportsSecureState = NO;
+        }
+    }
+    return supportsSecureState;
+}
+
 + (void)_systemWillPowerOff {
     [self _notifyJava:com_apple_eawt__AppEventHandler_NOTIFY_SHUTDOWN];
 }
@@ -506,8 +520,10 @@ AWT_ASSERT_APPKIT_THREAD;
     [dockImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
     [dockImageView setImage:image];
 
-    [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
-    [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    if ([ApplicationDelegate sharedDelegate] != nil) {
+        [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
+        [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+    }
 
     // add it to the NSDockTile
     [dockTile setContentView: dockImageView];
@@ -520,14 +536,15 @@ AWT_ASSERT_APPKIT_THREAD;
 AWT_ASSERT_APPKIT_THREAD;
 
     ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-    if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
-        [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
-        [delegate.fProgressIndicator setHidden:NO];
-    } else {
-        [delegate.fProgressIndicator setHidden:YES];
+    if (delegate != nil) {
+        if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
+            [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
+            [delegate.fProgressIndicator setHidden:NO];
+        } else {
+            [delegate.fProgressIndicator setHidden:YES];
+        }
+        [[NSApp dockTile] display];
     }
-
-    [[NSApp dockTile] display];
 }
 
 // Obtains the image of the Dock icon, either manually set, a drawn copy, or the default NSApplicationIcon
@@ -638,7 +655,9 @@ JNI_COCOA_ENTER(env);
 
     NSMenu *menu = (NSMenu *)jlong_to_ptr(nsMenuPtr);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDockMenu = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);
@@ -818,13 +837,15 @@ JNI_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
-        switch (menuID) {
-            case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
-                [delegate _updateAboutMenu:visible enabled:enabled];
-                break;
-            case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
-                [delegate _updatePreferencesMenu:visible enabled:enabled];
-                break;
+        if (delegate != nil) {
+            switch (menuID) {
+                case com_apple_eawt__AppMenuBarHandler_MENU_ABOUT:
+                    [delegate _updateAboutMenu:visible enabled:enabled];
+                    break;
+                case com_apple_eawt__AppMenuBarHandler_MENU_PREFS:
+                    [delegate _updatePreferencesMenu:visible enabled:enabled];
+                    break;
+            }
         }
     }];
 
@@ -843,7 +864,9 @@ JNI_COCOA_ENTER(env);
 
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        if ([ApplicationDelegate sharedDelegate] != nil) {
+            [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+        }
     }];
 
 JNI_COCOA_EXIT(env);

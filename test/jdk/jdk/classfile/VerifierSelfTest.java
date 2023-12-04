@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Verifier.
+ * @summary Testing ClassFile Verifier.
  * @enablePreview
  * @run junit VerifierSelfTest
  */
@@ -42,9 +42,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -60,7 +60,7 @@ class VerifierSelfTest {
                     .flatMap(p -> p)
                     .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
                         try {
-                            Classfile.of().parse(path).verify(null);
+                            ClassFile.of().parse(path).verify(null);
                         } catch (IOException e) {
                             throw new AssertionError(e);
                         }
@@ -70,7 +70,7 @@ class VerifierSelfTest {
     @Test
     void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var cc = Classfile.of(Classfile.ClassHierarchyResolverOption.of(
+        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                 className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
         var classModel = cc.parse(path);
         byte[] brokenClassBytes = cc.transform(classModel,
@@ -88,7 +88,7 @@ class VerifierSelfTest {
                         clb.with(cle);
                 });
         StringBuilder sb = new StringBuilder();
-        if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
+        if (ClassFile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
             throw new AssertionError("expected verification failure");
         }
         String output = sb.toString();
@@ -100,7 +100,7 @@ class VerifierSelfTest {
 
     @Test
     void testParserVerification() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var cd_test = ClassDesc.of("ParserVerificationTestClass");
         var indexes = new int[9];
         var clm = cc.parse(cc.build(cd_test, clb -> {
@@ -146,8 +146,8 @@ class VerifierSelfTest {
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
                             .withCode(cob -> cob.return_()))
-                    .withMethod("<>", MTD_void, Classfile.ACC_NATIVE, mb -> {})
-                    .withMethod("<>", MTD_void, Classfile.ACC_NATIVE, mb -> {});
+                    .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {})
+                    .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {});
         }));
         var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
         var expected = STR."""
@@ -252,7 +252,7 @@ class VerifierSelfTest {
         }
     }
 
-    private static <B extends ClassfileBuilder> B patch(B b, Attribute... attrs) {
+    private static <B extends ClassFileBuilder> B patch(B b, Attribute... attrs) {
         for (var a : attrs) {
             b.with(a).with(new CloneAttribute(a));
         }

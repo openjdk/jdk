@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ClassPrinter.
+ * @summary Testing ClassFile ClassPrinter.
  * @run junit ClassPrinterTest
  */
 import java.io.IOException;
@@ -32,25 +32,25 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.Optional;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ClassPrinterTest {
 
     ClassModel getClassModel() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         return cc.parse(cc.build(ClassDesc.of("Foo"), clb ->
             clb.withVersion(61, 0)
-                .withFlags(Classfile.ACC_PUBLIC)
+                .withFlags(ClassFile.ACC_PUBLIC)
                 .with(SourceFileAttribute.of("Foo.java"))
                 .withSuperclass(ClassDesc.of("Boo"))
                 .withInterfaceSymbols(ClassDesc.of("Phee"), ClassDesc.of("Phoo"))
                 .with(InnerClassesAttribute.of(
-                        InnerClassInfo.of(ClassDesc.of("Phee"), Optional.of(ClassDesc.of("Phoo")), Optional.of("InnerName"), Classfile.ACC_PROTECTED),
-                        InnerClassInfo.of(ClassDesc.of("Phoo"), Optional.empty(), Optional.empty(), Classfile.ACC_PRIVATE)))
+                        InnerClassInfo.of(ClassDesc.of("Phee"), Optional.of(ClassDesc.of("Phoo")), Optional.of("InnerName"), ClassFile.ACC_PROTECTED),
+                        InnerClassInfo.of(ClassDesc.of("Phoo"), Optional.empty(), Optional.empty(), ClassFile.ACC_PRIVATE)))
                 .with(EnclosingMethodAttribute.of(ClassDesc.of("Phee"), Optional.of("enclosingMethod"), Optional.of(MethodTypeDesc.of(ConstantDescs.CD_Double, ConstantDescs.CD_Collection))))
                 .with(SyntheticAttribute.of())
                 .with(SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(ClassDesc.of("Boo")), Signature.ClassTypeSig.of(ClassDesc.of("Phee")), Signature.ClassTypeSig.of(ClassDesc.of("Phoo")))))
@@ -66,9 +66,9 @@ class ClassPrinterTest {
                 .with(RuntimeInvisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 2),  AnnotationElement.ofFloat("frfl", 3))))
                 .with(PermittedSubclassesAttribute.ofSymbols(ClassDesc.of("Boo"), ClassDesc.of("Phoo")))
                 .withField("f", ConstantDescs.CD_String, fb -> fb
-                        .withFlags(Classfile.ACC_PRIVATE)
+                        .withFlags(ClassFile.ACC_PRIVATE)
                         .with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 0),  AnnotationElement.ofFloat("frfl", 1)))))
-                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_Void, ConstantDescs.CD_boolean, ConstantDescs.CD_Throwable), Classfile.ACC_PROTECTED, mb -> mb
+                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_Void, ConstantDescs.CD_boolean, ConstantDescs.CD_Throwable), ClassFile.ACC_PROTECTED, mb -> mb
                         .with(AnnotationDefaultAttribute.of(AnnotationValue.ofArray(
                             AnnotationValue.ofBoolean(true),
                             AnnotationValue.ofByte((byte)12),
