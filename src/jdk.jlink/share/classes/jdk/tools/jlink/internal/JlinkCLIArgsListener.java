@@ -25,6 +25,8 @@
 
 package jdk.tools.jlink.internal;
 
+import java.util.List;
+
 /**
  *
  * Plugins wishing to observe the command list that was used to
@@ -33,5 +35,5 @@ package jdk.tools.jlink.internal;
  */
 public interface JlinkCLIArgsListener {
 
-    public void process(String[] commands);
+    public void process(List<String> cliArgs);
 }

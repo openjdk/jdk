@@ -173,7 +173,7 @@ public final class ImagePluginStack {
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
     private final List<JlinkCLIArgsListener> cliArgsListeners = new ArrayList<>();
     private final boolean validate;
-    private final String[] cliArgs;
+    private final List<String> cliArgs;
 
     public ImagePluginStack() {
         this(null, Collections.emptyList(), null, null);
@@ -181,7 +181,7 @@ public final class ImagePluginStack {
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
-            Plugin lastSorter, String[] cliArgs) {
+            Plugin lastSorter, List<String> cliArgs) {
         this(imageBuilder, plugins, lastSorter, true, cliArgs);
     }
 
@@ -189,7 +189,7 @@ public final class ImagePluginStack {
             List<Plugin> plugins,
             Plugin lastSorter,
             boolean validate,
-            String[] cliArgs) {
+            List<String> cliArgs) {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));

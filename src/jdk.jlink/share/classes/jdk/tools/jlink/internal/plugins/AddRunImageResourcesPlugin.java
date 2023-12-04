@@ -86,7 +86,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
 
     private final Map<String, List<String>> nonClassResEntries;
 
-    private String[] commands;
+    private List<String> commands;
 
     public AddRunImageResourcesPlugin() {
         super(NAME);
@@ -262,7 +262,7 @@ public final class AddRunImageResourcesPlugin extends AbstractPlugin implements 
     }
 
     @Override
-    public void process(String[] commands) {
+    public void process(List<String> commands) {
         this.commands = commands;
     }
 }

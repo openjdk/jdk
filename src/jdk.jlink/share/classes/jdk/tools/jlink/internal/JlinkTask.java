@@ -370,7 +370,7 @@ public class JlinkTask {
                                     null);
 
         // Then create the Plugin Stack
-        ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(plugins, optionsHelper.getInputCommand());
+        ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(plugins);
 
         //Ask the stack to proceed;
         stack.operate(imageProvider);
@@ -432,7 +432,7 @@ public class JlinkTask {
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
             taskHelper.getPluginsConfig(options.output, options.launchers,
-                    imageProvider.targetPlatform, config), optionsHelper.getInputCommand());
+                    imageProvider.targetPlatform, config), getMergedCliArgs(!config.useModulePath()));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -566,12 +566,7 @@ public class JlinkTask {
             if (log != null) {
                 log.println("'jmods' folder not present, performing a run-time image based link.");
                 if (verbose) {
-                    List<String> oldCli = new ArrayList<>();
-                    try (InputStream in = jdkJlink.getResourceAsStream(OLD_CLI_FILE)) {
-                        CommandLine.loadCmdFile(Objects.requireNonNull(in, "Old CLI args not being tracked in jimage"),
-                                                oldCli);
-                    }
-                    logPackagedModuleEquivalent(log, oldCli, optionsHelper.getInputCommand(), opts);
+                    logPackagedModuleEquivalent(log, getMergedCliArgs(!config.useModulePath()), opts);
                 }
             }
         }
@@ -644,13 +639,7 @@ public class JlinkTask {
      *            The parsed options of the current command line arguments.
      */
     private static void logPackagedModuleEquivalent(PrintWriter logWriter,
-            List<String> oldCli, String[] newCLI, OptionsValues opts) {
-        // merge old and new cli args and process options.
-        List<String> combined = new ArrayList<>(oldCli);
-        for (String s: newCLI) {
-            combined.add(s);
-        }
-
+            List<String> mergedCLI, OptionsValues opts) {
         // parse options, produce plugins maps.
         TaskHelper scratchTaskHelper = new TaskHelper(JLINK_BUNDLE);
         OptionsHelper<JlinkTask> scratchOptionsHelper = scratchTaskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
@@ -658,7 +647,7 @@ public class JlinkTask {
 
         Map<Plugin, List<Map<String, String>>> pluginMaps = null;
         try {
-            scratchOptionsHelper.handleOptions(scratch, combined.toArray(new String[] {}));
+            scratchOptionsHelper.handleOptions(scratch, mergedCLI.toArray(new String[] {}));
             pluginMaps = scratchTaskHelper.getPluginMaps();
         } catch (BadArgs e) {
             throw new AssertionError("handling of scratch options failed", e);
@@ -720,6 +709,22 @@ public class JlinkTask {
             }
         }
         logWriter.println();
+    }
+
+    private static List<String> getMergedCliArgs(boolean isRunTimeImageLink) throws IOException {
+        // First read in the stored CLI args that were used for the input
+        // run-time image
+        List<String> merged = new ArrayList<>();
+        if (isRunTimeImageLink) {
+            try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(OLD_CLI_FILE)) {
+                CommandLine.loadCmdFile(Objects.requireNonNull(in, "Old CLI args not being tracked in jimage"),
+                                merged);
+            }
+        }
+        for (String arg: optionsHelper.getInputCommand()) {
+            merged.add(arg);
+        }
+        return Collections.unmodifiableList(merged);
     }
 
     private static void collectNonClassResources(String modName,
