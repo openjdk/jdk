@@ -3710,20 +3710,6 @@ static void warn_no_large_pages_configured() {
   }
 }
 
-static void warn_thp_not_configured() {
-  if (FLAG_IS_DEFAULT(UseTransparentHugePages)) {
-    // Don't warn if user didn't set the flag
-    return;
-  }
-
-  if (UseZGC && os::Linux::thp_requested() && HugePages::supports_shmem_thp()) {
-    // ZGC uses shared memory THPs; don't warn if those are configured
-    return;
-  }
-
-  log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
-}
-
 struct LargePageInitializationLoggerMark {
   ~LargePageInitializationLoggerMark() {
     LogTarget(Info, pagesize) lt;
@@ -3748,6 +3734,31 @@ struct LargePageInitializationLoggerMark {
          HugePages::forced_shmem_thp());
   }
 };
+
+static bool validate_thps_configured() {
+  assert(UseTransparentHugePages, "Sanity");
+  assert(os::Linux::thp_requested(), "Sanity");
+
+  if (UseZGC) {
+    if (!HugePages::supports_shmem_thp()) {
+      log_warning(pagesize)("Shared memory transparent huge pages are not enabled in the OS. "
+          "Set /sys/kernel/mm/transparent_hugepage/shmem_enabled to 'advise' to enable them.");
+      // UseTransparentHugePages has historically been tightly coupled with
+      // anonymous THPs. Fall through here and let the validity be determined
+      // by the OS configuration for anonymous THPs. ZGC doesn't use the flag
+      // but instead checks os::Linux::thp_requested().
+    }
+  }
+
+  if (!HugePages::supports_thp()) {
+    log_warning(pagesize)("Anonymous transparent huge pages are not enabled in the OS. "
+        "Set /sys/kernel/mm/transparent_hugepage/enabled to 'madvise' to enable them.");
+    log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
+    return false;
+  }
+
+  return true;
+}
 
 void os::large_page_init() {
   Linux::large_page_init();
@@ -3778,7 +3789,7 @@ void os::Linux::large_page_init() {
     FLAG_SET_ERGO(THPStackMitigation, false); // Mitigation not needed
   }
 
-  // 1) Handle the case where we do not want to use huge pages
+  // Handle the case where we do not want to use huge pages
   if (!UseLargePages &&
       !UseTransparentHugePages) {
     // Not using large pages.
@@ -3791,13 +3802,13 @@ void os::Linux::large_page_init() {
     return;
   }
 
-  // 2) check if the OS supports THPs resp. static hugepages.
-  if (UseTransparentHugePages && !HugePages::supports_thp()) {
-    warn_thp_not_configured();
+  // Check if the OS supports THPs
+  if (UseTransparentHugePages && !validate_thps_configured()) {
     UseLargePages = UseTransparentHugePages = false;
     return;
   }
 
+  // Check if the OS supports static hugepages.
   if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
     warn_no_large_pages_configured();
     UseLargePages = false;
