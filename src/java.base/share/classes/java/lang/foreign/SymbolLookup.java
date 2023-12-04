@@ -294,7 +294,7 @@ public interface SymbolLookup {
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
                 SymbolLookup.class, "libraryLookup");
-        if (path.getFileSystem().equals(FileSystems.getDefault())) {
+        if (!path.getFileSystem().equals(FileSystems.getDefault())) {
             throw new IllegalArgumentException("Path not in default file system: " + path);
         }
         return libraryLookup(path, RawNativeLibraries::load, arena);
