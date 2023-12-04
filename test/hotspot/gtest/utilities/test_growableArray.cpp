@@ -57,6 +57,8 @@
 //         that to the allocated GrowableArray
 //      de-allocate GrowableAray
 //   test.finish()
+//
+// ------------  ValueFactor  -------------
 
 template<typename E> class TestClosure;
 template<typename E> class ModifyClosure;
@@ -105,6 +107,36 @@ public:
   virtual void do_modify(AllocatorClosure<E>* a) = 0;
 };
 
+// ------------  ValueFactor  -------------
+
+template<typename E>
+E value_factory(int i) {
+  return E(i);
+}
+
+class Point {
+private:
+  int _x;
+  int _y;
+public:
+  Point(int x, int y) : _x(x), _y(y) {}
+  Point() : _x(0), _y(0) {} // TODO remove?
+  bool operator==(const Point& other) const {
+    return _x == other._x && _y == other._y;
+  }
+};
+
+template<>
+Point value_factory(int i) {
+  return Point(i, -i);
+}
+
+template<>
+int* value_factory(int i) {
+  // cast int to int ptr, just for sake of test
+  return (int*)(0x100000000L + (long)i);
+}
+
 // ------------ AllocationClosures ------------
 
 template<typename E>
@@ -133,6 +165,17 @@ public:
 };
 
 template<typename E>
+class EmbeddedGrowableArray {
+private:
+  E _garbage;
+  GrowableArray<E> _array;
+public:
+  EmbeddedGrowableArray(E&& garbage) : _garbage(garbage) {}
+  EmbeddedGrowableArray(E&& garbage, Arena* arena) : _garbage(garbage), _array(arena) {}
+  GrowableArray<E>* array() { return &_array; }
+};
+
+template<typename E>
 class AllocatorClosureStackResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
@@ -143,6 +186,25 @@ public:
       ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
       ASSERT_TRUE(array.on_resource_area()); // data: resource area
       this->set_array(&array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureEmbeddedResourceArea : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      ResourceMark rm;
+      EmbeddedGrowableArray<E> embedded(value_factory<E>(42));
+      GrowableArray<E>* array = embedded.array();
+      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+      ASSERT_TRUE(array->on_resource_area()); // data: resource area
+      this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
     }
@@ -187,6 +249,25 @@ public:
 };
 
 template<typename E>
+class AllocatorClosureEmbeddedArena : public AllocatorClosureGrowableArray<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      Arena arena(mtTest);
+      EmbeddedGrowableArray<E> embedded(value_factory<E>(42), &arena);
+      GrowableArray<E>* array = embedded.array();
+      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+      ASSERT_TRUE(!array->on_resource_area()); // data: arena
+      this->set_array(array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
 class AllocatorClosureArenaArena : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
@@ -204,35 +285,89 @@ public:
   };
 };
 
-// ------------  ValueFactor  -------------
-
 template<typename E>
-E value_factory(int i) {
-  return E(i);
-}
-
-class Point {
+class AllocatorClosureGrowableArrayCHeap : public AllocatorClosure<E> {
 private:
-  int _x;
-  int _y;
+  GrowableArrayCHeap<E, mtTest>* _array;
+
 public:
-  Point(int x, int y) : _x(x), _y(y) {}
-  Point() : _x(0), _y(0) {} // TODO remove?
-  bool operator==(const Point& other) const {
-    return _x == other._x && _y == other._y;
+  void set_array(GrowableArrayCHeap<E, mtTest>* array) {
+    this->set_view(array);
+    _array = array;
+  }
+
+  virtual void append(const E& e) override final {
+    _array->append(e);
+  }
+  virtual void reserve(int new_capacity) override final {
+    _array->reserve(new_capacity);
+  }
+  virtual void shrink_to_fit() override final {
+    _array->shrink_to_fit();
+  }
+  virtual void clear_and_deallocate() override final {
+    _array->clear_and_deallocate();
   }
 };
 
-template<>
-Point value_factory(int i) {
-  return Point(i, -i);
-}
+template<typename E>
+class EmbeddedGrowableArrayCHeap {
+private:
+  E _garbage;
+  GrowableArrayCHeap<E, mtTest> _array;
+public:
+  EmbeddedGrowableArrayCHeap(E&& garbage) : _garbage(garbage) {}
+  GrowableArrayCHeap<E, mtTest>* array() { return &_array; }
+};
 
-template<>
-int* value_factory(int i) {
-  // cast int to int ptr, just for sake of test
-  return (int*)(0x100000000L + (long)i);
-}
+template<typename E>
+class AllocatorClosureStackCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      GrowableArrayCHeap<E, mtTest> array;
+      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+      this->set_array(&array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureEmbeddedCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      EmbeddedGrowableArrayCHeap<E> embedded(value_factory<E>(42));
+      GrowableArrayCHeap<E, mtTest>* array = embedded.array();
+      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+      this->set_array(array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
+
+template<typename E>
+class AllocatorClosureCHeapCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
+public:
+  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
+    test->reset();
+    {
+      GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>();
+      ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+      this->set_array(array);
+      modify->do_modify(this);
+      test->do_test(this);
+    }
+    test->finish();
+  };
+};
 
 // ------------ ModifyClosures ------------
 
@@ -860,17 +995,29 @@ protected:
     AllocatorClosureStackResourceArea<E> allocator_s_r;
     allocator_s_r.dispatch(modify, test);
 
+    AllocatorClosureEmbeddedResourceArea<E> allocator_e_r;
+    allocator_e_r.dispatch(modify, test);
+
     AllocatorClosureResourceAreaResourceArea<E> allocator_r_r;
     allocator_r_r.dispatch(modify, test);
 
     AllocatorClosureStackArena<E> allocator_s_a;
     allocator_s_a.dispatch(modify, test);
 
+    AllocatorClosureEmbeddedArena<E> allocator_e_a;
+    allocator_e_a.dispatch(modify, test);
+
     AllocatorClosureArenaArena<E> allocator_a_a;
     allocator_a_a.dispatch(modify, test);
 
+    AllocatorClosureStackCHeap<E> allocator_s_c;
+    allocator_s_c.dispatch(modify, test);
 
-    // TODO more allocators
+    AllocatorClosureEmbeddedCHeap<E> allocator_e_c;
+    allocator_e_c.dispatch(modify, test);
+
+    AllocatorClosureCHeapCHeap<E> allocator_c_c;
+    allocator_c_c.dispatch(modify, test);
   }
 
   template<typename E>
