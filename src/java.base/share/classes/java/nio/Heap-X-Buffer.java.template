@@ -29,6 +29,7 @@ package java.nio;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Objects;
+import java.util.Arrays;
 
 /**
 #if[rw]
@@ -174,6 +175,10 @@ class Heap$Type$Buffer$RW$
 
     public $type$ get(int i) {
         return hb[ix(checkIndex(i))];
+    }
+
+    public int hashCode() {
+        return Arrays.hashCode(hb);
     }
 
 #if[streamableType]
