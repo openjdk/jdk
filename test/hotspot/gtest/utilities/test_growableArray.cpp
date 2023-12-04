@@ -39,6 +39,8 @@
 
 // TODO delete CHeap - and verify!
 
+// TODO negative tests for CHeap allocation (first verify)
+
 // We have a list of each:
 //  - ModifyClosure
 //  - TestClosure
@@ -89,6 +91,9 @@ public:
   GrowableArrayIterator<E> begin() const { return _view->begin(); }
   GrowableArrayIterator<E> end() const   { return _view->end(); }
   E pop()                { return _view->pop(); }
+
+  template<typename Predicate>
+  int find_if(Predicate predicate) const { return _view->find_if(predicate); }
 
   // forwarding to underlying array with allocation
   virtual void append(const E& e) = 0;
@@ -593,6 +598,42 @@ class TestClosureCapacity : public TestClosure<E> {
   };
 };
 
+template<typename E>
+class TestClosureFindIf : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+
+    // Add elements
+    for (int i = 0; i < 10; i++) {
+      a->append(value_factory<E>(i));
+    }
+
+    for (int i = 0; i < 10; i++) {
+      int index = a->find_if([&](const E& elem) {
+        return elem == value_factory<E>(i);
+      });
+      ASSERT_EQ(index, i);
+    }
+
+    // TODO: example where up is different to down!
+
+    {
+      int index = a->find_if([&](const E& elem) {
+        return elem == value_factory<E>(100);
+      });
+      ASSERT_EQ(index, -1);
+    }
+
+    {
+      int index = a->find_if([&](const E& elem) {
+        return elem == value_factory<E>(-100);
+      });
+      ASSERT_EQ(index, -1);
+    }
+  };
+};
+
 // template<typename E>
 // class TestClosureCopy : public TestClosure<E> {
 //   virtual void do_test(AllocatorClosure<E>* a) override final {
@@ -787,6 +828,13 @@ protected:
     TestClosureCapacity<E> test;
     run_test_modify<E>(&test);
   }
+
+  template<typename E>
+  static void run_test_find_if() {
+    TestClosureFindIf<E> test;
+    run_test_modify<E>(&test);
+  }
+
   // TODO more tests
 };
 
@@ -836,6 +884,18 @@ TEST_VM_F(GrowableArrayTest, xxx_capacity_ptr) {
 
 TEST_VM_F(GrowableArrayTest, xxx_capacity_point) {
   run_test_capacity<Point>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_find_if_int) {
+  run_test_find_if<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_find_if_ptr) {
+  run_test_find_if<int*>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_find_if_point) {
+  run_test_find_if<Point>();
 }
 
 #ifdef ASSERT
