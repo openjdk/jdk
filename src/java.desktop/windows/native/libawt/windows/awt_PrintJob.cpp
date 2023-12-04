@@ -1016,7 +1016,22 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jdouble paperWidth, paperHeight;
     jboolean err;
     WORD dmPaperSize = getPrintPaperSize(env, &err, self);
-    if (err) goto done;
+    if (err) {
+        /* Free any resources allocated */
+        if (privateDC == TRUE) {
+            if (printDC != NULL) {
+                /* In this case we know that this DC has no GDI objects to free */
+                ::DeleteDC(printDC);
+            }
+            if (hDevMode != NULL) {
+                ::GlobalFree(hDevMode);
+            }
+            if (hDevNames != NULL) {
+                ::GlobalFree(hDevNames);
+            }
+        }
+        return;
+    }
 
     double ix, iy, iw, ih, pw, ph;
 
@@ -1253,7 +1268,6 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
 
     jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
-    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
     if (setSizeID == NULL) {
         env->ExceptionClear();
         JNU_ThrowNullPointerException(env, "no setSize method");
