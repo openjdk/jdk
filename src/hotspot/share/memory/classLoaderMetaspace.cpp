@@ -60,12 +60,10 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
-  constexpr size_t nonclass_mimumum_allocation_word_size = Metaspace::min_allocation_word_size;
   constexpr size_t nonclass_alignment_words = metaspace::AllocationAlignmentWordSize;
 
   // Initialize non-class Arena
   _non_class_space_arena = new MetaspaceArena(
-      nonclass_mimumum_allocation_word_size,
       nonclass_alignment_words,
       non_class_cm,
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
@@ -74,12 +72,10 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 
   // If needed, initialize class arena
   if (Metaspace::using_class_space()) {
-    constexpr size_t class_mimumum_allocation_word_size = sizeof(Klass) / BytesPerWord;
     constexpr size_t class_alignment_words = KlassAlignmentInBytes / BytesPerWord;
     ChunkManager* const class_cm =
             ChunkManager::chunkmanager_class();
     _class_space_arena = new MetaspaceArena(
-        class_mimumum_allocation_word_size,
         class_alignment_words,
         class_cm,
         ArenaGrowthPolicy::policy_for_space_type(space_type, true),
@@ -104,15 +100,15 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   word_size = align_up(word_size, Metaspace::min_allocation_word_size);
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   MetaBlock result, wastage;
-  if (Metaspace::is_class_space_allocation(mdType)) {
-    result = class_space_arena()->allocate(word_size, wastage);
-    if (wastage.is_nonempty()) {
-      non_class_space_arena()->deallocate(wastage);
-    }
-  } else {
-    result = non_class_space_arena()->allocate(word_size, wastage);
-    assert(wastage.is_empty(), "Unexpected wastage from non-class arena: "
-           METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
+  MetaspaceArena* const arena = Metaspace::is_class_space_allocation(mdType) ?
+                                class_space_arena() : non_class_space_arena();
+  result = arena->allocate(word_size, wastage);
+  if (wastage.is_nonempty()) {
+    assert(arena->allocation_alignment_words() > metaspace::AllocationAlignmentWordSize,
+           "minimally alignment used in arena, unexpected wastage returned");
+    assert(!is_aligned(wastage.base(), arena->allocation_alignment_words() * BytesPerWord),
+           "unexpected: wastage could have been used allocating arena.");
+    non_class_space_arena()->deallocate(wastage);
   }
   return result.base();
 }

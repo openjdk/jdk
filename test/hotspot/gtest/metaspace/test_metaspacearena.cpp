@@ -43,6 +43,7 @@
 #include "metaspaceGtestRangeHelpers.hpp"
 
 using metaspace::AllocationAlignmentByteSize;
+using metaspace::AllocationAlignmentWordSize;
 using metaspace::ArenaGrowthPolicy;
 using metaspace::CommitLimiter;
 using metaspace::InternalStats;
@@ -61,9 +62,9 @@ class MetaspaceArenaTestHelper {
   SizeAtomicCounter _used_words_counter;
   MetaspaceArena* _arena;
 
-  void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
+  void initialize(size_t allocation_alignment_words, const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _arena = new MetaspaceArena(&_context.cm(), _growth_policy, &_used_words_counter, name);
+    _arena = new MetaspaceArena(allocation_alignment_words, &_context.cm(), _growth_policy, &_used_words_counter, name);
     DEBUG_ONLY(_arena->verify());
   }
 
@@ -75,7 +76,16 @@ public:
                             const char* name = "gtest-MetaspaceArena") :
     _context(helper)
   {
-    initialize(ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), name);
+    initialize(AllocationAlignmentWordSize, ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), name);
+  }
+
+  // Create a helper; growth policy for arena is determined by the given spacetype|class tupel
+  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper, size_t allocation_alignment,
+                            Metaspace::MetaspaceType space_type, bool is_class,
+                            const char* name = "gtest-MetaspaceArena") :
+    _context(helper)
+  {
+    initialize(allocation_alignment, ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), name);
   }
 
   // Create a helper; growth policy is directly specified
@@ -83,7 +93,15 @@ public:
                            const char* name = "gtest-MetaspaceArena") :
     _context(helper)
   {
-    initialize(growth_policy, name);
+    initialize(AllocationAlignmentWordSize, growth_policy, name);
+  }
+
+  // Create a helper; growth policy is directly specified
+  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper, size_t allocation_alignment, const ArenaGrowthPolicy* growth_policy,
+                           const char* name = "gtest-MetaspaceArena") :
+    _context(helper)
+  {
+    initialize(allocation_alignment, growth_policy, name);
   }
 
   ~MetaspaceArenaTestHelper() {
@@ -144,8 +162,14 @@ public:
     ASSERT_NULL(dummy);
   }
 
-  // Allocate; it may or may not work; return value in *p_return_value
   void allocate_from_arena_with_tests(MetaWord** p_return_value, size_t word_size) {
+    MetaBlock result, wastage;
+    allocate_from_arena_with_tests(word_size, result, wastage);
+    ASSERT_TRUE(wastage.is_empty());
+  }
+
+  // Allocate; it may or may not work; return value in *p_return_value
+  void allocate_from_arena_with_tests(size_t word_size, MetaBlock& result, MetaBlock& wastage) {
 
     // Note: usage_numbers walks all chunks in use and counts.
     size_t used = 0, committed = 0, capacity = 0;
@@ -153,16 +177,14 @@ public:
 
     size_t possible_expansion = limiter().possible_expansion_words();
 
-    MetaBlock bl, wastage;
-    bl = _arena->allocate(word_size, wastage);
-    ASSERT_TRUE(wastage.is_empty());
+    result = _arena->allocate(word_size, wastage);
 
     SOMETIMES(DEBUG_ONLY(_arena->verify();))
 
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
     usage_numbers_with_test(&used2, &committed2, &capacity2);
 
-    if (bl.is_empty()) {
+    if (result.is_empty()) {
       // Allocation failed.
       ASSERT_LT(possible_expansion, word_size);
       ASSERT_EQ(used, used2);
@@ -170,7 +192,8 @@ public:
       ASSERT_EQ(capacity, capacity2);
     } else {
       // Allocation succeeded. Should be correctly aligned.
-      ASSERT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));
+      ASSERT_TRUE(is_aligned(result.base(), _arena->allocation_alignment_words()));
+
       // used: may go up or may not (since our request may have been satisfied from the freeblocklist
       //   whose content already counts as used).
       // committed: may go up, may not
@@ -179,8 +202,6 @@ public:
       ASSERT_GE(committed2, committed);
       ASSERT_GE(capacity2, capacity);
     }
-
-    *p_return_value = bl.base();
   }
 
   // Allocate; it may or may not work; but caller does not care for the result value
@@ -774,3 +795,61 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_top_al
 TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop_allocation) {
   test_repeatedly_allocate_and_deallocate(false);
 }
+
+TEST_VM(Metaspace, MetaspaceArena_test_aligned_allocations) {
+
+  constexpr Metaspace::MetaspaceType space_type space_type = Metaspace::StandardMetaspaceType;
+
+  for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl ++) {
+    chunklevel_t level = lvl;
+    const ArenaGrowthPolicy policy (&level, 1);
+    constexpr size_t first_chunk_word_size = word_size_for_level(level);
+
+    for (size_t align = AllocationAlignmentWordSize * 2;
+         align <= MIN2(first_chunk_word_size, MIN_CHUNK_WORD_SIZE); align *= 2) {
+      MetaspaceGtestContext context;
+      MetaspaceArenaTestHelper helper(context, align, Metaspace::StandardMetaspaceType, false);
+
+      for (int i = 0; i < 10; i++) {
+        MetaBlock result, wastage;
+        helper.allocate_from_arena_with_tests(Metaspace::min_allocation_word_size, result, wastage);
+
+        const int allocations_per_chunk = (int)(first_chunk_word_size / align);
+
+        ASSERT_TRUE(result.is_nonempty());
+        ASSERT_EQ(result.word_size(), Metaspace::min_allocation_word_size);
+
+        // we expect wastage unless we switched to a new chunk
+        if ((i % allocations_per_chunk) == 0) {
+          ASSERT_TRUE(wastage.is_empty());
+        } else {
+          ASSERT_TRUE(wastage.is_nonempty());
+          ASSERT_FALSE(is_aligned(wastage.base(), align));
+          ASSERT_LT(wastage.word_size(), align);
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

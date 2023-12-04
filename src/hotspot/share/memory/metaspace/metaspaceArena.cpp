@@ -60,8 +60,7 @@ chunklevel_t MetaspaceArena::next_chunk_level() const {
 
 // Returns true if we could reuse this block (large enough and correctly aligned).
 bool MetaspaceArena::could_reuse_block(MetaBlock bl) const {
-  return is_aligned(bl.base(), _allocation_alignment_words * BytesPerWord) &&
-         bl.word_size() >= _minimum_allocation_word_size;
+  return is_aligned(bl.base(), _allocation_alignment_words * BytesPerWord);
 }
 
 // Given a chunk, return the committed remainder of this chunk.
@@ -120,16 +119,14 @@ void MetaspaceArena::add_allocation_to_fbl(MetaBlock bl) {
 MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                                SizeAtomicCounter* total_used_words_counter,
                                const char* name)
-: MetaspaceArena(Metaspace::min_allocation_word_size, AllocationAlignmentWordSize,
+: MetaspaceArena(AllocationAlignmentWordSize,
                  chunk_manager, growth_policy, total_used_words_counter, name)
 {}
 
-MetaspaceArena::MetaspaceArena(size_t minimum_allocation_word_size,
-                               size_t allocation_alignment_words,
+MetaspaceArena::MetaspaceArena(size_t allocation_alignment_words,
                                ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                                SizeAtomicCounter* total_used_words_counter,
                                const char* name) :
-  _minimum_allocation_word_size(minimum_allocation_word_size),
   _allocation_alignment_words(allocation_alignment_words),
   _chunk_manager(chunk_manager),
   _growth_policy(growth_policy),
@@ -143,9 +140,6 @@ MetaspaceArena::MetaspaceArena(size_t minimum_allocation_word_size,
 {
   assert(is_power_of_2(_allocation_alignment_words), "Invalid alignment (%zu)",
          _allocation_alignment_words);
-  assert(_minimum_allocation_word_size >= Metaspace::min_allocation_word_size &&
-         _minimum_allocation_word_size <= Metaspace::max_allocation_word_size(),
-         "Invalid minimum allocation size (%zu", _minimum_allocation_word_size);
 
   // Requiring arena allocation alignment to be smaller or equal the smallest chunk size allows
   // us to allocate from a fresh chunk without having to align the result pointer.
@@ -251,7 +245,7 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
   UL2(trace, "requested " SIZE_FORMAT " words.", word_size);
 
   NOT_LP64(assert(is_aligned(word_size, Metaspace::min_allocation_word_size), "Bad block size");)
-  assert(word_size >= _minimum_allocation_word_size, "Too small for this arena");
+  assert(word_size >= Metaspace::min_allocation_word_size, "Too small");
 
   MetaBlock result;
   bool taken_from_fbl = false;

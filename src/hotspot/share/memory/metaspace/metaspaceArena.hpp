@@ -80,7 +80,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // Please note that access to a metaspace arena may be shared
   // between threads and needs to be synchronized in CLMS.
 
-  const size_t _minimum_allocation_word_size;
   const size_t _allocation_alignment_words;
 
   // Reference to the chunk manager to allocate chunks from.
@@ -145,13 +144,14 @@ public:
                  SizeAtomicCounter* total_used_words_counter,
                  const char* name);
 
-  MetaspaceArena(size_t minimum_allocation_word_size,
-                 size_t allocation_alignment_words,
+  MetaspaceArena(size_t allocation_alignment_words,
                  ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                  SizeAtomicCounter* total_used_words_counter,
                  const char* name);
 
   ~MetaspaceArena();
+
+  size_t allocation_alignment_words() const { return _allocation_alignment_words; }
 
   // Allocate memory from Metaspace.
   // On success, returns non-empty block of the specified word size, and
