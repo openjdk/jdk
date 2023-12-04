@@ -40,15 +40,33 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _end_semaphore() {}
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
+  bool use_caller = task->caller_can_run();
+  bool use_workers = !use_caller || (num_workers > 1);
+  uint num_worker_tasks = use_caller ? (num_workers - 1) : num_workers;
+
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  _not_finished = num_workers;
+  _not_finished = num_worker_tasks;
 
-  // Dispatch 'num_workers' number of tasks.
-  _start_semaphore.signal(num_workers);
+  if (use_workers) {
+    if (use_caller) {
+      // Claim worker_id = 0 for caller.
+      Atomic::inc(&_started);
+    }
 
-  // Wait for the last worker to signal the coordinator.
-  _end_semaphore.wait();
+    // Dispatch 'num_worker_tasks' number of tasks.
+    _start_semaphore.signal(num_worker_tasks);
+  }
+
+  if (use_caller) {
+    // Execute task in caller.
+    task->work(0);
+  }
+
+  if (use_workers) {
+    // Wait for the last worker to signal the coordinator.
+    _end_semaphore.wait();
+  }
 
   // No workers are allowed to read the state variables after the coordinator has been signaled.
   assert(_not_finished == 0, "%d not finished workers?", _not_finished);
