@@ -2182,7 +2182,7 @@ public final class String
         byte[] tv = value;
         byte[] ov = other.value;
         if (coder == otherCoder) {
-            if (ooffset == 0 && toffset == 0 && len == (tv.length >> coder) && ov.length == tv.length) {
+            if ((ooffset | toffset) == 0 && len == (tv.length >> coder) && ov.length == tv.length) {
                 return StringLatin1.equals(tv, ov);
             }
             if (coder == UTF16) {
