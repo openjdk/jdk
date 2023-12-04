@@ -168,6 +168,12 @@ Point value_factory(int i) {
   return Point(i, -i);
 }
 
+template<>
+int* value_factory(int i) {
+  // cast int to int ptr, just for sake of test
+  return (int*)(0x100000000L + (long)i);
+}
+
 // ------------ ModifyClosures ------------
 
 template<typename E>
@@ -794,12 +800,20 @@ TEST_VM_F(GrowableArrayTest, xxx_append_int) {
   run_test_append<int>();
 }
 
+TEST_VM_F(GrowableArrayTest, xxx_append_ptr) {
+  run_test_append<int*>();
+}
+
 TEST_VM_F(GrowableArrayTest, xxx_append_point) {
   run_test_append<Point>();
 }
 
 TEST_VM_F(GrowableArrayTest, xxx_clear_int) {
   run_test_clear<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_clear_ptr) {
+  run_test_clear<int*>();
 }
 
 TEST_VM_F(GrowableArrayTest, xxx_clear_point) {
@@ -810,12 +824,20 @@ TEST_VM_F(GrowableArrayTest, xxx_iterator_int) {
   run_test_iterator<int>();
 }
 
+TEST_VM_F(GrowableArrayTest, xxx_iterator_ptr) {
+  run_test_iterator<int*>();
+}
+
 TEST_VM_F(GrowableArrayTest, xxx_iterator_point) {
   run_test_iterator<Point>();
 }
 
 TEST_VM_F(GrowableArrayTest, xxx_capacity_int) {
   run_test_capacity<int>();
+}
+
+TEST_VM_F(GrowableArrayTest, xxx_capacity_ptr) {
+  run_test_capacity<int*>();
 }
 
 TEST_VM_F(GrowableArrayTest, xxx_capacity_point) {
