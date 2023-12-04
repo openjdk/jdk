@@ -46,7 +46,6 @@ RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
   nullptr};
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -189,6 +188,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {

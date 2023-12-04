@@ -169,6 +169,11 @@ public:
   // Add a node to the current bundle
   void AddNodeToBundle(Node *n, const Block *bb);
 
+  // Return an integer less than, equal to, or greater than zero
+  // if the stack offset of the first argument is respectively
+  // less than, equal to, or greater than the second.
+  int compare_two_spill_nodes(Node* first, Node* second);
+
   // Add a node to the list of available nodes
   void AddNodeToAvailableList(Node *n);
 
@@ -2271,6 +2276,29 @@ Node * Scheduling::ChooseNodeToBundle() {
   return _available[0];
 }
 
+int Scheduling::compare_two_spill_nodes(Node* first, Node* second) {
+  assert(first->is_MachSpillCopy() && second->is_MachSpillCopy(), "");
+
+  OptoReg::Name first_src_lo = _regalloc->get_reg_first(first->in(1));
+  OptoReg::Name first_dst_lo = _regalloc->get_reg_first(first);
+  OptoReg::Name second_src_lo = _regalloc->get_reg_first(second->in(1));
+  OptoReg::Name second_dst_lo = _regalloc->get_reg_first(second);
+
+  // Comparison between stack -> reg and stack -> reg
+  if (OptoReg::is_stack(first_src_lo) && OptoReg::is_stack(second_src_lo) &&
+      OptoReg::is_reg(first_dst_lo) && OptoReg::is_reg(second_dst_lo)) {
+    return _regalloc->reg2offset(first_src_lo) - _regalloc->reg2offset(second_src_lo);
+  }
+
+  // Comparison between reg -> stack and reg -> stack
+  if (OptoReg::is_stack(first_dst_lo) && OptoReg::is_stack(second_dst_lo) &&
+      OptoReg::is_reg(first_src_lo) && OptoReg::is_reg(second_src_lo)) {
+    return _regalloc->reg2offset(first_dst_lo) - _regalloc->reg2offset(second_dst_lo);
+  }
+
+  return 0; // Not comparable
+}
+
 void Scheduling::AddNodeToAvailableList(Node *n) {
   assert( !n->is_Proj(), "projections never directly made available" );
 #ifndef PRODUCT
@@ -2282,11 +2310,20 @@ void Scheduling::AddNodeToAvailableList(Node *n) {
 
   int latency = _current_latency[n->_idx];
 
-  // Insert in latency order (insertion sort)
+  // Insert in latency order (insertion sort). If two MachSpillCopyNodes
+  // for stack spilling or unspilling have the same latency, we sort
+  // them in the order of stack offset. Some ports (e.g. aarch64) may also
+  // have more opportunities to do ld/st merging
   uint i;
-  for ( i=0; i < _available.size(); i++ )
-    if (_current_latency[_available[i]->_idx] > latency)
+  for (i = 0; i < _available.size(); i++) {
+    if (_current_latency[_available[i]->_idx] > latency) {
       break;
+    } else if (_current_latency[_available[i]->_idx] == latency &&
+               n->is_MachSpillCopy() && _available[i]->is_MachSpillCopy() &&
+               compare_two_spill_nodes(n, _available[i]) > 0) {
+      break;
+    }
+  }
 
   // Special Check for compares following branches
   if( n->is_Mach() && _scheduled.size() > 0 ) {
