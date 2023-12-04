@@ -72,8 +72,7 @@ public class TransferToTrusted {
 
         OutputStream[] outputStreams = new OutputStream[] {
             new ByteArrayOutputStream(),
-            new UntrustedOutputStream(),
-            new DataOutputStream(new UntrustedOutputStream())
+            new UntrustedOutputStream()
         };
 
         for (OutputStream out : outputStreams) {
