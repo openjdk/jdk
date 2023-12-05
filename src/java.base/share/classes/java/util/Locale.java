@@ -1052,8 +1052,13 @@ public final class Locale implements Cloneable, Serializable {
         return loc;
     }
 
+    @SuppressWarnings("removal")
     private static Locale initDefault() {
         String language, region, script, country, variant;
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPropertiesAccess();
+        }
         language = StaticProperty.userLanguage(0);
         // for compatibility, check for old user.region property
         region = StaticProperty.userRegion();
@@ -1079,8 +1084,13 @@ public final class Locale implements Cloneable, Serializable {
                     .orElse(null));
     }
 
+    @SuppressWarnings("removal")
     private static Locale initDefault(Locale.Category category) {
         Locale locale = Locale.defaultLocale;
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPropertiesAccess();
+        }
         return getInstance(
             StaticProperty.userLanguage(category.ordinal() + 1),
             StaticProperty.userScript(category.ordinal() + 1),

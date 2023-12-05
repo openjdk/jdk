@@ -66,13 +66,13 @@ public final class StaticProperty {
     private static final String USER_COUNTRY;
     private static final String USER_COUNTRY_DISPLAY;
     private static final String USER_COUNTRY_FORMAT;
-    private static final String USER_REGION;
     private static final String USER_VARIANT;
     private static final String USER_VARIANT_DISPLAY;
     private static final String USER_VARIANT_FORMAT;
     private static final String USER_EXTENSIONS;
     private static final String USER_EXTENSIONS_DISPLAY;
     private static final String USER_EXTENSIONS_FORMAT;
+    private static final String USER_REGION;
 
     private StaticProperty() {}
 
@@ -104,13 +104,13 @@ public final class StaticProperty {
         USER_COUNTRY = getProperty(props, "user.country", "");
         USER_COUNTRY_DISPLAY = getProperty(props, "user.country.display", USER_COUNTRY);
         USER_COUNTRY_FORMAT = getProperty(props, "user.country.format", USER_COUNTRY);
-        USER_REGION = getProperty(props, "user.region", "");
         USER_VARIANT = getProperty(props, "user.variant", "");
         USER_VARIANT_DISPLAY = getProperty(props, "user.variant.display", USER_VARIANT);
         USER_VARIANT_FORMAT = getProperty(props, "user.variant.format", USER_VARIANT);
         USER_EXTENSIONS = getProperty(props, "user.extensions", "");
         USER_EXTENSIONS_DISPLAY = getProperty(props, "user.extensions.display", USER_EXTENSIONS);
         USER_EXTENSIONS_FORMAT = getProperty(props, "user.extensions.format", USER_EXTENSIONS);
+        USER_REGION = getProperty(props, "user.region", "");
     }
 
     private static String getProperty(Properties props, String key) {
@@ -367,16 +367,6 @@ public final class StaticProperty {
     }
 
     /**
-     * {@return the {@code user.region} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     */
-    public static String userRegion() {
-        return USER_REGION;
-    }
-
-    /**
      * {@return the {@code user.variant} system property}
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
@@ -412,5 +402,15 @@ public final class StaticProperty {
             case 2 -> USER_EXTENSIONS_FORMAT;
             default -> throw new InternalError();
         };
+    }
+
+    /**
+     * {@return the {@code user.region} system property}
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     */
+    public static String userRegion() {
+        return USER_REGION;
     }
 }
