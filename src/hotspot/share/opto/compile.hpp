@@ -1049,7 +1049,7 @@ private:
   void              add_scoped_value_late_inline(CallGenerator* cg) {
     _scoped_value_late_inlines.push(cg);
   }
-  
+
   template<typename N, ENABLE_IF(std::is_base_of<Node, N>::value)>
   void remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful);
 

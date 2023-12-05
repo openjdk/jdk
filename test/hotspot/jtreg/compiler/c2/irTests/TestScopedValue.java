@@ -33,9 +33,10 @@ import java.util.List;
 
 /*
  * @test
+ * @bug 8320649
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
-  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile --enable-preview -source ${jdk.version} TestScopedValue.java
  * @run main/othervm --enable-preview -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestScopedValue
  */
@@ -59,7 +60,7 @@ public class TestScopedValue {
             TestFramework.runWithFlags("--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
         }
     }
-    
+
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
     @IR(counts = {IRNode.LOAD_D, "1" })
@@ -90,7 +91,7 @@ public class TestScopedValue {
     @DontInline
     static void notInlined() {
     }
-    
+
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
     @IR(counts = {IRNode.LOAD_D, "1" })
@@ -250,7 +251,7 @@ public class TestScopedValue {
             testFastPath7Field = o;
         }
     }
-    
+
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
     @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 4" })
@@ -697,7 +698,7 @@ public class TestScopedValue {
 
     static class MyDouble {
         final private double value;
-        
+
         public MyDouble(long value) {
             this.value = value;
         }
