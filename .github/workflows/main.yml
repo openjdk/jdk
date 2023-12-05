@@ -30,6 +30,7 @@ on:
     branches-ignore:
       - master
       - pr/*
+      - jdk*
   workflow_dispatch:
     inputs:
       platforms:

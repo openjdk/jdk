@@ -93,6 +93,14 @@ import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.module.Modules;
+
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.CodeBuilder;
+
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -470,7 +478,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         boolean hasModulePackages() throws IOException {
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
-                return Classfile.of().parse(in.readAllBytes()).elementStream()
+                return ClassFile.of().parse(in.readAllBytes()).elementStream()
                         .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
                                     && !mpa.packages().isEmpty());
             }
@@ -635,7 +643,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate SystemModules class
          */
         public byte[] genClassBytes(Configuration cf) {
-            return Classfile.of().build(classDesc,
+            return ClassFile.of().build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
                            .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
@@ -1855,7 +1863,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         // write the class file to the pool as a resource
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
-        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.of().build(
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, ClassFile.of().build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
                           .withVersion(52, 0)

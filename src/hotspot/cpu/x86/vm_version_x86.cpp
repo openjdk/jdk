@@ -816,7 +816,6 @@ void VM_Version::get_processor_features() {
     _L1_data_cache_line_size = L1_line_size();
   }
 
-  _supports_cx8 = supports_cmpxchg8();
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -3236,4 +3235,3 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
-

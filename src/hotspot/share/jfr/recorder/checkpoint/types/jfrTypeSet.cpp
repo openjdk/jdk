@@ -219,7 +219,7 @@ static int write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp) 
   writer->write(cld != nullptr ? cld_id(cld, leakp) : 0);
   writer->write(mark_symbol(klass, leakp));
   writer->write(package_id(klass, leakp));
-  writer->write(get_flags(klass));
+  writer->write(klass->modifier_flags());
   writer->write<bool>(klass->is_hidden());
   return 1;
 }

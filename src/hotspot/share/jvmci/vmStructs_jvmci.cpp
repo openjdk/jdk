@@ -612,7 +612,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
   declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \

@@ -76,6 +76,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 			</calendar>
 		</calendars>
 		<timeZoneNames>
