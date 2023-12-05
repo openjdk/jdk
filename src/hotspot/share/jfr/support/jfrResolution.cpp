@@ -146,7 +146,7 @@ static inline void on_runtime_deprecated(const Method* method, JavaThread* jt) {
 }
 
 // We can circumvent the need to hook into backpatching if ciMethod is made aware
-// of the deprecated annotation as part of parsing bytecodes of the callee method.
+// of the deprecated annotation already as part of parsing bytecodes of the callee method.
 static void on_backpatching_deprecated(const Method* deprecated_method, JavaThread* jt) {
   assert(deprecated_method != nullptr, "invariant");
   assert(deprecated_method->deprecated(), "invariant");

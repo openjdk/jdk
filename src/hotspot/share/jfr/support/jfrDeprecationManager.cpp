@@ -40,6 +40,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -49,22 +50,6 @@
 
 // for strstr
 #include <string.h>
-
-static constexpr const size_t max_num_edges = 10000;
-static size_t _num_edges = 0;
-
-static inline size_t increment() {
-  return Atomic::add(&_num_edges, static_cast<size_t>(1));
-}
-
-static inline bool max_limit_not_exceded() {
-  const size_t value = increment();
-  if (value <= max_num_edges) {
-    return true;
-  }
-  // Logging here
-  return false;
-}
 
 static bool _enqueue_klasses = false;
 
@@ -143,6 +128,29 @@ static inline bool jfr_is_started_on_command_line() {
   return JfrRecorder::is_started_on_commandline();
 }
 
+static constexpr const size_t max_num_edges = 10000;
+
+static void log_max_num_edges_reached() {
+  log_info(jfr)("The number of deprecated method invocations recorded has reached a maximum limit of %d.", max_num_edges);
+  log_info(jfr)("Deprecated method invocations will not be recorded from now on.");
+  log_info(jfr)("Reduce the number of deprecated method invocations and try again.");
+}
+
+static bool max_limit_not_reached() {
+  static size_t num_edges = 0;
+  size_t compare_value;
+  do {
+    compare_value = Atomic::load(&num_edges);
+    if (compare_value == max_num_edges) {
+      return false;
+    }
+  } while (compare_value != Atomic::cmpxchg(&num_edges, compare_value, compare_value + 1));
+  if (compare_value + 1 == max_num_edges) {
+    log_max_num_edges_reached();
+  }
+  return true;
+}
+
 /*
  * Two cases for JDK modules as outlined by JEP 200: The Modular JDK.
  *
@@ -171,7 +179,11 @@ static inline bool is_jdk_module(const ModuleEntry* module, JavaThread* jt) {
   return is_jdk_module(module_name);
 }
 
-static bool should_report(const Method* method, const Method* sender, JavaThread* jt) {
+static inline bool is_not_jdk_module(const ModuleEntry* module, JavaThread* jt) {
+  return !is_jdk_module(module, jt);
+}
+
+static bool should_record(const Method* method, const Method* sender, JavaThread* jt) {
   assert(method != nullptr, "invariant");
   assert(method->deprecated(), "invariant");
   assert(sender != nullptr, "invariant");
@@ -179,13 +191,13 @@ static bool should_report(const Method* method, const Method* sender, JavaThread
   assert(jt != nullptr, "invariant");
   assert(jfr_is_started_on_command_line(), "invariant");
   const ModuleEntry* const deprecated_module = method->method_holder()->module();
-  if (!is_jdk_module(deprecated_module, jt)) {
-    // Only report invoked deprecated methods in the JDK.
+  // Only report invoked deprecated methods in the JDK.
+  if (is_not_jdk_module(deprecated_module, jt)) {
     return false;
   }
   const ModuleEntry* const sender_module = sender->method_holder()->module();
-  // Only report senders not in the JDK.
-  return !is_jdk_module(sender_module, jt) && max_limit_not_exceded();
+  // Only report senders not in the JDK and if we are still within budget.
+  return is_not_jdk_module(sender_module, jt) && max_limit_not_reached();
 }
 
 // This is the entry point for newly discovered edges in JfrResolution.cpp.
@@ -197,7 +209,7 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
   if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
-    if (should_report(method, sender, jt)) {
+    if (should_record(method, sender, jt)) {
       create_edge(method, sender, bci, frame_type, jt);
     }
   }
