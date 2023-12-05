@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ void InterpreterMacroAssembler::get_dispatch() {
   ExternalAddress target((address)Interpreter::dispatch_table());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(xdispatch, target, offset);
+    la(xdispatch, target.target(), offset);
     addi(xdispatch, xdispatch, offset);
   });
 }
