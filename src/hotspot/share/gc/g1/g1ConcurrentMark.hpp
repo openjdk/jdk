@@ -141,15 +141,15 @@ private:
   TaskQueueEntryChunk* _base;    // Bottom address of allocated memory area.
   size_t _chunk_capacity;        // Current maximum number of TaskQueueEntryChunk elements.
 
-  char _pad0[DEFAULT_CACHE_LINE_SIZE];
+  char _pad0[DEFAULT_PADDING_SIZE];
   TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   volatile size_t _hwm;          // High water mark within the reserved space.
-  char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
+  char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
   // Allocate a new chunk from the reserved memory, using the high water mark. Returns
   // null if out of memory.
