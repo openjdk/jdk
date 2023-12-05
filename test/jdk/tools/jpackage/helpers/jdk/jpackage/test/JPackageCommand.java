@@ -423,6 +423,14 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return outputDir().resolve(bundleName);
     }
 
+    Optional<Path> nullableOutputBundle() {
+        try {
+            return Optional.ofNullable(outputBundle());
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
+    }
+
     /**
      * Returns application layout.
      *
@@ -749,11 +757,15 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         if (hasArgument("--dest")) {
             if (isImagePackageType()) {
                 TKit.deleteDirectoryContentsRecursive(outputDir());
-            } else if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
-                    outputBundle())).get()) {
-                TKit.trace(
-                        String.format("Deleted [%s] file before running jpackage",
-                                outputBundle()));
+            } else {
+                nullableOutputBundle().ifPresent(path -> {
+                    if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
+                            path)).get()) {
+                        TKit.trace(String.format(
+                                "Deleted [%s] file before running jpackage",
+                                path));
+                    }
+                });
             }
         }
 

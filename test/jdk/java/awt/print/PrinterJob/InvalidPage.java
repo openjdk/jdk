@@ -25,7 +25,7 @@
  * @test InvalidPage.java
  * @bug 4671634 6506286
  * @summary Invalid page format can crash win32 JRE
- * @author prr
+ * @key printer
  * @run main/manual InvalidPage
  */
 

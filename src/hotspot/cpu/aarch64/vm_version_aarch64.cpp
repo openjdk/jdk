@@ -204,8 +204,13 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse N1, N2 and V1
-  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) || model_is(0xd40))) {
+  // Neoverse
+  //   N1: 0xd0c
+  //   N2: 0xd49
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
+                          model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -234,8 +239,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  // Neoverse V1
-  if (_cpu == CPU_ARM && model_is(0xd40)) {
+  // Neoverse
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
