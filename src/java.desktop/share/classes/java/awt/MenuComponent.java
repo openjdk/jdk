@@ -59,14 +59,6 @@ import sun.awt.ComponentFactory;
  */
 public abstract class MenuComponent implements java.io.Serializable {
 
-    static {
-        /* ensure that the necessary native libraries are loaded */
-        Toolkit.loadLibraries();
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
-
     transient volatile MenuComponentPeer peer;
     transient volatile MenuContainer parent;
 
@@ -463,12 +455,6 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         appContext = AppContext.getAppContext();
     }
-
-    /**
-     * Initialize JNI field and method IDs.
-     */
-    private static native void initIDs();
-
 
     /*
      * --- Accessibility Support ---
