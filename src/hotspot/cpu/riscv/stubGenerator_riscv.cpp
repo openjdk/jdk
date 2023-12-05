@@ -3887,6 +3887,10 @@ class StubGenerator: public StubCodeGenerator {
       __ enter();
 
       __ push_reg(saved_regs, sp);
+
+      address constant_table = vset_sew == Assembler::e32 ? (address)round_consts_256 : (address)round_consts_512;
+      la(consts, ExternalAddress(constant_table));
+
       // Register use in this function:
       //
       // VECTORS
@@ -3984,9 +3988,6 @@ class StubGenerator: public StubCodeGenerator {
       __ vid_v(v0);
       __ vmseq_vi(v0, v0, 0x0);  // v0.mask[i] = (i == 0 ? 1 : 0)
 
-      address constant_table = vset_sew == Assembler::e32 ? (address)round_consts_256 : (address)round_consts_512;
-      la(consts, ExternalAddress(constant_table));
-
       VectorRegister rotation_regs[] = {v10, v11, v12, v13};
       int rot_pos = 0;
       // Quad-round #0 (+0, v10->v11->v12->v13) ... #11 (+3, v13->v10->v11->v12)
@@ -4027,6 +4028,8 @@ class StubGenerator: public StubCodeGenerator {
       __ vadd_vv(v17, v27, v17);
 
       if (multi_block) {
+        int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
+        __ addi(consts, consts, -total_adds);
         __ add(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
         __ ble(ofs, limit, multi_block_loop);
         __ mv(c_rarg0, ofs); // return ofs
