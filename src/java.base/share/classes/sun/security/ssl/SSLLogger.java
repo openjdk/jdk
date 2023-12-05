@@ -486,7 +486,7 @@ public final class SSLLogger {
                 if (certExts == null) {
                     Object[] certFields = {
                         x509.getVersion(),
-                        Debug.toString(x509.getSerialNumber().toByteArray()),
+                        Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
                         dateTimeFormat.format(x509.getNotBefore().toInstant()),
@@ -510,7 +510,7 @@ public final class SSLLogger {
                     }
                     Object[] certFields = {
                         x509.getVersion(),
-                        Debug.toString(x509.getSerialNumber().toByteArray()),
+                        Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
                         dateTimeFormat.format(x509.getNotBefore().toInstant()),

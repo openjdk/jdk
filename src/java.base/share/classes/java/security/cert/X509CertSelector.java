@@ -1930,7 +1930,7 @@ public class X509CertSelector implements CertSelector {
 
         if (debug != null) {
             debug.println("X509CertSelector.match(Serial number: "
-                + Debug.toString(xcert.getSerialNumber().toByteArray())
+                + Debug.toString(xcert.getSerialNumber())
                 + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
                 + xcert.getSubjectX500Principal() + ")");
         }

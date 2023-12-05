@@ -279,7 +279,7 @@ final class ForwardBuilder extends Builder {
                     debug.println("ForwardBuilder.getMatchingCACerts: " +
                         "found matching trust anchor." +
                         "\n  SN: " +
-                            Debug.toString(trustedCert.getSerialNumber().toByteArray()) +
+                            Debug.toString(trustedCert.getSerialNumber()) +
                         "\n  Subject: " +
                             trustedCert.getSubjectX500Principal() +
                         "\n  Issuer: " +
@@ -678,7 +678,7 @@ final class ForwardBuilder extends Builder {
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
-                + Debug.toString(cert.getSerialNumber().toByteArray())
+                + Debug.toString(cert.getSerialNumber())
                 + "\n  Issuer: " + cert.getIssuerX500Principal() + ")"
                 + "\n  Subject: " + cert.getSubjectX500Principal() + ")");
         }

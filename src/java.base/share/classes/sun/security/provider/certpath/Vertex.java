@@ -149,7 +149,7 @@ final class Vertex {
         sb.append("Subject:    ").append
                 (x509Cert.getSubjectX500Principal()).append("\n");
         sb.append("SerialNum:  ").append
-                (Debug.toString(x509Cert.getSerialNumber().toByteArray())).append("\n");
+                (Debug.toString(x509Cert.getSerialNumber())).append("\n");
         sb.append("Expires:    ").append
                 (x509Cert.getNotAfter().toString()).append("\n");
         boolean[] iUID = x509Cert.getIssuerUniqueID();

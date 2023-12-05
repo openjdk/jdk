@@ -105,7 +105,7 @@ public final class JCAUtil {
                 (cert instanceof X509Certificate x509)) {
             PublicKey pKey = x509.getPublicKey();
             String algId = x509.getSigAlgName();
-            String serNum = Debug.toString(x509.getSerialNumber().toByteArray());
+            String serNum = Debug.toString(x509.getSerialNumber());
             String subject = x509.getSubjectX500Principal().toString();
             String issuer = x509.getIssuerX500Principal().toString();
             String keyType = pKey.getAlgorithm();

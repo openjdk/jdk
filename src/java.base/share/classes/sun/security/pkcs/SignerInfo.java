@@ -678,14 +678,14 @@ public class SignerInfo implements DerEncoder {
             md.digest(encryptedDigest))) {
 
             throw new SignatureException("Signature timestamp (#" +
-                Debug.toString(token.getSerialNumber().toByteArray()) +
+                Debug.toString(token.getSerialNumber()) +
                 ") generated on " + token.getDate() + " is inapplicable");
         }
 
         if (debug != null) {
             debug.println();
             debug.println("Detected signature timestamp (#" +
-                Debug.toString(token.getSerialNumber().toByteArray()) +
+                Debug.toString(token.getSerialNumber()) +
                 ") generated on " + token.getDate());
             debug.println();
         }

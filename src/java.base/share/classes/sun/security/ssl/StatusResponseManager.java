@@ -325,7 +325,7 @@ final class StatusResponseManager {
 
         if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
             SSLLogger.fine(
-                    "Check cache for SN" + Debug.toString(cid.getSerialNumber().toByteArray())
+                    "Check cache for SN" + Debug.toString(cid.getSerialNumber())
                         + ": " + (respEntry != null ? "HIT" : "MISS"));
         }
         return respEntry;
@@ -392,7 +392,7 @@ final class StatusResponseManager {
         public String toString() {
             return "StatusInfo:" + "\n\tCert: " +
                    this.cert.getSubjectX500Principal() +
-                   "\n\tSerial: " + Debug.toString(this.cert.getSerialNumber().toByteArray()) +
+                   "\n\tSerial: " + Debug.toString(this.cert.getSerialNumber()) +
                    "\n\tResponder: " + this.responder +
                    "\n\tResponse data: " +
                    (this.responseData != null ?
@@ -438,7 +438,7 @@ final class StatusResponseManager {
                 } else {
                     throw new IOException(
                             "Unable to find SingleResponse for SN " +
-                            Debug.toString(cid.getSerialNumber().toByteArray()));
+                            Debug.toString(cid.getSerialNumber()));
                 }
             } else {
                 nextUpdate = null;
@@ -489,7 +489,7 @@ final class StatusResponseManager {
             if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
                 SSLLogger.fine(
                     "Starting fetch for SN " +
-                    Debug.toString(statInfo.cid.getSerialNumber().toByteArray()));
+                    Debug.toString(statInfo.cid.getSerialNumber()));
             }
             try {
                 ResponseCacheEntry cacheEntry;
@@ -574,7 +574,7 @@ final class StatusResponseManager {
                 if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
                     SSLLogger.fine(
                         "Added response for SN " +
-                        Debug.toString(certId.getSerialNumber().toByteArray()) +
+                        Debug.toString(certId.getSerialNumber()) +
                         " to cache");
                 }
             }

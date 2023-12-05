@@ -102,7 +102,7 @@ public class SerialNumber {
      * Return the SerialNumber as user readable string.
      */
     public String toString() {
-        return "SerialNumber: " + Debug.toString(serialNum.toByteArray());
+        return "SerialNumber: " + Debug.toString(serialNum);
     }
 
     /**

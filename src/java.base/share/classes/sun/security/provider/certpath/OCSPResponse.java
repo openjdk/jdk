@@ -405,7 +405,7 @@ public final class OCSPResponse {
             }
             if (debug != null) {
                 debug.println("Status of certificate (with serial number " +
-                    Debug.toString(certId.getSerialNumber().toByteArray()) +
+                    Debug.toString(certId.getSerialNumber()) +
                     ") is: " + sr.getCertStatus());
             }
         }

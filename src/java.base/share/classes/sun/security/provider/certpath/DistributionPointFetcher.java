@@ -314,7 +314,7 @@ public class DistributionPointFetcher {
         if (debug != null) {
             debug.println("DistributionPointFetcher.verifyCRL: " +
                 "checking revocation status for" +
-                "\n  SN: " + Debug.toString(certImpl.getSerialNumber().toByteArray()) +
+                "\n  SN: " + Debug.toString(certImpl.getSerialNumber()) +
                 "\n  Subject: " + certImpl.getSubjectX500Principal() +
                 "\n  Issuer: " + certImpl.getIssuerX500Principal());
         }
