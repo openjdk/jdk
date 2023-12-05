@@ -2106,7 +2106,15 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     // Print a bunch of diagnostics, if requested.
     if (TraceDeoptimization || LogCompilation || is_receiver_constraint_failure) {
       ResourceMark rm;
+
+      // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+      // We must do this already now, since we cannot acquire this lock while
+      // holding the tty lock (lock ordering by rank).
+      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+      NoSafepointVerifier no_safepoint;
+
       ttyLocker ttyl;
+
       char buf[100];
       if (xtty != nullptr) {
         xtty->begin_head("uncommon_trap thread='" UINTX_FORMAT "' %s",
@@ -2142,15 +2150,10 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         if (dcnt != 0)
           xtty->print(" count='%d'", dcnt);
 
-        int dos = 0;
-        {
-          // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-          MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-          NoSafepointVerifier no_safepoint;
-
-          ProfileData* pdata = trap_mdo->bci_to_data(trap_bci);
-          dos = (pdata == nullptr)? 0: pdata->trap_state();
-        }
+        // We need to lock to read the ProfileData. But to keep the locks ordered, we need to
+        // lock extra_data_lock before the tty lock.
+        ProfileData* pdata = trap_mdo->bci_to_data(trap_bci);
+        int dos = (pdata == nullptr)? 0: pdata->trap_state();
         if (dos != 0) {
           xtty->print(" state='%s'", format_trap_state(buf, sizeof(buf), dos));
           if (trap_state_is_recompiled(dos)) {
