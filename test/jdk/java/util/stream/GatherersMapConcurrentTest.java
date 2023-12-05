@@ -52,9 +52,14 @@ public class GatherersMapConcurrentTest {
         }
     }
 
+    record ConcurrencyConfig(Config config, int concurrencyLevel) {}
+
     static final Stream<Integer> sizes(){
         return Stream.of(0,1,10,33,99,9999);
     }
+
+    static final Stream<Integer> concurrencyLevels() { return Stream.of(1, 2, 3, 10,
+            1000); }
 
     static final Stream<Config> sequentialAndParallel(int size) {
         return Stream.of(false, true)
@@ -64,6 +69,10 @@ public class GatherersMapConcurrentTest {
 
     static final Stream<Config> configurations() {
         return sizes().flatMap(i -> sequentialAndParallel(i));
+    }
+
+    static final Stream<ConcurrencyConfig> concurrencyConfigurations() {
+        return configurations().flatMap( c -> concurrencyLevels().map( l -> new ConcurrencyConfig(c, l)) );
     }
 
     static final Stream<Config> small_atleast3_configurations() {
@@ -104,6 +113,42 @@ public class GatherersMapConcurrentTest {
             );
         assertEquals("expected", exception.getMessage());
         assertNull(exception.getCause());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false } )
+    public void rethrowsSubtypesOfRuntimeExceptionsUnwrapped(boolean parallel) {
+        final var stream = parallel ? Stream.of(1).parallel() : Stream.of(1);
+
+        var exception =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> stream.gather(
+                                Gatherers.<Integer, Integer>mapConcurrent(2, x -> {
+                                    throw new IllegalStateException("expected");
+                                })
+                        ).toList()
+                );
+        assertEquals("expected", exception.getMessage());
+        assertNull(exception.getCause());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false } )
+    public void rethrowsErrorsWrappedAsRuntimeExceptions(boolean parallel) {
+        final var stream = parallel ? Stream.of(1).parallel() : Stream.of(1);
+
+        var exception =
+                assertThrows(
+                        RuntimeException.class,
+                        () -> stream.gather(
+                                Gatherers.<Integer, Integer>mapConcurrent(2, x -> {
+                                    throw new Error("expected");
+                                })
+                        ).toList()
+                );
+        assertEquals("expected", exception.getCause().getMessage());
+        assertEquals(Error.class, exception.getCause().getClass());
     }
 
     @ParameterizedTest
@@ -239,39 +284,34 @@ public class GatherersMapConcurrentTest {
     }
 
     @ParameterizedTest
-    @MethodSource("configurations")
-    public void behavesAsExpected(Config config) {
-        for (var concurrency : List.of(1, 2, 3, 10, 1000)) {
-            final var expectedResult = config.stream()
-                    .map(x -> x * x)
-                    .toList();
+    @MethodSource("concurrencyConfigurations")
+    public void behavesAsExpected(ConcurrencyConfig cc) {
+        final var expectedResult = cc.config().stream()
+                .map(x -> x * x)
+                .toList();
 
-            final var result = config.stream()
-                    .gather(Gatherers.mapConcurrent(concurrency, x -> x * x))
-                    .toList();
+        final var result = cc.config().stream()
+                .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), x -> x * x))
+                .toList();
 
-            assertEquals(expectedResult, result);
-        }
+        assertEquals(expectedResult, result);
     }
 
     @ParameterizedTest
-    @MethodSource("configurations")
-    public void behavesAsExpectedWhenShortCircuited(Config config) {
-        // Test short-circuiting
-        for (var concurrency : List.of(1, 2, 3, 10, 1000)) {
-            final var limitTo = Math.max(config.streamSize() / 2, 1);
+    @MethodSource("concurrencyConfigurations")
+    public void behavesAsExpectedWhenShortCircuited(ConcurrencyConfig cc) {
+        final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
 
-            final var expectedResult = config.stream()
-                    .map(x -> x * x)
-                    .limit(limitTo)
-                    .toList();
+        final var expectedResult = cc.config().stream()
+                .map(x -> x * x)
+                .limit(limitTo)
+                .toList();
 
-            final var result = config.stream()
-                    .gather(Gatherers.mapConcurrent(concurrency, x -> x * x))
-                    .limit(limitTo)
-                    .toList();
+        final var result = cc.config().stream()
+                .gather(Gatherers.mapConcurrent(cc.concurrencyLevel(), x -> x * x))
+                .limit(limitTo)
+                .toList();
 
-            assertEquals(expectedResult, result);
-        }
+        assertEquals(expectedResult, result);
     }
 }
