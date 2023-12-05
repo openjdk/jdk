@@ -1462,7 +1462,7 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-size_t os::get_rss() {
+size_t os::get_RSS() {
   size_t result = 0;
 #ifdef __APPLE__
   mach_task_basic_info info;

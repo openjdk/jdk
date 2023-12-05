@@ -2456,7 +2456,7 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-size_t os::get_rss() {
+size_t os::get_RSS() {
   size_t result = 0;
   os::Linux::meminfo_t mi;
   if (os::Linux::query_process_memory_info(&mi) && mi.vmrss != -1) {

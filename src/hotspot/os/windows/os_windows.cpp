@@ -2028,7 +2028,7 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-size_t os::get_rss() {
+size_t os::get_RSS() {
   size_t result = 0;
   PROCESS_MEMORY_COUNTERS pm;
   ZeroMemory(&pm, sizeof(pm));

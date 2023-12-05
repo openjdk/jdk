@@ -1369,13 +1369,12 @@ const int ObjectAlignmentInBytes = 8;
           "generate a fatal error. The limit can be either given as a "     \
           "memory size (e.g. \"2G\") or as a percentage of "                \
           "the total available memory on this machine or in this "          \
-          "container (e.g. \"-XX:RssLimit=80%%\"). A value of 0 (default) " \
-          "disables this feature.")                                         \
+          "container (e.g. \"-XX:RssLimit=80%%\").")                        \
                                                                             \
   product(uint, RssLimitCheckInterval, 5000, DIAGNOSTIC,                    \
           "If RssLimit is set, interval, in ms, at which the JVM will "     \
           "check the process resident set size."                            \
-          range(10, UINT_MAX))                                              \
+          range(10, INT_MAX))                                               \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \

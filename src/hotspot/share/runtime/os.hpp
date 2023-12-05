@@ -771,7 +771,7 @@ class os: AllStatic {
   static bool get_host_name(char* buf, size_t buflen);
 
   // Returns the process working set size (rss); 0 if unsupported.
-  static size_t get_rss();
+  static size_t get_RSS();
 
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.

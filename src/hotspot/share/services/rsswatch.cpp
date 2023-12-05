@@ -35,7 +35,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 static void check_rss(size_t limit) {
-  const size_t rss = os::get_rss();
+  const size_t rss = os::get_RSS();
   log_trace(os, rss)("Rss=%zu", rss);
   if (rss >= limit) {
     fatal("Resident Set Size (%zu bytes) reached RssLimit (%zu bytes).", rss, limit);
@@ -88,7 +88,7 @@ static bool parse_percentage(const char* s, const char** tail, double* percentag
   char sign;
   int chars_read = 0;
   if (sscanf(s, "%lf%c%n", &v, &sign, &chars_read) >= 2 && sign == '%') {
-    if (v > 100.0) {
+    if (v > 100.0 || v == 0.0) {
       vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid percentage");
     }
     *percentage = v;
@@ -109,9 +109,14 @@ void RssWatcher::initialize(const char* limit_option) {
   if (parse_percentage(s, &s, &percentage)) {
     is_absolute = false;
   } else {
-    if (!parse_integer(s, (char**)&s, &limit) || limit == 0) {
+    if (!parse_integer(s, (char**)&s, &limit) || (limit == 0)) {
       vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid limit size");
     }
+  }
+
+  if (os::get_RSS() == 0) {
+    log_warning(os, rss)("RssLimit specified, but not supported by the Operating System.");
+    return;
   }
 
   // PeriodicTask has some limitations:
