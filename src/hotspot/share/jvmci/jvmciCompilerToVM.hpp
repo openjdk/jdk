@@ -115,6 +115,8 @@ class CompilerToVM {
     // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
     static int data_section_item_alignment;
 
+    static int* _should_notify_object_alloc;
+
    public:
      static void initialize(JVMCI_TRAPS);
 

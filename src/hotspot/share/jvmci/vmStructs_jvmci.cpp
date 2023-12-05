@@ -122,6 +122,8 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             _should_notify_object_alloc,            int*)                                         \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
