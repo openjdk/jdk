@@ -390,9 +390,12 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
-                                                         HeapWord* end_address,
                                                          CardTableRS* ct,
                                                          Func& object_start) {
+
+  // end_card might be just beyond the heap, so need to use the _raw variant.
+  HeapWord* end_address = ct->addr_for_raw(end_card);
+
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
       current_card++;
@@ -500,7 +503,6 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
 
     CardValue* const dirty_r = find_first_clean_card(dirty_l + 1,
                                                      end_card,
-                                                     mr.end(),
                                                      ct,
                                                      object_start);
     assert(dirty_l < dirty_r, "inv");

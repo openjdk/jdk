@@ -56,13 +56,9 @@ class CardTableRS : public CardTable {
   static CardValue* find_first_dirty_card(CardValue* start_card,
                                           CardValue* end_card);
 
-  // Need to provide both end_card and end_address (address of the start of the
-  // card in the heap) because end_card might be the card beyond the heap which
-  // address we can not recover without an assertion triggering.
   template<typename Func>
   CardValue* find_first_clean_card(CardValue* start_card,
                                    CardValue* end_card,
-                                   HeapWord* end_address,
                                    CardTableRS* ct,
                                    Func& object_start);
 
