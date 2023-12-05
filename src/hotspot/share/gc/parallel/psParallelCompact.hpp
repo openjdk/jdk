@@ -1368,7 +1368,6 @@ MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
 
 class UpdateOnlyClosure: public ParMarkBitMapClosure {
  private:
-  const PSParallelCompact::SpaceId _space_id;
   ObjectStartArray* const          _start_array;
 
  public:
