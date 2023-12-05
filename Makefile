@@ -27,7 +27,7 @@
 ### This file is just a very small wrapper needed to run the real make/Init.gmk.
 ### It also performs some sanity checks on make.
 ###
-
+export LANG := en_US.UTF-8
 # The shell code below will be executed on /usr/bin/make on Solaris, but not in GNU Make.
 # /usr/bin/make lacks basically every other flow control mechanism.
 .TEST_FOR_NON_GNUMAKE:sh=echo You are not using GNU Make/gmake, this is a requirement. Check your path. 1>&2 && exit 1
