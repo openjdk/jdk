@@ -28,8 +28,8 @@ import java.nio.charset.StandardCharsets;
  * @test
  * @bug 8077559
  * @summary Tests Compact String for negative size.
- * @run main/othervm -XX:+CompactStrings NegativeSize
- * @run main/othervm -XX:-CompactStrings NegativeSize
+ * @run main/othervm -XX:+CompactStrings -Xmx4g NegativeSize
+ * @run main/othervm -XX:-CompactStrings -Xmx4g NegativeSize
  */
 
 // In Java8: java.lang.OutOfMemoryError: Java heap space
