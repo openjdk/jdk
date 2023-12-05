@@ -284,8 +284,8 @@ public interface SymbolLookup {
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
-     * @throws IllegalArgumentException if {@code path} is not in the default file system
-     *         or if {@code path} does not point to a valid library
+     * @throws IllegalArgumentException if {@code path} does not point to a valid library
+     *         in the default file system
      * @throws IllegalCallerException If the caller is in a module that does not have
      *         native access enabled
      */
