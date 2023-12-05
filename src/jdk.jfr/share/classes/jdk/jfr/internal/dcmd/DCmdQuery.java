@@ -71,6 +71,11 @@ public final class DCmdQuery extends AbstractDCmd {
         }
     }
 
+    @Override
+    protected final boolean isInteractive() {
+        return true;
+    }
+
     private String stripQuotes(String text) {
         if (text.startsWith("\"")) {
             text = text.substring(1);

@@ -27,17 +27,13 @@
  * @author Jean-Francois Denise
  * @library ../../lib
  * @build tests.*
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.jlink/jdk.tools.jmod
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          jdk.compiler
  * @run main StripJavaDebugAttributesPluginTest
  */
@@ -49,8 +45,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin;
 import jdk.tools.jlink.plugin.Plugin;
@@ -138,7 +134,7 @@ public class StripJavaDebugAttributesPluginTest {
     }
 
     private <T extends Attribute<T>> void checkDebugAttributes(byte[] strippedClassFile) {
-        ClassModel classFile = Classfile.of().parse(strippedClassFile);
+        ClassModel classFile = ClassFile.of().parse(strippedClassFile);
         for (MethodModel method : classFile.methods()) {
             String methodName = method.methodName().stringValue();
             CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();

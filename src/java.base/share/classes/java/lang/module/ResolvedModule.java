@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,8 @@ public final class ResolvedModule {
 
     /**
      * Returns the set of resolved modules that this resolved module reads.
+     * The readability relation is reflexive (every module reads itself). The
+     * set of resolved modules returned by this method does not include itself.
      *
      * @return A possibly-empty unmodifiable set of resolved modules that
      *         this resolved module reads

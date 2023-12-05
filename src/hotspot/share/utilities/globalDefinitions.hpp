@@ -604,7 +604,7 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 
 // The expected size in bytes of a cache line, used to pad data structures.
 #ifndef DEFAULT_CACHE_LINE_SIZE
-  #define DEFAULT_CACHE_LINE_SIZE 64
+#error "Platform should define DEFAULT_CACHE_LINE_SIZE"
 #endif
 
 
