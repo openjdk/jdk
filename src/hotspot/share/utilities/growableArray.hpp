@@ -394,22 +394,20 @@ private:
 protected:
   GrowableArrayWithAllocator(E* data, int capacity) :
       GrowableArrayView<E>(data, capacity, 0) {
-    // TODO must remove!
-    for (int i = 0; i < capacity; i++) {
-      ::new ((void*)&data[i]) E();
-    }
+    // Allocate for "capacity" many elements, but do not yet
+    // initialize / construct any elements.
   }
 
   GrowableArrayWithAllocator(E* data, int capacity, int initial_len, const E& filler) :
       GrowableArrayView<E>(data, capacity, initial_len) {
     int i = 0;
+    // We initialize / construct (with placement new, copy constructor),
+    // for "initial_len" many elements.
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
     }
-    // TODO must remove!
-    for (; i < capacity; i++) {
-      ::new ((void*)&data[i]) E();
-    }
+    // The "capacity" may be larger, but we leave the rest
+    // of the space uninitialized / no construction.
   }
 
   ~GrowableArrayWithAllocator() {}
@@ -418,8 +416,13 @@ public:
   int append(const E& elem) {
     if (this->_len == this->_capacity) grow(this->_len);
     int idx = this->_len++;
-    // TODO placement construct?
-    this->_data[idx] = elem;
+
+    // The destination element on _data is not yet initialized.
+    // Hence, we need to use placement new, with copy-construct.
+    // Assignment would be wrong, as it assumes the destination
+    // was already initialized.
+    ::new ((void*)&this->_data[idx]) E(elem);
+
     return idx;
   }
 
@@ -436,9 +439,13 @@ public:
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j <= i; j++)
-        // TODO placement new!
-        this->_data[j] = fill;
+      // The elements from old len to new len are not yet
+      // initialized. We use placement new with copy-construct.
+      // Assignment would be wrong, as it assumes the destination
+      // was already initialized.
+      for (int j = this->_len; j <= i; j++) {
+        ::new ((void*)&this->_data[j]) E(fill);
+      }
       this->_len = i+1;
     }
     return this->_data[i];
@@ -448,13 +455,19 @@ public:
     assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
-      for (int j = this->_len; j < i; j++)
-        // TODO placement new!
-        this->_data[j] = fill;
+      // The elements from old len to new len are not yet
+      // initialized. We use placement new with copy-construct.
+      // Assignment would be wrong, as it assumes the destination
+      // was already initialized.
+      for (int j = this->_len; j < i; j++) {
+        ::new ((void*)&this->_data[j]) E(fill);
+      }
+      ::new ((void*)&this->_data[i]) E(elem);
       this->_len = i+1;
+    } else {
+      // Eestination is already initialized, so use assignment.
+      this->_data[i] = elem;
     }
-    // TODO placement new! or maybe assign.
-    this->_data[i] = elem;
   }
 
   // inserts the given element before the element at index i
@@ -530,23 +543,34 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   int old_capacity = this->_capacity;
   assert(new_capacity > old_capacity,
          "expected growth but %d <= %d", new_capacity, old_capacity);
+
+  // Allocate the new data with new capacity
   this->_capacity = new_capacity;
-  E* newData = static_cast<Derived*>(this)->allocate();
+  E* new_data = static_cast<Derived*>(this)->allocate();
+
+  // Copy-construct old->new (using placement new)
   int i = 0;
+  for (     ; i < this->_len; i++) {
+    ::new ((void*)&new_data[i]) E(this->_data[i]);
+  }
 
-  // copy-construct old->new
-  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
+  // Leave rest of space up to "new_capacity" uninitialized,
+  // no construction
 
-  // TODO remove these
-  for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
+  // Remove the old elements, calling the deconstructor
+  // (on initialized elements only)
+  for (i = 0; i < this->_len; i++) {
+    this->_data[i].~E();
+  }
 
-  // deconstruct old
-  for (i = 0; i < old_capacity; i++) this->_data[i].~E();
-
+  // Now that we have deconstructed all elements on the old
+  // data, we can deallocate it.
   if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
   }
-  this->_data = newData;
+
+  // swap in the new data
+  this->_data = new_data;
 }
 
 template <typename E, typename Derived>

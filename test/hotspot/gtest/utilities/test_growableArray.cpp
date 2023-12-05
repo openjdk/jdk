@@ -102,7 +102,7 @@ private:
 public:
   CtorDtor() : _i(-1) { _constructed++; };
   explicit CtorDtor(int i) : _i(i) { _constructed++; }
-  CtorDtor(CtorDtor& t) : _i(t._i) { _constructed++; }
+  CtorDtor(const CtorDtor& t) : _i(t._i) { _constructed++; }
   CtorDtor& operator =(const CtorDtor& t) = default;
   CtorDtor(CtorDtor&& t) : _i(t._i) { _constructed++; }
   CtorDtor& operator =(CtorDtor&& t) = default;
@@ -225,11 +225,10 @@ public:
 template<typename E>
 class EmbeddedGrowableArray {
 private:
-  E _garbage;
   GrowableArray<E> _array;
 public:
-  EmbeddedGrowableArray(E&& garbage) : _garbage(garbage) {}
-  EmbeddedGrowableArray(E&& garbage, Arena* arena) : _garbage(garbage), _array(arena) {}
+  EmbeddedGrowableArray() {}
+  EmbeddedGrowableArray(Arena* arena) : _array(arena) {}
   GrowableArray<E>* array() { return &_array; }
 };
 
@@ -260,7 +259,7 @@ public:
     test->reset();
     {
       ResourceMark rm;
-      EmbeddedGrowableArray<E> embedded(value_factory<E>(42));
+      EmbeddedGrowableArray<E> embedded;
       GrowableArray<E>* array = embedded.array();
 #ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
@@ -321,7 +320,7 @@ public:
     test->reset();
     {
       Arena arena(mtTest);
-      EmbeddedGrowableArray<E> embedded(value_factory<E>(42), &arena);
+      EmbeddedGrowableArray<E> embedded(&arena);
       GrowableArray<E>* array = embedded.array();
 #ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
@@ -385,10 +384,9 @@ public:
 template<typename E>
 class EmbeddedGrowableArrayCHeap {
 private:
-  E _garbage;
   GrowableArrayCHeap<E, mtTest> _array;
 public:
-  EmbeddedGrowableArrayCHeap(E&& garbage) : _garbage(garbage) {}
+  EmbeddedGrowableArrayCHeap() {}
   GrowableArrayCHeap<E, mtTest>* array() { return &_array; }
 };
 
@@ -416,7 +414,7 @@ public:
   virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
     test->reset();
     {
-      EmbeddedGrowableArrayCHeap<E> embedded(value_factory<E>(42));
+      EmbeddedGrowableArrayCHeap<E> embedded;
       GrowableArrayCHeap<E, mtTest>* array = embedded.array();
 #ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
