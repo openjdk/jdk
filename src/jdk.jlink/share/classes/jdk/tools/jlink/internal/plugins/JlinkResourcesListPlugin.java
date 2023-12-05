@@ -58,7 +58,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 public final class JlinkResourcesListPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
 
     public static final String RESPATH_PREFIX = "jdk/tools/jlink/internal/fs_";
-    public static final String RESPATH_SUFFIX = "_resources";
+    public static final String RESPATH_SUFFIX = "_files";
     public static final String CLI_RESOURCE_FILE = "jdk/tools/jlink/internal/cli_cmd.txt";
     private static final int SYMLINKED_RES = 1;
     private static final int REGULAR_RES = 0;
