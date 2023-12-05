@@ -82,7 +82,10 @@ public class SearchWriter extends HtmlDocletWriter {
         contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                         contents.getContent("doclet.search.main_heading")))
                 .add(HtmlTree.DIV(HtmlTree.INPUT("text", HtmlId.of("page-search-input"))
-                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder")))
+                                .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
+                                .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
+                                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                                .put(HtmlAttr.AUTOCAPITALIZE, "off"))
                         .add(HtmlTree.INPUT("reset", HtmlId.of("page-search-reset"))
                                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"))
                                 .put(HtmlAttr.STYLE, "margin: 6px;"))

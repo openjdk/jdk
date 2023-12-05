@@ -46,6 +46,8 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -220,6 +222,7 @@ public abstract class AbstractMemberWriter {
             Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
+            writer.addToTableOfContents(HtmlIds.forMemberSummary(kind), getSummaryLabel());
         }
     }
 
@@ -304,6 +307,20 @@ public abstract class AbstractMemberWriter {
         SortedSet<Element> out = new TreeSet<>(summariesComparator);
         out.addAll(members);
         return out;
+    }
+
+    private Content getSummaryLabel() {
+        return switch (kind) {
+            case FIELDS -> contents.fieldSummaryLabel;
+            case METHODS -> contents.methodSummary;
+            case CONSTRUCTORS -> contents.constructorSummaryLabel;
+            case ENUM_CONSTANTS -> contents.enumConstantSummary;
+            case NESTED_CLASSES -> contents.nestedClassSummary;
+            case PROPERTIES -> contents.propertySummaryLabel;
+            case ANNOTATION_TYPE_MEMBER_OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
+            case ANNOTATION_TYPE_MEMBER_REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
+            default -> throw new IllegalArgumentException(kind.toString());
+        };
     }
 
     /**

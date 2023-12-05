@@ -112,21 +112,31 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
-                    <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
-                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <div class="top-nav" id="navbar-top">
+                    <div class="nav-content">
+                    <div class="nav-menu-button"><button id="navbar-toggle-button" aria-controls="na\
+                    vbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class\
+                    ="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</sp\
+                    an><span class="nav-bar-toggle-icon">&nbsp;</span></button></div>
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">S\
+                    kip navigation links</a></div>
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="p/package-summary.html">Package</a></li>
-                    <li>Class</li>
                     <li><a href="p/package-tree.html">Tree</a></li>
                     <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#external-specs">Help</a></li>
                     </ul>
                     </div>
+                    </div>
                     <div class="sub-nav">
-                    <div id="navbar-sub-list"></div>
-                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
-                    <input type="text" id="search-input" disabled placeholder="Search">
-                    <input type="reset" id="reset-button" disabled value="reset">
+                    <div class="nav-content">
+                    <ul class="sub-nav-list"></ul>
+                    <div class="nav-list-search">
+                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
+                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    <input type="reset" id="reset-button" disabled value="Reset">
+                    </div>
                     </div>
                     </div>
                     <!-- ========= END OF TOP NAVBAR ========= -->

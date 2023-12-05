@@ -225,7 +225,7 @@ public class TestSingletonLists extends JavadocTester {
     public class ListChecker extends HtmlChecker {
         private int listErrors;
         // Ignore "Constant Field Values" @see items for final fields created by javadoc
-        private boolean inSeeList;
+        private int inSeeOrTocList = 0;
         private Stack<Map<String,Integer>> counts = new Stack<>();
         private String fileName;
         private List<String> excludeFiles = List.of(
@@ -270,8 +270,9 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
-                    if ("tag-list".equals(attrs.get("class"))) {
-                        inSeeList = true;
+                    String classAttr = attrs.get("class");
+                    if ("tag-list".equals(classAttr) || "toc-list".equals(classAttr) || "sub-nav-list".equals(classAttr)) {
+                        inSeeOrTocList++;
                     }
                     break;
 
@@ -288,10 +289,10 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": {
                     Map<String,Integer> c = counts.pop();
-                    if (inSeeList) {
+                    if (inSeeOrTocList > 0) {
                         // Ignore "Constant Field Values" @see items for final fields created by javadoc
-                        inSeeList = false;
-                    } else if (c.get("li") == 0) {
+                        inSeeOrTocList--;
+                    } else if (!c.containsKey("li")) {
                         error(currFile, getLineNumber(), "empty list");
                         listErrors++;
                     } else if (c.get("li") == 1 && fileName != null && !excludeFiles.contains(fileName)) {

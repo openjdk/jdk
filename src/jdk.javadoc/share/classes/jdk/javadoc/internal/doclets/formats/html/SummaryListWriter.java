@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Arrays;
 import java.util.SortedSet;
 
 import javax.lang.model.element.Element;
@@ -154,16 +153,14 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         // The script below enables checkboxes in the page and invokes their click handler
         // to restore any previous state when the page is loaded via back/forward button.
         bodyContents.addMainContent(new Script("""
-                document.addEventListener("DOMContentLoaded", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                document.addEventListener("DOMContentLoaded", (e) => {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.disabled = false;
                             c.onclick();
                         });
                     });
                 window.addEventListener("load", function(e) {
-                    document.querySelectorAll('input[type="checkbox"]').forEach(
-                        function(c) {
+                    document.querySelectorAll('main input[type="checkbox"]').forEach((c) => {
                             c.onclick();
                         });
                     });

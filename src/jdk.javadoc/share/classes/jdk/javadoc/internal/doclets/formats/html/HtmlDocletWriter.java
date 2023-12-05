@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -70,6 +71,7 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.EscapeTree;
+import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -82,11 +84,13 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -161,6 +165,10 @@ public abstract class HtmlDocletWriter {
     protected final HtmlIds htmlIds;
 
     private final Set<String> headingIds = new HashSet<>();
+
+    protected final Map<String, String> headings = new LinkedHashMap<>();
+
+    protected ListBuilder tocBuilder;
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -549,6 +557,59 @@ public abstract class HtmlDocletWriter {
     protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
         return new Navigation(element, configuration, pageMode, path)
                 .setUserHeader(RawHtml.of(replaceDocRootDir(options.header())));
+    }
+
+    /**
+     * Returns a sidebar content object containing a header with various controls as well as
+     * the given {@code content}.
+     *
+     * @param content the sidebar content
+     * @param hasFilterInput whether or not to add a filter text input
+     * @return a content builder
+     */
+    protected Content getSideBar(Content content, boolean hasFilterInput) {
+        var sidebar = new ContentBuilder();
+        var sidebarHeader =  HtmlTree.DIV(HtmlStyle.tocHeader, contents.contentsHeading);
+        if (hasFilterInput) {
+            sidebarHeader.add(Entity.NO_BREAK_SPACE)
+                    .add(HtmlTree.INPUT("text", HtmlStyle.filterInput)
+                            .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.filter_label"))
+                            .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.filter_table_of_contents"))
+                            .put(HtmlAttr.AUTOCOMPLETE, "off")
+                            .put(HtmlAttr.AUTOCAPITALIZE, "off"))
+                    .add(HtmlTree.INPUT("reset", HtmlStyle.resetButton)
+                            .put(HtmlAttr.VALUE, resources.getText("doclet.filter_reset")));
+        }
+        sidebar.add(sidebarHeader);
+        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.hideSidebar)
+                .add(HtmlTree.SPAN(contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
+                .add(Entity.LEFT_POINTING_ANGLE));
+        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.showSidebar)
+                .add(Entity.RIGHT_POINTING_ANGLE)
+                .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(contents.showSidebar)));
+        return sidebar.add(content);
+    }
+
+    /**
+     * Adds a link to the table of contents.
+     * @param id the link fragment
+     * @param label the link label
+     */
+    public void addToTableOfContents(HtmlId id, Content label) {
+        tocBuilder.add(links.createLink(id, label).put(HtmlAttr.TABINDEX, "0"));
+    }
+
+    /**
+     * Adds all entries in {@code sections} to the table of contents where keys represent
+     * fragment ids and values represent link labels.
+     * @param sections a map containing id -> label pairs
+     */
+    public void addToTableOfContents(Map<String, String> sections) {
+        if (!sections.isEmpty()) {
+            tocBuilder.addNested(HtmlTree.UL(HtmlStyle.tocList, sections.keySet(),
+                    id -> HtmlTree.LI(links.createLink(HtmlId.of(id), Text.of(sections.get(id)))
+                            .put(HtmlAttr.TABINDEX, "0"))));
+        }
     }
 
     /**
@@ -1465,6 +1526,15 @@ public abstract class HtmlDocletWriter {
                 sb.append(text.getBody());
             } else if (docTree instanceof LiteralTree literal) {
                 sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof IndexTree index) {
+                DocTree searchTerm = index.getSearchTerm();
+                String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
+                if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
+                    tagText = tagText.substring(1, tagText.length() - 1);
+                }
+                sb.append(tagText);
+            } else if (docTree instanceof EntityTree entity) {
+                sb.append(utils.docTrees.getCharacters(entity));
             } else if (docTree instanceof LinkTree link) {
                 var label = link.getLabel();
                 sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
@@ -1483,6 +1553,8 @@ public abstract class HtmlDocletWriter {
             HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
             id = htmlId.name();
             attrs.add("id=\"").add(htmlId.name()).add("\"");
+        } else {
+            headingIds.add(id);
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
@@ -1492,6 +1564,10 @@ public abstract class HtmlDocletWriter {
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
+        }
+        // Record second-level headings for use in table of contents
+        if (node.getName().toString().equalsIgnoreCase("h2")) {
+            headings.put(id, headingContent);
         }
     }
 

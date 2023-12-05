@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,13 +107,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    <ul class="contents-list">
+                    <aside>
+                    <div class="toc-header">Contents&nbsp;""",
+                """
+                    <li><a href="#">Constant Field Values</a>
+                    <ul class="toc-list">
                     <li><a href="#p1.p2a">p1.p2a.*</a></li>
                     <li><a href="#p1.p2b">p1.p2b.*</a></li>
                     </ul>
-                    </section>""");
+                    </li>
+                    </ul>
+                    </aside>""");
     }
 
     /**
@@ -140,12 +144,16 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    <ul class="contents-list">
+                    <aside>
+                    <div class="toc-header">Contents&nbsp;""",
+                """
+                    <li><a href="#">Constant Field Values</a>
+                    <ul class="toc-list">
                     <li><a href="#unnamed-package">Unnamed Package</a></li>
                     </ul>
-                    </section>""");
+                    </li>
+                    </ul>
+                    </aside>""");
     }
 
     /**
@@ -179,13 +187,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    <ul class="contents-list">
-                    <li><a href="#unnamed-package">Unnamed Package</a></li>
-                    <li><a href="#p1.p2a">p1.p2a.*</a></li>
-                    </ul>
-                    </section>""");
+                    <aside>
+                    <div class="toc-header">Contents&nbsp;""",
+                """
+                   <li><a href="#">Constant Field Values</a>
+                   <ul class="toc-list">
+                   <li><a href="#unnamed-package">Unnamed Package</a></li>
+                   <li><a href="#p1.p2a">p1.p2a.*</a></li>
+                   </ul>
+                   </li>
+                   </ul>
+                   </aside>""");
     }
 
     /**
@@ -245,13 +257,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    <ul class="contents-list">
+                    <aside>
+                    <div class="toc-header">Contents&nbsp;""",
+                """
+                    <li><a href="#">Constant Field Values</a>
+                    <ul class="toc-list">
                     <li><a href="#p.a">p.a.*</a></li>
                     <li><a href="#p.b">p.b.*</a></li>
                     <li><a href="#p.q">p.q.*</a></li>
                     </ul>
-                    </section>""");
+                    </li>
+                    </ul>
+                    </aside>""");
     }
 }

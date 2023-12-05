@@ -79,6 +79,8 @@ public class FieldWriter extends AbstractMemberWriter {
         if (!fields.isEmpty()) {
             Content fieldDetailsHeader = getFieldDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.addToTableOfContents(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel);
+            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
@@ -91,9 +93,11 @@ public class FieldWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 fieldContent.add(div);
                 memberList.add(getMemberListItem(fieldContent));
+                writer.addToTableOfContents(htmlIds.forMember(currentElement), Text.of(name(element)));
             }
             Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);
             target.add(fieldDetails);
+            writer.tocBuilder.popNested();
         }
     }
 

@@ -42,8 +42,9 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -72,7 +73,7 @@ public class PackageWriter extends HtmlDocletWriter {
     /**
      * The HTML element for the section tag being written.
      */
-    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription);
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -97,6 +98,7 @@ public class PackageWriter extends HtmlDocletWriter {
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
+        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
         computePackageData();
     }
 
@@ -179,9 +181,12 @@ public class PackageWriter extends HtmlDocletWriter {
      *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
-        if (!options.noComment()) {
-            addPackageDescription(packageContent);
+        addToTableOfContents(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        if (options.noComment()) {
+            return;
         }
+        addPackageDescription(packageContent);
+        addToTableOfContents(headings);
     }
 
     /**
@@ -190,24 +195,16 @@ public class PackageWriter extends HtmlDocletWriter {
      * @param packageContent the content to which the package tags will be added
      */
     protected void buildPackageTags(Content packageContent) {
-        if (!options.noComment()) {
-            addPackageTags(packageContent);
+        if (options.noComment()) {
+            return;
         }
+        addPackageTags(packageContent);
     }
 
     protected Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
         HtmlTree body = getBody(getWindowTitle(packageName));
         var div = HtmlTree.DIV(HtmlStyle.header);
-        if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
-            var classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
-            var moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
-            moduleNameDiv.add(Entity.NO_BREAK_SPACE);
-            moduleNameDiv.add(getModuleLink(mdle,
-                    Text.of(mdle.getQualifiedName().toString())));
-            div.add(moduleNameDiv);
-        }
         Content packageHead = new ContentBuilder();
         if (!packageElement.isUnnamed()) {
             packageHead.add(contents.packageLabel).add(" ");
@@ -275,17 +272,15 @@ public class PackageWriter extends HtmlDocletWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent)
-                .setSubNavLinks(() -> List.of(
-                        links.createLink(HtmlIds.PACKAGE_DESCRIPTION, contents.navDescription,
-                                !utils.getFullBody(packageElement).isEmpty() && !options.noComment()),
-                        links.createLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages,
-                                relatedPackages != null && !relatedPackages.isEmpty()),
-                        links.createLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces,
-                                allClasses != null && !allClasses.isEmpty())));
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
+            subnavLinks.add(links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
+                    Text.of(mdle.getQualifiedName())));
+        }
+        subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
+                getLocalizedPackageName(packageElement), HtmlStyle.currentSelection, ""));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     /**
@@ -319,8 +314,7 @@ public class PackageWriter extends HtmlDocletWriter {
         TableHeader tableHeader= showModules
                 ? new TableHeader(contents.moduleLabel, contents.packageLabel, contents.descriptionLabel)
                 : new TableHeader(contents.packageLabel, contents.descriptionLabel);
-        addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader,
-                summaryContent, showModules);
+        addRelatedPackageSummary(tableHeader, summaryContent, showModules);
     }
 
     /**
@@ -359,17 +353,18 @@ public class PackageWriter extends HtmlDocletWriter {
             }
         }
         if (!table.isEmpty()) {
+            addToTableOfContents(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces);
             target.add(HtmlTree.LI(table));
         }
     }
 
-    protected void addPackageSummary(List<PackageElement> packages, Content label,
-                                  TableHeader tableHeader, Content summaryContent,
-                                  boolean showModules) {
-        if (!packages.isEmpty()) {
+    protected void addRelatedPackageSummary(TableHeader tableHeader, Content summaryContent,
+                                     boolean showModules) {
+        if (!relatedPackages.isEmpty()) {
+            addToTableOfContents(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages);
             var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
-                    .setCaption(label)
+                    .setCaption(contents.relatedPackages)
                     .setHeader(tableHeader);
             if (showModules) {
                 table.setColumnStyles(HtmlStyle.colPlain, HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -377,7 +372,7 @@ public class PackageWriter extends HtmlDocletWriter {
                 table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
             }
 
-            for (PackageElement pkg : packages) {
+            for (PackageElement pkg : relatedPackages) {
                 Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
                 Content moduleLink = Text.EMPTY;
                 if (showModules) {
@@ -427,6 +422,7 @@ public class PackageWriter extends HtmlDocletWriter {
 
     protected void addPackageContent(Content packageContent) {
         bodyContents.addMainContent(packageContent);
+        bodyContents.addSideContent(getSideBar(tocBuilder, false));
     }
 
     protected void addPackageFooter() {

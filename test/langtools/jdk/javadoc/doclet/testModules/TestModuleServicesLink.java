@@ -72,10 +72,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ul>""");
 
     }
 
@@ -97,10 +98,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ul>""");
 
     }
 
@@ -120,10 +122,10 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li>Description&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li>Services</li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    </ul>""");
     }
 
 }

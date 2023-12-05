@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;

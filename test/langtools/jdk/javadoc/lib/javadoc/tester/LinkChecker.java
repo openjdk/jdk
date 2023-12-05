@@ -329,6 +329,7 @@ public class LinkChecker extends HtmlChecker {
 
         IDTable(Path p) {
             this(relativePath(p).toString());
+            addID(0, ""); // Register empty anchor as top of page
         }
 
         IDTable(String name) {

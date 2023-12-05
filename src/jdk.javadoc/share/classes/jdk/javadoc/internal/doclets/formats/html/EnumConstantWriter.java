@@ -69,6 +69,8 @@ public class EnumConstantWriter extends AbstractMemberWriter {
         if (!enumConstants.isEmpty()) {
             Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.addToTableOfContents(HtmlIds.ENUM_CONSTANT_DETAIL, contents.enumConstantDetailLabel);
+            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
@@ -81,10 +83,12 @@ public class EnumConstantWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 enumConstantContent.add(div);
                 memberList.add(getMemberListItem(enumConstantContent));
+                writer.addToTableOfContents(htmlIds.forMember(currentElement), Text.of(name(currentElement)));
             }
             Content enumConstantDetails = getEnumConstantsDetails(
                     enumConstantsDetailsHeader, memberList);
             target.add(enumConstantDetails);
+            writer.tocBuilder.popNested();
         }
     }
 

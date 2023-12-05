@@ -45,7 +45,10 @@ import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -162,6 +165,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
+        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
         computeModulesData();
     }
 
@@ -251,8 +255,10 @@ public class ModuleWriter extends HtmlDocletWriter {
      *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
+        addToTableOfContents(HtmlIds.TOP_OF_PAGE, contents.navDescription);
         if (!options.noComment()) {
             addModuleDescription(moduleContent);
+            addToTableOfContents(headings);
         }
     }
 
@@ -274,16 +280,10 @@ public class ModuleWriter extends HtmlDocletWriter {
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setSubNavLinks(() -> List.of(
-                        links.createLink(HtmlIds.MODULE_DESCRIPTION, contents.navDescription,
-                            !utils.getFullBody(mdle).isEmpty() && !options.noComment()),
-                        links.createLink(HtmlIds.MODULES, contents.navModules,
-                            display(requires) || display(indirectModules)),
-                        links.createLink(HtmlIds.PACKAGES, contents.navPackages,
-                            display(packages) || display(indirectPackages) || display(indirectOpenPackages)),
-                        links.createLink(HtmlIds.SERVICES, contents.navServices,
-                            displayServices(uses, usesTrees) || displayServices(provides.keySet(), providesTrees))
-                ));
+                .setSubNavLinks(List.of(
+                    links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
+                            Text.of(mdle.getQualifiedName()),
+                            HtmlStyle.currentSelection, "")));
     }
 
     protected Content getContentHeader() {
@@ -536,6 +536,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
+            addToTableOfContents(HtmlIds.MODULES, contents.navModules);
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
@@ -580,6 +581,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
+            addToTableOfContents(HtmlIds.PACKAGES, contents.navPackages);
             var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
@@ -750,6 +752,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
+            addToTableOfContents(HtmlIds.SERVICES, contents.navServices);
             var section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
@@ -889,6 +892,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
+        bodyContents.addSideContent(getSideBar(tocBuilder, false));
     }
 
     protected void addModuleFooter() {

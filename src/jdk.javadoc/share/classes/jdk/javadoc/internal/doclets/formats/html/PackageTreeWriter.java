@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -33,9 +34,13 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -128,10 +133,14 @@ public class PackageTreeWriter extends AbstractTreeWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
+            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+        }
+        subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
+                getLocalizedPackageName(packageElement), HtmlStyle.currentSelection, ""));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     /**

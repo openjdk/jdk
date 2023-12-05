@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public enum TagName {
     A,
+    ASIDE,
     BUTTON,
     BLOCKQUOTE,
     BODY,

@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027 8182765
- *           8196200 8196202 8223378 8258659 8261976
+ * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
+ *           8196200 8196202 8223378 8258659 8261976 8320458
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -84,79 +84,10 @@ public class TestNavigation extends JavadocTester {
                     """,
                 """
                     <li><a href="../index.html">Overview</a></li>""");
-
-        // Remaining tests check for additional padding to offset the fixed navigation bar.
-        checkOutput("pkg/A.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <div class="header">""");
-    }
-
-    // Test for checking additional padding to offset the fixed navigation bar in HTML5.
-    @Test
-    public void test1(Path ignore) {
-        javadoc("-d", "out-1",
-                "-html5",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkSubNav();
-
-        checkOutput("pkg/A.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    </header>
-                    <main role="main">
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", true,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    <span class="skip-nav" id="skip-navbar-top"></span></nav>
-                    """);
-    }
-
-    // Test to make sure that no extra padding for nav bar gets generated if -nonavbar is specified.
-    @Test
-    public void test2(Path ignore) {
-        javadoc("-d", "out-2",
-                "-nonavbar",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkSubNav();
-
-        checkOutput("pkg/A.html", false,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    </div>
-                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
-                    </nav>
-                    </header>
-                    <!-- ======== START OF CLASS DATA ======== -->""");
-
-        checkOutput("pkg/package-summary.html", false,
-                """
-                    <!-- ========= END OF TOP NAVBAR ========= -->
-                    </div>
-                    <div class="skip-nav"><a id="skip-navbar-top"></a></div>
-                    </nav>""");
     }
 
     @Test
-    public void test3(Path base) throws IOException {
+    public void testNavLinks(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
@@ -201,57 +132,82 @@ public class TestNavigation extends JavadocTester {
                     package pkg1; public interface InterfaceWithNoMembers {
                     }""");
 
-        javadoc("-d", "out-3",
+        javadoc("-d", "out-navlinks",
                 "-sourcepath", src.toString(),
                 "pkg1");
         checkExit(Exit.OK);
 
         checkOrder("pkg1/A.X.html",
-                "Summary",
                 """
-                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#field-detail" tabindex="0">Field Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#field" tabindex="0">field</a></li>
+                    </ul>
+                    </li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">X()</a></li>
+                    </ul>
+                    </li>
+                    <li><a href="#method-detail" tabindex="0">Method Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#method()" tabindex="0">method()</a></li>
+                    </ul>
+                    </li>
+                    </ul>""");
 
         checkOrder("pkg1/A.Y.html",
-                "Summary",
                 """
-                    <li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">Y()</a></li>
+                    </ul>
+                    </li>
+                    </ul>""");
 
         checkOrder("pkg1/A.X.IC.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">IC()</a></li>
+                    </ul>
+                    </li>
+                    </ul>""");
 
         checkOrder("pkg1/C.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
                 """
-                    <li><a href="#constructor-summary">Constr</a>&nbsp;|&nbsp;</li>""",
-                """
-                    <li><a href="#method-summary">Method</a></li>""");
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
+                    <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
+                    <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
+                    <ul class="toc-list">
+                    <li><a href="#%3Cinit%3E()" tabindex="0">C()</a></li>
+                    </ul>
+                    </li>
+                    </ul>""");
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
-                "Summary",
-                "<li>Nested&nbsp;|&nbsp;</li>",
-                "<li>Field&nbsp;|&nbsp;</li>",
-                "<li>Constr&nbsp;|&nbsp;</li>",
-                "<li>Method</li>");
+                """
+                    <ul class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    </ul>""");
     }
 
     private void checkSubNav() {

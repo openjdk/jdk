@@ -44,6 +44,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -110,6 +111,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
         this.typeElementsWithConstFields = new HashSet<>();
         this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
+        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
     }
 
     @Override
@@ -144,16 +146,18 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      * Builds the list of contents for the groups of packages appearing in the constants summary page.
      */
     protected void buildContents() {
-        Content contentList = getContentsHeader();
+        tocBuilder.add(links.createLink(DocLink.fragment(""),
+                        Text.of(resources.getText("doclet.Constants_Summary"))))
+                .pushNested(HtmlTree.UL(HtmlStyle.tocList));
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
             if (hasConstantField(pkg) && !packageGroupHeadings.contains(abbrevPackageName)) {
-                addLinkToPackageContent(abbrevPackageName, contentList);
+                addLinkToPackageContent(abbrevPackageName);
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        addContentsList(contentList);
+        bodyContents.addSideContent(getSideBar(tocBuilder, true));
     }
 
     /**
@@ -322,17 +326,22 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
     }
 
      Content getHeader() {
-        String label = resources.getText("doclet.Constants_Summary");
-        HtmlTree body = getBody(getWindowTitle(label));
-        bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
-        return body;
+         String label = resources.getText("doclet.Constants_Summary");
+         HtmlTree body = getBody(getWindowTitle(label));
+         bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
+         Content titleContent = contents.constantsSummaryTitle;
+         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+                 HtmlStyle.title, titleContent);
+         var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
+         bodyContents.addMainContent(div);
+         return body;
     }
 
      Content getContentsHeader() {
         return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
-     void addLinkToPackageContent(String abbrevPackageName, Content content) {
+     void addLinkToPackageContent(String abbrevPackageName) {
         //add link to summary
         Content link;
         if (abbrevPackageName.isEmpty()) {
@@ -343,21 +352,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
             link = links.createLink(DocLink.fragment(abbrevPackageName),
                     packageNameContent, "");
         }
-        content.add(HtmlTree.LI(link));
-    }
-
-     void addContentsList(Content content) {
-        Content titleContent = contents.constantsSummaryTitle;
-        var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, titleContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        bodyContents.addMainContent(div);
-        Content headingContent = contents.contentsHeading;
-        var heading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
-                headingContent);
-        var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
-        section.add(content);
-        bodyContents.addMainContent(section);
+        tocBuilder.add(link);
     }
 
      void addPackageGroup(String abbrevPackageName, Content toContent) {

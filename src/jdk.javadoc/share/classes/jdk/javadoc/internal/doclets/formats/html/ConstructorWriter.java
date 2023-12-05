@@ -102,6 +102,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.addToTableOfContents(HtmlIds.CONSTRUCTOR_DETAIL, contents.constructorDetailsLabel);
+            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
@@ -114,9 +116,13 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 constructorContent.add(div);
                 memberList.add(getMemberListItem(constructorContent));
+                writer.addToTableOfContents(htmlIds.forMember(currentConstructor),
+                        Text.of(utils.getSimpleName(constructor)
+                                + utils.makeSignature(currentConstructor, typeElement, false, true)));
             }
             Content constructorDetails = getConstructorDetails(constructorDetailsHeader, memberList);
             target.add(constructorDetails);
+            writer.tocBuilder.popNested();
         }
     }
 

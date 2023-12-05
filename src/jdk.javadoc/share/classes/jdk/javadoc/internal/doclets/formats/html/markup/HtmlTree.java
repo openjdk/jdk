@@ -593,6 +593,12 @@ public class HtmlTree extends Content {
                 .put(HtmlAttr.DISABLED, "");
     }
 
+    public static HtmlTree INPUT(String type, HtmlStyle style) {
+        return new HtmlTree(TagName.INPUT)
+                .put(HtmlAttr.TYPE, type)
+                .setStyle(style)
+                .put(HtmlAttr.DISABLED, "");
+    }
     /**
      * Creates an HTML {@code LABEL} element with the given content.
      *
@@ -644,6 +650,10 @@ public class HtmlTree extends Content {
                 .put(HtmlAttr.TYPE, type)
                 .put(HtmlAttr.HREF, href)
                 .put(HtmlAttr.TITLE, title);
+    }
+
+    public static HtmlTree ASIDE(List<? extends Content> contents) {
+        return new HtmlTree(TagName.ASIDE).add(contents);
     }
 
     /**

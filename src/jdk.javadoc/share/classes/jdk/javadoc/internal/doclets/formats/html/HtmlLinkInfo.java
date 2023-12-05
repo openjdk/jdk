@@ -85,7 +85,7 @@ public class HtmlLinkInfo {
     private Kind context = Kind.PLAIN;
 
     // The fragment of the link.
-    private String fragment = "";
+    private String fragment = null;
 
     // The member this link points to (if any).
     private Element targetMember;

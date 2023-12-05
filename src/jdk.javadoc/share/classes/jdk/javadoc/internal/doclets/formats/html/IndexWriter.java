@@ -350,7 +350,7 @@ public class IndexWriter extends HtmlDocletWriter {
         }
 
         content.add(new HtmlTree(TagName.BR));
-        List<Content> pageLinks = Stream.of(IndexItem.Category.values())
+        List<? extends Content> pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))
                 .sorted((i1,i2)-> utils.compareStrings(i1.getLabel(), i2.getLabel()))

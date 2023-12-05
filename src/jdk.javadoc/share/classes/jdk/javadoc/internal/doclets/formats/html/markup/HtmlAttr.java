@@ -38,6 +38,8 @@ public enum HtmlAttr {
     ARIA_LABELLEDBY("aria-labelledby"),
     ARIA_ORIENTATION("aria-orientation"),
     ARIA_SELECTED("aria-selected"),
+    AUTOCOMPLETE,
+    AUTOCAPITALIZE,
     CHECKED,
     CLASS,
     CLEAR,

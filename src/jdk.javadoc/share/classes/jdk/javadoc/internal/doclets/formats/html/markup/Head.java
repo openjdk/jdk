@@ -351,7 +351,7 @@ public class Head extends Content {
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
                 String ptrPath = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
-                mainBodyScript.append("var pathtoroot = ")
+                mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
                         .append("loadScripts(document, 'script');");

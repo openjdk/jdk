@@ -426,14 +426,17 @@ public class TestSearch extends JavadocTester {
                 """
                     <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
                 """
-                    var pathtoroot = "./";
+                    const pathtoroot = "./";
                     loadScripts(document, 'script');""",
                 "<div class=\"nav-list-search\">",
                 """
-                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
-                    <input type="text" id="search-input" disabled placeholder="Search">
-                    <input type="reset" id="reset-button" disabled value="reset">
-                    """);
+                    <li><a href="search.html">Search</a></li>""",
+                """
+                    <div class="nav-list-search">
+                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
+                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    <input type="reset" id="reset-button" disabled value="Reset">
+                    </div>""");
     }
 
     void checkSingleIndex() {

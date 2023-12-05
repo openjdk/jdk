@@ -37,17 +37,24 @@ import java.util.Objects;
  * Content for the {@code <body>} element.
  *
  * The content is a {@code <div>} element that contains a
- * header that is always visible, and main content that
- * can be scrolled if necessary.
+ * header that is always visible, main content that
+ * can be scrolled if necessary, and optional side content
+ * that will be displayed as a sidebar if available.
  */
 public class BodyContents extends Content {
 
     private final List<Content> mainContents = new ArrayList<>();
+    private final List<Content> sideContents = new ArrayList<>();
     private Content header = null;
     private Content footer = null;
 
     public BodyContents addMainContent(Content content) {
         mainContents.add(content);
+        return this;
+    }
+
+    public BodyContents addSideContent(Content content) {
+        sideContents.add(content);
         return this;
     }
 
@@ -89,7 +96,10 @@ public class BodyContents extends Content {
 
         return new ContentBuilder()
                 .add(header)
-                .add(HtmlTree.MAIN().add(mainContents))
-                .add(footer == null ? Text.EMPTY : footer);
+                .add(HtmlTree.DIV(HtmlStyle.mainGrid)
+                        .add(HtmlTree.ASIDE(sideContents))
+                        .add(HtmlTree.MAIN()
+                                .add(mainContents)
+                                .add(footer == null ? Text.EMPTY : footer)));
     }
 }

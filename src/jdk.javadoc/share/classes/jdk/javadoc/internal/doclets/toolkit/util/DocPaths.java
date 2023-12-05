@@ -94,6 +94,9 @@ public class DocPaths {
     /** The name of the default javascript file. */
     public static final DocPath SCRIPT_JS = DocPath.create("script.js");
 
+    /** The name of the template of the default javascript file. */
+    public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
+
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
