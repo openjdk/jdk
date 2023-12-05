@@ -106,7 +106,7 @@ public class PrinterDevice implements Printable {
         /* Make sure that device really is TYPE_PRINTER */
         GraphicsDevice gd = gConfig.getDevice();
         System.out.println("Printer Device ID = " + gd.getIDstring());
-        if (!(gd.getType() == GraphicsDevice.TYPE_PRINTER)) {
+        if (gd.getType() != GraphicsDevice.TYPE_PRINTER) {
             failed = true;
             throw new RuntimeException("Expected printer device");
         }
