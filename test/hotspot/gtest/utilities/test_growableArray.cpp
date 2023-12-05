@@ -104,7 +104,7 @@ public:
   explicit CtorDtor(int i) : _i(i) { _constructed++; }
   CtorDtor(const CtorDtor& t) : _i(t._i) { _constructed++; }
   CtorDtor& operator =(const CtorDtor& t) = default;
-  CtorDtor(CtorDtor&& t) : _i(t._i) { _constructed++; }
+  CtorDtor(CtorDtor&& t) : _i(t._i) { /* not counted, as t never deconstructed */ }
   CtorDtor& operator =(CtorDtor&& t) = default;
   ~CtorDtor() { _deconstructed++; }
 
@@ -131,11 +131,23 @@ void reset_type<CtorDtor>() {
 }
 
 template<typename E>
-void check_no_constructor_for_type() {}
+void check_constructor_count_for_type(int i) {
+  // default no check because no count
+}
 
 template<>
-void check_no_constructor_for_type<CtorDtor>() {
+void check_constructor_count_for_type<CtorDtor>(int i) {
   ASSERT_EQ(CtorDtor::constructed(), 0);
+}
+
+template<typename E>
+void check_constructor_count_consistency_for_type() {
+  // default no check because no count
+}
+
+template<>
+void check_constructor_count_consistency_for_type<CtorDtor>() {
+  ASSERT_EQ(CtorDtor::constructed(), CtorDtor::deconstructed());
 }
 
 // -------------- Basic Definitions -------------
@@ -190,7 +202,16 @@ public:
     reset_type<E>();
   }
   virtual void do_test(AllocatorClosure<E>* a) = 0;
-  virtual void finish() {}
+  virtual void finish(const AllocatorClosure<E>* a) {
+    // After the array is deconstructed, all constructed elements
+    // should again be deconstructed. But this only holds for
+    // the CHeap version. The Arena / Resource Area allocated
+    // array can simply be abandoned and the deconstructions
+    // are not guaranteed for the elements.
+    if (a->is_C_heap()) {
+      check_constructor_count_consistency_for_type<E>();
+    }
+  }
 };
 
 template<typename E>
@@ -248,7 +269,7 @@ public:
       modify->do_modify(this);
       test->do_test(this);
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -269,7 +290,7 @@ public:
       modify->do_modify(this);
       test->do_test(this);
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -288,8 +309,9 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
+      // no deconstructors called, array just abandoned
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -309,7 +331,7 @@ public:
       modify->do_modify(this);
       test->do_test(this);
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -330,7 +352,7 @@ public:
       modify->do_modify(this);
       test->do_test(this);
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -349,8 +371,9 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
+      // no deconstructors called, array just abandoned
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -365,7 +388,7 @@ public:
     _array = array;
   }
 
-  virtual bool is_C_heap() const override final { return false; };
+  virtual bool is_C_heap() const override final { return true; };
 
   virtual void append(const E& e) override final {
     _array->append(e);
@@ -403,8 +426,10 @@ public:
       this->set_array(&array);
       modify->do_modify(this);
       test->do_test(this);
+      // deconstructors called implicitly, and it first deconstruct
+      // all elements.
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -422,8 +447,10 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
+      // deconstructors called implicitly, and it first deconstruct
+      // all elements.
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -440,8 +467,10 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
+      // deconstruction explicit, recursively deconstructs all elements
+      delete array;
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -458,8 +487,10 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
+      // deconstruction explicit, recursively deconstructs all elements
+      delete array;
     }
-    test->finish();
+    test->finish(this);
   };
 };
 
@@ -469,8 +500,8 @@ template<typename E>
 class ModifyClosureEmpty : public ModifyClosure<E> {
 public:
   virtual void do_modify(AllocatorClosure<E>* a) override final {
-    // empty, but we can verify constructor / deconstructor count, if they are available
-    check_no_constructor_for_type<E>();
+    // empty, but we can verify constructor / deconstructor count = 0
+    check_constructor_count_for_type<E>(0);
   }
 };
 

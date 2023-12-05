@@ -97,7 +97,14 @@ public:
 
   // TODO should clear and trunc_to become virtual or at least abstract?
   // TODO we need to maybe call deconstructors here!
-  void  clear()                 { _len = 0; }
+  void  clear() {
+    // Remove the old elements, calling the deconstructor
+    // (on initialized elements only)
+    for (i = 0; i < this->_len; i++) {
+      this->_data[i].~E();
+    }
+    _len = 0;
+  }
   // TODO we need to maybe call deconstructors here!
   void  trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
@@ -806,7 +813,7 @@ void GrowableArrayCHeap<E, F>::shrink_to_fit() {
   }
 
   // deconstruct old
-  for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
+  for (int i = 0; i < len; ++i) old_data[i].~E();
 
   if (old_data != nullptr) {
     this->deallocate(old_data);
