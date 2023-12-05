@@ -36,7 +36,8 @@ import compiler.lib.ir_framework.*;
 public class TestLoadNIdeal {
 
     public static void main(String[] args) {
-        TestFramework.run();
+        // Ensure that we run with compressed oops
+        TestFramework.runWithFlags("-XX:+UseCompressedOops");
     }
 
     static class A { int x; }
@@ -45,7 +46,7 @@ public class TestLoadNIdeal {
     void dummy(A p[]) { }
 
     @Test
-    @IR(counts = {IRNode.LOAD_N, "1"})
+    @IR(applyIf = { "UseCompressedOops", "true" }, counts = { IRNode.LOAD_N, "1" })
     int test() {
         A p[] = new A[1];
         p[0] = new A();

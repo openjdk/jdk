@@ -1565,6 +1565,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
     record_for_igvn(ld);
     if (ld->is_DecodeN()) {
       // Also record the actual load (LoadN) in case ld is DecodeN
+      assert(ld->in(1)->Opcode() == Op_LoadN, "Assumption invalid: input to DecodeN is not LoadN");
       record_for_igvn(ld->in(1));
     }
   }
