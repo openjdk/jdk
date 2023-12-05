@@ -24,6 +24,10 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_SUPER;
 import static java.lang.constant.ConstantDescs.CD_List;
 import static java.lang.constant.ConstantDescs.CD_Map;
 import static java.lang.constant.ConstantDescs.CD_Object;
@@ -35,15 +39,16 @@ import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_FINAL;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
-import static jdk.internal.classfile.Classfile.ACC_SUPER;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -79,11 +84,6 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.module.Checks;
 import jdk.internal.module.DefaultRoots;
 import jdk.internal.module.ModuleHashes;
@@ -93,14 +93,6 @@ import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.module.Modules;
-
-import java.lang.classfile.attribute.ModulePackagesAttribute;
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.TypeKind;
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.CodeBuilder;
-
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
