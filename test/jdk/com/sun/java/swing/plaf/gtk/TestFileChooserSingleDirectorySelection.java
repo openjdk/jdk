@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6972078 8319938
+ * @bug 6972078
  * @key headful
  * @requires (os.family == "linux")
  * @summary Verifies if user is able to select single directory if multi selection
@@ -38,7 +38,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.Point;
 import java.awt.Robot;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -48,154 +47,130 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class TestFileChooserSingleDirectorySelection {
     private static JFrame frame;
     private static JFileChooser fileChooser;
-    private static JButton getSelectedFilesButton;
     private static Robot robot;
-    private static boolean passed;
-    private static File testDir;
-    private static File testFile;
-    private static File[] SubDirs;
-    private static File[] subFiles;
+    private static volatile Point frameLocation;
+    private static volatile int frameWidth;
+    private static volatile int frameHeight;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("sun.java2d.uiScale", "1.0");
         robot = new Robot();
         robot.setAutoDelay(100);
-        createFoldersOnlyDir();
-        createFilesOnlyDir();
-        populateDirs();
-        populateFiles();
+        File testDirDirs = createFoldersOnlyDir();
+        File testDirFiles = createFilesOnlyDir();
+        populateDirs(testDirDirs);
+        populateFiles(testDirFiles);
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            checkFileOnlyTest(laf);
-            checkDirectoriesOnlyTest(laf);
-            checkFilesAndDirectoriesTest(laf);
+            checkFileOnlyTest(laf, testDirFiles);
+            checkDirectoriesOnlyTest(laf, testDirDirs);
+            checkFilesAndDirectoriesTest(laf, testDirDirs);
             System.out.println("Passed");
         }
     }
 
-    private static void createFoldersOnlyDir() {
+    private static File createFoldersOnlyDir() {
         String tmpDir = System.getProperty("java.io.tmpdir");
-        testDir = new File(tmpDir, "testDir");
-        if (!testDir.exists()) {
-            testDir.mkdir();
+        File dirsDir = new File(tmpDir, "dirsDir");
+        if (!dirsDir.exists()) {
+            dirsDir.mkdir();
         }
-        testDir.deleteOnExit();
+        dirsDir.deleteOnExit();
+        return dirsDir;
     }
 
-    private static void populateDirs() {
-        SubDirs = new File[10];
+    private static void populateDirs(File dirsDir) {
         for (int i = 0; i < 10; ++i) {
-            SubDirs[i] = new File(testDir, "subDir_" + (i+1));
-            SubDirs[i].mkdir();
-            SubDirs[i].deleteOnExit();
+            File SubDirs = new File(dirsDir, "subDir_" + (i+1));
+            SubDirs.mkdir();
+            SubDirs.deleteOnExit();
         }
     }
 
-    private static void createFilesOnlyDir() {
+    private static File createFilesOnlyDir() {
         String tmpDir = System.getProperty("java.io.tmpdir");
-        testFile = new File(tmpDir, "testFile");
-        if (!testFile.exists()) {
-            testFile.mkdir();
+        File filesDir = new File(tmpDir, "filesDir");
+        if (!filesDir.exists()) {
+            filesDir.mkdir();
         }
-        testFile.deleteOnExit();
+        filesDir.deleteOnExit();
+        return filesDir;
     }
 
-    private static void populateFiles() throws Exception {
-        subFiles = new File[10];
+    private static void populateFiles(File filesDir) throws Exception {
         for (int i = 0; i < 10; ++i) {
-            subFiles[i] = File.createTempFile("subFiles_" + (i+1),
-                    ".txt", new File(testFile.getAbsolutePath()));
-            subFiles[i].deleteOnExit();
+            File subFile = new File(filesDir, "subFiles_" + (i+1));
+            subFile.createNewFile();
+            subFile.deleteOnExit();
         }
     }
 
-    private static void checkFileOnlyTest(UIManager.LookAndFeelInfo laf)
-            throws Exception {
+    private static void checkFileOnlyTest(UIManager.LookAndFeelInfo laf,
+                                          File crntDir) throws Exception {
         System.out.println("Testing File Only mode");
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
-                fileChooser.setCurrentDirectory(testFile);
+                fileChooser.setCurrentDirectory(crntDir);
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             });
 
             robot.waitForIdle();
             robot.delay(1000);
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            doTesting(laf, 230);
+            if (laf.getClassName().contains("Motif")
+                || laf.getClassName().contains("GTK")) {
+                doTesting(laf, 230);
+            } else {
+                doTesting(laf, 50);
+            }
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
+            disposeFrame();
         }
     }
 
-    private static void checkDirectoriesOnlyTest(UIManager.LookAndFeelInfo laf)
-            throws Exception {
+    private static void checkDirectoriesOnlyTest(UIManager.LookAndFeelInfo laf,
+                                             File crntDir) throws Exception {
         System.out.println("Testing Directories Only mode");
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
-                fileChooser.setCurrentDirectory(testDir);
+                fileChooser.setCurrentDirectory(crntDir);
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             });
             robot.waitForIdle();
             robot.delay(1000);
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             doTesting(laf, 50);
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
+            disposeFrame();
         }
     }
 
-    private static void checkFilesAndDirectoriesTest(UIManager.LookAndFeelInfo laf)
-            throws Exception {
+    private static void checkFilesAndDirectoriesTest(UIManager.LookAndFeelInfo laf,
+                                               File crntDir) throws Exception {
         System.out.println("Testing Files and Directories mode");
         try {
             SwingUtilities.invokeAndWait(() -> {
                 createAndShowUI();
-                fileChooser.setCurrentDirectory(testDir);
+                fileChooser.setCurrentDirectory(crntDir);
+                fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             });
             robot.waitForIdle();
             robot.delay(1000);
-            fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             doTesting(laf, 50);
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
+            disposeFrame();
         }
     }
 
     private static void createAndShowUI() {
         frame = new JFrame("Test File Chooser Single Directory Selection");
         frame.getContentPane().setLayout(new BorderLayout());
-        fileChooser = new JFileChooser(testDir);
+        fileChooser = new JFileChooser();
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setControlButtonsAreShown(false);
-
-        getSelectedFilesButton = new JButton();
-        getSelectedFilesButton.setText("Print selected Files");
-        getSelectedFilesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                passed = false;
-                File files[] = fileChooser.getSelectedFiles();
-                if (files.length != 0) {
-                    passed = true;
-                }
-            }
-        });
-
         frame.getContentPane().add(fileChooser, BorderLayout.CENTER);
-        frame.getContentPane().add(getSelectedFilesButton, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -213,16 +188,14 @@ public class TestFileChooserSingleDirectorySelection {
         }
     }
 
-    private static void doTesting(UIManager.LookAndFeelInfo laf, int xOffset) {
-        Point frameLocation = fileChooser.getLocationOnScreen();
-        int frameWidth = frame.getWidth();
-        int frameHeight = frame.getHeight();
-
-        Point btnLocation = getSelectedFilesButton.getLocationOnScreen();
-        int btnWidth = getSelectedFilesButton.getWidth();
-        int btnHeight = getSelectedFilesButton.getHeight();
+    private static void doTesting(UIManager.LookAndFeelInfo laf, int xOffset)
+                                    throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            frameLocation = fileChooser.getLocationOnScreen();
+            frameWidth = frame.getWidth();
+            frameHeight = frame.getHeight();
+        });
         clickMouse(frameLocation, 0, frameHeight, xOffset);
-        clickMouse(btnLocation, btnWidth, btnHeight, 0);
         checkResult(laf);
     }
 
@@ -236,8 +209,18 @@ public class TestFileChooserSingleDirectorySelection {
     }
 
     private static void checkResult(UIManager.LookAndFeelInfo laf) {
-        if (!passed)
+        File files[] = fileChooser.getSelectedFiles();
+        if (files.length == 0) {
             throw new RuntimeException("getSelectedFiles returned " +
-                    "empty array for LAF: "+laf.getClassName());
+                    "empty array for LAF: " + laf.getClassName());
+        }
+    }
+
+    private static void disposeFrame() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+        });
     }
 }
