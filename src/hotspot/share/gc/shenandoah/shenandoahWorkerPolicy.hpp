@@ -29,20 +29,38 @@
 
 class ShenandoahWorkerPolicy : AllStatic {
 public:
-  // Normal GC cycle:
-  static uint calc_workers_for_init_marking()         { return ParallelGCThreads; }
-  static uint calc_workers_for_conc_marking()         { return ConcGCThreads;     }
-  static uint calc_workers_for_final_marking()        { return ParallelGCThreads; }
-  static uint calc_workers_for_conc_refs_processing() { return ConcGCThreads;     }
-  static uint calc_workers_for_conc_root_processing() { return ConcGCThreads;     }
-  static uint calc_workers_for_conc_evac()            { return ConcGCThreads;     }
-  static uint calc_workers_for_conc_update_ref()      { return ConcGCThreads;     }
-  static uint calc_workers_for_final_update_ref()     { return ParallelGCThreads; }
-  static uint calc_workers_for_conc_reset()           { return ConcGCThreads;     }
+  // Calculate the number of workers for initial marking
+  static uint calc_workers_for_init_marking();
 
-  // STW GC cycles:
-  static uint calc_workers_for_stw_degenerated()      { return ParallelGCThreads; }
-  static uint calc_workers_for_fullgc()               { return ParallelGCThreads; }
+  // Calculate the number of workers for concurrent marking
+  static uint calc_workers_for_conc_marking();
+
+  // Calculate the number of workers for final marking
+  static uint calc_workers_for_final_marking();
+
+  // Calculate workers for concurrent root processing
+  static uint calc_workers_for_conc_root_processing();
+
+  // Calculate workers for concurrent refs processing
+  static uint calc_workers_for_conc_refs_processing();
+
+  // Calculate workers for concurrent evacuation (concurrent GC)
+  static uint calc_workers_for_conc_evac();
+
+  // Calculate workers for parallel full gc
+  static uint calc_workers_for_fullgc();
+
+  // Calculate workers for parallel degenerated gc
+  static uint calc_workers_for_stw_degenerated();
+
+  // Calculate workers for concurrent reference update
+  static uint calc_workers_for_conc_update_ref();
+
+  // Calculate workers for parallel/final reference update
+  static uint calc_workers_for_final_update_ref();
+
+  // Calculate workers for concurrent reset
+  static uint calc_workers_for_conc_reset();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

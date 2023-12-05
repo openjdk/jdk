@@ -23,3 +23,50 @@
  */
 
 #include "precompiled.hpp"
+
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+
+uint ShenandoahWorkerPolicy::calc_workers_for_init_marking() {
+  return ParallelGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
+  return ParallelGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_refs_processing() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_root_processing() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_evac() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_fullgc() {
+  return ParallelGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated() {
+  return ParallelGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref() {
+  return ConcGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_final_update_ref() {
+  return ParallelGCThreads;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_conc_reset() {
+  return ConcGCThreads;
+}
