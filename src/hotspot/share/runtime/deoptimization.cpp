@@ -2574,6 +2574,11 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
   assert(!reason_is_speculate(reason), "reason speculate only used by compiler");
   // JVMCI uses the total counts to determine if deoptimizations are happening too frequently -> do not adjust total counts
   bool update_total_counts = true JVMCI_ONLY( && !UseJVMCICompiler);
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  NoSafepointVerifier no_safepoint;
+
   query_update_method_data(trap_mdo, trap_bci,
                            (DeoptReason)reason,
                            update_total_counts,
