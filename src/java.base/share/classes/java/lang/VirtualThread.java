@@ -113,7 +113,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private static final int NEW      = 0;
     private static final int STARTED  = 1;
-    private static final int RUNNING  = 2;     // runnable-unmounted
+    private static final int RUNNING  = 2;     // runnable-mounted
 
     // untimed and timed parking
     private static final int PARKING       = 3;
