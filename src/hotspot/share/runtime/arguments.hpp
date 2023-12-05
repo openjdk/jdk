@@ -291,8 +291,6 @@ class Arguments : AllStatic {
   // Numbered properties are never writeable, and always internal.
   static bool create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
   static bool create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count);
-  static bool create_numbered_addmods_property(const char* prop_base_name, const char* prop_value, unsigned int &count);
-  static bool is_duplicate_addmods_module(const char* prop_base_name, const char* prop_value, unsigned int count, bool &duplicate);
 
   static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
 

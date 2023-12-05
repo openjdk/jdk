@@ -563,7 +563,7 @@ void Modules::verify_archived_modules() {
 
 #if INCLUDE_CDS_JAVA_HEAP
 char* Modules::_archived_main_module_name = nullptr;
-Array<char*>*  Modules::_addmods_names = nullptr;
+char* Modules::_archived_addmods_names = nullptr;
 #endif
 
 void Modules::dump_main_module_name() {
@@ -607,47 +607,37 @@ void Modules::serialize(SerializeClosure* soc) {
 
 void Modules::dump_addmods_names() {
   unsigned int count = Arguments::addmods_count();
-  assert(Arguments::addmods_count() == count, "inconsistent modules count");
-  if (count > 0) {
-    _addmods_names = ArchiveBuilder::new_ro_array<char*>(count);
-    SystemProperty* p = Arguments::system_properties();
-    int i = 0;
-    while (p !=  nullptr) {
-      log_debug(cds)("    key %s value %s", p->key(), p->value());
-      if (p->internal() && Arguments::is_add_modules_property(p->key())) {
-        char* name = ArchiveBuilder::current()->ro_strdup(p->value());
-        log_debug(cds)("    add module %d: %s", i, name);
-        _addmods_names->at_put(i, name);
-        ArchivePtrMarker::mark_pointer(_addmods_names->adr_at(i));
-        //process_module_names((const char*)p->value(), i);
-        i++;
-      }
-      p = p->next();
-    }
+  const char* addmods_names = get_addmods_names_as_sorted_string();
+  if (addmods_names != nullptr) {
+    _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
   }
+  ArchivePtrMarker::mark_pointer(&_archived_addmods_names);
 }
 
 void Modules::serialize_addmods_names(SerializeClosure* soc) {
-  soc->do_ptr(&_addmods_names);
+  soc->do_ptr(&_archived_addmods_names);
   if (soc->reading()) {
     bool disable = false;
-    if ((_addmods_names != nullptr &&
-          ((Arguments::addmods_count() == 0) || (Arguments::addmods_count() != (unsigned int)_addmods_names->length()))) ||
-        (_addmods_names == nullptr && (Arguments::addmods_count() > 0))) {
-      log_info(cds)("Inconsistent number of modules specified via --add-modules between dump time and runtime:");
-      log_info(cds)("  dump time: %d, runtime: %d",
-        (_addmods_names != nullptr) ? _addmods_names->length() : 0, Arguments::addmods_count());
-      disable = true;
-    }
-    if (_addmods_names != nullptr) {
-      log_debug(cds)("Total add modules names read from static archive: %d", _addmods_names->length());
-
-      if (!check_addmods_name()) {
-        log_info(cds)("Mistached module names between dump time and runtime of --add-modules");
+    if (_archived_addmods_names[0] != '\0') {
+      if (Arguments::addmods_count() == 0) {
+        log_info(cds)("--add-modules module name(s) found in archive but not specified during runtime: %s",
+            _archived_addmods_names);
+        disable = true;
+      } else {
+        const char* addmods_names = get_addmods_names_as_sorted_string();
+        if (strcmp((const char*)_archived_addmods_names, addmods_names) != 0) {
+          log_info(cds)("Mismatched --add-modules module name(s).");
+          log_info(cds)("  dump time: %s runtime: %s", _archived_addmods_names, addmods_names);
+          disable = true;
+        }
+      }
+    } else {
+      if (Arguments::addmods_count() > 0) {
+        log_info(cds)("--add-modules module name(s) specified during runtime but not found in archive: %s",
+                      get_addmods_names_as_sorted_string());
         disable = true;
       }
     }
-
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
       MetaspaceShared::disable_optimized_module_handling();
@@ -657,50 +647,60 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
   }
 }
 
-bool Modules::check_addmods_name() {
+static int compare_module_names(char** s1, char** s2) {
+  return ::strcmp(*s1, *s2);
+}
+
+const char* Modules::get_addmods_names_as_sorted_string() {
+  ResourceMark rm;
   const int max_digits = 3;
   const int extra_symbols_count = 2; // includes '.', '\0'
   size_t prop_len = strlen("jdk.module.addmods") + max_digits + extra_symbols_count;
-  char* prop_name = AllocateHeap(prop_len, mtArguments);
-  bool matched = true;
+  char* prop_name = resource_allocate_bytes(prop_len);
+  GrowableArray<char*> list;
   for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
-    int ret = jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
-    if (ret < 0 || ret >= (int)prop_len) {
-      FreeHeap(prop_name);
-      jio_fprintf(defaultStream::error_stream(), "Failed to create property name jdk.module.addmods.%d\n", i);
-      return false;
-    }
-    int j;
-    for (j = 0; j < _addmods_names->length(); j++) {
-      if (strcmp(Arguments::get_property(prop_name), _addmods_names->at(j)) == 0) {
+    jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
+    const char* prop_value = Arguments::get_property(prop_name);
+    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
+    strcpy(p, prop_value);
+    while (*p == ',') p++; // skip leading commas
+    while (*p) {
+      char* next = strchr(p, ',');
+      if (next == nullptr) {
+        // no more commas, p is the last element
+        list.append(p);
         break;
+      } else {
+        *next = 0;
+        list.append(p);
+        p = next + 1;
       }
     }
-    if (j >= _addmods_names->length()) {
-      log_info(cds)("Module %s was not part of --add-modules during dump time", Arguments::get_property(prop_name));
-      matched = false;
+  }
+
+  // Example:
+  // --add-modules=java.compiler --add-modules=java.base,java.base,,
+  //
+  // list[0] = "java.compiler"
+  // list[1] = "java.base"
+  // list[2] = "java.base"
+  // list[3] = ""
+  // list[4] = ""
+  list.sort(compare_module_names);
+
+  const char* prefix = "";
+  stringStream st;
+  const char* last_string = ""; // This also filters out all empty strings
+  for (int i = 0; i < list.length(); i++) {
+    const char* m = list.at(i);
+    if (strcmp(m, last_string) != 0) { // filter out duplicates
+      st.print("%s%s", prefix, m);
+      last_string = m;
+      prefix = ",";
     }
   }
-#ifdef ASSERT
-  if (!matched) {
-      log_debug(cds)("Dump time --add-modules:");
-      for (int k = 0; k < _addmods_names->length(); k++) {
-        log_debug(cds)("    %s", _addmods_names->at(k));
-      }
-      log_debug(cds)("Runtime --add-modules:");
-      for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
-        int ret = jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
-        if (ret < 0 || ret >= (int)prop_len) {
-          FreeHeap(prop_name);
-          jio_fprintf(defaultStream::error_stream(), "Failed to create property name jdk.module.addmods.%d\n", i);
-          return false;
-        }
-        log_debug(cds)("    %s", Arguments::get_property(prop_name));
-      }
-  }
-#endif
-  FreeHeap(prop_name);
-  return matched;
+
+  return (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {

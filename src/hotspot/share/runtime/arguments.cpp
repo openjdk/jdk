@@ -1903,7 +1903,7 @@ bool Arguments::check_vm_args_consistency() {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
-      if (!create_numbered_addmods_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count)) {
+      if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }
     }
@@ -1912,7 +1912,7 @@ bool Arguments::check_vm_args_consistency() {
 
 #if INCLUDE_JFR
   if (status && (FlightRecorderOptions || StartFlightRecording)) {
-    if (!create_numbered_addmods_property("jdk.module.addmods", "jdk.jfr", _addmods_count)) {
+    if (!create_numbered_module_property("jdk.module.addmods", "jdk.jfr", _addmods_count++)) {
       return false;
     }
   }
@@ -2035,86 +2035,6 @@ bool Arguments::create_numbered_module_property(const char* prop_base_name, cons
 
   jio_fprintf(defaultStream::error_stream(), "Property count limit exceeded: %s, limit=%d\n", prop_base_name, props_count_limit);
   return false;
-}
-
-bool Arguments::create_numbered_addmods_property(const char* prop_base_name, const char* prop_value, unsigned int &count) {
-  assert(is_internal_module_property(prop_base_name), "unknown module property: '%s'", prop_base_name);
-  const unsigned int props_count_limit = 1000;
-
-  // Make sure count is < props_count_limit. Otherwise, memory allocation will be too small.
-  if (count >= props_count_limit) {
-    jio_fprintf(defaultStream::error_stream(), "Property count limit exceeded: %s, limit=%d\n", prop_base_name, props_count_limit);
-    return false;
-  }
-
-  char* start = (char*)prop_value;
-  while (*start == ',') {
-    start++;
-  }
-  char* next;
-  char* value;
-  char* result;
-  size_t value_len;
-  while (*start != '\0') {
-    if (count >= props_count_limit) {
-      jio_fprintf(defaultStream::error_stream(), "Property count limit exceeded: %s, limit=%d\n", prop_base_name, props_count_limit);
-      return false;
-    }
-    next = strstr(start, ",");
-    if (next == nullptr) {
-      value_len = strlen(start) + 1;
-      value = AllocateHeap(value_len, mtArguments);
-      result = strncpy(value, (const char*)start, value_len);
-      assert(strlen(result) == strlen(value), "sanity");
-      start += strlen(start);
-    } else {
-      value_len = size_t(next - start) + 1;
-      value = AllocateHeap(value_len, mtArguments);
-      result = strncpy(value, (const char*)start, value_len - 1);
-      value[value_len - 1] = '\0';
-      assert(strlen(result) == strlen(value), "sanity");
-      start = next + 1;
-      while (*start == ',') {
-        start++;
-      }
-    }
-    bool duplicate = false;
-    if (!is_duplicate_addmods_module(prop_base_name, value, count, duplicate)) {
-      return false;
-    }
-    if (!duplicate) {
-      if (!create_numbered_module_property(prop_base_name, value, count)) {
-        return false;
-      }
-      count++;
-    } else {
-      log_debug(cds)("    duplicate module %d: %s", count, value);
-    }
-    FreeHeap(value);
-  }
-  return true;
-}
-
-bool Arguments::is_duplicate_addmods_module(const char* prop_base_name, const char* prop_value, unsigned int count, bool &duplicate) {
-  const int max_digits = 3;
-  const int extra_symbols_count = 2; // includes '.', '\0'
-  size_t prop_len = strlen(prop_base_name) + max_digits + extra_symbols_count;
-  char* prop_name = AllocateHeap(prop_len, mtArguments);
-  duplicate = false;
-  for (unsigned int i = 0; i < count; i++) {
-    int ret = jio_snprintf(prop_name, prop_len, "%s.%d", prop_base_name, i);
-    if (ret < 0 || ret >= (int)prop_len) {
-      FreeHeap(prop_name);
-      jio_fprintf(defaultStream::error_stream(), "Failed to create property name %s.%d\n", prop_base_name, i);
-      return false;
-    }
-    if (strcmp(prop_value, get_property(prop_name)) == 0) {
-      duplicate = true;
-      break;
-    }
-  }
-  FreeHeap(prop_name);
-  return true;
 }
 
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
@@ -2428,7 +2348,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--add-modules=", &tail)) {
-      if (!create_numbered_addmods_property("jdk.module.addmods", tail, _addmods_count)) {
+      if (!create_numbered_module_property("jdk.module.addmods", tail, _addmods_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--enable-native-access=", &tail)) {
@@ -2502,7 +2422,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         FREE_C_HEAP_ARRAY(char, options);
 
         // java agents need module java.instrument
-        if (!create_numbered_addmods_property("jdk.module.addmods", "java.instrument", _addmods_count)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", _addmods_count++)) {
           return JNI_ENOMEM;
         }
       }
@@ -2683,7 +2603,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_EINVAL;
         }
         // management agent in module jdk.management.agent
-        if (!create_numbered_addmods_property("jdk.module.addmods", "jdk.management.agent", _addmods_count)) {
+        if (!create_numbered_module_property("jdk.module.addmods", "jdk.management.agent", _addmods_count++)) {
           return JNI_ENOMEM;
         }
 #else
