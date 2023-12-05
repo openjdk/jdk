@@ -278,7 +278,7 @@ bool CompileBroker::can_remove(CompilerThread *ct, bool do_it) {
   if (ct->idle_time_millis() < (c1 ? 500 : 100)) return false;
 
 #if INCLUDE_JVMCI
-  if (compiler->is_jvmci()) {
+  if (compiler->is_jvmci() && !UseJVMCINativeLibrary) {
     // Handles for JVMCI thread objects may get released concurrently.
     if (do_it) {
       assert(CompileThread_lock->owner() == ct, "must be holding lock");
@@ -297,7 +297,7 @@ bool CompileBroker::can_remove(CompilerThread *ct, bool do_it) {
       assert_locked_or_safepoint(CompileThread_lock); // Update must be consistent.
       compiler->set_num_compiler_threads(compiler_count - 1);
 #if INCLUDE_JVMCI
-      if (compiler->is_jvmci()) {
+      if (compiler->is_jvmci() && !UseJVMCINativeLibrary) {
         // Old j.l.Thread object can die when no longer referenced elsewhere.
         JNIHandles::destroy_global(compiler2_object(compiler_count - 1));
         _compiler2_objects[compiler_count - 1] = nullptr;
@@ -772,11 +772,6 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _initialized = true;
 }
 
-Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK_NH);
-  return thread_oop;
-}
-
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
 // Stress testing. Dedicated threads revert optimizations based on escape analysis concurrently to
 // the running java application.  Configured with vm options DeoptimizeObjectsALot*.
@@ -923,6 +918,13 @@ static bool trace_compiler_threads() {
   return TraceCompilerThreads || lt.is_enabled();
 }
 
+static jobject create_compiler_thread(AbstractCompiler* compiler, int i, TRAPS) {
+  char name_buffer[256];
+  os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", compiler->name(), i);
+  Handle thread_oop = JavaThread::create_system_thread_object(name_buffer, CHECK_NULL);
+  return JNIHandles::make_global(thread_oop);
+}
+
 static void print_compiler_threads(stringStream& msg) {
   if (TraceCompilerThreads) {
     tty->print_cr("%7d %s", (int)tty->time_stamp().milliseconds(), msg.as_string());
@@ -953,18 +955,9 @@ void CompileBroker::init_compiler_threads() {
     _compiler1_logs = NEW_C_HEAP_ARRAY(CompileLog*, _c1_count, mtCompiler);
   }
 
-  char name_buffer[256];
-
   for (int i = 0; i < _c2_count; i++) {
-    jobject thread_handle = nullptr;
-    // Create all j.l.Thread objects for C1 and C2 threads here, but only one
-    // for JVMCI compiler which can create further ones on demand.
-    JVMCI_ONLY(if (!UseJVMCICompiler || !UseDynamicNumberOfCompilerThreads || i == 0) {)
     // Create a name for our thread.
-    os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
-    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-    thread_handle = JNIHandles::make_global(thread_oop);
-    JVMCI_ONLY(})
+    jobject thread_handle = create_compiler_thread(_compilers[1], i, CHECK);
     _compiler2_objects[i] = thread_handle;
     _compiler2_logs[i] = nullptr;
 
@@ -985,9 +978,7 @@ void CompileBroker::init_compiler_threads() {
 
   for (int i = 0; i < _c1_count; i++) {
     // Create a name for our thread.
-    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C1 CompilerThread%d", i);
-    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-    jobject thread_handle = JNIHandles::make_global(thread_oop);
+    jobject thread_handle = create_compiler_thread(_compilers[0], i, CHECK);
     _compiler1_objects[i] = thread_handle;
     _compiler1_logs[i] = nullptr;
 
@@ -1015,7 +1006,7 @@ void CompileBroker::init_compiler_threads() {
     // Initialize and start the object deoptimizer threads
     const int total_count = DeoptimizeObjectsALotThreadCountSingle + DeoptimizeObjectsALotThreadCountAll;
     for (int count = 0; count < total_count; count++) {
-      Handle thread_oop = create_thread_oop("Deoptimize objects a lot single mode", CHECK);
+      Handle thread_oop = JavaThread::create_system_thread_object("Deoptimize objects a lot single mode", CHECK);
       jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
       make_thread(deoptimizer_t, thread_handle, nullptr, nullptr, THREAD);
     }
@@ -1042,13 +1033,15 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
     for (int i = old_c2_count; i < new_c2_count; i++) {
 #if INCLUDE_JVMCI
-      if (UseJVMCICompiler) {
-        // Native compiler threads as used in C1/C2 can reuse the j.l.Thread
-        // objects as their existence is completely hidden from the rest of
-        // the VM (and those compiler threads can't call Java code to do the
-        // creation anyway). For JVMCI we have to create new j.l.Thread objects
-        // as they are visible and we can see unexpected thread lifecycle
-        // transitions if we bind them to new JavaThreads.
+      if (UseJVMCICompiler && !UseJVMCINativeLibrary && _compiler2_objects[i] == nullptr) {
+        // Native compiler threads as used in C1/C2 can reuse the j.l.Thread objects as their
+        // existence is completely hidden from the rest of the VM (and those compiler threads can't
+        // call Java code to do the creation anyway).
+        //
+        // For pure Java JVMCI we have to create new j.l.Thread objects as they are visible and we
+        // can see unexpected thread lifecycle transitions if we bind them to new JavaThreads.  For
+        // native library JVMCI it's preferred to use the C1/C2 strategy as this avoids unnecessary
+        // coupling with Java.
         if (!THREAD->can_call_java()) break;
         char name_buffer[256];
         os::snprintf_checked(name_buffer, sizeof(name_buffer), "%s CompilerThread%d", _compilers[1]->name(), i);
@@ -1056,7 +1049,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         {
           // We have to give up the lock temporarily for the Java calls.
           MutexUnlocker mu(CompileThread_lock);
-          thread_oop = create_thread_oop(name_buffer, THREAD);
+          thread_oop = JavaThread::create_system_thread_object(name_buffer, THREAD);
         }
         if (HAS_PENDING_EXCEPTION) {
           if (trace_compiler_threads()) {
@@ -1076,6 +1069,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
         _compiler2_objects[i] = thread_handle;
       }
 #endif
+      guarantee(compiler2_object(i) != nullptr, "Thread oop must exist");
       JavaThread *ct = make_thread(compiler_t, compiler2_object(i), _c2_compile_queue, _compilers[1], THREAD);
       if (ct == nullptr) break;
       _compilers[1]->set_num_compiler_threads(i + 1);
@@ -1794,7 +1788,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   BufferBlob* blob = thread->get_buffer_blob();
   if (blob != nullptr) {
-    blob->flush();
+    blob->purge();
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
   }

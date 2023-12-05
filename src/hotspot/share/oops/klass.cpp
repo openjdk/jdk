@@ -61,10 +61,6 @@ void Klass::set_java_mirror(Handle m) {
   _java_mirror = class_loader_data()->add_handle(m);
 }
 
-oop Klass::java_mirror_no_keepalive() const {
-  return _java_mirror.peek();
-}
-
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
