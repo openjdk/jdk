@@ -28,15 +28,13 @@ import java.nio.charset.StandardCharsets;
  * @test
  * @bug 8077559
  * @summary Tests Compact String for negative size.
- * @run testng/othervm -XX:+CompactStrings NegativeSize
- * @run testng/othervm -XX:-CompactStrings NegativeSize
+ * @run main/othervm -XX:+CompactStrings NegativeSize
+ * @run main/othervm -XX:-CompactStrings NegativeSize
  */
-
-public class NegativeSize {
 
 // In Java8: java.lang.OutOfMemoryError: Java heap space
 // In Java9+: was java.lang.NegativeArraySizeException: -1894967266
-public class Main {
+public class NegativeSize {
 
     static byte[] generateData() {
         int asciisize = 1_200_000_000;
@@ -68,5 +66,5 @@ public class Main {
         }
     }
 }
-}
+
 
