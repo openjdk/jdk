@@ -95,7 +95,9 @@ public:
   bool  is_full() const         { return _len == _capacity; }
 
   // TODO should clear and trunc_to become virtual or at least abstract?
+  // TODO we need to maybe call deconstructors here!
   void  clear()                 { _len = 0; }
+  // TODO we need to maybe call deconstructors here!
   void  trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
     _len = length;
@@ -181,6 +183,7 @@ public:
 
   E pop() {
     assert(_len > 0, "empty list");
+    // TODO move or deconstruct?
     return _data[--_len];
   }
 
@@ -265,6 +268,7 @@ public:
 
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
+    // TODO call deconstructor!
     for (int j = index + 1; j < _len; j++) {
       _data[j-1] = _data[j];
     }
@@ -281,6 +285,7 @@ public:
     assert(0 <= start, "illegal start index %d", start);
     assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
+    // TODO call deconstructors
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
     }
@@ -290,6 +295,7 @@ public:
   // The order is changed.
   void delete_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
+    // TODO call deconstructors: difference to remove_at -> rem or document?
     if (index < --_len) {
       // Replace removed element with last one.
       _data[index] = _data[_len];
@@ -380,13 +386,14 @@ template <typename E, typename Derived>
 class GrowableArrayWithAllocator : public GrowableArrayView<E> {
   friend class VMStructs;
 
+private:
   void expand_to(int j);
   void grow(int j);
 
 protected:
   GrowableArrayWithAllocator(E* data, int capacity) :
       GrowableArrayView<E>(data, capacity, 0) {
-    // TODO remove this!
+    // TODO must remove!
     for (int i = 0; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
@@ -398,6 +405,7 @@ protected:
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
     }
+    // TODO must remove!
     for (; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
@@ -409,6 +417,7 @@ public:
   int append(const E& elem) {
     if (this->_len == this->_capacity) grow(this->_len);
     int idx = this->_len++;
+    // TODO placement construct?
     this->_data[idx] = elem;
     return idx;
   }
@@ -427,6 +436,7 @@ public:
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j <= i; j++)
+        // TODO placement new!
         this->_data[j] = fill;
       this->_len = i+1;
     }
@@ -438,9 +448,11 @@ public:
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++)
+        // TODO placement new!
         this->_data[j] = fill;
       this->_len = i+1;
     }
+    // TODO placement new! or maybe assign.
     this->_data[i] = elem;
   }
 
@@ -448,6 +460,7 @@ public:
   void insert_before(const int idx, const E& elem) {
     assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
     if (this->_len == this->_capacity) grow(this->_len);
+    // TODO at least one must be constructed!
     for (int j = this->_len - 1; j >= idx; j--) {
       this->_data[j + 1] = this->_data[j];
     }
@@ -460,6 +473,7 @@ public:
     int array_len = array->length();
     int new_len = this->_len + array_len;
     if (new_len >= this->_capacity) grow(new_len);
+    // TODO at least one must be constructed!
 
     for (int j = this->_len - 1; j >= idx; j--) {
       this->_data[j + array_len] = this->_data[j];
@@ -518,9 +532,16 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   this->_capacity = new_capacity;
   E* newData = static_cast<Derived*>(this)->allocate();
   int i = 0;
+
+  // copy-construct old->new
   for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
+
+  // TODO remove these
   for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
+
+  // deconstruct old
   for (i = 0; i < old_capacity; i++) this->_data[i].~E();
+
   if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
   }
@@ -635,6 +656,7 @@ public:
     return _arena == (Arena*)Thread::current()->resource_area();
   };
 
+  // TODO should these not be protected?
   E* allocate() {
     DEBUG_ONLY(_nesting_check.on_allocate(); )
     return allocate(_arena, this->_capacity);
@@ -752,10 +774,13 @@ void GrowableArrayCHeap<E, F>::shrink_to_fit() {
   this->_capacity = len;        // Must preceed allocate().
   if (len > 0) {
     new_data = this->allocate();
+    // copy-construct old->new
     for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
   }
-  // Destroy contents of old data, and deallocate it.
+
+  // deconstruct old
   for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
+
   if (old_data != nullptr) {
     this->deallocate(old_data);
   }
