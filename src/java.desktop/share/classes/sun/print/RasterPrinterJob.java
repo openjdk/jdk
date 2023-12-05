@@ -2093,7 +2093,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PrinterGraphicsConfig pgConfig;
 
     protected synchronized void setGraphicsConfigInfo(AffineTransform at,
-                                            double pw, double ph) {
+                                                      double pw, double ph) {
         Point2D.Double pt = new Point2D.Double(pw, ph);
         at.transform(pt, pt);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  *
  * @test
  * @bug 4276227 8320443
+ * @key printer
  * @summary Checks that the PrinterGraphics is for a Printer GraphicsDevice.
  * Test doesn't run unless there's a printer on the system.
- * @key printer
  * @run main/othervm PrinterDevice
  */
 
