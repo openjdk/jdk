@@ -307,26 +307,17 @@ public class JRTArchive implements Archive {
         }
 
         private static Archive.Entry.EntryType toEntryType(Type input) {
-            switch(input) {
-            case CLASS_OR_RESOURCE:
-                return Archive.Entry.EntryType.CLASS_OR_RESOURCE;
-            case CONFIG:
-                return Archive.Entry.EntryType.CONFIG;
-            case HEADER_FILE:
-                return Archive.Entry.EntryType.HEADER_FILE;
-            case LEGAL_NOTICE:
-                return Archive.Entry.EntryType.LEGAL_NOTICE;
-            case MAN_PAGE:
-                return Archive.Entry.EntryType.MAN_PAGE;
-            case NATIVE_CMD:
-                return Archive.Entry.EntryType.NATIVE_CMD;
-            case NATIVE_LIB:
-                return Archive.Entry.EntryType.NATIVE_LIB;
-            case TOP:
-                throw new IllegalArgumentException("TOP files should be handled by ReleaseInfoPlugin!");
-            default:
-                throw new IllegalArgumentException("Unknown type: " + input);
-            }
+            return switch(input) {
+                case CLASS_OR_RESOURCE -> Archive.Entry.EntryType.CLASS_OR_RESOURCE;
+                case CONFIG -> Archive.Entry.EntryType.CONFIG;
+                case HEADER_FILE -> Archive.Entry.EntryType.HEADER_FILE;
+                case LEGAL_NOTICE -> Archive.Entry.EntryType.LEGAL_NOTICE;
+                case MAN_PAGE -> Archive.Entry.EntryType.MAN_PAGE;
+                case NATIVE_CMD -> Archive.Entry.EntryType.NATIVE_CMD;
+                case NATIVE_LIB -> Archive.Entry.EntryType.NATIVE_LIB;
+                case TOP -> throw new IllegalArgumentException("TOP files should be handled by ReleaseInfoPlugin!");
+                default -> throw new IllegalArgumentException("Unknown type: " + input);
+            };
         }
     }
 

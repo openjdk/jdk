@@ -571,7 +571,7 @@ public class JlinkTask {
             nonClassRes = nonClassResMap;
             // Print info message when a run-image link is being performed
             if (log != null) {
-                log.println("'jmods' folder not present, performing a run-time image based link.");
+                log.println(taskHelper.getMessage("runtime.link.info"));
                 if (verbose) {
                     logPackagedModuleEquivalent(log, getMergedCliArgs(!config.useModulePath()), opts);
                 }
@@ -580,7 +580,7 @@ public class JlinkTask {
             if (config.singleHop()) {
                 try (InputStream in = jdkJlink.getResourceAsStream(JRTArchive.RUNIMAGE_SINGLE_HOP_STAMP)) {
                     if (in != null) {
-                        String msg = "Recursive links based on the current run-time image are not allowed.";
+                        String msg = taskHelper.getMessage("err.runtime.link.recursive");
                         throw new IllegalArgumentException(msg);
                     }
                 }
@@ -592,7 +592,9 @@ public class JlinkTask {
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
               .forEach(rm -> log.format("%s %s%s%n",
-                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (run-time image)"));
+                                        rm.name(),
+                                        rm.reference().location().get(),
+                                        config.useModulePath() ? "" : taskHelper.getMessage("runtime.link.jprt.path.extra")));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
@@ -705,7 +707,7 @@ public class JlinkTask {
             jlinkCmd.add("--output");
             jlinkCmd.add(opts.output.toString());
         }
-        logWriter.println("Equivalent jlink command using packaged modules is:");
+        logWriter.println(taskHelper.getMessage("runtime.link.equivalent.packaged.modules"));
         logWriter.print("  ");
         logWriter.print(jlinkCmd.stream().collect(Collectors.joining(" ")));
         for (Plugin p: forwardingPlugins) {
