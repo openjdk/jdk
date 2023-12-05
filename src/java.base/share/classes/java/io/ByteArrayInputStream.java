@@ -207,7 +207,7 @@ public class ByteArrayInputStream extends InputStream {
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
         if (len > 0) {
-            // 'tmp' is null if and only if 'out' is trusted
+            // 'tmpbuf' is null if and only if 'out' is trusted
             byte[] tmpbuf;
             Class<?> outClass = out.getClass();
             if (outClass == ByteArrayOutputStream.class ||
