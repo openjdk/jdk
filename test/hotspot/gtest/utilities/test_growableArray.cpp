@@ -241,8 +241,10 @@ public:
     {
       ResourceMark rm;
       GrowableArray<E> array;
+#ifdef ASSERT
       ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
       ASSERT_TRUE(array.on_resource_area()); // data: resource area
+#endif
       this->set_array(&array);
       modify->do_modify(this);
       test->do_test(this);
@@ -260,8 +262,10 @@ public:
       ResourceMark rm;
       EmbeddedGrowableArray<E> embedded(value_factory<E>(42));
       GrowableArray<E>* array = embedded.array();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
       ASSERT_TRUE(array->on_resource_area()); // data: resource area
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -278,8 +282,10 @@ public:
     {
       ResourceMark rm;
       GrowableArray<E>* array = new GrowableArray<E>();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_res_area()); // itself: resource arena
       ASSERT_TRUE(array->on_resource_area()); // data: resource area
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -296,8 +302,10 @@ public:
     {
       Arena arena(mtTest);
       GrowableArray<E> array(&arena);
+#ifdef ASSERT
       ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
       ASSERT_TRUE(!array.on_resource_area()); // data: arena
+#endif
       this->set_array(&array);
       modify->do_modify(this);
       test->do_test(this);
@@ -315,8 +323,10 @@ public:
       Arena arena(mtTest);
       EmbeddedGrowableArray<E> embedded(value_factory<E>(42), &arena);
       GrowableArray<E>* array = embedded.array();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
       ASSERT_TRUE(!array->on_resource_area()); // data: arena
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -333,8 +343,10 @@ public:
     {
       Arena arena(mtTest);
       GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena);
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_arena()); // itself: arena
       ASSERT_TRUE(!array->on_resource_area()); // data: arena
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -387,7 +399,9 @@ public:
     test->reset();
     {
       GrowableArrayCHeap<E, mtTest> array;
+#ifdef ASSERT
       ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+#endif
       this->set_array(&array);
       modify->do_modify(this);
       test->do_test(this);
@@ -404,7 +418,9 @@ public:
     {
       EmbeddedGrowableArrayCHeap<E> embedded(value_factory<E>(42));
       GrowableArrayCHeap<E, mtTest>* array = embedded.array();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -420,7 +436,9 @@ public:
     test->reset();
     {
       GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
@@ -436,7 +454,9 @@ public:
     test->reset();
     {
       GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>();
+#ifdef ASSERT
       ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+#endif
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);

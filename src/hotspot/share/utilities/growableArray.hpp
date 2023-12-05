@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -652,9 +653,11 @@ public:
 
   ~GrowableArray() {}
 
+#ifdef ASSERT
   bool on_resource_area() const {
     return _arena == (Arena*)Thread::current()->resource_area();
   };
+#endif
 
   // TODO should these not be protected?
   E* allocate() {

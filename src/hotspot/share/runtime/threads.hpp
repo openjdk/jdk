@@ -37,6 +37,7 @@ class Thread;
 class ThreadClosure;
 class ThreadsList;
 class outputStream;
+class ObjectMonitor;
 
 class CodeBlobClosure;
 class MetadataClosure;
