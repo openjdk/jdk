@@ -33,7 +33,6 @@
 
 class CardTableRS;
 class GCPolicyCounters;
-class GenerationSpec;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -62,9 +61,6 @@ protected:
   Generation* _old_gen;
 
 private:
-  GenerationSpec* _young_gen_spec;
-  GenerationSpec* _old_gen_spec;
-
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
@@ -143,9 +139,6 @@ public:
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
-
-  GenerationSpec* young_gen_spec() const;
-  GenerationSpec* old_gen_spec() const;
 
   SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 

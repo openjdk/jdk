@@ -256,6 +256,8 @@ class StubRoutines: AllStatic {
   static address _f2hf;
   static address _hf2f;
 
+  static address _method_entry_barrier;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -459,6 +461,8 @@ class StubRoutines: AllStatic {
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
+
+  static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }

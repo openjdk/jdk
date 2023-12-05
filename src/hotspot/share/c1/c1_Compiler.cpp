@@ -110,7 +110,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_compareAndSetLong:
-    if (!VM_Version::supports_cx8()) return false;
     break;
   case vmIntrinsics::_getAndAddInt:
     if (!VM_Version::supports_atomic_getadd4()) return false;

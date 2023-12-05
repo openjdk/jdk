@@ -32,44 +32,38 @@
 
 ClassUnloadingContext* ClassUnloadingContext::_context = nullptr;
 
-ClassUnloadingContext::ClassUnloadingContext() {
-  assert(_context == nullptr, "context already set");
-  _context = this;
-}
-
-ClassUnloadingContext::~ClassUnloadingContext() {
-  assert(_context == this, "context not set correctly");
-  _context = nullptr;
-}
-
-
-DefaultClassUnloadingContext::DefaultClassUnloadingContext(uint num_workers, bool lock_codeblob_free_separately) :
-  ClassUnloadingContext(),
+ClassUnloadingContext::ClassUnloadingContext(uint num_workers, bool lock_codeblob_free_separately) :
   _cld_head(nullptr),
   _num_nmethod_unlink_workers(num_workers),
   _unlinked_nmethods(nullptr),
   _lock_codeblob_free_separately(lock_codeblob_free_separately) {
 
+  assert(_context == nullptr, "context already set");
+  _context = this;
+
   assert(num_workers > 0, "must be");
 
-  _unlinked_nmethods = NEW_C_HEAP_ARRAY(NmethodSet*, num_workers, mtGC);
+  _unlinked_nmethods = NEW_C_HEAP_ARRAY(NMethodSet*, num_workers, mtGC);
   for (uint i = 0; i < num_workers; ++i) {
-    _unlinked_nmethods[i] = new NmethodSet();
+    _unlinked_nmethods[i] = new NMethodSet();
   }
 }
 
-DefaultClassUnloadingContext::~DefaultClassUnloadingContext() {
+ClassUnloadingContext::~ClassUnloadingContext() {
   for (uint i = 0; i < _num_nmethod_unlink_workers; ++i) {
     delete _unlinked_nmethods[i];
   }
-  FREE_C_HEAP_ARRAY(NmethodSet*, _unlinked_nmethods);
+  FREE_C_HEAP_ARRAY(NMethodSet*, _unlinked_nmethods);
+
+  assert(_context == this, "context not set correctly");
+  _context = nullptr;
 }
 
-bool DefaultClassUnloadingContext::has_unloaded_classes() const {
+bool ClassUnloadingContext::has_unloaded_classes() const {
   return _cld_head != nullptr;
 }
 
-void DefaultClassUnloadingContext::register_unloading_class_loader_data(ClassLoaderData* cld) {
+void ClassUnloadingContext::register_unloading_class_loader_data(ClassLoaderData* cld) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   cld->unload();
@@ -78,7 +72,7 @@ void DefaultClassUnloadingContext::register_unloading_class_loader_data(ClassLoa
   _cld_head = cld;
 }
 
-void DefaultClassUnloadingContext::purge_class_loader_data() {
+void ClassUnloadingContext::purge_class_loader_data() {
   for (ClassLoaderData* cld = _cld_head; cld != nullptr;) {
     assert(cld->is_unloading(), "invariant");
 
@@ -88,7 +82,7 @@ void DefaultClassUnloadingContext::purge_class_loader_data() {
   }
 }
 
-void DefaultClassUnloadingContext::classes_unloading_do(void f(Klass* const)) {
+void ClassUnloadingContext::classes_unloading_do(void f(Klass* const)) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* cld = _cld_head; cld != nullptr; cld = cld->unloading_next()) {
     assert(cld->is_unloading(), "invariant");
@@ -96,7 +90,7 @@ void DefaultClassUnloadingContext::classes_unloading_do(void f(Klass* const)) {
   }
 }
 
-void DefaultClassUnloadingContext::register_unlinked_nmethod(nmethod* nm) {
+void ClassUnloadingContext::register_unlinked_nmethod(nmethod* nm) {
   assert(_context != nullptr, "no context set");
 
   assert(!nm->is_unlinked(), "Only register for unloading once");
@@ -110,15 +104,14 @@ void DefaultClassUnloadingContext::register_unlinked_nmethod(nmethod* nm) {
   nm->set_is_unlinked();
 }
 
-void DefaultClassUnloadingContext::purge_nmethods() {
+void ClassUnloadingContext::purge_nmethods() {
   assert(_context != nullptr, "no context set");
 
   size_t freed_memory = 0;
 
   for (uint i = 0; i < _num_nmethod_unlink_workers; ++i) {
-    NmethodSet* set = _unlinked_nmethods[i];
-    for (int j = 0; j < set->length(); ++j) {
-      nmethod* nm = set->at(j);
+    NMethodSet* set = _unlinked_nmethods[i];
+    for (nmethod* nm : *set) {
       freed_memory += nm->size();
       nm->purge(false /* free_code_cache_data */);
     }
@@ -127,15 +120,15 @@ void DefaultClassUnloadingContext::purge_nmethods() {
   CodeCache::maybe_restart_compiler(freed_memory);
 }
 
-void DefaultClassUnloadingContext::free_code_blobs() {
+void ClassUnloadingContext::free_code_blobs() {
   assert(_context != nullptr, "no context set");
 
   // Sort nmethods before freeing to benefit from optimizations. If Nmethods were
   // collected in parallel, use a new temporary buffer for the result, otherwise
   // sort in-place.
-  NmethodSet* all = nullptr;
+  NMethodSet* nmethod_set = nullptr;
 
-  bool is_parallel = _num_nmethod_unlink_workers != 1;
+  bool is_parallel = _num_nmethod_unlink_workers > 1;
 
   // Merge all collected nmethods into a huge array.
   if (is_parallel) {
@@ -144,12 +137,12 @@ void DefaultClassUnloadingContext::free_code_blobs() {
     for (uint i = 0; i < _num_nmethod_unlink_workers; ++i) {
       num_nmethods += _unlinked_nmethods[i]->length();
     }
-    all = new NmethodSet(num_nmethods);
+    nmethod_set = new NMethodSet(num_nmethods);
     for (uint i = 0; i < _num_nmethod_unlink_workers; ++i) {
-      all->appendAll(_unlinked_nmethods[i]);
+      nmethod_set->appendAll(_unlinked_nmethods[i]);
     }
   } else {
-    all = _unlinked_nmethods[0];
+    nmethod_set = _unlinked_nmethods[0];
   }
 
   // Sort by ascending address.
@@ -160,18 +153,22 @@ void DefaultClassUnloadingContext::free_code_blobs() {
     if (u_a < u_b) return -1;
     return 1;
   };
-  all->sort(sort_nmethods);
+  nmethod_set->sort(sort_nmethods);
 
-  // And free.
-  {
-    ConditionalMutexLocker ml_outer(CodeCache_lock, !_lock_codeblob_free_separately, Mutex::_no_safepoint_check_flag);
-    for (int i = 0; i < all->length(); ++i) {
-      ConditionalMutexLocker ml_inner(CodeCache_lock, _lock_codeblob_free_separately, Mutex::_no_safepoint_check_flag);
-      CodeCache::free(all->at(i));
+  // And free. Duplicate loop for clarity depending on where we want the locking.
+  if (_lock_codeblob_free_separately) {
+    for (nmethod* nm : *nmethod_set) {
+      MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      CodeCache::free(nm);
+    }
+  } else {
+    MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    for (nmethod* nm : *nmethod_set) {
+      CodeCache::free(nm);
     }
   }
 
   if (is_parallel) {
-    delete all;
+    delete nmethod_set;
   }
 }

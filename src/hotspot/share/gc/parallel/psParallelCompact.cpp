@@ -1768,8 +1768,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     ref_processor()->start_discovery(maximum_heap_compaction);
 
-    DefaultClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
-                                     false /* lock_codeblob_free_separately */);
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* lock_codeblob_free_separately */);
 
     marking_phase(&_gc_tracer);
 
@@ -3177,7 +3177,6 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
                                      ParCompactionManager* cm,
                                      PSParallelCompact::SpaceId space_id) :
   ParMarkBitMapClosure(mbm, cm),
-  _space_id(space_id),
   _start_array(PSParallelCompact::start_array(space_id))
 {
 }

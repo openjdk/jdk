@@ -321,8 +321,8 @@ void XHeap::process_non_strong_references() {
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
 
-  DefaultClassUnloadingContext ctx(_workers.active_workers(),
-                                   true /* lock_codeblob_free_separately */);
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

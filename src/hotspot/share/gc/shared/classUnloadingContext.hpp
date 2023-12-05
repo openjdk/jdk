@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_CLASSUNLOADINGCONTEXT_HPP
 #define SHARE_GC_SHARED_CLASSUNLOADINGCONTEXT_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
 class ClassLoaderData;
@@ -32,64 +33,45 @@ class Klass;
 class nmethod;
 
 class ClassUnloadingContext : public CHeapObj<mtGC> {
-protected:
   static ClassUnloadingContext* _context;
 
-  ClassUnloadingContext();
-  virtual ~ClassUnloadingContext();
+  ClassLoaderData* volatile _cld_head;
+
+  const uint _num_nmethod_unlink_workers;
+
+  using NMethodSet = GrowableArrayCHeap<nmethod*, mtGC>;
+  NMethodSet** _unlinked_nmethods;
+
+  bool _lock_codeblob_free_separately;
 
 public:
   static ClassUnloadingContext* context() { assert(_context != nullptr, "context not set"); return _context; }
 
-  // Has class unloading occurred?
-  virtual bool has_unloaded_classes() const = 0;
+  // Num_nmethod_unlink_workers configures the maximum numbers of threads unlinking
+  //     nmethods.
+  // lock_codeblob_free_separately determines whether freeing the code blobs takes
+  //     the CodeCache_lock during the whole operation (=false) or per code blob
+  //     free operation (=true).
+  ClassUnloadingContext(uint num_nmethod_unlink_workers,
+                        bool lock_codeblob_free_separately);
+  ~ClassUnloadingContext();
 
-  virtual void register_unloading_class_loader_data(ClassLoaderData* cld) = 0;
-  virtual void purge_class_loader_data() = 0;
+  bool has_unloaded_classes() const;
 
-  // Apply f on all Klasses of all unloading ClassLoaderDatas.
-  virtual void classes_unloading_do(void f(Klass* const)) = 0;
+  void register_unloading_class_loader_data(ClassLoaderData* cld);
+  void purge_class_loader_data();
 
-  virtual void register_unlinked_nmethod(nmethod* nm) = 0;
-  virtual void purge_nmethods() = 0;
-  virtual void free_code_blobs() = 0;
+  void classes_unloading_do(void f(Klass* const));
+
+  // Register unloading nmethods, potentially in parallel.
+  void register_unlinked_nmethod(nmethod* nm);
+  void purge_nmethods();
+  void free_code_blobs();
 
   void purge_and_free_nmethods() {
     purge_nmethods();
     free_code_blobs();
   }
-};
-
-class DefaultClassUnloadingContext : public ClassUnloadingContext {
-  ClassLoaderData* volatile _cld_head;
-
-  uint _num_nmethod_unlink_workers;
-
-  using NmethodSet = GrowableArrayCHeap<nmethod*, mtGC>;
-  NmethodSet** _unlinked_nmethods;
-
-  bool _lock_codeblob_free_separately;
-
-public:
-  // Num_nmethod_unlink_workers configures the maximum numbers of threads unlinking
-  //     nmethods.
-  // lock_codeblob_free_separately determines whether freeing the code blobs takes
-  //     the CodeCache_lock during the whole operation or per code blob free operation.
-  DefaultClassUnloadingContext(uint num_nmethod_unlink_workers,
-                               bool lock_codeblob_free_separately);
-  ~DefaultClassUnloadingContext();
-
-  bool has_unloaded_classes() const override;
-
-  void register_unloading_class_loader_data(ClassLoaderData* cld) override;
-  void purge_class_loader_data() override;
-
-  void classes_unloading_do(void f(Klass* const)) override;
-
-  // Register unloading nmethods, potentially in parallel.
-  void register_unlinked_nmethod(nmethod* nm) override;
-  void purge_nmethods() override;
-  void free_code_blobs() override;
 };
 
 #endif // SHARE_GC_SHARED_CLASSUNLOADINGCONTEXT_HPP

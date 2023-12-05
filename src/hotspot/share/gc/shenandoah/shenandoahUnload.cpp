@@ -139,8 +139,8 @@ void ShenandoahUnload::unload() {
   assert(ClassUnloading, "Filtered by caller");
   assert(heap->is_concurrent_weak_root_in_progress(), "Filtered by caller");
 
-  DefaultClassUnloadingContext ctx(heap->workers()->active_workers(),
-                                   true /* lock_codeblob_free_separately */);
+  ClassUnloadingContext ctx(heap->workers()->active_workers(),
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   {
