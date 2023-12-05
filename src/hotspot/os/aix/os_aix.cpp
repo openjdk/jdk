@@ -1150,53 +1150,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-
-  struct stat64x libstat;
-  if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
-    // file with filename does not exist
-    result = ::dlopen(filename, dflags);
-    if (result != nullptr) {
-      assert(false, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
-    }
-  }
-  else {
-    int i = 0;
-    pthread_mutex_lock ( &g_handletable_mutex);
-    // check if library belonging to filename is already loaded.
-    // If yes use stored handle from previous ::dlopen() and increase refcount
-    for (i = 0; i < g_handletable_used; i++) {
-      if (g_handletable[i].handle &&
-          g_handletable[i].inode == libstat.st_ino &&
-          g_handletable[i].devid == libstat.st_dev) {
-        g_handletable[i].refcount++;
-        result = g_handletable[i].handle;
-        break;
-      }
-    }
-    if (i == g_handletable_used) {
-      // library not still loaded. Check if there is space left in array
-      // to store new ::dlopen() handle
-      if (g_handletable_used == max_handletable) {
-        // Array is already full. No place for new handle. Cry and give up.
-        pthread_mutex_unlock ( &g_handletable_mutex);
-        assert(false, "max_handletable reached");
-        ::strncpy(ebuf, "dll_load: max_handletable reached", ebuflen - 1);
-        return nullptr;
-      }
-      // library not still loaded and still place in array, so load library
-      // and if successful, create new entry at end of array
-      // to store handle, inode/devid with refcount=1
-      result = ::dlopen(filename, dflags);
-      if (result != nullptr) {
-        g_handletable_used++;
-        g_handletable[i].handle = result;
-        g_handletable[i].inode = libstat.st_ino;
-        g_handletable[i].devid = libstat.st_dev;
-        g_handletable[i].refcount = 1;
-      }
-    }
-    pthread_mutex_unlock ( &g_handletable_mutex);
-  }
+  result = os::Aix::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1219,42 +1173,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   return nullptr;
 }
-
-// specific AIX version for ::dlclose(), which handles the struct g_handletable
-// filled by os::dll_load()
-int os::Aix::dlclose(void* lib) {
-  int i = 0, res;
-  pthread_mutex_lock(&g_handletable_mutex);
-  // try to find handle in array, which means library was loaded by os::dll_load() call
-  for (i = 0; i < g_handletable_used; i++) {
-    if (g_handletable[i].handle == lib) {
-      // handle found, decrease refcount
-      g_handletable[i].refcount--;
-      if (g_handletable[i].refcount > 0) {
-        // if refcount is still >0 then we have to keep library and return
-        pthread_mutex_unlock(&g_handletable_mutex);
-        return 0;
-      }
-      // refcount == 0, so we have to ::dlclose() the lib
-      // and delete the entry from the array.
-      res = ::dlclose(lib);
-      g_handletable_used--;
-      // If the entry was the last one of the array, the previous g_handletable_used--
-      // is sufficient to remove the entry from the array, otherwise we move the last
-      // entry of the array to the place of the entry we want to remove and overwrite it
-      if (i < g_handletable_used) {
-        g_handletable[i] = g_handletable[g_handletable_used];
-      }
-      pthread_mutex_unlock(&g_handletable_mutex);
-      return res;
-    }
-  }
-  pthread_mutex_unlock(&g_handletable_mutex);
-  // if we reach this point, the library was not created by os::dll_load()
-  // so nag and perform the plain ::dlclose();
-  assert(false, "os::AIX::dlclose() library was not loaded by os::dll_load()");
-  return ::dlclose(lib);
-} // end: os::AIX::dlclose()
 
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
@@ -3174,3 +3092,91 @@ int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
   free (path2);
   return ret;
 }
+
+// specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
+// filled by os::dll_load(). This way we mimic dl handle equality for a library
+// opened a second time, as it is implemented on other platforms.
+void* os::Aix::dlopen(const char* filename, int Flags) {
+  void* result;
+  struct stat64x libstat;
+
+  if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
+    // file with filename does not exist
+    result = ::dlopen(filename, Flags);
+    if (result != nullptr) {
+      assert(false, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
+    }
+  }
+  else {
+    int i = 0;
+    pthread_mutex_lock(&g_handletable_mutex);
+    // check if library belonging to filename is already loaded.
+    // If yes use stored handle from previous ::dlopen() and increase refcount
+    for (i = 0; i < g_handletable_used; i++) {
+      if (g_handletable[i].handle &&
+          g_handletable[i].inode == libstat.st_ino &&
+          g_handletable[i].devid == libstat.st_dev) {
+        g_handletable[i].refcount++;
+        result = g_handletable[i].handle;
+        break;
+      }
+    }
+    if (i == g_handletable_used) {
+      // library not still loaded. Check if there is space left in array
+      // to store new ::dlopen() handle
+      if (g_handletable_used == max_handletable) {
+        // Array is already full. No place for new handle. Cry and give up.
+        pthread_mutex_unlock(&g_handletable_mutex);
+        assert(false, "max_handletable reached");
+        return nullptr;
+      }
+      // library not still loaded and still place in array, so load library
+      // and if successful, create new entry at end of array
+      // to store handle, inode/devid with refcount=1
+      result = ::dlopen(filename, Flags);
+      if (result != nullptr) {
+        g_handletable_used++;
+        g_handletable[i].handle = result;
+        g_handletable[i].inode = libstat.st_ino;
+        g_handletable[i].devid = libstat.st_dev;
+        g_handletable[i].refcount = 1;
+      }
+    }
+    pthread_mutex_unlock(&g_handletable_mutex);
+  }
+  return result;
+}
+
+int os::Aix::dlclose(void* lib) {
+  int i = 0, res;
+  pthread_mutex_lock(&g_handletable_mutex);
+  // try to find handle in array, which means library was loaded by os::dll_load() call
+  for (i = 0; i < g_handletable_used; i++) {
+    if (g_handletable[i].handle == lib) {
+      // handle found, decrease refcount
+      g_handletable[i].refcount--;
+      if (g_handletable[i].refcount > 0) {
+        // if refcount is still >0 then we have to keep library and return
+        pthread_mutex_unlock(&g_handletable_mutex);
+        return 0;
+      }
+      // refcount == 0, so we have to ::dlclose() the lib
+      // and delete the entry from the array.
+      res = ::dlclose(lib);
+      g_handletable_used--;
+      // If the entry was the last one of the array, the previous g_handletable_used--
+      // is sufficient to remove the entry from the array, otherwise we move the last
+      // entry of the array to the place of the entry we want to remove and overwrite it
+      if (i < g_handletable_used) {
+        g_handletable[i] = g_handletable[g_handletable_used];
+      }
+      pthread_mutex_unlock(&g_handletable_mutex);
+      return res;
+    }
+  }
+  pthread_mutex_unlock(&g_handletable_mutex);
+  // if we reach this point, the library was not created by os::dll_load()
+  // so nag and perform the plain ::dlclose();
+  assert(false, "os::AIX::dlclose() library was not loaded by os::dll_load()");
+  return ::dlclose(lib);
+} // end: os::AIX::dlclose()
