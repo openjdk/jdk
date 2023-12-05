@@ -3669,29 +3669,26 @@ class StubGenerator: public StubCodeGenerator {
    public:
       Sha2Generator(MacroAssembler* masm, StubCodeGenerator* cgen) : MacroAssembler(masm->code()), _cgen(cgen) {}
       address generate_sha256_implCompress(bool multi_block) {
-        return generate_sha2_implCompress<Assembler::e32>(multi_block);
+        return generate_sha2_implCompress(Assembler::e32, multi_block);
       }
       address generate_sha512_implCompress(bool multi_block) {
-        return generate_sha2_implCompress<Assembler::e64>(multi_block);
+        return generate_sha2_implCompress(Assembler::e64, multi_block);
       }
    private:
 
-    template<Assembler::SEW T>
-    void vl1reXX_v(VectorRegister vr, Register sr) {
-      if (T == Assembler::e32) __ vl1re32_v(vr, sr);
-      else                     __ vl1re64_v(vr, sr);
+    void vl1reXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vl1re32_v(vr, sr);
+      else                            __ vl1re64_v(vr, sr);
     }
 
-    template<Assembler::SEW T>
-    void vleXX_v(VectorRegister vr, Register sr) {
-      if (T == Assembler::e32) __ vle32_v(vr, sr);
-      else                     __ vle64_v(vr, sr);
+    void vleXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vle32_v(vr, sr);
+      else                            __ vle64_v(vr, sr);
     }
 
-    template<Assembler::SEW T>
-    void vseXX_v(VectorRegister vr, Register sr) {
-      if (T == Assembler::e32) __ vse32_v(vr, sr);
-      else                     __ vse64_v(vr, sr);
+    void vseXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vse32_v(vr, sr);
+      else                            __ vse64_v(vr, sr);
     }
 
     // Overview of the logic in each "quad round".
@@ -3789,11 +3786,10 @@ class StubGenerator: public StubCodeGenerator {
     //  hence the uses of those vectors rotate in each round, and we get back to the
     //  initial configuration every 4 quad-rounds. We could avoid those changes at
     //  the cost of moving those vectors at the end of each quad-rounds.
-    template<Assembler::SEW vset_sew>
-    void sha2_quad_round(VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
+    void sha2_quad_round(Assembler::SEW vset_sew, VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
                          Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister vtemp3, VectorRegister vtemp4,
                          bool gen_words = true, bool step_const = true) {
-      __ vl1reXX_v<vset_sew>(vtemp, scalarconst);
+      __ vl1reXX_v(vset_sew, vtemp, scalarconst);
       if (step_const) {
         __ addi(scalarconst, scalarconst, vset_sew == Assembler::e32 ? 16 : 32);
       }
@@ -3808,8 +3804,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    template<Assembler::SEW vset_sew>
-    const char* stub_name(bool multi_block) {
+    const char* stub_name(Assembler::SEW vset_sew, bool multi_block) {
       if (vset_sew == Assembler::e32 && !multi_block) return "sha256_implCompress";
       if (vset_sew == Assembler::e32 &&  multi_block) return "sha256_implCompressMB";
       if (vset_sew == Assembler::e64 && !multi_block) return "sha512_implCompress";
@@ -3825,8 +3820,7 @@ class StubGenerator: public StubCodeGenerator {
     //   c_rarg2   - int     offset
     //   c_rarg3   - int     limit
     //
-    template<Assembler::SEW vset_sew>
-    address generate_sha2_implCompress(bool multi_block) {
+    address generate_sha2_implCompress(Assembler::SEW vset_sew, bool multi_block) {
       alignas(64) static const uint32_t round_consts_256[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
         0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -3874,10 +3868,10 @@ class StubGenerator: public StubCodeGenerator {
         0x431d67c49c100d4cl, 0x4cc5d4becb3e42b6l, 0x597f299cfc657e2al,
         0x5fcb6fab3ad6faecl, 0x6c44198c4a475817l
       };
-      constexpr int const_add = vset_sew == Assembler::e32 ? 16 : 32;
+      const int const_add = vset_sew == Assembler::e32 ? 16 : 32;
 
       __ align(CodeEntryAlignment);
-      StubCodeMark mark(_cgen, "StubRoutines", stub_name<vset_sew>(multi_block));
+      StubCodeMark mark(_cgen, "StubRoutines", stub_name(vset_sew, multi_block));
       address start = __ pc();
 
       Register buf   = c_rarg0;
@@ -3940,9 +3934,9 @@ class StubGenerator: public StubCodeGenerator {
       // Load H[0..8] to produce
       //  v16 = {a,b,e,f}
       //  v17 = {c,d,g,h}
-      __ vleXX_v<vset_sew>(v16, state);                // v16 = {d,c,b,a}
+      __ vleXX_v(vset_sew, v16, state);                // v16 = {d,c,b,a}
       __ addi(state, state, const_add);
-      __ vleXX_v<vset_sew>(v17, state);                // v17 = {h,g,f,e}
+      __ vleXX_v(vset_sew, v17, state);                // v17 = {h,g,f,e}
 
       __ vid_v(v30);                                   // v30 = {3,2,1,0}
       __ vxor_vi(v30, v30, 0x3);                       // v30 = {0,1,2,3}
@@ -3973,16 +3967,16 @@ class StubGenerator: public StubCodeGenerator {
       //  sequence = [3 2 1 0   7 6 5 4  11 10 9 8   15 14 13 12]
       //   <https://oeis.org/A004444> gives us "N ^ 3" as a nice formula to generate
       //  this sequence. 'vid' gives us the N.
-      __ vleXX_v<vset_sew>(v10, buf);
+      __ vleXX_v(vset_sew, v10, buf);
       __ vrev8_v(v10, v10);
       __ addi(buf, buf, const_add);
-      __ vleXX_v<vset_sew>(v11, buf);
+      __ vleXX_v(vset_sew, v11, buf);
       __ vrev8_v(v11, v11);
       __ addi(buf, buf, const_add);
-      __ vleXX_v<vset_sew>(v12, buf);
+      __ vleXX_v(vset_sew, v12, buf);
       __ vrev8_v(v12, v12);
       __ addi(buf, buf, const_add);
-      __ vleXX_v<vset_sew>(v13, buf);
+      __ vleXX_v(vset_sew, v13, buf);
       __ vrev8_v(v13, v13);
       __ addi(buf, buf, const_add);
 
@@ -3996,10 +3990,10 @@ class StubGenerator: public StubCodeGenerator {
       VectorRegister rotation_regs[] = {v10, v11, v12, v13};
       int rot_pos = 0;
       // Quad-round #0 (+0, v10->v11->v12->v13) ... #11 (+3, v13->v10->v11->v12)
-      constexpr int qr_end = vset_sew == Assembler::e32 ? 12 : 16;
+      const int qr_end = vset_sew == Assembler::e32 ? 12 : 16;
       for (int i = 0; i < qr_end; i++) {
-        sha2_quad_round<vset_sew>
-                  (rotation_regs[(rot_pos + 0) & 0x3],
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
                    rotation_regs[(rot_pos + 1) & 0x3],
                    rotation_regs[(rot_pos + 2) & 0x3],
                    rotation_regs[(rot_pos + 3) & 0x3],
@@ -4010,10 +4004,10 @@ class StubGenerator: public StubCodeGenerator {
       // Quad-round #12 (+0, v10->v11->v12->v13) ... #15 (+3, v13->v10->v11->v12)
       // Note that we stop generating new message schedule words (Wt, v10-13)
       // as we already generated all the words we end up consuming (i.e., W[63:60]).
-      constexpr int qr_c_end = qr_end + 4;
+      const int qr_c_end = qr_end + 4;
       for (int i = qr_end; i < qr_c_end; i++) {
-        sha2_quad_round<vset_sew>
-                  (rotation_regs[(rot_pos + 0) & 0x3],
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
                    rotation_regs[(rot_pos + 1) & 0x3],
                    rotation_regs[(rot_pos + 2) & 0x3],
                    rotation_regs[(rot_pos + 3) & 0x3],
@@ -4056,9 +4050,9 @@ class StubGenerator: public StubCodeGenerator {
       __ vmerge_vvm(v16, v16, v26);                    // v16 = {d,c,b,a}
 
       // Save the hash
-      __ vseXX_v<vset_sew>(v17, state);
+      __ vseXX_v(vset_sew, v17, state);
       __ addi(state, state, -const_add);
-      __ vseXX_v<vset_sew>(v16, state);
+      __ vseXX_v(vset_sew, v16, state);
 
       __ pop_reg(saved_regs, sp);
       __ leave();
