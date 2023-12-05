@@ -571,7 +571,12 @@ public class JlinkTask {
             nonClassRes = nonClassResMap;
             // Print info message when a run-image link is being performed
             if (log != null) {
-                log.println(taskHelper.getMessage("runtime.link.info"));
+                String verboseHint = " " + taskHelper.getMessage("runtime.link.verbose.hint");
+                if (verbose) {
+                    // Don't mention the hint if we already use --verbose.
+                    verboseHint = "";
+                }
+                log.println(taskHelper.getMessage("runtime.link.info", verboseHint));
                 if (verbose) {
                     logPackagedModuleEquivalent(log, getMergedCliArgs(!config.useModulePath()), opts);
                 }
