@@ -97,6 +97,7 @@ class outputStream;
   LOG_TAG(iklass) \
   LOG_TAG(indy) \
   LOG_TAG(init) \
+  LOG_TAG(inlinecache)\
   LOG_TAG(inlining) \
   LOG_TAG(install) \
   LOG_TAG(interpreter) \
@@ -213,8 +214,7 @@ class outputStream;
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(vtablestubs) \
-  LOG_TAG(inlinecache)
+  LOG_TAG(vtablestubs)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 
