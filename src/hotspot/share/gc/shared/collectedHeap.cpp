@@ -558,9 +558,13 @@ void CollectedHeap::record_whole_heap_examined_timestamp() {
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
   assert(timer != nullptr, "timer is null");
+  static uint count = 0;
   if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
-    GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
-    HeapDumper::dump_heap();
+    if (FullGCHeapDumpLimit == 0 || count < FullGCHeapDumpLimit) {
+      GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
+      HeapDumper::dump_heap();
+      count++;
+    }
   }
 
   LogTarget(Trace, gc, classhisto) lt;
