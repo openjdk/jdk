@@ -124,14 +124,10 @@ static void create_edge(const Method* method, Method* sender, int bci, u1 frame_
   _list.add(edge);
 }
 
-static inline bool jfr_is_started_on_command_line() {
-  return JfrRecorder::is_started_on_commandline();
-}
-
 static constexpr const size_t max_num_edges = 10000;
 
 static void log_max_num_edges_reached() {
-  log_info(jfr)("The number of deprecated method invocations recorded has reached a maximum limit of %d.", max_num_edges);
+  log_info(jfr)("The number of deprecated method invocations recorded has reached a maximum limit of %zu.", max_num_edges);
   log_info(jfr)("Deprecated method invocations will not be recorded from now on.");
   log_info(jfr)("Reduce the number of deprecated method invocations and try again.");
 }
@@ -183,6 +179,10 @@ static inline bool is_not_jdk_module(const ModuleEntry* module, JavaThread* jt) 
   return !is_jdk_module(module, jt);
 }
 
+static inline bool jfr_is_started_on_command_line() {
+  return JfrRecorder::is_started_on_commandline();
+}
+
 static bool should_record(const Method* method, const Method* sender, JavaThread* jt) {
   assert(method != nullptr, "invariant");
   assert(method->deprecated(), "invariant");
@@ -191,12 +191,12 @@ static bool should_record(const Method* method, const Method* sender, JavaThread
   assert(jt != nullptr, "invariant");
   assert(jfr_is_started_on_command_line(), "invariant");
   const ModuleEntry* const deprecated_module = method->method_holder()->module();
-  // Only report invoked deprecated methods in the JDK.
+  // Only record invoked deprecated methods in the JDK.
   if (is_not_jdk_module(deprecated_module, jt)) {
     return false;
   }
   const ModuleEntry* const sender_module = sender->method_holder()->module();
-  // Only report senders not in the JDK and if we are still within budget.
+  // Only record senders not in the JDK and if we are still within budget.
   return is_not_jdk_module(sender_module, jt) && max_limit_not_reached();
 }
 
