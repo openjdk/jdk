@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4869502 4869539
+ * @key printer
  * @summary Confirm that ToPage is populated for argument =2. Range is disabled for argument = 0.
  * @run main/manual PrintDlgPageable
  */

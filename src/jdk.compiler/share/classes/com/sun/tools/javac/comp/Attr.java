@@ -4186,11 +4186,11 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
-        if (tree.var.vartype != null) {
-            annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
+        annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
+        if (!tree.var.isImplicitlyTyped()) {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
-            annotate.flush();
         }
+        annotate.flush();
         chk.validate(tree.var.vartype, env, true);
         result = tree.type;
         if (v.isUnnamedVariable()) {
@@ -5507,7 +5507,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
 
-                if ((c.flags_field & Flags.UNNAMED_CLASS) != 0) {
+                if (c.isImplicit()) {
                     chk.checkHasMain(env.tree.pos(), c);
                 }
             } finally {

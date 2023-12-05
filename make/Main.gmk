@@ -867,14 +867,6 @@ ifeq ($(JCOV_ENABLED), true)
 endif
 
 ################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
-
-################################################################################
 #
 # Dependency declarations between targets.
 #
