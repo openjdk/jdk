@@ -32,6 +32,25 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
+class ThreadPriorityAdjuster : public StackObj {
+private:
+  Thread* const _thread;
+  ThreadPriority const _new_prio;
+  ThreadPriority _old_prio;
+public:
+  ThreadPriorityAdjuster(ThreadPriority new_prio) : _thread(Thread::current()), _new_prio(new_prio) {
+    os::get_priority(_thread, _old_prio);
+    if (_old_prio != _new_prio) {
+      os::set_priority(_thread, new_prio);
+    }
+  }
+  ~ThreadPriorityAdjuster() {
+    if (_old_prio != _new_prio) {
+      os::set_priority(_thread, _old_prio);
+    }
+  }
+};
+
 WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _task(nullptr),
     _started(0),
@@ -46,7 +65,7 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
 
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  _not_finished = num_worker_tasks;
+  Atomic::store(&_not_finished, num_worker_tasks);
 
   if (use_workers) {
     if (use_caller) {
@@ -60,7 +79,7 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
 
   if (use_caller) {
     // Execute task in caller.
-    task->work(0);
+    caller_run_task();
   }
 
   if (use_workers) {
@@ -72,6 +91,18 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   assert(_not_finished == 0, "%d not finished workers?", _not_finished);
   _task = nullptr;
   _started = 0;
+}
+
+void WorkerTaskDispatcher::caller_run_task() {
+  // Execute the task in the same context and with the same priority
+  // it would be executed by a worker.
+  ThreadPriorityAdjuster tp(NearMaxPriority);
+  if (Thread::current()->is_Named_thread()) {
+    GCIdMark gc_id_mark(_task->gc_id());
+    _task->work(0);
+  } else {
+    _task->work(0);
+  }
 }
 
 void WorkerTaskDispatcher::worker_run_task() {

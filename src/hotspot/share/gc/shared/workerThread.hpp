@@ -69,6 +69,9 @@ class WorkerTaskDispatcher {
   // Semaphore used to notify the coordinator that all workers are done.
   Semaphore _end_semaphore;
 
+  // Runs task in caller.
+  void caller_run_task();
+
 public:
   WorkerTaskDispatcher();
 
