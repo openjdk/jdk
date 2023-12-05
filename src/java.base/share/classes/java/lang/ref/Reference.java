@@ -389,21 +389,20 @@ public abstract sealed class Reference<T>
 
     /**
      * Clears this reference object. Invoking this method does not enqueue this
-     * object, and the garbage collector will no longer enqueue this object once
-     * the referent reaches the designated reachability level.
-     * <p>
+     * object, and the garbage collector will no longer clear or enqueue this
+     * object.
+     *
+     * <p>When the garbage collector
+     * clears references it does so directly, without invoking this method.
+     *
+     * @apiNote
      * There is a potential race condition with the garbage collector. When this
      * method is called, the garbage collector may already be in the process of
      * (or already completed) clearing and/or enqueueing this reference.
      *
-     * Avoid this race by ensuring the referent remains strongly-reachable until
-     * after the call to clear(), using {@link #reachabilityFence(Object)} if necessary.
-     *
-     *
-     * <p> This method is invoked only by Java code; when the garbage collector
-     * clears references it does so directly, without invoking this method. The
-     * {@link #enqueue} method also clears references directly, without invoking
-     * this method.
+     * Avoid this race by ensuring the referent remains strongly reachable until
+     * after the call to clear(), using {@link #reachabilityFence(Object)} if
+     * necessary.
      */
     public void clear() {
         clear0();
@@ -484,26 +483,29 @@ public abstract sealed class Reference<T>
      * Clears this reference object, then attempts to add it to the queue with
      * which it is registered, if any.
      *
-     * <p>If this reference was already enqueued (by the garbage collector, or a
-     * previous call to {@code enqueue}), this method is <b><i>not successful</i></b>,
-     * and returns false.
+     * <p>If this reference is registered with a queue but not yet enqueued,
+     * the reference is added to the queue; this method is
+     * <b><i>successful</i></b> and returns true.
+     * If this reference is not registered with a queue, or was already enqueued
+     * (by the garbage collector, or a previous call to {@code enqueue}), this
+     * method is <b><i>unnsuccessful</i></b> and returns false.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * {@code enqueue} <b><i>successfully</i></b>
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
-     * or {@link ReferenceQueue#remove}.
+     * or {@link ReferenceQueue#remove}. An <b><i>unsuccessful</i></b>
+     * {@code enqueue} call has no memory consistency effects.
      *
-     * <p>This method is invoked only by Java code; when the garbage collector
-     * enqueues references it does so directly, without invoking this method.
+     * <p>When the garbage collector
+     * clears and enqueues references it does so directly, without invoking this
+     * method or the {@link #clear()} method.
      *
      * @apiNote
      * Use of this method allows the registered queue's
      * {@link ReferenceQueue#poll} and {@link ReferenceQueue#remove} methods
      * to return this reference even though the referent is still strongly
-     * reachable. That is, before the referent has reached the expected
-     * reachability level.
-
+     * reachable.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
@@ -556,7 +558,9 @@ public abstract sealed class Reference<T>
      * otherwise only implicit in a program -- the reachability conditions
      * triggering garbage collection.  This method is applicable only
      * when reclamation may have visible effects,
-     * such as for objects with finalizers or that use Cleaner.
+     * such as for objects that use finalizers or {@link Cleaner}, or code that
+     * performs
+     * <a href="{@docRoot}/java.base/java/lang/ref/package-summary.html">reference processing</a>.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * {@code reachabilityFence(x)}
