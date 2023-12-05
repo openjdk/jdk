@@ -3667,7 +3667,7 @@ instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
 instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
   match(Set dst (SignumVF dst (Binary zero one)));
   match(Set dst (SignumVD dst (Binary zero one)));
-  effect(TEMP_DEF dst);
+  effect(TEMP_DEF dst, TEMP v0);
   format %{ "vsignum $dst, $dst\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
