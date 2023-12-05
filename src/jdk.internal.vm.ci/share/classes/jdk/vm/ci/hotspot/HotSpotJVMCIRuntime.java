@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -499,7 +500,20 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
-    @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
+
+    static class KlassWeakReference extends WeakReference<ResolvedJavaType> {
+
+        private final Long klassPointer;
+
+        public KlassWeakReference(Long klassPointer, ResolvedJavaType referent, ReferenceQueue<ResolvedJavaType>q) {
+            super(referent, q);
+            this.klassPointer = klassPointer;
+        }
+    }
+
+    @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
+
+    @NativeImageReinitialize private ReferenceQueue<ResolvedJavaType> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
@@ -662,9 +676,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(Long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
+            resolvedJavaTypesQueue = new ReferenceQueue<>();
         }
         assert klassPointer != 0;
         WeakReference<ResolvedJavaType> klassReference = resolvedJavaTypes.get(klassPointer);
@@ -675,9 +690,25 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);
             javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
-            resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
+            resolvedJavaTypes.put(klassPointer, new KlassWeakReference(klassPointer, javaType, resolvedJavaTypesQueue));
         }
+        expungeStaleEntries();
         return javaType;
+    }
+
+
+    /**
+     * Clean up WeakReferences whose referents have been cleared.
+     */
+    private void expungeStaleEntries() {
+        KlassWeakReference current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        while (current != null) {
+            // Make sure the entry is still mapped to the weak reference
+            if (resolvedJavaTypes.get(current.klassPointer) == current) {
+                resolvedJavaTypes.remove(current.klassPointer);
+            }
+            current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        }
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {
