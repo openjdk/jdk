@@ -62,8 +62,83 @@
 //         that to the allocated GrowableArray
 //      de-allocate GrowableAray
 //   test.finish()
-//
-// ------------  ValueFactor  -------------
+
+
+// ------------  Array Elements  -------------
+
+template<typename E>
+E value_factory(int i) {
+  return E(i);
+}
+
+class Point {
+private:
+  int _x;
+  int _y;
+public:
+  Point(int x, int y) : _x(x), _y(y) {}
+  Point() : _x(0), _y(0) {} // TODO remove?
+  bool operator==(const Point& other) const {
+    return _x == other._x && _y == other._y;
+  }
+};
+
+template<>
+Point value_factory<Point>(int i) {
+  return Point(i, -i);
+}
+
+template<>
+int* value_factory<int*>(int i) {
+  // cast int to int ptr, just for sake of test
+  return (int*)(0x100000000L + (long)i);
+}
+
+class CtorDtor {
+private:
+  static int _constructed;
+  static int _deconstructed;
+  int _i;
+public:
+  CtorDtor() : _i(-1) { _constructed++; };
+  explicit CtorDtor(int i) : _i(i) { _constructed++; }
+  CtorDtor(CtorDtor& t) : _i(t._i) { _constructed++; }
+  CtorDtor& operator =(const CtorDtor& t) = default;
+  CtorDtor(CtorDtor&& t) : _i(t._i) { _constructed++; }
+  CtorDtor& operator =(CtorDtor&& t) = default;
+  ~CtorDtor() { _deconstructed++; }
+
+  bool operator==(const CtorDtor& other) const {
+    return _i == other._i;
+  }
+
+  static int constructed() { return _constructed; }
+  static int deconstructed() { return _deconstructed; }
+  static void reset() {
+    _constructed = 0;
+    _deconstructed = 0;
+  }
+};
+int CtorDtor::_constructed = 0;
+int CtorDtor::_deconstructed = 0;
+
+template<typename E>
+void reset_type() {}
+
+template<>
+void reset_type<CtorDtor>() {
+  CtorDtor::reset();
+}
+
+template<typename E>
+void check_no_constructor_for_type() {}
+
+template<>
+void check_no_constructor_for_type<CtorDtor>() {
+  ASSERT_EQ(CtorDtor::constructed(), 0);
+}
+
+// -------------- Basic Definitions -------------
 
 template<typename E> class TestClosure;
 template<typename E> class ModifyClosure;
@@ -111,7 +186,9 @@ public:
 template<typename E>
 class TestClosure {
 public:
-  virtual void reset() {}
+  virtual void reset() {
+    reset_type<E>();
+  }
   virtual void do_test(AllocatorClosure<E>* a) = 0;
   virtual void finish() {}
 };
@@ -121,36 +198,6 @@ class ModifyClosure {
 public:
   virtual void do_modify(AllocatorClosure<E>* a) = 0;
 };
-
-// ------------  ValueFactor  -------------
-
-template<typename E>
-E value_factory(int i) {
-  return E(i);
-}
-
-class Point {
-private:
-  int _x;
-  int _y;
-public:
-  Point(int x, int y) : _x(x), _y(y) {}
-  Point() : _x(0), _y(0) {} // TODO remove?
-  bool operator==(const Point& other) const {
-    return _x == other._x && _y == other._y;
-  }
-};
-
-template<>
-Point value_factory(int i) {
-  return Point(i, -i);
-}
-
-template<>
-int* value_factory(int i) {
-  // cast int to int ptr, just for sake of test
-  return (int*)(0x100000000L + (long)i);
-}
 
 // ------------ AllocationClosures ------------
 
@@ -404,7 +451,8 @@ template<typename E>
 class ModifyClosureEmpty : public ModifyClosure<E> {
 public:
   virtual void do_modify(AllocatorClosure<E>* a) override final {
-    // empty
+    // empty, but we can verify constructor / deconstructor count, if they are available
+    check_no_constructor_for_type<E>();
   }
 };
 
@@ -801,6 +849,10 @@ TEST_VM_F(GrowableArrayTest, append_point) {
   run_test_append<Point>();
 }
 
+TEST_VM_F(GrowableArrayTest, append_ctor_dtor) {
+  run_test_append<CtorDtor>();
+}
+
 TEST_VM_F(GrowableArrayTest, clear_int) {
   run_test_clear<int>();
 }
@@ -811,6 +863,10 @@ TEST_VM_F(GrowableArrayTest, clear_ptr) {
 
 TEST_VM_F(GrowableArrayTest, clear_point) {
   run_test_clear<Point>();
+}
+
+TEST_VM_F(GrowableArrayTest, clear_ctor_dtor) {
+  run_test_clear<CtorDtor>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_int) {
@@ -825,6 +881,10 @@ TEST_VM_F(GrowableArrayTest, iterator_point) {
   run_test_iterator<Point>();
 }
 
+TEST_VM_F(GrowableArrayTest, iterator_ctor_dtor) {
+  run_test_iterator<CtorDtor>();
+}
+
 TEST_VM_F(GrowableArrayTest, capacity_int) {
   run_test_capacity<int>();
 }
@@ -837,6 +897,10 @@ TEST_VM_F(GrowableArrayTest, capacity_point) {
   run_test_capacity<Point>();
 }
 
+TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
+  run_test_capacity<CtorDtor>();
+}
+
 TEST_VM_F(GrowableArrayTest, find_if_int) {
   run_test_find_if<int>();
 }
@@ -847,6 +911,10 @@ TEST_VM_F(GrowableArrayTest, find_if_ptr) {
 
 TEST_VM_F(GrowableArrayTest, find_if_point) {
   run_test_find_if<Point>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
+  run_test_find_if<CtorDtor>();
 }
 
 #ifdef ASSERT

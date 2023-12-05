@@ -782,7 +782,7 @@ class GrowableArrayIterator : public StackObj {
  public:
   GrowableArrayIterator() : _array(nullptr), _position(0) { }
   GrowableArrayIterator<E>& operator++() { ++_position; return *this; }
-  E operator*()                          { return _array->at(_position); }
+  const E& operator*()                   { return _array->at(_position); }
 
   bool operator==(const GrowableArrayIterator<E>& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
