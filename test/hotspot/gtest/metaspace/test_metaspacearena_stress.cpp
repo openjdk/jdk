@@ -137,7 +137,7 @@ public:
     _alloc_count(),
     _dealloc_count()
   {
-    _arena = new MetaspaceArena(cm, alloc_sequence, used_words_counter, "gtest-MetaspaceArenaTestBed-sm");
+    _arena = new MetaspaceArena(Metaspace::min_allocation_alignment, cm, alloc_sequence, used_words_counter, "gtest-MetaspaceArenaTestBed-sm");
   }
 
   ~MetaspaceArenaTestBed() {
@@ -169,6 +169,12 @@ public:
     size_t word_size = 1 + _allocation_range.random_value();
     MetaBlock wastage;
     MetaBlock bl = _arena->allocate(word_size, wastage);
+    // We only expect wastage if either alignment was not met or the chunk remainder
+    // was not large enough.
+    if (wastage.is_nonempty()) {
+      _arena->deallocate(wastage);
+    }
+
     EXPECT_TRUE(wastage.is_empty());
     if (bl.is_nonempty()) {
       EXPECT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));

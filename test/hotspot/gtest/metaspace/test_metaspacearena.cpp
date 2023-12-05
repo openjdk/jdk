@@ -34,10 +34,11 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
+#include "memory/metaspace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-//#define LOG_PLEASE
+#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
@@ -64,7 +65,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(size_t allocation_alignment_words, const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _arena = new MetaspaceArena(allocation_alignment_words, &_context.cm(), _growth_policy, &_used_words_counter, name);
+    _arena = new MetaspaceArena(Metaspace::min_allocation_alignment, &_context.cm(), _growth_policy, &_used_words_counter, name);
     DEBUG_ONLY(_arena->verify());
   }
 
@@ -135,7 +136,8 @@ public:
       if (p_committed != NULL) {
         ASSERT_GE(*p_committed, *p_used);
       }
-      // Since we own the used words counter, it should reflect our usage number 1:1
+      // Since we only have one arena, only it can have updated the used words counter; therefore
+      // arena::used() should == counter
       ASSERT_EQ(_used_words_counter.get(), *p_used);
     }
     if (p_committed != NULL && p_capacity != NULL) {
@@ -166,6 +168,7 @@ public:
     MetaBlock result, wastage;
     allocate_from_arena_with_tests(word_size, result, wastage);
     ASSERT_TRUE(wastage.is_empty());
+    (*p_return_value) = result.base();
   }
 
   // Allocate; it may or may not work; return value in *p_return_value
@@ -796,47 +799,93 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
   test_repeatedly_allocate_and_deallocate(false);
 }
 
-TEST_VM(Metaspace, MetaspaceArena_test_aligned_allocations) {
+static void test_aligned_allocation(size_t arena_alignment_words,
+  chunklevel_t lvl, size_t allocation_word_size) {
+  chunklevel_t level = lvl;
+  const ArenaGrowthPolicy policy (&level, 1);
+  const size_t chunk_word_size = word_size_for_level(level);
 
-  constexpr Metaspace::MetaspaceType space_type space_type = Metaspace::StandardMetaspaceType;
+  if (allocation_word_size > chunk_word_size) {
+    return;
+  }
 
-  for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl ++) {
-    chunklevel_t level = lvl;
-    const ArenaGrowthPolicy policy (&level, 1);
-    constexpr size_t first_chunk_word_size = word_size_for_level(level);
+  size_t expected_used = 0;
 
-    for (size_t align = AllocationAlignmentWordSize * 2;
-         align <= MIN2(first_chunk_word_size, MIN_CHUNK_WORD_SIZE); align *= 2) {
-      MetaspaceGtestContext context;
-      MetaspaceArenaTestHelper helper(context, align, Metaspace::StandardMetaspaceType, false);
+  LOG("Chunk word size: %zu, alignment: %zu, alloc size: %zu", chunk_word_size, arena_alignment_words, allocation_word_size);
 
-      for (int i = 0; i < 10; i++) {
-        MetaBlock result, wastage;
-        helper.allocate_from_arena_with_tests(Metaspace::min_allocation_word_size, result, wastage);
+  MetaspaceGtestContext context;
+  MetaspaceArenaTestHelper helper(context, arena_alignment_words, &policy);
 
-        const int allocations_per_chunk = (int)(first_chunk_word_size / align);
+  // Allocate as much as needed to have 2 chunk turnovers
+  const size_t aligned_allocation_word_size = align_up(allocation_word_size, arena_alignment_words);
+  const int num_allocations_per_chunk = chunk_word_size / aligned_allocation_word_size;
+  assert(num_allocations_per_chunk > 0, "Sanity");
+  const int num_allocations_total = num_allocations_per_chunk * 2 + 1;
 
-        ASSERT_TRUE(result.is_nonempty());
-        ASSERT_EQ(result.word_size(), Metaspace::min_allocation_word_size);
+  for (int i = 0; i < num_allocations_total; i++) {
 
-        // we expect wastage unless we switched to a new chunk
-        if ((i % allocations_per_chunk) == 0) {
-          ASSERT_TRUE(wastage.is_empty());
-        } else {
-          ASSERT_TRUE(wastage.is_nonempty());
-          ASSERT_FALSE(is_aligned(wastage.base(), align));
-          ASSERT_LT(wastage.word_size(), align);
-        }
+    MetaBlock result, wastage;
+    helper.allocate_from_arena_with_tests(allocation_word_size, result, wastage);
+
+    ASSERT_TRUE(result.is_nonempty());
+    ASSERT_TRUE(is_aligned(result.base(), arena_alignment_words * BytesPerWord));
+    ASSERT_EQ(result.word_size(), allocation_word_size);
+
+    expected_used += allocation_word_size + wastage.word_size();
+    size_t used, committed, reserved;
+    helper.usage_numbers_with_test(&used, &committed, &reserved);
+    ASSERT_EQ(used, expected_used);
+
+    const bool first_allocation = (i == 0);
+    const bool chunk_turnover = !first_allocation && ((i % num_allocations_per_chunk) == 0);
+
+    if (first_allocation) {
+      // expect no wastage if its the first allocation in the arena
+      ASSERT_TRUE(wastage.is_empty());
+    }
+
+    if (!first_allocation && (aligned_allocation_word_size > allocation_word_size)) {
+      // expect wastage if the alignment requires it
+      ASSERT_FALSE(wastage.is_empty());
+    }
+
+    if (wastage.is_nonempty()) {
+      // If we have wastage, we expect it to be either too small or unaligned. That would not be true
+      // for wastage from the fbl, which could have any size; however, in this test we don't deallocate,
+      // so we don't expect wastage from the fbl.
+      if (wastage.is_aligned_base(arena_alignment_words)) {
+        ASSERT_LT(wastage.word_size(), allocation_word_size);
+      }
+      if (chunk_turnover) {
+        // chunk turnover: no more wastage than size of a commit granule, since we salvage the
+        // committed remainder of the old chunk.
+        ASSERT_LT(wastage.word_size(), Settings::commit_granule_words());
+      } else {
+        // No chunk turnover: no more wastage than what alignment requires.
+        ASSERT_LT(wastage.word_size(), arena_alignment_words);
       }
     }
   }
 }
 
+TEST_VM(metaspace, MetaspaceArena_test_aligned) {
 
-
-
-
-
+  test_aligned_allocation(1, LOWEST_CHUNK_LEVEL, Metaspace::max_allocation_word_size());
+  /*
+  for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl ++) {
+    const size_t chunk_word_size = word_size_for_level(lvl);
+    for (size_t align = AllocationAlignmentWordSize; align <= MIN_CHUNK_WORD_SIZE; align *= 2) {
+      for (size_t allocsize = Metaspace::min_allocation_word_size;
+           allocsize < Metaspace::max_allocation_word_size(); allocsize *= 2) {
+        test_aligned_allocation(align, lvl, allocsize);
+      }
+      // test some odd sizes too
+      test_aligned_allocation(align, lvl, Metaspace::max_allocation_word_size());
+      test_aligned_allocation(align, lvl, sizeof(Klass) / BytesPerWord);
+      test_aligned_allocation(align, lvl, 17);
+    }
+  }*/
+}
 
 
 

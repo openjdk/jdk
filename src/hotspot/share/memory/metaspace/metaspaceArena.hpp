@@ -39,6 +39,7 @@ namespace metaspace {
 
 class ArenaGrowthPolicy;
 struct ArenaStats;
+class MetaspaceContext;
 class ChunkManager;
 class Fence;
 class FreeBlocks;
@@ -112,9 +113,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   FreeBlocks* fbl() const                       { return _fbl; }
   void add_allocation_to_fbl(MetaBlock bl);
 
-  // Returns true if we could reuse this block (large enough and correctly aligned).
-  bool could_reuse_block(MetaBlock bl) const;
-
   // Given a chunk, return the committed remainder of this chunk.
   MetaBlock salvage_chunk(Metachunk* c);
 
@@ -140,10 +138,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
 public:
 
-  MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
-                 SizeAtomicCounter* total_used_words_counter,
-                 const char* name);
-
   MetaspaceArena(size_t allocation_alignment_words,
                  ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
                  SizeAtomicCounter* total_used_words_counter,
@@ -152,6 +146,7 @@ public:
   ~MetaspaceArena();
 
   size_t allocation_alignment_words() const { return _allocation_alignment_words; }
+  size_t allocation_alignment_bytes() const { return allocation_alignment_words() * BytesPerWord; }
 
   // Allocate memory from Metaspace.
   // On success, returns non-empty block of the specified word size, and

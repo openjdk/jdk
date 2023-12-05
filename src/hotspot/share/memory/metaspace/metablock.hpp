@@ -27,6 +27,7 @@
 #define SHARE_MEMORY_METASPACE_METABLOCK_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/debug.hpp"
 
 namespace metaspace {
 
@@ -47,6 +48,7 @@ public:
   size_t word_size() const { return _word_size; }
   bool is_empty() const { return _base == nullptr; }
   bool is_nonempty() const { return _base != nullptr; }
+  void reset() { _base = nullptr; _word_size = 0; }
 
   bool operator==(const MetaBlock& rhs) const {
     return base() == rhs.base() &&
@@ -70,10 +72,23 @@ public:
   }
 
   DEBUG_ONLY(void verify() const;)
+
+  // Convenience function
+  bool is_aligned_base(size_t alignment_words) const {
+    return is_aligned(_base, alignment_words * BytesPerWord);
+  }
+
 };
 
 #define METABLOCKFORMAT                 "block (@" PTR_FORMAT " size " SIZE_FORMAT ")"
 #define METABLOCKFORMATARGS(__block__)  p2i((__block__).base()), (__block__).word_size()
+
+// some convenience asserts
+#define assert_block_aligned(block, alignment_words) \
+  assert(block.is_aligned_base(alignment_words), "Block wrong alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
+
+#define assert_block_larger_or_equal(block, word_size) \
+  assert(block.word_size() >= word_size, "Block too small " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
 
 }
 

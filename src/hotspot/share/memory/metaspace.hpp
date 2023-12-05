@@ -107,9 +107,11 @@ public:
   // The largest possible single allocation
   static size_t max_allocation_word_size();
 
-  // Every allocation will get rounded up to the minimum word size; only matters on
-  // 32-bit.
-  static constexpr size_t min_allocation_word_size = LP64_ONLY(1) NOT_LP64(2);
+  // Minimum allocation alignment Metaspace observes.
+  static constexpr size_t min_allocation_alignment = sizeof(uint64_t) / BytesPerWord;
+
+  // Every allocation will get rounded up to the minimum word size.
+  static constexpr size_t min_allocation_word_size = min_allocation_alignment;
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type, TRAPS);

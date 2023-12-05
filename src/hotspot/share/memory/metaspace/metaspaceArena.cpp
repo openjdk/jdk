@@ -58,11 +58,6 @@ chunklevel_t MetaspaceArena::next_chunk_level() const {
   return _growth_policy->get_level_at_step(growth_step);
 }
 
-// Returns true if we could reuse this block (large enough and correctly aligned).
-bool MetaspaceArena::could_reuse_block(MetaBlock bl) const {
-  return is_aligned(bl.base(), _allocation_alignment_words * BytesPerWord);
-}
-
 // Given a chunk, return the committed remainder of this chunk.
 MetaBlock MetaspaceArena::salvage_chunk(Metachunk* c) {
   MetaBlock result;
@@ -73,7 +68,6 @@ MetaBlock MetaspaceArena::salvage_chunk(Metachunk* c) {
 
     MetaWord* ptr = c->allocate(remaining_words);
     assert(ptr != nullptr, "Should have worked");
-    _total_used_words_counter->increment_by(remaining_words);
 
     result = MetaBlock(ptr, remaining_words);
 
@@ -108,20 +102,13 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
 
 void MetaspaceArena::add_allocation_to_fbl(MetaBlock bl) {
   assert(bl.is_nonempty(), "Sanity");
-  assert(could_reuse_block(bl), "block " METABLOCKFORMAT " is not usable by this arena", METABLOCKFORMATARGS(bl));
+  assert_block_aligned(bl, allocation_alignment_words());
 
   if (_fbl == nullptr) {
     _fbl = new FreeBlocks(); // Create only on demand
   }
   _fbl->add_block(bl);
 }
-
-MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
-                               SizeAtomicCounter* total_used_words_counter,
-                               const char* name)
-: MetaspaceArena(AllocationAlignmentWordSize,
-                 chunk_manager, growth_policy, total_used_words_counter, name)
-{}
 
 MetaspaceArena::MetaspaceArena(size_t allocation_alignment_words,
                                ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
@@ -254,6 +241,9 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
   if (_fbl != nullptr && !_fbl->is_empty()) {
     MetaBlock block = _fbl->remove_block(word_size);
     if (block.is_nonempty()) {
+      assert_block_aligned(block, allocation_alignment_words());
+      assert_block_larger_or_equal(block, word_size);
+      // Split wastage off block
       block.split(word_size, result, wastage);
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
@@ -290,22 +280,20 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
 
   } // End: allocate from arena proper
 
-  // Repurpose wastage for this arena if possible.
-  if (wastage.is_nonempty() && could_reuse_block(wastage)) {
-    add_allocation_to_fbl(wastage);
-    wastage = MetaBlock();
-  }
-
   // Logging, sanity checks
   if (result.is_nonempty()) {
-    stringStream ss;
-    if (wastage.is_nonempty()) {
-      ss.print("wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
-    } else {
-      ss.print("no wastage");
+    LogTarget(Trace, metaspace) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print("returning " METABLOCKFORMAT " taken from %s, ",
+               METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"));
+      if (wastage.is_empty()) {
+        ls.print(", no wastage");
+      } else {
+        ls.print(", wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
+      }
     }
-    UL2(trace, "returning " METABLOCKFORMAT " taken from %s, with %s",
-                METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"), ss.base());
+    // The result we hand out must be correctly aligned, and should be precisely the requested size.
     assert(result.word_size() == word_size &&
            is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
            "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
@@ -399,7 +387,7 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
     InternalStats::inc_num_allocs_failed_limit();
   } else {
     DEBUG_ONLY(InternalStats::inc_num_allocs();)
-    _total_used_words_counter->increment_by(word_size);
+    _total_used_words_counter->increment_by(word_size + wastage.word_size());
   }
 
   SOMETIMES(verify();)
@@ -409,21 +397,22 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
   }
 
+  // Wastage from arena allocations only occurs for alignment waste or the remaining space
+  // of a salvaged chunk; so it has to be either too small for our size or must be badly aligned.
+  assert(wastage.is_empty() ||
+         wastage.is_aligned_base(allocation_alignment_words()) ||
+         wastage.word_size() < word_size,
+         "Unexpected wastage: " METABLOCKFORMAT ", arena alignment: %zu, allocation word size: %zu",
+         METABLOCKFORMATARGS(wastage), allocation_alignment_words(), word_size);
+
   return result;
 }
 
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore (requires CLD lock to be active).
 void MetaspaceArena::deallocate(MetaBlock block) {
-  // At this point a current chunk must exist since we only deallocate if we did allocate before.
-  NOT_LP64(assert(is_aligned(block.word_size(), Metaspace::min_allocation_word_size), "Bad block size");)
-  assert(could_reuse_block(block), "Block " METABLOCKFORMAT " not usable by this arena. ", METABLOCKFORMATARGS(block));
-  assert(current_chunk() != nullptr, "stray deallocation?");
-
   UL2(trace, "deallocating " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
-
   add_allocation_to_fbl(block);
-
   SOMETIMES(verify();)
 }
 

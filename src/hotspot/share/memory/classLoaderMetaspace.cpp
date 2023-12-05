@@ -60,11 +60,10 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
-  constexpr size_t nonclass_alignment_words = metaspace::AllocationAlignmentWordSize;
 
   // Initialize non-class Arena
   _non_class_space_arena = new MetaspaceArena(
-      nonclass_alignment_words,
+      Metaspace::min_allocation_alignment,
       non_class_cm,
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
       RunningCounters::used_nonclass_counter(),
@@ -72,11 +71,10 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 
   // If needed, initialize class arena
   if (Metaspace::using_class_space()) {
-    constexpr size_t class_alignment_words = KlassAlignmentInBytes / BytesPerWord;
     ChunkManager* const class_cm =
             ChunkManager::chunkmanager_class();
     _class_space_arena = new MetaspaceArena(
-        class_alignment_words,
+        KlassAlignmentInBytes / BytesPerWord,
         class_cm,
         ArenaGrowthPolicy::policy_for_space_type(space_type, true),
         RunningCounters::used_class_counter(),
@@ -100,14 +98,21 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   word_size = align_up(word_size, Metaspace::min_allocation_word_size);
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   MetaBlock result, wastage;
-  MetaspaceArena* const arena = Metaspace::is_class_space_allocation(mdType) ?
-                                class_space_arena() : non_class_space_arena();
-  result = arena->allocate(word_size, wastage);
+  if (Metaspace::is_class_space_allocation(mdType)) {
+    assert(word_size >= (sizeof(Klass)/BytesPerWord), "weird size for klass: %zu", word_size);
+    result = class_space_arena()->allocate(word_size, wastage);
+    static constexpr size_t minimum_size_for_klass = (sizeof(Klass)/BytesPerWord) + 32; // large enough to be able to hold a klass plus some fudge factor
+    // If possible, re-purpose wastage for Klass allocations:
+    if (wastage.is_nonempty() &&
+        wastage.word_size() > minimum_size_for_klass &&
+        is_aligned(wastage.base(), class_space_arena()->allocation_alignment_words() * BytesPerWord)) {
+      class_space_arena()->deallocate(wastage);
+      wastage.reset();
+    }
+  } else {
+    result = non_class_space_arena()->allocate(word_size, wastage);
+  }
   if (wastage.is_nonempty()) {
-    assert(arena->allocation_alignment_words() > metaspace::AllocationAlignmentWordSize,
-           "minimally alignment used in arena, unexpected wastage returned");
-    assert(!is_aligned(wastage.base(), arena->allocation_alignment_words() * BytesPerWord),
-           "unexpected: wastage could have been used allocating arena.");
     non_class_space_arena()->deallocate(wastage);
   }
   return result.base();
