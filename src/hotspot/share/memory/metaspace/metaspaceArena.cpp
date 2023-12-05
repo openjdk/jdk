@@ -288,9 +288,9 @@ MetaBlock MetaspaceArena::allocate(size_t word_size, MetaBlock& wastage) {
       ls.print("returning " METABLOCKFORMAT " taken from %s, ",
                METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"));
       if (wastage.is_empty()) {
-        ls.print(", no wastage");
+        ls.print("no wastage");
       } else {
-        ls.print(", wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
+        ls.print("wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
       }
     }
     // The result we hand out must be correctly aligned, and should be precisely the requested size.
@@ -398,9 +398,9 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
   }
 
   // Wastage from arena allocations only occurs for alignment waste or the remaining space
-  // of a salvaged chunk; so it has to be either too small for our size or must be badly aligned.
+  // of a salvaged chunk; so it has to be either too small os misaligned
   assert(wastage.is_empty() ||
-         wastage.is_aligned_base(allocation_alignment_words()) ||
+         !wastage.is_aligned_base(allocation_alignment_words()) ||
          wastage.word_size() < word_size,
          "Unexpected wastage: " METABLOCKFORMAT ", arena alignment: %zu, allocation word size: %zu",
          METABLOCKFORMATARGS(wastage), allocation_alignment_words(), word_size);

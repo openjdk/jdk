@@ -34,6 +34,7 @@ class outputStream;
 namespace metaspace {
   struct ClmsStats;
   class MetaspaceArena;
+  class MetaspaceContext;
 }
 
 // A ClassLoaderMetaspace manages MetaspaceArena(s) for a CLD.
@@ -76,6 +77,11 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   metaspace::MetaspaceArena* class_space_arena() const       { return _class_space_arena; }
 
 public:
+
+  // Constructor for gtests
+  ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type,
+                       metaspace::MetaspaceContext* non_class_context,
+                       metaspace::MetaspaceContext* class_context);
 
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
 

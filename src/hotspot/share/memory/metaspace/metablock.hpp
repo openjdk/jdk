@@ -27,6 +27,7 @@
 #define SHARE_MEMORY_METASPACE_METABLOCK_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 namespace metaspace {

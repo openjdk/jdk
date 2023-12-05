@@ -173,9 +173,8 @@ public:
     // was not large enough.
     if (wastage.is_nonempty()) {
       _arena->deallocate(wastage);
+      wastage.reset();
     }
-
-    EXPECT_TRUE(wastage.is_empty());
     if (bl.is_nonempty()) {
       EXPECT_TRUE(is_aligned(bl.base(), AllocationAlignmentByteSize));
 

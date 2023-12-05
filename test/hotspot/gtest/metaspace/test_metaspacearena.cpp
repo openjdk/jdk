@@ -65,7 +65,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(size_t allocation_alignment_words, const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _arena = new MetaspaceArena(Metaspace::min_allocation_alignment, &_context.cm(), _growth_policy, &_used_words_counter, name);
+    _arena = new MetaspaceArena(allocation_alignment_words, &_context.cm(), _growth_policy, &_used_words_counter, name);
     DEBUG_ONLY(_arena->verify());
   }
 
@@ -167,7 +167,10 @@ public:
   void allocate_from_arena_with_tests(MetaWord** p_return_value, size_t word_size) {
     MetaBlock result, wastage;
     allocate_from_arena_with_tests(word_size, result, wastage);
-    ASSERT_TRUE(wastage.is_empty());
+    if (wastage.is_nonempty()) {
+      _arena->deallocate(wastage);
+      wastage.reset();
+    }
     (*p_return_value) = result.base();
   }
 
@@ -799,8 +802,7 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
   test_repeatedly_allocate_and_deallocate(false);
 }
 
-static void test_aligned_allocation(size_t arena_alignment_words,
-  chunklevel_t lvl, size_t allocation_word_size) {
+static void test_aligned_allocation(size_t arena_alignment_words, chunklevel_t lvl, size_t allocation_word_size) {
   chunklevel_t level = lvl;
   const ArenaGrowthPolicy policy (&level, 1);
   const size_t chunk_word_size = word_size_for_level(level);
@@ -868,37 +870,26 @@ static void test_aligned_allocation(size_t arena_alignment_words,
   }
 }
 
-TEST_VM(metaspace, MetaspaceArena_test_aligned) {
-
-  test_aligned_allocation(1, LOWEST_CHUNK_LEVEL, Metaspace::max_allocation_word_size());
-  /*
+static void test_for_size(size_t allocation_word_size) {
   for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl ++) {
     const size_t chunk_word_size = word_size_for_level(lvl);
     for (size_t align = AllocationAlignmentWordSize; align <= MIN_CHUNK_WORD_SIZE; align *= 2) {
-      for (size_t allocsize = Metaspace::min_allocation_word_size;
-           allocsize < Metaspace::max_allocation_word_size(); allocsize *= 2) {
-        test_aligned_allocation(align, lvl, allocsize);
-      }
-      // test some odd sizes too
-      test_aligned_allocation(align, lvl, Metaspace::max_allocation_word_size());
-      test_aligned_allocation(align, lvl, sizeof(Klass) / BytesPerWord);
-      test_aligned_allocation(align, lvl, 17);
+      test_aligned_allocation(align, lvl, allocation_word_size);
     }
-  }*/
+  }
 }
 
+TEST_VM(metaspace, MetaspaceArena_test_aligned_max_allocation_word_size) {
+  test_for_size(Metaspace::max_allocation_word_size());
+}
 
+TEST_VM(metaspace, MetaspaceArena_test_aligned_min_allocation_word_size) {
+  test_for_size(Metaspace::min_allocation_word_size);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+TEST_VM(metaspace, MetaspaceArena_test_aligned_pow2_sizes) {
+  for (size_t s = Metaspace::min_allocation_word_size * 2;
+       s < Metaspace::max_allocation_word_size(); s *= 2) {
+    test_for_size(s);
+  }
+}

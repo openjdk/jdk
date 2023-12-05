@@ -34,6 +34,7 @@
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/runningCounters.hpp"
@@ -45,6 +46,7 @@
 using metaspace::ChunkManager;
 using metaspace::MetaBlock;
 using metaspace::MetaspaceArena;
+using metaspace::MetaspaceContext;
 using metaspace::ArenaGrowthPolicy;
 using metaspace::RunningCounters;
 using metaspace::InternalStats;
@@ -53,6 +55,14 @@ using metaspace::InternalStats;
 #define LOGFMT_ARGS    p2i(this)
 
 ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type) :
+    ClassLoaderMetaspace(lock, space_type,
+                         MetaspaceContext::context_nonclass(),
+                         MetaspaceContext::context_class())
+{}
+
+ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type,
+                                           MetaspaceContext* non_class_context,
+                                           MetaspaceContext* class_context) :
   _lock(lock),
   _space_type(space_type),
   _non_class_space_arena(nullptr),
