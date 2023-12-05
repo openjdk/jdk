@@ -137,9 +137,9 @@ public class CheckStylesheetClasses {
         // used in search.js and search-page.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link",
                 "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
-                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "expanded",
-                "search-result-link", "two-column-search-results", "ui-static-link",
-                "sort-asc", "sort-desc", "visible");
+                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "ui-menu",
+                "ui-menu-item-wrapper", "ui-static-link", "expanded", "search-result-link",
+                "two-column-search-results", "sort-asc", "sort-desc", "visible");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

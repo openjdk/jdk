@@ -402,7 +402,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   } else {
     Label done;
     __ jccb(Assembler::equal, done);
-    __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+    __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
     __ bind(done);
   }
 }
@@ -423,7 +423,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
   __ cmpl_imm32(disarmed_addr, 0);
   __ pop(tmp);
   __ jcc(Assembler::equal, continuation);
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
   __ bind(continuation);
 }
 #endif

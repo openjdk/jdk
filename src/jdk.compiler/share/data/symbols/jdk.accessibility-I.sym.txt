@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,20 +39,4 @@ class name com/sun/java/accessibility/util/AWTEventMonitor
 -field name adjustmentListener descriptor Ljava/awt/event/AdjustmentListener;
 -field name itemListener descriptor Ljava/awt/event/ItemListener;
 -field name textListener descriptor Ljava/awt/event/TextListener;
-
-class name com/sun/java/accessibility/util/AccessibilityListenerList
-header extends java/lang/Object flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name com/sun/java/accessibility/util/EventID
-header extends java/lang/Object flags 21
-
-class name com/sun/java/accessibility/util/GUIInitializedListener
-header extends java/lang/Object implements java/util/EventListener flags 601
-
-class name com/sun/java/accessibility/util/TopLevelWindowListener
-header extends java/lang/Object implements java/util/EventListener flags 601
-
-class name com/sun/java/accessibility/util/Translator
-header extends javax/accessibility/AccessibleContext implements javax/accessibility/Accessible,javax/accessibility/AccessibleComponent flags 21
 

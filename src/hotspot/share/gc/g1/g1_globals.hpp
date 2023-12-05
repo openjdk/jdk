@@ -324,6 +324,10 @@
           "retained region restore purposes.")                              \
           range(1, 256)                                                     \
                                                                             \
+  product(uint, G1NumCollectionsKeepPinned, 8, DIAGNOSTIC,                  \
+          "After how many GCs a region has been found pinned G1 should "    \
+          "give up reclaiming it.")                                         \
+                                                                            \
   product(uint, G1NumCardsCostSampleThreshold, 1000, DIAGNOSTIC,            \
           "Threshold for the number of cards when reporting remembered set "\
           "card cost related prediction samples. A sample must involve "    \
