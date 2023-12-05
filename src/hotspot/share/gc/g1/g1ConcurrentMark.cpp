@@ -1677,7 +1677,6 @@ void G1ConcurrentMark::weak_refs_work() {
 
   assert(_global_mark_stack.is_empty(), "Marking should have completed");
 
-  G1CMIsAliveClosure is_alive(_g1h);
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
     G1CMIsAliveClosure is_alive(_g1h);
