@@ -461,7 +461,7 @@ private:
 
   ciArgInfoData *arg_info() const;
 
-  void prepare_metadata();
+  void prepare_metadata(NoSafepointVerifier* no_safepoint);
   void load_remaining_extra_data();
   ciProfileData* bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots);
 

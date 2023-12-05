@@ -2284,7 +2284,7 @@ public:
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
   uint arg_modified(int a)                       { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock());
+                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
                                                    NoSafepointVerifier no_safepoint;
                                                    ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
@@ -2296,7 +2296,7 @@ public:
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
   void set_arg_modified(int a, uint v)           { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock());
+                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
                                                    NoSafepointVerifier no_safepoint;
                                                    ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
@@ -2520,7 +2520,9 @@ public:
     // so this here is an exception.
     MethodData* self = (MethodData*)this;
     assert(self->extra_data_lock()->owned_by_self(), "must have lock");
-    assert(JavaThread::current()->is_in_no_safepoint_scope(), "must have NoSafepointVerifier inside lock scope");
+    assert(!Thread::current()->is_Java_thread() ||
+           JavaThread::current()->is_in_no_safepoint_scope(),
+           "JavaThread must have NoSafepointVerifier inside lock scope");
 #endif
   }
 };

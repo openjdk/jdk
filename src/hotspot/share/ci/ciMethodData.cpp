@@ -82,13 +82,20 @@ public:
     return _safepoint_tracker.safepoint_state_changed();
   }
 
-  bool finish() {
+  bool finish(NoSafepointVerifier* no_safepoint) {
     if (_uncached_methods.length() == 0) {
       // Preparation finished iff all Methods* were already cached.
       return true;
     }
-    // Holding locks through safepoints is bad practice.
-    MutexUnlocker mu(_mdo->extra_data_lock());
+    // We are currently holding the extra_data_lock and ensuring
+    // no safepoint breaks the lock.
+    _mdo->check_extra_data_locked();
+    // We now want to cache some method data. This could cause
+    // a safepoint. We temporarily release the lock and allow
+    // safepoints, and revert that at the end of the scope:
+    MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+    PauseNoSafepointVerifier pause_no_safepoints(no_safepoint);
+
     for (int i = 0; i < _uncached_methods.length(); ++i) {
       if (has_safepointed()) {
         // The metadata in the growable array might contain stale
@@ -104,19 +111,14 @@ public:
   }
 };
 
-void ciMethodData::prepare_metadata() {
+void ciMethodData::prepare_metadata(NoSafepointVerifier* no_safepoint) {
   MethodData* mdo = get_MethodData();
 
   for (;;) {
     ResourceMark rm;
     PrepareExtraDataClosure cl(mdo);
-    {
-      // We hold the extra data lock, so now don't safepoint so we don't
-      // give up the lock during cleaning.
-      NoSafepointVerifier no_safepoint;
-      mdo->clean_extra_data(&cl);
-    }
-    if (cl.finish()) {
+    mdo->clean_extra_data(&cl);
+    if (cl.finish(no_safepoint)) {
       // When encountering uncached metadata, the Compile_lock might be
       // acquired when creating ciMetadata handles, causing safepoints
       // which requires a new round of preparation to clean out potentially
@@ -128,12 +130,15 @@ void ciMethodData::prepare_metadata() {
 
 void ciMethodData::load_remaining_extra_data() {
   MethodData* mdo = get_MethodData();
-  MutexLocker ml(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not unintentionally broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  NoSafepointVerifier no_safepoint;
+
   // Deferred metadata cleaning due to concurrent class unloading.
-  prepare_metadata();
+  prepare_metadata(&no_safepoint);
   // After metadata preparation, there is no stale metadata,
   // and no safepoints can introduce more stale metadata.
-  NoSafepointVerifier no_safepoint;
 
   assert((mdo->data_size() == _data_size) && (mdo->extra_data_size() == _extra_data_size), "sanity, unchanged");
   assert(extra_data_base() == (DataLayout*)((address) _data + _data_size), "sanity");
@@ -567,7 +572,7 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(mdo->extra_data_lock());
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
     NoSafepointVerifier no_safepoint;
 
     ProfileData* data = mdo->bci_to_data(bci);
@@ -595,7 +600,7 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(mdo->extra_data_lock());
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
     NoSafepointVerifier no_safepoint;
 
     ProfileData* data = mdo->bci_to_data(bci);

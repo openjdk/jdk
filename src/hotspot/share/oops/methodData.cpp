@@ -1224,7 +1224,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
     // Holds Compile_lock
-    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
+    _extra_data_lock(Mutex::nosafepoint, "MDOExtraData_lock"),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
@@ -1512,6 +1512,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
     // // have added extra data entries. Do it re-entrant in case
     // // we already have the lock further up.
     // ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self());
+    // Mutex::_no_safepoint_check_flag
     ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
     if (result != nullptr || dp >= end) {
       return result;
@@ -1871,7 +1872,11 @@ void MethodData::clean_method_data(bool always_clean) {
   }
 
   CleanExtraDataKlassClosure cl(always_clean);
-  // TODO safe?
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  NoSafepointVerifier no_safepoint;
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
@@ -1881,7 +1886,11 @@ void MethodData::clean_method_data(bool always_clean) {
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   CleanExtraDataMethodClosure cl;
-  // TODO safe?
+
+  // Lock to modify extra data, and prevent Safepoint from breaking the lock
+  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  NoSafepointVerifier no_safepoint;
+
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }

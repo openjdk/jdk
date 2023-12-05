@@ -1798,7 +1798,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
   if (imm_mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(imm_mdo->extra_data_lock());
+    MutexLocker ml(imm_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
     NoSafepointVerifier no_safepoint;
 
     ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), nullptr);
@@ -2145,7 +2145,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         int dos = 0;
         {
           // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-          MutexLocker ml(trap_mdo->extra_data_lock());
+          MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
           NoSafepointVerifier no_safepoint;
 
           ProfileData* pdata = trap_mdo->bci_to_data(trap_bci);
@@ -2331,7 +2331,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       bool maybe_prior_recompile = false;
 
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-      MutexLocker ml(trap_mdo->extra_data_lock());
+      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
       NoSafepointVerifier no_safepoint;
 
       ProfileData* pdata = query_update_method_data(trap_mdo, trap_bci, reason, true,
