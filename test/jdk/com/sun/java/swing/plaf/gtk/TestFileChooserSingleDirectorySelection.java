@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
 
 import java.io.File;
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.Point;
 import java.awt.Robot;
@@ -207,7 +205,7 @@ public class TestFileChooserSingleDirectorySelection {
 
     private static void checkResult(UIManager.LookAndFeelInfo laf) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            File files[] = fileChooser.getSelectedFiles();
+            File[] files = fileChooser.getSelectedFiles();
             if (files.length == 0) {
                 throw new RuntimeException("getSelectedFiles returned " +
                         "empty array for LAF: " + laf.getClassName());
