@@ -83,14 +83,14 @@ public class DataDescriptorIgnoreCrcAndSizeFields {
     /**
      * Assert that the given ZipEntry has the expected name and that
      * the expected content can be read from the ZipInputStream
-     * @param nameAndContent the expected name and content
+     * @param expected the expected name and content
      * @param entry the entry to check the name of
      * @param in the ZipInputStream to check the entry content of
      * @throws IOException if an IO exception occurs
      */
-    private static void assertNameAndContents(String nameAndContent, ZipEntry entry, ZipInputStream in) throws IOException {
-        assertEquals(nameAndContent, entry.getName());
-        assertArrayEquals(nameAndContent.getBytes(StandardCharsets.UTF_8), in.readAllBytes());
+    private static void assertNameAndContents(String expected, ZipEntry entry, ZipInputStream in) throws IOException {
+        assertEquals(expected, entry.getName());
+        assertArrayEquals(expected.getBytes(StandardCharsets.UTF_8), in.readAllBytes());
     }
 
     /**
