@@ -1504,12 +1504,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
 #define DO_ELEMENT_LOAD(reg, idx) \
   switch (eltype) { \
-  case T_BOOLEAN: lb(reg, Address(ary, idx * elsize)); break; \
-  case T_CHAR:   lhu(reg, Address(ary, idx * elsize)); break; \
-  case T_BYTE:    lb(reg, Address(ary, idx * elsize)); break; \
-  case T_SHORT:   lh(reg, Address(ary, idx * elsize)); break; \
-  case T_INT:     lw(reg, Address(ary, idx * elsize)); break; \
-  default:                                             break; \
+  case T_BOOLEAN: lbu(reg, Address(ary, idx * elsize)); break; \
+  case T_CHAR:    lhu(reg, Address(ary, idx * elsize)); break; \
+  case T_BYTE:     lb(reg, Address(ary, idx * elsize)); break; \
+  case T_SHORT:    lh(reg, Address(ary, idx * elsize)); break; \
+  case T_INT:      lw(reg, Address(ary, idx * elsize)); break; \
+  default:                               ShouldNotReachHere(); \
   } \
 
   ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()

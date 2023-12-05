@@ -10304,8 +10304,8 @@ instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
 
 // fast ArraysSupport.vectorizedHashCode
 instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
-                         iRegLNoSp tmp1, iRegINoSp tmp2,
-                         iRegINoSp tmp3, iRegLNoSp tmp4, rFlagsReg cr)
+                         iRegLNoSp tmp1, iRegLNoSp tmp2,
+                         iRegLNoSp tmp3, iRegLNoSp tmp4, rFlagsReg cr)
 %{
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
