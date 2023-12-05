@@ -149,7 +149,7 @@ public:
     // As _byte_map_base may be "negative" (the card table has been allocated before
     // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
     size_t delta = p - _byte_map_base;
-    return (HeapWord*) (delta << _card_shift);    
+    return (HeapWord*) (delta << _card_shift);
   }
 
   // Mapping from card marking array entry to address of first word.
