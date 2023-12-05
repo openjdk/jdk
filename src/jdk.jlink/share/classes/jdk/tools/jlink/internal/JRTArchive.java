@@ -44,20 +44,24 @@ import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
-public class RunImageArchive implements Archive {
+/**
+ * An archive implementation based on the run-time image (lib/modules, or jimage)
+ * and associated files from the filesystem if any (e.g. native libraries).
+ */
+public class JRTArchive implements Archive {
 
-    private static final String JAVA_BASE_MODULE = "java.base";
-    // File marker in lib/modules file for java.base indicating it got created
-    // with a run-image-type link.
-    private static final String RUNIMAGE_SINGLE_HOP_STAMP = ".runtimeimage.stamp";
+    // File marker in lib/modules file for jdk.jlink indicating it got created
+    // with a run-time image type link.
+    public static final String RUNIMAGE_SINGLE_HOP_STAMP = "jdk/tools/jlink/internal/runtimeimage.link.stamp";
+    private static final String JDK_JLINK_MODULE = "jdk.jlink";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
-    private final List<RunImageFile> files = new ArrayList<>();
+    private final List<JRTArchiveFile> files = new ArrayList<>();
     private final List<String> otherRes;
     private final boolean singleHop;
 
-    RunImageArchive(String module, Path path, boolean singleHop, List<String> otherRes) {
+    JRTArchive(String module, Path path, boolean singleHop, List<String> otherRes) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -84,7 +88,7 @@ public class RunImageArchive implements Archive {
             collectFiles();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        } catch (RunImageLinkException e) {
+        } catch (RuntimeImageLinkException e) {
             // populate single-hop issue
             throw e.getReason();
         }
@@ -114,8 +118,8 @@ public class RunImageArchive implements Archive {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof RunImageArchive) {
-            RunImageArchive other = (RunImageArchive)obj;
+        if (obj instanceof JRTArchive) {
+            JRTArchive other = (JRTArchive)obj;
             return Objects.equals(module, other.module) &&
                    Objects.equals(path, other.path);
         }
@@ -129,25 +133,19 @@ public class RunImageArchive implements Archive {
             // Add classes/resources from image module
             files.addAll(ref.open().list()
                                    .map(s -> {
-                return new RunImageFile(RunImageArchive.this, s,
+                return new JRTArchiveFile(JRTArchive.this, s,
                         Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, singleHop);
             }).collect(Collectors.toList()));
-            // if we use single-hop and we find a stamp file we fail the link
-            if (files.stream().anyMatch(f -> { return RUNIMAGE_SINGLE_HOP_STAMP.equals(f.resPath);})) {
-                String msg = "Recursive links based on the current run-time image are not allowed.";
-                IllegalArgumentException ise = new IllegalArgumentException(msg);
-                throw new RunImageLinkException(ise);
-            };
-            // add/persist a special, empty file for java.base so as to support
-            // the single-hop-only runimage-jlink
-            if (singleHop && JAVA_BASE_MODULE.equals(module)) {
-                files.add(createRunImageSingleHopStamp());
+            // add/persist a special, empty file for jdk.jlink so as to support
+            // the single-hop-only run-time image jlink
+            if (singleHop && JDK_JLINK_MODULE.equals(module)) {
+                files.add(createRuntimeImageSingleHopStamp());
             }
         }
     }
 
-    private RunImageFile createRunImageSingleHopStamp() {
-        return new RunImageStampFile(this, RUNIMAGE_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, singleHop);
+    private JRTArchiveFile createRuntimeImageSingleHopStamp() {
+        return new JRTArchiveStampFile(this, RUNIMAGE_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, singleHop);
     }
 
     private void addNonClassResources() throws IOException {
@@ -157,7 +155,7 @@ public class RunImageArchive implements Archive {
             files.addAll(otherRes.stream()
                     .map(s -> {
                         TypePathMapping m = mappingResource(s);
-                        return new RunImageFile(RunImageArchive.this, m.resPath, m.resType, m.sha, m.symlink, singleHop);
+                        return new JRTArchiveFile(JRTArchive.this, m.resPath, m.resType, m.sha, m.symlink, singleHop);
                     })
                     .filter(m -> m != null)
                     .collect(Collectors.toList()));
@@ -205,7 +203,7 @@ public class RunImageArchive implements Archive {
         }
     }
 
-    static class RunImageFile {
+    static class JRTArchiveFile {
         private static final String JAVA_HOME = System.getProperty("java.home");
         private static final Path BASE = Paths.get(JAVA_HOME);
         private static final String MISMATCH_FORMAT = "%s has been modified.%s%n";
@@ -216,7 +214,7 @@ public class RunImageArchive implements Archive {
         final boolean symlink;
         final boolean failOnMod; // Only allow non-failure in multi-hop mode
 
-        RunImageFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
+        JRTArchiveFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             this.resPath = resPath;
             this.resType = toEntryType(resType);
             this.archive = archive;
@@ -262,7 +260,7 @@ public class RunImageArchive implements Archive {
                                 String hint = " You may force the link with '--unlock-run-image'.";
                                 String msg = String.format(MISMATCH_FORMAT, path.toString(), hint);
                                 IllegalArgumentException ise = new IllegalArgumentException(msg);
-                                throw new RunImageLinkException(ise);
+                                throw new RuntimeImageLinkException(ise);
                             } else if (!warningProduced) {
                                 String msg = String.format(MISMATCH_FORMAT, path.toString(), "");
                                 System.err.printf("WARNING: %s", msg);
@@ -333,8 +331,8 @@ public class RunImageArchive implements Archive {
     }
 
     // Stamp file marker for single-hop implementation
-    static class RunImageStampFile extends RunImageFile {
-        RunImageStampFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
+    static class JRTArchiveStampFile extends JRTArchiveFile {
+        JRTArchiveStampFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             super(archive, resPath, resType, sha, symlink, failOnMod);
         }
 

@@ -29,13 +29,13 @@ package jdk.tools.jlink.internal;
  * Exception thrown for links without packaged modules. I.e. run-image link.
  *
  */
-public class RunImageLinkException extends IllegalStateException {
+public class RuntimeImageLinkException extends IllegalStateException {
 
     private static final long serialVersionUID = -1848914673073119403L;
 
     private final IllegalArgumentException iae;
 
-    public RunImageLinkException(IllegalArgumentException cause) {
+    public RuntimeImageLinkException(IllegalArgumentException cause) {
         super(cause);
         this.iae = cause;
     }

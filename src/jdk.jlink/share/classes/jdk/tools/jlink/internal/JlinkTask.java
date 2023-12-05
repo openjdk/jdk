@@ -576,6 +576,15 @@ public class JlinkTask {
                     logPackagedModuleEquivalent(log, getMergedCliArgs(!config.useModulePath()), opts);
                 }
             }
+            // if we use single-hop and we find a stamp file we fail the link
+            if (config.singleHop()) {
+                try (InputStream in = jdkJlink.getResourceAsStream(JRTArchive.RUNIMAGE_SINGLE_HOP_STAMP)) {
+                    if (in != null) {
+                        String msg = "Recursive links based on the current run-time image are not allowed.";
+                        throw new IllegalArgumentException(msg);
+                    }
+                }
+            }
         }
 
         if (verbose && log != null) {
@@ -740,14 +749,14 @@ public class JlinkTask {
         String resName = String.format(OTHER_RESOURCES_FILE, modName);
         try {
             InputStream inStream = jdkJlink.getResourceAsStream(resName);
-            if (inStream != null) {
-                try (inStream) {
-                    String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
+            try (inStream) {
+                String input = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
+                if (input.isEmpty()) {
+                    // Not all modules have non-class resources
+                    nonResEntries.put(modName, Collections.emptyList());
+                } else {
                     nonResEntries.put(modName, Arrays.asList(input.split("\n")));
                 }
-            } else {
-                // Not all modules have non-class resources
-                nonResEntries.put(modName, Collections.emptyList());
             }
         } catch (IOException e) {
             throw new InternalError("Failed to process run-time image resources for " + modName);
@@ -1093,8 +1102,8 @@ public class JlinkTask {
                         taskHelper.getMessage("err.not.a.module.directory", path));
                 }
             } else if (ModuleFinder.ofSystem().find(module).isPresent()){
-                // the path is a JRTPath, when using a jmod-less image
-                return new RunImageArchive(module, path, singleHop, Objects.requireNonNull(nonClassRes));
+                // the path is a JRTPath, when using the run-time image for linking
+                return new JRTArchive(module, path, singleHop, Objects.requireNonNull(nonClassRes));
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

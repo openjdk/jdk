@@ -33,7 +33,6 @@ import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +44,7 @@ import java.util.stream.Collectors;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.JlinkCLIArgsListener;
 import jdk.tools.jlink.internal.Platform;
-import jdk.tools.jlink.internal.RunImageLinkException;
+import jdk.tools.jlink.internal.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -72,6 +71,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
     private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PREFIX + "%s" + RESPATH_SUFFIX;
     private static final String CLI_RESOURCE = "/" + JLINK_MOD_NAME + "/" + CLI_RESOURCE_FILE;
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
+    private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
 
     // Type file format:
     // '<type>|{0,1}|<sha-sum>|<file-path>'
@@ -108,7 +108,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
         if (jdkJlink.isPresent()) {
             Platform targetPlatform = getTargetPlatform(in);
             in.transformAndCopy(e -> recordAndFilterEntry(e, targetPlatform), out);
-            addModuleResourceEntries(out);
+            addModuleResourceEntries(in, out);
             addCLIResource(out);
         } else {
             in.transformAndCopy(Function.identity(), out);
@@ -152,14 +152,24 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
         return Platform.parsePlatform(platform);
     }
 
-    private void addModuleResourceEntries(ResourcePoolBuilder out) {
-        nonClassResEntries.keySet().stream().sorted().forEach(module -> {
+    private void addModuleResourceEntries(ResourcePool in, ResourcePoolBuilder out) {
+        Set<String> inputModules = in.moduleView().modules()
+                                                  .map(rm -> rm.name())
+                                                  .collect(Collectors.toSet());
+        inputModules.stream().sorted().forEach(module -> {
             String mResource = String.format(RESPATH, module);
-            List<String> mResources = Objects.requireNonNull(nonClassResEntries.get(module),
-                                                             "Module listed, but no resources?");
-            String mResContent = mResources.stream().sorted().collect(Collectors.joining("\n"));
-            out.add(ResourcePoolEntry.create(mResource,
+            List<String> mResources = nonClassResEntries.get(module);
+            if (mResources == null) {
+                // We create empty resource files for modules in the resource
+                // pool view, but which don't themselves contain native resources
+                // or config files.
+                out.add(ResourcePoolEntry.create(mResource, EMPTY_RESOURCE_BYTES));
+            } else {
+                String mResContent = mResources.stream().sorted()
+                                               .collect(Collectors.joining("\n"));
+                out.add(ResourcePoolEntry.create(mResource,
                     mResContent.getBytes(StandardCharsets.UTF_8)));
+            }
         });
     }
 
@@ -199,7 +209,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
                 HexFormat format = HexFormat.of();
                 return format.formatHex(db);
             }
-        } catch (RunImageLinkException e) {
+        } catch (RuntimeImageLinkException e) {
             // RunImageArchive::RunImageFile.content() may throw this when
             // getting the content(). Propagate this specific exception.
             throw e;
