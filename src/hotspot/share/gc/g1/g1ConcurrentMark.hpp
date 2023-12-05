@@ -142,7 +142,7 @@ private:
     size_t _capacity;
     size_t _num_buckets;
     bool _growable;
-    TaskQueueEntryChunk* volatile* _data;
+    TaskQueueEntryChunk* volatile* _buckets;
     char _pad0[DEFAULT_CACHE_LINE_SIZE];
     volatile size_t _size;
     char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];

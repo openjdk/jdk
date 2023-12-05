@@ -135,14 +135,14 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
   size_t bucket = get_bucket(cur_idx);
 
-  if (Atomic::load_acquire(&_data[bucket]) == nullptr) {
+  if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
     if (!_growable) {
       // Prefer to restart the CM.
       return nullptr;
     }
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
-    if (Atomic::load_acquire(&_data[bucket]) == nullptr) {
+    if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
       size_t new_capacity = bucket_size(bucket) * 2;
       if (!reserve(new_capacity)) {
         return nullptr;
@@ -151,7 +151,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
   }
 
   size_t bucket_idx = get_bucket_index(cur_idx);
-  TaskQueueEntryChunk* result = ::new (&_data[bucket][bucket_idx]) TaskQueueEntryChunk;
+  TaskQueueEntryChunk* result = ::new (&_buckets[bucket][bucket_idx]) TaskQueueEntryChunk;
   result->next = nullptr;
   return result;
 }
@@ -162,7 +162,7 @@ G1CMMarkStack::ChunkAllocator::ChunkAllocator() :
   _capacity(0),
   _num_buckets(0),
   _growable(false),
-  _data(nullptr),
+  _buckets(nullptr),
   _size(0)
 { }
 
@@ -173,10 +173,10 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   _max_capacity = max_capacity;
   _num_buckets  = get_bucket(_max_capacity);
 
-  _data = NEW_C_HEAP_ARRAY(TaskQueueEntryChunk*, _num_buckets, mtGC);
+  _buckets = NEW_C_HEAP_ARRAY(TaskQueueEntryChunk*, _num_buckets, mtGC);
 
   for (size_t i = 0; i < _num_buckets; i++) {
-    _data[i] = nullptr;
+    _buckets[i] = nullptr;
   }
 
   size_t new_capacity = bucket_size(0);
@@ -203,18 +203,18 @@ void G1CMMarkStack::ChunkAllocator::expand() {
 }
 
 G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
-  if (_data == nullptr) {
+  if (_buckets == nullptr) {
     return;
   }
 
   for (size_t i = 0; i < _num_buckets; i++) {
-    if (_data[i] != nullptr) {
-      MmapArrayAllocator<TaskQueueEntryChunk>::free(_data[i],  bucket_size(i));
-      _data[i] = nullptr;
+    if (_buckets[i] != nullptr) {
+      MmapArrayAllocator<TaskQueueEntryChunk>::free(_buckets[i],  bucket_size(i));
+      _buckets[i] = nullptr;
     }
   }
 
-  FREE_C_HEAP_ARRAY(TaskQueueEntryChunk*, _data);
+  FREE_C_HEAP_ARRAY(TaskQueueEntryChunk*, _buckets);
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
@@ -226,7 +226,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   size_t highest_bucket = get_bucket(new_capacity);
   size_t i = get_bucket(_capacity);
   for (; i <= highest_bucket; i++) {
-    if (Atomic::load_acquire(&_data[i]) != nullptr) {
+    if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
     }
 
@@ -239,7 +239,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
       return false;
     }
     _capacity += bucket_capacity;
-    Atomic::release_store(&_data[i], bucket_base);
+    Atomic::release_store(&_buckets[i], bucket_base);
   }
   return true;
 }
