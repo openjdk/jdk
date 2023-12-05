@@ -594,7 +594,7 @@ public class JlinkTask {
               .forEach(rm -> log.format("%s %s%s%n",
                                         rm.name(),
                                         rm.reference().location().get(),
-                                        config.useModulePath() ? "" : taskHelper.getMessage("runtime.link.jprt.path.extra")));
+                                        config.useModulePath() ? "" : " " + taskHelper.getMessage("runtime.link.jprt.path.extra")));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
@@ -646,11 +646,10 @@ public class JlinkTask {
      *
      * @param logWriter
      *            The log to print to.
-     * @param oldCli
-     *            The jlink command line arguments used for producing the
-     *            current run-time image (including jdk.jlink module).
-     * @param newCLI
-     *            The current jlink command line arguments
+     * @param mergedCLI
+     *            The merged command line parameters of the persisted link of
+     *            the run-time image being used and the current command line
+     *            arguments.
      * @param inputCommand
      *            The jlink CLI args used for the current link run.
      * @param opts
@@ -703,12 +702,14 @@ public class JlinkTask {
                 jlinkCmd.add(entry.getKey() + "=" + entry.getValue());
             }
         }
+        String outputPath = "";
         if (opts.output != null) {
+            outputPath = opts.output.toString();
             jlinkCmd.add("--output");
-            jlinkCmd.add(opts.output.toString());
+            jlinkCmd.add(outputPath);
         }
-        logWriter.println(taskHelper.getMessage("runtime.link.equivalent.packaged.modules"));
-        logWriter.print("  ");
+        logWriter.println(taskHelper.getMessage("runtime.link.equivalent.packaged.modules", outputPath));
+        logWriter.print("    ");
         logWriter.print(jlinkCmd.stream().collect(Collectors.joining(" ")));
         for (Plugin p: forwardingPlugins) {
             List<Map<String, String>> configs = pluginMaps.get(p);

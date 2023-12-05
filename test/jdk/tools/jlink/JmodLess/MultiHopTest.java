@@ -65,7 +65,9 @@ public class MultiHopTest extends AbstractJmodLessTest {
         if (analyzer.getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to multi-hop (hop 2)");
         }
-        analyzer.stdoutShouldContain("Recursive links based on the current run-time image are not allowed.");
+        String expectedMsg = "Module path to the JDK packaged modules must be specified. " +
+                "Run-time image based linking is not supported as $java.home was already created from a run-time image.";
+        analyzer.stdoutShouldContain(expectedMsg);
         analyzer.stdoutShouldNotContain("Exception"); // ensure error message is sane
     }
 

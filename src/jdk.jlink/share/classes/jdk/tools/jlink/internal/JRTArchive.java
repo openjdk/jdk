@@ -206,7 +206,7 @@ public class JRTArchive implements Archive {
     static class JRTArchiveFile {
         private static final String JAVA_HOME = System.getProperty("java.home");
         private static final Path BASE = Paths.get(JAVA_HOME);
-        private static final String MISMATCH_FORMAT = "%s has been modified.%s%n";
+        private static final String MISMATCH_FORMAT = "%s has been modified.%n";
         final String resPath;
         final Archive.Entry.EntryType resType;
         final Archive archive;
@@ -257,12 +257,11 @@ public class JRTArchive implements Archive {
                         Path path = BASE.resolve(resPath);
                         if (shaSumMismatch(path, sha, symlink)) {
                             if (failOnMod) {
-                                String hint = " You may force the link with '--unlock-run-image'.";
-                                String msg = String.format(MISMATCH_FORMAT, path.toString(), hint);
+                                String msg = String.format(MISMATCH_FORMAT, path.toString());
                                 IllegalArgumentException ise = new IllegalArgumentException(msg);
                                 throw new RuntimeImageLinkException(ise);
                             } else if (!warningProduced) {
-                                String msg = String.format(MISMATCH_FORMAT, path.toString(), "");
+                                String msg = String.format(MISMATCH_FORMAT, path.toString());
                                 System.err.printf("WARNING: %s", msg);
                                 warningProduced = true;
                             }
