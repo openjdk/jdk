@@ -74,7 +74,7 @@ public class GrabTest {
     public static void main(String[] args) throws Exception {
 
         robot = new Robot();
-        robot.setAutoDelay(500);
+        robot.setAutoDelay(100);
 
         SwingUtilities.invokeAndWait(() -> {
             Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
@@ -119,6 +119,7 @@ public class GrabTest {
 
             f.setVisible(true);
             w.setVisible(true);
+            robot.delay(500);
 
             frame = new Frame();
             window1 = new Window(frame);
