@@ -41,6 +41,7 @@ import tests.JImageHelper;
  * @summary Compare packaged-modules jlink with a jmod-less jlink to produce the same result
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal

@@ -36,6 +36,7 @@ import tests.JImageValidator;
  *          not consistently enabled/disabled.
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal

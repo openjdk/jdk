@@ -9,6 +9,7 @@ import tests.Helper;
  * @summary Verify jlink fails by default when jlinking in jmod-less mode and files have been changed
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal

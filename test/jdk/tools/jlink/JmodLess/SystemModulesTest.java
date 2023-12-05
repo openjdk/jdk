@@ -33,6 +33,7 @@ import tests.JImageValidator;
  * @summary Test appropriate handling of generated SystemModules* classes in run-time image link mode
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
