@@ -119,7 +119,6 @@ public class GrabTest {
 
             f.setVisible(true);
             w.setVisible(true);
-            robot.delay(500);
 
             frame = new Frame();
             window1 = new Window(frame);
@@ -136,6 +135,7 @@ public class GrabTest {
         });
 
         Util.waitForIdle(robot);
+        robot.delay(500);
         test();
     }
 
@@ -189,6 +189,7 @@ public class GrabTest {
         // 5. Check that press on the other frame's title causes ungrab
         f1.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         Util.clickOnTitle(f1, robot);
         Util.waitForIdle(robot);
@@ -238,6 +239,7 @@ public class GrabTest {
         window1.setVisible(true);
         window2.setVisible(true);
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         tk.grab(window1);
 
