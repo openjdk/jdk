@@ -4437,6 +4437,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register
     // don't want non-IEEE rounding modes or floating-point traps.
     bfi(tmp1, zr, 22, 4); // Clear DN, FZ, and Rmode
     bfi(tmp1, zr, 8, 5);  // Clear exception-control bits (8-12)
+    bfi(tmp1, zr, 0, 2);  // Clear AH:FIZ
     eor(tmp2, tmp1, tmp2);
     cbz(tmp2, OK);        // Only reset FPCR if it's wrong
     set_fpcr(tmp1);
