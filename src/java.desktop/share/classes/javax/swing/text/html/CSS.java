@@ -2933,7 +2933,8 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImage extends CssValue {
-        private volatile ImageIcon image;
+        private volatile boolean loadedImage;
+        private ImageIcon image;
 
         Object parseCssValue(String value) {
             BackgroundImage retValue = new BackgroundImage();
@@ -2947,9 +2948,9 @@ public class CSS implements Serializable {
 
         // PENDING: this base is wrong for linked style sheets.
         ImageIcon getImage(URL base) {
-            if (image == null) {
+            if (!loadedImage) {
                 synchronized(this) {
-                    if (image == null) {
+                    if (!loadedImage) {
                         URL url = CSS.getURL(base, svalue);
                         if (url != null) {
                             image = new ImageIcon();
@@ -2958,6 +2959,7 @@ public class CSS implements Serializable {
                                 image.setImage(tmpImg);
                             }
                         }
+                        loadedImage = true;
                     }
                 }
             }
