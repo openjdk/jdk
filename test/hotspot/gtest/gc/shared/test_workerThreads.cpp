@@ -85,72 +85,93 @@ public:
   }
 };
 
+class PerfTask : public WorkerTask {
+public:
+  PerfTask(bool can_caller_execute) :
+    WorkerTask("Parallel Perf Task", can_caller_execute) {}
+
+  void work(uint worker_id) {
+    // Do nothing, pretend the work is very small.
+  }
+};
+
 static uint expected_ids_bitset(int expected_workers) {
   return (1 << expected_workers) - 1;
 }
 
+static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller_runs, NumberSeq* stats) {
+  ParallelTask task(num_workers, caller_runs);
+  {
+    jlong start = os::javaTimeNanos();
+    workers->run_task(&task);
+    stats->add(os::javaTimeNanos() - start);
+  }
+  EXPECT_EQ(num_workers, task.actual_workers());
+  EXPECT_EQ(expected_ids_bitset(num_workers), task.actual_ids_bitset());
+  if (!caller_runs) {
+    EXPECT_FALSE(task.seen_caller());
+  }
+}
+
 TEST_VM(WorkerThreads, basic) {
-  static const int TRIES = 1000;
-  static const uint max_workers = 4;
+  static const int TRIES = 100000;
+  static const uint max_workers = os::processor_count();
   static const uint half_workers = max_workers / 2;
+  static const uint min_workers = 1;
 
   WorkerThreads* workers = new WorkerThreads("test", max_workers);
   workers->initialize_workers();
 
+  NumberSeq seq_full, seq_full_caller, seq_half, seq_half_caller, seq_min, seq_min_caller;
+
   // Full parallelism
   workers->set_active_workers(max_workers);
   for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(max_workers, false);
-    workers->run_task(&task);
-    EXPECT_EQ(max_workers, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(max_workers), task.actual_ids_bitset());
-    EXPECT_FALSE(task.seen_caller());
+    basic_run_with(workers, max_workers, false, &seq_full);
   }
-
-  // Full parallelism, can execute in caller
-  workers->set_active_workers(max_workers);
   for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(max_workers, true);
-    workers->run_task(&task);
-    EXPECT_EQ(max_workers, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(max_workers), task.actual_ids_bitset());
+    basic_run_with(workers, max_workers,   true, &seq_full_caller);
   }
 
   // Half parallelism
   workers->set_active_workers(half_workers);
   for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(half_workers, false);
-    workers->run_task(&task);
-    EXPECT_EQ(half_workers, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(half_workers), task.actual_ids_bitset());
-    EXPECT_FALSE(task.seen_caller());
+    basic_run_with(workers, half_workers, false, &seq_half);
+  }
+  for (int t = 0; t < TRIES; t++) {
+    basic_run_with(workers, half_workers,  true, &seq_half_caller);
   }
 
-  // Half parallelism, can execute in caller
-  workers->set_active_workers(half_workers);
+  // Min parallelism
+  workers->set_active_workers(min_workers);
   for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(half_workers, true);
-    workers->run_task(&task);
-    EXPECT_EQ(half_workers, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(half_workers), task.actual_ids_bitset());
+    basic_run_with(workers, min_workers,  false, &seq_min);
+  }
+  for (int t = 0; t < TRIES; t++) {
+    basic_run_with(workers, min_workers,   true, &seq_min_caller);
   }
 
-  // Lowest parallelism
-  workers->set_active_workers(1);
-  for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(1, false);
-    workers->run_task(&task);
-    EXPECT_EQ(1u, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(1), task.actual_ids_bitset());
-    EXPECT_FALSE(task.seen_caller());
-  }
+  tty->print_cr("Full:");
+  seq_full.dump();
+  tty->cr();
 
-  // Lowest parallelism, can execute in caller
-  workers->set_active_workers(1);
-  for (int t = 0; t < TRIES; t++) {
-    ParallelTask task(1, true);
-    workers->run_task(&task);
-    EXPECT_EQ(1u, task.actual_workers());
-    EXPECT_EQ(expected_ids_bitset(1), task.actual_ids_bitset());
-  }
+  tty->print_cr("Full + caller runs:");
+  seq_full_caller.dump();
+  tty->cr();
+
+  tty->print_cr("Half:");
+  seq_half.dump();
+  tty->cr();
+
+  tty->print_cr("Half + caller runs:");
+  seq_half_caller.dump();
+  tty->cr();
+
+  tty->print_cr("Min:");
+  seq_min.dump();
+  tty->cr();
+
+  tty->print_cr("Min + caller runs:");
+  seq_min_caller.dump();
+  tty->cr();
 }
