@@ -89,6 +89,17 @@ public interface ExecutableElement extends Element, Parameterizable {
      * non-inner class, or an initializer (static or instance), has no
      * receiver type.
      *
+     * <p>The receiver <em>parameter</em> is a syntactic device added
+     * to the language for the purpose of hosting annotations. Even
+     * when source code is used as the basis for creating an
+     * executable, if a receiver parameter is not present in the
+     * source code, an implementation may elect to return a {@code
+     * NoType} object even in cases where a receiver <em>type</em> is
+     * nominally defined on the executable in question, such as an
+     * instance method.  When a receiver parameter is present and
+     * hosting annotations, a suitably annotated receiver type is
+     * returned.
+     *
      * @return the receiver type of this executable
      * @since 1.8
      *

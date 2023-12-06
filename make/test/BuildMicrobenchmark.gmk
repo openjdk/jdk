@@ -98,11 +98,6 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \

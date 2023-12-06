@@ -648,6 +648,16 @@ bool Method::init_method_counters(MethodCounters* counters) {
   return Atomic::replace_if_null(&_method_counters, counters);
 }
 
+void Method::set_exception_handler_entered(int handler_bci) {
+  if (ProfileExceptionHandlers) {
+    MethodData* mdo = method_data();
+    if (mdo != nullptr) {
+      BitData handler_data = mdo->exception_handler_bci_to_data(handler_bci);
+      handler_data.set_exception_handler_entered();
+    }
+  }
+}
+
 int Method::extra_stack_words() {
   // not an inline function, to avoid a header dependency on Interpreter
   return extra_stack_entries() * Interpreter::stackElementSize;
@@ -2261,6 +2271,20 @@ void Method::record_gc_epoch() {
 // Called when the class loader is unloaded to make all methods weak.
 void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
+}
+
+void Method::clear_jmethod_id() {
+  // Being at a safepoint prevents racing against other class redefinitions
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
+  // The jmethodID is not stored in the Method instance, we need to look it up first
+  jmethodID methodid = find_jmethod_id_or_null();
+  // We need to make sure that jmethodID actually resolves to this method
+  // - multiple redefined versions may share jmethodID slots and if a method
+  //   has already been rewired to a newer version we could be removing reference
+  //   to a still existing method instance
+  if (methodid != nullptr && *((Method**)methodid) == this) {
+    *((Method**)methodid) = nullptr;
+  }
 }
 
 bool Method::has_method_vptr(const void* ptr) {

@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6334074 8022536
+  @key printer
   @summary test supported text flavors reported properly
   @run main TextFlavorTest
 */
