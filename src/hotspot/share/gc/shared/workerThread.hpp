@@ -82,7 +82,7 @@ public:
 
   // For workers: waits for a task to become available to the worker and runs it.
   // For non-workers: sees if there is a task and runs it.
-  // Returns false if there are no tasks to execute.
+  // Returns true if task was executed.
   bool internal_run_task(bool is_worker);
 };
 

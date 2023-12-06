@@ -61,9 +61,9 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  Atomic::store(&_not_finished, num_workers);
+  _not_finished = num_workers;
 
-  // Notify workers there is work.
+  // Dispatch 'num_workers' number of tasks.
   _start_semaphore.signal(num_workers);
 
   // If possible, execute tasks in caller, while there is work to do.
@@ -77,7 +77,7 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   // No workers are allowed to read the state variables after the coordinator has been signaled.
   assert(_not_finished == 0, "%d not finished workers?", _not_finished);
   _task = nullptr;
-  Atomic::store(&_started, 0u);
+  _started = 0;
 }
 
 bool WorkerTaskDispatcher::internal_run_task(bool is_worker) {
