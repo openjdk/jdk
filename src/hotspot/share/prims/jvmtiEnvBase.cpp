@@ -207,7 +207,8 @@ JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
   _is_retransformable = true;
 
   // all callbacks initially NULL
-  memset(&_event_callbacks,0,sizeof(jvmtiEventCallbacks));
+  memset(&_event_callbacks, 0, sizeof(jvmtiEventCallbacks));
+  memset(&_ext_event_callbacks, 0, sizeof(jvmtiExtEventCallbacks));
 
   // all capabilities initially off
   memset(&_current_capabilities, 0, sizeof(_current_capabilities));
