@@ -123,9 +123,9 @@ public class Flags {
      */
     public static final int HASINIT          = 1<<18;
 
-    /** Class is a unnamed top level class.
+    /** Class is an implicitly declared top level class.
      */
-    public static final int UNNAMED_CLASS    = 1<<19;
+    public static final int IMPLICIT_CLASS    = 1<<19;
 
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
@@ -499,7 +499,7 @@ public class Flags {
         ANNOTATION(Flags.ANNOTATION),
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
-        UNNAMED_CLASS(Flags.UNNAMED_CLASS),
+        IMPLICIT_CLASS(Flags.IMPLICIT_CLASS),
         BLOCK(Flags.BLOCK),
         FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),

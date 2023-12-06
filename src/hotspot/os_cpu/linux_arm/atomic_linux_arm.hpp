@@ -128,6 +128,13 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
   return xchg_using_helper<int32_t>(ARMAtomicFuncs::_xchg_func, dest, exchange_value);
 }
 
+// No direct support for 8-byte xchg; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+
+// No direct support for 8-byte add; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
 
 // The memory_order parameter is ignored - we always provide the strongest/most-conservative ordering
 
@@ -146,7 +153,6 @@ inline int32_t reorder_cmpxchg_func(int32_t exchange_value,
 inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
                                          int64_t volatile* dest,
                                          int64_t compare_value) {
-  assert(VM_Version::supports_cx8(), "Atomic compare and exchange int64_t not supported on this architecture!");
   // Warning:  Arguments are swapped to avoid moving them for kernel call
   return (*ARMAtomicFuncs::_cmpxchg_long_func)(compare_value, exchange_value, dest);
 }

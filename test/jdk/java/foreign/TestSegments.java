@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
@@ -35,7 +34,9 @@ import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
@@ -84,7 +85,7 @@ public class TestSegments {
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(1000, 1);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
@@ -95,7 +96,7 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(10, 1);
             //init
@@ -263,7 +264,7 @@ public class TestSegments {
 
     @Test(dataProvider = "segmentFactories")
     public void testFill(Supplier<MemorySegment> segmentSupplier) {
-        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.varHandle();
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
             MemorySegment segment = segmentSupplier.get();
@@ -380,6 +381,71 @@ public class TestSegments {
             assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
         }
         assertEquals(counter.get(), 2);
+    }
+
+    @Test
+    void testThrowInCleanup() {
+        AtomicInteger counter = new AtomicInteger();
+        RuntimeException thrown = null;
+        Set<String> expected = new HashSet<>();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw new IllegalArgumentException(msg);
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                String msg = "exception#" + i;
+                expected.add(msg);
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw new IllegalArgumentException(msg);
+                });
+            }
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } catch (RuntimeException ex) {
+            thrown = ex;
+        }
+        assertNotNull(thrown);
+        assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 19);
+        Throwable[] errors = new IllegalArgumentException[20];
+        assertTrue(thrown instanceof IllegalArgumentException);
+        errors[0] = thrown;
+        for (int i = 0 ; i < 19 ; i++) {
+            assertTrue(thrown.getSuppressed()[i] instanceof IllegalArgumentException);
+            errors[i + 1] = thrown.getSuppressed()[i];
+        }
+        for (Throwable t : errors) {
+            assertTrue(expected.remove(t.getMessage()));
+        }
+        assertTrue(expected.isEmpty());
+    }
+
+    @Test
+    void testThrowInCleanupSame() {
+        AtomicInteger counter = new AtomicInteger();
+        Throwable thrown = null;
+        IllegalArgumentException iae = new IllegalArgumentException();
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0 ; i < 10 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(arena, seg -> {
+                    throw iae;
+                });
+            }
+            for (int i = 10 ; i < 20 ; i++) {
+                MemorySegment.ofAddress(42).reinterpret(100, arena, seg -> {
+                    throw iae;
+                });
+            }
+            MemorySegment.ofAddress(42).reinterpret(arena, seg -> counter.incrementAndGet());
+        } catch (RuntimeException ex) {
+            thrown = ex;
+        }
+        assertEquals(thrown, iae);
+        assertEquals(counter.get(), 1);
+        assertEquals(thrown.getSuppressed().length, 0);
     }
 
     @DataProvider(name = "badSizeAndAlignments")

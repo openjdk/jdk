@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -109,6 +110,8 @@ void C2Compiler::initialize() {
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
 
+  CompilationMemoryStatisticMark cmsm(directive);
+
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool do_iterative_escape_analysis = DoEscapeAnalysis;
@@ -118,6 +121,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_superword = UseSuperWord;
 
   while (!env->failing()) {
+    ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads,
                     do_escape_analysis,

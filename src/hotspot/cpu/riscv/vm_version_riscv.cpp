@@ -46,7 +46,6 @@ RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
   nullptr};
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -191,14 +190,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
-  if (UseRVV) {
-    if (!ext_V.enabled()) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
   if (UseRVC && !ext_C.enabled()) {
@@ -253,6 +254,25 @@ void VM_Version::initialize() {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
+
+  if (UseRVV) {
+    if (!ext_V.enabled()) {
+      warning("RVV is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseRVV, false);
+    } else {
+      // read vector length from vector CSR vlenb
+      _initial_vector_length = cpu_vector_length();
+    }
+  }
+
+#ifdef COMPILER2
+  c2_initialize();
+#endif // COMPILER2
+
+  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
@@ -263,10 +283,6 @@ void VM_Version::initialize() {
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
-
-#ifdef COMPILER2
-  c2_initialize();
-#endif // COMPILER2
 }
 
 #ifdef COMPILER2
@@ -280,31 +296,22 @@ void VM_Version::c2_initialize() {
   }
 
   if (!UseRVV) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
-  }
-
-  if (!UseRVV && MaxVectorSize) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  }
-
-  if (!UseRVV) {
     FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
-  }
-
-  if (UseRVV) {
+  } else {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
+    } else if (!is_power_of_2(MaxVectorSize)) {
+      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d, must be a power of 2", (int)MaxVectorSize));
+    } else if (MaxVectorSize > _initial_vector_length) {
+      warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
+              _initial_vector_length, _initial_vector_length);
+      MaxVectorSize = _initial_vector_length;
+    }
+    if (MaxVectorSize < 16) {
       warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
       UseRVV = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-        MaxVectorSize = _initial_vector_length;
-      }
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
   }
 

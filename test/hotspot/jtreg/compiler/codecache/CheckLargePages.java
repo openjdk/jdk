@@ -50,7 +50,7 @@ public class CheckLargePages {
         final boolean largePages = WHITE_BOX.getBooleanVMFlag("UseLargePages");
         final long largePageSize = WHITE_BOX.getVMLargePageSize();
         if (largePages && (largePageSize == 1024 * 1024 * 1024)) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-XX:+UseLargePages",
                     "-XX:+SegmentedCodeCache",
                     "-XX:InitialCodeCacheSize=2g",
@@ -62,7 +62,7 @@ public class CheckLargePages {
             out.shouldMatch("Code cache size too small for \\S* pages\\. Reverting to smaller page size \\((\\S*)\\)\\.");
             out.shouldHaveExitValue(0);
             // Parse page sizes to find next biggest page
-            String sizes = out.firstMatch("Usable page sizes:(.*)", 1);
+            String sizes = out.firstMatch("Usable page sizes:([^.]+)", 1);
             List<Long> sizeList = Arrays.stream(sizes.trim().split("\\s*,\\s*")).map(CheckLargePages::parseMemoryString).sorted().toList();
             final int smallerPageSizeIndex = sizeList.indexOf(largePageSize) - 1;
             Asserts.assertGreaterThanOrEqual(smallerPageSizeIndex, 0);

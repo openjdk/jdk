@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -64,6 +62,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -73,7 +72,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/threads.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
@@ -1131,13 +1129,10 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
     // Distribute the given marked bytes across the humongous object starting
     // with hr and note end of marking for these regions.
     void distribute_marked_bytes(HeapRegion* hr, size_t marked_bytes) {
-      size_t const obj_size_in_words = cast_to_oop(hr->bottom())->size();
-
-      // "Distributing" zero words means that we only note end of marking for these
-      // regions.
-      assert(marked_bytes == 0 || obj_size_in_words * HeapWordSize == marked_bytes,
+      // Dead humongous objects (marked_bytes == 0) may have already been unloaded.
+      assert(marked_bytes == 0 || cast_to_oop(hr->bottom())->size() * HeapWordSize == marked_bytes,
              "Marked bytes should either be 0 or the same as humongous object (%zu) but is %zu",
-             obj_size_in_words * HeapWordSize, marked_bytes);
+             cast_to_oop(hr->bottom())->size() * HeapWordSize, marked_bytes);
 
       auto distribute_bytes = [&] (HeapRegion* r) {
         size_t const bytes_to_add = MIN2(HeapRegion::GrainBytes, marked_bytes);
@@ -1148,10 +1143,6 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
         marked_bytes -= bytes_to_add;
       };
       _g1h->humongous_obj_regions_iterate(hr, distribute_bytes);
-
-      assert(marked_bytes == 0,
-             "%zu bytes left after distributing space across %zu regions",
-             marked_bytes, G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words));
     }
 
     void update_marked_bytes(HeapRegion* hr) {
@@ -1262,6 +1253,12 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    // Unload Klasses, String, Code Cache, etc.
+    if (ClassUnloadingWithConcurrentMark) {
+      G1CMIsAliveClosure is_alive(_g1h);
+      _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
+    }
+
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of the marking cycle, we're expected all
@@ -1297,12 +1294,6 @@ void G1ConcurrentMark::remark() {
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
       reclaim_empty_regions();
-    }
-
-    // Clean out dead classes
-    if (ClassUnloadingWithConcurrentMark) {
-      GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     }
 
     // Potentially, some empty-regions have been reclaimed; make this a
@@ -1345,6 +1336,8 @@ void G1ConcurrentMark::remark() {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
+  _g1h->update_parallel_gc_threads_cpu_time();
+
   policy->record_concurrent_mark_remark_end();
 }
 
@@ -1370,7 +1363,10 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
     uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
+      bool can_reclaim = hr->used() > 0 && hr->live_bytes() == 0 &&
+                         !hr->is_young() && !hr->has_pinned_objects();
+
+      if (can_reclaim) {
         log_trace(gc, marking)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                                hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
@@ -1629,9 +1625,6 @@ public:
 void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
-  // Is alive closure.
-  G1CMIsAliveClosure g1_is_alive(_g1h);
-
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1688,15 +1681,8 @@ void G1ConcurrentMark::weak_refs_work() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
-    WeakProcessor::weak_oops_do(_g1h->workers(), &g1_is_alive, &do_nothing_cl, 1);
-  }
-
-  // Unload Klasses, String, Code Cache, etc.
-  if (ClassUnloadingWithConcurrentMark) {
-    GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    CodeCache::UnloadingScope scope(&g1_is_alive);
-    bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm);
-    _g1h->complete_cleaning(purged_classes);
+    G1CMIsAliveClosure is_alive(_g1h);
+    WeakProcessor::weak_oops_do(_g1h->workers(), &is_alive, &do_nothing_cl, 1);
   }
 }
 
@@ -2159,7 +2145,6 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _calls                         = 0;
   _elapsed_time_ms               = 0.0;
   _termination_time_ms           = 0.0;
-  _termination_start_time_ms     = 0.0;
 
   _mark_stats_cache.reset();
 }
@@ -2758,16 +2743,14 @@ void G1CMTask::do_marking_step(double time_target_ms,
     // Separated the asserts so that we know which one fires.
     assert(_cm->out_of_regions(), "only way to reach here");
     assert(_task_queue->size() == 0, "only way to reach here");
-    _termination_start_time_ms = os::elapsedVTime() * 1000.0;
+    double termination_start_time_ms = os::elapsedTime() * 1000.0;
 
     // The G1CMTask class also extends the TerminatorTerminator class,
     // hence its should_exit_termination() method will also decide
     // whether to exit the termination protocol or not.
     bool finished = (is_serial ||
                      _cm->terminator()->offer_termination(this));
-    double termination_end_time_ms = os::elapsedVTime() * 1000.0;
-    _termination_time_ms +=
-      termination_end_time_ms - _termination_start_time_ms;
+    _termination_time_ms += (os::elapsedTime() * 1000.0 - termination_start_time_ms);
 
     if (finished) {
       // We're all done.
@@ -2885,7 +2868,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _step_times_ms(),
   _elapsed_time_ms(0.0),
   _termination_time_ms(0.0),
-  _termination_start_time_ms(0.0),
   _marking_step_diff_ms()
 {
   guarantee(task_queue != nullptr, "invariant");

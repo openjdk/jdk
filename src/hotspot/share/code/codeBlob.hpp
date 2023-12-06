@@ -143,7 +143,7 @@ public:
   static unsigned int align_code_offset(int offset);
 
   // Deletion
-  virtual void flush();
+  virtual void purge(bool free_code_cache_data = true);
 
   // Typing
   virtual bool is_buffer_blob() const                 { return false; }
@@ -410,7 +410,7 @@ class BufferBlob: public RuntimeBlob {
 
  public:
   // Creation
-  static BufferBlob* create(const char* name, int buffer_size);
+  static BufferBlob* create(const char* name, uint buffer_size);
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);
@@ -733,13 +733,10 @@ class UpcallLinker;
 class UpcallStub: public RuntimeBlob {
   friend class UpcallLinker;
  private:
-  intptr_t _exception_handler_offset;
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  UpcallStub(const char* name, CodeBuffer* cb, int size,
-                     intptr_t exception_handler_offset,
-                     jobject receiver, ByteSize frame_data_offset);
+  UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset);
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -754,13 +751,10 @@ class UpcallStub: public RuntimeBlob {
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static UpcallStub* create(const char* name, CodeBuffer* cb,
-                            intptr_t exception_handler_offset,
-                            jobject receiver, ByteSize frame_data_offset);
+  static UpcallStub* create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset);
 
   static void free(UpcallStub* blob);
 
-  address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;

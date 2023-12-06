@@ -38,6 +38,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -3931,43 +3932,46 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    void gen_loads(Register base) {
-      for (uint i = 0; i < L; i += 1) {
-        __ ld(_regs[i], Address(base, 8 * i));
-      }
+    // generate load for the i'th register
+    void gen_load(uint i, Register base) {
+      assert(i < L, "invalid i: %u", i);
+      __ ld(_regs[i], Address(base, 8 * i));
     }
 
-    // Generate code extracting i-th unsigned word (4 bytes).
-    void get_u32(Register dest, uint i, Register rmask32) {
+    // add i'th 32-bit integer to dest
+    void add_u32(const Register dest, uint i, const Register rtmp = t0) {
       assert(i < 2 * L, "invalid i: %u", i);
 
-      if (i % 2 == 0) {
-        __ andr(dest, _regs[i / 2], rmask32);
+      if (is_even(i)) {
+        // Use the bottom 32 bits. No need to mask off the top 32 bits
+        // as addw will do the right thing.
+        __ addw(dest, dest, _regs[i / 2]);
       } else {
-        __ srli(dest, _regs[i / 2], 32);
+        // Use the top 32 bits by right-shifting them.
+        __ srli(rtmp, _regs[i / 2], 32);
+        __ addw(dest, dest, rtmp);
       }
     }
   };
 
   typedef RegCache<8> BufRegCache;
 
-  // a += rtmp1 + x + ac;
+  // a += value + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
   void m5_FF_GG_HH_II_epilogue(BufRegCache& reg_cache,
                                Register a, Register b, Register c, Register d,
                                int k, int s, int t,
-                               Register rtmp1, Register rtmp2, Register rmask32) {
-    // rtmp1 = rtmp1 + x + ac
-    reg_cache.get_u32(rtmp2, k, rmask32);
-    __ addw(rtmp1, rtmp1, rtmp2);
-    __ mv(rtmp2, t);
-    __ addw(rtmp1, rtmp1, rtmp2);
+                               Register value) {
+    // a += ac
+    __ addw(a, a, t, t1);
 
-    // a += rtmp1 + x + ac
-    __ addw(a, a, rtmp1);
+    // a += x;
+    reg_cache.add_u32(a, k);
+    // a += value;
+    __ addw(a, a, value);
 
     // a = Integer.rotateLeft(a, s) + b;
-    __ rolw_imm(a, a, s, rtmp1);
+    __ rolw_imm(a, a, s);
     __ addw(a, a, b);
   }
 
@@ -3976,7 +3980,7 @@ class StubGenerator: public StubCodeGenerator {
   void md5_FF(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = b & c
     __ andr(rtmp1, b, c);
 
@@ -3986,8 +3990,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = (b & c) | ((~b) & d)
     __ orr(rtmp1, rtmp1, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += ((b & d) | (c & (~d))) + x + ac;
@@ -3995,7 +3998,7 @@ class StubGenerator: public StubCodeGenerator {
   void md5_GG(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = b & d
     __ andr(rtmp1, b, d);
 
@@ -4005,8 +4008,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = (b & d) | (c & (~d))
     __ orr(rtmp1, rtmp1, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += ((b ^ c) ^ d) + x + ac;
@@ -4014,13 +4016,12 @@ class StubGenerator: public StubCodeGenerator {
   void md5_HH(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = (b ^ c) ^ d
-    __ xorr(rtmp1, b, c);
-    __ xorr(rtmp1, rtmp1, d);
+    __ xorr(rtmp2, b, c);
+    __ xorr(rtmp1, rtmp2, d);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // a += (c ^ (b | (~d))) + x + ac;
@@ -4028,13 +4029,12 @@ class StubGenerator: public StubCodeGenerator {
   void md5_II(BufRegCache& reg_cache,
               Register a, Register b, Register c, Register d,
               int k, int s, int t,
-              Register rtmp1, Register rtmp2, Register rmask32) {
+              Register rtmp1, Register rtmp2) {
     // rtmp1 = c ^ (b | (~d))
-    __ orn(rtmp1, b, d);
-    __ xorr(rtmp1, c, rtmp1);
+    __ orn(rtmp2, b, d);
+    __ xorr(rtmp1, c, rtmp2);
 
-    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
-                            rtmp1, rtmp2, rmask32);
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
   // Arguments:
@@ -4051,11 +4051,11 @@ class StubGenerator: public StubCodeGenerator {
   //    x2     sp  (stack pointer)
   //    x3     gp  (global pointer)
   //    x4     tp  (thread pointer)
-  //    x5     t0  state0
-  //    x6     t1  state1
-  //    x7     t2  state2
+  //    x5     t0  (tmp register)
+  //    x6     t1  (tmp register)
+  //    x7     t2  state0
   //    x8  f0/s0  (frame pointer)
-  //    x9     s1  state3  [saved-reg]
+  //    x9     s1
   //   x10     a0  rtmp1 / c_rarg0
   //   x11     a1  rtmp2 / c_rarg1
   //   x12     a2  a     / c_rarg2
@@ -4066,9 +4066,9 @@ class StubGenerator: public StubCodeGenerator {
   //   x17     a7  state
   //   x18     s2  ofs     [saved-reg]  (multi_block == True)
   //   x19     s3  limit   [saved-reg]  (multi_block == True)
-  //   x20     s4
-  //   x21     s5
-  //   x22     s6  mask32  [saved-reg]
+  //   x20     s4  state1  [saved-reg]
+  //   x21     s5  state2  [saved-reg]
+  //   x22     s6  state3  [saved-reg]
   //   x23     s7
   //   x24     s8  buf0    [saved-reg]
   //   x25     s9  buf1    [saved-reg]
@@ -4101,6 +4101,8 @@ class StubGenerator: public StubCodeGenerator {
     const int S43 = 15;
     const int S44 = 21;
 
+    const int64_t mask32 = 0xffffffff;
+
     Register buf_arg   = c_rarg0; // a0
     Register state_arg = c_rarg1; // a1
     Register ofs_arg   = c_rarg2; // a2
@@ -4120,17 +4122,14 @@ class StubGenerator: public StubCodeGenerator {
     Register c         = x14; // a4
     Register d         = x15; // a5
 
-    Register state0    =  x5; // t0
-    Register state1    =  x6; // t1
-    Register state2    =  x7; // t2
-    Register state3    =  x9; // s1
+    Register state0    =  x7; // t2
+    Register state1    = x20; // s4
+    Register state2    = x21; // s5
+    Register state3    = x22; // s6
 
-    // using x9->x11 to allow compressed instructions
+    // using x10->x11 to allow compressed instructions
     Register rtmp1     = x10; // a0
     Register rtmp2     = x11; // a1
-
-    const int64_t MASK_32 = 0xffffffff;
-    Register rmask32   = x22; // s6
 
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
@@ -4142,7 +4141,7 @@ class StubGenerator: public StubCodeGenerator {
     if (multi_block) {
       saved_regs += RegSet::of(ofs, limit);
     }
-    saved_regs += RegSet::of(state3, rmask32);
+    saved_regs += RegSet::of(state1, state2, state3);
     saved_regs += reg_cache_saved_regs;
 
     __ push_reg(saved_regs, sp);
@@ -4153,22 +4152,20 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(ofs, ofs_arg);
       __ mv(limit, limit_arg);
     }
-    __ mv(rmask32, MASK_32);
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
     // and split them into 2 registers
+    __ mv(t0, mask32);
     __ ld(state0, Address(state));
     __ srli(state1, state0, 32);
-    __ andr(state0, state0, rmask32);
+    __ andr(state0, state0, t0);
     __ ld(state2, Address(state, 8));
     __ srli(state3, state2, 32);
-    __ andr(state2, state2, rmask32);
+    __ andr(state2, state2, t0);
 
     Label md5_loop;
     __ BIND(md5_loop);
-
-    reg_cache.gen_loads(buf);
 
     __ mv(a, state0);
     __ mv(b, state1);
@@ -4176,76 +4173,84 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(d, state3);
 
     // Round 1
-    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2, rmask32);
-    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2, rmask32);
+    reg_cache.gen_load(0, buf);
+    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2);
+    reg_cache.gen_load(1, buf);
+    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2);
+    reg_cache.gen_load(2, buf);
+    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2);
+    reg_cache.gen_load(3, buf);
+    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2);
+    reg_cache.gen_load(4, buf);
+    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2);
+    reg_cache.gen_load(5, buf);
+    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2);
+    reg_cache.gen_load(6, buf);
+    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2);
+    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2);
+    reg_cache.gen_load(7, buf);
+    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2);
+    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2);
 
     // Round 2
-    md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c,  6, S22, 0xc040b340, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b, 11, S23, 0x265e5a51, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  0, S24, 0xe9b6c7aa, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d,  5, S21, 0xd62f105d, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c, 10, S22, 0x02441453, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b, 15, S23, 0xd8a1e681, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  4, S24, 0xe7d3fbc8, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d,  9, S21, 0x21e1cde6, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c, 14, S22, 0xc33707d6, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b,  3, S23, 0xf4d50d87, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a,  8, S24, 0x455a14ed, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, a, b, c, d, 13, S21, 0xa9e3e905, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, d, a, b, c,  2, S22, 0xfcefa3f8, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, c, d, a, b,  7, S23, 0x676f02d9, rtmp1, rtmp2, rmask32);
-    md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c,  6, S22, 0xc040b340, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b, 11, S23, 0x265e5a51, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  0, S24, 0xe9b6c7aa, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d,  5, S21, 0xd62f105d, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c, 10, S22, 0x02441453, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b, 15, S23, 0xd8a1e681, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  4, S24, 0xe7d3fbc8, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d,  9, S21, 0x21e1cde6, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c, 14, S22, 0xc33707d6, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b,  3, S23, 0xf4d50d87, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a,  8, S24, 0x455a14ed, rtmp1, rtmp2);
+    md5_GG(reg_cache, a, b, c, d, 13, S21, 0xa9e3e905, rtmp1, rtmp2);
+    md5_GG(reg_cache, d, a, b, c,  2, S22, 0xfcefa3f8, rtmp1, rtmp2);
+    md5_GG(reg_cache, c, d, a, b,  7, S23, 0x676f02d9, rtmp1, rtmp2);
+    md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2);
 
     // Round 3
-    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2, rmask32);
-    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2);
+    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2);
+    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2);
+    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2);
+    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2);
 
     // Round 4
-    md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c,  7, S42, 0x432aff97, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b, 14, S43, 0xab9423a7, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  5, S44, 0xfc93a039, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d, 12, S41, 0x655b59c3, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c,  3, S42, 0x8f0ccc92, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b, 10, S43, 0xffeff47d, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  1, S44, 0x85845dd1, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d,  8, S41, 0x6fa87e4f, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c, 15, S42, 0xfe2ce6e0, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b,  6, S43, 0xa3014314, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a, 13, S44, 0x4e0811a1, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, a, b, c, d,  4, S41, 0xf7537e82, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, d, a, b, c, 11, S42, 0xbd3af235, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, c, d, a, b,  2, S43, 0x2ad7d2bb, rtmp1, rtmp2, rmask32);
-    md5_II(reg_cache, b, c, d, a,  9, S44, 0xeb86d391, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c,  7, S42, 0x432aff97, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b, 14, S43, 0xab9423a7, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  5, S44, 0xfc93a039, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d, 12, S41, 0x655b59c3, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c,  3, S42, 0x8f0ccc92, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b, 10, S43, 0xffeff47d, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  1, S44, 0x85845dd1, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d,  8, S41, 0x6fa87e4f, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c, 15, S42, 0xfe2ce6e0, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b,  6, S43, 0xa3014314, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a, 13, S44, 0x4e0811a1, rtmp1, rtmp2);
+    md5_II(reg_cache, a, b, c, d,  4, S41, 0xf7537e82, rtmp1, rtmp2);
+    md5_II(reg_cache, d, a, b, c, 11, S42, 0xbd3af235, rtmp1, rtmp2);
+    md5_II(reg_cache, c, d, a, b,  2, S43, 0x2ad7d2bb, rtmp1, rtmp2);
+    md5_II(reg_cache, b, c, d, a,  9, S44, 0xeb86d391, rtmp1, rtmp2);
 
     __ addw(state0, state0, a);
     __ addw(state1, state1, b);
@@ -4262,11 +4267,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // to minimize the number of memory operations:
     // write back the 4 state 4-byte values in pairs, with a single sd
-    __ andr(state0, state0, rmask32);
+    __ mv(t0, mask32);
+    __ andr(state0, state0, t0);
     __ slli(state1, state1, 32);
     __ orr(state0, state0, state1);
     __ sd(state0, Address(state));
-    __ andr(state2, state2, rmask32);
+    __ andr(state2, state2, t0);
     __ slli(state3, state3, 32);
     __ orr(state2, state2, state3);
     __ sd(state2, Address(state, 8));
@@ -4413,6 +4419,214 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+#ifdef COMPILER2
+
+static const int64_t right_2_bits = right_n_bits(2);
+static const int64_t right_3_bits = right_n_bits(3);
+
+  // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
+  // are represented as long[5], with BITS_PER_LIMB = 26.
+  // Pack five 26-bit limbs into three 64-bit registers.
+  void poly1305_pack_26(Register dest0, Register dest1, Register dest2, Register src, Register tmp1, Register tmp2) {
+    assert_different_registers(dest0, dest1, dest2, src, tmp1, tmp2);
+
+    // The goal is to have 128-bit value in dest2:dest1:dest0
+    __ ld(dest0, Address(src, 0));    // 26 bits in dest0
+
+    __ ld(tmp1, Address(src, sizeof(jlong)));
+    __ slli(tmp1, tmp1, 26);
+    __ add(dest0, dest0, tmp1);       // 52 bits in dest0
+
+    __ ld(tmp2, Address(src, 2 * sizeof(jlong)));
+    __ slli(tmp1, tmp2, 52);
+    __ add(dest0, dest0, tmp1);       // dest0 is full
+
+    __ srli(dest1, tmp2, 12);         // 14-bit in dest1
+
+    __ ld(tmp1, Address(src, 3 * sizeof(jlong)));
+    __ slli(tmp1, tmp1, 14);
+    __ add(dest1, dest1, tmp1);       // 40-bit in dest1
+
+    __ ld(tmp1, Address(src, 4 * sizeof(jlong)));
+    __ slli(tmp2, tmp1, 40);
+    __ add(dest1, dest1, tmp2);       // dest1 is full
+
+    if (dest2->is_valid()) {
+      __ srli(tmp1, tmp1, 24);
+      __ mv(dest2, tmp1);               // 2 bits in dest2
+    } else {
+#ifdef ASSERT
+      Label OK;
+      __ srli(tmp1, tmp1, 24);
+      __ beq(zr, tmp1, OK);           // 2 bits
+      __ stop("high bits of Poly1305 integer should be zero");
+      __ should_not_reach_here();
+      __ bind(OK);
+#endif
+    }
+  }
+
+  // As above, but return only a 128-bit integer, packed into two
+  // 64-bit registers.
+  void poly1305_pack_26(Register dest0, Register dest1, Register src, Register tmp1, Register tmp2) {
+    poly1305_pack_26(dest0, dest1, noreg, src, tmp1, tmp2);
+  }
+
+  // U_2:U_1:U_0: += (U_2 >> 2) * 5
+  void poly1305_reduce(Register U_2, Register U_1, Register U_0, Register tmp1, Register tmp2) {
+    assert_different_registers(U_2, U_1, U_0, tmp1, tmp2);
+
+    // First, U_2:U_1:U_0 += (U_2 >> 2)
+    __ srli(tmp1, U_2, 2);
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
+    __ andi(U_2, U_2, right_2_bits); // Clear U_2 except for the lowest two bits
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ add(U_2, U_2, tmp2);
+
+    // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
+    __ slli(tmp1, tmp1, 2);
+    __ cad(U_0, U_0, tmp1, tmp2); // Add tmp1 to U_0 with carry output to tmp2
+    __ cad(U_1, U_1, tmp2, tmp2); // Add carry to U_1 with carry output to tmp2
+    __ add(U_2, U_2, tmp2);
+  }
+
+  // Poly1305, RFC 7539
+  // void com.sun.crypto.provider.Poly1305.processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
+
+  // Arguments:
+  //    c_rarg0:   input_start -- where the input is stored
+  //    c_rarg1:   length
+  //    c_rarg2:   acc_start -- where the output will be stored
+  //    c_rarg3:   r_start -- where the randomly generated 128-bit key is stored
+
+  // See https://loup-vaillant.fr/tutorials/poly1305-design for a
+  // description of the tricks used to simplify and accelerate this
+  // computation.
+
+  address generate_poly1305_processBlocks() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+    address start = __ pc();
+    __ enter();
+    Label here;
+
+    RegSet saved_regs = RegSet::range(x18, x21);
+    RegSetIterator<Register> regs = (RegSet::range(x14, x31) - RegSet::range(x22, x27)).begin();
+    __ push_reg(saved_regs, sp);
+
+    // Arguments
+    const Register input_start = c_rarg0, length = c_rarg1, acc_start = c_rarg2, r_start = c_rarg3;
+
+    // R_n is the 128-bit randomly-generated key, packed into two
+    // registers. The caller passes this key to us as long[5], with
+    // BITS_PER_LIMB = 26.
+    const Register R_0 = *regs, R_1 = *++regs;
+    poly1305_pack_26(R_0, R_1, r_start, t1, t2);
+
+    // RR_n is (R_n >> 2) * 5
+    const Register RR_0 = *++regs, RR_1 = *++regs;
+    __ srli(t1, R_0, 2);
+    __ shadd(RR_0, t1, t1, t2, 2);
+    __ srli(t1, R_1, 2);
+    __ shadd(RR_1, t1, t1, t2, 2);
+
+    // U_n is the current checksum
+    const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+    poly1305_pack_26(U_0, U_1, U_2, acc_start, t1, t2);
+
+    static constexpr int BLOCK_LENGTH = 16;
+    Label DONE, LOOP;
+
+    __ mv(t1, BLOCK_LENGTH);
+    __ blt(length, t1, DONE); {
+      __ bind(LOOP);
+
+      // S_n is to be the sum of U_n and the next block of data
+      const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+      __ ld(S_0, Address(input_start, 0));
+      __ ld(S_1, Address(input_start, wordSize));
+
+      __ cad(S_0, S_0, U_0, t1); // Add U_0 to S_0 with carry output to t1
+      __ cadc(S_1, S_1, U_1, t1); // Add U_1 with carry to S_1 with carry output to t1
+      __ add(S_2, U_2, t1);
+
+      __ addi(S_2, S_2, 1);
+
+      const Register U_0HI = *++regs, U_1HI = *++regs;
+
+      // NB: this logic depends on some of the special properties of
+      // Poly1305 keys. In particular, because we know that the top
+      // four bits of R_0 and R_1 are zero, we can add together
+      // partial products without any risk of needing to propagate a
+      // carry out.
+      __ wide_mul(U_0, U_0HI, S_0, R_0);
+      __ wide_madd(U_0, U_0HI, S_1, RR_1, t1, t2);
+      __ wide_madd(U_0, U_0HI, S_2, RR_0, t1, t2);
+
+      __ wide_mul(U_1, U_1HI, S_0, R_1);
+      __ wide_madd(U_1, U_1HI, S_1, R_0, t1, t2);
+      __ wide_madd(U_1, U_1HI, S_2, RR_1, t1, t2);
+
+      __ andi(U_2, R_0, right_2_bits);
+      __ mul(U_2, S_2, U_2);
+
+      // Partial reduction mod 2**130 - 5
+      __ cad(U_1, U_1, U_0HI, t1); // Add U_0HI to U_1 with carry output to t1
+      __ adc(U_2, U_2, U_1HI, t1);
+      // Sum is now in U_2:U_1:U_0.
+
+      // U_2:U_1:U_0: += (U_2 >> 2) * 5
+      poly1305_reduce(U_2, U_1, U_0, t1, t2);
+
+      __ sub(length, length, BLOCK_LENGTH);
+      __ addi(input_start, input_start, BLOCK_LENGTH);
+      __ mv(t1, BLOCK_LENGTH);
+      __ bge(length, t1, LOOP);
+    }
+
+    // Further reduce modulo 2^130 - 5
+    poly1305_reduce(U_2, U_1, U_0, t1, t2);
+
+    // Unpack the sum into five 26-bit limbs and write to memory.
+    // First 26 bits is the first limb
+    __ slli(t1, U_0, 38); // Take lowest 26 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start)); // First 26-bit limb
+
+    // 27-52 bits of U_0 is the second limb
+    __ slli(t1, U_0, 12); // Take next 27-52 bits
+    __ srli(t1, t1, 38);
+    __ sd(t1, Address(acc_start, sizeof (jlong))); // Second 26-bit limb
+
+    // Getting 53-64 bits of U_0 and 1-14 bits of U_1 in one register
+    __ srli(t1, U_0, 52);
+    __ slli(t2, U_1, 50);
+    __ srli(t2, t2, 38);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 2 * sizeof (jlong))); // Third 26-bit limb
+
+    // Storing 15-40 bits of U_1
+    __ slli(t1, U_1, 24); // Already used up 14 bits
+    __ srli(t1, t1, 38); // Clear all other bits from t1
+    __ sd(t1, Address(acc_start, 3 * sizeof (jlong))); // Fourth 26-bit limb
+
+    // Storing 41-64 bits of U_1 and first three bits from U_2 in one register
+    __ srli(t1, U_1, 40);
+    __ andi(t2, U_2, right_3_bits);
+    __ slli(t2, t2, 24);
+    __ add(t1, t1, t2);
+    __ sd(t1, Address(acc_start, 4 * sizeof (jlong))); // Fifth 26-bit limb
+
+    __ bind(DONE);
+    __ pop_reg(saved_regs, sp);
+    __ leave(); // Required for proper stackwalking
+    __ ret();
+
+    return start;
+  }
+
+#endif // COMPILER2
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -4504,6 +4718,20 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // INCLUDE_JFR
 
+  // exception handler for upcall stubs
+  address generate_upcall_stub_exception_handler() {
+    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    address start = __ pc();
+
+    // Native caller has no idea how to handle exceptions,
+    // so we just crash here. Up to callee to catch exceptions.
+    __ verify_oop(x10); // return a exception oop in a0
+    __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
+    __ should_not_reach_here();
+
+    return start;
+  }
+
 #undef __
 
   // Initialization
@@ -4585,8 +4813,10 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::riscv::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
+
+    StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 
     StubRoutines::riscv::set_completed();
   }
@@ -4616,6 +4846,10 @@ class StubGenerator: public StubCodeGenerator {
       StubCodeMark mark(this, "StubRoutines", "montgomerySquare");
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       StubRoutines::_montgomerySquare = g.generate_square();
+    }
+
+    if (UsePoly1305Intrinsics) {
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
     if (UseRVVForBigIntegerShiftIntrinsics) {

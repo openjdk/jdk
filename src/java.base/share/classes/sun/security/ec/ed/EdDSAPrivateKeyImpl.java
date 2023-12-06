@@ -26,6 +26,8 @@
 package sun.security.ec.ed;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.InvalidKeyException;
 import java.security.interfaces.EdECPrivateKey;
 import java.util.Optional;
@@ -38,6 +40,7 @@ import sun.security.util.*;
 public final class EdDSAPrivateKeyImpl
         extends PKCS8Key implements EdECPrivateKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
@@ -101,5 +104,21 @@ public final class EdDSAPrivateKeyImpl
     @Override
     public Optional<byte[]> getBytes() {
         return Optional.of(getKey());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "EdDSAPrivateKeyImpl keys are not directly deserializable");
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 # ##########################################################
 #
 module name java.base
-header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/event[jdk.jfr],jdk/internal/vm/vector[jdk.incubator.vector] uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
+header exports java/io,java/lang,java/lang/annotation,java/lang/constant,java/lang/invoke,java/lang/module,java/lang/ref,java/lang/reflect,java/lang/runtime,java/math,java/net,java/net/spi,java/nio,java/nio/channels,java/nio/channels/spi,java/nio/charset,java/nio/charset/spi,java/nio/file,java/nio/file/attribute,java/nio/file/spi,java/security,java/security/cert,java/security/interfaces,java/security/spec,java/text,java/text/spi,java/time,java/time/chrono,java/time/format,java/time/temporal,java/time/zone,java/util,java/util/concurrent,java/util/concurrent/atomic,java/util/concurrent/locks,java/util/function,java/util/jar,java/util/random,java/util/regex,java/util/spi,java/util/stream,java/util/zip,javax/crypto,javax/crypto/interfaces,javax/crypto/spec,javax/net,javax/net/ssl,javax/security/auth,javax/security/auth/callback,javax/security/auth/login,javax/security/auth/spi,javax/security/auth/x500,javax/security/cert,jdk/internal/access/foreign[jdk.incubator.foreign],jdk/internal/event[jdk.jfr],jdk/internal/misc[jdk.incubator.foreign],jdk/internal/vm/vector[jdk.incubator.vector] uses java/lang/System$LoggerFinder,java/net/ContentHandlerFactory,java/net/spi/URLStreamHandlerProvider,java/nio/channels/spi/AsynchronousChannelProvider,java/nio/channels/spi/SelectorProvider,java/nio/charset/spi/CharsetProvider,java/nio/file/spi/FileSystemProvider,java/nio/file/spi/FileTypeDetector,java/security/Provider,java/text/spi/BreakIteratorProvider,java/text/spi/CollatorProvider,java/text/spi/DateFormatProvider,java/text/spi/DateFormatSymbolsProvider,java/text/spi/DecimalFormatSymbolsProvider,java/text/spi/NumberFormatProvider,java/time/chrono/AbstractChronology,java/time/chrono/Chronology,java/time/zone/ZoneRulesProvider,java/util/random/RandomGenerator,java/util/spi/CalendarDataProvider,java/util/spi/CalendarNameProvider,java/util/spi/CurrencyNameProvider,java/util/spi/LocaleNameProvider,java/util/spi/ResourceBundleControlProvider,java/util/spi/ResourceBundleProvider,java/util/spi/TimeZoneNameProvider,java/util/spi/ToolProvider,javax/security/auth/spi/LoginModule,jdk/internal/logger/DefaultLoggerFinder,sun/text/spi/JavaTimeDateTimePatternProvider,sun/util/locale/provider/LocaleDataMetaInfo,sun/util/resources/LocaleData$CommonResourceBundleProvider,sun/util/resources/LocaleData$SupplementaryResourceBundleProvider,sun/util/spi/CalendarProvider provides interface\u0020;java/nio/file/spi/FileSystemProvider\u0020;impls\u0020;jdk/internal/jrtfs/JrtFileSystemProvider,interface\u0020;java/util/random/RandomGenerator\u0020;impls\u0020;java/security/SecureRandom\u005C;u002C;java/util/Random\u005C;u002C;java/util/SplittableRandom target linux-amd64 flags 8000
 
 class name java/io/CharArrayReader
 method name read descriptor (Ljava/nio/CharBuffer;)I thrownTypes java/io/IOException flags 1
@@ -52,39 +52,15 @@ class name java/io/ObjectInputFilter$Config
 method name getSerialFilterFactory descriptor ()Ljava/util/function/BinaryOperator; flags 9 signature ()Ljava/util/function/BinaryOperator<Ljava/io/ObjectInputFilter;>;
 method name setSerialFilterFactory descriptor (Ljava/util/function/BinaryOperator;)V flags 9 signature (Ljava/util/function/BinaryOperator<Ljava/io/ObjectInputFilter;>;)V
 
-class name java/io/PrintStream
-header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
 class name java/io/WriteAbortedException
 -field name detail descriptor Ljava/lang/Exception;
 field name detail descriptor Ljava/lang/Exception; flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="17")
-
-class name java/lang/AbstractStringBuilder
-header extends java/lang/Object implements java/lang/Appendable,java/lang/CharSequence flags 420
-innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/lang/Class
 -method name isSealed descriptor ()Z
 -method name getPermittedSubclasses descriptor ()[Ljava/lang/Class;
 method name getPermittedSubclasses descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>; runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name isSealed descriptor ()Z flags 1
-
-class name java/lang/Compiler
-header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="9")
-
-class name java/lang/Deprecated
-header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Documented;@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;RUNTIME;)@Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PACKAGE;eLjava/lang/annotation/ElementType;MODULE;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;TYPE;})
-
-class name java/lang/IllegalCallerException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/LayerInstantiationException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/NamedPackage
-header extends java/lang/Object flags 20
 
 class name java/lang/Process
 method name inputReader descriptor ()Ljava/io/BufferedReader; flags 11
@@ -108,9 +84,6 @@ class name java/lang/StrictMath
 method name toRadians descriptor (D)D flags 9
 method name toDegrees descriptor (D)D flags 9
 
-class name java/lang/SuppressWarnings
-header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;TYPE;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;MODULE;})@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;SOURCE;)
-
 class name java/lang/System
 -method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
 -method name getSecurityManager descriptor ()Ljava/lang/SecurityManager;
@@ -125,17 +98,42 @@ class name java/lang/ThreadGroup
 -method name checkAccess descriptor ()V
 method name checkAccess descriptor ()V flags 11 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 
+class name java/lang/constant/AsTypeMethodHandleDesc
+header extends java/lang/constant/DynamicConstantDesc implements java/lang/constant/MethodHandleDesc flags 30 signature Ljava/lang/constant/DynamicConstantDesc<Ljava/lang/invoke/MethodHandle;>;Ljava/lang/constant/MethodHandleDesc;
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name invocationType descriptor ()Ljava/lang/constant/MethodTypeDesc; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandle; thrownTypes java/lang/ReflectiveOperationException flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041
+
 class name java/lang/constant/ClassDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
+header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfField sealed true permittedSubclasses java/lang/constant/PrimitiveClassDescImpl,java/lang/constant/ReferenceClassDescImpl flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfField<Ljava/lang/constant/ClassDesc;>;
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 
 class name java/lang/constant/ConstantDesc
-header extends java/lang/Object sealed true flags 601
+header extends java/lang/Object sealed true permittedSubclasses java/lang/constant/ClassDesc,java/lang/constant/MethodHandleDesc,java/lang/constant/MethodTypeDesc,java/lang/Double,java/lang/constant/DynamicConstantDesc,java/lang/Float,java/lang/Integer,java/lang/Long,java/lang/String flags 601
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/lang/constant/DirectMethodHandleDesc
-header extends java/lang/Object implements java/lang/constant/MethodHandleDesc nestMembers java/lang/constant/DirectMethodHandleDesc$Kind sealed true flags 601
+header extends java/lang/Object implements java/lang/constant/MethodHandleDesc nestMembers java/lang/constant/DirectMethodHandleDesc$Kind sealed true permittedSubclasses java/lang/constant/DirectMethodHandleDescImpl flags 601
 innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
+
+class name java/lang/constant/DirectMethodHandleDescImpl
+header extends java/lang/Object implements java/lang/constant/DirectMethodHandleDesc flags 30
+innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name kind descriptor ()Ljava/lang/constant/DirectMethodHandleDesc$Kind; flags 1
+method name refKind descriptor ()I flags 1
+method name isOwnerInterface descriptor ()Z flags 1
+method name owner descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name methodName descriptor ()Ljava/lang/String; flags 1
+method name invocationType descriptor ()Ljava/lang/constant/MethodTypeDesc; flags 1
+method name lookupDescriptor descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandle; thrownTypes java/lang/ReflectiveOperationException flags 1
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041
 
 class name java/lang/constant/DynamicConstantDesc
 header extends java/lang/Object implements java/lang/constant/ConstantDesc flags 421 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;
@@ -144,67 +142,74 @@ innerclass innerClass java/lang/Enum$EnumDesc outerClass java/lang/Enum innerCla
 innerclass innerClass java/lang/invoke/VarHandle$VarHandleDesc outerClass java/lang/invoke/VarHandle innerClassName VarHandleDesc flags 19
 
 class name java/lang/constant/MethodHandleDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc sealed true flags 601
+header extends java/lang/Object implements java/lang/constant/ConstantDesc sealed true permittedSubclasses java/lang/constant/AsTypeMethodHandleDesc,java/lang/constant/DirectMethodHandleDesc flags 601
 innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
 
 class name java/lang/constant/MethodTypeDesc
-header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfMethod sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfMethod<Ljava/lang/constant/ClassDesc;Ljava/lang/constant/MethodTypeDesc;>;
+header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfMethod sealed true permittedSubclasses java/lang/constant/MethodTypeDescImpl flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfMethod<Ljava/lang/constant/ClassDesc;Ljava/lang/constant/MethodTypeDesc;>;
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
-class name java/lang/invoke/CallSite
-header extends java/lang/Object flags 421
+class name java/lang/constant/MethodTypeDescImpl
+header extends java/lang/Object implements java/lang/constant/MethodTypeDesc flags 30
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
+method name returnType descriptor ()Ljava/lang/constant/ClassDesc; flags 1
+method name parameterCount descriptor ()I flags 1
+method name parameterType descriptor (I)Ljava/lang/constant/ClassDesc; flags 1
+method name parameterList descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljava/lang/constant/ClassDesc;>;
+method name parameterArray descriptor ()[Ljava/lang/constant/ClassDesc; flags 1
+method name changeReturnType descriptor (Ljava/lang/constant/ClassDesc;)Ljava/lang/constant/MethodTypeDesc; flags 1
+method name changeParameterType descriptor (ILjava/lang/constant/ClassDesc;)Ljava/lang/constant/MethodTypeDesc; flags 1
+method name dropParameterTypes descriptor (II)Ljava/lang/constant/MethodTypeDesc; flags 1
+method name insertParameterTypes descriptor (I[Ljava/lang/constant/ClassDesc;)Ljava/lang/constant/MethodTypeDesc; flags 81
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodType; thrownTypes java/lang/ReflectiveOperationException flags 1
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041
+method name insertParameterTypes descriptor (I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod; flags 1041
+method name dropParameterTypes descriptor (II)Ljava/lang/invoke/TypeDescriptor$OfMethod; flags 1041
+method name changeParameterType descriptor (ILjava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod; flags 1041
+method name changeReturnType descriptor (Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod; flags 1041
+method name parameterArray descriptor ()[Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
+method name returnType descriptor ()Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
+method name parameterType descriptor (I)Ljava/lang/invoke/TypeDescriptor$OfField; flags 1041
 
-class name java/lang/invoke/LambdaMetafactory
-header extends java/lang/Object flags 31
+class name java/lang/constant/PrimitiveClassDescImpl
+header extends java/lang/constant/DynamicConstantDesc implements java/lang/constant/ClassDesc flags 30 signature Ljava/lang/constant/DynamicConstantDesc<Ljava/lang/Class<*>;>;Ljava/lang/constant/ClassDesc;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name descriptorString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class; flags 1 signature (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class<*>;
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041
+
+class name java/lang/constant/ReferenceClassDescImpl
+header extends java/lang/Object implements java/lang/constant/ClassDesc flags 30
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name descriptorString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class; thrownTypes java/lang/ReflectiveOperationException flags 1 signature (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class<*>;
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041
 
 class name java/lang/invoke/MethodHandles
 method name tableSwitch descriptor (Ljava/lang/invoke/MethodHandle;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle; flags 89
 
-class name java/lang/invoke/StringConcatException
-header extends java/lang/Exception flags 21
-
-class name java/lang/module/Configuration
-header extends java/lang/Object flags 31
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/module/FindException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/InvalidModuleDescriptorException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/ModuleReader
-header extends java/lang/Object implements java/io/Closeable flags 601
-
-class name java/lang/module/ModuleReference
-header extends java/lang/Object flags 421
-
-class name java/lang/module/ResolutionException
-header extends java/lang/RuntimeException flags 21
-
-class name java/lang/module/ResolvedModule
-header extends java/lang/Object flags 31
+class name java/lang/ref/Reference
+header extends java/lang/Object flags 421 signature <T:Ljava/lang/Object;>Ljava/lang/Object;
 
 class name java/lang/reflect/AccessibleObject
 header extends java/lang/Object implements java/lang/reflect/AnnotatedElement flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 -method name <init> descriptor ()V
 method name <init> descriptor ()V flags 4 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="17")
 
-class name java/lang/reflect/AnnotatedElement
-header extends java/lang/Object flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/lang/reflect/Executable
-header extends java/lang/reflect/AccessibleObject implements java/lang/reflect/Member,java/lang/reflect/GenericDeclaration sealed true flags 421
+header extends java/lang/reflect/AccessibleObject implements java/lang/reflect/Member,java/lang/reflect/GenericDeclaration sealed true permittedSubclasses java/lang/reflect/Constructor,java/lang/reflect/Method flags 421
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/lang/reflect/InaccessibleObjectException
-header extends java/lang/RuntimeException flags 21
 
 class name java/lang/runtime/SwitchBootstraps
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SWITCH_PATTERN_MATCHING;)
@@ -233,15 +238,39 @@ class name java/net/URLStreamHandler
 -method name getHostAddress descriptor (Ljava/net/URL;)Ljava/net/InetAddress;
 method name getHostAddress descriptor (Ljava/net/URL;)Ljava/net/InetAddress; flags 4
 
-class name java/net/spi/URLStreamHandlerProvider
-header extends java/lang/Object implements java/net/URLStreamHandlerFactory flags 421
+class name java/nio/Buffer
+header extends java/lang/Object flags 421
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
+class name java/nio/ByteBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/ByteBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
 
 class name java/nio/CharBuffer
 header extends java/nio/Buffer implements java/lang/Comparable,java/lang/Appendable,java/lang/CharSequence,java/lang/Readable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/CharBuffer;>;Ljava/lang/Appendable;Ljava/lang/CharSequence;Ljava/lang/Readable;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
 innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/nio/DoubleBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/DoubleBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
+class name java/nio/FloatBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/FloatBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
+class name java/nio/IntBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/IntBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
+class name java/nio/LongBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/LongBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
 class name java/nio/MappedByteBuffer
+header extends java/nio/ByteBuffer flags 421
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
 method name slice descriptor ()Ljava/nio/MappedByteBuffer; flags 401
 method name slice descriptor (II)Ljava/nio/MappedByteBuffer; flags 401
 method name duplicate descriptor ()Ljava/nio/MappedByteBuffer; flags 401
@@ -254,6 +283,10 @@ method name duplicate descriptor ()Ljava/nio/Buffer; flags 1041
 method name slice descriptor (II)Ljava/nio/Buffer; flags 1041
 method name slice descriptor ()Ljava/nio/Buffer; flags 1041
 
+class name java/nio/ShortBuffer
+header extends java/nio/Buffer implements java/lang/Comparable flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/ShortBuffer;>;
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+
 class name java/security/AccessControlContext
 header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 
@@ -263,14 +296,8 @@ header extends java/lang/SecurityException flags 21 deprecated true runtimeAnnot
 class name java/security/AccessController
 header extends java/lang/Object flags 31 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
 
-class name java/security/Certificate
-header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
-
 class name java/security/DomainCombiner
 header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
-
-class name java/security/Identity
-header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.2")
 
 class name java/security/Policy
 header extends java/lang/Object nestMembers java/security/Policy$Parameters flags 421 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
@@ -287,70 +314,6 @@ class name java/security/SecureRandom
 header extends java/util/Random flags 21 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="SecureRandom",isStochastic=Ztrue)
 innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
 
-class name java/security/SecureRandomParameters
-header extends java/lang/Object flags 601
-
-class name java/security/SignedObject
-header extends java/lang/Object implements java/io/Serializable flags 31
-innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
-
-class name java/security/cert/CertificateRevokedException
-header extends java/security/cert/CertificateException flags 21
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-
-class name java/security/cert/URICertStoreParameters
-header extends java/lang/Object implements java/security/cert/CertStoreParameters flags 31
-
-class name java/security/interfaces/RSAKey
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/MGF1ParameterSpec
--field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec;
--field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec;
-field name SHA512_224 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-field name SHA512_256 descriptor Ljava/security/spec/MGF1ParameterSpec; flags 19
-
-class name java/security/spec/PSSParameterSpec
--field name TRAILER_FIELD_BC descriptor I
--method name toString descriptor ()Ljava/lang/String;
-field name TRAILER_FIELD_BC descriptor I constantValue 1 flags 19
-method name toString descriptor ()Ljava/lang/String; flags 1
-
-class name java/security/spec/RSAKeyGenParameterSpec
--method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (ILjava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getKeyParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/RSAMultiPrimePrivateCrtKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;[Ljava/security/spec/RSAOtherPrimeInfo;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-
-class name java/security/spec/RSAPrivateCrtKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-
-class name java/security/spec/RSAPrivateKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/security/spec/RSAPublicKeySpec
--method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V
--method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec;
-method name <init> descriptor (Ljava/math/BigInteger;Ljava/math/BigInteger;Ljava/security/spec/AlgorithmParameterSpec;)V flags 1
-method name getParams descriptor ()Ljava/security/spec/AlgorithmParameterSpec; flags 1
-
-class name java/text/DateFormatSymbols
-header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/text/RuleBasedCollator
-header extends java/text/Collator flags 21
-innerclass innerClass java/text/Normalizer$Form outerClass java/text/Normalizer innerClassName Form flags 4019
-
 class name java/time/Clock
 header extends java/lang/Object implements java/time/InstantSource flags 421
 
@@ -364,37 +327,8 @@ method name instant descriptor ()Ljava/time/Instant; flags 401
 method name millis descriptor ()J flags 1
 method name withZone descriptor (Ljava/time/ZoneId;)Ljava/time/Clock; flags 1
 
-class name java/time/chrono/ChronoLocalDate
-header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDate;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/time/chrono/ChronoLocalDateTime
-header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature <D::Ljava/time/chrono/ChronoLocalDate;>Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDateTime<*>;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/time/format/DecimalStyle
-header extends java/lang/Object flags 31
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/time/temporal/TemporalAdjusters
-header extends java/lang/Object flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/Comparator
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/DoubleSummaryStatistics
-header extends java/lang/Object implements java/util/function/DoubleConsumer flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/GregorianCalendar
-header extends java/util/Calendar flags 21
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
-class name java/util/HashSet
-header extends java/util/AbstractSet implements java/util/Set,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/Set<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+class name java/util/EnumSet
+header extends java/util/AbstractSet implements java/lang/Cloneable,java/io/Serializable flags 421 signature <E:Ljava/lang/Enum<TE;>;>Ljava/util/AbstractSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
 
 class name java/util/HexFormat
 header extends java/lang/Object flags 31
@@ -436,18 +370,12 @@ method name hashCode descriptor ()I flags 1
 method name toString descriptor ()Ljava/lang/String; flags 1
 
 class name java/util/Locale$IsoCountryCode
-header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
+header extends java/lang/Enum nestHost java/util/Locale sealed true permittedSubclasses java/util/Locale$IsoCountryCode$1,java/util/Locale$IsoCountryCode$2,java/util/Locale$IsoCountryCode$3 flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
 innerclass innerClass java/util/Locale$IsoCountryCode outerClass java/util/Locale innerClassName IsoCountryCode flags 4409
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/util/Map$Entry
 method name copyOf descriptor (Ljava/util/Map$Entry;)Ljava/util/Map$Entry; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(Ljava/util/Map$Entry<+TK;+TV;>;)Ljava/util/Map$Entry<TK;TV;>;
-
-class name java/util/Observable
-header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name java/util/Observer
-header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 
 class name java/util/Random
 header extends java/lang/Object implements java/util/random/RandomGenerator,java/io/Serializable flags 21 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="Random",i=I48,j=I0,k=I0,equidistribution=I0)
@@ -473,31 +401,9 @@ method name splits descriptor (JLjava/util/random/RandomGenerator$SplittableGene
 method name split descriptor (Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator; flags 1041
 method name split descriptor ()Ljava/util/random/RandomGenerator$SplittableGenerator; flags 1041
 
-class name java/util/TimeZone
-header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 421
-innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
-
 class name java/util/Timer
 header extends java/lang/Object flags 21
 innerclass innerClass java/lang/ref/Cleaner$Cleanable outerClass java/lang/ref/Cleaner innerClassName Cleanable flags 609
-
-class name java/util/TreeSet
-header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-
-class name java/util/concurrent/ConcurrentMap
-header extends java/lang/Object implements java/util/Map flags 601 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Map<TK;TV;>;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/ConcurrentSkipListSet
-header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
-innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/CountedCompleter
-header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/util/concurrent/Executors
 -method name privilegedThreadFactory descriptor ()Ljava/util/concurrent/ThreadFactory;
@@ -532,102 +438,6 @@ innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/Obj
 -method name nextGaussian descriptor ()D
 method name nextFloat descriptor (F)F flags 1
 method name nextFloat descriptor (FF)F flags 1
-
-class name java/util/concurrent/atomic/AtomicBoolean
-header extends java/lang/Object implements java/io/Serializable flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/atomic/AtomicReference
-header extends java/lang/Object implements java/io/Serializable flags 21 signature <V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/io/Serializable;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/atomic/AtomicReferenceArray
-header extends java/lang/Object implements java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/io/Serializable;
-innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/concurrent/locks/StampedLock
-header extends java/lang/Object implements java/io/Serializable flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
--method name tryWriteLock descriptor ()J
--method name writeLockInterruptibly descriptor ()J
--method name tryReadLock descriptor ()J
--method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J
--method name readLockInterruptibly descriptor ()J
--method name unlock descriptor (J)V
-method name tryWriteLock descriptor ()J flags 1
-method name writeLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name tryReadLock descriptor ()J flags 1
-method name tryReadLock descriptor (JLjava/util/concurrent/TimeUnit;)J thrownTypes java/lang/InterruptedException flags 1
-method name readLockInterruptibly descriptor ()J thrownTypes java/lang/InterruptedException flags 1
-method name unlock descriptor (J)V flags 1
-
-class name java/util/function/BiConsumer
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BiFunction
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BiPredicate
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;U:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/BinaryOperator
-header extends java/lang/Object implements java/util/function/BiFunction flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/function/BiFunction<TT;TT;TT;>; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Consumer
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoubleConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoublePredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/DoubleUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Function
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;R:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntPredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/IntUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongConsumer
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongPredicate
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/LongUnaryOperator
-header extends java/lang/Object flags 601 runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/Predicate
-header extends java/lang/Object flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/function/UnaryOperator
-header extends java/lang/Object implements java/util/function/Function flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/function/Function<TT;TT;>; runtimeAnnotations @Ljava/lang/FunctionalInterface;
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/util/random/RandomGenerator
 header extends java/lang/Object nestMembers java/util/random/RandomGenerator$ArbitrarilyJumpableGenerator,java/util/random/RandomGenerator$LeapableGenerator,java/util/random/RandomGenerator$JumpableGenerator,java/util/random/RandomGenerator$SplittableGenerator,java/util/random/RandomGenerator$StreamableGenerator flags 601
@@ -769,154 +579,6 @@ method name create descriptor ()Ljava/util/random/RandomGenerator; flags 1 signa
 method name create descriptor (J)Ljava/util/random/RandomGenerator; flags 1 signature (J)TT;
 method name create descriptor ([B)Ljava/util/random/RandomGenerator; flags 1 signature ([B)TT;
 
-class name java/util/spi/AbstractResourceBundleProvider
-header extends java/lang/Object implements java/util/spi/ResourceBundleProvider flags 421
-innerclass innerClass java/util/ResourceBundle$Control outerClass java/util/ResourceBundle innerClassName Control flags 9
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/spi/CurrencyNameProvider
-header extends java/util/spi/LocaleServiceProvider flags 421
-innerclass innerClass java/util/ResourceBundle$Control outerClass java/util/ResourceBundle innerClassName Control flags 9
-
-class name java/util/spi/ResourceBundleProvider
-header extends java/lang/Object flags 601
-
-class name java/util/spi/ToolProvider
-header extends java/lang/Object flags 601
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/util/zip/CRC32C
-header extends java/lang/Object implements java/util/zip/Checksum flags 31
-
-class name javax/crypto/AEADBadTagException
-header extends javax/crypto/BadPaddingException flags 21
-
-class name javax/crypto/BadPaddingException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/CipherInputStream
-header extends java/io/FilterInputStream flags 21
-
-class name javax/crypto/CipherOutputStream
-header extends java/io/FilterOutputStream flags 21
-
-class name javax/crypto/CipherSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/EncryptedPrivateKeyInfo
-header extends java/lang/Object flags 21
-
-class name javax/crypto/ExemptionMechanism
-header extends java/lang/Object flags 21
-
-class name javax/crypto/ExemptionMechanismException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/ExemptionMechanismSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/IllegalBlockSizeException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/KeyAgreement
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/KeyAgreementSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/KeyGenerator
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/KeyGeneratorSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/Mac
-header extends java/lang/Object implements java/lang/Cloneable flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/MacSpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/NoSuchPaddingException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/NullCipher
-header extends javax/crypto/Cipher flags 21
-
-class name javax/crypto/SealedObject
-header extends java/lang/Object implements java/io/Serializable flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name javax/crypto/SecretKey
-header extends java/lang/Object implements java/security/Key,javax/security/auth/Destroyable flags 601
-
-class name javax/crypto/SecretKeyFactory
-header extends java/lang/Object flags 21
-innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
-
-class name javax/crypto/SecretKeyFactorySpi
-header extends java/lang/Object flags 421
-
-class name javax/crypto/ShortBufferException
-header extends java/security/GeneralSecurityException flags 21
-
-class name javax/crypto/interfaces/DHKey
-header extends java/lang/Object flags 601
-
-class name javax/crypto/interfaces/DHPrivateKey
-header extends java/lang/Object implements javax/crypto/interfaces/DHKey,java/security/PrivateKey flags 601
-
-class name javax/crypto/interfaces/DHPublicKey
-header extends java/lang/Object implements javax/crypto/interfaces/DHKey,java/security/PublicKey flags 601
-
-class name javax/crypto/interfaces/PBEKey
-header extends java/lang/Object implements javax/crypto/SecretKey flags 601
-
-class name javax/crypto/spec/DESKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DESedeKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DHGenParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/DHParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/DHPrivateKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/DHPublicKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/GCMParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/IvParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/OAEPParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-innerclass innerClass javax/crypto/spec/PSource$PSpecified outerClass javax/crypto/spec/PSource innerClassName PSpecified flags 19
-
-class name javax/crypto/spec/PBEKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec flags 21
-
-class name javax/crypto/spec/PBEParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/RC2ParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/RC5ParameterSpec
-header extends java/lang/Object implements java/security/spec/AlgorithmParameterSpec flags 21
-
-class name javax/crypto/spec/SecretKeySpec
-header extends java/lang/Object implements java/security/spec/KeySpec,javax/crypto/SecretKey flags 21
-
 class name javax/security/auth/Subject
 -method name getSubject descriptor (Ljava/security/AccessControlContext;)Ljavax/security/auth/Subject;
 -method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;
@@ -927,6 +589,231 @@ method name doAsPrivileged descriptor (Ljavax/security/auth/Subject;Ljava/securi
 
 class name javax/security/auth/SubjectDomainCombiner
 header extends java/lang/Object implements java/security/DomainCombiner flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name jdk/internal/access/foreign/MemorySegmentProxy
+header extends java/lang/Object flags 421
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+method name <init> descriptor ()V flags 1
+method name checkAccess descriptor (JJZ)V flags 401
+method name unsafeGetOffset descriptor ()J flags 401
+method name unsafeGetBase descriptor ()Ljava/lang/Object; flags 401
+method name isSmall descriptor ()Z flags 401
+method name scope descriptor ()Ljdk/internal/misc/ScopedMemoryAccess$Scope; flags 401
+method name addOffsets descriptor (JJLjdk/internal/access/foreign/MemorySegmentProxy;)J flags 9
+method name multiplyOffsets descriptor (JJLjdk/internal/access/foreign/MemorySegmentProxy;)J flags 9
+
+class name jdk/internal/misc/ScopedMemoryAccess
+header extends java/lang/Object nestMembers jdk/internal/misc/ScopedMemoryAccess$Scope,jdk/internal/misc/ScopedMemoryAccess$Scope$Handle flags 21
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope$Handle outerClass jdk/internal/misc/ScopedMemoryAccess$Scope innerClassName Handle flags 609
+method name closeScope descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;)Z flags 1
+method name getScopedMemoryAccess descriptor ()Ljdk/internal/misc/ScopedMemoryAccess; flags 9
+method name copyMemory descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JLjava/lang/Object;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name copySwapMemory descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JLjava/lang/Object;JJJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name setMemory descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name vectorizedMismatch descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JLjava/lang/Object;JII)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name isLoaded descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name isLoadedInternal descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/misc/ScopedMemoryAccess$Scoped;
+method name load descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name loadInternal descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/misc/ScopedMemoryAccess$Scoped;
+method name unload descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name unloadInternal descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;JZJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/misc/ScopedMemoryAccess$Scoped;
+method name force descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/io/FileDescriptor;JZJJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name forceInternal descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/io/FileDescriptor;JZJJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/misc/ScopedMemoryAccess$Scoped;
+method name loadFromByteBuffer descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TE;>;ILjava/nio/ByteBuffer;ITS;Ljdk/internal/vm/vector/VectorSupport$LoadOperation<Ljava/nio/ByteBuffer;TV;TE;TS;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name storeIntoByteBuffer descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)V flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;E:Ljava/lang/Object;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TE;>;ITV;Ljava/nio/ByteBuffer;ILjdk/internal/vm/vector/VectorSupport$StoreVectorOperation<Ljava/nio/ByteBuffer;TV;>;)V runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getByteVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putByteVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getByteAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putByteRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getByteOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putByteOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddByteAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddByteRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrByteAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrByteRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndByteAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndByteRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorByte descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorByteAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorByteRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JB)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JZ)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putShortUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JSZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putShortVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putShortRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getShortOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putShortOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddShortAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddShortRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrShortAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrShortRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndShortAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndShortRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorShort descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorShortAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorShortRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JS)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JZ)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putCharUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JCZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putCharVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putCharRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getCharOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putCharOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddCharAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddCharRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrCharAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrCharRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndCharAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndCharRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorChar descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorCharAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorCharRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JC)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JZ)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putIntUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JIZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putIntVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getIntOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putIntOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndSetInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetIntPlain descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JII)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorInt descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorIntAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorIntRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JI)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JZ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putLongUnaligned descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putLongVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getLongOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putLongOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndSetLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetLongPlain descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJJ)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseOrLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseAndLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorLong descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorLongAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndBitwiseXorLongRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JJ)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putFloatVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putFloatRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getFloatOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putFloatOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndSetFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeFloatAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeFloatRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetFloatPlain descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetFloatAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetFloatRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JFF)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetFloatAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetFloatRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddFloat descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddFloatAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddFloatRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JF)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putDoubleVolatile descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putDoubleRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getDoubleOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name putDoubleOpaque descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndSetDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeDoubleAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name compareAndExchangeDoubleRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetDoublePlain descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetDoubleAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name weakCompareAndSetDoubleRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JDD)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetDoubleAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndSetDoubleRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddDouble descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddDoubleAcquire descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name getAndAddDoubleRelease descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope;Ljava/lang/Object;JD)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+
+class name jdk/internal/misc/ScopedMemoryAccess$Scope
+header extends java/lang/Object nestHost jdk/internal/misc/ScopedMemoryAccess flags 601
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope$Handle outerClass jdk/internal/misc/ScopedMemoryAccess$Scope innerClassName Handle flags 609
+method name checkValidState descriptor ()V flags 401
+method name ownerThread descriptor ()Ljava/lang/Thread; flags 401
+method name isImplicit descriptor ()Z flags 401
+method name acquire descriptor ()Ljdk/internal/misc/ScopedMemoryAccess$Scope$Handle; flags 401
+method name release descriptor (Ljdk/internal/misc/ScopedMemoryAccess$Scope$Handle;)V flags 401
+
+class name jdk/internal/misc/ScopedMemoryAccess$Scope$Handle
+header extends java/lang/Object nestHost jdk/internal/misc/ScopedMemoryAccess flags 601
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope outerClass jdk/internal/misc/ScopedMemoryAccess innerClassName Scope flags 609
+innerclass innerClass jdk/internal/misc/ScopedMemoryAccess$Scope$Handle outerClass jdk/internal/misc/ScopedMemoryAccess$Scope innerClassName Handle flags 609
+method name scope descriptor ()Ljdk/internal/misc/ScopedMemoryAccess$Scope; flags 401
 
 class name jdk/internal/vm/vector/VectorSupport
 field name VECTOR_OP_MASK_TRUECOUNT descriptor I constantValue 19 flags 19

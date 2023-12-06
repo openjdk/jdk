@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public class TestUnicode extends JavadocTester {
                 """
                     <section class="detail" id="set##(int)">
                     <h3>set##</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="element-name">set##</span><wbr>\
                     <span class="parameters">(int&nbsp;##)</span></div>
@@ -115,6 +116,7 @@ public class TestUnicode extends JavadocTester {
                     <dt>Parameters:</dt>
                     <dd><code>##</code> - the ##</dd>
                     </dl>
+                    </div>
                     </section>
                     """.replaceAll("##", chineseElephant)
                 );
