@@ -104,7 +104,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   size_t* _obj_alloc_stat;
 
   // Per-thread evacuation failure data structures.
-  ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _evac_failure_inject_counter;)
+  ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
 
   PreservedMarks* _preserved_marks;
   EvacuationFailedInfo _evacuation_failed_info;
