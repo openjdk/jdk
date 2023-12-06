@@ -264,6 +264,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
