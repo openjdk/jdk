@@ -43,9 +43,10 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 // The default padding size for data structures to avoid false sharing.
 #ifdef _LP64
-// Hardware prefetchers on current implementations may pull 2 cache lines
-// on access, therefore we pessimistically assume twice the cache line size
-// for padding.
+// The common wisdom is that adjacent cache line prefetchers on some hardware
+// may pull two cache lines on access, so we have to pessimistically assume twice
+// the cache line size for padding. TODO: Check if this is still true for modern
+// hardware. If not, DEFAULT_CACHE_LINE_SIZE might as well suffice.
 #define DEFAULT_PADDING_SIZE (DEFAULT_CACHE_LINE_SIZE*2)
 #else
 #define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
