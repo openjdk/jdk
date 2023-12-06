@@ -28,7 +28,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -122,17 +121,14 @@ final class FieldBuilder {
             configureNotInitFrameField();
             return true;
         }
-
         if (fieldName.equals("stackTrace.topFrame.class")) {
             configureTopFrameClassField();
             return true;
         }
-
         if (fieldName.equals("stackTrace.topFrame")) {
             configureTopFrameField();
             return true;
         }
-
         if (fieldName.equals("id") && field.type.getName().equals("jdk.ActiveSetting")) {
             configureEventTypeIdField();
             return true;

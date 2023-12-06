@@ -32,10 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
-import jdk.jfr.consumer.RecordedClass;
-import jdk.jfr.consumer.RecordedObject;
-import jdk.jfr.consumer.RecordedFrame;
-import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.util.Output;
