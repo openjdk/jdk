@@ -704,7 +704,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
             return bufferCrypt(input, output, true);
         } catch (AEADBadTagException e) {
             // exception is never thrown by update ops
-            return 0;
+            throw new AssertionError(e);
         }
     }
 
