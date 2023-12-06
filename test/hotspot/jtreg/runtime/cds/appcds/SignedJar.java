@@ -37,7 +37,7 @@ import java.io.File;
 public class SignedJar {
     public static void main(String[] args) throws Exception {
         String unsignedJar = JarBuilder.getOrCreateHelloJar();
-        JarBuilder.signJar();
+        JarBuilder.signJar("hello");
 
         // Test class exists in signed JAR
         String signedJar = TestCommon.getTestJar("signed_hello.jar");
