@@ -24,6 +24,9 @@
 #include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/universe.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 #include "unittest.hpp"
@@ -39,13 +42,12 @@ protected:
 
 public:
   ParallelTask(int expected_workers, bool can_caller_execute) :
-    WorkerTask("Parallel Task", can_caller_execute),
-    _expected_workers(expected_workers),
-    _actual_workers(0),
-    _actual_ids_bitset(0),
-    _caller_thread(Thread::current()),
-    _seen_caller(false)
-    {};
+      WorkerTask("Parallel Task", can_caller_execute),
+      _expected_workers(expected_workers),
+      _actual_workers(0),
+      _actual_ids_bitset(0),
+      _caller_thread(Thread::current()),
+      _seen_caller(false) {}
 
   void record_worker(uint worker_id) {
     if (!_seen_caller && Thread::current() == _caller_thread) {
@@ -110,35 +112,20 @@ static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller
   }
 }
 
-
 TEST_VM(WorkerThreads, basic) {
   static const int TRIES = 1000;
-  static const uint max_workers = MIN2(31, os::processor_count()); // ID bitmap limits the max CPU
-  static const uint half_workers = max_workers / 2;
-  static const uint min_workers = 1;
+  static const uint MAX_WORKERS = MIN2(31, os::processor_count()); // ID bitmap limits the max CPU
 
-  WorkerThreads* workers = new WorkerThreads("test", max_workers);
+  WorkerThreads* workers = new WorkerThreads("test", MAX_WORKERS);
   workers->initialize_workers();
 
-  // Full parallelism
-  workers->set_active_workers(max_workers);
-  for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, max_workers, false);
-    basic_run_with(workers, max_workers, true);
-  }
-
-  // Half parallelism
-  workers->set_active_workers(half_workers);
-  for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, half_workers, false);
-    basic_run_with(workers, half_workers,  true);
-  }
-
-  // Min parallelism
-  workers->set_active_workers(min_workers);
-  for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, min_workers,  false);
-    basic_run_with(workers, min_workers,   true);
+  for (uint w = 1; w <= MAX_WORKERS; w++) {
+    tty->print_cr("Test with %u workers", w);
+    workers->set_active_workers(w);
+    for (int t = 0; t < TRIES; t++) {
+      basic_run_with(workers, w, false);
+      basic_run_with(workers, w, true);
+    }
   }
 }
 
@@ -158,47 +145,22 @@ static void perf_iteration(WorkerThreads* workers, bool caller_runs) {
 
 TEST_VM(WorkerThreads, perf) {
   static const int ITERS = 5;
+  static const uint MAX_WORKERS = os::processor_count();
 
-  static const uint max_workers = os::processor_count();
-  static const uint half_workers = max_workers / 2;
-  static const uint min_workers = 1;
-
-  WorkerThreads* workers = new WorkerThreads("test", max_workers);
+  WorkerThreads* workers = new WorkerThreads("test", MAX_WORKERS);
   workers->initialize_workers();
 
-  tty->print_cr("Full parallelism (%u workers):", max_workers);
-  workers->set_active_workers(max_workers);
-  tty->print_cr("  only workers:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, false);
+  for (uint w = MAX_WORKERS; w > 0; w /= 2) {
+    workers->set_active_workers(w);
+    tty->print_cr("Test with %u workers:", w);
+    tty->print_cr("  only workers:");
+    for (int i = 0; i < ITERS; i++) {
+      perf_iteration(workers, false);
+    }
+    tty->print_cr("  workers + caller:");
+    for (int i = 0; i < ITERS; i++) {
+      perf_iteration(workers, true);
+    }
+    tty->cr();
   }
-  tty->print_cr("  workers + caller:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, true);
-  }
-  tty->cr();
-
-  tty->print_cr("Half parallelism (%u workers):", half_workers);
-  workers->set_active_workers(half_workers);
-  tty->print_cr("  only workers:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, false);
-  }
-  tty->print_cr("  workers + caller:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, true);
-  }
-  tty->cr();
-
-  tty->print_cr("Min parallelism (%u workers):", min_workers);
-  workers->set_active_workers(min_workers);
-  tty->print_cr("  only workers:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, false);
-  }
-  tty->print_cr("  workers + caller:");
-  for (int i = 0; i < ITERS; i++) {
-    perf_iteration(workers, true);
-  }
-  tty->cr();
 }
