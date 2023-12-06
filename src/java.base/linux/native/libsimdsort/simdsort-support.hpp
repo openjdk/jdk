@@ -24,6 +24,8 @@
 
 #ifndef SIMDSORT_SUPPORT_HPP
 #define SIMDSORT_SUPPORT_HPP
+#include <stdio.h>
+#include <stdlib.h>
 
 #undef assert
 #define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
