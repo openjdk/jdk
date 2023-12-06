@@ -57,6 +57,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.internal.foreign.AbstractMemorySegmentImpl.AccessConstraint.*;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -192,7 +193,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value){
-        checkAccess(0, length, false);
+        checkAccess(0, length, ON_WRITE_UOE);
         SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
@@ -358,10 +359,19 @@ public abstract sealed class AbstractMemorySegmentImpl
         return arr;
     }
 
+    public enum AccessConstraint {
+        READ_ONLY, ON_WRITE_UOE, ON_WRITE_IAE
+    }
+
     @ForceInline
-    public void checkAccess(long offset, long length, boolean readOnly) {
-        if (!readOnly && this.readOnly) {
-            throw new UnsupportedOperationException("Attempt to write a read-only segment");
+    public void checkAccess(long offset, long length, AccessConstraint access) {
+        if (readOnly) {
+            switch (access) {
+                case ON_WRITE_UOE ->
+                        throw new UnsupportedOperationException("Attempt to write a read-only segment");
+                case ON_WRITE_IAE ->
+                        throw new IllegalArgumentException("Attempt to write a read-only segment");
+            }
         }
         checkBounds(offset, length);
     }
@@ -608,8 +618,8 @@ public abstract sealed class AbstractMemorySegmentImpl
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
         long size = elementCount * srcElementLayout.byteSize();
-        srcImpl.checkAccess(srcOffset, size, true);
-        dstImpl.checkAccess(dstOffset, size, false);
+        srcImpl.checkAccess(srcOffset, size, READ_ONLY);
+        dstImpl.checkAccess(dstOffset, size, ON_WRITE_IAE);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
                     srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
@@ -635,7 +645,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
             throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
         }
-        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
+        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), READ_ONLY);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstInfo.scale() == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), null,
@@ -663,7 +673,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
-        destImpl.checkAccess(dstOffset, elementCount * srcInfo.scale(), false);
+        destImpl.checkAccess(dstOffset, elementCount * srcInfo.scale(), ON_WRITE_IAE);
         if (srcInfo.scale() == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.sessionImpl(),
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
@@ -681,8 +691,8 @@ public abstract sealed class AbstractMemorySegmentImpl
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment);
         long srcBytes = srcToOffset - srcFromOffset;
         long dstBytes = dstToOffset - dstFromOffset;
-        srcImpl.checkAccess(srcFromOffset, srcBytes, true);
-        dstImpl.checkAccess(dstFromOffset, dstBytes, true);
+        srcImpl.checkAccess(srcFromOffset, srcBytes, READ_ONLY);
+        dstImpl.checkAccess(dstFromOffset, dstBytes, READ_ONLY);
         if (dstImpl == srcImpl) {
             srcImpl.checkValidState();
             return -1;

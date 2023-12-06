@@ -350,7 +350,7 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws UnsupportedOperationException if {@code value} is not
+     * @throws IllegalArgumentException if {@code value} is not
      *         a {@linkplain MemorySegment#isNative() native} segment
      */
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {

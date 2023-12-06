@@ -1493,7 +1493,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - bytes}
      * @throws IndexOutOfBoundsException if either {@code srcOffset},
      *         {@code dstOffset} or {@code bytes} are {@code < 0}
-     * @throws UnsupportedOperationException if {@code dstSegment} is
+     * @throws IllegalArgumentException if {@code dstSegment} is
      *         {@linkplain #isReadOnly() read-only}
      */
     @ForceInline
@@ -1552,7 +1552,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@code dstSegment} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code dstSegment.isAccessibleBy(T) == false}
-     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code elementCount * dtsLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}
@@ -1921,7 +1921,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
      * @throws UnsupportedOperationException if this segment is
      *         {@linkplain #isReadOnly() read-only}
-     * @throws UnsupportedOperationException if {@code value} is not a
+     * @throws IllegalArgumentException if {@code value} is not a
      *         {@linkplain #isNative() native} segment
      */
     void set(AddressLayout layout, long offset, MemorySegment value);
@@ -2336,7 +2336,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
-     * @throws UnsupportedOperationException if {@code value} is not a {@linkplain #isNative() native} segment
+     * @throws IllegalArgumentException if {@code value} is not a {@linkplain #isNative() native} segment
      */
     void setAtIndex(AddressLayout layout, long index, MemorySegment value);
 
@@ -2460,7 +2460,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
      *         in the source element layout
      * @throws IllegalArgumentException if {@code dstLayout.byteAlignment() > dstLayout.byteSize()}
-     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code elementCount * dstLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code srcIndex > srcArray.length - elementCount}

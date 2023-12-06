@@ -160,6 +160,25 @@ public class TestSegmentAllocators {
         }
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testArenaAllocateFromHeapSegment() {
+        try (Arena arena = Arena.ofConfined()) {
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testAllocatorAllocateFromHeapSegment() {
+        try (Arena arena = Arena.ofConfined()) {
+            SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+        }
+    }
+
     @Test
     public void testArrayAllocateDelegation() {
         AtomicInteger calls = new AtomicInteger();
