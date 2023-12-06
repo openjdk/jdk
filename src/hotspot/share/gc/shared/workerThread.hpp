@@ -80,10 +80,13 @@ public:
 
   // Worker API.
 
-  // For workers: waits for a task to become available to the worker and runs it.
-  // For non-workers: sees if there is a task and runs it.
-  // Returns true if task was executed.
-  bool internal_run_task(bool is_worker);
+  // Waits for a task to become available to the worker and runs it.
+  void caller_run_task();
+
+  // Sees if there is a task and runs it.
+  void worker_run_task();
+
+  void internal_run_task(bool is_worker);
 };
 
 // A set of worker threads to execute tasks

@@ -40,16 +40,21 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _end_semaphore() {}
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
+  bool use_caller = task->caller_can_run();
+  uint num_worker_tasks = use_caller ? (num_workers - 1) : num_workers;
+
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
   _not_finished = num_workers;
 
-  // Dispatch 'num_workers' number of tasks.
-  _start_semaphore.signal(num_workers);
+  // Dispatch tasks to workers.
+  if (num_worker_tasks > 0) {
+    _start_semaphore.signal(num_worker_tasks);
+  }
 
-  // If possible, execute tasks in caller, while there is work to do.
-  if (task->caller_can_run()) {
-    while (internal_run_task(false)) {};
+  // If possible, execute tasks in caller.
+  if (use_caller) {
+    caller_run_task();
   }
 
   // Wait for the last worker to signal the coordinator.
@@ -61,17 +66,21 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   _started = 0;
 }
 
-bool WorkerTaskDispatcher::internal_run_task(bool is_worker) {
-  if (is_worker) {
-    // Wait for the coordinator to dispatch a task.
-    _start_semaphore.wait();
-  } else {
-    // See if there is work to do. Called from coordinator, do not block.
-    if (!_start_semaphore.trywait()) {
-      return false;
-    }
-  }
+void WorkerTaskDispatcher::caller_run_task() {
+  // Run at least one task in the caller.
+  // Then see if we have other tasks that caller can run.
+  do {
+    internal_run_task(false);
+  } while (_start_semaphore.trywait());
+}
 
+void WorkerTaskDispatcher::worker_run_task() {
+  // Wait for the coordinator to dispatch a task.
+  _start_semaphore.wait();
+  internal_run_task(true);
+}
+
+void WorkerTaskDispatcher::internal_run_task(bool is_worker) {
   // Get and set worker id.
   const uint worker_id = Atomic::fetch_then_add(&_started, 1u);
   if (is_worker) {
@@ -94,8 +103,6 @@ bool WorkerTaskDispatcher::internal_run_task(bool is_worker) {
   if (not_finished == 0) {
     _end_semaphore.signal();
   }
-
-  return true;
 }
 
 WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
@@ -213,6 +220,6 @@ void WorkerThread::run() {
   os::set_priority(this, NearMaxPriority);
 
   while (true) {
-    _dispatcher->internal_run_task(true);
+    _dispatcher->worker_run_task();
   }
 }
