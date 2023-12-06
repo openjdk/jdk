@@ -595,8 +595,9 @@ define SetupRunMicroTestBody
     $1_MICRO_BASIC_OPTIONS += -rff $$($1_TEST_RESULTS_DIR)/jmh-result.$(MICRO_RESULTS_FORMAT)
   endif
 
-  # Set library path for native dependencies
-  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
+  # Set paths for dependencies
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native \
+      -Xbootclasspath/a:$$(TEST_IMAGE_DIR)/lib-test/wb.jar
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
