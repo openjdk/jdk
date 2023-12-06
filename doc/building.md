@@ -636,8 +636,8 @@ files.
 ### libsleef
 
 libsleef, the [SIMD Library for Evaluating Elementary Functions](
-https://sleef.org/) is required when building libvmath.so on Linux/aarch64
-platforms.
+https://sleef.org/) is optional. But it will provide performance enhancement
+for vector math operations on Linux/aarch64 platforms.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
     libsleef-dev`.
@@ -645,9 +645,7 @@ platforms.
     sleef-devel`.
 
 Use `--with-libsleef=<path>` if `configure` does not properly locate your libsleef
-files. This is optional. If libsleef is neither installed nor specified
-manually, the JDK build will succeed but without libvmath.so and the
-performance enhancements provided by it.
+files.
 
 ## Build Tools Requirements
 

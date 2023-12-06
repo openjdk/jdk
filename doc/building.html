@@ -815,8 +815,9 @@ version of Hotspot.</p>
 does not properly locate your libffi files.</p>
 <h3 id="libsleef">libsleef</h3>
 <p>libsleef, the <a href="https://sleef.org/">SIMD Library for
-Evaluating Elementary Functions</a> is required when building
-libvmath.so on Linux/aarch64 platforms.</p>
+Evaluating Elementary Functions</a> is optional. But it will provide
+performance enhancement for vector math operations on Linux/aarch64
+platforms.</p>
 <ul>
 <li>To install on an apt-based Linux, try running
 <code>sudo apt-get install     libsleef-dev</code>.</li>
@@ -824,10 +825,7 @@ libvmath.so on Linux/aarch64 platforms.</p>
 <code>sudo yum install     sleef-devel</code>.</li>
 </ul>
 <p>Use <code>--with-libsleef=&lt;path&gt;</code> if
-<code>configure</code> does not properly locate your libsleef files.
-This is optional. If libsleef is neither installed nor specified
-manually, the JDK build will succeed but without libvmath.so and the
-performance enhancements provided by it.</p>
+<code>configure</code> does not properly locate your libsleef files.</p>
 <h2 id="build-tools-requirements">Build Tools Requirements</h2>
 <h3 id="autoconf">Autoconf</h3>
 <p>The JDK build requires <a
