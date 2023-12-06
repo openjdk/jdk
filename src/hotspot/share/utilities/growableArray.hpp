@@ -94,22 +94,6 @@ public:
   bool  is_empty() const        { return _len == 0; }
   bool  is_nonempty() const     { return _len != 0; }
   bool  is_full() const         { return _len == _capacity; }
-
-  // TODO should clear and trunc_to become virtual or at least abstract?
-  // TODO we need to maybe call deconstructors here!
-  void  clear() {
-    // Remove the old elements, calling the deconstructor
-    // (on initialized elements only)
-    for (i = 0; i < this->_len; i++) {
-      this->_data[i].~E();
-    }
-    _len = 0;
-  }
-  // TODO we need to maybe call deconstructors here!
-  void  trunc_to(int length)    {
-    assert(length <= _len,"cannot increase length");
-    _len = length;
-  }
 };
 
 template <typename E> class GrowableArrayIterator;
@@ -135,7 +119,16 @@ protected:
   ~GrowableArrayView() {}
 
 public:
-  const static GrowableArrayView EMPTY;
+  void clear() { trunc_to(0); }
+
+  void trunc_to(int length)    {
+    assert(length <= _len,"cannot increase length");
+    // Deconstruct all elements from new length to old length
+    for (int i = length; i < _len; i++) {
+      this->_data[i].~E();
+    }
+    _len = length;
+  }
 
   bool operator==(const GrowableArrayView<E>& rhs) const {
     if (_len != rhs._len)
@@ -191,8 +184,13 @@ public:
 
   E pop() {
     assert(_len > 0, "empty list");
-    // TODO move or deconstruct?
-    return _data[--_len];
+    int new_len = _len - 1;
+    // copy-construct the return value
+    E elem(_data[new_len]);
+    // deconstruct the old value
+    this->_data[new_len].~E();
+    _len = new_len;
+    return elem;
   }
 
   void at_put(int i, const E& elem) {
@@ -370,9 +368,6 @@ public:
     tty->print("}\n");
   }
 };
-
-template<typename E>
-const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
 template <typename E>
 class GrowableArrayFromArray : public GrowableArrayView<E> {
