@@ -22,8 +22,6 @@
  *
  */
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -33,16 +31,12 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.StringSupport;
@@ -333,6 +327,27 @@ public class TestStringEncoding {
         }
     }
 
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringGetWithCharset(SupportedCharset charset, HeapSegment segment) {
+        for (int offset = 0 ; offset <= charset.align ; offset++) {
+            segment.segment.getString(offset, charset.charset);
+        }
+    }
+
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringSetWithCharset(SupportedCharset charset, HeapSegment segment) {
+        for (int offset = 0 ; offset <= charset.align ; offset++) {
+            segment.segment.setString(offset, "H", charset.charset);
+        }
+    }
+
+    @Test(dataProvider = "charsetsAndSegments")
+    public void testStringAllocateFromWithCharset(SupportedCharset charset, HeapSegment segment) {
+        for (int offset = 0 ; offset <= charset.align ; offset++) {
+            SegmentAllocator.prefixAllocator(segment.segment.asSlice(offset)).allocateFrom("H", charset.charset);
+        }
+    }
+
     @DataProvider
     public static Object[][] strings() {
         return new Object[][]{
@@ -456,4 +471,52 @@ public class TestStringEncoding {
         }
     }
 
+    enum SupportedCharset {
+        ISO_8859_1(StandardCharsets.ISO_8859_1, 1),
+        US_ASCII(StandardCharsets.US_ASCII, 1),
+        UTF_8(StandardCharsets.UTF_8, 1),
+        UTF_16(StandardCharsets.UTF_16, 2),
+        UTF_16BE(StandardCharsets.UTF_16BE, 2),
+        UTF_16LE(StandardCharsets.UTF_16LE, 2),
+        UTF_32(StandardCharsets.UTF_32, 4),
+        UTF_32BE(StandardCharsets.UTF_32BE, 4),
+        UTF_32LE(StandardCharsets.UTF_32LE, 4);
+
+        final Charset charset;
+        final long align;
+
+        SupportedCharset(Charset charset, long align) {
+            this.charset = charset;
+            this.align = align;
+        }
+    }
+
+    enum HeapSegment {
+        BYTE(MemorySegment.ofArray(new byte[80]), 1),
+        CHAR(MemorySegment.ofArray(new char[40]), 2),
+        SHORT(MemorySegment.ofArray(new short[40]), 2),
+        INT(MemorySegment.ofArray(new int[20]), 4),
+        FLOAT(MemorySegment.ofArray(new float[20]), 4),
+        LONG(MemorySegment.ofArray(new long[10]), 8),
+        DOUBLE(MemorySegment.ofArray(new double[10]), 8);
+
+        final MemorySegment segment;
+        final long maxAlign;
+
+        HeapSegment(MemorySegment segment, long maxAlign) {
+            this.segment = segment;
+            this.maxAlign = maxAlign;
+        }
+    }
+
+    @DataProvider
+    public static Object[][] charsetsAndSegments() {
+        List<Object[]> values = new ArrayList<>();
+        for (SupportedCharset charset : SupportedCharset.values()) {
+            for (HeapSegment heapSegments : HeapSegment.values()) {
+                values.add(new Object[] { charset, heapSegments });
+            }
+        }
+        return values.toArray(Object[][]::new);
+    }
 }
