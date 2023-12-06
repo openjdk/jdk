@@ -31,8 +31,12 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Stream;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {
@@ -52,5 +56,31 @@ class VerifierSelfTest {
                             throw new AssertionError(e);
                         }
                     });
+    }
+
+    @Test
+    void testFailed() throws IOException {
+        Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
+        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+                className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
+        var classModel = cc.parse(path);
+        byte[] brokenClassBytes = cc.transform(classModel,
+                (clb, cle) -> {
+                    if (cle instanceof MethodModel mm) {
+                        clb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel cm) {
+                                mb.withCode(cob -> cm.forEachElement(cob));
+                            }
+                            else
+                                mb.with(me);
+                        });
+                    }
+                    else
+                        clb.with(cle);
+                });
+        StringBuilder sb = new StringBuilder();
+        if (ClassFile.of().verify(brokenClassBytes).isEmpty()) {
+            throw new AssertionError("expected verification failure");
+        }
     }
 }
