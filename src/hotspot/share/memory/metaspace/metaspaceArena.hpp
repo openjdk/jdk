@@ -138,9 +138,9 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
 public:
 
-  MetaspaceArena(size_t allocation_alignment_words,
-                 ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
-                 SizeAtomicCounter* total_used_words_counter,
+  MetaspaceArena(MetaspaceContext* context,
+                 const ArenaGrowthPolicy* growth_policy,
+                 size_t allocation_alignment_words,
                  const char* name);
 
   ~MetaspaceArena();

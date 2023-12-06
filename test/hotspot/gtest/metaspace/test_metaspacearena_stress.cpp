@@ -29,6 +29,7 @@
 #include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
+#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -46,6 +47,7 @@ using metaspace::IntCounter;
 using metaspace::MemRangeCounter;
 using metaspace::MetaBlock;
 using metaspace::MetaspaceArena;
+using metaspace::MetaspaceContext;
 using metaspace::SizeAtomicCounter;
 using metaspace::ArenaStats;
 using metaspace::InUseChunkStats;
@@ -128,16 +130,14 @@ public:
 
   MetaspaceArena* arena() { return _arena; }
 
-  MetaspaceArenaTestBed(ChunkManager* cm, const ArenaGrowthPolicy* alloc_sequence,
-                        SizeAtomicCounter* used_words_counter, SizeRange allocation_range) :
-    _arena(NULL),
-    _allocation_range(allocation_range),
-    _size_of_last_failed_allocation(0),
-    _allocations(NULL),
-    _alloc_count(),
-    _dealloc_count()
+  MetaspaceArenaTestBed(MetaspaceContext* context, const ArenaGrowthPolicy* growth_policy,
+                        size_t allocation_alignment_words, SizeRange allocation_range)
+    : _arena(NULL)
+    , _allocation_range(allocation_range)
+    , _size_of_last_failed_allocation(0)
+    , _allocations(NULL)
   {
-    _arena = new MetaspaceArena(Metaspace::min_allocation_alignment, cm, alloc_sequence, used_words_counter, "gtest-MetaspaceArenaTestBed-sm");
+    _arena = new MetaspaceArena(context, growth_policy, Metaspace::min_allocation_alignment, "gtest-MetaspaceArenaTestBed-sm");
   }
 
   ~MetaspaceArenaTestBed() {
@@ -229,8 +229,8 @@ class MetaspaceArenaTest {
 
   void create_new_test_bed_at(int slotindex, const ArenaGrowthPolicy* growth_policy, SizeRange allocation_range) {
     DEBUG_ONLY(_testbeds.check_slot_is_null(slotindex));
-    MetaspaceArenaTestBed* bed = new MetaspaceArenaTestBed(&_context.cm(), growth_policy,
-                                                       &_used_words_counter, allocation_range);
+    MetaspaceArenaTestBed* bed = new MetaspaceArenaTestBed(_context.context(), growth_policy,
+        Metaspace::min_allocation_alignment, allocation_range);
     _testbeds.set_at(slotindex, bed);
     _num_beds.increment();
   }

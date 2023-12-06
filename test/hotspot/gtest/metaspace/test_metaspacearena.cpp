@@ -65,7 +65,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(size_t allocation_alignment_words, const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _arena = new MetaspaceArena(allocation_alignment_words, &_context.cm(), _growth_policy, &_used_words_counter, name);
+    _arena = new MetaspaceArena(_context.context(), _growth_policy, allocation_alignment_words, name);
     DEBUG_ONLY(_arena->verify());
   }
 

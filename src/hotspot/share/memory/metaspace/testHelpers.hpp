@@ -98,6 +98,7 @@ public:
   const CommitLimiter& commit_limiter() const { return _commit_limiter; }
   const VirtualSpaceList& vslist() const      { return *(_context->vslist()); }
   ChunkManager& cm()                          { return *(_context->cm()); }
+  MetaspaceContext* context() const           { return _context; }
 
   // Returns reserve- and commit limit we run the test with (in the real world,
   // these would be equivalent to CompressedClassSpaceSize resp MaxMetaspaceSize)
