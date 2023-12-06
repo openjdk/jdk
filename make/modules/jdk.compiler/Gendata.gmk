@@ -42,6 +42,9 @@ CT_MODULES_API_TARGETS := \
     $(foreach m, $(CT_MODULES) $(CT_TRANSITIVE_MODULES), \
       $(call SetupJavaCompilationApiTarget, $m, $(JDK_OUTPUTDIR)/modules/$m))
 
+#undocumented modules which should also be included in ct.sym:
+CT_EXTRA_MODULES := jdk.unsupported
+
 SYMBOL_FILES := $(wildcard $(MODULE_SRC)/share/data/symbols/*)
 
 CT_DATA_DESCRIPTION += $(MODULE_SRC)/share/data/symbols/symbols
@@ -72,6 +75,7 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym: $(COMPILE_CREATE_SYMBOLS) $(SYMBOL_FILES) \
 	$(RM) -r $(@D)
 	$(MKDIR) -p $(@D)
 	$(ECHO) Creating ct.sym classes
+	$(ECHO) $(CT_MODULES) $(CT_TRANSITIVE_MODULES) $(CT_EXTRA_MODULES) >$(SUPPORT_OUTPUTDIR)/symbols/included-modules
 	$(BUILD_JAVA_SMALL) \
 	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
 	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac \
@@ -82,7 +86,8 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym: $(COMPILE_CREATE_SYMBOLS) $(SYMBOL_FILES) \
 	    $(SOURCE_DATE_EPOCH) \
 	    $(JDK_SOURCE_TARGET_VERSION) \
 	    "$(VERSION_PRE)" \
-	    $(JDK_OUTPUTDIR)/modules/
+	    $(JDK_OUTPUTDIR)/modules/ \
+	    $(SUPPORT_OUTPUTDIR)/symbols/included-modules
 	$(TOUCH) $@
 
 # Copy ct.sym to the modules libs dir
