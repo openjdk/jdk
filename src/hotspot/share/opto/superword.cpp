@@ -1691,7 +1691,6 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   if (!is_power_of_2(abs(pre_stride))) {
     return AlignmentSolution("non power-of-2 stride not supported");
   }
-  assert(is_power_of_2(abs(pre_stride)), "pre_stride is power of 2");
   assert(is_power_of_2(unroll_factor), "unroll factor is power of 2");
   assert(is_power_of_2(abs(main_stride)), "main_stride is power of 2");
   assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
@@ -1744,8 +1743,9 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //      zero, and "C_const" accounts for "init" instead.
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
   //      during the "pre_iter" pre-loop iterations. This term can be adjusted
-  //      by changing the pre-loop limit. This allows us to adjust the alignment
-  //      of the main-loop memory reference.
+  //      by changing the pre-loop limit, which defines how many pre-loop iterations
+  //      are executed. This allows us to adjust the alignment of the main-loop
+  //      memory reference.
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
@@ -1819,7 +1819,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   }
 
   // In what follows, we need to show that the C_const, init and invar terms can be aligned by
-  // adjusting the pre-loop limit (pre-iter). We decompose pre_iter:
+  // adjusting the pre-loop limit (pre_iter). We decompose pre_iter:
   //
   //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
   //
@@ -1886,14 +1886,14 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   // Having solved (4a) and (4b), we now want to find solutions for (4c), i.e. we need
   // to show that the C_const term can be aligned with pre_iter_C_const.
   //
-  // We can assume that abs(C_pre) is a power of 2.
+  // We can assume that abs(C_pre) as well as aw are both powers of 2.
   //
   // If abs(C_pre) >= aw, then:
   //
   //   for any pre_iter >= 0:         (C_pre * pre_iter        ) % aw = 0
   //   for any pre_iter_C_const >= 0: (C_pre * pre_iter_C_const) % aw = 0
   //
-  // which implies that C_iter (and pre_iter_C_const) have no effect on the alignment of
+  // which implies that pre_iter (and pre_iter_C_const) have no effect on the alignment of
   // the C_const term. We thus either have a trivial solution, and any pre_iter aligns
   // the address, or there is no solution. To have the trivial solution, we require:
   //
