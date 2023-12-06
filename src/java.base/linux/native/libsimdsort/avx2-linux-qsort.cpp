@@ -43,6 +43,8 @@ extern "C" {
             case JVM_T_FLOAT:
                 avx2_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 
@@ -54,6 +56,8 @@ extern "C" {
             case JVM_T_FLOAT:
                 avx2_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 

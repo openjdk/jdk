@@ -50,6 +50,8 @@ extern "C" {
             case JVM_T_DOUBLE:
                 avx512_fast_sort((double*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_64BIT);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 
@@ -67,6 +69,8 @@ extern "C" {
             case JVM_T_DOUBLE:
                 avx512_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
                 break;
+            default:
+                assert(false, "Unexpected type");
         }
     }
 
