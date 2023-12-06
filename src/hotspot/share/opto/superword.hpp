@@ -312,15 +312,43 @@ public:
     assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
   }
 
-  bool is_valid() const          { return _valid; }
-  bool is_trivial() const        { return _trivial; }
-  const char* reason() const     { assert(!is_valid(), "only invalid has reason"); return _reason; }
-  int r() const                  { assert(is_valid(), "only valid has solution"); return _r; }
-  int q() const                  { assert(is_valid(), "only valid has solution"); return _q; }
-  MemNode* mem_ref() const       { assert(is_valid(), "valid and not trivial"); return _mem_ref; }
-  int aw() const                 { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _aw; }
-  Node* invar_dependency() const { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _invar_dependency; }
-  int scale_dependency() const   { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _scale_dependency; }
+  bool is_valid() const   { return _valid; }
+  bool is_trivial() const { return _trivial; }
+
+  const char* reason() const {
+    assert(!is_valid(), "only invalid has reason");
+    return _reason;
+  }
+
+  int r() const {
+    assert(is_valid(), "only valid has solution");
+    return _r;
+  }
+
+  int q() const {
+    assert(is_valid(), "only valid has solution");
+    return _q;
+  }
+
+  MemNode* mem_ref() const {
+    assert(is_valid(), "valid and not trivial");
+    return _mem_ref;
+  }
+
+  int aw() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _aw;
+  }
+
+  Node* invar_dependency() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _invar_dependency;
+  }
+
+  int scale_dependency() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _scale_dependency;
+  }
 
   AlignmentSolution filter(const AlignmentSolution& other) const {
     // Solution invalid if either is invalid.

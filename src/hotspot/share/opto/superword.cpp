@@ -1609,7 +1609,7 @@ void SuperWord::combine_packs() {
 }
 
 #ifndef PRODUCT
-void print_icon_or_idx(Node* n) {
+void print_icon_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");
   } else if (n->is_ConI()) {
@@ -1630,26 +1630,26 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
   // aligned. For example, the relative offset between two arrays is only guaranteed to
   // be divisible by ObjectAlignmentInBytes.
-  uint pack_size    = pack->size();
+  const uint pack_size    = pack->size();
   MemNode* mem_ref  = pack->at(0)->as_Mem();
-  int element_size  = mem_ref->memory_size();
-  int vector_width  = pack_size * element_size;
-  int aw            = MIN2(vector_width, ObjectAlignmentInBytes); // alignment_width
+  const int element_size  = mem_ref->memory_size();
+  const int vector_width  = pack_size * element_size;
+  const int aw            = MIN2(vector_width, ObjectAlignmentInBytes); // alignment_width
 
   CountedLoopEndNode* pre_end = lp()->pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
-  int pre_stride    = pre_end->stride_con();
-  int unroll_factor = _lp->unrolled_count();
-  int main_stride   = iv_stride();
-  Node* init_node   = pre_end->init_trip();
+  const int pre_stride    = pre_end->stride_con();
+  const int unroll_factor = _lp->unrolled_count();
+  const int main_stride   = iv_stride();
+  const Node* init_node   = pre_end->init_trip();
   assert(pre_stride * unroll_factor == main_stride, "unrolled stride must be consistent");
 
   VPointer mem_ref_p(mem_ref, phase(), lpt(), nullptr, false);
-  int scale         = mem_ref_p.scale_in_bytes();
-  int offset        = mem_ref_p.offset_in_bytes();
-  Node* base        = mem_ref_p.base();
-  Node* invar       = mem_ref_p.invar();
-  int invar_factor  = mem_ref_p.invar_factor();
+  const int scale         = mem_ref_p.scale_in_bytes();
+  const int offset        = mem_ref_p.offset_in_bytes();
+  const Node* base        = mem_ref_p.base();
+  Node* invar             = mem_ref_p.invar();
+  const int invar_factor  = mem_ref_p.invar_factor();
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1749,26 +1749,16 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //   6) The "C_main * j" term represents how much the iv is increased during "j"
   //      main-loop iterations.
 
-  int C_const_init = 0;
-  int C_init = 0;
-  if (init_node->is_ConI()) {
-    // init is constant -> contribute init to the C_const term.
-    C_const_init = init_node->as_ConI()->get_int();
-    C_init = 0; // no C_init term
-  } else {
-    // init is variable -> contribute init to the C_init term.
-    C_const_init = 0;
-    C_init = scale;
-  }
+  // Attribute init either to C_const or to C_init term.
+  const int C_const_init = init_node->is_ConI() ? init_node->as_ConI()->get_int() : 0;
+  const int C_init =       init_node->is_ConI() ? 0                               : scale;
 
-  int C_invar = 0;
-  if (invar != nullptr) {
-    C_invar = abs(invar_factor);
-  }
+  // Set C_invar depending on if invar is present
+  const int C_invar = (invar == nullptr) ? 0 : abs(invar_factor);
 
-  int C_const = offset + C_const_init * scale;
-  int C_pre = scale * pre_stride;
-  int C_main = scale * main_stride;
+  const int C_const = offset + C_const_init * scale;
+  const int C_pre = scale * pre_stride;
+  const int C_main = scale * main_stride;
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1809,7 +1799,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   //   C_main % aw = 0                                                                                        (2*)
   //
-  int C_main_mod_aw = AlignmentSolution::mod(C_main, aw);
+  const int C_main_mod_aw = AlignmentSolution::mod(C_main, aw);
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1874,8 +1864,8 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //   pre_iter_C_init  = alignment_init (X * var_init)
   //   pre_iter_C_invar = alignment_invar(Y * var_invar)
   //
-  int C_init_mod_abs_C_pre  = AlignmentSolution::mod(C_init,  abs(C_pre));
-  int C_invar_mod_abs_C_pre = AlignmentSolution::mod(C_invar, abs(C_pre));
+  const int C_init_mod_abs_C_pre  = AlignmentSolution::mod(C_init,  abs(C_pre));
+  const int C_invar_mod_abs_C_pre = AlignmentSolution::mod(C_invar, abs(C_pre));
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1910,7 +1900,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //   C_const % aw = 0                                                       (6*)
   //
   assert(abs(C_pre) > 0 && is_power_of_2(abs(C_pre)), "abs(C_pre) must be power of 2");
-  bool abs_C_pre_ge_aw = abs(C_pre) >= aw;
+  const bool abs_C_pre_ge_aw = abs(C_pre) >= aw;
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1921,7 +1911,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 #endif
 
   if (abs_C_pre_ge_aw) {
-    int C_const_mod_aw = AlignmentSolution::mod(C_const, aw);
+    const int C_const_mod_aw = AlignmentSolution::mod(C_const, aw);
 
 #ifndef PRODUCT
     if (is_trace_align_vector()) {
@@ -1959,7 +1949,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
   //
-  int  pre_q = aw / abs(C_pre);
+  const int  pre_q = aw / abs(C_pre);
   //
   // We brute force the solution for pre_r by enumerating all values 0..pre_q-1 and
   // checking EQ(10*).
@@ -2002,7 +1992,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 #endif
 
   for (int pre_r = 0; pre_r < pre_q; pre_r++) {
-    int EQ10_val = AlignmentSolution::mod(C_const + C_pre * pre_r, aw);
+    const int EQ10_val = AlignmentSolution::mod(C_const + C_pre * pre_r, aw);
 
 #ifndef PRODUCT
     if (is_trace_align_vector()) {
@@ -2016,7 +2006,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
       assert((C_invar == 0) == (invar == nullptr), "invar consistent");
 
       Node* invar_dependency = invar;
-      int scale_dependency  = (invar != nullptr || !init_node->is_ConI()) ? scale : 0;
+      const int scale_dependency  = (invar != nullptr || !init_node->is_ConI()) ? scale : 0;
       return AlignmentSolution(pre_r, pre_q, mem_ref, aw,
                                invar_dependency, scale_dependency);
     }
