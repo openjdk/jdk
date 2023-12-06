@@ -69,9 +69,6 @@ class WorkerTaskDispatcher {
   // Semaphore used to notify the coordinator that all workers are done.
   Semaphore _end_semaphore;
 
-  // Runs task in caller.
-  void caller_run_task();
-
 public:
   WorkerTaskDispatcher();
 
@@ -83,8 +80,10 @@ public:
 
   // Worker API.
 
-  // Waits for a task to become available to the worker and runs it.
-  void worker_run_task();
+  // For workers: waits for a task to become available to the worker and runs it.
+  // For non-workers: sees if there is a task and runs it.
+  // Returns false if there are no tasks to execute.
+  bool internal_run_task(bool is_worker);
 };
 
 // A set of worker threads to execute tasks

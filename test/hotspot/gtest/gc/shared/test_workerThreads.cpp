@@ -114,7 +114,6 @@ TEST_VM(WorkerThreads, basic) {
     workers->run_task(&task);
     EXPECT_EQ(max_workers, task.actual_workers());
     EXPECT_EQ(expected_ids_bitset(max_workers), task.actual_ids_bitset());
-    EXPECT_TRUE(task.seen_caller());
   }
 
   // Half parallelism
@@ -134,7 +133,6 @@ TEST_VM(WorkerThreads, basic) {
     workers->run_task(&task);
     EXPECT_EQ(half_workers, task.actual_workers());
     EXPECT_EQ(expected_ids_bitset(half_workers), task.actual_ids_bitset());
-    EXPECT_TRUE(task.seen_caller());
   }
 
   // Lowest parallelism
@@ -154,6 +152,5 @@ TEST_VM(WorkerThreads, basic) {
     workers->run_task(&task);
     EXPECT_EQ(1u, task.actual_workers());
     EXPECT_EQ(expected_ids_bitset(1), task.actual_ids_bitset());
-    EXPECT_TRUE(task.seen_caller());
   }
 }

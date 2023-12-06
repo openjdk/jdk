@@ -59,63 +59,57 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _end_semaphore() {}
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
-  bool use_caller = task->caller_can_run();
-  bool use_workers = !use_caller || (num_workers > 1);
-  uint num_worker_tasks = use_caller ? (num_workers - 1) : num_workers;
-
   // No workers are allowed to read the state variables until they have been signaled.
   _task = task;
-  Atomic::store(&_not_finished, num_worker_tasks);
+  Atomic::store(&_not_finished, num_workers);
 
-  if (use_workers) {
-    if (use_caller) {
-      // Claim worker_id = 0 for caller.
-      Atomic::inc(&_started);
-    }
+  // Notify workers there is work.
+  _start_semaphore.signal(num_workers);
 
-    // Dispatch 'num_worker_tasks' number of tasks.
-    _start_semaphore.signal(num_worker_tasks);
+  // If possible, execute tasks in caller, while there is work to do.
+  if (task->caller_can_run()) {
+    while (internal_run_task(false)) {};
   }
 
-  if (use_caller) {
-    // Execute task in caller.
-    caller_run_task();
-  }
-
-  if (use_workers) {
-    // Wait for the last worker to signal the coordinator.
-    _end_semaphore.wait();
-  }
+  // Wait for the last worker to signal the coordinator.
+  _end_semaphore.wait();
 
   // No workers are allowed to read the state variables after the coordinator has been signaled.
   assert(_not_finished == 0, "%d not finished workers?", _not_finished);
   _task = nullptr;
-  Atomic::store(&_started, 0);
+  Atomic::store(&_started, 0u);
 }
 
-void WorkerTaskDispatcher::caller_run_task() {
-  // Execute the task in the same context and with the same priority
-  // it would be executed by a worker.
-  ThreadPriorityAdjuster tp(NearMaxPriority);
-  if (Thread::current()->is_Named_thread()) {
-    GCIdMark gc_id_mark(_task->gc_id());
-    _task->work(0);
+bool WorkerTaskDispatcher::internal_run_task(bool is_worker) {
+  if (is_worker) {
+    // Wait for the coordinator to dispatch a task.
+    _start_semaphore.wait();
   } else {
-    _task->work(0);
+    // See if there is work to do. Called from coordinator, do not block.
+    if (!_start_semaphore.trywait()) {
+      return false;
+    }
   }
-}
-
-void WorkerTaskDispatcher::worker_run_task() {
-  // Wait for the coordinator to dispatch a task.
-  _start_semaphore.wait();
 
   // Get and set worker id.
   const uint worker_id = Atomic::fetch_then_add(&_started, 1u);
-  WorkerThread::set_worker_id(worker_id);
+  if (is_worker) {
+    WorkerThread::set_worker_id(worker_id);
+  }
 
   // Run task.
-  GCIdMark gc_id_mark(_task->gc_id());
-  _task->work(worker_id);
+  if (is_worker) {
+    GCIdMark gc_id_mark(_task->gc_id());
+    _task->work(worker_id);
+  } else {
+    ThreadPriorityAdjuster tp(NearMaxPriority);
+    if (Thread::current()->is_Named_thread()) {
+      GCIdMark gc_id_mark(_task->gc_id());
+      _task->work(worker_id);
+    } else {
+      _task->work(worker_id);
+    }
+  }
 
   // Mark that the worker is done with the task.
   // The worker is not allowed to read the state variables after this line.
@@ -125,6 +119,8 @@ void WorkerTaskDispatcher::worker_run_task() {
   if (not_finished == 0) {
     _end_semaphore.signal();
   }
+
+  return true;
 }
 
 WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
@@ -242,6 +238,6 @@ void WorkerThread::run() {
   os::set_priority(this, NearMaxPriority);
 
   while (true) {
-    _dispatcher->worker_run_task();
+    _dispatcher->internal_run_task(true);
   }
 }
