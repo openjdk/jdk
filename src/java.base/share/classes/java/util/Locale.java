@@ -263,15 +263,16 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>The default locale is provided mainly for the locale-sensitive methods if no
  * {@code Locale} is explicitly specified as an argument, such as
- * {@link DateFormat#getInstance()}. It can be queried by {@link #getDefault()} and
- * set by {@link #setDefault(Locale)}. At the Java runtime startup, the default
- * locale is constructed from a few system properties, which are determined by the
- * host environment. Those system properties are listed below. All but
- * {@code user.language} are optional.
+ * {@link DateFormat#getInstance()}. The default locale is determined at startup
+ * of the Java runtime. First, the locale-related system properties are
+ * established according to the underlying host environment. The following table
+ * lists the locale-related system properties. Some of the system properties
+ * (except for {@code user.language}) may not have corresponding values depending
+ * on the host environment.
  * <table class="striped">
  * <caption style="display:none">Shows property keys and associated values</caption>
  * <thead>
- * <tr><th scope="col">Key</th>
+ * <tr><th scope="col">Locale-related System Properties Key</th>
  *     <th scope="col">Description of Associated Value</th></tr>
  * </thead>
  * <tbody>
@@ -292,12 +293,19 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
  * </tbody>
  * </table>
- * <p>Users can override these system properties by specifying them on the Java
- * launcher's command line in order to customize the default locale independent
- * of the host environment. Since the system properties are read only at the Java
- * runtime startup, altering their values later with
- * {@link System#setProperties(Properties)}/{@link System#setProperty(String, String)}
- * will have no effect on the established default locale.
+ * <p>Next, the values for these system properties can be overridden from the values
+ * designated on the Java launcher's command line with {@code -D} option. Finally, the
+ * default {@code Locale} instance is constructed from these system properties values.
+ * <p>These system properties are read only at the Java runtime startup. Altering their
+ * values later with {@link System#setProperties(Properties)}/
+ * {@link System#setProperty(String, String)} will have no effect on the established
+ * default locale.
+ * <p>Once the default locale is established, applications can query the default
+ * locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}
+ * methods. If the default locale is changed with the setter method, the system
+ * properties that established the default locale won't be altered. Thus, it is not
+ * recommended that applications read those system properties and parse/interpret
+ * them by themselves as their values may be out of sync.
  *
  * <p>There are also finer-grained default locales specific for each
  * {@link Locale.Category}. These category specific default locales can also be
