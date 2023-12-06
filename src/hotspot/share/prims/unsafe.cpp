@@ -83,7 +83,7 @@
 // to unsafe functions, if we have such async exception conditions,
 // and return immediately if that is the case.
 //
-// We also use NoSafepointVerifier to block potential safepoints.
+// We can't have safepoints in this code.
 // It would be problematic if an async exception handshake were installed later on
 // during another safepoint in the function, but before the memory access happens,
 // as the memory will be freed after the handshake is installed. We must notice
@@ -97,8 +97,7 @@
 // that is about to be freed. (i.e. there can be no UNSAFE_LEAF_SCOPED)
 #define UNSAFE_ENTRY_SCOPED(result_type, header) \
   JVM_ENTRY(static result_type, header) \
-  if (thread->has_async_exception_condition()) {return (result_type)0;} \
-  NoSafepointVerifier nsv;
+  if (thread->has_async_exception_condition()) {return (result_type)0;}
 
 #define UNSAFE_END JVM_END
 

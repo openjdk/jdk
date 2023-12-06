@@ -42,9 +42,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /*
@@ -240,16 +238,8 @@ public class Versions {
 
     protected void check(String major, List<String> args) {
         printargs("check", args);
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
 
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         boolean creturn = compile("Base.java", jcargs);
         if (!creturn) {
@@ -262,6 +252,25 @@ public class Versions {
         } else if (!checkClassFileVersion("Base.class", major)) {
             failedCases++;
         }
+    }
+
+    /**
+     * Create a list of options suitable for use with {@link JavaCompiler}
+     * @param args a list of space-delimited options, such as "-source 11"
+     * @return a list of arguments suitable for use with {@link JavaCompiler}
+     */
+    private static List<String> javaCompilerOptions(List<String> args) {
+        List<String> jcargs = new ArrayList<>();
+        jcargs.add("-Xlint:-options");
+
+        // add in args conforming to List requirements of JavaCompiler
+        for (String onearg : args) {
+            String[] fields = onearg.split(" ");
+            for (String onefield : fields) {
+                jcargs.add(onefield);
+            }
+        }
+        return jcargs;
     }
 
     /**
@@ -311,7 +320,7 @@ public class Versions {
             """),
 
          SOURCE_14(14, "New14.java",
-             // New feature in 14: text blocks
+             // New feature in 14: switch expressions
              """
              public class New14 {
                  static {
@@ -427,16 +436,7 @@ public class Versions {
     protected void pass(List<String> args) {
         printargs("pass", args);
 
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
-
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         // empty list is error
         if (jcargs.isEmpty()) {
@@ -464,16 +464,7 @@ public class Versions {
     protected void fail(List<String> args) {
         printargs("fail", args);
 
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
-
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         // empty list is error
         if (jcargs.isEmpty()) {
