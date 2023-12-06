@@ -178,7 +178,7 @@ static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
 
-#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.Main"
+#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.SourceLauncher"
 
 /*
  * This reports error.  VM will not be created and no usage is printed.
