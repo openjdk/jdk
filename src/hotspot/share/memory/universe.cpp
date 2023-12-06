@@ -68,6 +68,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -780,6 +781,9 @@ jint universe_init() {
   initialize_global_behaviours();
 
   GCLogPrecious::initialize();
+
+  // Initialize CPUTimeCounters object, which must be done before creation of the heap.
+  CPUTimeCounters::initialize();
 
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();

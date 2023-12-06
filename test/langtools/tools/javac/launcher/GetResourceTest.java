@@ -40,7 +40,7 @@ import toolbox.Task;
 import toolbox.ToolBox;
 
 /*
- * The body of this test is in ${test.src}/src/CLTest.java,
+ * The body of this test is in ${test.src}/src/p/q/CLTest.java,
  * which is executed in single-file source-launcher mode,
  * in order to test the classloader used to launch such programs.
  */
@@ -52,7 +52,7 @@ public class GetResourceTest {
 
     void run() throws Exception {
         ToolBox tb = new ToolBox();
-        Path file = Paths.get(tb.testSrc).resolve("src").resolve("CLTest.java");
+        Path file = Paths.get(tb.testSrc).resolve("src/p/q").resolve("CLTest.java");
         new JavaTask(tb)
             .vmOptions("--enable-preview", "--source", String.valueOf(Runtime.version().feature()))
             .className(file.toString()) // implies source file mode
