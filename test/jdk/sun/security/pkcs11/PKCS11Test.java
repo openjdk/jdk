@@ -46,7 +46,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -258,30 +257,19 @@ public abstract class PKCS11Test {
 
     static Path getNSSLibPath(String library) throws Exception {
         String osid = getOsId();
-        String[] nssLibDirs = getNssLibPaths(osid);
-        if (nssLibDirs == null) {
-            System.out.println("Warning: unsupported OS: " + osid
+        String nssLibDir = fetchNssLib(osid);
+        if (nssLibDir == null) {
+            throw new SkippedException("Warning: unsupported OS: " + osid
                     + ", please initialize NSS library location, skipping test");
-            return null;
-        }
-        if (nssLibDirs.length == 0) {
-            System.out.println("Warning: NSS not supported on this platform, skipping test");
-            return null;
         }
 
-        Path nssLibPath = null;
-        for (String dir : nssLibDirs) {
-            Path libPath = Paths.get(dir).resolve(System.mapLibraryName(library));
-            if (Files.exists(libPath)) {
-                nssLibPath = libPath;
-                break;
-            }
+        String libraryName = System.mapLibraryName(library);
+        Path libPath = Paths.get(nssLibDir).resolve(libraryName);
+        if (!Files.exists(libPath)) {
+            throw new SkippedException("NSS library \"" + libraryName + "\" was not found in " + nssLibDir);
         }
-        if (nssLibPath == null) {
-            System.out.println("Warning: can't find NSS library on this machine, skipping test");
-            return null;
-        }
-        return nssLibPath;
+
+        return libPath;
     }
 
     private static String getOsId() {
@@ -605,73 +593,6 @@ public abstract class PKCS11Test {
         return parameters.getParameterSpec(ECParameterSpec.class);
     }
 
-    // Location of the NSS libraries on each supported platform
-    private static Map<String, String[]> getOsMap() {
-        if (osMap != null) {
-            return osMap;
-        }
-
-        osMap = new HashMap<>();
-        osMap.put("Linux-i386-32", new String[]{
-                "/usr/lib/i386-linux-gnu/",
-                "/usr/lib32/",
-                "/usr/lib/"});
-        osMap.put("Linux-amd64-64", new String[]{
-                "/usr/lib/x86_64-linux-gnu/",
-                "/usr/lib/x86_64-linux-gnu/nss/",
-                "/usr/lib64/"});
-        osMap.put("Linux-ppc64-64", new String[]{"/usr/lib64/"});
-        osMap.put("Linux-ppc64le-64", new String[]{
-                 "/usr/lib/powerpc64le-linux-gnu/",
-                 "/usr/lib/powerpc64le-linux-gnu/nss/",
-                 "/usr/lib64/"});
-        osMap.put("Linux-s390x-64", new String[]{"/usr/lib64/"});
-        osMap.put("Windows-x86-32", new String[]{});
-        osMap.put("Windows-amd64-64", new String[]{});
-        osMap.put("MacOSX-x86_64-64", new String[]{});
-        osMap.put("Linux-arm-32", new String[]{
-                "/usr/lib/arm-linux-gnueabi/nss/",
-                "/usr/lib/arm-linux-gnueabihf/nss/"});
-        osMap.put("Linux-aarch64-64", new String[] {
-                "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/",
-                "/usr/lib64/" });
-        return osMap;
-    }
-
-    private static String[] getNssLibPaths(String osId) {
-        String[] preferablePaths = getPreferableNssLibPaths(osId);
-        if (preferablePaths.length != 0) {
-            return preferablePaths;
-        } else {
-            return getOsMap().get(osId);
-        }
-    }
-
-    private static String[] getPreferableNssLibPaths(String osId) {
-        List<String> nssLibPaths = new ArrayList<>();
-
-        String customNssLibPaths = System.getProperty("test.nss.lib.paths");
-        if (customNssLibPaths == null) {
-            // If custom local NSS lib path is not provided,
-            // try to download NSS libs from artifactory
-            String path = fetchNssLib(osId);
-            if (path != null) {
-                nssLibPaths.add(path);
-            }
-        } else {
-            String[] paths = customNssLibPaths.split(",");
-            for (String path : paths) {
-                if (!path.endsWith(File.separator)) {
-                    nssLibPaths.add(path + File.separator);
-                } else {
-                    nssLibPaths.add(path);
-                }
-            }
-        }
-
-        return nssLibPaths.toArray(new String[0]);
-    }
 
     public static String toString(byte[] b) {
         if (b == null) {

@@ -32,19 +32,19 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 
 /* Create an invalid classfile with version 51.0 and a non-abstract method in an interface.*/
 @SupportedAnnotationTypes("*")
 public class CreateBadClassFile extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (++round == 1) {
-            byte[] bytes = Classfile.of().build(ClassDesc.of("Test"), classBuilder -> {
+            byte[] bytes = ClassFile.of().build(ClassDesc.of("Test"), classBuilder -> {
                 classBuilder.withVersion(51, 0);
                 classBuilder.withFlags(AccessFlag.ABSTRACT ,
                                           AccessFlag.INTERFACE ,
                                           AccessFlag.PUBLIC);
-                classBuilder.withMethod("test", MethodTypeDesc.of(ConstantDescs.CD_void), Classfile.ACC_PUBLIC, methodBuilder -> {
+                classBuilder.withMethod("test", MethodTypeDesc.of(ConstantDescs.CD_void), ClassFile.ACC_PUBLIC, methodBuilder -> {
                     methodBuilder.withFlags(AccessFlag.PUBLIC);});
                 });
             try {

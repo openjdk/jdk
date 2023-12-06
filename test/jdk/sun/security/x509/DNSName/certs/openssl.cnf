@@ -1,0 +1,40 @@
+#
+# OpenSSL configuration file.
+#
+
+[ withLeadingPeriod ]
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+basicConstraints        = critical,CA:true
+keyUsage                = critical,keyCertSign
+nameConstraints         = critical,permitted;DNS:.example.com
+
+[ withoutLeadingPeriod ]
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+basicConstraints        = critical,CA:true
+keyUsage                = critical,keyCertSign
+nameConstraints         = critical,permitted;DNS:example.com
+
+[ v3_ca ]
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+basicConstraints        = critical,CA:true
+keyUsage                = critical,keyCertSign
+
+
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions		 = v3_ca  # The extentions to add to self signed certs
+req_extensions		 = v3_req # The extensions to add to req's
+
+prompt = no
+
+[req_distinguished_name]
+C = US
+O = Example
+CN = example.com
+
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth

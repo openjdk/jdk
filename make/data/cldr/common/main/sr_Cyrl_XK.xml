@@ -24,7 +24,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nqo" draft="contributed">н’ко</language>
 			<language type="shi" draft="contributed">јужни шилха</language>
 			<language type="si" draft="contributed">синхалски</language>
-			<language type="tzm" draft="contributed">централноатласки тамашек</language>
 			<language type="xh" draft="contributed">исикоса</language>
 			<language type="zgh" draft="contributed">стандардни марокански тамашек</language>
 			<language type="zu" draft="contributed">исизулу</language>
@@ -57,22 +56,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">јан</month>
-							<month type="2">феб</month>
-							<month type="3" draft="contributed">март</month>
-							<month type="4">апр</month>
-							<month type="5" draft="contributed">мај</month>
-							<month type="6" draft="contributed">јун</month>
-							<month type="7" draft="contributed">јул</month>
-							<month type="8">авг</month>
-							<month type="9">септ</month>
-							<month type="10">окт</month>
-							<month type="11">нов</month>
-							<month type="12">дец</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1">јан</month>
 							<month type="2">феб</month>

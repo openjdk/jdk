@@ -34,7 +34,6 @@
 
 size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
 
-#ifdef ASSERT
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
@@ -46,7 +45,6 @@ void VirtualMemory::update_peak(size_t size) {
     }
   }
 }
-#endif // ASSERT
 
 void VirtualMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");

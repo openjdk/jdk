@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.security.pkcs10;
 
 import java.io.PrintStream;
@@ -174,7 +173,7 @@ public class PKCS10 {
                 throw new SignatureException("Invalid PKCS #10 signature");
             }
         } catch (InvalidKeyException e) {
-            throw new SignatureException("Invalid key");
+            throw new SignatureException("Invalid key", e);
         } catch (InvalidAlgorithmParameterException e) {
             throw new SignatureException("Invalid signature parameters", e);
         } catch (ProviderException e) {

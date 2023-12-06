@@ -95,10 +95,10 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *                       .awaitAndCheck();
  *     }
  *
- *     private static List<Window> createTestUI() {
+ *     private static Window createTestUI() {
  *         JFrame testUI = new JFrame("Test UI");
  *         testUI.setSize(250, 150);
- *         return List.of(testUI);
+ *         return testUI;
  *     }
  * }
  * }</pre>
@@ -109,6 +109,10 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * The framework will create instruction UI, it will call
  * the provided {@code createTestUI} on the Event Dispatch Thread (EDT),
  * and it will automatically position the test UI and make it visible.
+ * <p>
+ * The {@code Builder.testUI} methods accept interfaces which create one window
+ * or a list of windows if the test needs multiple windows,
+ * or directly a single window, an array of windows or a list of windows.
  * <p>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
@@ -146,7 +150,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     <li>to enable screenshots.</li>
  * </ul>
  */
-public class PassFailJFrame {
+public final class PassFailJFrame {
 
     private static final String TITLE = "Test Instruction Frame";
     private static final long TEST_TIMEOUT = 5;
@@ -277,12 +281,18 @@ public class PassFailJFrame {
         this(builder.title, builder.instructions, builder.testTimeOut,
              builder.rows, builder.columns, builder.screenCapture);
 
-        if (builder.windowCreator != null) {
+        if (builder.windowListCreator != null) {
             invokeOnEDT(() ->
-                    builder.testWindows = builder.windowCreator.createTestUI());
+                    builder.testWindows = builder.windowListCreator.createTestUI());
+            if (builder.testWindows == null) {
+                throw new IllegalStateException("Window list creator returned null list");
+            }
         }
 
         if (builder.testWindows != null) {
+            if (builder.testWindows.isEmpty()) {
+                throw new IllegalStateException("Window list is empty");
+            }
             addTestWindow(builder.testWindows);
             builder.testWindows
                    .forEach(w -> w.addWindowListener(windowClosingHandler));
@@ -293,17 +303,15 @@ public class PassFailJFrame {
                     builder.positionWindows
                            .positionTestWindows(unmodifiableList(builder.testWindows),
                                                 builder.instructionUIHandler);
-
-                    windowList.forEach(w -> w.setVisible(true));
                 });
             } else if (builder.testWindows.size() == 1) {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
-                window.setVisible(true);
             } else {
                 positionTestWindow(null, builder.position);
             }
         }
+        showAllWindows();
     }
 
     /**
@@ -369,7 +377,7 @@ public class PassFailJFrame {
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
         frame.setLocationRelativeTo(null);
-        windowList.add(frame);
+        addTestWindow(frame);
     }
 
     private static JTextComponent configurePlainText(String instructions,
@@ -400,14 +408,27 @@ public class PassFailJFrame {
 
 
     /**
-     * Creates one or more windows for test UI.
+     * Creates a test UI window.
      */
     @FunctionalInterface
     public interface WindowCreator {
         /**
+         * Creates a window for test UI.
+         * This method is called by the framework on the EDT.
+         * @return a test UI window
+         */
+        Window createTestUI();
+    }
+
+    /**
+     * Creates a list of test UI windows.
+     */
+    @FunctionalInterface
+    public interface WindowListCreator {
+        /**
          * Creates one or more windows for test UI.
          * This method is called by the framework on the EDT.
-         * @return a list of windows.
+         * @return a list of test UI windows
          */
         List<? extends Window> createTestUI();
     }
@@ -423,8 +444,13 @@ public class PassFailJFrame {
          * the instruction UI frame was positioned on the screen.
          * <p>
          * The list of the test windows contains the windows
-         * that were passed to the framework via
-         * {@link Builder#testUI(WindowCreator) testUI} method.
+         * that were passed to the framework via the
+         * {@link Builder#testUI(Window...) testUI(Window...)} method or
+         * that were created with {@code WindowCreator}
+         * or {@code WindowListCreator} which were passed via
+         * {@link Builder#testUI(WindowCreator) testUI(WindowCreator)} or
+         * {@link Builder#testUI(WindowListCreator) testUI(WindowListCreator)}
+         * correspondingly.
          *
          * @param testWindows the list of test windows
          * @param instructionUI information about the instruction frame
@@ -860,6 +886,29 @@ public class PassFailJFrame {
     }
 
     /**
+     * Displays all the windows in {@code windowList}.
+     *
+     * @throws InterruptedException if the thread is interrupted while
+     *              waiting for the event dispatch thread to finish running
+     *              the {@link #showUI() showUI}
+     * @throws InvocationTargetException if an exception is thrown while
+     *              the event dispatch thread executes {@code showUI}
+     */
+    private static void showAllWindows()
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(PassFailJFrame::showUI);
+    }
+
+    /**
+     * Displays all the windows in {@code windowList}; it has to be called on
+     * the EDT &mdash; use {@link #showAllWindows() showAllWindows} to ensure it.
+     */
+    private static synchronized void showUI() {
+        windowList.forEach(w -> w.setVisible(true));
+    }
+
+
+    /**
      * Forcibly pass the test.
      * <p>The sample usage:
      * <pre><code>
@@ -900,7 +949,7 @@ public class PassFailJFrame {
         private boolean screenCapture;
 
         private List<? extends Window> testWindows;
-        private WindowCreator windowCreator;
+        private WindowListCreator windowListCreator;
         private PositionWindows positionWindows;
         private InstructionUI instructionUIHandler;
 
@@ -936,39 +985,109 @@ public class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Adds a {@code WindowCreator} which the framework will use
+         * to create the test UI window.
+         *
+         * @param windowCreator a {@code WindowCreator}
+         *              to create the test UI window
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windowCreator} is {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(WindowCreator windowCreator) {
+            if (windowCreator == null) {
+                throw new IllegalArgumentException("The window creator can't be null");
+            }
+
+            checkWindowsLists();
+
+            this.windowListCreator = () -> List.of(windowCreator.createTestUI());
+            return this;
+        }
+
+        /**
+         * Adds a {@code WindowListCreator} which the framework will use
+         * to create a list of test UI windows.
+         *
+         * @param windowListCreator a {@code WindowListCreator}
+         *              to create test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windowListCreator} is {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(WindowListCreator windowListCreator) {
+            if (windowListCreator == null) {
+                throw new IllegalArgumentException("The window list creator can't be null");
+            }
+
+            checkWindowsLists();
+
+            this.windowListCreator = windowListCreator;
+            return this;
+        }
+
+        /**
+         * Adds an already created test UI window.
+         * The window is positioned and shown automatically.
+         *
+         * @param window a test UI window
+         * @return this builder
+         */
         public Builder testUI(Window window) {
             return testUI(List.of(window));
         }
 
+        /**
+         * Adds an array of already created test UI windows.
+         *
+         * @param windows an array of test UI windows
+         * @return this builder
+         */
         public Builder testUI(Window... windows) {
             return testUI(List.of(windows));
         }
 
-        public Builder testUI(List<Window> windows) {
+        /**
+         * Adds a list of already created test UI windows.
+         *
+         * @param windows a list of test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if {@code windows} is {@code null}
+         *              or the list contains {@code null}
+         * @throws IllegalStateException if a window creator
+         *              or a list of test windows is already set
+         */
+        public Builder testUI(List<? extends Window> windows) {
             if (windows == null) {
                 throw new IllegalArgumentException("The list of windows can't be null");
             }
             if (windows.stream()
                        .anyMatch(Objects::isNull)) {
-                throw new IllegalArgumentException("The windows list can't contain null");
+                throw new IllegalArgumentException("The list of windows can't contain null");
             }
 
-            if (windowCreator != null) {
-                throw new IllegalStateException("windowCreator is already set");
-            }
+            checkWindowsLists();
+
             this.testWindows = windows;
             return this;
         }
 
-        public Builder testUI(WindowCreator windowCreator) {
-            if (windowCreator == null) {
-                throw new IllegalArgumentException("The window creator can't be null");
+        /**
+         * Verifies the state of window list and window creator.
+         *
+         * @throws IllegalStateException if a windows list creator
+         *              or a list of test windows is already set
+         */
+        private void checkWindowsLists() {
+            if (windowListCreator != null) {
+                throw new IllegalStateException("Window list creator is already set");
             }
             if (testWindows != null) {
-                throw new IllegalStateException("testWindows are already set");
+                throw new IllegalStateException("The list of test windows is already set");
             }
-            this.windowCreator = windowCreator;
-            return this;
         }
 
         public Builder positionTestUI(PositionWindows positionWindows) {
@@ -1010,13 +1129,13 @@ public class PassFailJFrame {
             }
 
             if (position == null
-                && (testWindows != null || windowCreator != null)) {
+                && (testWindows != null || windowListCreator != null)) {
 
                 position = Position.HORIZONTAL;
             }
 
             if (positionWindows != null) {
-                if (testWindows == null && windowCreator == null) {
+                if (testWindows == null && windowListCreator == null) {
                     throw new IllegalStateException("To position windows, "
                             + "provide an a list of windows to the builder");
                 }

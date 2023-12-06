@@ -120,7 +120,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Enqueue the card of p into the (evacuation failed) region.
   template <class T> void enqueue_card_into_evac_fail_region(T* p, oop obj);
 
-  bool inject_evacuation_failure(uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+  bool inject_allocation_failure(uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
@@ -231,7 +231,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);

@@ -30,13 +30,14 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
 import javax.xml.crypto.NodeSetData;
 
-import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
-import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
+import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.Node;
 
 public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
 
@@ -46,6 +47,7 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
         this.xi = xi;
     }
 
+    @Override
     public Iterator<Node> iterator() {
         // If nodefilters are set, must execute them first to create node-set
         try {
@@ -61,6 +63,7 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
         }
     }
 
+    @Override
     public XMLSignatureInput getXMLSignatureInput() {
         return xi;
     }

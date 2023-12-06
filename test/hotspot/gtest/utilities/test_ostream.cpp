@@ -93,24 +93,6 @@ TEST_VM(ostream, stringStream_static) {
   ASSERT_EQ(*canary_at, 'X'); // canary
 }
 
-TEST_VM(ostream, bufferedStream_static) {
-  char buf[100 + 1];
-  char* canary_at = buf + sizeof(buf) - 1;
-  *canary_at = 'X';
-  size_t stream_buf_size = sizeof(buf) - 1;
-  bufferedStream bs(buf, stream_buf_size);
-  size_t written = 0;
-  for (int i = 0; i < 100; i ++) {
-    written += print_lorem(&bs);
-    if (written < stream_buf_size) {
-      ASSERT_EQ(bs.size(), written);
-    } else {
-      ASSERT_EQ(bs.size(), stream_buf_size - 1);
-    }
-  }
-  ASSERT_EQ(*canary_at, 'X'); // canary
-}
-
 TEST_VM(ostream, bufferedStream_dynamic_small) {
   bufferedStream bs(1); // small to excercise realloc.
   size_t written = 0;

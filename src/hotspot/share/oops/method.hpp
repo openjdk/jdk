@@ -308,6 +308,9 @@ class Method : public Metadata {
     return _method_data;
   }
 
+  // mark an exception handler as entered (used to prune dead catch blocks in C2)
+  void set_exception_handler_entered(int handler_bci);
+
   MethodCounters* method_counters() const {
     return _method_counters;
   }
@@ -715,6 +718,7 @@ public:
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
+  void clear_jmethod_id();
   static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist

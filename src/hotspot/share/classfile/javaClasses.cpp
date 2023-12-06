@@ -802,9 +802,7 @@ GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = nullptr;
 inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
   assert(fd->has_initial_value(), "caller should have checked this");
   assert(fd->field_type() == T_OBJECT, "caller should have checked this");
-  // Can't use vmSymbols::string_signature() as fd->signature() may have been relocated
-  // during DumpSharedSpaces
-  assert(fd->signature()->equals("Ljava/lang/String;"), "just checking");
+  assert(fd->signature() == vmSymbols::string_signature(), "just checking");
 }
 #endif
 
@@ -2453,7 +2451,7 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       BacktraceElement bte = iter.next(THREAD);
       print_stack_element_to_stream(st, bte._mirror, bte._method_id, bte._version, bte._bci, bte._name);
     }
-    {
+    if (THREAD->can_call_java()) {
       // Call getCause() which doesn't necessarily return the _cause field.
       ExceptionMark em(THREAD);
       JavaValue cause(T_OBJECT);
@@ -2475,6 +2473,9 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
           st->cr();
         }
       }
+    } else {
+      st->print_raw_cr("<<cannot call Java to get cause>>");
+      return;
     }
   }
 }
