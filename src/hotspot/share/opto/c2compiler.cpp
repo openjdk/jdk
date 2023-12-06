@@ -214,24 +214,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   return C2Compiler::is_intrinsic_supported(id);
 }
 
-bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id, BasicType bt) {
-  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-
-  if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
-    return false;
-  }
-
-  switch (id) {
-  case vmIntrinsics::_arraySort:
-  case vmIntrinsics::_arrayPartition:
-    if (!Matcher::supports_simd_sort(bt)) return false;
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
 bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 

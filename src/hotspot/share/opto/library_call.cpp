@@ -293,8 +293,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySort:                return inline_array_sort(intrinsic_id());
-  case vmIntrinsics::_arrayPartition:           return inline_array_partition(intrinsic_id());
+  case vmIntrinsics::_arraySort:                return inline_array_sort();
+  case vmIntrinsics::_arrayPartition:           return inline_array_partition();
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5367,7 +5367,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 }
 
 //------------------------------inline_array_partition-----------------------
-bool LibraryCallKit::inline_array_partition(vmIntrinsics::ID id) {
+bool LibraryCallKit::inline_array_partition() {
 
   Node* elementType     = null_check(argument(0));
   Node* obj             = argument(1);
@@ -5388,7 +5388,7 @@ bool LibraryCallKit::inline_array_partition(vmIntrinsics::ID id) {
     ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
     BasicType bt = elem_type->basic_type();
     // Disable the intrinsic if the CPU does not support SIMD sort
-    if (!C2Compiler::is_intrinsic_supported(id, bt)) {
+    if (!Matcher::supports_simd_sort(bt)) {
       return false;
     }
     address stubAddr = nullptr;
@@ -5433,7 +5433,7 @@ bool LibraryCallKit::inline_array_partition(vmIntrinsics::ID id) {
 
 
 //------------------------------inline_array_sort-----------------------
-bool LibraryCallKit::inline_array_sort(vmIntrinsics::ID id) {
+bool LibraryCallKit::inline_array_sort() {
 
   Node* elementType     = null_check(argument(0));
   Node* obj             = argument(1);
@@ -5445,7 +5445,7 @@ bool LibraryCallKit::inline_array_sort(vmIntrinsics::ID id) {
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
   // Disable the intrinsic if the CPU does not support SIMD sort
-  if (!C2Compiler::is_intrinsic_supported(id, bt)) {
+  if (!Matcher::supports_simd_sort(bt)) {
     return false;
   }
   address stubAddr = nullptr;
