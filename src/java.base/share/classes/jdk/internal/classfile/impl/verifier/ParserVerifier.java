@@ -32,16 +32,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributedElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributedElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFileElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
@@ -158,7 +158,7 @@ public record ParserVerifier(ClassModel classModel) {
         }
     }
 
-    private void verifyAttributes(ClassfileElement cfe, List<VerifyError> errors) {
+    private void verifyAttributes(ClassFileElement cfe, List<VerifyError> errors) {
         if (cfe instanceof AttributedElement ae) {
             var attrNames = new HashSet<String>();
             for (var a : ae.attributes()) {

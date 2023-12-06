@@ -144,7 +144,7 @@ class VerifierSelfTest {
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {})
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {});
         }));
-        var found = clm.verify(null).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
+        var found = cc.verify(clm).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
         var expected = STR."""
                 Invalid class name: invalid.class.name at constant pool index \{ indexes[0] } in class ParserVerificationTestClass
                 Bad method descriptor: invalid method type at constant pool index \{ indexes[1] } in class ParserVerificationTestClass
