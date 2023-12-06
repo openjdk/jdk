@@ -193,7 +193,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value){
-        checkAccess(0, length, ON_WRITE_UOE);
+        checkAccess(0, length, ON_WRITE_IAE);
         SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
@@ -360,7 +360,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     public enum AccessConstraint {
-        READ_ONLY, ON_WRITE_UOE, ON_WRITE_IAE
+        NONE, ON_WRITE_UOE, ON_WRITE_IAE
     }
 
     @ForceInline
@@ -618,7 +618,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
         long size = elementCount * srcElementLayout.byteSize();
-        srcImpl.checkAccess(srcOffset, size, READ_ONLY);
+        srcImpl.checkAccess(srcOffset, size, NONE);
         dstImpl.checkAccess(dstOffset, size, ON_WRITE_IAE);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
@@ -645,7 +645,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
             throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
         }
-        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), READ_ONLY);
+        srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), NONE);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstInfo.scale() == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), null,
@@ -691,8 +691,8 @@ public abstract sealed class AbstractMemorySegmentImpl
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment);
         long srcBytes = srcToOffset - srcFromOffset;
         long dstBytes = dstToOffset - dstFromOffset;
-        srcImpl.checkAccess(srcFromOffset, srcBytes, READ_ONLY);
-        dstImpl.checkAccess(dstFromOffset, dstBytes, READ_ONLY);
+        srcImpl.checkAccess(srcFromOffset, srcBytes, NONE);
+        dstImpl.checkAccess(dstFromOffset, dstBytes, NONE);
         if (dstImpl == srcImpl) {
             srcImpl.checkValidState();
             return -1;
