@@ -39,7 +39,7 @@ inline bool G1YoungGCAllocationFailureInjector::allocation_should_fail(size_t& c
   if (!_allocation_failure_regions.at(region_idx)) {
     return false;
   }
-  if (++counter < G1AllocationFailureALotCount) {
+  if (++counter < G1GCAllocationFailureALotCount) {
     return false;
   }
   counter = 0;

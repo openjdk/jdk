@@ -46,9 +46,9 @@ public class TestAllocationFailure {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
                                                                              "-Xmx32M",
                                                                              "-Xmn16M",
-                                                                             "-XX:+G1AllocationFailureALot",
-                                                                             "-XX:G1AllocationFailureALotCount=100",
-                                                                             "-XX:G1AllocationFailureALotInterval=1",
+                                                                             "-XX:+G1GCAllocationFailureALot",
+                                                                             "-XX:G1GCAllocationFailureALotCount=100",
+                                                                             "-XX:G1GCAllocationFailureALotInterval=1",
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-Xlog:gc",
                                                                              GCTestWithAllocationFailure.class.getName());
@@ -62,14 +62,14 @@ public class TestAllocationFailure {
     static class GCTestWithAllocationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
-        private static Object[] holder = new Object[200]; // Must be larger than G1AllocationFailureALotCount
+        private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
         public static void main(String [] args) {
             largeObject = new byte[16 * 1024 * 1024];
             System.out.println("Creating garbage");
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
-            // which is larger than G1AllocationFailureALotInterval.
+            // which is larger than G1GCAllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
                 holder[i % holder.length] = new byte[1024];
             }

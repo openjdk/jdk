@@ -47,38 +47,38 @@
                                        range,                               \
                                        constraint)                          \
                                                                             \
-  product(bool, G1AllocationFailureALot, false,                             \
-          "Force use of evacuation failure handling during certain "        \
-          "evacuation pauses")                                              \
+  product(bool, G1GCAllocationFailureALot, false,                           \
+          "Force execution of evacuation failure handling by inducing "     \
+          "allocation failures during certain young collection pauses")     \
                                                                             \
-  product(uintx, G1AllocationFailureALotCount, 1000,                        \
-          "Number of successful evacuations between evacuation failures "   \
-          "occurring at object copying per thread")                         \
+  product(uintx, G1GCAllocationFailureALotCount, 1000,                      \
+          "Number of successful evacuations between induced allocation "    \
+          "failures occurring at object copying per thread")                \
                                                                             \
-  product(uintx, G1AllocationFailureALotInterval, 5,                        \
+  product(uintx, G1GCAllocationFailureALotInterval, 5,                      \
           "Total collections between forced triggering of evacuation "      \
           "failures")                                                       \
                                                                             \
-  product(bool, G1AllocationFailureALotDuringConcMark, true,                \
-          "Force use of evacuation failure handling during evacuation "     \
-          "pauses when marking is in progress")                             \
+  product(bool, G1GCAllocationFailureALotDuringConcMark, true,              \
+          "Trigger evacuation failure handling in collection pauses where " \
+          "marking is in progress")                                         \
                                                                             \
-  product(bool, G1AllocationFailureALotDuringConcurrentStart, true,         \
-          "Force use of evacuation failure handling during concurrent "     \
-          "start evacuation pauses")                                        \
+  product(bool, G1GCAllocationFailureALotDuringConcurrentStart, true,       \
+          "Trigger evacuation failure handling during concurrent start "    \
+          "collection pauses")                                              \
                                                                             \
-  product(bool, G1AllocationFailureALotDuringYoungGC, true,                 \
-          "Force use of evacuation failure handling during young "          \
-          "evacuation pauses")                                              \
+  product(bool, G1GCAllocationFailureALotDuringYoungGC, true,               \
+          "Trigger evacuation failure handling during young collection "    \
+          "pauses")                                                         \
                                                                             \
-  product(bool, G1AllocationFailureALotDuringMixedGC, true,                 \
+  product(bool, G1GCAllocationFailureALotDuringMixedGC, true,               \
           "Force use of evacuation failure handling during mixed "          \
-          "evacuation pauses")                                              \
+          "collection pauses")                                              \
                                                                             \
-  product(uint, G1AllocationFailureALotCSetPercent, 100,                    \
+  product(uint, G1GCAllocationFailureALotCSetPercent, 100,                  \
           "The percentage of regions in the collection set starting "       \
-          "from the beginning where the forced evacuation failure "         \
-          "injection will be applied.")                                     \
+          "from the beginning where the allocation failures are "           \
+          "injected.")                                                      \
           range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \

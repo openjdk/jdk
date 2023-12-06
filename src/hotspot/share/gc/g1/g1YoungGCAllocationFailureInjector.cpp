@@ -37,7 +37,7 @@ class SelectAllocationFailureRegionClosure : public HeapRegionClosure {
 public:
   SelectAllocationFailureRegionClosure(CHeapBitMap& allocation_failure_regions, size_t cset_length) :
     _allocation_failure_regions(allocation_failure_regions),
-    _allocation_failure_regions_num(cset_length * G1AllocationFailureALotCSetPercent / 100) { }
+    _allocation_failure_regions_num(cset_length * G1GCAllocationFailureALotCSetPercent / 100) { }
 
   bool do_heap_region(HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
@@ -66,28 +66,28 @@ bool G1YoungGCAllocationFailureInjector::arm_if_needed_for_gc_type(bool for_youn
                                                                    bool mark_or_rebuild_in_progress) {
   bool res = false;
   if (mark_or_rebuild_in_progress) {
-    res |= G1AllocationFailureALotDuringConcMark;
+    res |= G1GCAllocationFailureALotDuringConcMark;
   }
   if (during_concurrent_start) {
-    res |= G1AllocationFailureALotDuringConcurrentStart;
+    res |= G1GCAllocationFailureALotDuringConcurrentStart;
   }
   if (for_young_only_phase) {
-    res |= G1AllocationFailureALotDuringYoungGC;
+    res |= G1GCAllocationFailureALotDuringYoungGC;
   } else {
     // GCs are mixed
-    res |= G1AllocationFailureALotDuringMixedGC;
+    res |= G1GCAllocationFailureALotDuringMixedGC;
   }
   return res;
 }
 
 void G1YoungGCAllocationFailureInjector::arm_if_needed() {
-  if (G1AllocationFailureALot) {
+  if (G1GCAllocationFailureALot) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     // Check if we have gone over the interval.
     const size_t gc_num = g1h->total_collections();
     const size_t elapsed_gcs = gc_num - _last_collection_with_allocation_failure;
 
-    _inject_allocation_failure_for_current_gc = (elapsed_gcs >= G1AllocationFailureALotInterval);
+    _inject_allocation_failure_for_current_gc = (elapsed_gcs >= G1GCAllocationFailureALotInterval);
 
     // Now check if evacuation failure injection should be enabled for the current GC.
     G1CollectorState* collector_state = g1h->collector_state();

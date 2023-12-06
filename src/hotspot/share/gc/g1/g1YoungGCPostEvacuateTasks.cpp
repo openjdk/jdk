@@ -83,7 +83,7 @@ public:
   void do_work(uint worker_id) override {
     G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed);
     if (_allocation_failed) {
-      // Reset the G1AllocationFailureALot counters and flags
+      // Reset the G1GCAllocationFailureALot counters and flags
       G1CollectedHeap::heap()->allocation_failure_injector()->reset();
     }
   }

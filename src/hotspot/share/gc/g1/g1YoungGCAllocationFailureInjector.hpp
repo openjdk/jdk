@@ -39,12 +39,12 @@
 #define ALLOCATION_FAILURE_INJECTOR_ONLY(code)
 #endif // ALLOCATION_FAILURE_INJECTOR
 
-// Support for injecting allocation failures based on the G1AllocationFailureALot*
+// Support for injecting allocation failures based on the G1GCAllocationFailureALot*
 // flags. Analogous to PromotionFailureALot for the other collectors.
 //
-// Every G1AllocationFailureALotInterval collections without evacuation failure
+// Every G1GCAllocationFailureALotInterval collections without evacuation failure
 // in between we "arm" the injector to induce allocation failures after
-// G1AllocationFailureALotCount successful evacuations.
+// G1GCAllocationFailureALotCount successful evacuations.
 //
 // Available only when ALLOCATION_FAILURE_INJECTOR is defined.
 class G1YoungGCAllocationFailureInjector {
@@ -65,7 +65,7 @@ class G1YoungGCAllocationFailureInjector {
                                  bool during_concurrent_start,
                                  bool mark_or_rebuild_in_progress) ALLOCATION_FAILURE_INJECTOR_RETURN_( return false; );
 
-  // Selects the regions that will fail allocation by G1AllocationFailureALotCSetPercent.
+  // Selects the regions that will fail allocation by G1GCAllocationFailureALotCSetPercent.
   void select_allocation_failure_regions() ALLOCATION_FAILURE_INJECTOR_RETURN;
 public:
 
