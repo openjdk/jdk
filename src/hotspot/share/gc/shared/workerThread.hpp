@@ -51,7 +51,7 @@ public:
 
   const char* name() const { return _name; }
   uint gc_id() const { return _gc_id; }
-  bool caller_can_run() { return _caller_can_run; }
+  bool caller_can_run() const { return _caller_can_run; }
 
   virtual void work(uint worker_id) = 0;
 };
