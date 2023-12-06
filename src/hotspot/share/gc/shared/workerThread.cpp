@@ -90,7 +90,7 @@ void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint nu
   // No workers are allowed to read the state variables after the coordinator has been signaled.
   assert(_not_finished == 0, "%d not finished workers?", _not_finished);
   _task = nullptr;
-  _started = 0;
+  Atomic::store(&_started, 0);
 }
 
 void WorkerTaskDispatcher::caller_run_task() {
