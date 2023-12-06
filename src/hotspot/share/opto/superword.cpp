@@ -1725,7 +1725,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
   //          -----------           ------------------------                  -----------------------   ------------------
-  //   adr =  base               =  base                                   =  base                      (base mod aw = 0)
+  //   adr =  base               =  base                                   =  base                      (base % aw = 0)
   //        + offset              + offset                                  + C_const                   (sum of constant terms)
   //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
   //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
@@ -1734,7 +1734,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and hence can be assumed to already be aw-aligned (base mod aw = 0).
+  //      and hence can be assumed to already be aw-aligned (base % aw = 0).
   //   2) The "C_const" term is the sum of all constant terms. This is "offset",
   //      plus "init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
@@ -1791,21 +1791,21 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 #endif
 
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0.
-  // Since "base mod aw = 0", we only need to ensure alignment of the other 5 terms:
+  // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
   //
-  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter = 0 (modulo aw)      (1)
+  //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
   //
   // Alignment must be maintained over all main-loop iterations, i.e. for any main_iter >= 0, we require:
   //
-  //   C_main % aw = 0                                                                                                (2*)
+  //   C_main % aw = 0                                                                                           (2*)
   //
   const int C_main_mod_aw = AlignmentSolution::mod(C_main, aw);
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
-    tty->print("  EQ(1  ): C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
+    tty->print("  EQ(1  ): (C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
                   C_const, C_invar, C_init);
-    tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * main_iter = 0 (mod aw(%d))",
+    tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * main_iter) %% aw(%d) = 0",
                   C_pre, C_main, aw);
     tty->print_cr(" (given base aligned -> align rest)");
     tty->print("  EQ(2* ): C_main(%d) %% aw(%d) = scale(%d) * main_stride(%d) %% aw(%d) = %d = 0",
@@ -1827,18 +1827,18 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   // pre-loop iterations required to align the C_const, init and invar terms individually.
   // Hence, we can rewrite:
   //
-  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter
-  //   =  C_const             + C_pre * pre_iter_C_const
-  //    + C_invar * var_invar + C_pre * pre_iter_C_invar
-  //    + C_init  * var_init  + C_pre * pre_iter_C_init
-  //   = 0 (modulo aw)                                                           (3)
+  //     (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
+  //   = ( C_const             + C_pre * pre_iter_C_const
+  //     + C_invar * var_invar + C_pre * pre_iter_C_invar
+  //     + C_init  * var_init  + C_pre * pre_iter_C_init ) % aw
+  //   = 0                                                                       (3)
   //
   // We strengthen the constraints by splitting the equation into 3 equations, where the C_const,
   // init, and invar term are aligned individually:
   //
-  //   C_init  * var_init  + C_pre * pre_iter_C_init  = 0 (modulo aw)            (4a)
-  //   C_invar * var_invar + C_pre * pre_iter_C_invar = 0 (modulo aw)            (4b)
-  //   C_const             + C_pre * pre_iter_C_const = 0 (modulo aw)            (4c)
+  //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4a)
+  //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
+  //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4c)
   //
   // We can only guarantee solutions to (4a) and (4b) if:
   //
@@ -1850,13 +1850,13 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //   C_init  = C_pre * X       (X = 0 if C_init  = 0, else X = C_init  / C_pre)
   //   C_invar = C_pre * Y       (Y = 0 if C_invar = 0, else Y = C_invar / C_pre)
   //
-  //   C_init    * var_init  + C_pre * pre_iter_C_init  =
-  //   C_pre * X * var_init  + C_pre * pre_iter_C_init  =
-  //   C_pre * (X * var_init  + pre_iter_C_init)         = 0 (modulo aw)
+  //   (C_init    * var_init  + C_pre * pre_iter_C_init ) % aw =
+  //   (C_pre * X * var_init  + C_pre * pre_iter_C_init ) % aw =
+  //   (C_pre * (X * var_init  + pre_iter_C_init)       ) % aw = 0
   //
-  //   C_invar   * var_invar + C_pre * pre_iter_C_invar =
-  //   C_pre * Y * var_invar + C_pre * pre_iter_C_invar =
-  //   C_pre * (Y * var_invar + pre_iter_C_invar)       = 0 (modulo aw)
+  //   (C_invar   * var_invar + C_pre * pre_iter_C_invar) % aw =
+  //   (C_pre * Y * var_invar + C_pre * pre_iter_C_invar) % aw =
+  //   (C_pre * (Y * var_invar + pre_iter_C_invar)      ) % aw = 0
   //
   // And hence, we know that there are solutions for pre_iter_C_init and pre_iter_C_invar,
   // based on X, Y, var_init, and var_invar. We call them:
@@ -1890,8 +1890,8 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   // If abs(C_pre) >= aw, then:
   //
-  //   for any pre_iter >= 0: C_pre * pre_iter = 0 (mod aw)
-  //   for any pre_iter_C_const >= 0: C_pre * pre_iter_C_const = 0 (mod aw)
+  //   for any pre_iter >= 0:         (C_pre * pre_iter        ) % aw = 0
+  //   for any pre_iter_C_const >= 0: (C_pre * pre_iter_C_const) % aw = 0
   //
   // which implies that C_iter (and pre_iter_C_const) have no effect on the alignment of
   // the C_const term. We thus either have a trivial solution, and any pre_iter aligns
@@ -1940,12 +1940,12 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   // We can now restate (4c) with (7):
   //
-  //   C_const + C_pre * pre_r + C_pre * pre_q * m = 0 (modulo aw)                (8)
+  //   (C_const + C_pre * pre_r + C_pre * pre_q * m) % aw = 0                     (8)
   //
   // Since this holds for any m >= 0, we require:
   //
-  //   C_pre * pre_q = 0 (modulo aw)                                              (9)
-  //   C_const + C_pre * pre_r = 0 (modulo aw)                                    (10*)
+  //   (C_pre * pre_q) % aw = 0                                                   (9)
+  //   (C_const + C_pre * pre_r) % aw = 0                                         (10*)
   //
   // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
   //
@@ -1983,7 +1983,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   if (is_trace_align_vector()) {
     tty->print_cr("  Find alignment for C_const(%d), with:", C_const);
     tty->print_cr("  pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)");
-    tty->print_cr("  C_const(%d) + C_pre(%d) * pre_r + C_pre(%d) * pre_q * m = 0 (modulo aw(%d)):",
+    tty->print_cr("  (C_const(%d) + C_pre(%d) * pre_r + C_pre(%d) * pre_q * m) %% aw(%d) = 0:",
                   C_const, C_pre, C_pre, aw);
     tty->print_cr("  pre_q = aw(%d) / abs(C_pre(%d)) = %d",
                   aw, C_pre, pre_q);
