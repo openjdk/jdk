@@ -162,8 +162,8 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
 
-    const char* default_base_archive_name = Arguments::get_default_shared_archive_path();
-    const char* current_base_archive_name = Arguments::GetSharedArchivePath();
+    const char* default_base_archive_name = CDSConfig::default_archive_path();
+    const char* current_base_archive_name = CDSConfig::static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -199,7 +199,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(Arguments::GetSharedArchivePath());
+    copy_base_archive_name(CDSConfig::static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -397,23 +397,25 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
       log_warning(cds)("directory is not empty: %s", name);
       ok = false;
     }
-  } else if ((has_timestamp() && _timestamp != st.st_mtime) ||
-             _filesize != st.st_size) {
-    ok = false;
-    if (PrintSharedArchiveAndExit) {
-      log_warning(cds)(_timestamp != st.st_mtime ?
-                                 "Timestamp mismatch" :
-                                 "File size mismatch");
-    } else {
-      const char* bad_jar_msg = "A jar file is not the one used while building the shared archive file:";
-      log_warning(cds)("%s %s", bad_jar_msg, name);
-      if (!log_is_enabled(Info, cds)) {
-        log_warning(cds)("%s %s", bad_jar_msg, name);
-      }
-      if (_timestamp != st.st_mtime) {
-        log_warning(cds)("%s timestamp has changed.", name);
+  } else {
+    bool size_differs = _filesize != st.st_size;
+    bool time_differs = has_timestamp() && _timestamp != st.st_mtime;
+    if (time_differs || size_differs) {
+      ok = false;
+      if (PrintSharedArchiveAndExit) {
+        log_warning(cds)(time_differs ? "Timestamp mismatch" : "File size mismatch");
       } else {
-        log_warning(cds)("%s size has changed.", name);
+        const char* bad_file_msg = "This file is not the one used while building the shared archive file:";
+        log_warning(cds)("%s %s", bad_file_msg, name);
+        if (!log_is_enabled(Info, cds)) {
+          log_warning(cds)("%s %s", bad_file_msg, name);
+        }
+        if (time_differs) {
+          log_warning(cds)("%s timestamp has changed.", name);
+        }
+        if (size_differs) {
+          log_warning(cds)("%s size has changed.", name);
+        }
       }
     }
   }
@@ -916,7 +918,7 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
 
 bool FileMapInfo::check_module_paths() {
   const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = Arguments::num_archives(rp);
+  int num_paths = CDSConfig::num_archives(rp);
   if (num_paths != header()->num_module_paths()) {
     return false;
   }
@@ -1248,7 +1250,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 
   const char* base = file_helper.base_archive_name();
   if (base == nullptr) {
-    *base_archive_name = Arguments::get_default_shared_archive_path();
+    *base_archive_name = CDSConfig::default_archive_path();
   } else {
     *base_archive_name = os::strdup_check_oom(base);
   }
@@ -2273,7 +2275,7 @@ bool FileMapInfo::initialize() {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
+        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
       }
       return false;
     }
