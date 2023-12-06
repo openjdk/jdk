@@ -70,8 +70,7 @@ final class AEADBufferedStream extends ByteArrayOutputStream {
         int blen = buf.length;
         // Create a new larger buffer and append the new data
         if (blen < count + len) {
-            buf = Arrays.copyOf(buf, ArraysSupport.newLength(blen,  len,
-                Math.max(len, blen)));
+            buf = Arrays.copyOf(buf, ArraysSupport.newLength(blen, len, blen));
         }
     }
 
