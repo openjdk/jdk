@@ -1672,10 +1672,10 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 
     tty->print_cr("  invar_factor = %d", invar_factor);
 
-    // iv = init + pre_iter * pre_stride + j * main_stride
+    // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
     print_icon_or_idx(init_node);
-    tty->print_cr(" + pre_iter * pre_stride(%d) + j * main_stride(%d)",
+    tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   pre_stride, main_stride);
 
     // adr = base + offset + invar + scale * iv
@@ -1711,13 +1711,13 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //
   // Where the iv can be written as:
   //
-  //   iv = init + pre_stride * pre_iter + main_stride * j
+  //   iv = init + pre_stride * pre_iter + main_stride * main_iter
   //
   // init:        value before pre-loop
   // pre_stride:  increment per pre-loop iteration
   // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
   // main_stride: increment per main-loop iteration (= pre_stride * unroll_factor)
-  // j:           number of main-loop iterations (j >= 0)
+  // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
   // In the following, we restate the simple form of the address expression, by first
   // expanding the iv variable. In a second step, we reshape the expression again, and
@@ -1730,7 +1730,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for variable init)
   //                          /   + scale * init                            + C_init  * var_init        (term for invariant)
   //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
-  //                          \   + scale * main_stride * j                 + C_main  * j               (main-loop term, for any j >= 0)
+  //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
@@ -1746,8 +1746,8 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //      during the "pre_iter" pre-loop iterations. This term can be adjusted
   //      by changing the pre-loop limit. This allows us to adjust the alignment
   //      of the main-loop memory reference.
-  //   6) The "C_main * j" term represents how much the iv is increased during "j"
-  //      main-loop iterations.
+  //   6) The "C_main * main_iter" term represents how much the iv is increased
+  //      during "main_iter" main-loop iterations.
 
   // Attribute init either to C_const or to C_init term.
   const int C_const_init = init_node->is_ConI() ? init_node->as_ConI()->get_int() : 0;
@@ -1763,7 +1763,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
     tty->print("      = base[%d] + ", base->_idx);
-    tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * j",
+    tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * main_iter",
                   C_const, C_invar, C_init,  C_pre, C_main);
     if (init_node->is_ConI()) {
       tty->print_cr("  init is constant:");
@@ -1793,11 +1793,11 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0.
   // Since "base mod aw = 0", we only need to ensure alignment of the other 5 terms:
   //
-  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * j = 0 (modulo aw)      (1)
+  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter = 0 (modulo aw)      (1)
   //
-  // Alignment must be maintained over all main-loop iterations, i.e. for any j >= 0, we require:
+  // Alignment must be maintained over all main-loop iterations, i.e. for any main_iter >= 0, we require:
   //
-  //   C_main % aw = 0                                                                                        (2*)
+  //   C_main % aw = 0                                                                                                (2*)
   //
   const int C_main_mod_aw = AlignmentSolution::mod(C_main, aw);
 
@@ -1805,7 +1805,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   if (is_trace_align_vector()) {
     tty->print("  EQ(1  ): C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
                   C_const, C_invar, C_init);
-    tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * j = 0 (mod aw(%d))",
+    tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * main_iter = 0 (mod aw(%d))",
                   C_pre, C_main, aw);
     tty->print_cr(" (given base aligned -> align rest)");
     tty->print("  EQ(2* ): C_main(%d) %% aw(%d) = scale(%d) * main_stride(%d) %% aw(%d) = %d = 0",
@@ -2031,17 +2031,17 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 // pre_iter = i // number of iterations in the pre-loop
 // iv = init + pre_iter * pre_stride
 //
-// j = 0 // main-loop iteration counter
+// main_iter = 0 // main-loop iteration counter
 // main_stride = unroll_factor * pre_stride
 //
 // main-loop:
-//   i = pre_iter + j * unroll_factor
-//   iv = init + i * pre_stride = init + pre_iter * pre_stride + j * unroll_factor * pre_stride
-//                              = init + pre_iter * pre_stride + j * main_stride
+//   i = pre_iter + main_iter * unroll_factor
+//   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
+//                              = init + pre_iter * pre_stride + main_iter * main_stride
 //   adr = base + offset + invar + scale * iv // must be aligned
 //   iv += main_stride
 //   i  += unroll_factor
-//   j++
+//   main_iter++
 //
 // Find an alignment solution: find the set of pre_iter that memory align all packs.
 // Start with the maximal set (pre_iter >= 0) and filter it with the constraints

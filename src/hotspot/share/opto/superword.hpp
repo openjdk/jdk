@@ -228,13 +228,15 @@ class OrderedPair {
 // When alignment is required, we must adjust the pre-loop iteration count pre_iter.
 // We find the set of pre_iter which guarantee alignment:
 //
+// TODO restate this a bit with since I changed the new proof!
+//
 //   pre_iter = pre_r + pre_q * m  (for any m >= 0)
 //
-// Such that the address is aligned for any j >= 0:
+// Such that the address is aligned for any main_iter >= 0:
 //
 //   adr = base + offset + invar + scale * init
 //                               + scale * pre_stride * pre_iter
-//                               + scale * main_stride * j
+//                               + scale * main_stride * main_iter
 //
 // Two simplifying restrictions:
 //   1. In the presence of variable init, all solutions must have the same scale.
