@@ -3672,7 +3672,7 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ signum_fp_v(as_VectorRegister($dst$$reg), bt, Matcher::vector_length(this),
-                  as_VectorRegister($zero$$reg), as_VectorRegister($one$$reg));
+                   as_VectorRegister($zero$$reg), as_VectorRegister($one$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

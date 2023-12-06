@@ -1586,11 +1586,6 @@ enum VectorMask {
   INSN(vfadd_vf,  0b1010111, 0b101, 0b000000);
   INSN(vfrsub_vf, 0b1010111, 0b101, 0b100111);
 
-  // Vector Floating-Point Sign-Injection Instructions
-  INSN(vfsgnj_vf, 0b1010111, 0b101, 0b001000);
-  INSN(vfsgnjx_vf, 0b1010111, 0b101, 0b001010);
-  INSN(vfsgnjn_vf, 0b1010111, 0b101, 0b001001);
-
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
