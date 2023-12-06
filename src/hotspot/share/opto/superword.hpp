@@ -258,6 +258,7 @@ private:
   int _aw = 0;
   Node* _invar_dependency = nullptr;
   int _scale_dependency = 0;
+
 public:
   // Invalid solution.
   AlignmentSolution(const char* reason) :
@@ -272,6 +273,7 @@ public:
       _scale_dependency(0) {
     assert(!is_trivial() && !is_valid(), "must be invalid");
   }
+
   // Trivial Solution.
   AlignmentSolution() :
       _valid(true),
@@ -285,6 +287,7 @@ public:
       _scale_dependency(0) {
     assert(is_trivial() && is_valid(), "must be trivial");
   }
+
   // Constrained solution.
   AlignmentSolution(const int r,
                     const int q,
@@ -308,15 +311,17 @@ public:
            "must have mem_ref and aw");
     assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
   }
-  bool is_valid() const { return _valid; }
-  const char* reason() const { assert(!is_valid(), "only invalid has reason"); return _reason; }
-  int r() const { assert(is_valid(), "only valid has solution"); return _r; }
-  int q() const { assert(is_valid(), "only valid has solution"); return _q; }
-  MemNode* mem_ref() const { assert(is_valid(), "valid and not trivial"); return _mem_ref; }
-  int aw() const { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _aw; }
-  bool is_trivial() const { return _trivial; }
-  Node* invar_dependency() const { return _invar_dependency; }
-  int scale_dependency() const { return _scale_dependency; }
+
+  bool is_valid() const          { return _valid; }
+  bool is_trivial() const        { return _trivial; }
+  const char* reason() const     { assert(!is_valid(), "only invalid has reason"); return _reason; }
+  int r() const                  { assert(is_valid(), "only valid has solution"); return _r; }
+  int q() const                  { assert(is_valid(), "only valid has solution"); return _q; }
+  MemNode* mem_ref() const       { assert(is_valid(), "valid and not trivial"); return _mem_ref; }
+  int aw() const                 { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _aw; }
+  Node* invar_dependency() const { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _invar_dependency; }
+  int scale_dependency() const   { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _scale_dependency; }
+
   AlignmentSolution filter(const AlignmentSolution& other) const {
     // Solution invalid if either is invalid.
     if (!is_valid() || !other.is_valid()) {
@@ -349,6 +354,7 @@ public:
     // Now we know: "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
     return s2; // return the subset
   }
+
   void print() {
     if (is_valid()) {
       if (is_trivial()) {
@@ -367,6 +373,7 @@ public:
       tty->print_cr("no solution: %s", reason());
     }
   }
+
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
     assert(q >= 1, "modulo value must be large enough");
