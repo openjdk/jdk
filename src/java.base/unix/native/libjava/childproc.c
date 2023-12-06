@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,6 @@
 #include "childproc.h"
 
 const char * const *parentPathv;
-
-ssize_t
-restartableWrite(int fd, const void *buf, size_t count)
-{
-    ssize_t result;
-    RESTARTABLE(write(fd, buf, count), result);
-    return result;
-}
 
 int
 restartableDup2(int fd_from, int fd_to)
@@ -163,6 +155,46 @@ readFully(int fd, void *buf, size_t nbyte)
     }
 }
 
+/*
+ * Writes nbyte bytes from buf into file descriptor fd,
+ * The write operation is retried in case of EINTR or partial writes.
+ *
+ * Returns number of bytes written (normally nbyte).
+ * In case of write errors, returns -1 and sets errno.
+ */
+ssize_t
+writeFully(int fd, const void *buf, size_t nbyte)
+{
+#ifdef DEBUG
+/* This code is only used in debug builds for testing truncated writes
+ * during the handshake with the spawn helper for MODE_POSIX_SPAWN.
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == 99 && nbyte == sizeof(ChildStuff)) {
+        printf("posix_spawn: truncating write of ChildStuff struct\n");
+        fflush(stdout);
+        nbyte = nbyte / 2;
+    }
+#endif
+    ssize_t remaining = nbyte;
+    for (;;) {
+        ssize_t n = write(fd, buf, remaining);
+        if (n > 0) {
+            remaining -= n;
+            if (remaining <= 0)
+                return nbyte;
+            /* We were interrupted in the middle of writing the bytes.
+             * Unlikely, but possible. */
+            buf = (void *) (((char *)buf) + n);
+        } else if (n == -1 && errno == EINTR) {
+            /* Retry */
+        } else {
+            return -1;
+        }
+    }
+}
+
 void
 initVectorFromBlock(const char**vector, const char* block, int count)
 {
@@ -210,7 +242,7 @@ execve_with_shell_fallback(int mode, const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-    if (mode == MODE_CLONE || mode == MODE_VFORK) {
+    if (mode == MODE_VFORK) {
         /* shared address space; be very careful. */
         execve(file, (char **) argv, (char **) envp);
         if (errno == ENOEXEC)
@@ -321,9 +353,14 @@ childProcess(void *arg)
         /* Child shall signal aliveness to parent at the very first
          * moment. */
         int code = CHILD_IS_ALIVE;
-        restartableWrite(fail_pipe_fd, &code, sizeof(code));
+        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
+            goto WhyCantJohnnyExec;
+        }
     }
 
+#ifdef DEBUG
+    jtregSimulateCrash(0, 6);
+#endif
     /* Close the parent sides of the pipes.
        Closing pipe fds here is redundant, since closeDescriptors()
        would do it anyways, but a little paranoia is a good thing. */
@@ -390,9 +427,26 @@ childProcess(void *arg)
      */
     {
         int errnum = errno;
-        restartableWrite(fail_pipe_fd, &errnum, sizeof(errnum));
+        writeFully(fail_pipe_fd, &errnum, sizeof(errnum));
     }
     close(fail_pipe_fd);
     _exit(-1);
     return 0;  /* Suppress warning "no return value from function" */
 }
+
+#ifdef DEBUG
+/* This method is only used in debug builds for testing MODE_POSIX_SPAWN
+ * in the light of abnormal program termination of either the parent JVM
+ * or the newly created jspawnhelper child process during the execution of
+ * Java_java_lang_ProcessImpl_forkAndExec().
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+void jtregSimulateCrash(pid_t child, int stage) {
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == stage) {
+        printf("posix_spawn:%d\n", child);
+        fflush(stdout);
+        _exit(stage);
+    }
+}
+#endif
