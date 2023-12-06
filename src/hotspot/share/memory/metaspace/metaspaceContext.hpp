@@ -80,9 +80,9 @@ public:
   // untouched, otherwise all memory is unmapped.
   ~MetaspaceContext();
 
-  VirtualSpaceList* vslist() const              { return _vslist; }
-  ChunkManager* cm() const                      { return _cm; }
-  SizeAtomicCounter* used_words_counter() const { return &_used_words_counter; }
+  VirtualSpaceList* vslist()                    { return _vslist; }
+  ChunkManager* cm()                            { return _cm; }
+  SizeAtomicCounter* used_words_counter()       { return &_used_words_counter; }
 
   // Create a new, empty, expandable metaspace context.
   static MetaspaceContext* create_expandable_context(const char* name, CommitLimiter* commit_limiter);

@@ -55,6 +55,11 @@ using metaspace::SizeAtomicCounter;
 using metaspace::Settings;
 using metaspace::ArenaStats;
 
+#define HANDLE_FAILURE \
+  if (testing::Test::HasFailure()) { \
+    return; \
+  }
+
 class MetaspaceArenaTestHelper {
 
   MetaspaceGtestContext& _context;
@@ -198,7 +203,7 @@ public:
       ASSERT_EQ(capacity, capacity2);
     } else {
       // Allocation succeeded. Should be correctly aligned.
-      ASSERT_TRUE(is_aligned(result.base(), _arena->allocation_alignment_words()));
+      ASSERT_TRUE(result.is_aligned_base(_arena->allocation_alignment_words()));
 
       // used: may go up or may not (since our request may have been satisfied from the freeblocklist
       //   whose content already counts as used).
@@ -439,23 +444,28 @@ TEST_VM(metaspace, MetaspaceArena_deallocate) {
 
     MetaWord* p1 = NULL;
     helper.allocate_from_arena_with_tests_expect_success(&p1, s);
+    ASSERT_FALSE(HasFailure());
 
     size_t used1 = 0, capacity1 = 0;
     helper.usage_numbers_with_test(&used1, NULL, &capacity1);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used1, s);
 
     helper.deallocate_with_tests(p1, s);
 
     size_t used2 = 0, capacity2 = 0;
     helper.usage_numbers_with_test(&used2, NULL, &capacity2);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used1, used2);
     ASSERT_EQ(capacity2, capacity2);
 
     MetaWord* p2 = NULL;
     helper.allocate_from_arena_with_tests_expect_success(&p2, s);
+    ASSERT_FALSE(HasFailure());
 
     size_t used3 = 0, capacity3 = 0;
     helper.usage_numbers_with_test(&used3, NULL, &capacity3);
+    ASSERT_FALSE(HasFailure());
     ASSERT_EQ(used3, used2);
     ASSERT_EQ(capacity3, capacity2);
 
@@ -498,6 +508,7 @@ static void test_recover_from_commit_limit_hit() {
     helper1.allocate_from_arena_with_tests_expect_success(1);
     helper2.allocate_from_arena_with_tests_expect_success(1);
     allocated_from_1_and_2 += 2;
+    HANDLE_FAILURE
   }
 
   // Now, allocating from helper3, creep up on the limit
@@ -611,12 +622,14 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     }
 
     smhelper.allocate_from_arena_with_tests_expect_success(alloc_words);
+    HANDLE_FAILURE
     words_allocated += alloc_words;
     num_allocated++;
 
     size_t used2 = 0, committed2 = 0, capacity2 = 0;
 
     smhelper.arena()->usage_numbers(&used2, &committed2, &capacity2);
+    HANDLE_FAILURE
 
     // used should not grow larger than what we allocated, plus possible overhead.
     ASSERT_GE(used2, used);
@@ -774,6 +787,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     if (!is_topmost) {
       // another one on top, size does not matter.
       helper.allocate_from_arena_with_tests_expect_success(0x10);
+      HANDLE_FAILURE
     }
 
     // Measure
@@ -783,6 +797,7 @@ static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
     for (int i = 0; i < 5; i ++) {
       helper.deallocate_with_tests(p, blocksize);
       helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
+      HANDLE_FAILURE
       // We should get the same pointer back.
       EXPECT_EQ(p2, p);
     }
@@ -867,6 +882,7 @@ static void test_aligned_allocation(size_t arena_alignment_words, chunklevel_t l
         ASSERT_LT(wastage.word_size(), arena_alignment_words);
       }
     }
+    HANDLE_FAILURE
   }
 }
 
@@ -875,6 +891,7 @@ static void test_for_size(size_t allocation_word_size) {
     const size_t chunk_word_size = word_size_for_level(lvl);
     for (size_t align = AllocationAlignmentWordSize; align <= MIN_CHUNK_WORD_SIZE; align *= 2) {
       test_aligned_allocation(align, lvl, allocation_word_size);
+      HANDLE_FAILURE
     }
   }
 }
@@ -891,5 +908,6 @@ TEST_VM(metaspace, MetaspaceArena_test_aligned_pow2_sizes) {
   for (size_t s = Metaspace::min_allocation_word_size * 2;
        s < Metaspace::max_allocation_word_size(); s *= 2) {
     test_for_size(s);
+    HANDLE_FAILURE
   }
 }
