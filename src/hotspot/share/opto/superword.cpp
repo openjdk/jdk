@@ -1727,8 +1727,8 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //          -----------           ------------------------                  -----------------------   ------------------
   //   adr =  base               =  base                                   =  base                      (base mod aw = 0)
   //        + offset              + offset                                  + C_const                   (sum of constant terms)
-  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for variable init)
-  //                          /   + scale * init                            + C_init  * var_init        (term for invariant)
+  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
+  //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
   //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
   //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
   //
@@ -1739,9 +1739,9 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   //      plus "init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
-  //   4) The "C_init * var_init" is the factorization of "init" into a constant
-  //      and a variable term. If "init" is constant, then "C_init" is zero, and
-  //      "C_const" accounts for "init" instead.
+  //   4) The "C_init * var_init" is the factorization of "scale * init" into a
+  //      constant and a variable term. If "init" is constant, then "C_init" is
+  //      zero, and "C_const" accounts for "init" instead.
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
   //      during the "pre_iter" pre-loop iterations. This term can be adjusted
   //      by changing the pre-loop limit. This allows us to adjust the alignment
