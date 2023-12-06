@@ -33,14 +33,8 @@
 
 import java.text.ListFormat;
 import java.text.MessageFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -95,28 +89,5 @@ public class ListSubFormats {
         mFmt.setFormatByArgumentIndex(0,
                 ListFormat.getInstance(mFmt.getLocale(), ListFormat.Type.UNIT, ListFormat.Style.NARROW));
         assertEquals("{0}", mFmt.toPattern());
-    }
-
-    // Test that the listFmt Subformats format properly within the MessageFormat
-    @ParameterizedTest
-    @MethodSource
-    public void formatTest(MessageFormat mFmt, ListFormat lFmt) {
-        List<String> listData = List.of("foo", "bar", "baz");
-        Object[] data = {listData};
-        // Check ListFormat sub-format is formatting properly
-        assertEquals(mFmt.format(data), "quux"+lFmt.format(listData)+"quux");
-    }
-
-    // MessageFormat with patterns that contain the associated ListFormat
-    private static Stream<Arguments> formatTest() {
-        Locale loc = Locale.getDefault(Locale.Category.FORMAT);
-        return Stream.of(
-                Arguments.of(new MessageFormat("quux{0,list}quux"),
-                        ListFormat.getInstance(loc, ListFormat.Type.STANDARD, ListFormat.Style.FULL)),
-                Arguments.of(new MessageFormat("quux{0,list,or}quux"),
-                        ListFormat.getInstance(loc, ListFormat.Type.OR, ListFormat.Style.FULL)),
-                Arguments.of(new MessageFormat("quux{0,list,unit}quux"),
-                        ListFormat.getInstance(loc, ListFormat.Type.UNIT, ListFormat.Style.FULL))
-        );
     }
 }

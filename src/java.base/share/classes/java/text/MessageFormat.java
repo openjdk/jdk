@@ -83,7 +83,14 @@ import java.util.Objects;
  *         { <i>ArgumentIndex</i> , <i>FormatType</i> , <i>FormatStyle</i> }
  *
  * <i>FormatType: one of </i>
- *         number date time choice list temporal
+ *         number
+ *         date
+ *         j_date
+ *         time
+ *         j_time
+ *         choice
+ *         list
+ *         <i>the DateTimeFormatter predefined formats</i>
  *
  * <i>FormatStyle:</i>
  *         short
@@ -93,15 +100,10 @@ import java.util.Objects;
  *         integer
  *         currency
  *         percent
- *         compact-short
- *         compact-long
+ *         compact_short
+ *         compact_long
  *         or
  *         unit
- *         iso-local-date
- *         iso-local-time
- *         iso-local-date-time
- *         iso-offset-date-time
- *         iso-instant
  *         <i>SubformatPattern</i>
  * </pre></blockquote>
  *
@@ -152,8 +154,10 @@ import java.util.Objects;
  * <p>
  * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
  * a {@code Format} instance for the format element. The following
- * table shows how the values map to {@code Format} instances. Combinations not
- * shown in the table are illegal. A <i>SubformatPattern</i> must
+ * table shows how the values map to {@code Format} instances. These values
+ * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
+ * not shown in the table are illegal, except for the DateTimeFormatter
+ * predefined formatters. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
  *
  * <table class="plain">
@@ -183,10 +187,10 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal">{@code percent}
  *       <td>{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code compact-short}
+ *       <th scope="row" style="font-weight:normal">{@code compact_short}
  *       <td>{@link NumberFormat#getCompactNumberInstance(Locale, NumberFormat.Style)  NumberFormat.getCompactNumberInstance}{@code (getLocale(),} {@link NumberFormat.Style#SHORT})
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code compact-long}
+ *       <th scope="row" style="font-weight:normal">{@code compact_long}
  *       <td>{@link NumberFormat#getCompactNumberInstance(Locale, NumberFormat.Style) NumberFormat.getCompactNumberInstance}{@code (getLocale(),} {@link NumberFormat.Style#LONG})
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
@@ -200,7 +204,7 @@ import java.util.Objects;
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
  *       <td>{@link DateFormat#getDateInstance(int,Locale) DateFormat.getDateInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
@@ -211,6 +215,25 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code j_date}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal">{@code short}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal">{@code medium}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal">{@code long}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal">{@code full}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
+ *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
+ *    <tr>
  *       <th scope="row" style="font-weight:normal" rowspan=6>{@code time}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
@@ -219,7 +242,7 @@ import java.util.Objects;
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#SHORT}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#DEFAULT}{@code , getLocale())}
+ *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#MEDIUM}{@code , getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
  *       <td>{@link DateFormat#getTimeInstance(int,Locale) DateFormat.getTimeInstance}{@code (}{@link DateFormat#LONG}{@code , getLocale())}
@@ -230,24 +253,24 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code temporal}
- *       <th scope="row" style="font-weight:normal">{@code iso-local-date}
- *       <td>{@link DateTimeFormatter#ISO_LOCAL_DATE}{@code .toFormat()}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code j_time}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code iso-local-time}
- *       <td>{@link DateTimeFormatter#ISO_LOCAL_TIME}{@code .toFormat()}
+ *       <th scope="row" style="font-weight:normal">{@code short}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code iso-local-date-time}
- *       <td>{@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}{@code .toFormat()}
+ *       <th scope="row" style="font-weight:normal">{@code medium}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code iso-offset-date-time}
- *       <td>{@link DateTimeFormatter#ISO_OFFSET_DATE}{@code .toFormat()}
+ *       <th scope="row" style="font-weight:normal">{@code long}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal">{@code iso-instant}
- *       <td>{@link DateTimeFormatter#ISO_INSTANT}{@code .toFormat()}
+ *       <th scope="row" style="font-weight:normal">{@code full}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
- *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale())}
+ *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code choice}
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
@@ -265,57 +288,28 @@ import java.util.Objects;
  * </tbody>
  * </table>
  *
+ * @apiNote For the <i>j_date</i> and <i>j_time</i> {@code FormatTypes} with a
+ * <i>subformatPattern</i> {@code FormatStyle}, either {@code FormatType} will work with a
+ * time, date, or date and time <i>subformatPattern</i>. As the same method is invoked
+ * for both <i>j_date</i> and <i>j_time</i> when using a <i>subformatPattern</i>,
+ * a <i>j_date</i> with a time only <i>subformatPattern</i> is equivalent to
+ * <i>j_time</i> with the same <i>subformatPattern</i>. This behavior applies to
+ * the <i>date</i> and <i>time</i> {@code FormatTypes} as well.
+ *
+ * <h3>DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
+ * Additionally, the {@link DateTimeFormatter} predefined formats are also supported
+ * in MessageFormat patterns. To utilize one of these formatter constants, the
+ * constant field name can be used as a {@code FormatType}. There are no associated {@code FormatStyles}
+ * for these {@code FormatTypes}. For example, the {@code FormatType} <i>iso_date_time</i>
+ * returns {@link DateTimeFormatter#ISO_DATE_TIME}{@code .toFormat()}. Similar
+ * to <i>j_time</i> and <i>j_date</i>, these {@code FormatTypes} should only be
+ * used to format java.time objects.
+ *
  * <h3>Usage Information</h3>
- *
- * <p>
- * Here are some examples of usage.
- * In real internationalized programs, the message format pattern and other
- * static strings will, of course, be obtained from resource bundles.
- * Other parameters will be dynamically determined at runtime.
- * <p>
- * The first example uses the static method {@code MessageFormat.format},
- * which internally creates a {@code MessageFormat} for one-time use:
- * <blockquote>
- * {@snippet lang=java :
- * int planet = 7;
- * String event = "a disturbance in the Force";
- *
- * String result = MessageFormat.format(
- *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
- *     planet, new Date(), event);
- * }
- * </blockquote>
- * The output is:
- * <blockquote><pre>
- * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
- * </pre></blockquote>
- *
- * <p>
- * The following example creates a {@code MessageFormat} instance that
- * can be used repeatedly:
- * <blockquote>
- * {@snippet lang=java :
- * int fileCount = 1273;
- * String diskName = "MyDisk";
- * Object[] testArgs = {Long.valueOf(fileCount), diskName};
- *
- * MessageFormat form = new MessageFormat(
- *     "The disk \"{1}\" contains {0} file(s).");
- *
- * System.out.println(form.format(testArgs));
- * }
- * </blockquote>
- * The output with different values for {@code fileCount}:
- * <blockquote><pre>
- * The disk "MyDisk" contains 0 file(s).
- * The disk "MyDisk" contains 1 file(s).
- * The disk "MyDisk" contains 1,273 file(s).
- * </pre></blockquote>
  *
  * <p>
  * For more sophisticated patterns, you can use a {@code ChoiceFormat}
  * to produce correct forms for singular and plural:
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat form = new MessageFormat("The disk \"{1}\" contains {0}.");
  * double[] filelimits = {0,1,2};
@@ -329,7 +323,6 @@ import java.util.Objects;
  *
  * System.out.println(form.format(testArgs));
  * }
- * </blockquote>
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
@@ -341,12 +334,10 @@ import java.util.Objects;
  * You can create the {@code ChoiceFormat} programmatically, as in the
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
- * <blockquote>
  * {@snippet lang=java :
  * form.applyPattern(
  *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
  * }
- * </blockquote>
  *
  * <p>
  * <strong>Note:</strong> As we see above, the string produced
@@ -358,7 +349,6 @@ import java.util.Objects;
  * <p>
  * When a single argument is parsed more than once in the string, the last match
  * will be the final result of the parsing.  For example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
  * Object[] objs = {Double.valueOf(3.1415)};
@@ -367,44 +357,44 @@ import java.util.Objects;
  * objs = mf.parse(result, new ParsePosition(0));
  * // objs now equals {Double.valueOf(3.1)}
  * }
- * </blockquote>
  *
  * <p>
  * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
  * String forParsing = "x, y, z";
  * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
  * // objs now equals {new String("z")}
  * }
- * </blockquote>
  *
- * <h3>Temporal vs Date vs Time</h3>
+ * <h3>Formatting java.time versus java.util.Date</h3>
  *
- * MessageFormat provides patterns that support both
- * {@link java.time} and {@link Date} objects.
+ * MessageFormat provides patterns that support both {@link java.time} and
+ * {@link Date} objects. Consider the 3 following examples,
+ * with a date of 11/16/2023.
  *
- * <p>For example, a <i>temporal</i> {@code FormatType} with a <i>SubFformatPattern</i> {@code FormatStyle},
- * <blockquote>
- * {@snippet lang=java :
- * Object[] arg = {LocalDate.now()};
- * var temporalFmt = new MessageFormat("It was {0,temporal,MM/dd/yy}");
- * }
- * </blockquote>
- *
- * <p>For example, a <i>date</i> {@code FormatType} with a <i>SubformatPattern</i> {@code FormatStyle},
- * <blockquote>
+ * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
  * Object[] arg = {new Date()};
- * var dateFmt = new MessageFormat("It was {0,date,MM/dd/yy}");
+ * var fmt = new MessageFormat("The date was {0,date,full}");
+ * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
- * </blockquote>
  *
- * Formatting a {@code Date} under a <i>temporal</i> format, or conversely a
- * {@code java.time} object under a <i>date</i> or <i>time</i> format will throw an exception.
+ * <p>2) a <i>j_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
+ * {@snippet lang=java :
+ * Object[] arg = {LocalDate.now()};
+ * var fmt = new MessageFormat("The date was {0,j_date,full}");
+ * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
+ * }
+ *
+ * <p>3) an <i>iso_local_date</i> {@code FormatType},
+ * {@snippet lang=java :
+ * Object[] arg = {LocalDate.now()};
+ * var fmt = new MessageFormat("The date was {0,iso_local_date}");
+ * fmt.format(arg); // returns "The date was 2023-11-16"
+ * }
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
  *
@@ -422,6 +412,7 @@ import java.util.Objects;
  * @see          ChoiceFormat
  * @see          DateFormat
  * @see          SimpleDateFormat
+ * @see          DateTimeFormatter
  *
  * @author       Mark Davis
  * @since 1.1
@@ -633,13 +624,13 @@ public class MessageFormat extends Format {
      *
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
-     * @implSpec This method does not convert a Subformat to a pattern if the
-     * Subformat is a {@code ListFormat}, {@code CompactNumberFormat}, or {@code
-     * DateTimeFormatter.toFormat()} that is not equal to one of the recognized
+     * @implSpec This method does not convert a subformat to a pattern if the
+     * subformat is a {@code DateTimeFormatter.toFormat()} or a {@code ListFormat}
+     * or {@code CompactNumberFormat} that is not equal to one of the recognized
      * {@code FormatType} and {@code FormatStyle} combinations, excluding the
      * <i>SubformatPattern</i> {@code FormatStyle}. Additionally, user-defined
      * subclasses of {@code Format} cannot be converted to a String pattern.
-     * <p> If a Subformat cannot be converted to a String pattern, the {@code FormatType}
+     * <p> If a subformat cannot be converted to a String pattern, the {@code FormatType}
      * and {@code FormatStyle} will be omitted from the {@code FormatElement}.
      */
     public String toPattern() {
@@ -649,93 +640,81 @@ public class MessageFormat extends Format {
         for (int i = 0; i <= maxOffset; ++i) {
             copyAndFixQuotes(pattern, lastOffset, offsets[i], result);
             lastOffset = offsets[i];
-            result.append('{').append(argumentNumbers[i]);
-            Format fmt = formats[i];
-            if (fmt instanceof NumberFormat) {
-                // Add any instances returned from the NumberFormat factory methods
-                if (fmt.equals(NumberFormat.getInstance(locale))) {
-                    result.append(",number");
-                } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
-                    result.append(",number,currency");
-                } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
-                    result.append(",number,percent");
-                } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
-                    result.append(",number,integer");
-                } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
-                        NumberFormat.Style.SHORT))) {
-                    result.append(",number,compact-short");
-                } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
-                        NumberFormat.Style.LONG))) {
-                    result.append(",number,compact-long");
-                } else {
-                    if (fmt instanceof DecimalFormat dFmt) {
-                        result.append(",number,").append(dFmt.toPattern());
-                    } else if (fmt instanceof ChoiceFormat cFmt) {
-                        result.append(",choice,").append(cFmt.toPattern());
-                    } else {
-                        // Other future or user defined subclass of NumberFormat
-                    }
-                }
-            } else if (fmt instanceof DateFormat) {
-                // dates
-                if (fmt.equals(DateFormat.getDateInstance(DateFormat.DEFAULT, locale))) {
-                    result.append(",date");
-                } else if (fmt.equals(DateFormat.getDateInstance(DateFormat.SHORT, locale))) {
-                    result.append(",date,short");
-                } else if (fmt.equals(DateFormat.getDateInstance(DateFormat.MEDIUM, locale))) {
-                    result.append(",date,medium");
-                } else if (fmt.equals(DateFormat.getDateInstance(DateFormat.LONG, locale))) {
-                    result.append(",date,long");
-                } else if (fmt.equals(DateFormat.getDateInstance(DateFormat.FULL, locale))) {
-                    result.append(",date,full");
-                // times
-                } else if (fmt.equals(DateFormat.getTimeInstance(DateFormat.DEFAULT, locale))) {
-                    result.append(",time");
-                } else if (fmt.equals(DateFormat.getTimeInstance(DateFormat.SHORT, locale))) {
-                    result.append(",time,short");
-                } else if (fmt.equals(DateFormat.getTimeInstance(DateFormat.MEDIUM, locale))) {
-                    result.append(",time,medium");
-                } else if (fmt.equals(DateFormat.getTimeInstance(DateFormat.LONG, locale))) {
-                    result.append(",time,long");
-                } else if (fmt.equals(DateFormat.getTimeInstance(DateFormat.FULL, locale))) {
-                    result.append(",time,full");
-                } else if (fmt instanceof SimpleDateFormat sdFmt) {
-                    // Could not match to a DateFormat factory instance, thus it's
-                    // a user-defined Subformat pattern
-                    result.append(",date,").append(sdFmt.toPattern());
-                } else {
-                    // Other future or user defined subclass of DateFormat
-                }
-            } else if (fmt instanceof ListFormat) {
-                if (fmt.equals(ListFormat.getInstance(locale, ListFormat.Type.STANDARD, ListFormat.Style.FULL))) {
-                    result.append(",list");
-                } else if (fmt.equals(ListFormat.getInstance(locale, ListFormat.Type.OR, ListFormat.Style.FULL))) {
-                    result.append(",list,or");
-                } else if (fmt.equals(ListFormat.getInstance(locale, ListFormat.Type.UNIT, ListFormat.Style.FULL))) {
-                    result.append(",list,unit");
-                } else {
-                    // ListFormat does not have toPattern(), cannot recognize other instances
-                }
-            } else if (fmt != null) {
-                // Since ClassicFormat is not public, cannot use instanceof check
-                if (fmt.equals(DateTimeFormatter.ISO_LOCAL_DATE.toFormat())) {
-                    result.append(",temporal,iso-local-date");
-                } else if (fmt.equals(DateTimeFormatter.ISO_LOCAL_TIME.toFormat())) {
-                    result.append(",temporal,iso-local-time");
-                } else if (fmt.equals(DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat())) {
-                    result.append(",temporal,iso-local-date-time");
-                } else if (fmt.equals(DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat())) {
-                    result.append(",temporal,iso-offset-date-time");
-                } else if (fmt.equals(DateTimeFormatter.ISO_INSTANT.toFormat())) {
-                    result.append(",temporal,iso-instant");
-                }
-                // Either a non-recognized DateTimeFormatter or a user-defined
-                // Format subclass, both cannot be converted.
-            }
-            result.append('}');
+            result.append('{')
+                    .append(argumentNumbers[i])
+                    .append(patternFromFormat(formats[i]))
+                    .append('}');
         }
         copyAndFixQuotes(pattern, lastOffset, pattern.length(), result);
         return result.toString();
+    }
+
+    /**
+     * This method converts a Format into a {@code FormatType} and {@code
+     * FormatStyle}, if applicable. For each Format, this method will
+     * first check against the pre-defined styles established in the
+     * {@link ##patterns patterns section}. If a Format does not match to a
+     * pre-defined style, it will provide the {@code SubformatPattern}, if the Format
+     * class can provide one. The following subformats do not provide a {@code
+     * SubformatPattern}: {@link CompactNumberFormat}, {@link ListFormat}, and {@link
+     * java.time.format.DateTimeFormatter}. In addition, {@code DateTimeFormatter}
+     * does not implement {@code equals()}, and thus cannot be synthesized as a
+     * pattern. Any "default"/"medium" styles are omitted per the specification.
+     */
+    private String patternFromFormat(Format fmt) {
+        if (fmt instanceof NumberFormat) {
+            // Add any instances returned from the NumberFormat factory methods
+            if (fmt.equals(NumberFormat.getInstance(locale))) {
+                return ",number";
+            } else if (fmt.equals(NumberFormat.getCurrencyInstance(locale))) {
+                return ",number,currency";
+            } else if (fmt.equals(NumberFormat.getPercentInstance(locale))) {
+                return ",number,percent";
+            } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
+                return ",number,integer";
+            } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                    NumberFormat.Style.SHORT))) {
+                return ",number,compact_short";
+            } else if (fmt.equals(NumberFormat.getCompactNumberInstance(locale,
+                    NumberFormat.Style.LONG))) {
+                return ",number,compact_long";
+            } else {
+                // No pre-defined styles match, return the SubformatPattern
+                if (fmt instanceof DecimalFormat dFmt) {
+                    return ",number,"+dFmt.toPattern();
+                } else if (fmt instanceof ChoiceFormat cFmt) {
+                    return ",choice,"+cFmt.toPattern();
+                }
+            }
+        } else if (fmt instanceof DateFormat) {
+            // Match to any pre-defined DateFormat styles
+            for (DateFormat.Style style : DateFormat.Style.values()) {
+                if (fmt.equals(DateFormat.getDateInstance(style.getValue(), locale))) {
+                    return ",date"+((style.getValue() != DateFormat.DEFAULT)
+                            ? ","+style.name().toLowerCase(Locale.ROOT) : "");
+                }
+                if (fmt.equals(DateFormat.getTimeInstance(style.getValue(), locale))) {
+                    return ",time"+((style.getValue() != DateFormat.DEFAULT)
+                            ? ","+style.name().toLowerCase(Locale.ROOT) : "");
+                }
+            }
+            // If no styles match, return the SubformatPattern
+            if (fmt instanceof SimpleDateFormat sdFmt) {
+                return ",date,"+sdFmt.toPattern();
+            }
+        } else if (fmt instanceof ListFormat) {
+            for (ListFormat.Type type : ListFormat.Type.values()) {
+                if (fmt.equals(ListFormat.getInstance(locale, type, ListFormat.Style.FULL))) {
+                    return ",list"+((type != ListFormat.Type.STANDARD)
+                            ? ","+type.name().toLowerCase(Locale.ROOT) : "");
+                }
+            }
+        }
+        else if (fmt != null) {
+            // By here, this means that it is a JDK Format class that cannot
+            // provide a SubformatPattern or a user-defined Format subclass
+        }
+        return "";
     }
 
     /**
@@ -797,9 +776,8 @@ public class MessageFormat extends Format {
         if (runsToCopy > maxOffset + 1) {
             runsToCopy = maxOffset + 1;
         }
-        for (int i = 0; i < runsToCopy; i++) {
-            formats[i] = newFormats[i];
-        }
+        if (runsToCopy >= 0)
+            System.arraycopy(newFormats, 0, formats, 0, runsToCopy);
     }
 
     /**
@@ -1612,33 +1590,34 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * This method converts a FormatType and FormatStyle to a corresponding
-     * {@code Format} value. The String parameters are converted to their
-     * corresponding enum values FormatType and FormatStyle which are used
+     * This method converts a {@code FormatType} and {@code FormatStyle} to a
+     * {@code Format} value. The String parameters are converted
+     * to their corresponding enum values FormatType and FormatStyle which are used
      * to return a {@code Format}. See the patterns section in the class
      * description for further detail on a MessageFormat pattern.
      *
-     * @param type the {@code FormatType} of {@code FormatElement}
-     * @param modifier the {@code FormatStyle} of {@code FormatElement}
-     * @return a Format that corresponds to {@code formatType} and {@code formatStyle}
+     * @param type the {@code FormatType} in {@code FormatElement}
+     * @param style the {@code FormatStyle} in {@code FormatElement}
+     * @return a Format that corresponds to the corresponding {@code formatType}
+     *         and {@code formatStyle}
      * @throws IllegalArgumentException if a Format cannot be produced from the
-     *         {@code formatType} and {@code formatStyle} combination
+     *         type and style provided
      */
-    private Format formatFromPattern(String type, String modifier) {
-
-        // Get the type if it exists
+    private Format formatFromPattern(String type, String style) {
+        // Get the type, if it's valid
         FormatType fType;
         try {
             fType = FormatType.fromString(type);
         } catch (IllegalArgumentException iae) {
+            // Invalid type throws exception
             throw new IllegalArgumentException("unknown format type: " + type);
         }
-        // Get the style if recognized, otherwise treat modifier as a sub_format pattern
+        // Get the style if recognized, otherwise treat style as a SubformatPattern
         FormatStyle fStyle;
         try {
-            fStyle = FormatStyle.fromString(modifier);
+            fStyle = FormatStyle.fromString(style);
         } catch (IllegalArgumentException iae) {
-            fStyle = FormatStyle.SUBFORMAT_PATTERN;
+            fStyle = FormatStyle.SUBFORMATPATTERN;
         }
         return switch (fType) {
             case NUMBER -> switch (fStyle) {
@@ -1653,7 +1632,7 @@ public class MessageFormat extends Format {
                         NumberFormat.getCompactNumberInstance(locale, NumberFormat.Style.SHORT);
                 case COMPACT_LONG ->
                         NumberFormat.getCompactNumberInstance(locale, NumberFormat.Style.LONG);
-                default -> getSubformatFromPattern(fType, modifier);
+                default -> formatFromSubformatPattern(fType, style);
             };
             case DATE -> switch (fStyle) {
                 case DEFAULT ->
@@ -1666,7 +1645,7 @@ public class MessageFormat extends Format {
                         DateFormat.getDateInstance(DateFormat.LONG, locale);
                 case FULL ->
                         DateFormat.getDateInstance(DateFormat.FULL, locale);
-                default -> getSubformatFromPattern(fType, modifier);
+                default -> formatFromSubformatPattern(fType, style);
             };
             case TIME -> switch (fStyle) {
                 case DEFAULT ->
@@ -1679,9 +1658,31 @@ public class MessageFormat extends Format {
                         DateFormat.getTimeInstance(DateFormat.LONG, locale);
                 case FULL ->
                         DateFormat.getTimeInstance(DateFormat.FULL, locale);
-                default -> getSubformatFromPattern(fType, modifier);
+                default -> formatFromSubformatPattern(fType, style);
             };
-            case CHOICE -> getSubformatFromPattern(fType, modifier);
+            case J_DATE -> switch (fStyle) {
+                case DEFAULT, MEDIUM ->
+                        DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
+                case SHORT ->
+                        DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.SHORT).withLocale(locale).toFormat();
+                case LONG ->
+                        DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(locale).toFormat();
+                case FULL ->
+                        DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
+                default -> formatFromSubformatPattern(fType, style);
+            };
+            case J_TIME -> switch (fStyle) {
+                case DEFAULT, MEDIUM ->
+                        DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
+                case SHORT ->
+                        DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).withLocale(locale).toFormat();
+                case LONG ->
+                        DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.LONG).withLocale(locale).toFormat();
+                case FULL ->
+                        DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
+                default -> formatFromSubformatPattern(fType, style);
+            };
+            case CHOICE -> formatFromSubformatPattern(fType, style);
             case LIST -> switch (fStyle) {
                 case DEFAULT ->
                         ListFormat.getInstance(locale, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
@@ -1690,36 +1691,52 @@ public class MessageFormat extends Format {
                 case UNIT ->
                         ListFormat.getInstance(locale, ListFormat.Type.UNIT, ListFormat.Style.FULL);
                 // ListFormat does not provide a String pattern method/constructor
-                default -> getSubformatFromPattern(fType, modifier);
+                default -> formatFromSubformatPattern(fType, style);
             };
-            case TEMPORAL -> switch (fStyle) {
-                case ISO_LOCAL_DATE ->
-                        DateTimeFormatter.ISO_LOCAL_DATE.toFormat();
-                case ISO_LOCAL_TIME ->
-                        DateTimeFormatter.ISO_LOCAL_TIME.toFormat();
-                case ISO_LOCAL_DATE_TIME ->
-                        DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
-                case ISO_OFFSET_DATE_TIME ->
-                        DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat();
-                case ISO_INSTANT ->
-                        DateTimeFormatter.ISO_INSTANT.toFormat();
-                default ->
-                        getSubformatFromPattern(fType, modifier);
-            };
+            // The DateTimeFormatter constants are only given as a type
+            // Regardless of style, return the corresponding DTF constant
+            case BASIC_ISO_DATE -> DateTimeFormatter.BASIC_ISO_DATE.toFormat();
+            case ISO_LOCAL_DATE -> DateTimeFormatter.ISO_LOCAL_DATE.toFormat();
+            case ISO_OFFSET_DATE -> DateTimeFormatter.ISO_OFFSET_DATE.toFormat();
+            case ISO_DATE -> DateTimeFormatter.ISO_DATE.toFormat();
+            case ISO_LOCAL_TIME -> DateTimeFormatter.ISO_LOCAL_TIME.toFormat();
+            case ISO_OFFSET_TIME -> DateTimeFormatter.ISO_OFFSET_TIME.toFormat();
+            case ISO_TIME -> DateTimeFormatter.ISO_TIME.toFormat();
+            case ISO_LOCAL_DATE_TIME -> DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat();
+            case ISO_OFFSET_DATE_TIME -> DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat();
+            case ISO_ZONED_DATE_TIME -> DateTimeFormatter.ISO_ZONED_DATE_TIME.toFormat();
+            case ISO_DATE_TIME -> DateTimeFormatter.ISO_DATE_TIME.toFormat();
+            case ISO_ORDINAL_DATE -> DateTimeFormatter.ISO_ORDINAL_DATE.toFormat();
+            case ISO_WEEK_DATE -> DateTimeFormatter.ISO_WEEK_DATE.toFormat();
+            case ISO_INSTANT -> DateTimeFormatter.ISO_INSTANT.toFormat();
+            case RFC_1123_DATE_TIME -> DateTimeFormatter.RFC_1123_DATE_TIME.toFormat();
         };
     }
 
-    // Either returns a Format created from a Subformat pattern, or catches an
-    // exception and propagates it back up as appropiate
-    private Format getSubformatFromPattern(FormatType fType, String pattern) {
-        String type = fType.getText().substring(0,1).toUpperCase(Locale.ROOT)
-                + fType.getText().substring(1);
+    /**
+     * This method will attempt to return a subformat produced with the provided
+     * SubformatPattern applied. If the subformat does not support SubformatPatterns
+     * or the SubformatPattern is illegal to the subformat, an IllegalArgumentException
+     * is thrown. To adhere to the specification, this method ensures if an underlying
+     * exception is thrown, it is rethrown as an IllegalArgumentException unless
+     * the underlying exception is itself an IAE, or an NPE.
+     *
+     * @param fType the enum type of the subformat
+     * @param pattern the SubformatPattern to be applied
+     * @return a Format that corresponds to the corresponding {@code fType}
+     *         and {@code pattern}
+     * @throws IllegalArgumentException if a Format cannot be produced from the
+     *         type and SubformatPattern provided
+     */
+    private Format formatFromSubformatPattern(FormatType fType, String pattern) {
+        // Modified for neater exception value if needed
+        String type = fType.text.substring(0,1).toUpperCase(Locale.ROOT)+fType.text.substring(1);
         try {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
+                case J_DATE, J_TIME -> DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
-                case TEMPORAL -> DateTimeFormatter.ofPattern(pattern).toFormat();
                 default ->  throw new IllegalArgumentException(String.format(
                             "Unexpected modifier for %s: %s", type, pattern));
             };
@@ -1765,48 +1782,34 @@ public class MessageFormat extends Format {
         }
     }
 
-    /**
-     * After reading an object from the input stream, do a simple verification
-     * to maintain class invariants.
-     * @throws InvalidObjectException if the objects read from the stream is invalid.
-     */
-    @java.io.Serial
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        boolean isValid = maxOffset >= -1
-                && formats.length > maxOffset
-                && offsets.length > maxOffset
-                && argumentNumbers.length > maxOffset;
-        if (isValid) {
-            int lastOffset = pattern.length() + 1;
-            for (int i = maxOffset; i >= 0; --i) {
-                if ((offsets[i] < 0) || (offsets[i] > lastOffset)) {
-                    isValid = false;
-                    break;
-                } else {
-                    lastOffset = offsets[i];
-                }
-            }
-        }
-        if (!isValid) {
-            throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
-        }
-    }
-
     // Corresponding to the FormatType pattern
     private enum FormatType {
         NUMBER("number"),
         DATE("date"),
         TIME("time"),
+        J_DATE("j_date"),
+        J_TIME("j_time"),
         CHOICE("choice"),
         LIST("list"),
-        TEMPORAL("temporal");
+
+        // Pre-defined DateTimeFormatter types
+        BASIC_ISO_DATE("basic_iso_date"),
+        ISO_LOCAL_DATE("iso_local_date"),
+        ISO_OFFSET_DATE ("iso_offset_date"),
+        ISO_DATE("iso_date"),
+        ISO_LOCAL_TIME("iso_local_time"),
+        ISO_OFFSET_TIME("iso_offset_time"),
+        ISO_TIME("iso_time"),
+        ISO_LOCAL_DATE_TIME("iso_local_date_time"),
+        ISO_OFFSET_DATE_TIME("iso_offset_date_time"),
+        ISO_ZONED_DATE_TIME("iso_zoned_date_time"),
+        ISO_DATE_TIME("iso_date_time"),
+        ISO_ORDINAL_DATE("iso_ordinal_date"),
+        ISO_WEEK_DATE("iso_week_date"),
+        ISO_INSTANT("iso_instant"),
+        RFC_1123_DATE_TIME("rfc_1123_date_time");
 
         private final String text;
-
-        public String getText() {
-            return text;
-        }
 
         FormatType(String text){
             this.text = text;
@@ -1836,19 +1839,13 @@ public class MessageFormat extends Format {
         INTEGER("integer"),
         CURRENCY("currency"),
         PERCENT("percent"),
-        COMPACT_SHORT("compact-short"),
-        COMPACT_LONG("compact-long"),
+        COMPACT_SHORT("compact_short"),
+        COMPACT_LONG("compact_long"),
         OR("or"),
         UNIT("unit"),
-        ISO_LOCAL_DATE("iso-local-date"),
-        ISO_LOCAL_TIME("iso-local-time"),
-        ISO_LOCAL_DATE_TIME("iso-local-date-time"),
-        ISO_OFFSET_DATE_TIME("iso-offset-date-time"),
-        ISO_INSTANT("iso-instant"),
-        SUBFORMAT_PATTERN(null);
+        SUBFORMATPATTERN(null);
 
         private final String text;
-
         FormatStyle(String text){
             this.text = text;
         }
@@ -1864,6 +1861,34 @@ public class MessageFormat extends Format {
                 }
             }
             throw new IllegalArgumentException();
+        }
+    }
+
+    /**
+     * After reading an object from the input stream, do a simple verification
+     * to maintain class invariants.
+     * @throws InvalidObjectException if the objects read from the stream is invalid.
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        boolean isValid = maxOffset >= -1
+                && formats.length > maxOffset
+                && offsets.length > maxOffset
+                && argumentNumbers.length > maxOffset;
+        if (isValid) {
+            int lastOffset = pattern.length() + 1;
+            for (int i = maxOffset; i >= 0; --i) {
+                if ((offsets[i] < 0) || (offsets[i] > lastOffset)) {
+                    isValid = false;
+                    break;
+                } else {
+                    lastOffset = offsets[i];
+                }
+            }
+        }
+        if (!isValid) {
+            throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
         }
     }
 }

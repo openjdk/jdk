@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug 8318761
- * @summary Test MessageFormatPattern ability to recognize and produce the
- *          appropriate FormatType and FormatStyle for DateTimeFormatter(ClassicFormat).
+ * @summary Test MessageFormatPattern ability to recognize the appropriate
+ *          FormatType and FormatStyle for DateTimeFormatter(ClassicFormat).
+ *          This includes the types j_time, j_date, and the DateTimeFormatter
+ *          predefined formatters.
  * @run junit TemporalSubFormats
  */
 
@@ -36,8 +38,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+import java.time.format.FormatStyle;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -50,64 +53,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TemporalSubFormats {
 
-    // Ensure the built-in FormatType and FormatStyles for dtFmt are as expected
-    @Test
-    public void applyPatternTest() {
-        var mFmt = new MessageFormat(
-                "{0,temporal,iso-local-date}{1,temporal,iso-local-time}" +
-                        "{2,temporal,iso-local-date-time}{3,temporal,iso-offset-date-time}{4,temporal,iso-instant}");
-        assertEquals(mFmt.getFormatsByArgumentIndex()[0], DateTimeFormatter.ISO_LOCAL_DATE.toFormat());
-        assertEquals(mFmt.getFormatsByArgumentIndex()[1], DateTimeFormatter.ISO_LOCAL_TIME.toFormat());
-        assertEquals(mFmt.getFormatsByArgumentIndex()[2], DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat());
-        assertEquals(mFmt.getFormatsByArgumentIndex()[3], DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat());
-        assertEquals(mFmt.getFormatsByArgumentIndex()[4], DateTimeFormatter.ISO_INSTANT.toFormat());
-    }
-
-    // Ensure that only the supported built-in FormatStyles or a
-    // Subformat pattern are recognized
-    @Test
-    public void badApplyPatternTest() {
-        // Not a supported FormatStyle
-        assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,number,iso-date"));
-        // Bad Subformat pattern
-        assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,number,1"));
-    }
-
-    // Ensure the supported built-in FormatStyles can be recognized on toPattern()
-    @Test
-    public void toPatternTest() {
-        var mFmt = new MessageFormat("{0}{1}{2}{3}{4}");
-        mFmt.setFormatByArgumentIndex(0, DateTimeFormatter.ISO_LOCAL_DATE.toFormat());
-        mFmt.setFormatByArgumentIndex(1, DateTimeFormatter.ISO_LOCAL_TIME.toFormat());
-        mFmt.setFormatByArgumentIndex(2, DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat());
-        mFmt.setFormatByArgumentIndex(3, DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat());
-        mFmt.setFormatByArgumentIndex(4, DateTimeFormatter.ISO_INSTANT.toFormat());
-        assertEquals("{0,temporal,iso-local-date}{1,temporal,iso-local-time}{2,temporal,iso-local-date-time}" +
-                "{3,temporal,iso-offset-date-time}{4,temporal,iso-instant}", mFmt.toPattern());
-    }
-
-    // A dtFmt created with a Subformat pattern cannot be recognized
-    // when toPattern is invoked
-    @Test
-    public void badToPatternTest() {
-        var mFmt = new MessageFormat("{0}");
-        // Non-recognizable DateTimeFormatter (ClassicFormat)
-        mFmt.setFormatByArgumentIndex(0,
-                DateTimeFormatter.ofPattern("yy").toFormat());
-        // Default behavior of unrecognizable Formats is a FormatElement
-        // in the form of { ArgumentIndex }
-        assertEquals("{0}", mFmt.toPattern());
-    }
-
-    // Test that the dtFmt subformats format properly within the MessageFormat
+    // Check that applying the built-in DateTimeFormatter types returns the
+    // correct Format and formats properly. Patterns are case-insensitive
     @ParameterizedTest
-    @MethodSource
-    public void formatTest(MessageFormat mFmt, Format cFmt) {
-        // Variety of different date/time types to test formatting
+    @MethodSource("preDefinedTypes")
+    public void preDefinedPatternsTest(String pattern, Format fmt) {
+        var mFmt = new MessageFormat("quux{0,"+pattern+"}quux");
         Object[] temporals = new Object[]{LocalDate.now(), LocalTime.now(),
-                LocalDateTime.now(), OffsetDateTime.now(), Instant.now()};
+                ZonedDateTime.now(), LocalDateTime.now(), OffsetDateTime.now(), Instant.now()};
         for (Object val : temporals) {
             // Wrap in Object array for MessageFormat
             Object[] wrappedVal = new Object[]{val};
@@ -115,34 +68,111 @@ public class TemporalSubFormats {
             try {
                 String mFmtted = mFmt.format(wrappedVal);
                 // If current format can support the time object. Check equality of result
-                assertEquals(mFmtted, "quux" + cFmt.format(val) + "quux");
+                assertEquals(mFmtted, "quux"+fmt.format(val)+"quux");
             } catch (IllegalArgumentException ignored) {
                 // Otherwise, ensure both throw IAE on unsupported field
-                assertThrows(IllegalArgumentException.class, () -> cFmt.format(val));
+                assertThrows(IllegalArgumentException.class, () -> fmt.format(val));
             }
         }
     }
 
-    // MessageFormats with patterns that contain the associated ClassicFormat
-    private static Stream<Arguments> formatTest() {
-        Locale loc = Locale.getDefault(Locale.Category.FORMAT);
+    // Provides String patterns and the associated (standalone) FormatType
+    private static Stream<Arguments> preDefinedTypes() {
         return Stream.of(
-                // Built-in patterns
-                Arguments.of(new MessageFormat("quux{0,temporal,iso-local-date}quux"),
-                        DateTimeFormatter.ISO_LOCAL_DATE.toFormat()),
-                Arguments.of(new MessageFormat("quux{0,temporal,iso-local-time}quux"),
-                        DateTimeFormatter.ISO_LOCAL_TIME.toFormat()),
-                Arguments.of(new MessageFormat("quux{0,temporal,iso-local-date-time}quux"),
-                        DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat()),
-                Arguments.of(new MessageFormat("quux{0,temporal,iso-offset-date-time}quux"),
-                        DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat()),
-                Arguments.of(new MessageFormat("quux{0,temporal,iso-instant}quux"),
-                        DateTimeFormatter.ISO_INSTANT.toFormat()),
-                // Subformat Patterns
-                Arguments.of(new MessageFormat("quux{0,temporal,MM/dd/yy}quux"),
-                        DateTimeFormatter.ofPattern("MM/dd/yy", loc).toFormat()),
-                Arguments.of(new MessageFormat("quux{0,temporal,HH:mm}quux"),
-                        DateTimeFormatter.ofPattern("HH:mm", loc).toFormat())
+            Arguments.of("BASIC_ISO_DATE", DateTimeFormatter.BASIC_ISO_DATE.toFormat()),
+            Arguments.of("ISO_LOCAL_DATE", DateTimeFormatter.ISO_LOCAL_DATE.toFormat()),
+            Arguments.of("ISO_OFFSET_DATE", DateTimeFormatter.ISO_OFFSET_DATE.toFormat()),
+            Arguments.of("ISO_DATE", DateTimeFormatter.ISO_DATE.toFormat()),
+            Arguments.of("ISO_LOCAL_TIME", DateTimeFormatter.ISO_LOCAL_TIME.toFormat()),
+            Arguments.of("ISO_OFFSET_TIME", DateTimeFormatter.ISO_OFFSET_TIME.toFormat()),
+            Arguments.of("ISO_TIME", DateTimeFormatter.ISO_TIME.toFormat()),
+            Arguments.of("ISO_LOCAL_DATE_TIME", DateTimeFormatter.ISO_LOCAL_DATE_TIME.toFormat()),
+            Arguments.of("ISO_OFFSET_DATE_TIME", DateTimeFormatter.ISO_OFFSET_DATE_TIME.toFormat()),
+            Arguments.of("ISO_ZONED_DATE_TIME", DateTimeFormatter.ISO_ZONED_DATE_TIME.toFormat()),
+            Arguments.of("ISO_DATE_TIME", DateTimeFormatter.ISO_DATE_TIME.toFormat()),
+            Arguments.of("ISO_ORDINAL_DATE", DateTimeFormatter.ISO_ORDINAL_DATE.toFormat()),
+            Arguments.of("ISO_WEEK_DATE", DateTimeFormatter.ISO_WEEK_DATE.toFormat()),
+            Arguments.of("ISO_INSTANT", DateTimeFormatter.ISO_INSTANT.toFormat()),
+            Arguments.of("RFC_1123_DATE_TIME", DateTimeFormatter.RFC_1123_DATE_TIME.toFormat())
         );
+    }
+
+    // Check that the appropriate FormatType/Style combo returns correct Format
+    // Unlike the other pattern tests, the formatted output is used to check
+    // equality, as DateTimeFormatter does not implement equals()
+    @ParameterizedTest
+    @MethodSource("styles")
+    public void applyPatternTest(String style, FormatStyle fStyle) {
+        var time = ZonedDateTime.now();
+        var date = LocalDate.now();
+        // Test j_date
+        var dFmt = new MessageFormat("{0,j_date"+style+"}");
+        assertEquals(DateTimeFormatter.ofLocalizedDate(fStyle).withLocale(
+                dFmt.getLocale()).toFormat().format(date),
+                dFmt.getFormatsByArgumentIndex()[0].format(date));
+
+        // Test j_time
+        var tFmt = new MessageFormat("{0,j_time"+style+"}");
+        assertEquals(DateTimeFormatter.ofLocalizedTime(fStyle).withLocale(
+                tFmt.getLocale()).toFormat().format(time),
+                tFmt.getFormatsByArgumentIndex()[0].format(time));
+    }
+
+    // Provides String patterns and the associated FormatStyle
+    private static Stream<Arguments> styles() {
+        return Stream.of(
+                Arguments.of("", FormatStyle.MEDIUM),
+                Arguments.of(",short", FormatStyle.SHORT),
+                Arguments.of(",medium", FormatStyle.MEDIUM),
+                Arguments.of(",long", FormatStyle.LONG),
+                Arguments.of(",full", FormatStyle.FULL)
+        );
+    }
+
+    // Test that a proper Format from a SubformatPattern can be reproduced
+    @Test
+    public void subformatPatternTest() {
+        // SubformatPattern invokes the same method for both j_date and j_time
+        var pattern = "d MMM uuuu";
+        var date = LocalDate.now();
+
+        // Test j_date
+        var dFmt = new MessageFormat("{0,j_date,"+pattern+"}");
+        assertEquals(DateTimeFormatter.ofPattern(pattern,dFmt.getLocale()).toFormat().format(date),
+                dFmt.getFormatsByArgumentIndex()[0].format(date));
+
+        // Test j_time (which is essentially j_date for a SubformatPattern)
+        var tFmt = new MessageFormat("{0,j_time,"+pattern+"}");
+        assertEquals(DateTimeFormatter.ofPattern(pattern,tFmt.getLocale()).toFormat().format(date),
+                tFmt.getFormatsByArgumentIndex()[0].format(date));
+    }
+
+    // Ensure that only the supported built-in FormatStyles or a
+    // valid SubformatPattern are recognized
+    @Test
+    public void badApplyPatternTest() {
+        // Not a supported FormatStyle
+        assertThrows(IllegalArgumentException.class, () ->
+                new MessageFormat("{0,j_date,longer"));
+        // Not a legal SubformatPattern
+        assertThrows(IllegalArgumentException.class, () ->
+                new MessageFormat("{0,j_date,d MMM uuuu xx"));
+        // Pre-defined ISO style does not exist
+        assertThrows(IllegalArgumentException.class, () ->
+                new MessageFormat("{0,basic_iso_date_foo"));
+    }
+
+    // DateTimeFormatters cannot be recognized when toPattern() is invoked
+    // Default behavior of unrecognizable Formats is a FormatElement
+    // in the form of { ArgumentIndex }
+    @Test
+    public void nonRecognizableToPatternTest() {
+        var validPattern = "yy";
+        var mFmt = new MessageFormat("{0}");
+        mFmt.setFormatByArgumentIndex(0, DateTimeFormatter.ofPattern(validPattern).toFormat());
+        assertEquals("{0}", mFmt.toPattern());
+
+        mFmt = new MessageFormat("{0,j_date,long}");
+        assertEquals("{0}", mFmt.toPattern());
     }
 }

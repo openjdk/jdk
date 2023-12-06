@@ -34,16 +34,11 @@ import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompactSubFormats {
 
@@ -51,7 +46,7 @@ public class CompactSubFormats {
     @Test
     public void applyPatternTest() {
         var mFmt = new MessageFormat(
-                "{0,number,compact-short}{1,number,compact-long}");
+                "{0,number,compact_short}{1,number,compact_long}");
         var compactShort = NumberFormat.getCompactNumberInstance(
                 mFmt.getLocale(), NumberFormat.Style.SHORT);
         var compactLong = NumberFormat.getCompactNumberInstance(
@@ -60,11 +55,11 @@ public class CompactSubFormats {
         assertEquals(mFmt.getFormatsByArgumentIndex()[1], compactLong);
     }
 
-    // Ensure that only 'compact-short' and 'compact-long' are recognized
+    // Ensure that only 'compact_short' and 'compact_long' are recognized
     @Test
     public void badApplyPatternTest() {
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,number,compact-regular"));
+                new MessageFormat("{0,number,compact_regular"));
     }
 
     // SHORT and LONG CompactNumberFormats should produce correct patterns
@@ -75,7 +70,7 @@ public class CompactSubFormats {
                 mFmt.getLocale(), NumberFormat.Style.SHORT));
         mFmt.setFormatByArgumentIndex(1, NumberFormat.getCompactNumberInstance(
                 mFmt.getLocale(), NumberFormat.Style.LONG));
-        assertEquals("{0,number,compact-short}{1,number,compact-long}", mFmt.toPattern());
+        assertEquals("{0,number,compact_short}{1,number,compact_long}", mFmt.toPattern());
     }
 
     // A custom cnFmt cannot be recognized, thus does not produce any built-in pattern
@@ -88,28 +83,5 @@ public class CompactSubFormats {
         // Default behavior of unrecognizable Formats is a FormatElement
         // in the form of { ArgumentIndex }
         assertEquals("{0}", mFmt.toPattern());
-    }
-
-    // Test that the cnFmt Subformats format properly within the MessageFormat
-    @ParameterizedTest
-    @MethodSource
-    public void formatTest(MessageFormat mFmt, CompactNumberFormat cnFmt) {
-        long[] values = new long[]{1, 10, 100, 1000, 10000, 100000};
-        for (long value : values) {
-            Object[] data = {value};
-            // Check cnFmt sub-format is formatting properly
-            assertEquals(mFmt.format(data), "foo"+cnFmt.format(value)+"foo");
-        }
-    }
-
-    // MessageFormat with patterns that contain the associated cnFmt
-    private static Stream<Arguments> formatTest() {
-        Locale loc = Locale.getDefault(Locale.Category.FORMAT);
-        return Stream.of(
-                Arguments.of(new MessageFormat("foo{0,number,compact-short}foo"),
-                        NumberFormat.getCompactNumberInstance(loc, NumberFormat.Style.SHORT)),
-                Arguments.of(new MessageFormat("foo{0,number,compact-long}foo"),
-                        NumberFormat.getCompactNumberInstance(loc, NumberFormat.Style.LONG))
-        );
     }
 }
