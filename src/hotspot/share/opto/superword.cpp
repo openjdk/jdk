@@ -1622,19 +1622,19 @@ void print_icon_or_idx(Node* n) {
 #endif
 
 // Find the set of alignment solutions for load/store pack p.
-AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
-  assert(p != nullptr && (p->at(0)->is_Load() || p->at(0)->is_Store()), "only load/store packs");
+AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
+  assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   // All vector loads and stores need to be memory aligned. The alignment width (aw) in
-  // principle is the vector width (vw). But when vw > ObjectAlignmentInBytes this is
+  // principle is the vector_width. But when vector_width > ObjectAlignmentInBytes this is
   // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
   // aligned. For example, the relative offset between two arrays is only guaranteed to
   // be divisible by ObjectAlignmentInBytes.
-  uint pack_size    = p->size();
-  MemNode* mem_ref  = p->at(0)->as_Mem();
+  uint pack_size    = pack->size();
+  MemNode* mem_ref  = pack->at(0)->as_Mem();
   int element_size  = mem_ref->memory_size();
-  int vw            = pack_size * element_size;         // vector_width
-  int aw            = MIN2(vw, ObjectAlignmentInBytes); // alignment_width
+  int vector_width  = pack_size * element_size;
+  int aw            = MIN2(vector_width, ObjectAlignmentInBytes); // alignment_width
 
   CountedLoopEndNode* pre_end = lp()->pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
@@ -1655,9 +1655,10 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   if (is_trace_align_vector()) {
     tty->print(" pack mem_ref:");
     mem_ref->dump();
-    tty->print_cr("  vw = vector_width    = pack_size(%d) * element_size(%d) = %d", pack_size, element_size, vw);
-    tty->print_cr("  aw = alignment_width = min(vw(%d), ObjectAlignmentInBytes(%d)) = %d",
-                  vw, ObjectAlignmentInBytes, aw);
+    tty->print_cr("  vector_width = pack_size(%d) * element_size(%d) = %d",
+                  pack_size, element_size, vector_width);
+    tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
+                  vector_width, ObjectAlignmentInBytes, aw);
 
     if (!init_node->is_ConI()) {
       tty->print("  init:");
