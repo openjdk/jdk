@@ -9843,24 +9843,10 @@ instruct string_equalsL(iRegP str1, iRegP str2, iRegI cnt, iRegI result, roddReg
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct string_equalsU(iRegP str1, iRegP str2, iRegI cnt, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP oddReg, TEMP evenReg, KILL cr); // R0, R1 are killed, too.
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU || ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::none);
-  ins_cost(300);
-  format %{ "String Equals char[] $str1,$str2,$cnt -> $result" %}
-  ins_encode %{
-    __ array_equals(false, $str1$$Register, $str2$$Register,
-                    $cnt$$Register, $oddReg$$Register, $evenReg$$Register,
-                    $result$$Register, false /* byte */);
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
 instruct string_equals_imm(iRegP str1, iRegP str2, uimmI8 cnt, iRegI result, flagsReg cr) %{
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(KILL cr); // R0 is killed, too.
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL || ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   ins_cost(100);
   format %{ "String Equals byte[] $str1,$str2,$cnt -> $result" %}
   ins_encode %{

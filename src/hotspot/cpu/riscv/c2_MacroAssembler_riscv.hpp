@@ -83,8 +83,7 @@
                      int elem_size);
 
   void string_equals(Register r1, Register r2,
-                     Register result, Register cnt1,
-                     int elem_size);
+                     Register result, Register cnt1);
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
@@ -173,8 +172,7 @@
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void string_equals_v(Register r1, Register r2,
-                       Register result, Register cnt1,
-                       int elem_size);
+                       Register result, Register cnt1);
 
   void arrays_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
