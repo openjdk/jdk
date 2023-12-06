@@ -219,8 +219,9 @@ public class ScreencastHelper {
                     "Screen Capture in the selected area was not allowed"
             );
         } else if (retVal == ERROR) {
-            throw new RuntimeException(
-                "Screen capture has failed due to desktop environment error");
+            if (SCREENCAST_DEBUG) {
+                System.err.println("Screen capture failed.");
+            }
         } else if (retVal == OUT_OF_BOUNDS) {
             if (SCREENCAST_DEBUG) {
                 System.err.println(

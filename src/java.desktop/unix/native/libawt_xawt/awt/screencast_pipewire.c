@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "debug_util.h"
 #ifdef HEADLESS
 #error This file should not be included in headless library
 #endif
@@ -886,12 +885,11 @@ static int makeScreencast(
     while (!isAllDataReady()) {
         fp_pw_thread_loop_lock(pw.loop);
         fp_pw_thread_loop_wait(pw.loop);
+        fp_pw_thread_loop_unlock(pw.loop);
         if (hasPipewireFailed) {
             doCleanup();
-            fp_pw_thread_loop_unlock(pw.loop);
             return RESULT_ERROR;
         }
-        fp_pw_thread_loop_unlock(pw.loop);
     }
 
     return RESULT_OK;
@@ -957,6 +955,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
         token, &requestedArea, affectedScreenBounds, affectedBoundsLength);
 
     if (attemptResult) {
+        if (attemptResult == RESULT_DENIED) {
+            releaseToken(env, jtoken, token);
+            return attemptResult;
+        }
         DEBUG_SCREENCAST("Screencast attempt failed with %i, re-trying...\n",
                          attemptResult);
         attemptResult = makeScreencast(
