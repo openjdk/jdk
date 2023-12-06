@@ -1461,11 +1461,10 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
                                         Register tmp1, Register tmp2, Register tmp3,
-                                        Register tmp4, BasicType eltype)
+                                        Register tmp4, Register tmp5, Register tmp6,
+                                        BasicType eltype)
 {
-  const Register tmp5 = t0;
-  const Register tmp6 = t1;
-  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   const int elsize = arrays_hashcode_elsize(eltype);
   const int chunks_end_shift = exact_log2(elsize);
@@ -1481,10 +1480,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   }
 
   const int stride = 4;
-  const Register pow31_3_4 = tmp1;
-  const Register pow31_3   = tmp2;
-  const Register pow31_2   = tmp3;
-  const Register chunks    = tmp4;
+  const Register pow31_4 = tmp1;
+  const Register pow31_3 = tmp2;
+  const Register pow31_2 = tmp3;
+  const Register chunks  = tmp4;
   const Register chunks_end = chunks;
 
   Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
@@ -1493,7 +1492,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
   beqz(cnt, DONE);
 
-  mv(pow31_2, 961); // [31^^2]
+  addiw(pow31_2, zr, 961); // [31^^2]
 
   andi(chunks, cnt, ~(stride-1));
   beqz(chunks, TAIL);
@@ -1512,25 +1511,29 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   default:                               ShouldNotReachHere(); \
   } \
 
-  ld(pow31_3_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                                + 0 * sizeof(jint))); // [31^^3:31^^4]
-  srli(pow31_3, pow31_3_4, 32);
+  ld(pow31_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                              + 0 * sizeof(jint))); // [31^^3:31^^4]
+  srli(pow31_3, pow31_4, 32);
 
   bind(WIDE_LOOP);
-  mulw(result, result, pow31_3_4); // 31^^4 * h
-  DO_ELEMENT_LOAD(tmp5, 0);
-  mulw(tmp5, tmp5, pow31_3);       // 31^^3 * ary[i+0]
-  addw(result, result, tmp5);
-  DO_ELEMENT_LOAD(tmp5, 1);
-  mulw(tmp5, tmp5, pow31_2);       // 31^^2 * ary[i+1]
-  addw(result, result, tmp5);
+  mulw(result, result, pow31_4); // 31^^4 * h
+  DO_ELEMENT_LOAD(t0,   0);
+  DO_ELEMENT_LOAD(t1,   1);
   DO_ELEMENT_LOAD(tmp5, 2);
-  slli(tmp6, tmp5, 5);             // optimize 31^^1 * ary[i+2]
-  subw(tmp5, tmp6, tmp5);          // with ary[i+2]<<5 - ary[i+2]
+  DO_ELEMENT_LOAD(tmp6, 3);
+
+  mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
+  addw(result, result, t0);
+
+  mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
+  addw(result, result, t1);
+
+  slli(t0, tmp5, 5);             // optimize 31^^1 * ary[i+2]
+  subw(tmp5, t0, tmp5);          // with ary[i+2]<<5 - ary[i+2]
   addw(result, result, tmp5);
-  DO_ELEMENT_LOAD(tmp5, 3);
-  addw(result, result, tmp5);      // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
-                                   //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
+
+  addw(result, result, tmp6);    // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
+                                 //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
   addi(ary, ary, elsize * stride);
   bne(ary, chunks_end, WIDE_LOOP);
 
@@ -1540,10 +1543,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   add(chunks_end, ary, chunks_end);
 
   bind(TAIL_LOOP);
-  DO_ELEMENT_LOAD(tmp5, 0)
-  slli(tmp6, result, 5);           // optimize 31 * result
-  subw(result, tmp6, result);      // with result<<5 - result
-  addw(result, result, tmp5);
+  DO_ELEMENT_LOAD(t0, 0)
+  slli(t1, result, 5);           // optimize 31 * result
+  subw(result, t1, result);      // with result<<5 - result
+  addw(result, result, t0);
   addi(ary, ary, elsize);
   bne(ary, chunks_end, TAIL_LOOP);
 
