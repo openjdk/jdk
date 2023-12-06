@@ -666,5 +666,5 @@ public final class JVM {
      * @param eventTypeId the id of the event type
      * @param value
      */
-    public static native void setMiscellaneous(long id, long value);
+    public static native void setMiscellaneous(long eventTypeId, long value);
 }

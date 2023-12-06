@@ -594,7 +594,7 @@ void JfrCheckpointManager::clear_type_set() {
   // from the leakp writer. For the real writer, the data will not be
   // committed, because the JFR system is yet to be started.
   // Therefore, the writer is cancelled before its destructor is run,
-  // to avoid writing unnecessary inforamation into the checkpoint system.
+  // to avoid writing unnecessary information into the checkpoint system.
   writer.cancel();
 }
 

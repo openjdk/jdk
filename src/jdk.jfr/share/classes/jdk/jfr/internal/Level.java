@@ -38,7 +38,7 @@ import jdk.jfr.MetadataDefinition;
  *
  * This settings is only supported for JVM events.
  *
- * @since 21
+ * @since 22
  */
 @MetadataDefinition
 @Target({ ElementType.TYPE })
