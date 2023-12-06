@@ -103,8 +103,11 @@ size_t G1CMMarkStack::capacity_alignment() {
   return (size_t)lcm(os::vm_allocation_granularity(), sizeof(TaskQueueEntryChunk)) / sizeof(G1TaskQueueEntry);
 }
 
-bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
+bool G1CMMarkStack::initialize() {
   guarantee(_chunk_allocator.capacity() == 0, "G1CMMarkStack already initialized.");
+
+  size_t initial_capacity = MarkStackSize;
+  size_t max_capacity = MarkStackSizeMax;
 
   size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
 
@@ -112,13 +115,16 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
   size_t initial_chunk_capacity = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
   initial_chunk_capacity = round_up_power_of_2(initial_chunk_capacity);
+  max_capacity = MAX2(initial_chunk_capacity, max_capacity);
 
-  guarantee(initial_chunk_capacity <= max_capacity,
-            "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,
-            max_capacity, initial_chunk_capacity);
+  FLAG_SET_ERGO(MarkStackSizeMax, (max_capacity * TaskEntryChunkSizeInVoidStar));
+  FLAG_SET_ERGO(MarkStackSize, (initial_chunk_capacity * TaskEntryChunkSizeInVoidStar));
+
+  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 
   log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
                 initial_chunk_capacity, max_capacity);
+
   return _chunk_allocator.initialize(initial_chunk_capacity, max_capacity);
 }
 
@@ -500,7 +506,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _concurrent_workers->initialize_workers();
   _num_concurrent_workers = _concurrent_workers->active_workers();
 
-  if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
+  if (!_global_mark_stack.initialize()) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
   }
 

@@ -230,8 +230,8 @@ private:
   // Alignment and minimum capacity of this mark stack in number of oops.
   static size_t capacity_alignment();
 
-  // Allocate and initialize the mark stack with the given number of oops.
-  bool initialize(size_t initial_capacity, size_t max_capacity);
+  // Allocate and initialize the mark stack.
+  bool initialize();
 
   // Pushes the given buffer containing at most EntriesPerChunk elements on the mark
   // stack. If less than EntriesPerChunk elements are to be pushed, the array must
