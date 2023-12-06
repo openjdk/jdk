@@ -710,7 +710,9 @@ public class Annotate {
         List<JCExpression> elems = na.elems;
         if (na.elemtype != null) {
             log.error(na.elemtype.pos(), Errors.NewNotAllowedInAnnotation);
-            elems = List.nil();
+            if (elems == null) {
+                elems = List.nil();
+            }
         }
         ListBuffer<Attribute> buf = new ListBuffer<>();
         for (List<JCExpression> l = elems; l.nonEmpty(); l = l.tail) {

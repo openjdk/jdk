@@ -14,5 +14,6 @@ public class T8320144 {
     @Target({ElementType.TYPE})
     public @interface TestAnnotation {
         public String[] excludeModules() default new String[0];
+        public String[] value() default new String[] { 3 };
     }
 }
