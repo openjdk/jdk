@@ -93,7 +93,7 @@ public class ThreadLocal<T> {
      * The next hash code to be given out. Updated atomically. Starts at
      * zero.
      */
-    private static AtomicInteger nextHashCode =
+    private static final AtomicInteger nextHashCode =
         new AtomicInteger();
 
     /**
