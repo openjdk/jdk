@@ -8976,7 +8976,7 @@ instruct verify_vector_alignment(rRegP r, immL32 mask, rFlagsReg cr) %{
     __ stop("verify_vector_alignment found a misaligned vector memory access");
     __ bind(Lskip);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{

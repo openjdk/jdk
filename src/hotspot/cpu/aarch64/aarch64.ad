@@ -8252,7 +8252,7 @@ instruct verify_vector_alignment(iRegP r, immL_positive_bitmaskI mask, rFlagsReg
     __ stop("verify_vector_alignment found a misaligned vector memory access");
     __ bind(Lskip);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================

@@ -67,7 +67,7 @@ bool C2Compiler::init_c2_runtime() {
 
 #ifdef ASSERT
   if (!AlignVector && VerifyAlignVector) {
-    warning("VerifyAlignVector disabled because AlignVector not enabled.");
+    warning("VerifyAlignVector disabled because AlignVector is not enabled.");
     FLAG_SET_CMDLINE(VerifyAlignVector, false);
   }
 #endif

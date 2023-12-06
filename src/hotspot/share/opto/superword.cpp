@@ -609,7 +609,7 @@ void SuperWord::find_adjacent_refs() {
 
   // Take the first mem_ref as the reference to align to. The pre-loop trip count is
   // modified to align this reference to a vector-aligned address. If strict alignment
-  // is required, we may change the reference later (see filter_packs_for_alignment).
+  // is required, we may change the reference later (see filter_packs_for_alignment()).
   MemNode* align_to_mem_ref = nullptr;
 
   while (memops.size() != 0) {
@@ -1691,7 +1691,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
     return AlignmentSolution("non power-of-2 scale not supported");
   }
 
-  // We analyze the adress of the mem_ref. The idea is to disassemble it into a linear
+  // We analyze the address of mem_ref. The idea is to disassemble it into a linear
   // expression, where we can use the constant factors as the basis for ensuring the
   // alignment of vector memory accesses.
   //
@@ -1705,12 +1705,12 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   //
   // init:        value before pre-loop
   // pre_stride:  increment per pre-loop iteration
-  // pre_iter:    number of pre-loop iterations (adjustible via pre-loop limit)
+  // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
   // main_stride: increment per main-loop iteration (= pre_stride * unroll_factor)
   // j:           number of main-loop iterations (j >= 0)
   //
   // In the following, we restate the simple form of the address expression, by first
-  // expanding the iv varialbe. In a second step, we reshape the expression again, and
+  // expanding the iv variable. In a second step, we reshape the expression again, and
   // state it as a linear expression, consisting of 6 terms.
   //
   //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
@@ -1723,7 +1723,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   //                          \   + scale * main_stride * j                 + C_main  * j               (main-loop term, for any j >= 0)
   //
   // We describe the 6 terms:
-  //   1) The "base" of the address is the address of a java object (e.g. array),
+  //   1) The "base" of the address is the address of a Java object (e.g. array),
   //      and hence can be assumed to already be aw-aligned (base mod aw = 0).
   //   2) The "C_const" term is the sum of all constant terms. This is "offset",
   //      plus "init" if it is constant.
@@ -1746,7 +1746,9 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
 
   if (init_node->is_ConI()) {
     C_const_init = init_node->as_ConI()->get_int();
+    C_init = 0;
   } else {
+    C_const_init = 0
     C_init = scale;
   }
 
@@ -1793,7 +1795,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   //
   //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * j = 0 (modulo aw)      (1)
   //
-  // Alignment must be maintained over all main-loop iterations, i.e for any j >= 0, we require:
+  // Alignment must be maintained over all main-loop iterations, i.e. for any j >= 0, we require:
   //
   //   C_main % aw = 0                                                                                        (2*)
   //
