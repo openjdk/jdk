@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/universe.hpp"
+#include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 #include "unittest.hpp"
 
@@ -142,7 +143,7 @@ TEST_VM(WorkerThreads, basic) {
 }
 
 static void perf_iteration(WorkerThreads* workers, bool caller_runs) {
-  static const int TRIES = 50000;
+  static const int TRIES = 10000;
   NumberSeq seq;
 
   for (int t = 0; t < TRIES; t++) {
@@ -156,6 +157,8 @@ static void perf_iteration(WorkerThreads* workers, bool caller_runs) {
 }
 
 TEST_VM(WorkerThreads, perf) {
+  static const int ITERS = 5;
+
   static const uint max_workers = os::processor_count();
   static const uint half_workers = max_workers / 2;
   static const uint min_workers = 1;
@@ -163,39 +166,38 @@ TEST_VM(WorkerThreads, perf) {
   WorkerThreads* workers = new WorkerThreads("test", max_workers);
   workers->initialize_workers();
 
-
-  tty->print_cr("Full parallelism:");
+  tty->print_cr("Full parallelism (%u workers):", max_workers);
   workers->set_active_workers(max_workers);
   tty->print_cr("  only workers:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, false);
   }
   tty->print_cr("  workers + caller:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, true);
   }
   tty->cr();
 
-  tty->print_cr("Half parallelism:");
+  tty->print_cr("Half parallelism (%u workers):", half_workers);
   workers->set_active_workers(half_workers);
   tty->print_cr("  only workers:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, false);
   }
   tty->print_cr("  workers + caller:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, true);
   }
   tty->cr();
 
-  tty->print_cr("Min parallelism:");
+  tty->print_cr("Min parallelism (%u workers):", min_workers);
   workers->set_active_workers(min_workers);
   tty->print_cr("  only workers:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, false);
   }
   tty->print_cr("  workers + caller:");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < ITERS; i++) {
     perf_iteration(workers, true);
   }
   tty->cr();
