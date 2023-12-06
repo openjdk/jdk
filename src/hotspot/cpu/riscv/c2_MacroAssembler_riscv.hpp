@@ -163,7 +163,7 @@
 
   void signum_fp(FloatRegister dst, FloatRegister one, bool is_double);
 
-  void signum_fp_v(VectorRegister dst, BasicType bt, int vlen, VectorRegister zero, VectorRegister one);
+  void signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen);
 
   // intrinsic methods implemented by rvv instructions
 
