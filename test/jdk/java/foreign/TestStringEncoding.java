@@ -329,21 +329,21 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "charsetsAndSegments")
     public void testStringGetWithCharset(Charset charset, MemorySegment segment) {
-        for (int offset = 0 ; offset < 5 ; offset++) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             segment.getString(offset, charset);
         }
     }
 
     @Test(dataProvider = "charsetsAndSegments")
     public void testStringSetWithCharset(Charset charset, MemorySegment segment) {
-        for (int offset = 0 ; offset < 5 ; offset++) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             segment.setString(offset, "H", charset);
         }
     }
 
     @Test(dataProvider = "charsetsAndSegments")
     public void testStringAllocateFromWithCharset(Charset charset, MemorySegment segment) {
-        for (int offset = 0 ; offset < 5 ; offset++) {
+        for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             SegmentAllocator.prefixAllocator(segment.asSlice(offset)).allocateFrom("H", charset);
         }
     }
