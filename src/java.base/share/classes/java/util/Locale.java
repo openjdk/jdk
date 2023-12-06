@@ -1052,16 +1052,11 @@ public final class Locale implements Cloneable, Serializable {
         return loc;
     }
 
-    @SuppressWarnings("removal")
     private static Locale initDefault() {
         String language, region, script, country, variant;
-        var sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-        language = StaticProperty.userLanguage(0);
+        language = StaticProperty.USER_LANGUAGE;
         // for compatibility, check for old user.region property
-        region = StaticProperty.userRegion();
+        region = StaticProperty.USER_REGION;
         if (!region.isEmpty()) {
             // region can be of form country, country_variant, or _variant
             int i = region.indexOf('_');
@@ -1074,29 +1069,24 @@ public final class Locale implements Cloneable, Serializable {
             }
             script = "";
         } else {
-            script = StaticProperty.userScript(0);
-            country = StaticProperty.userCountry(0);
-            variant = StaticProperty.userVariant(0);
+            script = StaticProperty.USER_SCRIPT;
+            country = StaticProperty.USER_COUNTRY;
+            variant = StaticProperty.USER_VARIANT;
         }
 
         return getInstance(language, script, country, variant,
-                getDefaultExtensions(StaticProperty.userExtensions(0))
+                getDefaultExtensions(StaticProperty.USER_EXTENSIONS)
                     .orElse(null));
     }
 
-    @SuppressWarnings("removal")
     private static Locale initDefault(Locale.Category category) {
         Locale locale = Locale.defaultLocale;
-        var sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
         return getInstance(
-            StaticProperty.userLanguage(category.ordinal() + 1),
-            StaticProperty.userScript(category.ordinal() + 1),
-            StaticProperty.userCountry(category.ordinal() + 1),
-            StaticProperty.userVariant(category.ordinal() + 1),
-            getDefaultExtensions(StaticProperty.userExtensions(category.ordinal() + 1))
+            category == Category.DISPLAY ? StaticProperty.USER_LANGUAGE_DISPLAY : StaticProperty.USER_LANGUAGE_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_SCRIPT_DISPLAY : StaticProperty.USER_SCRIPT_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_COUNTRY_DISPLAY : StaticProperty.USER_COUNTRY_FORMAT,
+            category == Category.DISPLAY ? StaticProperty.USER_VARIANT_DISPLAY : StaticProperty.USER_VARIANT_FORMAT,
+            getDefaultExtensions(category == Category.DISPLAY ? StaticProperty.USER_EXTENSIONS_DISPLAY : StaticProperty.USER_EXTENSIONS_FORMAT)
                 .orElse(locale.getLocaleExtensions()));
     }
 

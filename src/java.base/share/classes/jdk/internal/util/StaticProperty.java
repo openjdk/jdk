@@ -57,22 +57,22 @@ public final class StaticProperty {
     private static final String OS_NAME;
     private static final String OS_ARCH;
     private static final String OS_VERSION;
-    private static final String USER_LANGUAGE;
-    private static final String USER_LANGUAGE_DISPLAY;
-    private static final String USER_LANGUAGE_FORMAT;
-    private static final String USER_SCRIPT;
-    private static final String USER_SCRIPT_DISPLAY;
-    private static final String USER_SCRIPT_FORMAT;
-    private static final String USER_COUNTRY;
-    private static final String USER_COUNTRY_DISPLAY;
-    private static final String USER_COUNTRY_FORMAT;
-    private static final String USER_VARIANT;
-    private static final String USER_VARIANT_DISPLAY;
-    private static final String USER_VARIANT_FORMAT;
-    private static final String USER_EXTENSIONS;
-    private static final String USER_EXTENSIONS_DISPLAY;
-    private static final String USER_EXTENSIONS_FORMAT;
-    private static final String USER_REGION;
+    public static final String USER_LANGUAGE;
+    public static final String USER_LANGUAGE_DISPLAY;
+    public static final String USER_LANGUAGE_FORMAT;
+    public static final String USER_SCRIPT;
+    public static final String USER_SCRIPT_DISPLAY;
+    public static final String USER_SCRIPT_FORMAT;
+    public static final String USER_COUNTRY;
+    public static final String USER_COUNTRY_DISPLAY;
+    public static final String USER_COUNTRY_FORMAT;
+    public static final String USER_VARIANT;
+    public static final String USER_VARIANT_DISPLAY;
+    public static final String USER_VARIANT_FORMAT;
+    public static final String USER_EXTENSIONS;
+    public static final String USER_EXTENSIONS_DISPLAY;
+    public static final String USER_EXTENSIONS_FORMAT;
+    public static final String USER_REGION;
 
     private StaticProperty() {}
 
@@ -308,109 +308,4 @@ public final class StaticProperty {
      public static String osVersion() {
          return OS_VERSION;
      }
-
-    /**
-     * {@return the {@code user.language} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @param category locale category. 0 for the base property,
-     *                 {@code Locale.Category.ordinal() + 1} for the category
-     *                 specific property
-     */
-    public static String userLanguage(int category) {
-        return switch (category) {
-            case 0 -> USER_LANGUAGE;
-            case 1 -> USER_LANGUAGE_DISPLAY;
-            case 2 -> USER_LANGUAGE_FORMAT;
-            default -> throw new InternalError();
-        };
-    }
-
-    /**
-     * {@return the {@code user.script} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @param category locale category. 0 for the base property,
-     *                 {@code Locale.Category.ordinal() + 1} for the category
-     *                 specific property
-     */
-    public static String userScript(int category) {
-        return switch (category) {
-            case 0 -> USER_SCRIPT;
-            case 1 -> USER_SCRIPT_DISPLAY;
-            case 2 -> USER_SCRIPT_FORMAT;
-            default -> throw new InternalError();
-        };
-    }
-
-    /**
-     * {@return the {@code user.country} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @param category locale category. 0 for the base property,
-     *                 {@code Locale.Category.ordinal() + 1} for the category
-     *                 specific property
-     */
-    public static String userCountry(int category) {
-        return switch (category) {
-            case 0 -> USER_COUNTRY;
-            case 1 -> USER_COUNTRY_DISPLAY;
-            case 2 -> USER_COUNTRY_FORMAT;
-            default -> throw new InternalError();
-        };
-    }
-
-    /**
-     * {@return the {@code user.variant} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @param category locale category. 0 for the base property,
-     *                 {@code Locale.Category.ordinal() + 1} for the category
-     *                 specific property
-     */
-    public static String userVariant(int category) {
-        return switch (category) {
-            case 0 -> USER_VARIANT;
-            case 1 -> USER_VARIANT_DISPLAY;
-            case 2 -> USER_VARIANT_FORMAT;
-            default -> throw new InternalError();
-        };
-    }
-
-    /**
-     * {@return the {@code user.extensions} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @param category locale category. 0 for the base property,
-     *                 {@code Locale.Category.ordinal() + 1} for the category
-     *                 specific property
-     */
-    public static String userExtensions(int category) {
-        return switch (category) {
-            case 0 -> USER_EXTENSIONS;
-            case 1 -> USER_EXTENSIONS_DISPLAY;
-            case 2 -> USER_EXTENSIONS_FORMAT;
-            default -> throw new InternalError();
-        };
-    }
-
-    /**
-     * {@return the {@code user.region} system property}
-     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-     * in this method. The caller of this method should take care to ensure
-     * that the returned property is not made accessible to untrusted code.</strong>
-     */
-    public static String userRegion() {
-        return USER_REGION;
-    }
 }
