@@ -42,7 +42,7 @@ public class TestLoadNIdeal {
 
     static class A { int x; }
 
-    @DontCompile
+    @DontInline
     void dummy(A p[]) { }
 
     @Test
@@ -51,7 +51,7 @@ public class TestLoadNIdeal {
         A p[] = new A[1];
         p[0] = new A();
 
-        // Dummy is not compiled and hence not inlined => Escape analysis
+        // The dummy method is not inlined => Escape analysis
         // cannot ensure that p[0] is unmodified after the call.
         dummy(p);
 
