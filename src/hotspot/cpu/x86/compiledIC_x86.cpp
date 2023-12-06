@@ -28,6 +28,7 @@
 #include "code/compiledIC.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
