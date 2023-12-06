@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,15 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.javax.crypto.full;
 
-#ifdef HEADLESS
-    #error This file should not be included in headless library
-#endif
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
 
-#include "jni_util.h"
+import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 
-struct MenuComponentIDs {
-  jfieldID font;
-  jfieldID appContext;
-  jmethodID getParent;
-};
+/**
+ * This performance tests runs ChaCha20-Poly1305 encryption and decryption
+ * using heap and direct ByteBuffers for input and output buffers with single
+ * and multi-part operations.
+ */
+
+public class CC20P1305ByteBuffer extends ByteBufferBase {
+
+    public static final int IV_MODULO = 12;
+
+    public AlgorithmParameterSpec getNewSpec() {
+        iv_index = (iv_index + 1) % IV_MODULO;
+        return new IvParameterSpec(iv, iv_index, IV_MODULO);
+    }
+
+    @Setup
+    public void setup() throws Exception {
+        init("ChaCha20-Poly1305/None/NoPadding", keyLength);
+    }
+}

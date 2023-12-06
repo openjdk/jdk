@@ -1038,7 +1038,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // Step 2: custom catalog if specified
-        if (staxInputSource == null && (fUseCatalog && fCatalogFile != null)) {
+        if ((publicId != null || literalSystemId != null) &&
+                staxInputSource == null && (fUseCatalog && fCatalogFile != null)) {
             if (fCatalogResolver == null) {
                 fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
                 fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
@@ -1048,7 +1049,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
-        if (staxInputSource == null && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
+        if ((publicId != null || literalSystemId != null) &&
+                staxInputSource == null && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();
 
             staxInputSource = resolveWithCatalogStAX(fDefCR, JdkCatalog.JDKCATALOG, publicId, literalSystemId);
@@ -1056,10 +1058,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // Step 4: default resolution if not resolved by a resolver and the RESOLVE
         // feature is set to 'continue'
+        // Note if both publicId and systemId are null, the resolution process continues as usual
         if (staxInputSource != null) {
             fISCreatedByResolver = true;
-        } else if (JdkXmlUtils.isResolveContinue(fCatalogFeatures) &&
-                fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE)) {
+        } else if ((publicId == null && literalSystemId == null) ||
+                (JdkXmlUtils.isResolveContinue(fCatalogFeatures) &&
+                fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE))) {
             staxInputSource = new StaxXMLInputSource(
                     new XMLInputSource(publicId, literalSystemId, baseSystemId, true), false);
         }
@@ -1222,8 +1226,10 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // Step 4: default resolution if not resolved by a resolver and the RESOLVE
         // feature is set to 'continue'
-        if ((xmlInputSource == null) && JdkXmlUtils.isResolveContinue(fCatalogFeatures) &&
-                fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE)) {
+        // Note if both publicId and systemId are null, the resolution process continues as usual
+        if ((publicId == null && literalSystemId == null) ||
+                ((xmlInputSource == null) && JdkXmlUtils.isResolveContinue(fCatalogFeatures) &&
+                fSecurityManager.is(Limit.JDKCATALOG_RESOLVE, JdkConstants.CONTINUE))) {
             xmlInputSource = new XMLInputSource(publicId, literalSystemId, baseSystemId, false);
         }
 

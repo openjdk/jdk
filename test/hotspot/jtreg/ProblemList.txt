@@ -72,7 +72,7 @@ compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x6
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
-compiler/codecache/CheckLargePages.java 8317831 linux-x64
+compiler/codecache/CheckLargePages.java 8319795 linux-x64
 
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
