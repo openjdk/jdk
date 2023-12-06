@@ -1528,7 +1528,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
     private final class EngineAEADDec implements ChaChaEngine {
 
-        private AEADBufferedStream cipherBuf;
+        private AEADBufferedStream cipherBuf = null;
         private final byte[] tag;
 
         @Override
@@ -1614,7 +1614,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 doUpdate(in, inOff, inLen, out, outOff);
                 ctPlusTag = cipherBuf.toByteArray();
                 inOff = 0;
-                ctPlusTagLen = ctPlusTag.length;
+                ctPlusTagLen = cipherBuf.size();
                 cipherBuf.reset();
             }
 
@@ -1653,21 +1653,29 @@ abstract class ChaCha20Cipher extends CipherSpi {
             throws ShortBufferException, AEADBadTagException, KeyException {
             int len;
             int inLen = input.remaining();
-            byte[] ct, buf = (getBufferedLength() == 0 ? null : cipherBuf.toByteArray());
+            byte[] ct = null, buf = null;
+                //buf = (getBufferedLength() == 0 ? null : cipherBuf.toByteArray());
+            int bufLen = 0;
+            // The length of cipher text and tag
             int ctLen = getBufferedLength() + inLen;
+
             if (ctLen < TAG_LENGTH) {
                 throw new AEADBadTagException("Input too short - need tag");
             }
-            if (inLen == 0) {
-                ct = buf;
-                buf = null;
-                len = ctLen;
-            } else if (inLen < TAG_LENGTH) {
-                doUpdate(input, output);
-                ct = cipherBuf.toByteArray();
-                buf = null;
+
+            if (inLen < TAG_LENGTH) {
+                if (inLen > 0) {
+                    doUpdate(input, output);
+                }
+                if (cipherBuf != null) {
+                    ct = cipherBuf.toByteArray();
+                }
                 len = ctLen;
             } else {
+                if (cipherBuf != null) {
+                    buf = cipherBuf.toByteArray();
+                    bufLen = cipherBuf.size();
+                }
                 ct = new byte[inLen];
                 input.get(ct, 0, inLen);
                 len = inLen;
@@ -1676,7 +1684,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
             // If there is an internal buffer, calculate its tag contribution.
             if (buf != null) {
-                dataLen = authUpdate(buf, 0, buf.length);
+                dataLen = authUpdate(buf, 0, bufLen);
             }
             // Complete tag calculation
             len -= TAG_LENGTH;
@@ -1691,8 +1699,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
             // decrypt internal buffer in-place, then put it into the bytebuffer
             if (buf != null) {
-                chaCha20Transform(buf, 0, buf.length, buf, 0);
-                output.put(buf, 0, buf.length);
+                chaCha20Transform(buf, 0, bufLen, buf, 0);
+                output.put(buf, 0, bufLen);
             }
             // decrypt input buffer in-place, append it to the bytebuffer
             chaCha20Transform(ct, 0, len, ct, 0);
