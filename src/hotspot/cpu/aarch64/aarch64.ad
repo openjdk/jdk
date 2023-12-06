@@ -8240,14 +8240,14 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
 // ============================================================================
 // VerifyVectorAlignment Instruction
 
-instruct verify_vector_alignment(iRegP r, immL_positive_bitmaskI mask, rFlagsReg cr) %{
-  match(Set r (VerifyVectorAlignment r mask));
+instruct verify_vector_alignment(iRegP addr, immL_positive_bitmaskI mask, rFlagsReg cr) %{
+  match(Set addr (VerifyVectorAlignment addr mask));
   effect(KILL cr);
-  format %{ "verify_vector_alignment $r $mask \t! verify alignment" %}
+  format %{ "verify_vector_alignment $addr $mask \t! verify alignment" %}
   ins_encode %{
     Label Lskip;
-    // check if masked bits of r are zero
-    __ tst($r$$Register, $mask$$constant);
+    // check if masked bits of addr are zero
+    __ tst($addr$$Register, $mask$$constant);
     __ br(Assembler::EQ, Lskip);
     __ stop("verify_vector_alignment found a misaligned vector memory access");
     __ bind(Lskip);

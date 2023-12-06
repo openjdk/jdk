@@ -586,8 +586,9 @@ bool SuperWord::SLP_extract() {
 
 //------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
-// This is the initial set of packs that will then be extended by
-// following use->def and def->use links.
+// We can find adjacent memory references by comparing their relative
+// alignment. If the final vectors can be aligned can not yet be determined,
+// that is only done once all vectors are extended and combined.
 void SuperWord::find_adjacent_refs() {
   // Get list of memory operations
   Node_List memops;
@@ -620,6 +621,7 @@ void SuperWord::find_adjacent_refs() {
 
     if (align_to_mem_ref == nullptr) {
       align_to_mem_ref = mem_ref;
+      set_align_to_ref(align_to_mem_ref);
     }
 
     VPointer align_to_ref_p(mem_ref, phase(), lpt(), nullptr, false);
@@ -666,7 +668,8 @@ void SuperWord::find_adjacent_refs() {
     }
   } // while (memops.size() != 0)
 
-  set_align_to_ref(align_to_mem_ref);
+  assert(_packset.is_empty() || align_to_mem_ref != nullptr,
+         "packset empty or we find the alignment reference");
 
   if (TraceSuperWord) {
     tty->print_cr("\nAfter find_adjacent_refs");
@@ -1495,6 +1498,12 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_packs() {
+#ifdef ASSERT
+  for (int i = 0; i < _packset.length(); i++) {
+    assert(_packset.at(i) != nullptr, "no nullptr in packset");
+  }
+#endif
+
   bool changed = true;
   // Combine packs regardless max vector size.
   while (changed) {
@@ -1739,19 +1748,19 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   //   6) The "C_main * j" term represents how much the iv is increased during "j"
   //      main-loop iterations.
 
-  // Trivial constants
-  int C_const_init  = 0;
-  int C_init  = 0;
-  int C_invar = 0;
-
+  int C_const_init = 0;
+  int C_init = 0;
   if (init_node->is_ConI()) {
+    // init is constant -> contribute init to the C_const term.
     C_const_init = init_node->as_ConI()->get_int();
-    C_init = 0;
+    C_init = 0; // no C_init term
   } else {
-    C_const_init = 0
+    // init is variable -> contribute init to the C_init term.
+    C_const_init = 0;
     C_init = scale;
   }
 
+  int C_invar = 0;
   if (invar != nullptr) {
     C_invar = abs(invar_factor);
   }

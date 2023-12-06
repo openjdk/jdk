@@ -3692,17 +3692,17 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
                                                         n->as_StoreVector()->must_verify_alignment();
       if (must_verify_alignment) {
-        jlong memory_size = n->is_LoadVector() ? n->as_LoadVector()->memory_size() :
-                                                 n->as_StoreVector()->memory_size();
-        // The memory access should be aligned to the vector length in bytes.
+        jlong vector_width = n->is_LoadVector() ? n->as_LoadVector()->memory_size() :
+                                                  n->as_StoreVector()->memory_size();
+        // The memory access should be aligned to the vector width in bytes.
         // However, the underlying array is possibly less well aligned, but at least
         // to ObjectAlignmentInBytes. Hence, even if multiple arrays are accessed in
         // a loop we can expect at least the following alignment:
-        jlong alignment = MIN2(memory_size, (jlong)ObjectAlignmentInBytes);
-        assert(2 <= alignment && alignment <= 64, "alignment must be in range");
-        assert(is_power_of_2(alignment), "alignment must be power of 2");
+        jlong guaranteed_alignment = MIN2(vector_width, (jlong)ObjectAlignmentInBytes);
+        assert(2 <= guaranteed_alignment && guaranteed_alignment <= 64, "alignment must be in range");
+        assert(is_power_of_2(guaranteed_alignment), "alignment must be power of 2");
         // Create mask from alignment. e.g. 0b1000 -> 0b0111
-        jlong mask = alignment - 1;
+        jlong mask = guaranteed_alignment - 1;
         Node* mask_con = ConLNode::make(mask);
         VerifyVectorAlignmentNode* va = new VerifyVectorAlignmentNode(n->in(MemNode::Address), mask_con);
         n->set_req(MemNode::Address, va);

@@ -8964,14 +8964,14 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
 %}
 
 #ifdef _LP64
-instruct verify_vector_alignment(rRegP r, immL32 mask, rFlagsReg cr) %{
-  match(Set r (VerifyVectorAlignment r mask));
+instruct verify_vector_alignment(rRegP addr, immL32 mask, rFlagsReg cr) %{
+  match(Set addr (VerifyVectorAlignment addr mask));
   effect(KILL cr);
-  format %{ "verify_vector_alignment $r $mask \t! verify alignment" %}
+  format %{ "verify_vector_alignment $addr $mask \t! verify alignment" %}
   ins_encode %{
     Label Lskip;
-    // check if masked bits of r are zero
-    __ testq($r$$Register, $mask$$constant);
+    // check if masked bits of addr are zero
+    __ testq($addr$$Register, $mask$$constant);
     __ jccb(Assembler::equal, Lskip);
     __ stop("verify_vector_alignment found a misaligned vector memory access");
     __ bind(Lskip);
