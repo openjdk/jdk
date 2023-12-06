@@ -1684,6 +1684,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   assert(is_power_of_2(abs(pre_stride)), "pre_stride is power of 2");
   assert(is_power_of_2(unroll_factor), "unroll factor is power of 2");
   assert(is_power_of_2(abs(main_stride)), "main_stride is power of 2");
+  assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
 
   // Out of simplicity: non power-of-2 scale not supported.
   if (abs(scale) == 0 || !is_power_of_2(abs(scale))) {
@@ -1732,11 +1733,11 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   //      and a variable term. If "init" is constant, then "C_init" is zero, and
   //      "C_const" accounts for "init" instead.
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
-  //      during the "pre_iter" many pre-loop iterations. This term can be adjusted
+  //      during the "pre_iter" pre-loop iterations. This term can be adjusted
   //      by changing the pre-loop limit. This allows us to adjust the alignment
   //      of the main-loop memory reference.
   //   6) The "C_main * j" term represents how much the iv is increased during "j"
-  //      "j" main-loop iterations.
+  //      main-loop iterations.
 
   // Trivial constants
   int C_const_init  = 0;
@@ -1815,43 +1816,88 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
     return AlignmentSolution("EQ(2*) not satisfied (cannot align across main-loop iterations)");
   }
 
-  // In what follows, me must ensure that the C_pre term can align the C_const, C_init and C_invar terms,
-  // by adjusting the pre-loop limit (pre_iter). We must check
+  // In what follows, we need to show that the C_const, init and invar terms can be aligned by
+  // adjusting the pre-loop limit (pre-iter). We decompose pre_iter:
   //
-  //   C_init  % abs(C_pre) = 0                                          (3a*)
-  //   C_invar % abs(C_pre) = 0                                          (3b*)
+  //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
   //
-  // to ensure that the variable term for init and invar can be aligned with the C_pre term.
+  // where pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are defined as the number of
+  // pre-loop iterations required to align the C_const, init and invar terms individually.
+  // Hence, we can rewrite:
+  //
+  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter
+  //   =  C_const             + C_pre * pre_iter_C_const
+  //    + C_invar * var_invar + C_pre * pre_iter_C_invar
+  //    + C_init  * var_init  + C_pre * pre_iter_C_init
+  //   = 0 (modulo aw)                                                           (3)
+  //
+  // We strengthen the constraints by splitting the equation into 3 equations, where the C_const,
+  // init, and invar term are aligned individually:
+  //
+  //   C_init  * var_init  + C_pre * pre_iter_C_init  = 0 (modulo aw)            (4a)
+  //   C_invar * var_invar + C_pre * pre_iter_C_invar = 0 (modulo aw)            (4b)
+  //   C_const             + C_pre * pre_iter_C_const = 0 (modulo aw)            (4c)
+  //
+  // We can only guarantee solutions to (4a) and (4b) if:
+  //
+  //   C_init  % abs(C_pre) = 0                                                  (5a*)
+  //   C_invar % abs(C_pre) = 0                                                  (5b*)
+  //
+  // Which means there are X and Y such that:
+  //
+  //   C_init  = C_pre * X       (X = 0 if C_init  = 0, else X = C_init  / C_pre)
+  //   C_invar = C_pre * Y       (Y = 0 if C_invar = 0, else Y = C_invar / C_pre)
+  //
+  //   C_init    * var_init  + C_pre * pre_iter_C_init  =
+  //   C_pre * X * var_init  + C_pre * pre_iter_C_init  =
+  //   C_pre * (X * var_init  + pre_iter_C_init)         = 0 (modulo aw)
+  //
+  //   C_invar   * var_invar + C_pre * pre_iter_C_invar =
+  //   C_pre * Y * var_invar + C_pre * pre_iter_C_invar =
+  //   C_pre * (Y * var_invar + pre_iter_C_invar)       = 0 (modulo aw)
+  //
+  // And hence, we know that there are solutions for pre_iter_C_init and pre_iter_C_invar,
+  // based on X, Y, var_init, and var_invar. We call them:
+  //
+  //   pre_iter_C_init  = alignment_init (X * var_init)
+  //   pre_iter_C_invar = alignment_invar(Y * var_invar)
   //
   int C_init_mod_abs_C_pre  = AlignmentSolution::mod(C_init,  abs(C_pre));
   int C_invar_mod_abs_C_pre = AlignmentSolution::mod(C_invar, abs(C_pre));
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
-    tty->print_cr("  EQ(3a*): C_init(%d) %% abs(C_pre(%d)) = %d = 0   (if false: cannot align init)",
+    tty->print_cr("  EQ(5a*): C_init(%d) %% abs(C_pre(%d)) = %d = 0   (if false: cannot align init)",
                   C_init, C_pre, C_init_mod_abs_C_pre);
-    tty->print_cr("  EQ(3b*): C_invar(%d) %% abs(C_pre(%d)) = %d = 0  (if false: cannot align invar)",
+    tty->print_cr("  EQ(5b*): C_invar(%d) %% abs(C_pre(%d)) = %d = 0  (if false: cannot align invar)",
                   C_invar, C_pre, C_invar_mod_abs_C_pre);
   }
 #endif
 
   if (C_init_mod_abs_C_pre != 0) {
-    return AlignmentSolution("EQ(3a*) not satisfied (cannot align init)");
+    return AlignmentSolution("EQ(5a*) not satisfied (cannot align init)");
   }
   if (C_invar_mod_abs_C_pre != 0) {
-    return AlignmentSolution("EQ(3b*) not satisfied (cannot align invar)");
+    return AlignmentSolution("EQ(5b*) not satisfied (cannot align invar)");
   }
 
-  // We must now show that the C_const term can be aligned.
+  // Having solved (4a) and (4b), we now want to find solutions for (4c), i.e. we need
+  // to show that the C_const term can be aligned with pre_iter_C_const.
   //
   // We can assume that abs(C_pre) is a power of 2.
-  // If abs(C_pre) >= aw, then for any pre_iter >= 0: C_pre * pre_iter = 0 (mod aw),
-  // and hence we require (else there is no solution):
   //
-  //   C_const % aw = 0                                           (4*)
+  // If abs(C_pre) >= aw, then:
+  //
+  //   for any pre_iter >= 0: C_pre * pre_iter = 0 (mod aw)
+  //   for any pre_iter_C_const >= 0: C_pre * pre_iter_C_const = 0 (mod aw)
+  //
+  // which implies that C_iter (and pre_iter_C_const) have no effect on the alignment of
+  // the C_const term. We thus either have a trivial solution, and any pre_iter aligns
+  // the address, or there is no solution. To have the trivial solution, we require:
+  //
+  //   C_const % aw = 0                                                       (6*)
   //
   assert(abs(C_pre) > 0 && is_power_of_2(abs(C_pre)), "abs(C_pre) must be power of 2");
-  assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
   bool abs_C_pre_ge_aw = abs(C_pre) >= aw;
 
 #ifndef PRODUCT
@@ -1867,66 +1913,69 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
 
 #ifndef PRODUCT
     if (is_trace_align_vector()) {
-      tty->print_cr("  EQ(4* ): C_const(%d) %% aw(%d) = %d = 0",
+      tty->print_cr("  EQ(6* ): C_const(%d) %% aw(%d) = %d = 0",
                     C_const, aw, C_const_mod_aw);
     }
 #endif
 
     // The C_init and C_invar terms are trivially aligned.
-    assert(AlignmentSolution::mod(C_init,  aw) == 0,  "implied by abs(C_pre) >= aw and (3a*)");
-    assert(AlignmentSolution::mod(C_invar, aw) == 0,  "implied by abs(C_pre) >= aw and (3b*)");
+    assert(AlignmentSolution::mod(C_init,  aw) == 0,  "implied by abs(C_pre) >= aw and (5a*)");
+    assert(AlignmentSolution::mod(C_invar, aw) == 0,  "implied by abs(C_pre) >= aw and (5b*)");
 
     if (C_const_mod_aw != 0) {
-      return AlignmentSolution("EQ(4*) not satisfied: C_const not aligned");
+      return AlignmentSolution("EQ(6*) not satisfied: C_const not aligned");
     } else {
       // Solution is trivial, holds for any pre-loop limit.
       return AlignmentSolution();
     }
   }
 
-  // Otherwise, if abs(C_pre) < aw, we need to produce a solution that aligns
-  // the C_const, C_init and C_invar terms at the same time.
+  // Otherwise, if abs(C_pre) < aw, we find all solutions for pre_iter_C_const in (4c).
+  // We state pre_iter_C_const in terms of the smallest possible pre_q and pre_r, such
+  // that pre_q >= 0 and 0 <= pre_r < pre_q:
   //
-  //   C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter = 0 (modulo aw)       (5)
+  //   pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)                     (7)
   //
-  // In general, this is not an easy task at compile time. We add two
-  // simplifying restrictions:
+  // We can now restate (4c) with (7):
   //
-  // 1. If a variable init is present (i.e. C_init = scale), then we
-  //    make the solution dependent on scale and C_pre. Only solutions
-  //    with the same dependencies are compatible. This ensures that
-  //    all solutions require the same number of pre-loop iterations
-  //    to align the C_init term.
-  //
-  // 2. If a invariant is present, then we make the solution dependent
-  //    on C_pre and invar. Only solutions with tthe same dependenceis are
-  //    compatible. This ensures that all solutions require the same
-  //    number of pre-loop iterations to align the C_invar term.
-  //
-  // With these assumptions, we can find a solution:
-  //
-  //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
-  //
-  // From (3b*) and the two simplifying assumptions, we know that
-  // pre_iter_C_init and pre_iter_C_invar exist and are the same
-  // for all compatible solutions.
-  // We now have to show that there is a pre_iter_C_const, terms of the
-  // smallest possible pre_q >= 0 and 0 <= pre_r < pre_q:
-  //
-  //   pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)                     (6)
-  //   C_const + C_pre * pre_r + C_pre * pre_q * m = 0 (modulo aw)                (7)
+  //   C_const + C_pre * pre_r + C_pre * pre_q * m = 0 (modulo aw)                (8)
   //
   // Since this holds for any m >= 0, we require:
   //
-  //   C_pre * pre_q = 0 (modulo aw)                                              (8)
-  //   C_const + C_pre * pre_r = 0 (modulo aw)                                    (9*)
+  //   C_pre * pre_q = 0 (modulo aw)                                              (9)
+  //   C_const + C_pre * pre_r = 0 (modulo aw)                                    (10*)
   //
   // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
   //
   int  pre_q = aw / abs(C_pre);
   //
-  // We brute force the solution for pre_r by enumerating
-  // all values 0..pre_q-1 and checking EQ(9*).
+  // We brute force the solution for pre_r by enumerating all values 0..pre_q-1 and
+  // checking EQ(10*).
+  //
+  // Assuming we found a solution for (4c), and also for (4a) and (4b), we know that
+  // the solution to pre_iter is non-trivial:
+  //
+  //   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
+  //            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
+  //
+  // Hence, the solution depends on:
+  //   - Always: pre_r and pre_q
+  //   - If a variable init is present (i.e. C_init = scale), then we know that to
+  //     satisfy (5a*), we must have abs(pre_stride) = 1, X = 1 and C_pre = scale.
+  //     The solution thus depends on var_init = init / scale. We thus have a
+  //     dependency on scale. We could also add a dependency for init, but since
+  //     it is the same for all mem_refs in the loop this is unnecessary. If init
+  //     is constant, then we could add a dependency that there is no variable init.
+  //     But since init is the same for all mem_refs, this is unecessary.
+  //   - If an invariant is present (i.e. C_invar = abs(invar_factor)), then we know
+  //     from (5b*), that Y = abs(invar_factor) / (scale * pre_stride). The solution
+  //     depends on Y * var_invar = abs(invar_factor) * var_invar / (scale * pre_stride),
+  //     hence we have to add a dependency for invar, and scale (pre_stride is the
+  //     same for all mem_refs in the loop). If there is no invariant, then we add
+  //     a dependency that there is no invariant.
+  //
+  // Other mem_refs must have solutions with  the same dependencies, otherwise we
+  // cannot ensure that they require the same number of pre-loop iterations.
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1936,33 +1985,31 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
                   C_const, C_pre, C_pre, aw);
     tty->print_cr("  pre_q = aw(%d) / abs(C_pre(%d)) = %d",
                   aw, C_pre, pre_q);
-    tty->print_cr("  EQ(9*): brute force pre_r = 0..%d", pre_q - 1);
+    tty->print_cr("  EQ(10*): brute force pre_r = 0..%d", pre_q - 1);
   }
 #endif
 
   for (int pre_r = 0; pre_r < pre_q; pre_r++) {
-    int EQ9_val = AlignmentSolution::mod(C_const + C_pre * pre_r, aw);
+    int EQ10_val = AlignmentSolution::mod(C_const + C_pre * pre_r, aw);
 
 #ifndef PRODUCT
     if (is_trace_align_vector()) {
       tty->print_cr("   try pre_r = %d: (C_const(%d) + C_pre(%d) * pre_r(%d)) %% aw(%d) = %d = 0",
-                    pre_r, C_const, C_pre, pre_r, aw, EQ9_val);
+                    pre_r, C_const, C_pre, pre_r, aw, EQ10_val);
     }
 #endif
 
-    if (EQ9_val == 0) {
+    if (EQ10_val == 0) {
       assert((C_init == 0) == init_node->is_ConI(), "init consistent");
       assert((C_invar == 0) == (invar == nullptr), "invar consistent");
 
-      // Dependencies given by the two simplifying assumptions.
-      // Note: if scale is the same, then C_pre is the same.
       Node* invar_dependency = invar;
       int scale_dependency  = (invar != nullptr || !init_node->is_ConI()) ? scale : 0;
       return AlignmentSolution(pre_r, pre_q, mem_ref, aw,
                                invar_dependency, scale_dependency);
     }
   }
-  return AlignmentSolution("EQ(9*) has no solution for pre_r");
+  return AlignmentSolution("EQ(10*) has no solution for pre_r");
 }
 
 // Ensure that all packs can be aligned. We analyze each pack address, and if and how
