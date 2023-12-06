@@ -45,7 +45,7 @@
 
 /*
  * @test id=test-high-interval
- * @summary Verify -XX:RssLimit with an absolute limit
+ * @summary Verify -XX:RssLimit with a high interval
  * @requires vm.flagless
  * @requires os.family != "aix"
  * @modules java.base/jdk.internal.misc
@@ -55,12 +55,22 @@
 
 /*
  * @test id=test-default-interval
- * @summary Verify -XX:RssLimit with an absolute limit
+ * @summary Verify -XX:RssLimit default interval
  * @requires vm.flagless
  * @requires os.family != "aix"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver RssLimitTest test-default-interval
+ */
+
+/*
+ * @test id=test-default-off
+ * @summary Verify -XX:RssLimit is off by default
+ * @requires vm.flagless
+ * @requires os.family != "aix"
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @run driver RssLimitTest test-default-off
  */
 
 import jdk.test.lib.Platform;
@@ -101,12 +111,11 @@ public class RssLimitTest {
         // this may or may not crash us.
         DecimalFormat format = (DecimalFormat) DecimalFormat.getInstance();
         char dot = format.getDecimalFormatSymbols().getDecimalSeparator();
-        String limitPercent = "0" + dot + "01%";
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=" + limitPercent, "-XX:RssLimitCheckInterval=100",
+                "-XX:RssLimitPercent=1", "-XX:RssLimitCheckInterval=100",
                 "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
-        o.shouldContain("RssWatcher task: interval=100ms, limit=" + limitPercent + " of total memory");
-        String pat = "Setting RssWatcher limit to (\\d+) bytes \\(0.01% of total memory of \\d+ bytes\\)";
+        o.shouldContain("RssWatcher task: interval=100ms, limit=1% of total memory");
+        String pat = "Setting RssWatcher limit to (\\d+) bytes \\(1% of total memory of \\d+ bytes\\)";
         String limitString = o.firstMatch(pat, 1);
         long limit = Long.parseLong(limitString);
         if (limit < 100 * 1024 * 1024) {
@@ -120,7 +129,7 @@ public class RssLimitTest {
     private static void testLimitWithVeryHighInterval() throws IOException {
         OutputAnalyzer o = runWithSettings(
                 "-XX:RssLimit=100m", "-XX:RssLimitCheckInterval=120000",
-                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
+                "-Xmx100m");
         o.shouldContain("RssWatcher task: interval=120000ms, limit=100M");
         o.shouldNotContain("Error");
         o.shouldHaveExitValue(0);
@@ -128,9 +137,16 @@ public class RssLimitTest {
 
     private static void testPercentageWithDefaultInterval() throws IOException {
         OutputAnalyzer o = runWithSettings(
-                "-XX:RssLimit=99%",
-                "-Xmx100m", "-Xms100m", "-XX:+AlwaysPreTouch");
-        o.shouldContain("RssWatcher task: interval=5000ms, limit=99.00% of total memory");
+                "-XX:RssLimitPercent=99",
+                "-Xmx100m");
+        o.shouldContain("RssWatcher task: interval=1000ms, limit=99% of total memory");
+        o.shouldNotContain("Error");
+        o.shouldHaveExitValue(0);
+    }
+
+    private static void testDefaultOff() throws IOException {
+        OutputAnalyzer o = runWithSettings("-Xmx100m");
+        o.shouldNotContain("RssWatcher");
         o.shouldNotContain("Error");
         o.shouldHaveExitValue(0);
     }
@@ -151,6 +167,9 @@ public class RssLimitTest {
                 break;
             case "test-default-interval":
                 testPercentageWithDefaultInterval();
+                break;
+            case "test-default-off":
+                testDefaultOff();
                 break;
             default:
                 throw new RuntimeException("Invalid argument (" + args[0] + ")");

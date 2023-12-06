@@ -27,6 +27,7 @@
 
 #include "logging/log.hpp"
 #include "runtime/java.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "services/rsswatch.hpp"
@@ -34,19 +35,23 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-static void check_rss(size_t limit) {
-  const size_t rss = os::get_RSS();
-  log_trace(os, rss)("Rss=%zu", rss);
-  if (rss >= limit) {
-    fatal("Resident Set Size (%zu bytes) reached RssLimit (%zu bytes).", rss, limit);
+class RssLimitTask : public PeriodicTask {
+protected:
+  RssLimitTask() : PeriodicTask(RssLimitCheckInterval) {}
+  void check_rss(size_t limit) {
+    const size_t rss = os::get_RSS();
+    log_trace(os, rss)("Rss=%zu", rss);
+    if (rss >= limit) {
+      fatal("Resident Set Size (%zu bytes) reached RssLimit (%zu bytes).", rss, limit);
+    }
   }
-}
+};
 
-class RssAbsoluteLimitTask : public PeriodicTask {
+class RssAbsoluteLimitTask : public RssLimitTask {
   const size_t _limit;
 public:
-  RssAbsoluteLimitTask(size_t limit, unsigned interval_ms) :
-    PeriodicTask(interval_ms), _limit(limit) {
+  RssAbsoluteLimitTask(size_t limit) :
+    _limit(limit) {
     log_info(os, rss)("RssWatcher task: interval=%ums, limit=" PROPERFMT,
                       interval(), PROPERFMTARGS(_limit));
   }
@@ -55,8 +60,8 @@ public:
   }
 };
 
-class RssRelativeLimitTask : public PeriodicTask {
-  const double _percent;
+class RssRelativeLimitTask : public RssLimitTask {
+  const unsigned _percent;
   size_t _limit;
 
   void update_limit() {
@@ -64,17 +69,17 @@ class RssRelativeLimitTask : public PeriodicTask {
     const size_t limit_x = (size_t)(((double)limit_100 * _percent) / 100.0f);
     if (limit_x != _limit) { // limit changed?
       _limit = limit_x;
-      log_info(os, rss)("Setting RssWatcher limit to %zu bytes (%.2f%% of total memory of %zu bytes)",
+      log_info(os, rss)("Setting RssWatcher limit to %zu bytes (%u%% of total memory of %zu bytes)",
                         limit_x, _percent, limit_100);
     }
   }
 
 public:
 
-  RssRelativeLimitTask(double limit_percent, unsigned interval_ms) :
-    PeriodicTask(interval_ms), _percent(limit_percent), _limit(0) {
+  RssRelativeLimitTask(unsigned percent) :
+    _percent(percent), _limit(0) {
     log_info(os, rss)("RssWatcher task: interval=%ums, "
-                      "limit=%.2f%% of total memory", interval(), _percent);
+                      "limit=%u%% of total memory", interval(), _percent);
   }
 
   void task() override {
@@ -83,35 +88,14 @@ public:
   }
 };
 
-static bool parse_percentage(const char* s, const char** tail, double* percentage) {
-  double v = 0;
-  char sign;
-  int chars_read = 0;
-  if (sscanf(s, "%lf%c%n", &v, &sign, &chars_read) >= 2 && sign == '%') {
-    if (v > 100.0 || v == 0.0) {
-      vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid percentage");
-    }
-    *percentage = v;
-    *tail = s + chars_read;
-    return true;
+void RssWatcher::initialize() {
+
+  if (RssLimit == 0 && RssLimitPercent == 0) {
+    return;
   }
-  return false;
-}
 
-void RssWatcher::initialize(const char* limit_option) {
-  assert(limit_option != nullptr, "Invalid argument");
-
-  bool is_absolute = true;
-  size_t limit = 0;
-  double percentage = 0;
-  const char* s = limit_option;
-
-  if (parse_percentage(s, &s, &percentage)) {
-    is_absolute = false;
-  } else {
-    if (!parse_integer(s, (char**)&s, &limit) || (limit == 0)) {
-      vm_exit_during_initialization("Failed to parse RssLimit", "Not a valid limit size");
-    }
+  if (RssLimit > 0 && RssLimitPercent > 0) {
+    vm_exit_during_initialization("Please specify either RssLimit or RssLimitPercent, but not both");
   }
 
   if (os::get_RSS() == 0) {
@@ -119,7 +103,7 @@ void RssWatcher::initialize(const char* limit_option) {
     return;
   }
 
-  // PeriodicTask has some limitations:
+  // Sanity-check the interval given. We use PeriodicTask, and that has some limitations:
   // - minimum task time
   // - task time aligned to (non-power-of-2) alignment.
   // For convenience, we just adjust the interval.
@@ -130,8 +114,10 @@ void RssWatcher::initialize(const char* limit_option) {
   if (interval != RssLimitCheckInterval) {
     log_warning(os, rss)("RssLimit interval has been adjusted to %ums", interval);
   }
-  PeriodicTask* const task = (is_absolute) ?
-       (PeriodicTask*) new RssAbsoluteLimitTask(limit, interval) :
-       (PeriodicTask*) new RssRelativeLimitTask(percentage, interval);
+
+  RssLimitTask* const task = (RssLimit > 0) ?
+       (RssLimitTask*)new RssAbsoluteLimitTask(RssLimit) :
+       (RssLimitTask*)new RssRelativeLimitTask(RssLimitPercent);
+
   task->enroll();
 }

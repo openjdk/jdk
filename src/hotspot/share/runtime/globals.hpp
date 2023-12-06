@@ -1362,19 +1362,23 @@ const int ObjectAlignmentInBytes = 8;
           "-XX:MallocLimit=2g:oom"                                          \
           "-XX:MallocLimit=compiler:200m:oom,code:100m")                    \
                                                                             \
-                                                                            \
-  product(ccstr, RssLimit, nullptr, DIAGNOSTIC,                             \
+  product(size_t, RssLimit, 0, DIAGNOSTIC,                                  \
           "Limit to Resident Set Size. The JVM will periodically "          \
           "check if that limit had been reached and, if true, "             \
-          "generate a fatal error. The limit can be either given as a "     \
-          "memory size (e.g. \"2G\") or as a percentage of "                \
-          "the total available memory on this machine or in this "          \
-          "container (e.g. \"-XX:RssLimit=80%%\").")                        \
+          "generate a fatal error. A value of 0 (default) disables the "    \
+          "limit.")                                                         \
+          range(0, SIZE_MAX)                                                \
                                                                             \
-  product(uint, RssLimitCheckInterval, 5000, DIAGNOSTIC,                    \
-          "If RssLimit is set, interval, in ms, at which the JVM will "     \
-          "check the process resident set size."                            \
-          range(10, INT_MAX))                                               \
+  product(uint, RssLimitPercent, 0, DIAGNOSTIC,                             \
+          "Limit to Resident Set Size, given as percent of the total "      \
+          "physical memory of the machine or the memory limit of the "      \
+          "container. A value of 0 (default) disables the limit.")          \
+          range(0, 100)                                                     \
+                                                                            \
+  product(uint, RssLimitCheckInterval, 1000, DIAGNOSTIC,                    \
+          "If RssLimit or RssLimitPercent are set, interval, in ms, at "    \
+          "which the JVM will check the process resident set size.")        \
+          range(10, INT_MAX)                                                \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \

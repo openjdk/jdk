@@ -770,9 +770,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // Start RSS watcher task if needed
-  if (RssLimit != nullptr) {
-    RssWatcher::initialize(RssLimit);
-  }
+  RssWatcher::initialize();
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
