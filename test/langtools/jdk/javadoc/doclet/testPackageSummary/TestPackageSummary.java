@@ -51,26 +51,26 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("pkg1/sub/package-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
                     <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
-                    </ul>
+                    </ol>
                     """);
     }
 

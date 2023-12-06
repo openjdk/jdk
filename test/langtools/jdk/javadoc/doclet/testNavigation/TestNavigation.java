@@ -139,75 +139,75 @@ public class TestNavigation extends JavadocTester {
 
         checkOrder("pkg1/A.X.html",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
                     <li><a href="#field-detail" tabindex="0">Field Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#field" tabindex="0">field</a></li>
-                    </ul>
+                    </ol>
                     </li>
                     <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#%3Cinit%3E()" tabindex="0">X()</a></li>
-                    </ul>
+                    </ol>
                     </li>
                     <li><a href="#method-detail" tabindex="0">Method Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#method()" tabindex="0">method()</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>""");
+                    </ol>""");
 
         checkOrder("pkg1/A.Y.html",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
                     <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#%3Cinit%3E()" tabindex="0">Y()</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>""");
+                    </ol>""");
 
         checkOrder("pkg1/A.X.IC.html",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
                     <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#%3Cinit%3E()" tabindex="0">IC()</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>""");
+                    </ol>""");
 
         checkOrder("pkg1/C.html",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
                     <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
                     <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#%3Cinit%3E()" tabindex="0">C()</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>""");
+                    </ol>""");
 
         checkOrder("pkg1/InterfaceWithNoMembers.html",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
-                    </ul>""");
+                    </ol>""");
     }
 
     private void checkSubNav() {

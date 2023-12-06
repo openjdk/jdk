@@ -189,7 +189,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <aside>
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
                     <main role="main">

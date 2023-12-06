@@ -72,11 +72,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
-                    </ul>""");
+                    </ol>""");
 
     }
 
@@ -98,11 +98,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
-                    </ul>""");
+                    </ol>""");
 
     }
 
@@ -122,10 +122,10 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
-                    </ul>""");
+                    </ol>""");
     }
 
 }

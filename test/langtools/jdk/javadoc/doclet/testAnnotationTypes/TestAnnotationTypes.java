@@ -55,7 +55,7 @@ public class TestAnnotationTypes extends JavadocTester {
                     <li><a href="#field-summary" tabindex="0">Field Summary</a></li>""",
                 """
                     <li><a href="#field-detail" tabindex="0">Field Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#DEFAULT_NAME" tabindex="0">DEFAULT_NAME</a></li>""",
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
@@ -73,17 +73,17 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#annotation-interface-required-element-summary" tabindex="0">Required Element Summary</a></li>
                     <li><a href="#annotation-interface-optional-element-summary" tabindex="0">Optional Element Summary</a></li>
                     <li><a href="#annotation-interface-element-detail" tabindex="0">Element Details</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#value()" tabindex="0">value</a></li>
                     <li><a href="#optional()" tabindex="0">optional</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>""");
+                    </ol>""");
 
         checkOutput("pkg/AnnotationType.html", true,
                 """

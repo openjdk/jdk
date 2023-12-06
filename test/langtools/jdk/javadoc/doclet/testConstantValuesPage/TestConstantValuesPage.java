@@ -107,17 +107,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <aside>
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
                     <li><a href="#">Constant Field Values</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#p1.p2a">p1.p2a.*</a></li>
                     <li><a href="#p1.p2b">p1.p2b.*</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>
-                    </aside>""");
+                    </ol>
+                    </nav>""");
     }
 
     /**
@@ -144,16 +144,16 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <aside>
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
                     <li><a href="#">Constant Field Values</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#unnamed-package">Unnamed Package</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>
-                    </aside>""");
+                    </ol>
+                    </nav>""");
     }
 
     /**
@@ -187,17 +187,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <aside>
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
                    <li><a href="#">Constant Field Values</a>
-                   <ul class="toc-list">
+                   <ol class="toc-list">
                    <li><a href="#unnamed-package">Unnamed Package</a></li>
                    <li><a href="#p1.p2a">p1.p2a.*</a></li>
-                   </ul>
+                   </ol>
                    </li>
-                   </ul>
-                   </aside>""");
+                   </ol>
+                   </nav>""");
     }
 
     /**
@@ -257,17 +257,17 @@ public class TestConstantValuesPage extends JavadocTester {
 
         checkOutput("constant-values.html", true,
                 """
-                    <aside>
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
                     <li><a href="#">Constant Field Values</a>
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#p.a">p.a.*</a></li>
                     <li><a href="#p.b">p.b.*</a></li>
                     <li><a href="#p.q">p.q.*</a></li>
-                    </ul>
+                    </ol>
                     </li>
-                    </ul>
-                    </aside>""");
+                    </ol>
+                    </nav>""");
     }
 }

@@ -131,7 +131,7 @@ public class TestSpecTag extends JavadocTester {
                     </div>
                     <div class="sub-nav">
                     <div class="nav-content">
-                    <ul class="sub-nav-list"></ul>
+                    <ol class="sub-nav-list"></ol>
                     <div class="nav-list-search">
                     <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
                     earch in documentation" autocomplete="off" autocapitalize="off">

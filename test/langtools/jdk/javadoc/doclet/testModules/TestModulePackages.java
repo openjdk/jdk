@@ -151,39 +151,39 @@ public class TestModulePackages extends JavadocTester {
         checkPackageRow("o", "p", 0, "package-summary-table package-summary-table-tab1", null, null, "&nbsp;");
         checkOutput("m/p/package-summary.html", true,
                 """
-                    <ul class="sub-nav-list">
+                    <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">m</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html" class="current-selection">p</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("o/p/package-summary.html", true,
                 """
-                    <ul class="sub-nav-list">
+                    <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">o</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html" class="current-selection">p</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("m/p/C.html", true,
                 """
-                    <ul class="sub-nav-list">
+                    <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">m</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="C.html" class="current-selection" title="class in p">C</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("o/p/C.html", true,
                 """
-                    <ul class="sub-nav-list">
+                    <ol class="sub-nav-list">
                     <li><a href="../module-summary.html">o</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="package-summary.html">p</a></li>
                     &nbsp;&gt;&nbsp;
                     <li><a href="C.html" class="current-selection" title="class in p">C</a></li>
-                    </ul>
+                    </ol>
                     """);
         checkOutput("type-search-index.js", true,
                 """

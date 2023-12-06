@@ -722,11 +722,11 @@ public class TestModules extends JavadocTester {
     void checkModuleSummary() {
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <section class="modules-summary" id="modules-summary">
                     <!-- ============ MODULES SUMMARY =========== -->
@@ -748,11 +748,11 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("moduleB/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <!-- ============ PACKAGES SUMMARY =========== -->
                     <h2>Packages</h2>""",
@@ -897,11 +897,11 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <div class="col-first even-row-color"><a href="../moduleB/module-summary.html">moduleB</a></div>
                     <div class="col-last even-row-color"><a href="../moduleB/testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
@@ -912,11 +912,11 @@ public class TestModules extends JavadocTester {
                     -tab1"><a href="testpkgmdltags/package-summary.html">testpkgmdltags</a></div>
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""",
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <div class="caption"><span>Indirect Requires</span></div>
                     <div class="details-table three-column-summary">""",
@@ -960,11 +960,11 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab1">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
@@ -1037,12 +1037,12 @@ public class TestModules extends JavadocTester {
                     <div class="col-last even-row-color package-summary-table package-summary-table-tab3">&nbsp;</div>""");
         checkOutput("moduleB/module-summary.html", found,
                 """
-                    <ul class="toc-list">
+                    <ol class="toc-list">
                     <li><a href="#" tabindex="0">Description</a></li>
                     <li><a href="#packages-summary" tabindex="0">Packages</a></li>
                     <li><a href="#modules-summary" tabindex="0">Modules</a></li>
                     <li><a href="#services-summary" tabindex="0">Services</a></li>
-                    </ul>""",
+                    </ol>""",
                 """
                     <div class="col-first even-row-color package-summary-table package-summary-table\
                     -tab2"><a href="testpkgmdlB/package-summary.html">testpkgmdlB</a></div>
