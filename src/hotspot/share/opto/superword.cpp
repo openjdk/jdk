@@ -3918,6 +3918,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // strictly positive powers of 2. Further, they can be assumed to be non-zero,
   // otherwise the address does not depend on iv, and the alignment cannot be
   // affected by adjusting the pre-loop limit.
+  //
   // Further, if abs(scale) >= aw, then N has no effect on alignment, and we are not
   // able to affect the alignment at all. Hence, we require abs(scale) < aw.
   //
