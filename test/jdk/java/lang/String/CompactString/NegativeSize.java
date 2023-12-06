@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
  * @test
  * @bug 8077559
  * @summary Tests Compact String for negative size.
+ * @requires os.maxMemory >= 4G
  * @run main/othervm -XX:+CompactStrings -Xmx4g NegativeSize
  * @run main/othervm -XX:-CompactStrings -Xmx4g NegativeSize
  */
@@ -60,7 +61,11 @@ public class NegativeSize {
             System.out.println(inStr.length());
             System.out.println(inStr.substring(1_200_000_000));
         } catch (OutOfMemoryError ex) {
-            System.out.println("Succeeded with OutOfMemoryError");
+            if (ex.getMessage().startsWith("UTF16 String size is")) {
+                System.out.println("Succeeded with OutOfMemoryError");
+            } else {
+                throw new RuntimeException("Failed: Not the OutOfMemoryError expected", ex);
+            }
         } catch (NegativeArraySizeException ex) {
             throw new RuntimeException("Failed: Expected OutOfMemoryError", ex);
         }
