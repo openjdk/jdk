@@ -215,9 +215,6 @@
           " 3 = previous level, plus all reachable objects; "               \
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
-  product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
-          "Use Elastic TLABs with Shenandoah")                              \
-                                                                            \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of heap to reserve for evacuations. Larger values make "\
           "GC evacuate more live objects on every cycle, while leaving "    \
