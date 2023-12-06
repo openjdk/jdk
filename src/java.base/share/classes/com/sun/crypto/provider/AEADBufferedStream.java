@@ -42,8 +42,6 @@ import java.util.HexFormat;
  */
 final class AEADBufferedStream extends ByteArrayOutputStream {
 
-    private static final int INCREMENT = 64;
-
     /**
      * Create an instance with the specified buffer
      */
@@ -57,10 +55,9 @@ final class AEADBufferedStream extends ByteArrayOutputStream {
      * method must use {@code size()} for the relevant data length as the
      * returning byte[] maybe larger.
      *
-     * @return internal or new byte array of non-blocksize data.
+     * @return internal buffer.
      */
-    @Override
-    public byte[] toByteArray() {
+    public byte[] getBuffer() {
         return buf;
     }
 
@@ -73,8 +70,8 @@ final class AEADBufferedStream extends ByteArrayOutputStream {
         int blen = buf.length;
         // Create a new larger buffer and append the new data
         if (blen < count + len) {
-            buf = Arrays.copyOf(buf, ArraysSupport.newLength(blen, blen + len,
-                blen));
+            buf = Arrays.copyOf(buf, ArraysSupport.newLength(blen,  len,
+                Math.max(len, blen)));
         }
     }
 

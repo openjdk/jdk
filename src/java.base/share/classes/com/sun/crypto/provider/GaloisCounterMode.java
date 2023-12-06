@@ -842,7 +842,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (aadBuffer != null) {
                 sizeOfAAD = aadBuffer.size();
                 if (sizeOfAAD > 0) {
-                    byte[] aad = aadBuffer.toByteArray();
+                    byte[] aad = aadBuffer.getBuffer();
                     int lastLen = sizeOfAAD % blockSize;
                     if (lastLen != 0) {
                         ghash.update(aad, 0, sizeOfAAD - lastLen);
@@ -1130,7 +1130,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // if there is enough data in the ibuffer and 'in', encrypt it.
             if (bLen > 0) {
-                byte[] buffer = ibuffer.toByteArray();
+                byte[] buffer = ibuffer.getBuffer();
                 // number of bytes not filling a block
                 int remainder = blockSize - bLen;
 
@@ -1206,7 +1206,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // Check if there is enough 'src' and 'buffer' to fill a block
                 if (src.remaining() >= remainder) {
                     byte[] block = new byte[blockSize];
-                    ByteBuffer buffer = ByteBuffer.wrap(ibuffer.toByteArray(),
+                    ByteBuffer buffer = ByteBuffer.wrap(ibuffer.getBuffer(),
                         0, ibuffer.size());
                     buffer.get(block, 0, bLen);
                     src.get(block, bLen, remainder);
@@ -1268,7 +1268,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // process what is in the ibuffer
             if (bLen > 0) {
-                byte[] buffer = ibuffer.toByteArray();
+                byte[] buffer = ibuffer.getBuffer();
 
                 // Make a block if the remaining ibuffer and 'in' can make one.
                 if (bLen + inLen >= blockSize) {
@@ -1331,7 +1331,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (len > 0) {
                 processed += doLastBlock(op,
                     (ibuffer == null || ibuffer.size() == 0) ? null :
-                        ByteBuffer.wrap(ibuffer.toByteArray(), 0,
+                        ByteBuffer.wrap(ibuffer.getBuffer(), 0,
                             ibuffer.size()), src, dst);
             }
 
@@ -1406,7 +1406,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     tagLenBytes);
             } else {
                 // tagOfs will be negative
-                byte[] buffer = ibuffer.toByteArray();
+                byte[] buffer = ibuffer.getBuffer();
                 int ofs = ibuffer.size() - (tagLenBytes - inLen);
                 tagOfs = mergeBlock(buffer, ofs, ibuffer.size() - ofs,
                     in, inOfs, inLen,
@@ -1541,7 +1541,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             // Check if ibuffer has data
             if (getBufferedLength() != 0) {
-                buffer = ByteBuffer.wrap(ibuffer.toByteArray(), 0,
+                buffer = ByteBuffer.wrap(ibuffer.getBuffer(), 0,
                     ibuffer.size());
                 len += buffer.remaining();
             }
@@ -1658,7 +1658,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             if (bLen > 0) {
-                buffer = ibuffer.toByteArray();
+                buffer = ibuffer.getBuffer();
 
                 if (bLen >= PARALLEL_LEN) {
                     len = GaloisCounterMode.implGCMCrypt(buffer, 0, bLen,

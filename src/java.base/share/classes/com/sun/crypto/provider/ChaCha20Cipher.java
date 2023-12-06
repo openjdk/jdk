@@ -1612,7 +1612,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 ctPlusTagLen = inLen;
             } else {
                 doUpdate(in, inOff, inLen, out, outOff);
-                ctPlusTag = cipherBuf.toByteArray();
+                ctPlusTag = cipherBuf.getBuffer();
                 inOff = 0;
                 ctPlusTagLen = cipherBuf.size();
                 cipherBuf.reset();
@@ -1668,12 +1668,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
                     doUpdate(input, output);
                 }
                 if (cipherBuf != null) {
-                    ct = cipherBuf.toByteArray();
+                    ct = cipherBuf.getBuffer();
                 }
                 len = ctLen;
             } else {
                 if (cipherBuf != null) {
-                    buf = cipherBuf.toByteArray();
+                    buf = cipherBuf.getBuffer();
                     bufLen = cipherBuf.size();
                 }
                 ct = new byte[inLen];
