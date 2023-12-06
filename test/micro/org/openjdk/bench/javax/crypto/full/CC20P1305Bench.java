@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,31 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.javax.crypto.small;
+package org.openjdk.bench.javax.crypto.full;
 
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 
 import java.security.spec.AlgorithmParameterSpec;
-import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 
 /**
- * This small performance tests runs AES/GCM encryption and decryption
+ * This performance tests runs ChaCha20-Poly1305 encryption and decryption
  * using input and output byte[] buffers with single and multi-part testing.
- * Only 1024 plaintext data length is tested.
  */
 
-public class AESGCMBench extends
-    org.openjdk.bench.javax.crypto.full.AESGCMBench {
+public class CC20P1305Bench extends BenchBase {
 
-    @Param({"128"})
-    int keyLength;
+    public static final int IV_MODULO = 12;
 
-    @Param({"1024"})
-    int dataSize;
+    public AlgorithmParameterSpec getNewSpec() {
+        iv_index = (iv_index + 1) % IV_MODULO;
+        return new IvParameterSpec(iv, iv_index, IV_MODULO);
+    }
 
     @Setup
     public void setup() throws Exception {
-        init("AES/GCM/NoPadding", keyLength, dataSize);
+        init("ChaCha20-Poly1305/None/NoPadding", keyLength);
     }
 }
