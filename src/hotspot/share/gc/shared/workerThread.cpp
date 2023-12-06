@@ -32,25 +32,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
-class ThreadPriorityAdjuster : public StackObj {
-private:
-  Thread* const _thread;
-  ThreadPriority const _new_prio;
-  ThreadPriority _old_prio;
-public:
-  ThreadPriorityAdjuster(ThreadPriority new_prio) : _thread(Thread::current()), _new_prio(new_prio) {
-    os::get_priority(_thread, _old_prio);
-    if (_old_prio != _new_prio) {
-      os::set_priority(_thread, new_prio);
-    }
-  }
-  ~ThreadPriorityAdjuster() {
-    if (_old_prio != _new_prio) {
-      os::set_priority(_thread, _old_prio);
-    }
-  }
-};
-
 WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _task(nullptr),
     _started(0),
@@ -98,17 +79,11 @@ bool WorkerTaskDispatcher::internal_run_task(bool is_worker) {
   }
 
   // Run task.
-  if (is_worker) {
+  if (is_worker || Thread::current()->is_Named_thread()) {
     GCIdMark gc_id_mark(_task->gc_id());
     _task->work(worker_id);
   } else {
-    ThreadPriorityAdjuster tp(NearMaxPriority);
-    if (Thread::current()->is_Named_thread()) {
-      GCIdMark gc_id_mark(_task->gc_id());
-      _task->work(worker_id);
-    } else {
-      _task->work(worker_id);
-    }
+    _task->work(worker_id);
   }
 
   // Mark that the worker is done with the task.
