@@ -112,7 +112,7 @@ static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller
 
 TEST_VM(WorkerThreads, basic) {
   static const int TRIES = 1000;
-  static const uint max_workers = os::processor_count();
+  static const uint max_workers = MIN2(31, os::processor_count()); // ID bitmap limits the max CPU
   static const uint half_workers = max_workers / 2;
   static const uint min_workers = 1;
 
