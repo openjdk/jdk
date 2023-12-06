@@ -3877,7 +3877,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Opaque1Node* pre_opaq = lp()->pre_loop_end()->limit()->as_Opaque1();
 
   // Current pre-loop limit.
-  Node* lim0 = pre_opaq->in(1);
+  Node* old_limit = pre_opaq->in(1);
 
   // Where we put new limit calculations.
   Node* pre_ctrl = lp()->pre_loop_head()->in(LoopNode::EntryControl);
@@ -3895,22 +3895,22 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // The limit of the pre-loop needs to be adjusted.
   //
-  //   lim0:     current pre-loop limit
-  //   lim:      new pre-loop limit
-  //   N:        difference between lim and lim0
+  //   old_limit:   current pre-loop limit
+  //   new_limit:   new pre-loop limit
+  //   diff_limits: difference between new_limit and old_limit
   //
-  // We want to find N, such that:
+  // We want to find diff_limits, such that:
   //
-  //   iv = lim = lim0 + N   (exit when iv reaches the new limit)
+  //   iv = new_limit = old_limit + diff_limits   (exit when iv reaches the new limit)
   //   adr % aw = 0          (adr is aligned aligned after pre-loop)
   //
   // We can write:
   //
   //   E = base + offset + invar
-  //   adr = E + scale * lim
-  //       = E + scale * lim0 + scale * N
+  //   adr = E + scale * new_limit
+  //       = E + scale * old_limit + scale * diff_limits
   //
-  //   (E + scale * lim0 + scale * N) % aw = 0
+  //   (E + scale * old_limit + scale * diff_limits) % aw = 0
   //
   // In most cases, scale is the element size (elt_size), for example:
   //
@@ -3921,8 +3921,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // otherwise the address does not depend on iv, and the alignment cannot be
   // affected by adjusting the pre-loop limit.
   //
-  // Further, if abs(scale) >= aw, then N has no effect on alignment, and we are not
-  // able to affect the alignment at all. Hence, we require abs(scale) < aw.
+  // Further, if abs(scale) >= aw, then diff_limits has no effect on alignment, and
+  // we are not able to affect the alignment at all. Hence, we require abs(scale) < aw.
   //
   // Moreover, for alignment to be acheivabe, E must be a multiple of scale. We cannot
   // check this at compile time, and do not bother to do it at runtime either. If it
@@ -3933,28 +3933,28 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //   V = aw / abs(scale)            (power of 2)
   //   e = E / abs(scale)
   //
-  // Case 1: scale > 0 && stride > 0 (i.e. N >= 0)
-  //   (e + lim0 + N) % V = 0
-  //   N = (V - (e + lim0)) % V
-  //   lim = lim0 + (-e - lim0) % V
+  // Case 1: scale > 0 && stride > 0 (i.e. diff_limits >= 0)
+  //   (e + old_limit + diff_limits) % V = 0
+  //   diff_limits = (V - (e + old_limit)) % V
+  //   new_limit = old_limit + (-e - old_limit) % V
   //
-  // Case 2: scale < 0 && stride > 0 (i.e. N >= 0)
-  //   (e - lim0 - N) % V = 0
-  //   N = (e - lim0) % V
-  //   lim = lim0 + (+e - lim0) % V
+  // Case 2: scale < 0 && stride > 0 (i.e. diff_limits >= 0)
+  //   (e - old_limit - diff_limits) % V = 0
+  //   diff_limits = (e - old_limit) % V
+  //   new_limit = old_limit + (+e - old_limit) % V
   //
-  // Case 3: scale > 0 && stride < 0 (i.e. N <= 0)
-  //   (e + lim0 - abs(N)) % V = 0
-  //   abs(N) = (e + lim0) % V
-  //   lim = lim0 - (+e + lim0) % V
+  // Case 3: scale > 0 && stride < 0 (i.e. diff_limits <= 0)
+  //   (e + old_limit - abs(diff_limits)) % V = 0
+  //   abs(diff_limits) = (e + old_limit) % V
+  //   new_limit = old_limit - (+e + old_limit) % V
   //
-  // Case 4: scale < 0 && stride < 0 (i.e. N <= 0)
-  //   (e - lim0 + abs(N)) % V = 0
-  //   abs(N) = (lim0 - e) % V
-  //   lim = lim0 - (-e + lim0) % V
+  // Case 4: scale < 0 && stride < 0 (i.e. diff_limits <= 0)
+  //   (e - old_limit + abs(diff_limits)) % V = 0
+  //   abs(diff_limits) = (old_limit - e) % V
+  //   new_limit = old_limit - (-e + old_limit) % V
   //
   // We generalize this with the following formula:
-  //   lim = lim0 +- (pm_e +- lim0) % V
+  //   new_limit = old_limit +- (pm_e +- old_limit) % V
   //
   //   pm_e = -+ E / abs(scale)
   //        = pm_E / abs(scale)
@@ -4066,36 +4066,36 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   _igvn.register_new_node_with_optimizer(pm_e);
   _phase->set_ctrl(pm_e, pre_ctrl);
 
-  // 3: add / subtract lim0
-  Node* pm_e_pm_lim0 = nullptr;
+  // 3: add / subtract old_limit
+  Node* pm_e_pm_old_limit = nullptr;
   if (stride > 0) {
-    pm_e_pm_lim0 = new SubINode(pm_e, lim0);
+    pm_e_pm_old_limit = new SubINode(pm_e, old_limit);
   } else {
-    pm_e_pm_lim0 = new AddINode(pm_e, lim0);
+    pm_e_pm_old_limit = new AddINode(pm_e, old_limit);
   }
-  _igvn.register_new_node_with_optimizer(pm_e_pm_lim0);
-  _phase->set_ctrl(pm_e_pm_lim0, pre_ctrl);
+  _igvn.register_new_node_with_optimizer(pm_e_pm_old_limit);
+  _phase->set_ctrl(pm_e_pm_old_limit, pre_ctrl);
 
   // 4: modulo with V (mask with (V-1))
   Node* mask_V = _igvn.intcon(V-1);
-  Node* pm_e_pm_lim0_mod_V = new AndINode(pm_e_pm_lim0, mask_V);
-  _igvn.register_new_node_with_optimizer(pm_e_pm_lim0_mod_V);
-  _phase->set_ctrl(pm_e_pm_lim0_mod_V, pre_ctrl);
+  Node* pm_e_pm_old_limit_mod_V = new AndINode(pm_e_pm_old_limit, mask_V);
+  _igvn.register_new_node_with_optimizer(pm_e_pm_old_limit_mod_V);
+  _phase->set_ctrl(pm_e_pm_old_limit_mod_V, pre_ctrl);
 
   // 5: compute new limit
-  Node* lim = nullptr;
+  Node* new_limit = nullptr;
   if (stride < 0) {
-    lim = new SubINode(lim0, pm_e_pm_lim0_mod_V);
+    new_limit = new SubINode(old_limit, pm_e_pm_old_limit_mod_V);
   } else {
-    lim = new AddINode(lim0, pm_e_pm_lim0_mod_V);
+    new_limit = new AddINode(old_limit, pm_e_pm_old_limit_mod_V);
   }
-  _igvn.register_new_node_with_optimizer(lim);
-  _phase->set_ctrl(lim, pre_ctrl);
+  _igvn.register_new_node_with_optimizer(new_limit);
+  _phase->set_ctrl(new_limit, pre_ctrl);
 
   // 6. Make sure not to exceed the original limit with the new limit
   Node* constrained =
-    (stride > 0) ? (Node*) new MinINode(lim, orig_limit)
-                 : (Node*) new MaxINode(lim, orig_limit);
+    (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
+                 : (Node*) new MaxINode(new_limit, orig_limit);
   _igvn.register_new_node_with_optimizer(constrained);
   _phase->set_ctrl(constrained, pre_ctrl);
   _igvn.replace_input_of(pre_opaq, 1, constrained);
