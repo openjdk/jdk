@@ -707,20 +707,20 @@ public class Annotate {
         }
 
         JCNewArray na = (JCNewArray)tree;
+        List<JCExpression> elems = na.elems;
         if (na.elemtype != null) {
             log.error(na.elemtype.pos(), Errors.NewNotAllowedInAnnotation);
-            return new Attribute.Error(syms.errType);
-        } else {
-            ListBuffer<Attribute> buf = new ListBuffer<>();
-            for (List<JCExpression> l = na.elems; l.nonEmpty(); l = l.tail) {
-                buf.append(attributeAnnotationValue(types.elemtype(expectedElementType),
-                        l.head,
-                        env));
-            }
-            na.type = expectedElementType;
-            return new Attribute.
-                    Array(expectedElementType, buf.toArray(new Attribute[buf.length()]));
+            elems = List.nil();
         }
+        ListBuffer<Attribute> buf = new ListBuffer<>();
+        for (List<JCExpression> l = elems; l.nonEmpty(); l = l.tail) {
+            buf.append(attributeAnnotationValue(types.elemtype(expectedElementType),
+                    l.head,
+                    env));
+        }
+        na.type = expectedElementType;
+        return new Attribute.
+                Array(expectedElementType, buf.toArray(new Attribute[buf.length()]));
     }
 
     /* *********************************
