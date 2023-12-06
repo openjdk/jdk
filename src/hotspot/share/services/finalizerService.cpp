@@ -137,10 +137,13 @@ class FinalizerEntryLookup : StackObj {
  public:
   FinalizerEntryLookup(const InstanceKlass* ik) : _ik(ik) {}
   uintx get_hash() const { return hash_function(_ik); }
-  bool equals(FinalizerEntry** value, bool* is_dead) {
+  bool equals(FinalizerEntry** value) {
     assert(value != nullptr, "invariant");
     assert(*value != nullptr, "invariant");
     return (*value)->klass() == _ik;
+  }
+  bool is_dead(FinalizerEntry** value) {
+    return false;
   }
 };
 

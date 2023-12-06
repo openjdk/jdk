@@ -44,14 +44,25 @@
  */
 
 /*
- * @test id=Z
+ * @test id=ZSinglegen
  * @bug 8241486
  * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
  * @requires vm.flagless
  * @requires vm.flavor == "server" & !vm.graal.enabled
- * @requires vm.gc.Z
+ * @requires vm.gc.ZSinglegen
  * @library /test/lib
- * @run driver TestNoWarningLoopStripMiningIterSet Z
+ * @run driver TestNoWarningLoopStripMiningIterSet Z -XX:-ZGenerational
+ */
+
+/*
+ * @test id=ZGenerational
+ * @bug 8241486
+ * @summary G1/Z give warning when using LoopStripMiningIter and turn off LoopStripMiningIter (0)
+ * @requires vm.flagless
+ * @requires vm.flavor == "server" & !vm.graal.enabled
+ * @requires vm.gc.ZGenerational
+ * @library /test/lib
+ * @run driver TestNoWarningLoopStripMiningIterSet Z -XX:+ZGenerational
  */
 
 /*
@@ -83,7 +94,7 @@ public class TestNoWarningLoopStripMiningIterSet {
         System.arraycopy(args, 0, cmds, 1, args.length);
         cmds[args.length + 1] = "-XX:+PrintFlagsFinal";
         cmds[args.length + 2] = "-version";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmds);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
@@ -95,9 +106,18 @@ public class TestNoWarningLoopStripMiningIterSet {
 
     public static void main(String[] args) throws Exception {
         String gc = "-XX:+Use" + args[0] + "GC";
-        testWith(output -> output.shouldNotContain(CLSOffLSMGreaterZero), "should have CLS and LSM enabled", true, 100, "-XX:LoopStripMiningIter=100", gc);
-        testWith(output -> output.shouldContain(CLSOffLSMGreaterZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=100", gc);
-        testWith(output -> output.shouldContain(CLSOnLSMEqualZero), "should have CLS and LSM enabled", true, 1, "-XX:LoopStripMiningIter=0", gc);
-        testWith(output -> output.shouldNotContain(CLSOnLSMEqualZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=0", gc);
+        if (args.length > 1) {
+            String extraVMArg = args[1];
+            testWith(output -> output.shouldNotContain(CLSOffLSMGreaterZero), "should have CLS and LSM enabled", true, 100, "-XX:LoopStripMiningIter=100", gc, extraVMArg);
+            testWith(output -> output.shouldContain(CLSOffLSMGreaterZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=100", gc, extraVMArg);
+            testWith(output -> output.shouldContain(CLSOnLSMEqualZero), "should have CLS and LSM enabled", true, 1, "-XX:LoopStripMiningIter=0", gc, extraVMArg);
+            testWith(output -> output.shouldNotContain(CLSOnLSMEqualZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=0", gc, extraVMArg);
+        } else {
+            testWith(output -> output.shouldNotContain(CLSOffLSMGreaterZero), "should have CLS and LSM enabled", true, 100, "-XX:LoopStripMiningIter=100", gc);
+            testWith(output -> output.shouldContain(CLSOffLSMGreaterZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=100", gc);
+            testWith(output -> output.shouldContain(CLSOnLSMEqualZero), "should have CLS and LSM enabled", true, 1, "-XX:LoopStripMiningIter=0", gc);
+            testWith(output -> output.shouldNotContain(CLSOnLSMEqualZero), "should have CLS and LSM disabled", false, 0, "-XX:-UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=0", gc);
+
+        }
     }
 }

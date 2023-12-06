@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,7 +70,7 @@ struct loaded_module_t {
   // True if this module is part of the vm.
   bool is_in_vm;
 
-  // Next item in the list, or NULL if no such item exits
+  // Next item in the list, or null if no such item exits
   loaded_module_t* next;
 
 };
@@ -92,7 +92,7 @@ class LoadedLibraries
     // Optionally, information about the module is returned (info)
     static bool find_for_text_address (
       const void* p,
-      loaded_module_t* info // Optional, leave NULL if not needed.
+      loaded_module_t* info // Optional, leave null if not needed.
     );
 
     // Check whether the given address points into the data segment of a
@@ -100,7 +100,7 @@ class LoadedLibraries
     // Optionally, information about the module is returned (info)
     static bool find_for_data_address (
       const void* p,
-      loaded_module_t* info // Optional, leave NULL if not needed.
+      loaded_module_t* info // Optional, leave null if not needed.
     );
 
     // Output debug info

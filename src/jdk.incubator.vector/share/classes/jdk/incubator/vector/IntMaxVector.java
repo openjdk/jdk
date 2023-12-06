@@ -649,14 +649,6 @@ final class IntMaxVector extends IntVector {
 
         @Override
         @ForceInline
-        public IntMaxMask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            IntMaxMask m = (IntMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         IntMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (IntMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -703,9 +695,9 @@ final class IntMaxVector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        IntMaxMask xor(VectorMask<Integer> mask) {
+        public IntMaxMask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaxMask m = (IntMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMaxMask.class, null, int.class, VLENGTH,
@@ -744,6 +736,16 @@ final class IntMaxVector extends IntVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMaxMask.class, int.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(IntMaxMask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions

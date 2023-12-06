@@ -134,7 +134,7 @@ public class BlackholeIntrinsicTest {
         cmdline.add("compiler.blackhole.BlackholeIntrinsicTest");
         cmdline.add(test);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(cmdline);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmdline);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.stderrShouldBeEmpty();

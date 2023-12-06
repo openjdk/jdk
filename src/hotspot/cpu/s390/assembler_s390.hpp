@@ -137,10 +137,11 @@ class RelAddr {
     assert(((uint64_t)target & 0x0001L) == 0, "target of a relative address must be aligned");
     assert(((uint64_t)pc     & 0x0001L) == 0, "origin of a relative address must be aligned");
 
-    if ((target == NULL) || (target == pc)) {
+    if ((target == nullptr) || (target == pc)) {
       return 0;  // Yet unknown branch destination.
     } else {
-      guarantee(is_in_range_of_RelAddr(target, pc, shortForm), "target not within reach");
+      guarantee(is_in_range_of_RelAddr(target, pc, shortForm),
+                "target not within reach at " INTPTR_FORMAT ", distance = " INTX_FORMAT, p2i(pc), (target - pc) );
       return (int)((target - pc)>>1);
     }
   }
@@ -188,11 +189,6 @@ class Address {
     _base(noreg),
     _index(noreg),
     _disp(0) {}
-
-  Address(Register base, Register index, intptr_t disp = 0) :
-    _base(base),
-    _index(index),
-    _disp(disp) {}
 
   Address(Register base, intptr_t disp = 0) :
     _base(base),
@@ -295,7 +291,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec() {}
+  AddressLiteral() : _address(nullptr), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)
@@ -354,7 +350,7 @@ class AddressLiteral {
 
   intptr_t value() const { return (intptr_t) _address; }
 
-  const relocInfo::relocType rtype() const { return _rspec.type(); }
+  relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
 
   RelocationHolder rspec(int offset) const {

@@ -155,7 +155,7 @@ class StubQueue: public CHeapObj<mtCode> {
 
   void  check_index(int i) const                 { assert(0 <= i && i < _buffer_limit && i % stub_alignment() == 0, "illegal index"); }
   bool  is_contiguous() const                    { return _queue_begin <= _queue_end; }
-  int   index_of(Stub* s) const                  { int i = (address)s - _stub_buffer; check_index(i); return i; }
+  int   index_of(Stub* s) const                  { int i = (int)((address)s - _stub_buffer); check_index(i); return i; }
   Stub* stub_at(int i) const                     { check_index(i); return (Stub*)(_stub_buffer + i); }
   Stub* current_stub() const                     { return stub_at(_queue_end); }
 

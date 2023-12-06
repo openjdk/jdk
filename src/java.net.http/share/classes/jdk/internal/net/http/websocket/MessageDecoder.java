@@ -51,7 +51,7 @@ import static jdk.internal.net.http.websocket.StatusCodes.isLegalToReceiveFromSe
 class MessageDecoder implements Frame.Consumer {
 
     private static final Logger debug =
-            Utils.getWebSocketLogger("[Input]"::toString, Utils.DEBUG_WS);
+            Utils.getWebSocketLogger("[Input]"::toString);
 
     private final MessageStreamConsumer output;
     private final UTF8AccumulatingDecoder decoder = new UTF8AccumulatingDecoder();

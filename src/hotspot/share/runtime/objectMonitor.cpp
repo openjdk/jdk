@@ -281,16 +281,10 @@ ObjectMonitor::~ObjectMonitor() {
 
 oop ObjectMonitor::object() const {
   check_object_context();
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.resolve();
 }
 
 oop ObjectMonitor::object_peek() const {
-  if (_object.is_null()) {
-    return nullptr;
-  }
   return _object.peek();
 }
 
@@ -334,7 +328,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return true;
   }
 
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
@@ -383,7 +377,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return false;
   }
 
-  JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(current);)
+  JFR_ONLY(JfrConditionalFlush<EventJavaMonitorEnter> flush(current);)
   EventJavaMonitorEnter event;
   if (event.is_started()) {
     event.set_monitorClass(object()->klass());
@@ -515,16 +509,6 @@ bool ObjectMonitor::deflate_monitor() {
     return false;
   }
 
-  if (ObjectSynchronizer::is_final_audit() && owner_is_DEFLATER_MARKER()) {
-    // The final audit can see an already deflated ObjectMonitor on the
-    // in-use list because MonitorList::unlink_deflated() might have
-    // blocked for the final safepoint before unlinking all the deflated
-    // monitors.
-    assert(contentions() < 0, "must be negative: contentions=%d", contentions());
-    // Already returned 'true' when it was originally deflated.
-    return false;
-  }
-
   const oop obj = object_peek();
 
   if (obj == nullptr) {
@@ -536,7 +520,7 @@ bool ObjectMonitor::deflate_monitor() {
   } else {
     // Attempt async deflation protocol.
 
-    // Set a nullptr owner to DEFLATER_MARKER to force any contending thread
+    // Set a null owner to DEFLATER_MARKER to force any contending thread
     // through the slow path. This is just the first part of the async
     // deflation dance.
     if (try_set_owner_from(nullptr, DEFLATER_MARKER) != nullptr) {
@@ -561,7 +545,7 @@ bool ObjectMonitor::deflate_monitor() {
     // to retry. This is the second part of the async deflation dance.
     if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
-      // ObjectMonitor is now busy. Restore owner to nullptr if it is
+      // ObjectMonitor is now busy. Restore owner to null if it is
       // still DEFLATER_MARKER:
       if (try_set_owner_from(DEFLATER_MARKER, nullptr) != DEFLATER_MARKER) {
         // Deferred decrement for the JT EnterI() that cancelled the async deflation.
@@ -657,20 +641,19 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
 // Convert the fields used by is_busy() to a string that can be
 // used for diagnostic output.
 const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
-  ss->print("is_busy: waiters=%d, ", _waiters);
-  if (contentions() > 0) {
-    ss->print("contentions=%d, ", contentions());
-  } else {
-    ss->print("contentions=0");
-  }
-  if (!owner_is_DEFLATER_MARKER()) {
-    ss->print("owner=" INTPTR_FORMAT, p2i(owner_raw()));
-  } else {
-    // We report nullptr instead of DEFLATER_MARKER here because is_busy()
-    // ignores DEFLATER_MARKER values.
-    ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
-  }
-  ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
+  ss->print("is_busy: waiters=%d"
+            ", contentions=%d"
+            ", owner=" PTR_FORMAT
+            ", cxq=" PTR_FORMAT
+            ", EntryList=" PTR_FORMAT,
+            _waiters,
+            (contentions() > 0 ? contentions() : 0),
+            owner_is_DEFLATER_MARKER()
+                // We report null instead of DEFLATER_MARKER here because is_busy()
+                // ignores DEFLATER_MARKER values.
+                ? p2i(nullptr)
+                : p2i(owner_raw()),
+            p2i(_cxq),
             p2i(_EntryList));
   return ss->base();
 }
@@ -1135,7 +1118,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "invariant");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1340,12 +1323,7 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   OM_PERFDATA_OP(Parks, inc());
 }
 
-
-// -----------------------------------------------------------------------------
-// Class Loader deadlock handling.
-//
 // complete_exit exits a lock returning recursion count
-// complete_exit/reenter operate as a wait without waiting
 // complete_exit requires an inflated monitor
 // The _owner field is not always the Thread addr even with an
 // inflated monitor, e.g. the monitor can be inflated by a non-owning
@@ -1355,7 +1333,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "internal state error");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1368,20 +1346,6 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
-}
-
-// reenter() enters a lock and sets recursion count
-// complete_exit/reenter operate as a wait without waiting
-bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
-
-  guarantee(owner_raw() != current, "reenter already owner");
-  if (!enter(current)) {
-    return false;
-  }
-  // Entered the monitor.
-  guarantee(_recursions == 0, "reenter recursion");
-  _recursions = recursions;
-  return true;
 }
 
 // Checks that the current THREAD owns this monitor and causes an
@@ -1404,10 +1368,11 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   void* cur = owner_raw();
+  assert(cur != anon_owner_ptr(), "no anon owner here");
   if (cur == current) {
     return true;
   }
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
     _recursions = 0;
     return true;

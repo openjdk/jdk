@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ public:
 
 
   // Alive if non-zero, dead if zero
-  bool alive() const { return _def != NULL; }
+  bool alive() const { return _def != nullptr; }
   bool is_multidef() const { return _def == NodeSentinel; }
   bool is_singledef() const { return _def != NodeSentinel; }
 
@@ -747,7 +747,7 @@ private:
     Node* _def;
     Node* _first_use;
   public:
-    RegDefUse() : _def(NULL), _first_use(NULL) { }
+    RegDefUse() : _def(nullptr), _first_use(nullptr) { }
     Node* def() const       { return _def;       }
     Node* first_use() const { return _first_use; }
 
@@ -758,8 +758,8 @@ private:
       }
     }
     void clear() {
-      _def = NULL;
-      _first_use = NULL;
+      _def = nullptr;
+      _first_use = nullptr;
     }
   };
   typedef GrowableArray<RegDefUse> RegToDefUseMap;

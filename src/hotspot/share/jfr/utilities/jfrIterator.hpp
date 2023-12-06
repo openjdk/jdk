@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ class StopOnNullCondition {
  public:
   StopOnNullCondition(List& list) : _list(list), _node(list.head()) {}
   bool has_next() const {
-    return _node != NULL;
+    return _node != nullptr;
   }
   Node* next() const {
-    assert(_node != NULL, "invariant");
+    assert(_node != nullptr, "invariant");
     Node* temp = _node;
     _node = (Node*)_node->_next;
     return temp;
@@ -53,13 +53,13 @@ class StopOnNullConditionRemoval {
   List& _list;
   mutable Node* _node;
  public:
-  StopOnNullConditionRemoval(List& list) : _list(list), _node(NULL) {}
+  StopOnNullConditionRemoval(List& list) : _list(list), _node(nullptr) {}
   bool has_next() const {
     _node = _list.remove();
-    return _node != NULL;
+    return _node != nullptr;
   }
   Node* next() const {
-    assert(_node != NULL, "invariant");
+    assert(_node != nullptr, "invariant");
     return _node;
   }
 };

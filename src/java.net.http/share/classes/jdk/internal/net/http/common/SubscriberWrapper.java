@@ -282,7 +282,7 @@ public abstract class SubscriberWrapper
             // If there was an error, send it downstream.
             Throwable error = errorRef.get();
             if (error != null && outputQ.isEmpty()) {
-                synchronized(this) {
+                synchronized (this) {
                     if (downstreamCompleted)
                         return;
                     downstreamCompleted = true;

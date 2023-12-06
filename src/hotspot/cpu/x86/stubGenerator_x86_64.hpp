@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,11 @@ class StubGenerator: public StubCodeGenerator {
   void array_overlap_test(address no_overlap_target, Label* NOLp, Address::ScaleFactor sf);
 
   void array_overlap_test(address no_overlap_target, Address::ScaleFactor sf) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, sf);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, sf);
   }
   void array_overlap_test(Label& L_no_overlap, Address::ScaleFactor sf) {
-    array_overlap_test(NULL, &L_no_overlap, sf);
+    array_overlap_test(nullptr, &L_no_overlap, sf);
   }
 
 
@@ -140,19 +140,23 @@ class StubGenerator: public StubCodeGenerator {
 
   // This is used in places where r10 is a scratch register, and can
   // be adapted if r9 is needed also.
-  void setup_arg_regs_using_thread();
+  void setup_arg_regs_using_thread(int nargs = 3);
 
   void restore_arg_regs_using_thread();
 
   // Copy big chunks forward
   void copy_bytes_forward(Register end_from, Register end_to,
-                          Register qword_count, Register to,
-                          Label& L_copy_bytes, Label& L_copy_8_bytes);
+                          Register qword_count, Register tmp1,
+                          Register tmp2, Label& L_copy_bytes,
+                          Label& L_copy_8_bytes, DecoratorSet decorators,
+                          BasicType type);
 
   // Copy big chunks backward
   void copy_bytes_backward(Register from, Register dest,
-                           Register qword_count, Register to,
-                           Label& L_copy_bytes, Label& L_copy_8_bytes);
+                           Register qword_count, Register tmp1,
+                           Register tmp2, Label& L_copy_bytes,
+                           Label& L_copy_8_bytes, DecoratorSet decorators,
+                           BasicType type);
 
   void setup_argument_regs(BasicType type);
 
@@ -183,10 +187,19 @@ class StubGenerator: public StubCodeGenerator {
                                     Register index, Register temp,
                                     bool use64byteVector, Label& L_entry, Label& L_exit);
 
+  void arraycopy_avx3_special_cases_256(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp, Label& L_exit);
+
   void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
                                              Register to, Register start_index, Register end_index,
                                              Register count, int shift, Register temp,
                                              bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
+                            Register temp3, Register temp4, Register count,
+                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                            XMMRegister xmm4, int shift);
 
   void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   int shift = Address::times_1, int offset = 0);
@@ -194,6 +207,9 @@ class StubGenerator: public StubCodeGenerator {
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
+                                XMMRegister xmm3, XMMRegister xmm4, int shift, int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,
@@ -323,6 +339,10 @@ class StubGenerator: public StubCodeGenerator {
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
                       Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
+  // AVX2 AES Galois Counter Mode implementation
+  address generate_avx2_galoisCounterMode_AESCrypt();
+  void aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
+                   Register state, Register subkeyHtbl, Register counter);
 
  // Vector AES Counter implementation
   address generate_counterMode_VectorAESCrypt();
@@ -349,6 +369,17 @@ class StubGenerator: public StubCodeGenerator {
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
+  // AVX2 AES-GCM related functions
+  void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
+                           Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
+  void gfmul_avx2(XMMRegister GH, XMMRegister HK);
+  void generateHtbl_8_block_avx2(Register htbl);
+  void ghash8_encrypt8_parallel_avx2(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, Register in,
+                                     Register out, Register ct, Register pos, bool out_order, Register rounds,
+                                     XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                                     XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
+  void ghash_last_8_avx2(Register subkeyHtbl);
+
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
@@ -360,7 +391,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for increase 128bit counter (iv in CTR mode)
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
-
+  void ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                 int vector_len, KRegister ktmp, XMMRegister ones);
   void generate_aes_stubs();
 
 
@@ -470,6 +502,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerRightShift();
   address generate_bigIntegerLeftShift();
 
+  address generate_float16ToFloat();
+  address generate_floatToFloat16();
 
   // Libm trigonometric stubs
 
@@ -480,6 +514,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmPow();
   address generate_libmLog();
   address generate_libmLog10();
+  address generate_libmFmod();
 
   // Shared constants
   static address ZERO;
@@ -513,12 +548,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception();
 
 #if INCLUDE_JFR
-
+  void generate_jfr_stubs();
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   RuntimeStub* generate_jfr_write_checkpoint();
-
+  // For c2: call to runtime to return a buffer lease.
+  RuntimeStub* generate_jfr_return_lease();
 #endif // INCLUDE_JFR
 
   // Continuation point for throwing of implicit exceptions that are
@@ -541,24 +577,19 @@ class StubGenerator: public StubCodeGenerator {
                                    Register arg1 = noreg,
                                    Register arg2 = noreg);
 
+  // shared exception handler for FFM upcall stubs
+  address generate_upcall_stub_exception_handler();
+
   void create_control_words();
 
   // Initialization
-  void generate_initial();
-  void generate_phase1();
-  void generate_all();
+  void generate_initial_stubs();
+  void generate_continuation_stubs();
+  void generate_compiler_stubs();
+  void generate_final_stubs();
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    DEBUG_ONLY( _regs_in_thread = false; )
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
-  }
+  StubGenerator(CodeBuffer* code, StubsKind kind);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

@@ -35,7 +35,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -43,7 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Extensions to {@code IndexBuilder} to fill in remaining fields
@@ -52,10 +50,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * JavaScript files.
  */
 public class HtmlIndexBuilder extends IndexBuilder {
-    private final HtmlConfiguration configuration;
 
     private final Resources resources;
-    private final Utils utils;
     private final HtmlIds htmlIds;
 
     /**
@@ -64,11 +60,9 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * @param configuration the current configuration of the doclet
      */
     HtmlIndexBuilder(HtmlConfiguration configuration) {
-        super(configuration, configuration.getOptions().noDeprecated());
-        this.configuration = configuration;
-        resources = configuration.docResources;
-        utils = configuration.utils;
-        htmlIds = configuration.htmlIds;
+        super(configuration);
+        this.resources = configuration.docResources;
+        this.htmlIds = configuration.htmlIds;
     }
 
     /**
@@ -77,18 +71,15 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * After the initial work to add the element items, the remaining fields in
      * the items are also initialized.
      */
+    @Override
     public void addElements() {
         super.addElements();
-        if (classesOnly) {
-            return;
-        }
-
 
         Map<String,Integer> duplicateLabelCheck = new HashMap<>();
         for (Character ch : getFirstCharacters()) {
             for (IndexItem item : getItems(ch)) {
                 duplicateLabelCheck.compute(item.getFullyQualifiedLabel(utils),
-                                            (k, v) -> v == null ? 1 : v + 1);
+                        (k, v) -> v == null ? 1 : v + 1);
             }
         }
 
@@ -148,7 +139,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
                 throw new Error();
         }
     }
-
 
     /**
      * Generates the set of index files used by interactive search.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.management.StreamBarrier;
 
@@ -102,7 +102,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private RecordingStream(Map<String, String> settings) {
-        Utils.checkAccessFlightRecorder();
+        SecuritySupport.checkAccessFlightRecorder();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
@@ -441,7 +441,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @since 17
      */
     public void dump(Path destination) throws IOException {
-        Objects.requireNonNull(destination);
+        Objects.requireNonNull(destination, "destination");
         Object recorder = PrivateAccess.getInstance().getPlatformRecorder();
         synchronized (recorder) {
             RecordingState state = recording.getState();

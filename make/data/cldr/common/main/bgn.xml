@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bgn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="aa">افار</language>
+			<language type="ab">آبخازی</language>
+			<language type="ace">آچه‌ای</language>
+			<language type="ada">ادانگمی</language>
+			<language type="ady">ادیغی</language>
+			<language type="af">افریکانس</language>
+			<language type="agq">اغیمی</language>
+			<language type="ain">آینو</language>
+			<language type="ak">اکانی</language>
+			<language type="ale">الیوتی</language>
+			<language type="alt">جهلسرین آلتایی</language>
+			<language type="am">امهاری</language>
+			<language type="an">آراگونی</language>
+			<language type="anp">انگیکای</language>
+			<language type="ar">عربی</language>
+			<language type="ar_001">پیشرفته‌این عربی</language>
+			<language type="arn">ماپوچه‌ای</language>
+			<language type="arp">اراپاهو</language>
+			<language type="as">آسامی</language>
+			<language type="asa">آسو</language>
+			<language type="ast">آستوری</language>
+			<language type="av">آواری</language>
+			<language type="awa">آوادی</language>
+			<language type="ay">ایمارای</language>
+			<language type="az">آذربایجانی</language>
+			<language type="az" alt="short">آذری</language>
+			<language type="ba">باشقیری</language>
+			<language type="ban">بالینسی</language>
+			<language type="bas">باسا</language>
+			<language type="be">بیلاروسی</language>
+			<language type="bem">بیمبا</language>
+			<language type="bez">بینای</language>
+			<language type="bg">بلغاری</language>
+			<language type="bgn">بلوچی (رخشانی)</language>
+			<language type="bho">بهوجپوری</language>
+			<language type="bi">بیسلامه</language>
+			<language type="bin">بینی</language>
+			<language type="bla">سیکسیکا</language>
+			<language type="bm">بمبارای</language>
+			<language type="bn">بنگالی</language>
+			<language type="bo">تبتی</language>
+			<language type="br">بریتون</language>
+			<language type="brx">بۆدو</language>
+			<language type="bs">بوسنی</language>
+			<language type="bug">بوگینسی</language>
+			<language type="byn">بلین</language>
+			<language type="ca">کاتالانی</language>
+			<language type="ce">چیچینی</language>
+			<language type="ceb">سینوگبانونی</language>
+			<language type="cgg">شیگی</language>
+			<language type="ch">چه‌مروری</language>
+			<language type="chk">تروسکی</language>
+			<language type="chm">ماری</language>
+			<language type="cho">چاکتاوی</language>
+			<language type="chr">چیروکی</language>
+			<language type="chy">شاینی زبان</language>
+			<language type="ckb">مرکزین کوردی</language>
+			<language type="co">کرسی</language>
+			<language type="crs">سیشلی کریولین فرانسوی</language>
+			<language type="cs">چیکی</language>
+			<language type="cu">سلاواکی کلیسایی</language>
+			<language type="cv">چواشی</language>
+			<language type="cy">ولزی</language>
+			<language type="da">ڈینمارکی</language>
+			<language type="dak">داکوتی</language>
+			<language type="dar">دارگوایی</language>
+			<language type="dav">تایتایی</language>
+			<language type="de">جرمنی</language>
+			<language type="de_AT">استرالیاین جرمنی</language>
+			<language type="de_CH">سویسین جرمنی</language>
+			<language type="dgr">داگریبی</language>
+			<language type="dje">زرمی</language>
+			<language type="dsb">صُربی سفلی</language>
+			<language type="dua">دوالی</language>
+			<language type="dv">دیوهی</language>
+			<language type="dyo">جولا فونی</language>
+			<language type="dz">دزونگخا</language>
+			<language type="dzg">دزازا</language>
+			<language type="ebu">ایمبو</language>
+			<language type="ee">اوه‌ای</language>
+			<language type="efi">ایفیکی</language>
+			<language type="eka">ایکاجوکی</language>
+			<language type="el">یونانی</language>
+			<language type="en">انگریزی</language>
+			<language type="en_AU">استرالیاین انگریزی</language>
+			<language type="en_CA">کاناڈاین انگریزی</language>
+			<language type="en_GB">بریتانیاین انگریزی</language>
+			<language type="en_GB" alt="short">بریتن انگریزی</language>
+			<language type="en_US">امریکاین انگریزی</language>
+			<language type="en_US" alt="short">یو اس انگریزی</language>
+			<language type="eo">اسپرانتوی</language>
+			<language type="es">هسپانوی</language>
+			<language type="es_419">لاتین امریکایی هسپانوی</language>
+			<language type="es_ES">اوروپایین هسپانوی</language>
+			<language type="es_MX">مکسیکوین هسپانوی</language>
+			<language type="et">استونیایی</language>
+			<language type="eu">باسکی</language>
+			<language type="ewo">اواندویی</language>
+			<language type="fa">پارسی</language>
+			<language type="ff">فولایی</language>
+			<language type="fi">فنلاندی</language>
+			<language type="fil">فلیپینی</language>
+			<language type="fj">فیجی</language>
+			<language type="fo">فاروئی</language>
+			<language type="fon">فون</language>
+			<language type="fr">فرانسوی</language>
+			<language type="fr_CA">کاناڈاین فرانسوی</language>
+			<language type="fr_CH">اشاره‌این فرانسوی</language>
+			<language type="fur">فریولی</language>
+			<language type="fy">روچ‌کپتین فریزی</language>
+			<language type="ga">ایرلندی</language>
+			<language type="gaa">گا</language>
+			<language type="gd">اسکاتلندی گیلی</language>
+			<language type="gez">گعزی</language>
+			<language type="gil">گیلبیرتی</language>
+			<language type="gl">گالیسی</language>
+			<language type="gn">گوارانی</language>
+			<language type="gor">گورونتالو</language>
+			<language type="gsw">جرمنین سوئیسی</language>
+			<language type="gu">گوجراتی</language>
+			<language type="guz">گوسی</language>
+			<language type="gv">مانی</language>
+			<language type="gwi">گویچنی</language>
+			<language type="ha">هوسه‌ای</language>
+			<language type="haw">هاوایی</language>
+			<language type="he">عبرانی</language>
+			<language type="hi">هندی</language>
+			<language type="hil">هیلیگایونی</language>
+			<language type="hmn">همونگی</language>
+			<language type="hr">کراوتی</language>
+			<language type="hsb">علیای سیربی</language>
+			<language type="ht">کریول آییسینی</language>
+			<language type="hu">مجارستانی</language>
+			<language type="hup">هوپی</language>
+			<language type="hy">ارمنی</language>
+			<language type="hz">هرویی</language>
+			<language type="ia">اینترلینگوایی</language>
+			<language type="iba">ایبانگه</language>
+			<language type="ibb">ایبیبیو</language>
+			<language type="id">ایندونیزیایی</language>
+			<language type="ig">ایگبویی</language>
+			<language type="ii">یی سیچوان</language>
+			<language type="ilo">ایلوکانوی</language>
+			<language type="inh">اینگوشی</language>
+			<language type="io">ایدوی</language>
+			<language type="is">ایسلندی</language>
+			<language type="it">ایتالیایی</language>
+			<language type="iu">اینوکتیتوتی</language>
+			<language type="ja">جاپانی</language>
+			<language type="jbo">لوجبانی</language>
+			<language type="jgo">نگومبی</language>
+			<language type="jmc">ماچامه‌ای</language>
+			<language type="jv">جاوه‌ای</language>
+			<language type="ka">گرجی</language>
+			<language type="kab">قبایلی</language>
+			<language type="kac">کاچینی</language>
+			<language type="kaj">جیجو</language>
+			<language type="kam">کامبایی</language>
+			<language type="kbd">کاباردینی</language>
+			<language type="kcg">تیاپی</language>
+			<language type="kde">ماکوندی</language>
+			<language type="kea">کابووردیانو</language>
+			<language type="kfo">کورو</language>
+			<language type="kha">خاسی</language>
+			<language type="khq">کوجراچینی</language>
+			<language type="ki">کیکویویی</language>
+			<language type="kj">کوانیامایی</language>
+			<language type="kk">قزاقی</language>
+			<language type="kkj">کاکویی</language>
+			<language type="kl">گرینلندی</language>
+			<language type="kln">کالنجین</language>
+			<language type="km">خمری</language>
+			<language type="kmb">کیمبوندویی</language>
+			<language type="kn">کانارا</language>
+			<language type="ko">کوریایی</language>
+			<language type="kok">کونکانی</language>
+			<language type="kpe">کپله‌ای</language>
+			<language type="kr">کانوری</language>
+			<language type="krc">قره‌چایی‐بالکاری</language>
+			<language type="krl">کاریلینی</language>
+			<language type="kru">کوروخی</language>
+			<language type="ks">کشمیری</language>
+			<language type="ksb">شامبالای</language>
+			<language type="ksf">بافیا</language>
+			<language type="ksh">کولوگنی</language>
+			<language type="ku">کوردی</language>
+			<language type="kum">کومیکی</language>
+			<language type="kv">کومی</language>
+			<language type="kw">کورنی</language>
+			<language type="ky">قیرغیزی</language>
+			<language type="la">لاتین</language>
+			<language type="lad">لادینو</language>
+			<language type="lag">لانگی</language>
+			<language type="lb">لوگزامبورگی</language>
+			<language type="lez">لزگی</language>
+			<language type="lg">گاندایی</language>
+			<language type="li">لیمبورگی</language>
+			<language type="lkt">لاکوتا</language>
+			<language type="ln">لینگالایی</language>
+			<language type="lo">لائوسی</language>
+			<language type="loz">لوزی</language>
+			<language type="lrc">بُرزسرین لوری</language>
+			<language type="lt">لیتوانی</language>
+			<language type="lu">لوبایی‐کاتانگا</language>
+			<language type="lua">لوبایی‐لولوا</language>
+			<language type="lun">لوندایی</language>
+			<language type="luo">لوئویی</language>
+			<language type="lus">لوشه‌ای</language>
+			<language type="luy">لویایی</language>
+			<language type="lv">لاتوینی</language>
+			<language type="mad">مادورایی</language>
+			<language type="mag">ماگاهی</language>
+			<language type="mai">مایدیلی</language>
+			<language type="mak">ماکاساری</language>
+			<language type="mas">ماسایی</language>
+			<language type="mdf">موکشی</language>
+			<language type="men">منده‌ای</language>
+			<language type="mer">مرویی</language>
+			<language type="mfe">موریسینی</language>
+			<language type="mg">مالاگاسی</language>
+			<language type="mgh">ماکوا متوی</language>
+			<language type="mgo">میٹایی</language>
+			<language type="mh">مارشالی</language>
+			<language type="mi">مائوری</language>
+			<language type="mic">میکماکی</language>
+			<language type="min">مینانگ‌کابویی</language>
+			<language type="mk">مقدونی</language>
+			<language type="ml">مالایالامی</language>
+			<language type="mn">منگولی</language>
+			<language type="mni">مانیپوری</language>
+			<language type="moh">موهاکی</language>
+			<language type="mos">موسیی</language>
+			<language type="mr">مراٹی</language>
+			<language type="ms">مالایی</language>
+			<language type="mt">مالته‌ای</language>
+			<language type="mua">ماندانگی</language>
+			<language type="mul">چینکه زبان</language>
+			<language type="mus">کریکی</language>
+			<language type="mwl">میراندیسی</language>
+			<language type="my">بورمي</language>
+			<language type="myv">ارزیای</language>
+			<language type="mzn">مازندرانی</language>
+			<language type="na">نائورویی</language>
+			<language type="nap">ناپلی</language>
+			<language type="naq">نامایی</language>
+			<language type="nb">نارویی بوک‌مولی</language>
+			<language type="nd">بُرزسرین انده‌بله‌ای</language>
+			<language type="nds_NL">ساکسونی سفلی</language>
+			<language type="ne">نیپالی</language>
+			<language type="new">نیواری</language>
+			<language type="ng">اندونگی</language>
+			<language type="nia">نیاسی</language>
+			<language type="niu">نیویی</language>
+			<language type="nl">هالنڈی</language>
+			<language type="nl_BE">فلامانی</language>
+			<language type="nmg">کوازیو</language>
+			<language type="nn">نارویی نی‌نوشکی</language>
+			<language type="nnh">انگی‌ایمبونی</language>
+			<language type="nog">نغایی</language>
+			<language type="nqo">نکوی</language>
+			<language type="nr">جهلسرین انده‌بله‌ای</language>
+			<language type="nso">بُرزسرین سوتویی</language>
+			<language type="nus">نویری</language>
+			<language type="nv">ناواهویی</language>
+			<language type="ny">نیانجی</language>
+			<language type="nyn">نیانکوله‌ای</language>
+			<language type="oc">اوکیتایی</language>
+			<language type="om">اورومویی</language>
+			<language type="or">اودیه‌ای</language>
+			<language type="os">آسیتینی</language>
+			<language type="pa">پنجاپی</language>
+			<language type="pag">پانگاسینانی</language>
+			<language type="pam">پامپانگی</language>
+			<language type="pap">پاپیامنتوی</language>
+			<language type="pau">پالائویی</language>
+			<language type="pcm">نایجیریای پیڈگین</language>
+			<language type="pl">پولنڈی</language>
+			<language type="prg">پروسی</language>
+			<language type="ps">پشتو</language>
+			<language type="pt">پورتگالی</language>
+			<language type="pt_BR">برازیلین پورتگالی</language>
+			<language type="pt_PT">اوروپایین پورتگالی</language>
+			<language type="qu">کچوایی</language>
+			<language type="quc">کیچه‌</language>
+			<language type="rap">راپانویی</language>
+			<language type="rar">راروتونگی</language>
+			<language type="rm">رومانش</language>
+			<language type="rn">رونڈی</language>
+			<language type="ro">رومانی</language>
+			<language type="ro_MD">مالداوی</language>
+			<language type="rof">رومبویی</language>
+			<language type="ru">اوروسی</language>
+			<language type="rup">آرومانی</language>
+			<language type="rw">کینیارواندی</language>
+			<language type="rwk">روایی</language>
+			<language type="sa">سانسکریٹ</language>
+			<language type="sad">سانڈاوه‌ای</language>
+			<language type="sah">یاقوتی</language>
+			<language type="saq">سامبوروی</language>
+			<language type="sat">سانٹالی</language>
+			<language type="sba">انگامبی</language>
+			<language type="sbp">سانگویی</language>
+			<language type="sc">ساردینی</language>
+			<language type="scn">سیسیلی</language>
+			<language type="sco">اسکاتلندی</language>
+			<language type="sd">سیندی</language>
+			<language type="se">بُرزسرین سامی</language>
+			<language type="seh">سینایی</language>
+			<language type="ses">کویرابورا سنی</language>
+			<language type="sg">سانگۆیی</language>
+			<language type="shi">تاچل‌هیتی</language>
+			<language type="shn">شانی</language>
+			<language type="si">سینهالی</language>
+			<language type="sk">اسلواکی</language>
+			<language type="sl">اسلوانی</language>
+			<language type="sm">ساموآیی</language>
+			<language type="sma">جهلسرین سامی</language>
+			<language type="smj">لوله سامی</language>
+			<language type="smn">اناری سمی</language>
+			<language type="sms">اسکولت سامی</language>
+			<language type="sn">شونی</language>
+			<language type="snk">سونینکه‌ای</language>
+			<language type="so">سومالی</language>
+			<language type="sq">البانی</language>
+			<language type="sr">سیربی</language>
+			<language type="srn">تاکی‌تاکی</language>
+			<language type="ss">سواتی</language>
+			<language type="ssy">ساهویی</language>
+			<language type="st">جهلسرین سوتویی</language>
+			<language type="su">سونڈی</language>
+			<language type="suk">سوکومایی</language>
+			<language type="sv">سویڈنی</language>
+			<language type="sw">سواحلی</language>
+			<language type="sw_CD">کانگویی سواحلی</language>
+			<language type="swb">قمرین</language>
+			<language type="syr">سریانی</language>
+			<language type="ta">تامیلی</language>
+			<language type="te">تلوگویی</language>
+			<language type="tem">تیمنه‌ای</language>
+			<language type="teo">تیسویی</language>
+			<language type="tet">ٹیٹومی</language>
+			<language type="tg">تاجیکی</language>
+			<language type="th">تایلندی</language>
+			<language type="ti">ٹیگرینیایی</language>
+			<language type="tig">ٹایگری</language>
+			<language type="tk">تورکمنی</language>
+			<language type="tlh">کلینگونی</language>
+			<language type="tn">تسوانی</language>
+			<language type="to">تونگی</language>
+			<language type="tpi">توک‌پیسینی</language>
+			<language type="tr">تورکی</language>
+			<language type="trv">تاروکویی</language>
+			<language type="ts">تسونگی</language>
+			<language type="tt">تاتاری</language>
+			<language type="tum">تومبوکی</language>
+			<language type="tvl">ٹووالی</language>
+			<language type="twq">تسواکی</language>
+			<language type="ty">تاهیتی</language>
+			<language type="tyv">ٹووینی</language>
+			<language type="tzm">مرکزین اتلسین تامازیگتی</language>
+			<language type="udm">اوڈمورتی</language>
+			<language type="ug">اویغوری</language>
+			<language type="uk">اوکراینی</language>
+			<language type="umb">امبونڈویی</language>
+			<language type="und">نازانتین زبان</language>
+			<language type="ur">اوردو</language>
+			<language type="uz">اوزبکی</language>
+			<language type="vai">وایی</language>
+			<language type="ve">وینڈایی</language>
+			<language type="vi">ویتنامی</language>
+			<language type="vo">ولاپوکی</language>
+			<language type="vun">ونجو</language>
+			<language type="wa">والونی</language>
+			<language type="wae">والسیری</language>
+			<language type="wal">وولایٹی</language>
+			<language type="war">واری</language>
+			<language type="wo">ولوفی</language>
+			<language type="xal">کالمیکی</language>
+			<language type="xh">خوسی</language>
+			<language type="xog">سوگایی</language>
+			<language type="yav">یانگبینی</language>
+			<language type="ybb">یمبی</language>
+			<language type="yi">یدی</language>
+			<language type="yo">یوروبایی</language>
+			<language type="yue">کانتونیونی</language>
+			<language type="zgh">آمازیغی مراکشی معیار</language>
+			<language type="zh">چینایی</language>
+			<language type="zh_Hans">ساده‌گین چینایی</language>
+			<language type="zh_Hant">غدیمین چینایی</language>
+			<language type="zu">زولویی</language>
+			<language type="zun">زونی</language>
+			<language type="zxx">بغیر شه زبانین لڑا</language>
+			<language type="zza">زازایی</language>
+		</languages>
+		<scripts>
+			<script type="Arab">عربی</script>
+			<script type="Armn">ارمنی</script>
+			<script type="Beng">بنگالی</script>
+			<script type="Bopo">بوپوموفو</script>
+			<script type="Cyrl">سیریلیک</script>
+			<script type="Deva">دیوانگری</script>
+			<script type="Ethi">گعزی</script>
+			<script type="Geor">گورجی</script>
+			<script type="Grek">یونانی</script>
+			<script type="Gujr">گوجراتی</script>
+			<script type="Guru">گرمکهی</script>
+			<script type="Hanb">هانب</script>
+			<script type="Hang">هانگول</script>
+			<script type="Hani">هانی</script>
+			<script type="Hebr">عبرانی</script>
+			<script type="Jpan">جاپانی</script>
+			<script type="Kore">کوریایی</script>
+			<script type="Latn">لاتین</script>
+			<script type="Taml">تامیلی</script>
+			<script type="Thai">تایی</script>
+			<script type="Zsym">سمولان</script>
+			<script type="Zzzz">نامالومین خط</script>
+		</scripts>
+		<territories>
+			<territory type="001">دونیا/جهان</territory>
+			<territory type="002">افریقا</territory>
+			<territory type="009">اوقیانوسیه</territory>
+			<territory type="019">امریکای براعظم</territory>
+			<territory type="053">استرالیا</territory>
+			<territory type="142">اسیا</territory>
+			<territory type="150">اورورپا</territory>
+			<territory type="AE">متحدین عربین امارات</territory>
+			<territory type="AI">انگویلا</territory>
+			<territory type="AO">انگولا</territory>
+			<territory type="AR">ارجنٹاین</territory>
+			<territory type="AU">اسٹرالیا</territory>
+			<territory type="AZ">آزربایجان</territory>
+			<territory type="BE">بیلجیم</territory>
+			<territory type="BG">بولغاریه</territory>
+			<territory type="BH">بحرین</territory>
+			<territory type="BI">بروندی</territory>
+			<territory type="BM">بیرمودا</territory>
+			<territory type="BN">برونی</territory>
+			<territory type="BO">بولیویه</territory>
+			<territory type="BR">برازیل</territory>
+			<territory type="BS">بهاماس</territory>
+			<territory type="BT">بوتان</territory>
+			<territory type="CA">کاناڈا</territory>
+			<territory type="CL">چیلی</territory>
+			<territory type="CM">کامیرون</territory>
+			<territory type="CN">چین</territory>
+			<territory type="CO">کولومبیا</territory>
+			<territory type="CU">کوبا</territory>
+			<territory type="CY">قبرس</territory>
+			<territory type="DE">جرمنی</territory>
+			<territory type="DJ">جیبوتی</territory>
+			<territory type="DZ">الجزایر</territory>
+			<territory type="EC">اکوادور</territory>
+			<territory type="EG">مصر</territory>
+			<territory type="EH">روچ‌کپتین سحرا</territory>
+			<territory type="ER">اریتره</territory>
+			<territory type="ES">هسپانیه</territory>
+			<territory type="ET">ایتوپیه</territory>
+			<territory type="EU">اورورپایی یکویی</territory>
+			<territory type="FJ">فیجی</territory>
+			<territory type="FR">فرانسه</territory>
+			<territory type="GA">گابون</territory>
+			<territory type="GE">گرجستان</territory>
+			<territory type="GH">گانا</territory>
+			<territory type="GL">گرینلاند</territory>
+			<territory type="GM">گامبیا</territory>
+			<territory type="GN">گوینیا</territory>
+			<territory type="GR">یونان</territory>
+			<territory type="GY">گویانا</territory>
+			<territory type="HK">هانگ کانگ</territory>
+			<territory type="HU">هنگری</territory>
+			<territory type="ID">ایندونیزیا</territory>
+			<territory type="IL">اسرائیل</territory>
+			<territory type="IQ">عراق</territory>
+			<territory type="IT">ایتالیه</territory>
+			<territory type="JO">اردن</territory>
+			<territory type="KE">کینیا</territory>
+			<territory type="KG">قیرغیزستان</territory>
+			<territory type="KH">کمبودیا</territory>
+			<territory type="KM">کومورس</territory>
+			<territory type="KW">کویٹ</territory>
+			<territory type="KZ">قزاقستان</territory>
+			<territory type="LA">لاوس</territory>
+			<territory type="LB">لیبنان</territory>
+			<territory type="LY">لیبیا</territory>
+			<territory type="MA">مراکو</territory>
+			<territory type="MD">مالداویا</territory>
+			<territory type="MG">ماداگاسکار</territory>
+			<territory type="ML">مالی</territory>
+			<territory type="MT">مالته</territory>
+			<territory type="MU">موریتانیا</territory>
+			<territory type="MX">مکسیکو</territory>
+			<territory type="MY">مالیزیا</territory>
+			<territory type="NE">نیجیر</territory>
+			<territory type="NG">نایجیریا</territory>
+			<territory type="NZ">نیوزلنڈ</territory>
+			<territory type="OM">ئومان</territory>
+			<territory type="PA">پانامه</territory>
+			<territory type="PE">پیرو</territory>
+			<territory type="PH">فلیپین</territory>
+			<territory type="PT">پورتگال</territory>
+			<territory type="PY">پاراگوی</territory>
+			<territory type="QA">قطر</territory>
+			<territory type="RO">رومانیه</territory>
+			<territory type="RS">سیربستان</territory>
+			<territory type="RW">روندا</territory>
+			<territory type="SC">سیشیل</territory>
+			<territory type="SD">سوڈان</territory>
+			<territory type="SG">سینگاپور</territory>
+			<territory type="SN">سینیگال</territory>
+			<territory type="SO">سومالیا</territory>
+			<territory type="SR">سورینامی</territory>
+			<territory type="SY">سوریه</territory>
+			<territory type="TD">چاد</territory>
+			<territory type="TH">ٹایلنڈ</territory>
+			<territory type="TJ">تاجیکستان</territory>
+			<territory type="TM">تورکمنستان</territory>
+			<territory type="TN">ٹونیس</territory>
+			<territory type="TZ">تانزانیا</territory>
+			<territory type="UG">اوگاندا</territory>
+			<territory type="US">متحدین ایالات</territory>
+			<territory type="UY">اوراگوی</territory>
+			<territory type="UZ">اوزبکیستان</territory>
+			<territory type="VE">وینزوویلا</territory>
+			<territory type="VN">ویتنام</territory>
+			<territory type="YE">یمن</territory>
+			<territory type="ZM">زامبیا</territory>
+			<territory type="ZW">زیمبابوی</territory>
+			<territory type="ZZ">نازانتین سیمسر</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">میٹریک</measurementSystemName>
+			<measurementSystemName type="UK">بریتانوی</measurementSystemName>
+			<measurementSystemName type="US">امریکایی</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C ؤ]</exemplarCharacters>
+		<exemplarCharacters type="index">[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[‐ – — ، ؛ \: ! ؟ . … ‘’ &quot;“” « » ( ) \[ \] § @ * \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<fields>
+			<field type="year">
+				<displayName>سال</displayName>
+			</field>
+			<field type="month">
+				<displayName>ماه</displayName>
+			</field>
+			<field type="week">
+				<displayName>هفته‌گ</displayName>
+			</field>
+			<field type="day">
+				<displayName>روچ</displayName>
+				<relative type="-1">زي</relative>
+				<relative type="0">مروچی</relative>
+				<relative type="1">باندا</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} روچ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekday">
+				<displayName>هفته‌گئ روچان</displayName>
+			</field>
+			<field type="hour">
+				<displayName>ساعت</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>سائت</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>ساعت</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<zone type="Etc/Unknown">
+				<exemplarCity>نازانتین شاران</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>دوبی</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>کابل</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>باکو</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>ڈاکا</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>بحرین</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>ٹیمپو</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>اورمچی</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>تیبلیسی</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>یورشلیم</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>کلکته</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>بغداد</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>تهران</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>امان</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>توکیو</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>بیشکیک</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>سیول</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>کویٹ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>اقتاو</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>اورال</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>اقتوبه</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>قیزیلوردا</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>الماته</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>کولومبو</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>اولان‌باتور</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>مالدیف</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>کٹمنڈو</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>مسقط</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>کراچی</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>غزه</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>قطر</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>کیروف</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>سامارا</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>تومسک</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>ریاض</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>دمشق</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>دوشنبه</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>عشق آبات</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>استانبول</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>سمرقند</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>تاشکینت</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>عدن</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>اوگانستانی وخت</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>روچ‌دراتین قزاقستانی وخت</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>روچ‌کپتین قزاقستانی وخت</standard>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>قیرغیزستانی وخت</standard>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>تاجیکستانی وخت</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem draft="contributed">arabext</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">arabext</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="arabext">
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="latn">
+			<decimal>٫</decimal>
+			<group>،</group>
+			<percentSign>٪</percentSign>
+			<nan>ناعدد</nan>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other">0 هزار ¤</pattern>
+					<pattern type="10000" count="other">¤00هزار</pattern>
+					<pattern type="100000" count="other">¤ 000هزار</pattern>
+					<pattern type="1000000" count="other">¤ 0میلیون</pattern>
+					<pattern type="10000000" count="other">¤ 00میلیون</pattern>
+					<pattern type="100000000" count="other">¤000میلیون</pattern>
+					<pattern type="1000000000" count="other">¤0میلیارد</pattern>
+					<pattern type="10000000000" count="other">¤00میلیارد</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="AFN">
+				<displayName>اوگانستانئ اوگانی</displayName>
+				<symbol draft="contributed">؋</symbol>
+			</currency>
+			<currency type="BDT">
+				<displayName>بنگلادیشئ ٹاکه</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>بوتانئ انگولٹروم</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>هندوستانئ روپی</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>ایرانئ ریال</displayName>
+				<symbol draft="contributed">ریال</symbol>
+			</currency>
+			<currency type="LKR">
+				<displayName>سریلانکایی روپی</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>مالدیوی روپی</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>نیپالین روپی</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>پاکستانئ روپی</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>روسین روبل</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-year">
+				<perUnitPattern>{0} سالئ تا</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<perUnitPattern>{0} به ماه‌ای تا</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<perUnitPattern>{0} هفته‌گئ تا</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern>{0} روچئ تا</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<perUnitPattern>{0} ساعتئ تا</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<perUnitPattern>{0} دقیقه‌ای تا</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<perUnitPattern>{0} ثانیه‌ای تا</perUnitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<perUnitPattern>{0} کیلومیترئ تا</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<perUnitPattern>{0} میترئ تا</perUnitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-century">
+				<displayName>سده‌گ</displayName>
+				<unitPattern count="other">{0} سده‌گ</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>سال</displayName>
+				<unitPattern count="other">{0} سال</unitPattern>
+				<perUnitPattern>{0}/سال</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ماه</displayName>
+				<unitPattern count="other">{0} ماه</unitPattern>
+				<perUnitPattern>{0}/ماه</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>هفته‌گ</displayName>
+				<unitPattern count="other">{0} هفته‌گ</unitPattern>
+				<perUnitPattern>{0}/هفته‌گ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>روچ</displayName>
+				<unitPattern count="other">{0} روچ</unitPattern>
+				<perUnitPattern>{0}/روچ</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ساعت</displayName>
+				<unitPattern count="other">{0} ساعت</unitPattern>
+				<perUnitPattern>{0}/ساعت</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>دقیقه</displayName>
+				<unitPattern count="other">{0} دقیقه</unitPattern>
+				<perUnitPattern>{0}/دقیقه</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ثانیه</displayName>
+				<unitPattern count="other">{0} ثانیه</unitPattern>
+				<perUnitPattern>{0}/ث</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>میلی‌ثانیه</displayName>
+				<unitPattern count="other">{0} میلی‌ثانیه</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>مایکروثانیه</displayName>
+				<unitPattern count="other">{0} مایکروثانیه</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>نانوثانیه</displayName>
+				<unitPattern count="other">{0} نانوثانیه</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>کیلومیتر</displayName>
+				<unitPattern count="other">{0} کیلومیتر</unitPattern>
+				<perUnitPattern>{0}/کیلومیتر</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>میتر</displayName>
+				<unitPattern count="other">{0} میتر</unitPattern>
+				<perUnitPattern>{0}/میتر</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">روچ‌دراتین {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">بُرزسرین {0}</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-month">
+				<unitPattern count="other">{0}ماه</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="other">{0}هفته‌گ</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="other">{0}روچ</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other">{0}ساعت</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="other">{0}دقیقه</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="other">{0}ث</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="other">{0}میلی‌ثانیه</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<unitPattern count="other">{0}کیلومیتر</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<unitPattern count="other">{0}میتر</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start">{0}، {1}</listPatternPart>
+			<listPatternPart type="middle">{0}، {1}</listPatternPart>
+			<listPatternPart type="end">{0}، و {1}</listPatternPart>
+			<listPatternPart type="2">{0} و {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end">{0}، {1}</listPatternPart>
+			<listPatternPart type="2">{0}، {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>هان:هاو</yesstr>
+			<nostr>نه:ن</nostr>
+		</messages>
+	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — موچ</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — تاریخی</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} ضربه</characterLabelPattern>
+	</characterLabels>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,17 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ * @run testng/othervm -Xcheck:jni -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestDowncallStack
  */
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -58,11 +53,11 @@ public class TestDowncallStack extends TestDowncallBase {
         List<Consumer<Object>> checks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow("s" + fName);
         FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
-        Object[] args = makeArgsStack(paramTypes, fields, checks);
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofShared()) {
+            Object[] args = makeArgsStack(arena, descriptor, checks);
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?
-                    SegmentAllocator.nativeAllocator(arena.scope()) :
+                    arena :
                     THROWING_ALLOCATOR;
             Object res = doCall(addr, allocator, descriptor, args);
             if (ret == CallGeneratorHelper.Ret.NON_VOID) {
@@ -79,8 +74,8 @@ public class TestDowncallStack extends TestDowncallBase {
         return function(ret, params, fields, STACK_PREFIX_LAYOUTS);
     }
 
-    static Object[] makeArgsStack(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
-        return makeArgs(params, fields, checks, STACK_PREFIX_LAYOUTS);
+    static Object[] makeArgsStack(Arena arena, FunctionDescriptor descriptor, List<Consumer<Object>> checks) {
+        return makeArgs(arena, descriptor, checks, STACK_PREFIX_LAYOUTS.size());
     }
 
 }

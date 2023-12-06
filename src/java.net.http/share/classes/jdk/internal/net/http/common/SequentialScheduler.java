@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,29 +154,6 @@ public final class SequentialScheduler {
 
         /** The body of the task. */
         protected abstract void run();
-    }
-
-    /**
-     * A task that runs its main loop within a synchronized block to provide
-     * memory visibility between runs. Since the main loop can't run concurrently,
-     * the lock shouldn't be contended and no deadlock should ever be possible.
-     */
-    public static final class SynchronizedRestartableTask
-            extends CompleteRestartableTask {
-
-        private final Runnable mainLoop;
-        private final Object lock = new Object();
-
-        public SynchronizedRestartableTask(Runnable mainLoop) {
-            this.mainLoop = mainLoop;
-        }
-
-        @Override
-        protected void run() {
-            synchronized(lock) {
-                mainLoop.run();
-            }
-        }
     }
 
     /**
@@ -374,22 +351,6 @@ public final class SequentialScheduler {
      */
     public void stop() {
         state.set(STOP);
-    }
-
-    /**
-     * Returns a new {@code SequentialScheduler} that executes the provided
-     * {@code mainLoop} from within a {@link SynchronizedRestartableTask}.
-     *
-     * @apiNote This is equivalent to calling
-     * {@code new SequentialScheduler(new SynchronizedRestartableTask(mainLoop))}
-     * The main loop must not perform any blocking operation.
-     *
-     * @param mainLoop The main loop of the new sequential scheduler
-     * @return a new {@code SequentialScheduler} that executes the provided
-     * {@code mainLoop} from within a {@link SynchronizedRestartableTask}.
-     */
-    public static SequentialScheduler synchronizedScheduler(Runnable mainLoop) {
-        return new SequentialScheduler(new SynchronizedRestartableTask(mainLoop));
     }
 
     /**

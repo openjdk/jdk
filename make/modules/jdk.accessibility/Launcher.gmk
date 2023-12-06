@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@ ifeq ($(call isTargetOs, windows), true)
       CFLAGS := $(filter-out -Zc:wchar_t-, $(CFLAGS_JDKEXE)) -Zc:wchar_t \
           -analyze- -Od -Gd -D_WINDOWS \
           -D_UNICODE -DUNICODE -RTC1 -EHsc, \
+      CXXFLAGS := $(filter-out -Zc:wchar_t-, $(CXXFLAGS_JDKEXE)) -Zc:wchar_t \
+          -analyze- -Od -Gd -D_WINDOWS \
+          -D_UNICODE -DUNICODE -RTC1 -EHsc, \
       DISABLED_WARNINGS_microsoft_jabswitch.cpp := 4267 4996, \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       LIBS := advapi32.lib version.lib user32.lib, \
@@ -65,6 +68,7 @@ ifeq ($(call isTargetOs, windows), true)
       SRC := $(ACCESSIBILITY_SRCDIR)/jaccessinspector $(ACCESSIBILITY_SRCDIR)/common \
           $(ACCESSIBILITY_SRCDIR)/toolscommon $(ACCESSIBILITY_SRCDIR)/bridge, \
       CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
+      CXXFLAGS := $$(CXXFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
       LDFLAGS := $$(LDFLAGS_JDKEXE) -stack:655360, \
       LIBS := advapi32.lib user32.lib, \
       VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
@@ -86,6 +90,7 @@ ifeq ($(call isTargetOs, windows), true)
       SRC := $(ACCESSIBILITY_SRCDIR)/jaccesswalker $(ACCESSIBILITY_SRCDIR)/common \
           $(ACCESSIBILITY_SRCDIR)/toolscommon $(ACCESSIBILITY_SRCDIR)/bridge, \
       CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
+      CXXFLAGS := $$(CXXFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 -EHsc, \
       LDFLAGS := $$(LDFLAGS_JDKEXE) -stack:655360, \
       LIBS := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
       VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \

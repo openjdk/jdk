@@ -25,8 +25,6 @@
 
 package com.sun.source.tree;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A tree node for an {@code instanceof} expression.
  *
@@ -42,22 +40,6 @@ import jdk.internal.javac.PreviewFeature;
  * @since 1.6
  */
 public interface InstanceOfTree extends ExpressionTree {
-
-    /**
-     * Two possible variants of instanceof expressions:
-     * <ul>
-     * <li> testing types, and
-     * <li> performing pattern matching
-     * </ul>
-     * @since 20
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
-    public enum TestKind {
-        /** instanceof only testing a type */
-        TYPE,
-        /** instanceof doing a pattern matching */
-        PATTERN
-    }
 
     /**
      * Returns the expression to be tested.
@@ -93,12 +75,4 @@ public interface InstanceOfTree extends ExpressionTree {
      */
     PatternTree getPattern();
 
-    /**
-     * Returns the kind of this instanceof expression.
-     *
-     * @return the kind of this instanceof expression
-     * @since 20
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
-    TestKind getTestKind();
 }

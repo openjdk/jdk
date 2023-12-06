@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.StringJoiner;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * JFR.check - invoked from native
@@ -99,7 +99,7 @@ final class DCmdCheck extends AbstractDCmd {
         long maxSize = recording.getMaxSize();
         if (maxSize != 0) {
             print(" maxsize=");
-            print(Utils.formatBytesCompact(maxSize));
+            print(ValueFormatter.formatBytesCompact(maxSize));
         }
         Duration maxAge = recording.getMaxAge();
         if (maxAge != null) {
@@ -169,10 +169,10 @@ final class DCmdCheck extends AbstractDCmd {
         return new Argument[] {
             new Argument("name",
                 "Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings",
-                "STRING", false, null, false),
+                "STRING", false, true, null, false),
             new Argument("verbose",
                 "Print event settings for the recording(s)","BOOLEAN",
-                false, "false", false)
+                false, true, "false", false)
         };
     }
 }

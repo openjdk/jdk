@@ -822,6 +822,9 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
   $RM "$CODESIGN_TESTFILE"
   $TOUCH "$CODESIGN_TESTFILE"
   CODESIGN_SUCCESS=false
+
+  $ECHO "check codesign, calling $CODESIGN $PARAMS $CODESIGN_TESTFILE" >&AS_MESSAGE_LOG_FD
+
   eval \"$CODESIGN\" $PARAMS \"$CODESIGN_TESTFILE\" 2>&AS_MESSAGE_LOG_FD \
       >&AS_MESSAGE_LOG_FD && CODESIGN_SUCCESS=true
   $RM "$CODESIGN_TESTFILE"
@@ -902,4 +905,23 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
     AC_SUBST(MACOSX_CODESIGN_IDENTITY)
     AC_SUBST(MACOSX_CODESIGN_MODE)
   fi
+])
+
+################################################################################
+#
+# fallback linker
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_FALLBACK_LINKER],
+[
+  FALLBACK_LINKER_DEFAULT=false
+
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    FALLBACK_LINKER_DEFAULT=true
+  fi
+
+  UTIL_ARG_ENABLE(NAME: fallback-linker, DEFAULT: $FALLBACK_LINKER_DEFAULT,
+      RESULT: ENABLE_FALLBACK_LINKER,
+      DESC: [enable libffi-based fallback implementation of java.lang.foreign.Linker],
+      CHECKING_MSG: [if fallback linker enabled])
+  AC_SUBST(ENABLE_FALLBACK_LINKER)
 ])

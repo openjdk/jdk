@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,12 @@ private:
   friend class ciMethod;
 
   jint _flags;
+  bool _stable;
+  bool _intialized_final_update;
 
-  ciFlags()                  { _flags = 0; }
-  ciFlags(AccessFlags flags) { _flags = flags.as_int(); }
+  ciFlags() :_flags(0), _stable(false), _intialized_final_update(false) { }
+  ciFlags(AccessFlags flags, bool is_stable = false, bool is_initialized_final_update = false) :
+    _flags(flags.as_int()), _stable(is_stable), _intialized_final_update(is_initialized_final_update) { }
 
 public:
   // Java access flags
@@ -58,12 +61,12 @@ public:
   bool is_native               () const { return (_flags & JVM_ACC_NATIVE                    ) != 0; }
   bool is_interface            () const { return (_flags & JVM_ACC_INTERFACE                 ) != 0; }
   bool is_abstract             () const { return (_flags & JVM_ACC_ABSTRACT                  ) != 0; }
-  bool is_stable               () const { return (_flags & JVM_ACC_FIELD_STABLE              ) != 0; }
+  bool is_stable               () const { return _stable; }
   // In case the current object represents a field, return true if
   // the field is modified outside of instance initializer methods
   // (or class/initializer methods if the field is static) and false
   // otherwise.
-  bool has_initialized_final_update() const { return (_flags & JVM_ACC_FIELD_INITIALIZED_FINAL_UPDATE) != 0; };
+  bool has_initialized_final_update() const { return _intialized_final_update; };
 
   // Conversion
   jint   as_int()                      { return _flags; }

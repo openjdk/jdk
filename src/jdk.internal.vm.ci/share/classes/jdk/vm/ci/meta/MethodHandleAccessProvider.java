@@ -66,8 +66,8 @@ public interface MethodHandleAccessProvider {
      * interpreter overhead. If the parameter forceBytecodeGeneration is set to true, the VM should
      * try to generate bytecodes before this method returns.
      *
-     * @returns {@code null} if {@code methodHandle} is not a {@link MethodHandle} or the invocation
-     *          target is not available at this time
+     * @return {@code null} if {@code methodHandle} is not a {@link MethodHandle} or the invocation
+     *         target is not available at this time
      * @throws NullPointerException if {@code methodHandle} is null
      */
     ResolvedJavaMethod resolveInvokeBasicTarget(JavaConstant methodHandle, boolean forceBytecodeGeneration);
@@ -77,7 +77,7 @@ public interface MethodHandleAccessProvider {
      * with the given constant member name. The member name is the last parameter of the
      * {@code linkTo*} method.
      *
-     * @returns {@code null} if the invocation target is not available at this time
+     * @return {@code null} if the invocation target is not available at this time
      * @throws NullPointerException if {@code memberName} is null
      * @throws IllegalArgumentException if {@code memberName} is not a
      *             {@code java.lang.invoke.MemberName}

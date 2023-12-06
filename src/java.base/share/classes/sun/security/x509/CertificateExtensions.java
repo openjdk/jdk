@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,7 @@ public class CertificateExtensions implements DerEncoder {
      * @return true iff all the entries match that of the Other,
      * false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other)
             return true;
@@ -272,12 +273,11 @@ public class CertificateExtensions implements DerEncoder {
     }
 
     /**
-     * Returns a hashcode value for this CertificateExtensions.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this CertificateExtensions}
      */
+    @Override
     public int hashCode() {
-        return map.hashCode() + getUnparseableExtensions().hashCode();
+        return Objects.hash(map, getUnparseableExtensions());
     }
 
     /**

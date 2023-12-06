@@ -62,6 +62,13 @@ public:
 
 #define ASSERT_ALIGN(p, n) ASSERT_TRUE(is_aligned(p, n))
 
+#ifdef LOG_PLEASE
 #define LOG_HERE(s, ...) { printf(s, __VA_ARGS__); printf("\n"); fflush(stdout); }
+#else
+#define LOG_HERE(s, ...)
+#endif
+
+// handy for error analysis
+#define PING { printf("%s:%d\n", __FILE__, __LINE__); fflush(stdout); }
 
 #endif // TESTUTILS_HPP

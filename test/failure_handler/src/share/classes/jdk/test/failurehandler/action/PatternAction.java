@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class PatternAction implements Action {
 
     private final SimpleAction action;
     private final String[] originalArgs;
+    private final String originalSuccessArtifacts;
 
     public PatternAction(String id, Properties properties)
             throws InvalidValueException {
@@ -47,6 +48,11 @@ public class PatternAction implements Action {
         action = new SimpleAction(name != null ? ("pattern." + name) : "pattern", id, properties);
         ValueHandler.apply(this, properties, id);
         originalArgs = action.args.clone();
+        ActionParameters params = action.getParameters();
+        // just like the "args" the "successArtifacts" param can also contain pattern that
+        // this PatternAction will (sometimes repeatedly) replace, so we keep track of
+        // the original (un-replaced text)
+        originalSuccessArtifacts = params == null ? null : params.successArtifacts;
     }
 
     public ProcessBuilder prepareProcess(HtmlSection section,
@@ -61,6 +67,11 @@ public class PatternAction implements Action {
         }
         for (int i = 0, n = args.length; i < n; ++i) {
             args[i] = args[i].replace("%java", helper.findApp("java").getAbsolutePath());
+        }
+        // replace occurrences of the pattern in the "successArtifacts" param
+        if (originalSuccessArtifacts != null) {
+            action.getParameters().successArtifacts = originalSuccessArtifacts.replaceAll(pattern,
+                    value);
         }
         return action.prepareProcess(section.getWriter(), helper);
     }

@@ -32,18 +32,19 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "castnode.hpp"
+#include "utilities/checkedCast.hpp"
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
-  Node* dom = dominating_cast(phase, phase);
-  if (dom != NULL) {
-    return dom;
-  }
-  if (_dependency != RegularDependency) {
+  if (_dependency == UnconditionalDependency) {
     return this;
   }
-  return phase->type(in(1))->higher_equal_speculative(_type) ? in(1) : this;
+  Node* dom = dominating_cast(phase, phase);
+  if (dom != nullptr) {
+    return dom;
+  }
+  return higher_equal_types(phase, in(1)) ? in(1) : this;
 }
 
 //------------------------------Value------------------------------------------
@@ -97,96 +98,111 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
+  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
+}
+
+uint ConstraintCastNode::hash() const {
+  return TypeNode::hash() + (int)_dependency + (_extra_types != nullptr ? _extra_types->hash() : 0);
 }
 
 bool ConstraintCastNode::cmp(const Node &n) const {
-  return TypeNode::cmp(n) && ((ConstraintCastNode&)n)._dependency == _dependency;
+  if (!TypeNode::cmp(n)) {
+    return false;
+  }
+  ConstraintCastNode& cast = (ConstraintCastNode&) n;
+  if (cast._dependency != _dependency) {
+    return false;
+  }
+  if (_extra_types == nullptr || cast._extra_types == nullptr) {
+    return _extra_types == cast._extra_types;
+  }
+  return _extra_types->eq(cast._extra_types);
 }
 
 uint ConstraintCastNode::size_of() const {
   return sizeof(*this);
 }
 
-Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t, DependencyType dependency) {
+Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node* n, const Type* t, DependencyType dependency,
+                                    const TypeTuple* extra_types) {
   switch(opcode) {
   case Op_CastII: {
-    Node* cast = new CastIINode(n, t, dependency);
+    Node* cast = new CastIINode(n, t, dependency, false, extra_types);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastLL: {
-    Node* cast = new CastLLNode(n, t, dependency);
+    Node* cast = new CastLLNode(n, t, dependency, extra_types);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastPP: {
-    Node* cast = new CastPPNode(n, t, dependency);
+    Node* cast = new CastPPNode(n, t, dependency, extra_types);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastFF: {
-    Node* cast = new CastFFNode(n, t, dependency);
+    Node* cast = new CastFFNode(n, t, dependency, extra_types);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastDD: {
-    Node* cast = new CastDDNode(n, t, dependency);
+    Node* cast = new CastDDNode(n, t, dependency, extra_types);
     cast->set_req(0, c);
     return cast;
   }
   case Op_CastVV: {
-    Node* cast = new CastVVNode(n, t, dependency);
+    Node* cast = new CastVVNode(n, t, dependency, extra_types);
     cast->set_req(0, c);
     return cast;
   }
-  case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, dependency);
+  case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, dependency, extra_types);
   default:
     fatal("Bad opcode %d", opcode);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* ConstraintCastNode::make(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt) {
   switch(bt) {
   case T_INT: {
-    return make_cast(Op_CastII, c, n, t, dependency);
+    return make_cast(Op_CastII, c, n, t, dependency, nullptr);
   }
   case T_LONG: {
-    return make_cast(Op_CastLL, c, n, t, dependency);
+    return make_cast(Op_CastLL, c, n, t, dependency, nullptr);
   }
   default:
     fatal("Bad basic type %s", type2name(bt));
   }
-  return NULL;
+  return nullptr;
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const {
   if (_dependency == UnconditionalDependency) {
-    return NULL;
+    return nullptr;
   }
   Node* val = in(1);
   Node* ctl = in(0);
   int opc = Opcode();
-  if (ctl == NULL) {
-    return NULL;
+  if (ctl == nullptr) {
+    return nullptr;
   }
   // Range check CastIIs may all end up under a single range check and
   // in that case only the narrower CastII would be kept by the code
   // below which would be incorrect.
   if (is_CastII() && as_CastII()->has_range_check()) {
-    return NULL;
+    return nullptr;
   }
-  if (type()->isa_rawptr() && (gvn->type_or_null(val) == NULL || gvn->type(val)->isa_oopptr())) {
-    return NULL;
+  if (type()->isa_rawptr() && (gvn->type_or_null(val) == nullptr || gvn->type(val)->isa_oopptr())) {
+    return nullptr;
   }
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
     Node* u = val->fast_out(i);
     if (u != this &&
         u->outcnt() > 0 &&
         u->Opcode() == opc &&
-        u->in(0) != NULL &&
-        u->bottom_type()->higher_equal(type())) {
+        u->in(0) != nullptr &&
+        higher_equal_types(gvn, u)) {
       if (pt->is_dominator(u->in(0), ctl)) {
         return u->as_Type();
       }
@@ -199,12 +215,31 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
       }
     }
   }
-  return NULL;
+  return nullptr;
+}
+
+bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) const {
+  const Type* t = phase->type(other);
+  if (!t->higher_equal_speculative(type())) {
+    return false;
+  }
+  if (_extra_types != nullptr) {
+    for (uint i = 0; i < _extra_types->cnt(); ++i) {
+      if (!t->higher_equal_speculative(_extra_types->field_at(i))) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 #ifndef PRODUCT
 void ConstraintCastNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
+  if (_extra_types != nullptr) {
+    st->print(" extra types: ");
+    _extra_types->dump_on(st);
+  }
   if (_dependency != RegularDependency) {
     st->print(" %s dependency", _dependency == StrongDependency ? "strong" : "unconditional");
   }
@@ -228,86 +263,13 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
     res = widen_type(phase, res, T_INT);
   }
 
-  // Try to improve the type of the CastII if we recognize a CmpI/If pattern.
-  //
-  // in1  in2
-  //  |    |
-  //  +--- | --+
-  //  |    |   |
-  // CmpINode  |
-  //    |      |
-  // BoolNode  |
-  //    |      |
-  //  IfNode   |
-  //    |      |
-  //  IfProj   |
-  //    |      |
-  //   CastIINode
-  //
-  if (carry_dependency()) {
-    if (in(0) != NULL && in(0)->in(0) != NULL && in(0)->in(0)->is_If()) {
-      assert(in(0)->is_IfFalse() || in(0)->is_IfTrue(), "should be If proj");
-      Node* proj = in(0);
-      if (proj->in(0)->in(1)->is_Bool()) {
-        Node* b = proj->in(0)->in(1);
-        if (b->in(1)->Opcode() == Op_CmpI) {
-          Node* cmp = b->in(1);
-          if (cmp->in(1) == in(1) && phase->type(cmp->in(2))->isa_int()) {
-            const TypeInt* in2_t = phase->type(cmp->in(2))->is_int();
-            const Type* t = TypeInt::INT;
-            BoolTest test = b->as_Bool()->_test;
-            if (proj->is_IfFalse()) {
-              test = test.negate();
-            }
-            BoolTest::mask m = test._test;
-            jlong lo_long = min_jint;
-            jlong hi_long = max_jint;
-            if (m == BoolTest::le || m == BoolTest::lt) {
-              hi_long = in2_t->_hi;
-              if (m == BoolTest::lt) {
-                hi_long -= 1;
-              }
-            } else if (m == BoolTest::ge || m == BoolTest::gt) {
-              lo_long = in2_t->_lo;
-              if (m == BoolTest::gt) {
-                lo_long += 1;
-              }
-            } else if (m == BoolTest::eq) {
-              lo_long = in2_t->_lo;
-              hi_long = in2_t->_hi;
-            } else if (m == BoolTest::ne) {
-              // can't do any better
-            } else {
-              stringStream ss;
-              test.dump_on(&ss);
-              fatal("unexpected comparison %s", ss.freeze());
-            }
-            int lo_int = (int)lo_long;
-            int hi_int = (int)hi_long;
-
-            if (lo_long != (jlong)lo_int) {
-              lo_int = min_jint;
-            }
-            if (hi_long != (jlong)hi_int) {
-              hi_int = max_jint;
-            }
-
-            t = TypeInt::make(lo_int, hi_int, Type::WidenMax);
-
-            res = res->filter_speculative(t);
-            return res;
-          }
-        }
-      }
-    }
-  }
   return res;
 }
 
 static Node* find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, Node* control, const TypeInteger* type, ConstraintCastNode::DependencyType dependency, BasicType bt) {
   Node* n = ConstraintCastNode::make(control, parent, type, dependency, bt);
   Node* existing = igvn->hash_find_insert(n);
-  if (existing != NULL) {
+  if (existing != nullptr) {
     n->destruct(igvn);
     return existing;
   }
@@ -316,7 +278,7 @@ static Node* find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, Node* c
 
 Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
-  if (progress != NULL) {
+  if (progress != nullptr) {
     return progress;
   }
   if (can_reshape && !_range_check_dependency && !phase->C->post_loop_opts_phase()) {
@@ -326,7 +288,7 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (!_range_check_dependency) {
     return optimize_integer_cast(phase, T_INT);
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* CastIINode::Identity(PhaseGVN* phase) {
@@ -373,7 +335,7 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
 
 Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
-  if (progress != NULL) {
+  if (progress != nullptr) {
     return progress;
   }
   if (!phase->C->post_loop_opts_phase()) {
@@ -383,7 +345,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // transform (CastLL (ConvI2L ..)) into (ConvI2L (CastII ..)) if the type of the CastLL is narrower than the type of
   // the ConvI2L.
   Node* in1 = in(1);
-  if (in1 != NULL && in1->Opcode() == Op_ConvI2L) {
+  if (in1 != nullptr && in1->Opcode() == Op_ConvI2L) {
     const Type* t = Value(phase);
     const Type* t_in = phase->type(in1);
     if (t != Type::TOP && t_in != Type::TOP) {
@@ -418,7 +380,7 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   const TypePtr *in_type = inn->isa_ptr();
   const TypePtr *my_type = _type->isa_ptr();
   const Type *result = _type;
-  if (in_type != NULL && my_type != NULL) {
+  if (in_type != nullptr && my_type != nullptr) {
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
       result = in_type;
@@ -492,7 +454,7 @@ Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     break;
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -514,7 +476,7 @@ const Type* CastP2XNode::Value(PhaseGVN* phase) const {
 }
 
 Node *CastP2XNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : NULL;
+  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -523,20 +485,21 @@ Node* CastP2XNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency) {
-  Node* cast= NULL;
+Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency,
+                                             const TypeTuple* types) {
+  Node* cast= nullptr;
   if (type->isa_int()) {
-    cast = make_cast(Op_CastII, c, in, type, dependency);
+    cast = make_cast(Op_CastII, c, in, type, dependency, types);
   } else if (type->isa_long()) {
-    cast = make_cast(Op_CastLL, c, in, type, dependency);
+    cast = make_cast(Op_CastLL, c, in, type, dependency, types);
   } else if (type->isa_float()) {
-    cast = make_cast(Op_CastFF, c, in, type, dependency);
+    cast = make_cast(Op_CastFF, c, in, type, dependency, types);
   } else if (type->isa_double()) {
-    cast = make_cast(Op_CastDD, c, in, type, dependency);
+    cast = make_cast(Op_CastDD, c, in, type, dependency, types);
   } else if (type->isa_vect()) {
-    cast = make_cast(Op_CastVV, c, in, type, dependency);
+    cast = make_cast(Op_CastVV, c, in, type, dependency, types);
   } else if (type->isa_ptr()) {
-    cast = make_cast(Op_CastPP, c, in, type, dependency);
+    cast = make_cast(Op_CastPP, c, in, type, dependency, types);
   }
   return cast;
 }
@@ -545,15 +508,15 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   PhaseIterGVN *igvn = phase->is_IterGVN();
   const TypeInteger* this_type = this->type()->is_integer(bt);
   Node* z = in(1);
-  const TypeInteger* rx = NULL;
-  const TypeInteger* ry = NULL;
+  const TypeInteger* rx = nullptr;
+  const TypeInteger* ry = nullptr;
   // Similar to ConvI2LNode::Ideal() for the same reasons
   if (Compile::push_thru_add(phase, z, this_type, rx, ry, bt, bt)) {
-    if (igvn == NULL) {
+    if (igvn == nullptr) {
       // Postpone this optimization to iterative GVN, where we can handle deep
       // AddI chains without an exponential number of recursive Ideal() calls.
       phase->record_for_igvn(this);
-      return NULL;
+      return nullptr;
     }
     int op = z->Opcode();
     Node* x = z->in(1);
@@ -567,9 +530,9 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
       assert(op == Op_Sub(bt), "");
       return SubNode::make(cx, cy, bt);
     }
-    return NULL;
+    return nullptr;
   }
-  return NULL;
+  return nullptr;
 }
 
 const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const {
@@ -578,7 +541,7 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
   }
   const TypeInteger* this_type = res->is_integer(bt);
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
-  if (in_type != NULL &&
+  if (in_type != nullptr &&
       (in_type->lo_as_long() != this_type->lo_as_long() ||
        in_type->hi_as_long() != this_type->hi_as_long())) {
     jlong lo1 = this_type->lo_as_long();

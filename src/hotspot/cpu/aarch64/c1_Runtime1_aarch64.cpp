@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -369,7 +369,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
   // Save registers, if required.
   OopMapSet* oop_maps = new OopMapSet();
-  OopMap* oop_map = NULL;
+  OopMap* oop_map = nullptr;
   switch (id) {
   case forward_exception_id:
     // We're handling an exception in the context of a compiled frame.
@@ -385,7 +385,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
-    __ authenticate_return_address(exception_pc, rscratch1);
+    __ authenticate_return_address(exception_pc);
 
     // make sure that the vm_results are cleared (may be unnecessary)
     __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
@@ -434,7 +434,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
 
   // patch throwing pc into return address (has bci & oop map)
-  __ protect_return_address(exception_pc, rscratch1);
+  __ protect_return_address(exception_pc);
   __ str(exception_pc, Address(rfp, 1*BytesPerWord));
 
   // compute the exception handler.
@@ -450,7 +450,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ invalidate_registers(false, true, true, true, true, true);
 
   // patch the return address, this stub will directly return to the exception handler
-  __ protect_return_address(r0, rscratch1);
+  __ protect_return_address(r0);
   __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {
@@ -477,6 +477,15 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // other registers used in this stub
   const Register exception_pc = r3;
   const Register handler_addr = r1;
+
+  if (AbortVMOnException) {
+    __ mov(rscratch1, exception_oop);
+    __ enter();
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rscratch1);
+    restore_live_registers(sasm);
+    __ leave();
+  }
 
   // verify that only r0, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);
@@ -542,7 +551,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // Note: This number affects also the RT-Call in generate_handle_exception because
   //       the oop-map is shared for all calls.
   DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-  assert(deopt_blob != NULL, "deoptimization blob must have been created");
+  assert(deopt_blob != nullptr, "deoptimization blob must have been created");
 
   OopMap* oop_map = save_live_registers(sasm);
 
@@ -616,8 +625,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   bool save_fpu_registers = true;
 
   // stub code & info for the different stubs
-  OopMapSet* oop_maps = NULL;
-  OopMap* oop_map = NULL;
+  OopMapSet* oop_maps = nullptr;
+  OopMap* oop_map = nullptr;
   switch (id) {
     {
     case forward_exception_id:
@@ -834,7 +843,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ ldp(r4, r0, Address(sp, (sup_k_off) * VMRegImpl::stack_slot_size));
 
         Label miss;
-        __ check_klass_subtype_slow_path(r4, r0, r2, r5, NULL, &miss);
+        __ check_klass_subtype_slow_path(r4, r0, r2, r5, nullptr, &miss);
 
         // fallthrough on success:
         __ mov(rscratch1, 1);
@@ -904,7 +913,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps->add_gc_map(call_offset, oop_map);
         restore_live_registers(sasm);
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         __ leave();
         __ far_jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
       }
@@ -991,7 +1000,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         restore_live_registers(sasm);
         __ leave();
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
 
         __ far_jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
       }

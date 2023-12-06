@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ int RegisterForm::_reg_ctr = 0;
 //------------------------------RegisterForm-----------------------------------
 // Constructor
 RegisterForm::RegisterForm()
-  : _regDef(cmpstr,hashstr, Form::arena),
+  : _current_ac(nullptr),
+    _regDef(cmpstr,hashstr, Form::arena),
     _regClass(cmpstr,hashstr, Form::arena),
     _allocClass(cmpstr,hashstr, Form::arena) {
 }
@@ -93,28 +94,28 @@ void RegisterForm::addDynamicRegClass() {
 // Provide iteration over all register definitions
 // in the order used by the register allocator
 void        RegisterForm::reset_RegDefs() {
-  _current_ac = NULL;
+  _current_ac = nullptr;
   _aclasses.reset();
 }
 
 RegDef     *RegisterForm::iter_RegDefs() {
   // Check if we need to get the next AllocClass
-  if ( _current_ac == NULL ) {
+  if ( _current_ac == nullptr ) {
     const char *ac_name = _aclasses.iter();
-    if( ac_name == NULL )   return NULL;   // No more allocation classes
+    if( ac_name == nullptr )   return nullptr;   // No more allocation classes
     _current_ac = (AllocClass*)_allocClass[ac_name];
     _current_ac->_regDefs.reset();
-    assert( _current_ac != NULL, "Name must match an allocation class");
+    assert( _current_ac != nullptr, "Name must match an allocation class");
   }
 
   const char *rd_name = _current_ac->_regDefs.iter();
-  if( rd_name == NULL ) {
+  if( rd_name == nullptr ) {
     // At end of this allocation class, check the next
-    _current_ac = NULL;
+    _current_ac = nullptr;
     return iter_RegDefs();
   }
   RegDef *reg_def = (RegDef*)_current_ac->_regDef[rd_name];
-  assert( reg_def != NULL, "Name must match a register definition");
+  assert( reg_def != nullptr, "Name must match a register definition");
   return reg_def;
 }
 
@@ -137,19 +138,19 @@ bool   RegisterForm::verify() {
 
   // Verify Register Classes
   // check that each register class contains registers from one chunk
-  const char *rc_name = NULL;
+  const char *rc_name = nullptr;
   _rclasses.reset();
-  while ( (rc_name = _rclasses.iter()) != NULL ) {
+  while ( (rc_name = _rclasses.iter()) != nullptr ) {
     // Check the chunk value for all registers in this class
     RegClass *reg_class = getRegClass(rc_name);
-    assert( reg_class != NULL, "InternalError() no matching register class");
+    assert( reg_class != nullptr, "InternalError() no matching register class");
   } // end of RegClasses
 
   // Verify that every register has been placed into an allocation class
-  RegDef *reg_def = NULL;
+  RegDef *reg_def = nullptr;
   reset_RegDefs();
   uint  num_register_zero = 0;
-  while ( (reg_def = iter_RegDefs()) != NULL ) {
+  while ( (reg_def = iter_RegDefs()) != nullptr ) {
     if( reg_def->register_num() == 0 )  ++num_register_zero;
   }
   if( num_register_zero > 1 ) {
@@ -183,15 +184,15 @@ void RegisterForm::output(FILE *fp) {          // Write info to output files
   const char *name;
   fprintf(fp,"\n");
   fprintf(fp,"-------------------- Dump RegisterForm --------------------\n");
-  for(_rdefs.reset(); (name = _rdefs.iter()) != NULL;) {
+  for(_rdefs.reset(); (name = _rdefs.iter()) != nullptr;) {
     ((RegDef*)_regDef[name])->output(fp);
   }
   fprintf(fp,"\n");
-  for (_rclasses.reset(); (name = _rclasses.iter()) != NULL;) {
+  for (_rclasses.reset(); (name = _rclasses.iter()) != nullptr;) {
     ((RegClass*)_regClass[name])->output(fp);
   }
   fprintf(fp,"\n");
-  for (_aclasses.reset(); (name = _aclasses.iter()) != NULL;) {
+  for (_aclasses.reset(); (name = _aclasses.iter()) != nullptr;) {
     ((AllocClass*)_allocClass[name])->output(fp);
   }
   fprintf(fp,"-------------------- end  RegisterForm --------------------\n");
@@ -270,22 +271,22 @@ const char *RegClass::rd_name_iter() {
 
 RegDef *RegClass::RegDef_iter() {
   const char *rd_name  = rd_name_iter();
-  RegDef     *reg_def  = rd_name ? (RegDef*)_regDef[rd_name] : NULL;
+  RegDef     *reg_def  = rd_name ? (RegDef*)_regDef[rd_name] : nullptr;
   return      reg_def;
 }
 
 const RegDef* RegClass::find_first_elem() {
-  const RegDef* first = NULL;
-  const RegDef* def = NULL;
+  const RegDef* first = nullptr;
+  const RegDef* def = nullptr;
 
   reset();
-  while ((def = RegDef_iter()) != NULL) {
-    if (first == NULL || def->register_num() < first->register_num()) {
+  while ((def = RegDef_iter()) != nullptr) {
+    if (first == nullptr || def->register_num() < first->register_num()) {
       first = def;
     }
   }
 
-  assert(first != NULL, "empty mask?");
+  assert(first != nullptr, "empty mask?");
   return first;;
 }
 
@@ -293,7 +294,7 @@ const RegDef* RegClass::find_first_elem() {
 int RegClass::regs_in_word( int wordnum, bool stack_also ) {
   int         word = 0;
   const char *name;
-  for(_regDefs.reset(); (name = _regDefs.iter()) != NULL;) {
+  for(_regDefs.reset(); (name = _regDefs.iter()) != nullptr;) {
     int rnum = ((RegDef*)_regDef[name])->register_num();
     if( (rnum >> 5) == wordnum )
       word |= (1 << (rnum & 31));
@@ -315,7 +316,7 @@ void RegClass::dump() {
 void RegClass::output(FILE *fp) {           // Write info to output files
   fprintf(fp,"RegClass: %s\n",_classid);
   const char *name;
-  for(_regDefs.reset(); (name = _regDefs.iter()) != NULL;) {
+  for(_regDefs.reset(); (name = _regDefs.iter()) != nullptr;) {
     ((RegDef*)_regDef[name])->output(fp);
   }
   fprintf(fp,"--- done with entries for reg_class %s\n\n",_classid);
@@ -356,7 +357,7 @@ void RegClass::build_register_masks(FILE* fp) {
 }
 
 //------------------------------CodeSnippetRegClass---------------------------
-CodeSnippetRegClass::CodeSnippetRegClass(const char* classid) : RegClass(classid), _code_snippet(NULL) {
+CodeSnippetRegClass::CodeSnippetRegClass(const char* classid) : RegClass(classid), _code_snippet(nullptr) {
 }
 
 CodeSnippetRegClass::~CodeSnippetRegClass() {
@@ -371,7 +372,9 @@ void CodeSnippetRegClass::declare_register_masks(FILE* fp) {
 }
 
 //------------------------------ConditionalRegClass---------------------------
-ConditionalRegClass::ConditionalRegClass(const char *classid) : RegClass(classid), _condition_code(NULL) {
+ConditionalRegClass::ConditionalRegClass(const char *classid) : RegClass(classid), _condition_code(nullptr) {
+    _rclasses[0] = nullptr;
+    _rclasses[1] = nullptr;
 }
 
 ConditionalRegClass::~ConditionalRegClass() {
@@ -413,7 +416,7 @@ AllocClass::AllocClass(char *classid) : _classid(classid), _regDef(cmpstr,hashst
 
 // record a register in this class
 void AllocClass::addReg(RegDef *regDef) {
-  assert( regDef != NULL, "Can not add a NULL to an allocation class");
+  assert( regDef != nullptr, "Can not add a null to an allocation class");
   regDef->set_register_num( RegisterForm::_reg_ctr++ );
   // Add regDef to this allocation class
   _regDefs.addName(regDef->_regname);
@@ -427,7 +430,7 @@ void AllocClass::dump() {
 void AllocClass::output(FILE *fp) {       // Write info to output files
   fprintf(fp,"AllocClass: %s \n",_classid);
   const char *name;
-  for(_regDefs.reset(); (name = _regDefs.iter()) != NULL;) {
+  for(_regDefs.reset(); (name = _regDefs.iter()) != nullptr;) {
     ((RegDef*)_regDef[name])->output(fp);
   }
   fprintf(fp,"--- done with entries for alloc_class %s\n\n",_classid);
@@ -436,15 +439,20 @@ void AllocClass::output(FILE *fp) {       // Write info to output files
 //==============================Frame Handling=================================
 //------------------------------FrameForm--------------------------------------
 FrameForm::FrameForm() {
-  _frame_pointer = NULL;
-  _c_frame_pointer = NULL;
-  _alignment = NULL;
-  _return_addr = NULL;
-  _c_return_addr = NULL;
-  _varargs_C_out_slots_killed = NULL;
-  _return_value = NULL;
-  _c_return_value = NULL;
-  _interpreter_frame_pointer_reg = NULL;
+  _sync_stack_slots = nullptr;
+  _inline_cache_reg = nullptr;
+  _interpreter_frame_pointer_reg = nullptr;
+  _cisc_spilling_operand_name = nullptr;
+  _frame_pointer = nullptr;
+  _c_frame_pointer = nullptr;
+  _alignment = nullptr;
+  _return_addr_loc = false;
+  _c_return_addr_loc = false;
+  _return_addr = nullptr;
+  _c_return_addr = nullptr;
+  _varargs_C_out_slots_killed = nullptr;
+  _return_value = nullptr;
+  _c_return_value = nullptr;
 }
 
 FrameForm::~FrameForm() {
@@ -520,21 +528,21 @@ void PipelineForm::output(FILE *fp) {           // Write info to output files
     fprintf(fp, ", fetch %d x % d bytes per cycle", _instrFetchUnits, _instrFetchUnitSize);
 
   fprintf(fp,"\nResource:");
-  for ( _reslist.reset(); (res = _reslist.iter()) != NULL; )
+  for ( _reslist.reset(); (res = _reslist.iter()) != nullptr; )
     fprintf(fp," %s(0x%08x)", res, _resdict[res]->is_resource()->mask());
   fprintf(fp,"\n");
 
   fprintf(fp,"\nDescription:\n");
-  for ( _stages.reset(); (stage = _stages.iter()) != NULL; )
+  for ( _stages.reset(); (stage = _stages.iter()) != nullptr; )
     fprintf(fp," %s(%d)", stage, count++);
   fprintf(fp,"\n");
 
   fprintf(fp,"\nClasses:\n");
-  for ( _classlist.reset(); (cls = _classlist.iter()) != NULL; )
+  for ( _classlist.reset(); (cls = _classlist.iter()) != nullptr; )
     _classdict[cls]->is_pipeclass()->output(fp);
 
   fprintf(fp,"\nNop Instructions:");
-  for ( _noplist.reset(); (nop = _noplist.iter()) != NULL; )
+  for ( _noplist.reset(); (nop = _noplist.iter()) != nullptr; )
     fprintf(fp, " \"%s\"", nop);
   fprintf(fp,"\n");
 }
@@ -635,8 +643,8 @@ void PipeClassForm::output(FILE *fp) {         // Write info to output files
 //==============================Peephole Optimization==========================
 int Peephole::_peephole_counter = 0;
 //------------------------------Peephole---------------------------------------
-Peephole::Peephole() : _predicate(NULL), _match(NULL), _procedure(NULL),
-                       _constraint(NULL), _replace(NULL), _next(NULL) {
+Peephole::Peephole() : _predicate(nullptr), _match(nullptr), _procedure(nullptr),
+                       _constraint(nullptr), _replace(nullptr), _next(nullptr) {
   _peephole_number = _peephole_counter++;
 }
 Peephole::~Peephole() {
@@ -644,7 +652,7 @@ Peephole::~Peephole() {
 
 // Append a peephole rule with the same root instruction
 void Peephole::append_peephole(Peephole *next_peephole) {
-  if( _next == NULL ) {
+  if( _next == nullptr ) {
     _next = next_peephole;
   } else {
     _next->append_peephole( next_peephole );
@@ -653,24 +661,24 @@ void Peephole::append_peephole(Peephole *next_peephole) {
 
 // Add a predicate to this peephole rule
 void Peephole::add_predicate(PeepPredicate* predicate) {
-  assert( _predicate == NULL, "fatal()" );
+  assert( _predicate == nullptr, "fatal()" );
   _predicate = predicate;
 }
 
 // Store the components of this peephole rule
 void Peephole::add_match(PeepMatch *match) {
-  assert( _match == NULL, "fatal()" );
+  assert( _match == nullptr, "fatal()" );
   _match = match;
 }
 
 // Add a procedure to this peephole rule
 void Peephole::add_procedure(PeepProcedure* procedure) {
-  assert( _procedure == NULL, "fatal()" );
+  assert( _procedure == nullptr, "fatal()" );
   _procedure = procedure;
 }
 
 void Peephole::append_constraint(PeepConstraint *next_constraint) {
-  if( _constraint == NULL ) {
+  if( _constraint == nullptr ) {
     _constraint = next_constraint;
   } else {
     _constraint->append( next_constraint );
@@ -678,7 +686,7 @@ void Peephole::append_constraint(PeepConstraint *next_constraint) {
 }
 
 void Peephole::add_replace(PeepReplace *replace) {
-  assert( _replace == NULL, "fatal()" );
+  assert( _replace == nullptr, "fatal()" );
   _replace = replace;
 }
 
@@ -691,9 +699,9 @@ void Peephole::dump() {
 
 void Peephole::output(FILE *fp) {         // Write info to output files
   fprintf(fp,"Peephole:\n");
-  if( _match != NULL )       _match->output(fp);
-  if( _constraint != NULL )  _constraint->output(fp);
-  if( _replace != NULL )     _replace->output(fp);
+  if( _match != nullptr )       _match->output(fp);
+  if( _constraint != nullptr )  _constraint->output(fp);
+  if( _replace != nullptr )     _replace->output(fp);
   // Output the next entry
   if( _next ) _next->output(fp);
 }
@@ -793,7 +801,7 @@ void PeepProcedure::output(FILE* fp) {
 PeepConstraint::PeepConstraint(int left_inst,  char* left_op, char* relation,
                                int right_inst, char* right_op)
   : _left_inst(left_inst), _left_op(left_op), _relation(relation),
-    _right_inst(right_inst), _right_op(right_op), _next(NULL) {}
+    _right_inst(right_inst), _right_op(right_op), _next(nullptr) {}
 PeepConstraint::~PeepConstraint() {
 }
 
@@ -804,13 +812,13 @@ bool PeepConstraint::constrains_instruction(int position) {
   if( _right_inst == position ) return true;
 
   // Check remaining constraints in list
-  if( _next == NULL )  return false;
+  if( _next == nullptr )  return false;
   else                 return _next->constrains_instruction(position);
 }
 
 // Add another constraint
 void PeepConstraint::append(PeepConstraint *next_constraint) {
-  if( _next == NULL ) {
+  if( _next == nullptr ) {
     _next = next_constraint;
   } else {
     _next->append( next_constraint );

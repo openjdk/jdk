@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ public class CollectedHeapName {
 
   public static final CollectedHeapName SERIAL = new CollectedHeapName("Serial");
   public static final CollectedHeapName PARALLEL = new CollectedHeapName("Parallel");
-  public static final CollectedHeapName CMS = new CollectedHeapName("CMS");
   public static final CollectedHeapName G1 = new CollectedHeapName("G1");
   public static final CollectedHeapName EPSILON = new CollectedHeapName("Epsilon");
   public static final CollectedHeapName Z = new CollectedHeapName("Z");

@@ -70,8 +70,8 @@ inline void ZAttachedArray<ObjectT, ArrayT>::free(ObjectT* obj) {
 }
 
 template <typename ObjectT, typename ArrayT>
-inline ZAttachedArray<ObjectT, ArrayT>::ZAttachedArray(size_t length) :
-    _length(length) {}
+inline ZAttachedArray<ObjectT, ArrayT>::ZAttachedArray(size_t length)
+  : _length(length) {}
 
 template <typename ObjectT, typename ArrayT>
 inline size_t ZAttachedArray<ObjectT, ArrayT>::length() const {

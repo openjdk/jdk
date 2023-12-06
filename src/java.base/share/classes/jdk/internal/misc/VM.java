@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public class VM {
     // User-controllable flag that determines if direct buffers should be page
     // aligned. The "-XX:+PageAlignDirectMemory" option can be used to force
     // buffers, allocated by ByteBuffer.allocateDirect, to be page aligned.
+    @Stable
     private static boolean pageAlignDirectMemory;
 
     // Returns {@code true} if the direct buffers should be page aligned. This
@@ -159,14 +160,6 @@ public class VM {
     private static int classFileMajorVersion;
     private static int classFileMinorVersion;
     private static final int PREVIEW_MINOR_VERSION = 65535;
-
-    /**
-     * Returns the class file version of the current release.
-     * @jvms 4.1 Table 4.1-A. class file format major versions
-     */
-    public static int classFileVersion() {
-        return classFileMajorVersion;
-    }
 
     /**
      * Tests if the given version is a supported {@code class}

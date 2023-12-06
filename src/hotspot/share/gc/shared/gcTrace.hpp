@@ -30,6 +30,7 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcName.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
@@ -102,7 +103,7 @@ class GCTracer {
   void report_gc_heap_summary(GCWhen::Type when, const GCHeapSummary& heap_summary) const;
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
-  void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
+  void report_object_count_after_gc(BoolObjectClosure* object_filter, WorkerThreads* workers) NOT_SERVICES_RETURN;
   void report_cpu_time_event(double user_time, double system_time, double real_time) const;
 
  protected:

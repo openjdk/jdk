@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,12 +224,12 @@ public class UnsafeGetStableArrayElement {
     }
 
     static void testMismatched(Callable<?> c, Runnable setDefaultAction) throws Exception {
-        testMismatched(c, setDefaultAction, false);
+        testMismatched(c, setDefaultAction, false, true);
     }
 
-    static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray) throws Exception {
-        if (Compiler.isGraalEnabled() && !objectArray) {
-            // Graal will constant fold mismatched reads from primitive stable arrays
+    static void testMismatched(Callable<?> c, Runnable setDefaultAction, boolean objectArray, boolean aligned) throws Exception {
+        if (Compiler.isGraalEnabled() && !objectArray && aligned) {
+            // Graal will constant fold mismatched reads from primitive stable arrays, except unaligned ones
             run(c, setDefaultAction, null);
         } else {
             run(c, null, setDefaultAction);
@@ -319,15 +319,15 @@ public class UnsafeGetStableArrayElement {
         testMatched(   Test::testD_D, Test::changeD);
 
         // Object[], aligned accesses
-        testMismatched(Test::testL_J, Test::changeL, true); // long & double are always as large as an OOP
-        testMismatched(Test::testL_D, Test::changeL, true);
+        testMismatched(Test::testL_J, Test::changeL, true, true); // long & double are always as large as an OOP
+        testMismatched(Test::testL_D, Test::changeL, true, true);
         testMatched(   Test::testL_L, Test::changeL);
 
         // Unaligned accesses
-        testMismatched(Test::testS_U, Test::changeS);
-        testMismatched(Test::testC_U, Test::changeC);
-        testMismatched(Test::testI_U, Test::changeI);
-        testMismatched(Test::testJ_U, Test::changeJ);
+        testMismatched(Test::testS_U, Test::changeS, false, false);
+        testMismatched(Test::testC_U, Test::changeC, false, false);
+        testMismatched(Test::testI_U, Test::changeI, false, false);
+        testMismatched(Test::testJ_U, Test::changeJ, true, false);
 
         // No way to reliably check the expected behavior:
         //   (1) OOPs change during GC;

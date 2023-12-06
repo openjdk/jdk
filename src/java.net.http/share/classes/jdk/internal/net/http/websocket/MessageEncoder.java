@@ -50,7 +50,7 @@ import java.security.SecureRandom;
 public class MessageEncoder {
 
     private static final Logger debug =
-            Utils.getWebSocketLogger("[Output]"::toString, Utils.DEBUG_WS);
+            Utils.getWebSocketLogger("[Output]"::toString);
 
     private final SecureRandom maskingKeySource = new SecureRandom();
     private final Frame.HeaderWriter headerWriter = new Frame.HeaderWriter();

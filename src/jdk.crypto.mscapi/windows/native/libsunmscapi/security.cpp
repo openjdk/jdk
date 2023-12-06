@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -523,7 +523,11 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             else
             {
                 if (bCallerFreeProv == TRUE) {
-                    ::CryptReleaseContext(hCryptProv, NULL); // deprecated
+                    if ((dwKeySpec & CERT_NCRYPT_KEY_SPEC) == CERT_NCRYPT_KEY_SPEC) {
+                        NCryptFreeObject(hCryptProv);
+                    } else {
+                        ::CryptReleaseContext(hCryptProv, NULL); // deprecated
+                    }
                     bCallerFreeProv = FALSE;
                 }
 
@@ -635,6 +639,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         // Generate certificate from byte array and store into
                         // cert collection
                         env->CallVoidMethod(obj, mGenCert, byteArray, jArrayList);
+                        JNU_CHECK_EXCEPTION(env);
                     }
 
                     // Usually pszNameString should be non-NULL. It's either
@@ -655,6 +660,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                             env->CallVoidMethod(obj, mGenCertChain,
                                 name,
                                 jArrayList);
+                            JNU_CHECK_EXCEPTION(env);
                         }
                         else
                         {
@@ -677,6 +683,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) hUserKey,
                                             dwPublicKeyLength, jArrayList);
+                                    JNU_CHECK_EXCEPTION(env);
                                 }
                             } else {
                                 // Only accept EC for CNG
@@ -698,6 +705,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
+                                        JNU_CHECK_EXCEPTION(env);
                                     } else if (buffer[0] == 'R' && buffer[2] == 'S'
                                             && buffer[4] == 'A') {
                                         env->CallVoidMethod(obj, mGenKeyAndCertChain,
@@ -705,6 +713,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
+                                        JNU_CHECK_EXCEPTION(env);
                                     } else {
                                         dump("Unknown NCRYPT_ALGORITHM_PROPERTY", buffer, len);
                                     }
@@ -925,6 +934,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
         }
         env->GetByteArrayRegion(jHash, 0, jHashSize, pHashBuffer);
 
+        BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+        BCRYPT_PSS_PADDING_INFO pssInfo;
         VOID* param;
         DWORD dwFlags;
 
@@ -934,7 +945,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
             dwFlags = 0;
             break;
         case 1:
-            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
             if (jHashAlgorithm) {
                 pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
                 if (pkcs1Info.pszAlgId == NULL) {
@@ -949,7 +959,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
             dwFlags = BCRYPT_PAD_PKCS1;
             break;
         case 2:
-            BCRYPT_PSS_PADDING_INFO pssInfo;
             pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
             pssInfo.cbSalt = saltLen;
             if (pssInfo.pszAlgId == NULL) {
@@ -1160,6 +1169,8 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
         env->GetByteArrayRegion(jSignedHash, 0, jSignedHashSize,
             pSignedHashBuffer);
 
+        BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+        BCRYPT_PSS_PADDING_INFO pssInfo;
         VOID* param;
         DWORD dwFlags;
 
@@ -1169,7 +1180,6 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
             dwFlags = 0;
             break;
         case 1:
-            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
             if (jHashAlgorithm) {
                 pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
                 if (pkcs1Info.pszAlgId == NULL) {
@@ -1184,7 +1194,6 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
             dwFlags = NCRYPT_PAD_PKCS1_FLAG;
             break;
         case 2:
-            BCRYPT_PSS_PADDING_INFO pssInfo;
             pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
             pssInfo.cbSalt = saltLen;
             if (pssInfo.pszAlgId == NULL) {
@@ -1517,7 +1526,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
         pszCertAliasName[size] = 0; // append the string terminator
 
         CRYPT_DATA_BLOB friendlyName = {
-            sizeof(WCHAR) * (size + 1),
+            (DWORD)(sizeof(WCHAR) * (size + 1)),
             (BYTE *) pszCertAliasName
         };
 

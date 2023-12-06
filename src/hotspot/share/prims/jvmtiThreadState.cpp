@@ -33,7 +33,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -52,6 +52,7 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 //
 
 JvmtiThreadState *JvmtiThreadState::_head = nullptr;
+bool JvmtiThreadState::_seen_interp_only_mode = false;
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
@@ -219,12 +220,20 @@ volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_count = 0;
 // VTMS transitions for one virtual thread are disabled while it is positive
 volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_disable_for_one_count = 0;
 
-// VTMs transitions for all virtual threads are disabled while it is positive
+// VTMS transitions for all virtual threads are disabled while it is positive
 volatile int JvmtiVTMSTransitionDisabler::_VTMS_transition_disable_for_all_count = 0;
 
 // There is an active suspender or resumer.
 volatile bool JvmtiVTMSTransitionDisabler::_SR_mode = false;
 
+// Notifications from VirtualThread about VTMS events are enabled.
+bool JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events = false;
+
+// The JvmtiVTMSTransitionDisabler sync protocol is enabled if this count > 0.
+volatile int JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_count = 0;
+
+// JvmtiVTMSTraansitionDisabler sync protocol is enabled permanently after seeing a suspender.
+volatile bool JvmtiVTMSTransitionDisabler::_sync_protocol_enabled_permanently = false;
 
 #ifdef ASSERT
 void
@@ -243,7 +252,7 @@ JvmtiVTMSTransitionDisabler::print_info() {
 #endif
 
 // disable VTMS transitions for one virtual thread
-// no-op if thread is non-NULL and not a virtual thread
+// no-op if thread is non-null and not a virtual thread
 JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   : _is_SR(false), _thread(thread)
 {
@@ -252,6 +261,9 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   }
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
+  }
+  if (!sync_protocol_enabled_permanently()) {
+    JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
   }
   if (_thread != nullptr) {
     VTMS_transition_disable_for_one(); // disable VTMS transitions for one virtual thread
@@ -270,6 +282,12 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR)
   if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
+  if (!sync_protocol_enabled_permanently()) {
+    JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
+    if (is_SR) {
+      Atomic::store(&_sync_protocol_enabled_permanently, true);
+    }
+  }
   VTMS_transition_disable_for_all();
 }
 
@@ -285,12 +303,15 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
   } else {
     VTMS_transition_enable_for_all(); // enable VTMS transitions for all virtual threads
   }
+  if (!sync_protocol_enabled_permanently()) {
+    JvmtiVTMSTransitionDisabler::dec_sync_protocol_enabled_count();
+  }
 }
 
 // disable VTMS transitions for one virtual thread
 void
 JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
-  assert(_thread != NULL, "sanity check");
+  assert(_thread != nullptr, "sanity check");
   JavaThread* thread = JavaThread::current();
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_thread));
@@ -328,7 +349,8 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_all() {
     }
     if (_is_SR) {
       _SR_mode = true;
-      while (_VTMS_transition_disable_for_all_count > 0) {
+      while (_VTMS_transition_disable_for_all_count > 0 ||
+             _VTMS_transition_disable_for_one_count > 0) {
         ml.wait(10);   // Wait while there is any active jvmtiVTMSTransitionDisabler.
       }
     }
@@ -369,7 +391,7 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_one() {
   MonitorLocker ml(JvmtiVTMSTransition_lock);
   java_lang_Thread::dec_VTMS_transition_disable_count(vth());
   Atomic::dec(&_VTMS_transition_disable_for_one_count);
-  if (_VTMS_transition_disable_for_one_count == 0 || _is_SR) {
+  if (_VTMS_transition_disable_for_one_count == 0) {
     ml.notify_all();
   }
 #ifdef ASSERT
@@ -401,14 +423,21 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_enable_for_all() {
 void
 JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_mount) {
   JavaThread* thread = JavaThread::current();
-  HandleMark hm(thread);
-  Handle vth = Handle(thread, JNIHandles::resolve_external_guard(vthread));
-  int attempts = 50000;
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
 
   // Avoid using MonitorLocker on performance critical path, use
   // two-level synchronization with lock-free operations on counters.
   Atomic::inc(&_VTMS_transition_count); // Try to enter VTMS transition section optmistically.
-  java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
+  java_lang_Thread::set_is_in_VTMS_transition(vt, true);
+
+  if (!sync_protocol_enabled()) {
+    thread->set_is_in_VTMS_transition(true);
+    return;
+  }
+  HandleMark hm(thread);
+  Handle vth = Handle(thread, vt);
+  int attempts = 50000;
 
   // Do not allow suspends inside VTMS transitions.
   // Block while transitions are disabled or there are suspend requests.
@@ -455,7 +484,6 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   }
 #endif
   // Enter VTMS transition section.
-  assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
   thread->set_is_in_VTMS_transition(true);
 }
 
@@ -466,10 +494,13 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   assert(thread->is_in_VTMS_transition(), "sanity check");
   thread->set_is_in_VTMS_transition(false);
   oop vt = JNIHandles::resolve_external_guard(vthread);
-  int64_t thread_id = java_lang_Thread::thread_id(vt);
   java_lang_Thread::set_is_in_VTMS_transition(vt, false);
-
   Atomic::dec(&_VTMS_transition_count);
+
+  if (!sync_protocol_enabled()) {
+    return;
+  }
+  int64_t thread_id = java_lang_Thread::thread_id(vt);
 
   // Unblock waiting VTMS transition disablers.
   if (_VTMS_transition_disable_for_one_count > 0 ||
@@ -507,6 +538,137 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   }
 #endif
 }
+
+// set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
+void JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(JavaThread* thread, jobject vthread, bool in_trans) {
+  oop vt = JNIHandles::resolve_external_guard(vthread);
+  java_lang_Thread::set_is_in_VTMS_transition(vt, in_trans);
+  thread->set_is_in_VTMS_transition(in_trans);
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
+  VTMS_mount_end(vthread);
+  JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+
+  // If interp_only_mode has been enabled then we must eagerly create JvmtiThreadState
+  // objects for globally enabled virtual thread filtered events. Otherwise,
+  // it is an important optimization to create JvmtiThreadState objects lazily.
+  // This optimization is disabled when watchpoint capabilities are present. It is to
+  // work around a bug with virtual thread frames which can be not deoptimized in time.
+  if (JvmtiThreadState::seen_interp_only_mode() ||
+      JvmtiExport::should_post_field_access() ||
+      JvmtiExport::should_post_field_modification()){
+    JvmtiEventController::thread_started(thread);
+  }
+  if (JvmtiExport::should_post_vthread_start()) {
+    JvmtiExport::post_vthread_start(vthread);
+  }
+  // post VirtualThreadMount event after VirtualThreadStart
+  if (JvmtiExport::should_post_vthread_mount()) {
+    JvmtiExport::post_vthread_mount(vthread);
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
+  JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+
+  // post VirtualThreadUnmount event before VirtualThreadEnd
+  if (JvmtiExport::should_post_vthread_unmount()) {
+    JvmtiExport::post_vthread_unmount(vthread);
+  }
+  if (JvmtiExport::should_post_vthread_end()) {
+    JvmtiExport::post_vthread_end(vthread);
+  }
+  VTMS_unmount_begin(vthread, /* last_unmount */ true);
+  if (thread->jvmti_thread_state() != nullptr) {
+    JvmtiExport::cleanup_thread(thread);
+    assert(thread->jvmti_thread_state() == nullptr, "should be null");
+    assert(java_lang_Thread::jvmti_thread_state(JNIHandles::resolve(vthread)) == nullptr, "should be null");
+  }
+  thread->rebind_to_jvmti_thread_state_of(thread->threadObj());
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(jobject vthread, bool hide) {
+  if (hide) {
+    VTMS_mount_begin(vthread);
+  } else {
+    VTMS_mount_end(vthread);
+    if (JvmtiExport::should_post_vthread_mount()) {
+      JvmtiExport::post_vthread_mount(vthread);
+    }
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(jobject vthread, bool hide) {
+  if (hide) {
+    if (JvmtiExport::should_post_vthread_unmount()) {
+      JvmtiExport::post_vthread_unmount(vthread);
+    }
+    VTMS_unmount_begin(vthread, /* last_unmount */ false);
+  } else {
+    VTMS_unmount_end(vthread);
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_mount_begin(jobject vthread) {
+  JavaThread* thread = JavaThread::current();
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  start_VTMS_transition(vthread, /* is_mount */ true);
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
+  JavaThread* thread = JavaThread::current();
+  oop vt = JNIHandles::resolve(vthread);
+
+  thread->rebind_to_jvmti_thread_state_of(vt);
+
+  JvmtiThreadState* state = thread->jvmti_thread_state();
+  if (state != nullptr && state->is_pending_interp_only_mode()) {
+    MutexLocker mu(JvmtiThreadState_lock);
+    state = thread->jvmti_thread_state();
+    if (state != nullptr && state->is_pending_interp_only_mode()) {
+      JvmtiEventController::enter_interp_only_mode();
+    }
+  }
+  assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  finish_VTMS_transition(vthread, /* is_mount */ true);
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(jobject vthread, bool last_unmount) {
+  JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+
+  start_VTMS_transition(vthread, /* is_mount */ false);
+  if (!last_unmount) {
+    thread->rebind_to_jvmti_thread_state_of(thread->threadObj());
+  }
+}
+
+void
+JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread) {
+  JavaThread* thread = JavaThread::current();
+  assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  finish_VTMS_transition(vthread, /* is_mount */ false);
+}
+
 
 //
 // Virtual Threads Suspend/Resume management
@@ -615,6 +777,7 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  _seen_interp_only_mode = true;
   _thread->increment_interp_only_mode();
   invalidate_cur_stack_depth();
 }

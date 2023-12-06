@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,10 @@ public class MethodEntryExitEvents extends TestScaffold {
     boolean finishedCounting = false;
 
     /*
-     * Enter main() , then t2.<init>, then sayHello[1,2,3,4,5] 15 times 3 loops,
+     * main() is already entered, so add t2.<init>, then sayHello[1,2,3,4,5] 15 times 3 loops,
      * then loopComplete()
      */
-    final int expectedEntryCount = 1 + 1 + (15 * 3) + 1;
+    final int expectedEntryCount = 1 + (15 * 3) + 1;
     int methodEntryCount = 0;
 
     /*
@@ -220,8 +220,9 @@ public class MethodEntryExitEvents extends TestScaffold {
         waitForVMStart();
 
         // Determine main thread
-        ClassPrepareEvent e = resumeToPrepareOf("MethodEntryExitEventsDebugee");
-        mainThread = e.thread();
+        BreakpointEvent bpe = resumeTo("MethodEntryExitEventsDebugee",
+                                       "main", "([Ljava/lang/String;)V");;
+        mainThread = bpe.thread();
 
         try {
 

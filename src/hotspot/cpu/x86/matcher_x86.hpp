@@ -97,14 +97,14 @@
   }
 
   // Prefer ConN+DecodeN over ConP.
-  static const bool const_oop_prefer_decode() {
+  static bool const_oop_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     // Prefer ConN+DecodeN over ConP.
     return true;
   }
 
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  static const bool const_klass_prefer_decode() {
+  static bool const_klass_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     return false;
   }
@@ -165,12 +165,12 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return VM_Version::supports_evex();
   }
 

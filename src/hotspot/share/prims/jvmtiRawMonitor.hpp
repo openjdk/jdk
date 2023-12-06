@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,6 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
     M_ILLEGAL_MONITOR_STATE, // IllegalMonitorStateException
     M_INTERRUPTED            // Thread.interrupt()
   };
-
-  // Non-aborting operator new
-  void* operator new(size_t size) throw() {
-    return CHeapObj::operator new(size, std::nothrow);
-  }
 
   JvmtiRawMonitor(const char* name);
   ~JvmtiRawMonitor();

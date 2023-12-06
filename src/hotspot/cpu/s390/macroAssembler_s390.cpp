@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -887,7 +888,7 @@ void MacroAssembler::load_double_largeoffset(FloatRegister t, int64_t si20, Regi
 // Returns 0 (zero) if no consts section exists or if it has size zero.
 long MacroAssembler::toc_distance() {
   CodeSection* cs = code()->consts();
-  return (long)((cs != NULL) ? cs->start()-pc() : 0);
+  return (long)((cs != nullptr) ? cs->start()-pc() : 0);
 }
 
 // Implementation on x86/sparc assumes that constant and instruction section are
@@ -1142,9 +1143,9 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 //         referring to a position-fixed target location.
 //         If not so, relocations and patching must be used.
 void MacroAssembler::load_absolute_address(Register d, address addr) {
-  assert(addr != NULL, "should not happen");
+  assert(addr != nullptr, "should not happen");
   BLOCK_COMMENT("load_absolute_address:");
-  if (addr == NULL) {
+  if (addr == nullptr) {
     z_larl(d, pc()); // Dummy emit for size calc.
     return;
   }
@@ -1795,27 +1796,27 @@ void MacroAssembler::compare_and_branch_optimized(Register r1,
 //===========================================================================
 
 AddressLiteral MacroAssembler::allocate_metadata_address(Metadata* obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert(oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->allocate_metadata_index(obj);
   RelocationHolder rspec = metadata_Relocation::spec(index);
   return AddressLiteral((address)obj, rspec);
 }
 
 AddressLiteral MacroAssembler::constant_metadata_address(Metadata* obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert(oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->find_index(obj);
   RelocationHolder rspec = metadata_Relocation::spec(index);
   return AddressLiteral((address)obj, rspec);
 }
 
 AddressLiteral MacroAssembler::allocate_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert(oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->allocate_oop_index(obj);
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
 }
 
 AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert(oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(address(obj), oop_Relocation::spec(oop_index));
 }
@@ -2074,7 +2075,7 @@ void MacroAssembler::push_frame(Register bytes, Register old_sp, bool copy_sp, b
   assert_different_registers(bytes, old_sp, Z_SP);
   if (!copy_sp) {
     z_cgr(old_sp, Z_SP);
-    asm_assert_eq("[old_sp]!=[Z_SP]", 0x211);
+    asm_assert(bcondEqual, "[old_sp]!=[Z_SP]", 0x211);
   }
 #endif
   if (copy_sp) { z_lgr(old_sp, Z_SP); }
@@ -2125,7 +2126,7 @@ void MacroAssembler::pop_frame() {
 // Pop current C frame and restore return PC register (Z_R14).
 void MacroAssembler::pop_frame_restore_retPC(int frame_size_in_bytes) {
   BLOCK_COMMENT("pop_frame_restore_retPC:");
-  int retPC_offset = _z_abi16(return_pc) + frame_size_in_bytes;
+  int retPC_offset = _z_common_abi(return_pc) + frame_size_in_bytes;
   // If possible, pop frame by add instead of load (a penny saved is a penny got :-).
   if (Displacement::is_validDisp(retPC_offset)) {
     z_lg(Z_R14, retPC_offset, Z_SP);
@@ -2172,7 +2173,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // ARG1 must hold thread address.
   z_lgr(Z_ARG1, Z_thread);
 
-  address return_pc = NULL;
+  address return_pc = nullptr;
   if (allow_relocation) {
     return_pc = call_c(entry_point);
   } else {
@@ -2231,8 +2232,8 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2240,10 +2241,10 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                              Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2258,10 +2259,10 @@ void MacroAssembler::call_VM_static(Register oop_result, address entry_point, bo
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                                     Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM_static(oop_result, entry_point, check_exceptions);
 }
@@ -2282,8 +2283,8 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, bool check_exceptions) {
    // Z_ARG1 is reserved for the thread.
+   assert_different_registers(arg_2, Z_ARG2);
    lgr_if_needed(Z_ARG2, arg_1);
-   assert(arg_2 != Z_ARG2, "smashed argument");
    lgr_if_needed(Z_ARG3, arg_2);
    call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2291,10 +2292,10 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2312,17 +2313,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf(entry_point);
 }
@@ -2341,17 +2342,17 @@ void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf_static(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf_static(entry_point);
 }
@@ -2377,7 +2378,7 @@ address MacroAssembler::call_c_static(address function_entry) {
 
 address MacroAssembler::call_c_opt(address function_entry) {
   bool success = call_far_patchable(function_entry, -2 /* emit relocation + constant */);
-  _last_calls_return_pc = success ? pc() : NULL;
+  _last_calls_return_pc = success ? pc() : nullptr;
   return _last_calls_return_pc;
 }
 
@@ -2571,7 +2572,7 @@ address MacroAssembler::get_dest_of_call_far_patchable_at(address instruction_ad
             call_far_patchable_size());
     Disassembler::decode(instruction_addr, instruction_addr+call_far_patchable_size());
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -2632,7 +2633,7 @@ bool MacroAssembler::is_load_from_polling_page(address instr_loc) {
 
 // Extract poll address from instruction and ucontext.
 address MacroAssembler::get_poll_address(address instr_loc, void* ucontext) {
-  assert(ucontext != NULL, "must have ucontext");
+  assert(ucontext != nullptr, "must have ucontext");
   ucontext_t* uc = (ucontext_t*) ucontext;
   unsigned long z_instruction;
   unsigned int ilen = get_instruction(instr_loc, &z_instruction);
@@ -2650,7 +2651,7 @@ address MacroAssembler::get_poll_address(address instr_loc, void* ucontext) {
   }
 
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 // Extract poll register from instruction.
@@ -2766,10 +2767,8 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
   z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
-
   add2reg_with_index(itable_entry_addr,
-                     vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(),
+                     in_bytes(Klass::vtable_start_offset() + itableOffsetEntry::interface_offset()),
                      recv_klass, vtable_len);
 
   const int itable_offset_search_inc = itableOffsetEntry::size() * wordSize;
@@ -2778,7 +2777,7 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
   bind(search);
 
   // Handle IncompatibleClassChangeError.
-  // If the entry is NULL then we've reached the end of the table
+  // If the entry is null then we've reached the end of the table
   // without finding the expected interface, so throw an exception.
   load_and_test_long(itable_interface, Address(itable_entry_addr));
   z_bre(no_such_interface);
@@ -2789,8 +2788,8 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
 
   // Entry found and itable_entry_addr points to it, get offset of vtable for interface.
   if (return_method) {
-    const int vtable_offset_offset = (itableOffsetEntry::offset_offset_in_bytes() -
-                                      itableOffsetEntry::interface_offset_in_bytes()) -
+    const int vtable_offset_offset = in_bytes(itableOffsetEntry::offset_offset() -
+                                              itableOffsetEntry::interface_offset()) -
                                      itable_offset_search_inc;
 
     // Compute itableMethodEntry and get method and entry point
@@ -2798,7 +2797,7 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
     // for computing the entry's offset has a fixed and a dynamic part,
     // the latter depending on the matched interface entry and on the case,
     // that the itable index has been passed as a register, not a constant value.
-    int method_offset = itableMethodEntry::method_offset_in_bytes();
+    int method_offset = in_bytes(itableMethodEntry::method_offset());
                              // Fixed part (displacement), common operand.
     Register itable_offset = method_result;  // Dynamic part (index register).
 
@@ -2838,14 +2837,14 @@ void MacroAssembler::lookup_virtual_method(Register           recv_klass,
     Address vtable_entry_addr(recv_klass,
                               vtable_index.as_constant() * wordSize +
                               base +
-                              vtableEntry::method_offset_in_bytes());
+                              in_bytes(vtableEntry::method_offset()));
 
     z_lg(method_result, vtable_entry_addr);
   } else {
     // Shift index properly and load with base + index + disp.
     Register vindex = vtable_index.as_register();
     Address  vtable_entry_addr(recv_klass, vindex,
-                               base + vtableEntry::method_offset_in_bytes());
+                               base + in_bytes(vtableEntry::method_offset()));
 
     z_sllg(vindex, vindex, exact_log2(wordSize));
     z_lg(method_result, vtable_entry_addr);
@@ -2945,12 +2944,12 @@ void MacroAssembler::check_klass_subtype_fast_path(Register   sub_klass,
 
   NearLabel L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
-  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
+  if (L_success == nullptr)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1 ||
          (L_slow_path == &L_fallthrough && label_nulls <= 2 && !need_slow_path),
-         "at most one NULL in the batch, usually");
+         "at most one null in the batch, usually");
 
   BLOCK_COMMENT("check_klass_subtype_fast_path {");
   // If the pointers are equal, we are done (e.g., String[] elements).
@@ -3031,9 +3030,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
   assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
   NearLabel L_fallthrough;
   int label_nulls = 0;
-  if (L_success == NULL) { L_success = &L_fallthrough; label_nulls++; }
-  if (L_failure == NULL) { L_failure = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1, "at most one NULL in the batch");
+  if (L_success == nullptr) { L_success = &L_fallthrough; label_nulls++; }
+  if (L_failure == nullptr) { L_failure = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one null in the batch");
 
   const int ss_offset = in_bytes(Klass::secondary_supers_offset());
   const int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
@@ -3100,20 +3099,20 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   NearLabel failure;
   BLOCK_COMMENT(err_msg("check_klass_subtype(%s subclass of %s) {", sub_klass->name(), super_klass->name()));
   check_klass_subtype_fast_path(sub_klass, super_klass, temp1_reg,
-                                &L_success, &failure, NULL);
+                                &L_success, &failure, nullptr);
   check_klass_subtype_slow_path(sub_klass, super_klass,
-                                temp1_reg, temp2_reg, &L_success, NULL);
+                                temp1_reg, temp2_reg, &L_success, nullptr);
   BIND(failure);
   BLOCK_COMMENT("} check_klass_subtype");
 }
 
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
-  assert(L_fast_path != NULL || L_slow_path != NULL, "at least one is required");
+  assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");
 
   Label L_fallthrough;
-  if (L_fast_path == NULL) {
+  if (L_fast_path == nullptr) {
     L_fast_path = &L_fallthrough;
-  } else if (L_slow_path == NULL) {
+  } else if (L_slow_path == nullptr) {
     L_slow_path = &L_fallthrough;
   }
 
@@ -3167,51 +3166,63 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
   guarantee(Immediate::is_uimm16(markWord::monitor_value), "must be half-word");
-  z_lr(temp, displacedHeader);
+  z_lgr(temp, displacedHeader);
   z_nill(temp, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Set mark to markWord | markWord::unlocked_value.
-  z_oill(displacedHeader, markWord::unlocked_value);
+  if (LockingMode == LM_MONITOR) {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  } else if (LockingMode == LM_LEGACY) {
+    // Set mark to markWord | markWord::unlocked_value.
+    z_oill(displacedHeader, markWord::unlocked_value);
 
-  // Load Compare Value application register.
+    // Load Compare Value application register.
 
-  // Initialize the box (must happen before we update the object mark).
-  z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
+    // Initialize the box (must happen before we update the object mark).
+    z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Memory Fence (in cmpxchgd)
-  // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    // Memory Fence (in cmpxchgd)
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
 
-  // If the compare-and-swap succeeded, then we found an unlocked object and we
-  // have now locked it.
-  z_csg(displacedHeader, box, 0, oop);
-  assert(currentHeader==displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
-  z_bre(done);
+    // If the compare-and-swap succeeded, then we found an unlocked object and we
+    // have now locked it.
+    z_csg(displacedHeader, box, 0, oop);
+    assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
+    z_bre(done);
 
-  // We did not see an unlocked object so try the fast recursive case.
+    // We did not see an unlocked object so try the fast recursive case.
 
-  z_sgr(currentHeader, Z_SP);
-  load_const_optimized(temp, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+    z_sgr(currentHeader, Z_SP);
+    load_const_optimized(temp, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
 
-  z_ngr(currentHeader, temp);
-  //   z_brne(done);
-  //   z_release();
-  z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
+    z_ngr(currentHeader, temp);
+    //   z_brne(done);
+    //   z_release();
+    z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  z_bru(done);
+    z_bru(done);
+  } else {
+    assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+    lightweight_lock(oop, displacedHeader, temp, done);
+    z_bru(done);
+  }
 
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
   bind(object_has_monitor);
-  // The object's monitor m is unlocked iff m->owner == NULL,
+  // The object's monitor m is unlocked iff m->owner is null,
   // otherwise m->owner may contain a thread or a stack address.
   //
-  // Try to CAS m->owner from NULL to current thread.
+  // Try to CAS m->owner from null to current thread.
   z_lghi(zero, 0);
   // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
   z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-  // Store a non-null value into the box.
-  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    // Store a non-null value into the box.
+    z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  }
 #ifdef ASSERT
   z_brne(done);
   // We've acquired the monitor, check some invariants.
@@ -3234,32 +3245,56 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   Register temp = temp1;
   Register monitor = temp2;
 
+  const int hdr_offset = oopDesc::mark_offset_in_bytes();
+
   Label done, object_has_monitor;
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
 
-  // Find the lock address and load the displaced header from the stack.
-  // if the displaced header is zero, we have a recursive unlock.
-  load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-  z_bre(done);
+  if (LockingMode == LM_LEGACY) {
+    // Find the lock address and load the displaced header from the stack.
+    // if the displaced header is zero, we have a recursive unlock.
+    load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    z_bre(done);
+  }
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
-  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);
+  z_lg(currentHeader, hdr_offset, oop);
   guarantee(Immediate::is_uimm16(markWord::monitor_value), "must be half-word");
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    z_lgr(temp, currentHeader);
+  }
   z_nill(currentHeader, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Check if it is still a light weight lock, this is true if we see
-  // the stack address of the basicLock in the markWord of the object
-  // copy box to currentHeader such that csg does not kill it.
-  z_lgr(currentHeader, box);
-  z_csg(currentHeader, displacedHeader, 0, oop);
-  z_bru(done); // Csg sets CR as desired.
+  if (LockingMode == LM_MONITOR) {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  } else if (LockingMode == LM_LEGACY) {
+    // Check if it is still a light weight lock, this is true if we see
+    // the stack address of the basicLock in the markWord of the object
+    // copy box to currentHeader such that csg does not kill it.
+    z_lgr(currentHeader, box);
+    z_csg(currentHeader, displacedHeader, 0, oop);
+    z_bru(done); // csg sets CR as desired.
+  } else {
+    assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+
+    // don't load currentHead again from stack-top after monitor check, as it is possible
+    // some other thread modified it.
+    // currentHeader is altered, but it's contents are copied in temp as well
+    lightweight_unlock(oop, temp, currentHeader, done);
+    z_bru(done);
+  }
+
+  // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
+  // This is handled like owner thread mismatches: We take the slow path.
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);    // CurrentHeader is tagged with monitor_value set.
+  z_lg(currentHeader, hdr_offset, oop);    // CurrentHeader is tagged with monitor_value set.
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   z_brne(done);
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
@@ -3306,7 +3341,7 @@ void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Ja
   }
 
   // When returning from calling out from Java mode the frame anchor's
-  // last_Java_pc will always be set to NULL. It is set here so that
+  // last_Java_pc will always be set to null. It is set here so that
   // if we are doing a call to native (not VM) that we capture the
   // known pc and don't have to rely on the native call having a
   // standard frame linkage where we can find the pc.
@@ -3402,13 +3437,13 @@ void MacroAssembler::null_check(Register reg, Register tmp, int64_t offset) {
     bind(ok);
   } else {
     if (needs_explicit_null_check((intptr_t)offset)) {
-      // Provoke OS NULL exception if reg = NULL by
+      // Provoke OS null exception if reg is null by
       // accessing M[reg] w/o changing any registers.
       z_lg(tmp, 0, reg);
     }
     // else
       // Nothing to do, (later) access of M[reg + offset]
-      // will provoke OS NULL exception if reg = NULL.
+      // will provoke OS null exception if reg is null.
   }
 }
 
@@ -3447,7 +3482,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
     current = dst;
   }
 
-  if (base != NULL) {
+  if (base != nullptr) {
     // Use scaled-down base address parts to match scaled-down klass pointer.
     unsigned int base_h = ((unsigned long)base)>>(32+shift);
     unsigned int base_l = (unsigned int)(((unsigned long)base)>>shift);
@@ -3514,7 +3549,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 
 // This function calculates the size of the code generated by
 //   decode_klass_not_null(register dst, Register src)
-// when (Universe::heap() != NULL). Hence, if the instructions
+// when Universe::heap() isn't null. Hence, if the instructions
 // it generates change, then this method needs to be updated.
 int MacroAssembler::instr_size_for_decode_klass_not_null() {
   address  base    = CompressedKlassPointers::base();
@@ -3522,7 +3557,7 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
   int addbase_size = 0;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
-  if (base != NULL) {
+  if (base != nullptr) {
     unsigned int base_h = ((unsigned long)base)>>32;
     unsigned int base_l = (unsigned int)((unsigned long)base);
     if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
@@ -3557,7 +3592,7 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   if (shift != 0) { // Shift required?
     z_sllg(dst, dst, shift);
   }
-  if (base != NULL) {
+  if (base != nullptr) {
     unsigned int base_h = ((unsigned long)base)>>32;
     unsigned int base_l = (unsigned int)((unsigned long)base);
     if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
@@ -3604,7 +3639,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     lgr_if_needed(dst, src);
   }
 
-  if (base != NULL) {
+  if (base != nullptr) {
     unsigned int base_h = ((unsigned long)base)>>32;
     unsigned int base_l = (unsigned int)((unsigned long)base);
     if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
@@ -3651,11 +3686,6 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   }
 }
 
-void MacroAssembler::load_klass_check_null(Register klass, Register src_oop, Register tmp) {
-  null_check(src_oop, tmp, oopDesc::klass_offset_in_bytes());
-  load_klass(klass, src_oop);
-}
-
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   if (UseCompressedClassPointers) {
     assert_different_registers(dst_oop, klass, Z_R0);
@@ -3684,8 +3714,8 @@ void MacroAssembler::store_klass_gap(Register s, Register d) {
 // Rop1            - klass in register, always uncompressed.
 // disp            - Offset of klass in memory, compressed/uncompressed, depending on runtime flag.
 // Rbase           - Base address of cKlass in memory.
-// maybeNULL       - True if Rop1 possibly is a NULL.
-void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rbase, bool maybeNULL) {
+// maybenull       - True if Rop1 possibly is a null.
+void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rbase, bool maybenull) {
 
   BLOCK_COMMENT("compare klass ptr {");
 
@@ -3699,7 +3729,7 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
 
     // First encode register oop and then compare with cOop in memory.
     // This sequence saves an unnecessary cOop load and decode.
-    if (base == NULL) {
+    if (base == nullptr) {
       if (shift == 0) {
         z_cl(Rop1, disp, Rbase);     // Unscaled
       } else {
@@ -3714,7 +3744,7 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
       Register current = Rop1;
       Label    done;
 
-      if (maybeNULL) {       // NULL ptr must be preserved!
+      if (maybenull) {       // null ptr must be preserved!
         z_ltgr(Z_R0, current);
         z_bre(done);
         current = Z_R0;
@@ -3817,9 +3847,9 @@ int MacroAssembler::get_oop_base_complement(Register Rbase, uint64_t oop_base) {
 // Rop1            - Oop in register.
 // disp            - Offset of cOop in memory.
 // Rbase           - Base address of cOop in memory.
-// maybeNULL       - True if Rop1 possibly is a NULL.
-// maybeNULLtarget - Branch target for Rop1 == NULL, if flow control shall NOT continue with compare instruction.
-void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL) {
+// maybenull       - True if Rop1 possibly is a null.
+// maybenulltarget - Branch target for Rop1 == nullptr, if flow control shall NOT continue with compare instruction.
+void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybenull) {
   Register Rbase  = mem.baseOrR0();
   Register Rindex = mem.indexOrR0();
   int64_t  disp   = mem.disp();
@@ -3828,7 +3858,7 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
   address   base  = CompressedOops::base();
 
   assert(UseCompressedOops, "must be on to call this method");
-  assert(Universe::heap() != NULL, "java heap must be initialized to call this method");
+  assert(Universe::heap() != nullptr, "java heap must be initialized to call this method");
   assert((shift == 0) || (shift == LogMinObjAlignmentInBytes), "cOop encoder detected bad shift");
   assert_different_registers(Rop1, Z_R0);
   assert_different_registers(Rop1, Rbase, Z_R1);
@@ -3838,7 +3868,7 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
 
   // First encode register oop and then compare with cOop in memory.
   // This sequence saves an unnecessary cOop load and decode.
-  if (base == NULL) {
+  if (base == nullptr) {
     if (shift == 0) {
       z_cl(Rop1, disp, Rindex, Rbase);  // Unscaled
     } else {
@@ -3853,7 +3883,7 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
     Label done;
     int   pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
 
-    if (maybeNULL) {       // NULL ptr must be preserved!
+    if (maybenull) {       // null ptr must be preserved!
       z_ltgr(Z_R0, Rop1);
       z_bre(done);
     }
@@ -3933,7 +3963,7 @@ void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
 //
 // only32bitValid is set, if later code only uses the lower 32 bits. In this
 // case we must not fix the upper 32 bits.
-void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
+void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybenull,
                                  Register Rbase, int pow2_offset, bool only32bitValid) {
 
   const address oop_base  = CompressedOops::base();
@@ -3941,20 +3971,20 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
   const bool    disjoint  = CompressedOops::base_disjoint();
 
   assert(UseCompressedOops, "must be on to call this method");
-  assert(Universe::heap() != NULL, "java heap must be initialized to call this encoder");
+  assert(Universe::heap() != nullptr, "java heap must be initialized to call this encoder");
   assert((oop_shift == 0) || (oop_shift == LogMinObjAlignmentInBytes), "cOop encoder detected bad shift");
 
-  if (disjoint || (oop_base == NULL)) {
+  if (disjoint || (oop_base == nullptr)) {
     BLOCK_COMMENT("cOop encoder zeroBase {");
     if (oop_shift == 0) {
-      if (oop_base != NULL && !only32bitValid) {
+      if (oop_base != nullptr && !only32bitValid) {
         z_llgfr(Rdst, Rsrc); // Clear upper bits in case the register will be decoded again.
       } else {
         lgr_if_needed(Rdst, Rsrc);
       }
     } else {
       z_srlg(Rdst, Rsrc, oop_shift);
-      if (oop_base != NULL && !only32bitValid) {
+      if (oop_base != nullptr && !only32bitValid) {
         z_llgfr(Rdst, Rdst); // Clear upper bits in case the register will be decoded again.
       }
     }
@@ -3968,7 +3998,7 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
   BLOCK_COMMENT("cOop encoder general {");
   assert_different_registers(Rdst, Z_R1);
   assert_different_registers(Rsrc, Rbase);
-  if (maybeNULL) {
+  if (maybenull) {
     Label done;
     // We reorder shifting and subtracting, so that we can compare
     // and shift in parallel:
@@ -3995,7 +4025,7 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
     }
     assert_different_registers(Rdst, Rbase);
 
-    // Check for NULL oop (must be left alone) and shift.
+    // Check for null oop (must be left alone) and shift.
     if (oop_shift != 0) {  // Shift out alignment bits
       if (((intptr_t)oop_base&0xc000000000000000L) == 0L) { // We are sure: no single address will have the leftmost bit set.
         z_srag(Rdst, Rsrc, oop_shift);  // Arithmetic shift sets the condition code.
@@ -4006,7 +4036,7 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
         // z_cghi(Rsrc, 0);
       }
     } else {
-      z_ltgr(Rdst, Rsrc);   // Move NULL to result register.
+      z_ltgr(Rdst, Rsrc);   // Move null to result register.
     }
     z_bre(done);
 
@@ -4069,20 +4099,20 @@ void MacroAssembler::oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
 //  - avoid Z_R0 for any of the argument registers.
 //  - keep Rdst and Rsrc distinct from Rbase. Rdst == Rsrc is ok for performance.
 //  - avoid Z_R1 for Rdst if Rdst == Rbase.
-void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL, Register Rbase, int pow2_offset) {
+void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybenull, Register Rbase, int pow2_offset) {
 
   const address oop_base  = CompressedOops::base();
   const int     oop_shift = CompressedOops::shift();
   const bool    disjoint  = CompressedOops::base_disjoint();
 
   assert(UseCompressedOops, "must be on to call this method");
-  assert(Universe::heap() != NULL, "java heap must be initialized to call this decoder");
+  assert(Universe::heap() != nullptr, "java heap must be initialized to call this decoder");
   assert((oop_shift == 0) || (oop_shift == LogMinObjAlignmentInBytes),
          "cOop encoder detected bad shift");
 
   // cOops are always loaded zero-extended from memory. No explicit zero-extension necessary.
 
-  if (oop_base != NULL) {
+  if (oop_base != nullptr) {
     unsigned int oop_base_hl = ((unsigned int)((uint64_t)(intptr_t)oop_base >> 32)) & 0xffff;
     unsigned int oop_base_hh = ((unsigned int)((uint64_t)(intptr_t)oop_base >> 48)) & 0xffff;
     unsigned int oop_base_hf = ((unsigned int)((uint64_t)(intptr_t)oop_base >> 32)) & 0xFFFFffff;
@@ -4093,7 +4123,7 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL, R
       Label done;
 
       // Rsrc contains a narrow oop. Thus we are sure the leftmost <oop_shift> bits will never be set.
-      if (maybeNULL) {  // NULL ptr must be preserved!
+      if (maybenull) {  // null ptr must be preserved!
         z_slag(Rdst, Rsrc, oop_shift);  // Arithmetic shift sets the condition code.
         z_bre(done);
       } else {
@@ -4153,9 +4183,9 @@ void MacroAssembler::oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL, R
       }
       if (base_preloaded) lgr_if_needed(Rbase_tmp, Rbase);
 
-      // Scale oop and check for NULL.
+      // Scale oop and check for null.
       // Rsrc contains a narrow oop. Thus we are sure the leftmost <oop_shift> bits will never be set.
-      if (maybeNULL) {  // NULL ptr must be preserved!
+      if (maybenull) {  // null ptr must be preserved!
         z_slag(Rdst_tmp, Rsrc, oop_shift);  // Arithmetic shift sets the condition code.
         z_bre(done);
       } else {
@@ -4202,7 +4232,7 @@ void MacroAssembler::resolve_oop_handle(Register result) {
 
 void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
   mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset()));
   mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
   resolve_oop_handle(mirror);
 }
@@ -4210,7 +4240,7 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   mem2reg_opt(holder, Address(method, Method::const_offset()));
   mem2reg_opt(holder, Address(holder, ConstMethod::constants_offset()));
-  mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes()));
+  mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset()));
 }
 
 //---------------------------------------------------------------
@@ -4433,11 +4463,11 @@ int MacroAssembler::store_const_in_toc(AddressLiteral& val) {
   long    value  = val.value();
   address tocPos = long_constant(value);
 
-  if (tocPos != NULL) {
+  if (tocPos != nullptr) {
     int tocOffset = (int)(tocPos - code()->consts()->start());
     return tocOffset;
   }
-  // Address_constant returned NULL, so no constant entry has been created.
+  // Address_constant returned null, so no constant entry has been created.
   // In that case, we return a "fatal" offset, just in case that subsequently
   // generated access code is executed.
   return -1;
@@ -4451,7 +4481,7 @@ int MacroAssembler::store_oop_in_toc(AddressLiteral& oop) {
   // where x is the address of the constant pool entry.
   address tocPos = address_constant((address)oop.value(), RelocationHolder::none);
 
-  if (tocPos != NULL) {
+  if (tocPos != nullptr) {
     int              tocOffset = (int)(tocPos - code()->consts()->start());
     RelocationHolder rsp = oop.rspec();
     Relocation      *rel = rsp.reloc();
@@ -4465,7 +4495,7 @@ int MacroAssembler::store_oop_in_toc(AddressLiteral& oop) {
 
     return tocOffset;
   }
-  // Address_constant returned NULL, so no constant entry has been created
+  // Address_constant returned null, so no constant entry has been created
   // in that case, we return a "fatal" offset, just in case that subsequently
   // generated access code is executed.
   return -1;
@@ -4475,7 +4505,7 @@ bool MacroAssembler::load_const_from_toc(Register dst, AddressLiteral& a, Regist
   int     tocOffset = store_const_in_toc(a);
   if (tocOffset == -1) return false;
   address tocPos    = tocOffset + code()->consts()->start();
-  assert((address)code()->consts()->start() != NULL, "Please add CP address");
+  assert((address)code()->consts()->start() != nullptr, "Please add CP address");
   relocate(a.rspec());
   load_long_pcrelative(dst, tocPos);
   return true;
@@ -4485,7 +4515,7 @@ bool MacroAssembler::load_oop_from_toc(Register dst, AddressLiteral& a, Register
   int     tocOffset = store_oop_in_toc(a);
   if (tocOffset == -1) return false;
   address tocPos    = tocOffset + code()->consts()->start();
-  assert((address)code()->consts()->start() != NULL, "Please add CP address");
+  assert((address)code()->consts()->start() != nullptr, "Please add CP address");
 
   load_addr_pcrelative(dst, tocPos);
   return true;
@@ -4499,7 +4529,7 @@ intptr_t MacroAssembler::get_const_from_toc(address pc) {
   assert(is_load_const_from_toc(pc), "must be load_const_from_pool");
 
   long    offset  = get_load_const_from_toc_offset(pc);
-  address dataLoc = NULL;
+  address dataLoc = nullptr;
   if (is_load_const_from_toc_pcrelative(pc)) {
     dataLoc = pc + offset;
   } else {
@@ -4518,12 +4548,12 @@ void MacroAssembler::set_const_in_toc(address pc, unsigned long new_data, CodeBl
   assert(is_load_const_from_toc(pc), "must be load_const_from_pool");
 
   long    offset = MacroAssembler::get_load_const_from_toc_offset(pc);
-  address dataLoc = NULL;
+  address dataLoc = nullptr;
   if (is_load_const_from_toc_pcrelative(pc)) {
     dataLoc = pc+offset;
   } else {
     nmethod* nm = CodeCache::find_nmethod(pc);
-    assert((cb == NULL) || (nm == (nmethod*)cb), "instruction address should be in CodeBlob");
+    assert((cb == nullptr) || (nm == (nmethod*)cb), "instruction address should be in CodeBlob");
     dataLoc = nm->ctable_begin() + offset;
   }
   if (*(unsigned long *)dataLoc != new_data) { // Prevent cache invalidation: update only if necessary.
@@ -5331,47 +5361,25 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   z_lmg(Z_R7, Z_R13, _z_abi(gpr7), Z_SP);
 }
 
-#ifndef PRODUCT
+void MacroAssembler::asm_assert(branch_condition cond, const char* msg, int id, bool is_static) {
+#ifdef ASSERT
+  Label ok;
+  z_brc(cond, ok);
+  is_static ? stop_static(msg, id) : stop(msg, id);
+  bind(ok);
+#endif // ASSERT
+}
+
 // Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false).
 void MacroAssembler::asm_assert(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) {
-    z_bre(ok);
-  } else {
-    z_brne(ok);
-  }
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "low".
-void MacroAssembler::asm_assert_low(const char *msg, int id) {
-  Label ok;
-  z_brnl(ok);
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "high".
-void MacroAssembler::asm_assert_high(const char *msg, int id) {
-  Label ok;
-  z_brnh(ok);
-  stop(msg, id);
-  bind(ok);
-}
-
-// Assert if CC indicates "not equal" (check_equal==true) or "equal" (check_equal==false)
-// generate non-relocatable code.
-void MacroAssembler::asm_assert_static(bool check_equal, const char *msg, int id) {
-  Label ok;
-  if (check_equal) { z_bre(ok); }
-  else             { z_brne(ok); }
-  stop_static(msg, id);
-  bind(ok);
+#ifdef ASSERT
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id);
+#endif // ASSERT
 }
 
 void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocation, int size, int64_t mem_offset,
                                           Register mem_base, const char* msg, int id) {
+#ifdef ASSERT
   switch (size) {
     case 4:
       load_and_test_int(Z_R0, Address(mem_base, mem_offset));
@@ -5382,8 +5390,9 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
     default:
       ShouldNotReachHere();
   }
-  if (allow_relocation) { asm_assert(check_equal, msg, id); }
-  else                  { asm_assert_static(check_equal, msg, id); }
+  // if relocation is not allowed then stop_static() will be called otherwise call stop()
+  asm_assert(check_equal ? bcondEqual : bcondNotEqual, msg, id, !allow_relocation);
+#endif // ASSERT
 }
 
 // Check the condition
@@ -5392,18 +5401,13 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, bool allow_relocatio
 //   expected_size - FP + SP == 0
 // Destroys Register expected_size if no tmp register is passed.
 void MacroAssembler::asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id) {
-  if (tmp == noreg) {
-    tmp = expected_size;
-  } else {
-    if (tmp != expected_size) {
-      z_lgr(tmp, expected_size);
-    }
-    z_algr(tmp, Z_SP);
-    z_slg(tmp, 0, Z_R0, Z_SP);
-    asm_assert_eq(msg, id);
-  }
+#ifdef ASSERT
+  lgr_if_needed(tmp, expected_size);
+  z_algr(tmp, Z_SP);
+  z_slg(tmp, 0, Z_R0, Z_SP);
+  asm_assert(bcondEqual, msg, id);
+#endif // ASSERT
 }
-#endif // !PRODUCT
 
 // Save and restore functions: Exclude Z_R0.
 void MacroAssembler::save_volatile_regs(Register dst, int offset, bool include_fp, bool include_flags) {
@@ -5524,8 +5528,8 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   // The plain disassembler does not recognize illtrap. It instead displays
   // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
-  z_illtrap(); // Illegal instruction.
-  z_illtrap(); // Illegal instruction.
+  z_illtrap(id); // Illegal instruction.
+  z_illtrap(id); // Illegal instruction.
 
   BLOCK_COMMENT(" } stop");
 }
@@ -5539,7 +5543,7 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
 //       should be given for "hand-written" code, if all chain calls are in the same code blob.
 //       Generated code must not undergo any transformation, e.g. ShortenBranches, to be safe.
 address MacroAssembler::stop_chain(address reentry, int type, const char* msg, int id, bool allow_relocation) {
-  BLOCK_COMMENT(err_msg("stop_chain(%s,%s): %s {", reentry==NULL?"init":"cont", allow_relocation?"reloc ":"static", msg));
+  BLOCK_COMMENT(err_msg("stop_chain(%s,%s): %s {", reentry==nullptr?"init":"cont", allow_relocation?"reloc ":"static", msg));
 
   // Setup arguments.
   if (allow_relocation) {
@@ -5550,7 +5554,7 @@ address MacroAssembler::stop_chain(address reentry, int type, const char* msg, i
     load_absolute_address(Z_ARG1, (address)stop_types[type%stop_end]);
     load_absolute_address(Z_ARG2, (address)msg);
   }
-  if ((reentry != NULL) && RelAddr::is_in_range_of_RelAddr16(reentry, pc())) {
+  if ((reentry != nullptr) && RelAddr::is_in_range_of_RelAddr16(reentry, pc())) {
     BLOCK_COMMENT("branch to reentry point:");
     z_brc(bcondAlways, reentry);
   } else {
@@ -5559,12 +5563,12 @@ address MacroAssembler::stop_chain(address reentry, int type, const char* msg, i
     save_return_pc();    // Saves return pc Z_R14.
     push_frame_abi160(0);
     if (allow_relocation) {
-      reentry = NULL;    // Prevent reentry if code relocation is allowed.
+      reentry = nullptr;    // Prevent reentry if code relocation is allowed.
       call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
     } else {
       call_VM_leaf_static(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
     }
-    z_illtrap(); // Illegal instruction as emergency stop, should the above call return.
+    z_illtrap(id); // Illegal instruction as emergency stop, should the above call return.
   }
   BLOCK_COMMENT(" } stop_chain");
 
@@ -5574,7 +5578,7 @@ address MacroAssembler::stop_chain(address reentry, int type, const char* msg, i
 // Special version of stop() for code size reduction.
 // Assumes constant relative addresses for data and runtime call.
 void MacroAssembler::stop_static(int type, const char* msg, int id) {
-  stop_chain(NULL, type, msg, id, false);
+  stop_chain(nullptr, type, msg, id, false);
 }
 
 void MacroAssembler::stop_subroutine() {
@@ -5639,4 +5643,104 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
 
 SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
+}
+
+// Implements lightweight-locking.
+// Branches to slow upon failure to lock the object.
+// Falls through upon success.
+//
+//  - obj: the object to be locked, contents preserved.
+//  - hdr: the header, already loaded from obj, contents destroyed.
+//  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register temp, Label& slow_case) {
+
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, temp);
+
+  // First we need to check if the lock-stack has room for pushing the object reference.
+  z_lgf(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+
+  compareU32_and_branch(temp, (unsigned)LockStack::end_offset()-1, bcondHigh, slow_case);
+
+  // attempting a lightweight_lock
+  // Load (object->mark() | 1) into hdr
+  z_oill(hdr, markWord::unlocked_value);
+
+  z_lgr(temp, hdr);
+
+  // Clear lock-bits from hdr (locked state)
+  z_xilf(temp, markWord::unlocked_value);
+
+  z_csg(hdr, temp, oopDesc::mark_offset_in_bytes(), obj);
+  branch_optimized(Assembler::bcondNotEqual, slow_case);
+
+  // After successful lock, push object on lock-stack
+  z_lgf(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+  z_stg(obj, Address(Z_thread, temp));
+  z_ahi(temp, oopSize);
+  z_st(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+
+  // as locking was successful, set CC to EQ
+  z_cr(temp, temp);
+}
+
+// Implements lightweight-unlocking.
+// Branches to slow upon failure.
+// Falls through upon success.
+//
+// - obj: the object to be unlocked
+// - hdr: the (pre-loaded) header of the object, will be destroyed
+// - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
+
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, tmp);
+
+#ifdef ASSERT
+  {
+    // Check that hdr is lightweight-locked.
+    Label hdr_ok;
+    z_lgr(tmp, hdr);
+    z_nill(tmp, markWord::lock_mask_in_place);
+    z_bre(hdr_ok);
+    stop("Header is not lightweight-locked");
+    bind(hdr_ok);
+  }
+  {
+    // The following checks rely on the fact that LockStack is only ever modified by
+    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
+    // entries after inflation will happen delayed in that case.
+
+    // Check for lock-stack underflow.
+    Label stack_ok;
+    z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+    compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondHigh, stack_ok);
+    stop("Lock-stack underflow");
+    bind(stack_ok);
+  }
+  {
+    // Check if the top of the lock-stack matches the unlocked object.
+    Label tos_ok;
+    z_aghi(tmp, -oopSize);
+    z_lg(tmp, Address(Z_thread, tmp));
+    compare64_and_branch(tmp, obj, Assembler::bcondEqual, tos_ok);
+    stop("Top of lock-stack does not match the unlocked object");
+    bind(tos_ok);
+  }
+#endif // ASSERT
+
+  z_lgr(tmp, hdr);
+  z_oill(tmp, markWord::unlocked_value);
+  z_csg(hdr, tmp, oopDesc::mark_offset_in_bytes(), obj);
+  branch_optimized(Assembler::bcondNotEqual, slow);
+
+  // After successful unlock, pop object from lock-stack
+#ifdef ASSERT
+  z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+  z_aghi(tmp, -oopSize);
+  z_agr(tmp, Z_thread);
+  z_xc(0, oopSize-1, tmp, 0, tmp);  // wipe out lock-stack entry
+#endif
+  z_alsi(in_bytes(JavaThread::lock_stack_top_offset()), Z_thread, -oopSize);  // pop object
+  z_cr(tmp, tmp); // set CC to EQ
 }

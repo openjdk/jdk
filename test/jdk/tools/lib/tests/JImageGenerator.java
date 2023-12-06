@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ public class JImageGenerator {
             + "}\n";
 
     private static final String OUTPUT_OPTION = "--output";
-    private static final String POST_PROCESS_OPTION = "--post-process-path";
     private static final String MAIN_CLASS_OPTION = "--main-class";
     private static final String CLASS_PATH_OPTION = "--class-path";
     private static final String MODULE_PATH_OPTION = "--module-path";
@@ -697,27 +696,8 @@ public class JImageGenerator {
             return options.toArray(new String[options.size()]);
         }
 
-        private String[] optionsPostProcessJLink() {
-            List<String> options = new ArrayList<>();
-            if (existing != null) {
-                options.add(POST_PROCESS_OPTION);
-                options.add(existing.toString());
-            }
-            options.addAll(this.options);
-            return options.toArray(new String[options.size()]);
-        }
-
         public Result call() {
             String[] args = optionsJLink();
-            System.err.println("jlink options: " + optionsPrettyPrint(args));
-            StringWriter writer = new StringWriter();
-            PrintWriter pw = new PrintWriter(writer);
-            int exitCode = JLINK_TOOL.run(pw, pw, args);
-            return new Result(exitCode, writer.toString(), output);
-        }
-
-        public Result callPostProcess() {
-            String[] args = optionsPostProcessJLink();
             System.err.println("jlink options: " + optionsPrettyPrint(args));
             StringWriter writer = new StringWriter();
             PrintWriter pw = new PrintWriter(writer);

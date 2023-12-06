@@ -572,8 +572,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
+* `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain restrictions apply to the declarations provided by `<type_traits>`.
+
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -1081,6 +1085,9 @@ The following attributes are expressly forbidden:
 * `[[deprecated]]` - Not relevant in HotSpot code.
 
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))

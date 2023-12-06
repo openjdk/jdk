@@ -95,6 +95,12 @@ class GCCause : public AllStatic {
             cause == GCCause::_dcmd_gc_run);
   }
 
+  inline static bool is_explicit_full_gc(GCCause::Cause cause) {
+    return (is_user_requested_gc(cause) ||
+            is_serviceability_requested_gc(cause) ||
+            cause == GCCause::_wb_full_gc);
+  }
+
   inline static bool is_serviceability_requested_gc(GCCause::Cause
                                                              cause) {
     return (cause == GCCause::_jvmti_force_gc ||

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,15 @@ public class StringTableCleaningTest {
     // All G1 pauses except Cleanup do weak reference clearing.
     private static final String g1Suffix = "Pause(?! Cleanup)";
 
-    // Suffix for ZGC.
-    private static final String zStartSuffix = "Garbage Collection (.*)$";
-    private static final String zEndSuffix = "Garbage Collection (.*) .*->.*$";
+    // For ZGC only major collections clean the string table. ZGC prints the
+    // start message without using the start tag, hence the special prefix.
+    private static final String zStartPrefix = gcPrefix + gcMiddle;
+    private static final String zStartSuffix = "Major Collection \\(.*\\)$";
+    private static final String zEndSuffix = "Major Collection \\(.*\\) .*->.*$";
+
+    // Suffix for ZGC (non generational).
+    private static final String xStartSuffix = "Garbage Collection (.*)$";
+    private static final String xEndSuffix = "Garbage Collection (.*) .*->.*$";
 
     // Suffix for Shenandoah.
     private static final String shenSuffix = "Concurrent weak roots";
@@ -94,7 +100,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcStartPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcStartPrefix + zStartSuffix;
+            return "(" + zStartPrefix + zStartSuffix + ")|(" + gcStartPrefix + xStartSuffix + ")";
         } else if (GC.Shenandoah.isSelected()) {
             return gcStartPrefix + shenSuffix;
         } else {
@@ -108,7 +114,7 @@ public class StringTableCleaningTest {
         } else if (GC.G1.isSelected()) {
             return gcEndPrefix + g1Suffix;
         } else if (GC.Z.isSelected()) {
-            return gcEndPrefix + zEndSuffix;
+            return gcEndPrefix + "(" + zEndSuffix + ")|(" + xEndSuffix + ")";
         } else if (GC.Shenandoah.isSelected()) {
             return gcEndPrefix + shenSuffix;
         } else {

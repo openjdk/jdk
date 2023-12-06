@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class TestToString {
             recording.stop();
             List<RecordedEvent> events = Events.fromRecording(recording);
             Events.hasEvents(events);
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             String toString = e.toString();
             System.out.println(toString);
             Asserts.assertTrue(toString.contains("hello, world"), "Missing String field value in RecordedEvent#toString()");

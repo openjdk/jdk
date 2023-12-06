@@ -51,6 +51,8 @@ package org.w3c.dom;
  * <p>DOM Level 3 doesn't support editing <code>DocumentType</code> nodes.
  * <code>DocumentType</code> nodes are read-only.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public interface DocumentType extends Node {
     /**

@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  * @compile -doe SimpleAndGuardPattern.java
  * @run main SimpleAndGuardPattern
  */

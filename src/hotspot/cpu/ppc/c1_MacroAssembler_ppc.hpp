@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,7 +86,7 @@
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  void null_check(Register r, Label *Lnull = NULL);
+  void null_check(Register r, Label *Lnull = nullptr);
 
   address call_c_with_frame_resize(address dest, int frame_resize);
 

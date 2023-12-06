@@ -54,9 +54,15 @@ class ResolutionErrorKey {
   }
 };
 
-ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
-                  ResolutionErrorKey::equals> _resolution_error_table;
+                  ResolutionErrorKey::equals>;
+
+static InternalResolutionErrorTable* _resolution_error_table;
+
+void ResolutionErrorTable::initialize() {
+  _resolution_error_table = new (mtClass) InternalResolutionErrorTable();
+}
 
 // create new error entry
 void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_index,
@@ -68,7 +74,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
-  _resolution_error_table.put(key, entry);
+  _resolution_error_table->put(key, entry);
 }
 
 // create new nest host error entry
@@ -80,14 +86,14 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
-  _resolution_error_table.put(key, entry);
+  _resolution_error_table->put(key, entry);
 }
 
 // find entry in the table
 ResolutionErrorEntry* ResolutionErrorTable::find_entry(const constantPoolHandle& pool, int cp_index) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   ResolutionErrorKey key(pool(), cp_index);
-  ResolutionErrorEntry** entry = _resolution_error_table.get(key);
+  ResolutionErrorEntry** entry = _resolution_error_table->get(key);
   return entry == nullptr ? nullptr : *entry;
 }
 
@@ -139,7 +145,7 @@ void ResolutionErrorTable::delete_entry(ConstantPool* c) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   ResolutionErrorDeleteIterate deleteIterator(c);
-  _resolution_error_table.unlink(&deleteIterator);
+  _resolution_error_table->unlink(&deleteIterator);
 }
 
 class ResolutionIteratePurgeErrors : StackObj {
@@ -160,5 +166,5 @@ void ResolutionErrorTable::purge_resolution_errors() {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   ResolutionIteratePurgeErrors purgeErrorsIterator;
-  _resolution_error_table.unlink(&purgeErrorsIterator);
+  _resolution_error_table->unlink(&purgeErrorsIterator);
 }

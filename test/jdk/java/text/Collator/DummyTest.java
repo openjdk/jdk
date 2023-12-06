@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,15 @@
  * @test
  * @library /java/text/testlib
  * @summary test Dummy Collation
+ * @run junit DummyTest
  */
 
 import java.text.Collator;
 import java.text.RuleBasedCollator;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -42,11 +47,7 @@ attribution to Taligent may not be removed.
   Taligent is a registered trademark of Taligent, Inc.
 */
 
-public class DummyTest extends CollatorTest {
-
-    public static void main(String[] args) throws Exception {
-        new DummyTest().run(args);
-    }
+public class DummyTest {
 
     private static final String DEFAULTRULES =
         "='\u200B'=\u200C=\u200D=\u200E=\u200F"
@@ -382,25 +383,28 @@ public class DummyTest extends CollatorTest {
         "z"
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(getCollator(), Collator.PRIMARY,
+        TestUtils.doCollatorTest(getCollator(), Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
+    @Test
     public void TestSecondary() {
-        doTest(getCollator(), Collator.SECONDARY,
+        TestUtils.doCollatorTest(getCollator(), Collator.SECONDARY,
                secondarySourceData, secondaryTargetData, secondaryResults);
     }
 
+    @Test
     public void TestTertiary() {
         Collator col = getCollator();
 
-        doTest(col, Collator.TERTIARY,
+        TestUtils.doCollatorTest(col, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
 
         for (int i = 0; i < testData.length-1; i++) {
             for (int j = i+1; j < testData.length; j++) {
-                doTest(col, testData[i], testData[j], -1);
+                TestUtils.doCollatorTest(col, testData[i], testData[j], -1);
             }
         }
     }
@@ -412,7 +416,7 @@ public class DummyTest extends CollatorTest {
                 myCollation = new RuleBasedCollator
                     (DEFAULTRULES + "& C < ch, cH, Ch, CH & Five, 5 & Four, 4 & one, 1 & Ampersand; '&' & Two, 2 ");
             } catch (Exception foo) {
-                errln("Collator creation failed.");
+                fail("Collator creation failed.");
                 myCollation = (RuleBasedCollator)Collator.getInstance();
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ public abstract class UnixFileSystemProvider
         if (attrs.length > 0) {
             UnixFileModeAttribute.toUnixMode(0, attrs);  // may throw NPE or UOE
             throw new UnsupportedOperationException("Initial file attributes" +
-                "not supported when creating symbolic link");
+                " not supported when creating symbolic link");
         }
 
         // permission check

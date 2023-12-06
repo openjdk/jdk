@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -71,7 +71,7 @@ public:
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
                        Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level,
-                       Label *L_handle_null = NULL);
+                       Label *L_handle_null = nullptr);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,

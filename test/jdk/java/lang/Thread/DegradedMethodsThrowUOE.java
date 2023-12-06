@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug  8289610 8249627 8205132
- * @summary Test that Thread stop/suspend/resume/countStackFrames throw UOE
+ * @summary Test that Thread stop/suspend/resume throw UOE
  * @run junit DegradedMethodsThrowUOE
  */
 
@@ -45,8 +45,7 @@ class DegradedMethodsThrowUOE {
         return Stream.<Consumer<Thread>>of(
                 Thread::stop,
                 Thread::suspend,
-                Thread::resume,
-                Thread::countStackFrames
+                Thread::resume
         );
     }
 

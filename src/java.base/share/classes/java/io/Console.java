@@ -86,7 +86,7 @@ import sun.security.action.GetPropertyAction;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
  *     (passwd = cons.readPassword("[%s]", "Password:")) != null) {
- *     ...
+ *     code: // @replace substring="code:" replacement="..."
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
@@ -117,19 +117,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * This method is intended to be used by sophisticated applications, for
      * example, a {@link java.util.Scanner} object which utilizes the rich
      * parsing/scanning functionality provided by the {@code Scanner}:
-     * <blockquote><pre>
-     * Console con = System.console();
-     * if (con != null) {
-     *     Scanner sc = new Scanner(con.reader());
-     *     ...
+     * {@snippet lang=java :
+     *     Console con = System.console();
+     *     if (con != null) {
+     *         Scanner sc = new Scanner(con.reader());
+     *         code: // @replace substring="code:" replacement="..."
+     *     }
      * }
-     * </pre></blockquote>
      * <p>
      * For simple applications requiring only line-oriented reading, use
      * {@link #readLine}.
      * <p>
-     * The bulk read operations {@link java.io.Reader#read(char[]) read(char[]) },
-     * {@link java.io.Reader#read(char[], int, int) read(char[], int, int) } and
+     * The bulk read operations {@link java.io.Reader#read(char[]) read(char[])},
+     * {@link java.io.Reader#read(char[], int, int) read(char[], int, int)} and
      * {@link java.io.Reader#read(java.nio.CharBuffer) read(java.nio.CharBuffer)}
      * on the returned object will not read in characters beyond the line
      * bound for each invocation, even if the destination buffer has space for
@@ -151,7 +151,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      *
      * @param  fmt
      *         A format string as described in <a
-     *         href="../util/Formatter.html#syntax">Format string syntax</a>
+     *         href="../util/Formatter.html#syntax">Format string syntax</a>.
      *
      * @param  args
      *         Arguments referenced by the format specifiers in the format
@@ -186,7 +186,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * <p> An invocation of this method of the form
      * {@code con.printf(format, args)} behaves in exactly the same way
      * as the invocation of
-     * <pre>con.format(format, args)</pre>.
+     * {@snippet lang=java :
+     *     con.format(format, args)
+     * }
      *
      * @param  format
      *         A format string as described in <a
@@ -304,7 +306,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Reads a password or passphrase from the console with echoing disabled
+     * Reads a password or passphrase from the console with echoing disabled.
      *
      * @throws IOError
      *         If an I/O error occurs.
@@ -319,7 +321,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     /**
      * Flushes the console and forces any buffered output to be written
-     * immediately .
+     * immediately.
      */
     public void flush() {
         throw newUnsupportedOperationException();
@@ -342,16 +344,33 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         throw newUnsupportedOperationException();
     }
 
+    /**
+     * {@return {@code true} if the {@code Console} instance is a terminal}
+     * <p>
+     * This method returns {@code true} if the console device, associated with the current
+     * Java virtual machine, is a terminal, typically an interactive command line
+     * connected to a keyboard and display.
+     *
+     * @implNote The default implementation returns the value equivalent to calling
+     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
+     * descriptors are character devices or not on Windows.
+     *
+     * @since 22
+     */
+    public boolean isTerminal() {
+        return istty;
+    }
+
     private static UnsupportedOperationException newUnsupportedOperationException() {
         return new UnsupportedOperationException(
                 "Console class itself does not provide implementation");
     }
 
     private static native String encoding();
+    private static final boolean istty = istty();
     static final Charset CHARSET;
     static {
         Charset cs = null;
-        boolean istty = istty();
 
         if (istty) {
             String csname = encoding();

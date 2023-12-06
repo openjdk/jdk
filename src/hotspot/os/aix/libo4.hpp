@@ -45,7 +45,7 @@ public:
   //
   // See libo4.h for details on this API.
   //
-  // Specify NULL for numbers you are not interested in.
+  // Specify null for numbers you are not interested in.
   //
   // Returns false if an error happened. Activate OsMisc trace for
   // trace output.
@@ -61,7 +61,7 @@ public:
   //
   // See libo4.h for details on this API.
   //
-  // Specify NULL for numbers you are not interested in.
+  // Specify null for numbers you are not interested in.
   //
   // Returns false if an error happened. Activate OsMisc trace for
   // trace output.

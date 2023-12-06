@@ -33,15 +33,10 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/instanceRefKlass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 
 uint                    MarkSweep::_total_invocations = 0;
@@ -49,13 +44,15 @@ uint                    MarkSweep::_total_invocations = 0;
 Stack<oop, mtGC>              MarkSweep::_marking_stack;
 Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 
-Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
+PreservedMarksSet       MarkSweep::_preserved_overflow_stack_set(false /* in_c_heap */);
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = nullptr;
-ReferenceProcessor*     MarkSweep::_ref_processor   = nullptr;
 STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
 SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
+
+AlwaysTrueClosure   MarkSweep::_always_true_closure;
+ReferenceProcessor* MarkSweep::_ref_processor;
 
 StringDedup::Requests*  MarkSweep::_string_dedup_requests = nullptr;
 
@@ -145,14 +142,6 @@ template <class T> void MarkSweep::follow_root(T* p) {
 void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
 void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
-void PreservedMark::adjust_pointer() {
-  MarkSweep::adjust_pointer(&_obj);
-}
-
-void PreservedMark::restore() {
-  _obj->set_mark(_mark);
-}
-
 // We preserve the mark which should be replaced at the end and the location
 // that it will go.  Note that the object that this markWord belongs to isn't
 // currently at that address but it will be after phase4
@@ -164,13 +153,8 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   if (_preserved_count < _preserved_count_max) {
     _preserved_marks[_preserved_count++] = PreservedMark(obj, mark);
   } else {
-    _preserved_overflow_stack.push(PreservedMark(obj, mark));
+    _preserved_overflow_stack_set.get()->push_always(obj, mark);
   }
-}
-
-void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
-  _ref_processor = rp;
-  mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }
 
 void MarkSweep::mark_object(oop obj) {
@@ -213,30 +197,23 @@ AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 void MarkSweep::adjust_marks() {
   // adjust the oops we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
-    _preserved_marks[i].adjust_pointer();
+    PreservedMarks::adjust_preserved_mark(_preserved_marks + i);
   }
 
   // deal with the overflow stack
-  StackIterator<PreservedMark, mtGC> iter(_preserved_overflow_stack);
-  while (!iter.is_empty()) {
-    PreservedMark* p = iter.next_addr();
-    p->adjust_pointer();
-  }
+  _preserved_overflow_stack_set.get()->adjust_during_full_gc();
 }
 
 void MarkSweep::restore_marks() {
-  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack.size());
+  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
-    _preserved_marks[i].restore();
+    _preserved_marks[i].set_mark();
   }
 
   // deal with the overflow
-  while (!_preserved_overflow_stack.is_empty()) {
-    PreservedMark p = _preserved_overflow_stack.pop();
-    p.restore();
-  }
+  _preserved_overflow_stack_set.restore(nullptr);
 }
 
 MarkSweep::IsAliveClosure   MarkSweep::is_alive;
@@ -252,4 +229,9 @@ void MarkSweep::initialize() {
   MarkSweep::_gc_timer = new STWGCTimer();
   MarkSweep::_gc_tracer = new SerialOldTracer();
   MarkSweep::_string_dedup_requests = new StringDedup::Requests();
+
+  // The Full GC operates on the entire heap so all objects should be subject
+  // to discovery, hence the _always_true_closure.
+  MarkSweep::_ref_processor = new ReferenceProcessor(&_always_true_closure);
+  mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }

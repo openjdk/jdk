@@ -43,6 +43,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 // ==================================================================
@@ -418,11 +419,7 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr)  entries++;
   }
-#if INCLUDE_JVMCI
-  st->print_cr("count(%u) nonprofiled_count(%u) entries(%u)", count(), nonprofiled_count(), entries);
-#else
   st->print_cr("count(%u) entries(%u)", count(), entries);
-#endif
   int total = count();
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != nullptr) {
@@ -480,7 +477,7 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   // Now check to see if any of the cache slots are open.
   for (uint row = 0; row < row_limit(); row++) {
     if (bci(row) == no_bci) {
-      set_bci_displacement(row, mdp - dp());
+      set_bci_displacement(row, checked_cast<int>(mdp - dp()));
       set_bci_count(row, DataLayout::counter_increment);
       // Barrier to ensure displacement is written before the bci; allows
       // the interpreter to read displacement without fear of race condition.
@@ -837,27 +834,37 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
 bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
   assert(failed_speculations_address != nullptr, "must be");
   size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
-  FailedSpeculation* fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
-  if (fs == nullptr) {
-    // no memory -> ignore failed speculation
-    return false;
-  }
 
-  guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
   guarantee_failed_speculations_alive(nm, failed_speculations_address);
 
   FailedSpeculation** cursor = failed_speculations_address;
+  FailedSpeculation* fs = nullptr;
   do {
     if (*cursor == nullptr) {
+      if (fs == nullptr) {
+        // lazily allocate FailedSpeculation
+        fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
+        if (fs == nullptr) {
+          // no memory -> ignore failed speculation
+          return false;
+        }
+        guarantee(is_aligned(fs, sizeof(FailedSpeculation*)), "FailedSpeculation objects must be pointer aligned");
+      }
       FailedSpeculation* old_fs = Atomic::cmpxchg(cursor, (FailedSpeculation*) nullptr, fs);
       if (old_fs == nullptr) {
         // Successfully appended fs to end of the list
         return true;
       }
-      cursor = old_fs->next_adr();
-    } else {
-      cursor = (*cursor)->next_adr();
     }
+    guarantee(*cursor != nullptr, "cursor must point to non-null FailedSpeculation");
+    // check if the current entry matches this thread's failed speculation
+    if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
+      if (fs != nullptr) {
+        delete fs;
+      }
+      return false;
+    }
+    cursor = (*cursor)->next_adr();
   } while (true);
 }
 
@@ -958,6 +965,12 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   if (args_cell > 0) {
     object_size += DataLayout::compute_size_in_bytes(args_cell);
   }
+
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+  }
+
   return object_size;
 }
 
@@ -977,7 +990,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
     return 0;
   }
   int cell_count = -1;
-  int tag = DataLayout::no_tag;
+  u1 tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
   Bytecodes::Code c = stream->code();
   switch (c) {
@@ -1088,7 +1101,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
   if (cell_count >= 0) {
     assert(tag != DataLayout::no_tag, "bad tag");
     assert(bytecode_has_profile(c), "agree w/ BHP");
-    data_layout->initialize(tag, stream->bci(), cell_count);
+    data_layout->initialize(tag, checked_cast<u2>(stream->bci()), cell_count);
     return DataLayout::compute_size_in_bytes(cell_count);
   } else {
     assert(!bytecode_has_profile(c), "agree w/ !BHP");
@@ -1268,13 +1281,26 @@ void MethodData::initialize() {
   // for method entry so they don't fit with the framework for the
   // profiling of bytecodes). We store the offset within the MDO of
   // this area (or -1 if no parameter is profiled)
+  int parm_data_size = 0;
   if (parms_cell > 0) {
-    object_size += DataLayout::compute_size_in_bytes(parms_cell);
+    parm_data_size = DataLayout::compute_size_in_bytes(parms_cell);
+    object_size += parm_data_size;
     _parameters_type_data_di = data_size + extra_size + arg_data_size;
     DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
     dp->initialize(DataLayout::parameters_type_data_tag, 0, parms_cell);
   } else {
     _parameters_type_data_di = no_parameters;
+  }
+
+  _exception_handler_data_di = data_size + extra_size + arg_data_size + parm_data_size;
+  if (ProfileExceptionHandlers && method()->has_exception_handler()) {
+    int num_exception_handlers = method()->exception_table_length();
+    object_size += num_exception_handlers * single_exception_handler_data_size();
+    ExceptionTableElement* exception_handlers = method()->exception_table_start();
+    for (int i = 0; i < num_exception_handlers; i++) {
+      DataLayout *dp = exception_handler_data_at(i);
+      dp->initialize(DataLayout::bit_data_tag, exception_handlers[i].handler_pc, single_exception_handler_data_cell_count());
+    }
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1300,8 +1326,8 @@ void MethodData::init() {
   double scale = 1.0;
   methodHandle mh(Thread::current(), _method);
   CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
-  _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
-  _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _invoke_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
   _tenure_traps = 0;
   _num_loops = 0;
@@ -1369,6 +1395,28 @@ ProfileData* MethodData::bci_to_data(int bci) {
     }
   }
   return bci_to_extra_data(bci, nullptr, false);
+}
+
+DataLayout* MethodData::exception_handler_bci_to_data_helper(int bci) {
+  assert(ProfileExceptionHandlers, "not profiling");
+  for (int i = 0; i < num_exception_handler_data(); i++) {
+    DataLayout* exception_handler_data = exception_handler_data_at(i);
+    if (exception_handler_data->bci() == bci) {
+      return exception_handler_data;
+    }
+  }
+  return nullptr;
+}
+
+BitData* MethodData::exception_handler_bci_to_data_or_null(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  return data != nullptr ? new BitData(data) : nullptr;
+}
+
+BitData MethodData::exception_handler_bci_to_data(int bci) {
+  DataLayout* data = exception_handler_bci_to_data_helper(bci);
+  assert(data != nullptr, "invalid bci");
+  return BitData(data);
 }
 
 DataLayout* MethodData::next_extra(DataLayout* dp) {
@@ -1469,7 +1517,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
       return nullptr;
     }
     DataLayout temp;
-    temp.initialize(tag, bci, 0);
+    temp.initialize(tag, checked_cast<u2>(bci), 0);
 
     dp->set_header(temp.header());
     assert(dp->tag() == tag, "sane");

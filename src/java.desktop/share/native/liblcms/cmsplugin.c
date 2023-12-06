@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -825,8 +825,6 @@ void* _cmsContextGetClientChunk(cmsContext ContextID, _cmsMemoryClient mc)
 // identify which plug-in to unregister.
 void CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
 {
-    struct _cmsContext_struct* ctx = _cmsGetContext(ContextID);
-
     _cmsRegisterMemHandlerPlugin(ContextID, NULL);
     _cmsRegisterInterpPlugin(ContextID, NULL);
     _cmsRegisterTagTypePlugin(ContextID, NULL);
@@ -840,9 +838,6 @@ void CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
     _cmsRegisterMutexPlugin(ContextID, NULL);
     _cmsRegisterParallelizationPlugin(ContextID, NULL);
 
-   if (ctx->MemPool != NULL)
-       _cmsSubAllocDestroy(ctx->MemPool);
-   ctx->MemPool = NULL;
 }
 
 
@@ -1010,7 +1005,14 @@ cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
 // The ContextID can no longer be used in any THR operation.
 void CMSEXPORT cmsDeleteContext(cmsContext ContextID)
 {
-    if (ContextID != NULL) {
+    if (ContextID == NULL) {
+
+        cmsUnregisterPlugins();
+        if (globalContext.MemPool != NULL)
+            _cmsSubAllocDestroy(globalContext.MemPool);
+        globalContext.MemPool = NULL;
+    }
+    else {
 
         struct _cmsContext_struct* ctx = (struct _cmsContext_struct*) ContextID;
         struct _cmsContext_struct  fakeContext;

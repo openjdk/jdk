@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestPredefinedConfigurationInvalid {
         setInvalidConfigName(recId, "invalidname");
 
         // Verify we can set named config after failed attempts.
-        Configuration config = Configuration.getConfigurations().get(0);
+        Configuration config = Configuration.getConfigurations().getFirst();
         bean.setPredefinedConfiguration(recId, config.getName());
         JmxHelper.verifyMapEquals(bean.getRecordingSettings(recId), config.getSettings());
     }

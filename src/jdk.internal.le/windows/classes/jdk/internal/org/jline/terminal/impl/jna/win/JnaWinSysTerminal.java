@@ -22,6 +22,7 @@ import java.util.function.IntConsumer;
 import jdk.internal.org.jline.terminal.Cursor;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.InfoCmp;
 import jdk.internal.org.jline.utils.OSUtils;

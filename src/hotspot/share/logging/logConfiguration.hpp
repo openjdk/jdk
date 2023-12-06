@@ -24,6 +24,7 @@
 #ifndef SHARE_LOGGING_LOGCONFIGURATION_HPP
 #define SHARE_LOGGING_LOGCONFIGURATION_HPP
 
+#include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -41,6 +42,8 @@ class LogConfiguration : public AllStatic {
  friend class VMError;
  friend class LogTestFixture;
  public:
+  static LogStdoutOutput* StdoutLog;
+  static LogStderrOutput* StderrLog;
   // Function for listeners
   typedef void (*UpdateListenerFunction)(void);
 
@@ -61,7 +64,7 @@ class LogConfiguration : public AllStatic {
   static size_t                     _n_listener_callbacks;
   static bool                       _async_mode;
 
-  // Create a new output. Returns nullptr if failed.
+  // Create a new output. Returns null if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
 
   // Add an output to the list of configured outputs. Returns the assigned index.

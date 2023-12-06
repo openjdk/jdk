@@ -23,9 +23,6 @@
 
 // key: compiler.misc.not.applicable.types
 // key: compiler.err.prob.found.req
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview --source ${jdk.version}
 
 class NotApplicableTypes {
     void t(int i) {

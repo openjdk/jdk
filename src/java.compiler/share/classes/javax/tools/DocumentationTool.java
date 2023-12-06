@@ -191,8 +191,10 @@ public interface DocumentationTool extends Tool, OptionChecker {
          */
         SNIPPET_PATH;
 
+        @Override
         public String getName() { return name(); }
 
+        @Override
         public boolean isOutputLocation() {
             switch (this) {
                 case DOCUMENTATION_OUTPUT:

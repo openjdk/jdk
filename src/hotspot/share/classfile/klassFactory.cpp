@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -34,7 +35,6 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -54,7 +54,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   assert(ik != nullptr, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
-
+    ResourceMark rm(THREAD);
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = nullptr;
     if (cfs == nullptr) {
@@ -74,9 +74,9 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       // Set new class file stream using JVMTI agent modified class file data.
       ClassLoaderData* loader_data =
         ClassLoaderData::class_loader_data(class_loader());
-      int path_index = ik->shared_classpath_index();
+      s2 path_index = ik->shared_classpath_index();
       ClassFileStream* stream = new ClassFileStream(ptr,
-                                                    end_ptr - ptr,
+                                                    pointer_delta_as_int(end_ptr, ptr),
                                                     cfs->source(),
                                                     ClassFileStream::verify);
       ClassLoadInfo cl_info(protection_domain);
@@ -155,7 +155,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
       // JVMTI agent has modified class file data.
       // Set new class file stream using JVMTI agent modified class file data.
       stream = new ClassFileStream(ptr,
-                                   end_ptr - ptr,
+                                   pointer_delta_as_int(end_ptr, ptr),
                                    stream->source(),
                                    stream->need_verify());
     }
@@ -212,7 +212,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   JFR_ONLY(ON_KLASS_CREATION(result, parser, THREAD);)
 
 #if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
     ClassLoader::record_result(THREAD, result, stream, old_stream != stream);
   }
 #endif // INCLUDE_CDS

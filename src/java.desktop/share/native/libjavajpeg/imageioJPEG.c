@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1132,6 +1132,10 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
         return;
     }
     num_bytes += sb->remaining_skip;
+    // Check for overflow if remaining_skip value is too large
+    if (num_bytes < 0) {
+        return;
+    }
     sb->remaining_skip = 0;
 
     /* First the easy case where we are skipping <= the current contents. */
@@ -1291,7 +1295,7 @@ marker_is_icc (jpeg_saved_marker_ptr marker)
  * with an appropriate message.
  */
 
-jbyteArray
+static jbyteArray
 read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
 {
     jpeg_saved_marker_ptr marker;

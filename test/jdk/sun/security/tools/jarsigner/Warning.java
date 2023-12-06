@@ -36,7 +36,7 @@ import java.util.Arrays;
  * @summary warnings, errors and -strict
  * @library /lib/testlibrary /test/lib
  * @build jdk.test.lib.util.JarUtils
- * @run main Warning
+ * @run main/othervm/timeout=400 Warning
  */
 public class Warning {
 

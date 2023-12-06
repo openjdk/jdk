@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,18 @@ public final class MemoryLayoutUtil {
     private MemoryLayoutUtil() {
     }
 
-    public static void checkSize(long size) {
-        checkSize(size, false);
+    public static long requireNonNegative(long value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("The provided value was negative: " + value);
+        }
+        return value;
     }
 
-    public static void checkSize(long size, boolean includeZero) {
-        if (size < 0 || (!includeZero && size == 0)) {
-            throw new IllegalArgumentException("Invalid size for layout: " + size);
+    public static long requireByteSizeValid(long byteSize, boolean allowZero) {
+        if ((byteSize == 0 && !allowZero) || byteSize < 0) {
+            throw new IllegalArgumentException("Invalid byte size: " + byteSize);
         }
+        return byteSize;
     }
 
 }

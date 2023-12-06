@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ struct Tarjan;
 
 //------------------------------Block_Array------------------------------------
 // Map dense integer indices to Blocks.  Uses classic doubling-array trick.
-// Abstractly provides an infinite array of Block*'s, initialized to NULL.
+// Abstractly provides an infinite array of Block*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Block_Array : public ArenaObj {
@@ -60,11 +60,11 @@ public:
     debug_only(_limit=0);
     _blocks = NEW_ARENA_ARRAY( a, Block *, OptoBlockListSize );
     for( int i = 0; i < OptoBlockListSize; i++ ) {
-      _blocks[i] = NULL;
+      _blocks[i] = nullptr;
     }
   }
-  Block *lookup( uint i ) const // Lookup, or NULL for not mapped
-  { return (i<Max()) ? _blocks[i] : (Block*)NULL; }
+  Block *lookup( uint i ) const // Lookup, or null for not mapped
+  { return (i<Max()) ? _blocks[i] : (Block*)nullptr; }
   Block *operator[] ( uint i ) const // Lookup, or assert for not mapped
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
@@ -114,7 +114,7 @@ private:
 
 public:
 
-  // Get the node at index 'at_index', if 'at_index' is out of bounds return NULL
+  // Get the node at index 'at_index', if 'at_index' is out of bounds return null
   Node* get_node(uint at_index) const {
     return _nodes[at_index];
   }
@@ -282,7 +282,7 @@ public:
       _num_succs(0),
       _pre_order(0),
       _idom(0),
-      _loop(NULL),
+      _loop(nullptr),
       _reg_pressure(0),
       _ihrp_index(1),
       _freg_pressure(0),
@@ -466,8 +466,8 @@ class PhaseCFG : public Phase {
   Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
   void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
 
-  // Detect implicit-null-check opportunities.  Basically, find NULL checks
-  // with suitable memory ops nearby.  Use the memory op to do the NULL check.
+  // Detect implicit-null-check opportunities.  Basically, find null checks
+  // with suitable memory ops nearby.  Use the memory op to do the null check.
   // I can generate a memory op if there is not one nearby.
   void implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons);
 
@@ -578,7 +578,7 @@ class PhaseCFG : public Phase {
 
   // removes the mapping from a node to a block
   void unmap_node_from_block(const Node* node) {
-    _node_to_block_mapping.map(node->_idx, NULL);
+    _node_to_block_mapping.map(node->_idx, nullptr);
   }
 
   // get the block in which this node resides
@@ -588,7 +588,7 @@ class PhaseCFG : public Phase {
 
   // does this node reside in a block; return true
   bool has_block(const Node* node) const {
-    return (_node_to_block_mapping.lookup(node->_idx) != NULL);
+    return (_node_to_block_mapping.lookup(node->_idx) != nullptr);
   }
 
   // Use frequency calculations and code shape to predict if the block
@@ -691,7 +691,7 @@ protected:
   Block* _target;      // block target
   double  _prob;        // probability of edge to block
 public:
-  BlockProbPair() : _target(NULL), _prob(0.0) {}
+  BlockProbPair() : _target(nullptr), _prob(0.0) {}
   BlockProbPair(Block* b, double p) : _target(b), _prob(p) {}
 
   Block* get_target() const { return _target; }
@@ -716,9 +716,9 @@ class CFGLoop : public CFGElement {
     CFGElement(),
     _id(id),
     _depth(0),
-    _parent(NULL),
-    _sibling(NULL),
-    _child(NULL),
+    _parent(nullptr),
+    _sibling(nullptr),
+    _child(nullptr),
     _exit_prob(1.0f) {}
   CFGLoop* parent() { return _parent; }
   void push_pred(Block* blk, int i, Block_List& worklist, PhaseCFG* cfg);
@@ -731,7 +731,7 @@ class CFGLoop : public CFGElement {
     assert(hd->head()->is_Loop(), "must begin with loop head node");
     return hd;
   }
-  Block* backedge_block(); // Return the block on the backedge of the loop (else NULL)
+  Block* backedge_block(); // Return the block on the backedge of the loop (else null)
   void compute_loop_depth(int depth);
   void compute_freq(); // compute frequency with loop assuming head freq 1.0f
   void scale_freq();   // scale frequency by loop trip count (including outer loops)
@@ -817,8 +817,8 @@ class Trace : public ResourceObj {
   void break_loop_after(Block *b) {
     _last = b;
     _first = next(b);
-    set_prev(_first, NULL);
-    set_next(_last, NULL);
+    set_prev(_first, nullptr);
+    set_next(_last, nullptr);
   }
 
  public:
@@ -829,8 +829,8 @@ class Trace : public ResourceObj {
     _prev_list(prev_list),
     _first(b),
     _last(b) {
-    set_next(b, NULL);
-    set_prev(b, NULL);
+    set_next(b, nullptr);
+    set_prev(b, nullptr);
   };
 
   // Return the id number
@@ -849,7 +849,7 @@ class Trace : public ResourceObj {
   // Insert a trace in the middle of this one after b
   void insert_after(Block *b, Trace *tr) {
     set_next(tr->last_block(), next(b));
-    if (next(b) != NULL) {
+    if (next(b) != nullptr) {
       set_prev(next(b), tr->last_block());
     }
 
@@ -863,7 +863,7 @@ class Trace : public ResourceObj {
 
   void insert_before(Block *b, Trace *tr) {
     Block *p = prev(b);
-    assert(p != NULL, "use append instead");
+    assert(p != nullptr, "use append instead");
     insert_after(p, tr);
   }
 

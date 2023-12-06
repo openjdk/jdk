@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,32 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.IntBinaryOperator;
 
 /**
- * Implements SSL using two SubscriberWrappers.
+ * Implements SSL using two {@link SubscriberWrapper}s.
  *
- * <p> Constructor takes two Flow.Subscribers: one that receives the network
- * data (after it has been encrypted by SSLFlowDelegate) data, and one that
- * receives the application data (before it has been encrypted by SSLFlowDelegate).
+ * <p> Constructor takes two {@linkplain Flow.Subscriber subscribers} - {@code downReader}
+ * and {@code downWriter}. {@code downReader} receives the application data (after it has
+ * been decrypted by SSLFlowDelegate). {@code downWriter} receives the network data (after it has
+ * been encrypted by SSLFlowDelegate).
  *
- * <p> Methods upstreamReader() and upstreamWriter() return the corresponding
- * Flow.Subscribers containing Flows for the encrypted/decrypted upstream data.
- * See diagram below.
+ * <p> Method {@link #upstreamWriter()} returns a {@linkplain Subscriber subscriber} which should
+ * be subscribed with a {@linkplain Flow.Publisher publisher} which publishes application data
+ * that can then be encrypted into network data by this SSLFlowDelegate and handed off to the
+ * {@code downWriter}.
  *
- * <p> How Flow.Subscribers are used in this class, and where they come from:
+ * <p> Method {@link #upstreamReader()} returns a {@link Subscriber subscriber} which should be
+ * subscribed with a {@linkplain Flow.Publisher publisher} which publishes encrypted network data
+ * that can then be decrypted into application data by this SSLFlowDelegate and handed off to the
+ * {@code downReader}.
+ *
+ * <p> Errors are reported to the {@code downReader} subscriber.
+ *
+ * <p> The diagram below illustrates how the Flow.Subscribers are used in this class, and where
+ * they come from:
  * <pre>
  * {@code
  *
@@ -72,17 +83,21 @@ import java.util.function.IntBinaryOperator;
  * --------->  data flow direction
  *
  *
- *                         +------------------+
- *        upstreamWriter   |                  | downWriter
- *        ---------------> |                  | ------------>
- *  obtained from this     |                  | supplied to constructor
- *                         | SSLFlowDelegate  |
- *        downReader       |                  | upstreamReader
- *        <--------------- |                  | <--------------
- * supplied to constructor |                  | obtained from this
- *                         +------------------+
- *
- * Errors are reported to the downReader Flow.Subscriber
+ *                  |                                   ^
+ *  upstreamWriter  |                                   | downReader
+ *  obtained from   |                                   | supplied to
+ * upstreamWriter() |                                   | constructor
+ *                  v                                   |
+ *      +-----------------------------------------------------------+
+ *      *                                            decrypts       *
+ *      *                       SSLFlowDelegate                     *
+ *      *        encrypts                                           *
+ *      +-----------------------------------------------------------+
+ *                  |                                   ^
+ *    downWriter    |                                   | upstreamReader
+ *    supplied to   |                                   | obtained from
+ *    constructor   |                                   | upstreamReader()
+ *                  v                                   |
  *
  * }
  * </pre>
@@ -259,7 +274,7 @@ public class SSLFlowDelegate {
         final SequentialScheduler scheduler;
         volatile ByteBuffer readBuf;
         volatile boolean completing;
-        final Object readBufferLock = new Object();
+        final ReentrantLock readBufferLock = new ReentrantLock();
         final Logger debugr = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
         private final class ReaderDownstreamPusher implements Runnable {
@@ -340,7 +355,8 @@ public class SSLFlowDelegate {
         // readBuf is kept ready for reading outside of this method
         private void addToReadBuf(List<ByteBuffer> buffers, boolean complete) {
             assert Utils.remaining(buffers) > 0 || buffers.isEmpty();
-            synchronized (readBufferLock) {
+            readBufferLock.lock();
+            try {
                 for (ByteBuffer buf : buffers) {
                     readBuf.compact();
                     while (readBuf.remaining() < buf.remaining())
@@ -357,6 +373,8 @@ public class SSLFlowDelegate {
                     this.completing = complete;
                     minBytesRequired = 0;
                 }
+            } finally {
+                readBufferLock.unlock();
             }
         }
 
@@ -423,7 +441,8 @@ public class SSLFlowDelegate {
                     boolean handshaking = false;
                     try {
                         EngineResult result;
-                        synchronized (readBufferLock) {
+                        readBufferLock.lock();
+                        try {
                             complete = this.completing;
                             if (debugr.on()) debugr.log("Unwrapping: %s", readBuf.remaining());
                             // Unless there is a BUFFER_UNDERFLOW, we should try to
@@ -436,6 +455,8 @@ public class SSLFlowDelegate {
                                 debugr.log("Unwrapped: result: %s", result.result);
                                 debugr.log("Unwrapped: consumed: %s", result.bytesConsumed());
                             }
+                        } finally {
+                            readBufferLock.unlock();
                         }
                         if (result.bytesProduced() > 0) {
                             if (debugr.on())
@@ -448,7 +469,8 @@ public class SSLFlowDelegate {
                             // not enough data in the read buffer...
                             // no need to try to unwrap again unless we get more bytes
                             // than minBytesRequired = len in the read buffer.
-                            synchronized (readBufferLock) {
+                            readBufferLock.lock();
+                            try {
                                 minBytesRequired = len;
                                 // more bytes could already have been added...
                                 assert readBuf.remaining() >= len;
@@ -465,9 +487,11 @@ public class SSLFlowDelegate {
                                     throw new IOException("BUFFER_UNDERFLOW with EOF, "
                                             + len + " bytes non decrypted.");
                                 }
+                            } finally {
+                                readBufferLock.unlock();
                             }
                             // request more data and return.
-                            requestMore();
+                            requestMoreDataIfNeeded();
                             return;
                         }
                         if (complete && result.status() == Status.CLOSED) {
@@ -500,8 +524,11 @@ public class SSLFlowDelegate {
                     }
                 }
                 if (!complete) {
-                    synchronized (readBufferLock) {
+                    readBufferLock.lock();
+                    try {
                         complete = this.completing && !readBuf.hasRemaining();
+                    } finally {
+                        readBufferLock.unlock();
                     }
                 }
                 if (complete) {
@@ -754,7 +781,7 @@ public class SSLFlowDelegate {
         }
 
         private boolean hsTriggered() {
-            synchronized(writeList) {
+            synchronized (writeList) {
                 for (ByteBuffer b : writeList)
                     if (b == HS_TRIGGER)
                         return true;
@@ -958,10 +985,12 @@ public class SSLFlowDelegate {
 
     boolean stopped;
 
-    private synchronized void normalStop() {
-        if (stopped)
-            return;
-        stopped = true;
+    private void normalStop() {
+        synchronized (this) {
+            if (stopped)
+                return;
+            stopped = true;
+        }
         reader.stop();
         writer.stop();
         // make sure the alpnCF is completed.
@@ -1173,8 +1202,12 @@ public class SSLFlowDelegate {
                     // won't be able to send the acknowledgement.
                     // Nothing more will come from the socket either,
                     // so mark the reader as completed.
-                    synchronized (reader.readBufferLock) {
+                    var readerLock = reader.readBufferLock;
+                    readerLock.lock();
+                    try {
                         reader.completing = true;
+                    } finally {
+                        readerLock.unlock();
                     }
                 }
             }

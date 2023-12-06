@@ -25,7 +25,6 @@
  * @test
  * @summary Test virtual threads using java.util.concurrent locks
  * @library /test/lib
- * @enablePreview
  * @run junit Locking
  */
 

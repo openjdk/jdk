@@ -65,7 +65,7 @@ public class SpliteratorTest {
 
     @Test(dataProvider = "SegmentSpliterator", dataProviderClass = SegmentTestDataProvider.class )
     public void testSegmentSpliterator(String name, SequenceLayout layout, SpliteratorTestHelper.ContentAsserter<MemorySegment> contentAsserter) {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);
             SegmentTestDataProvider.initSegment(segment);
             SpliteratorTestHelper.testSpliterator(() -> segment.spliterator(layout),

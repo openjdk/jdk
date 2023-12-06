@@ -211,7 +211,7 @@ class Symbol : public MetaspaceObj {
   bool starts_with(const char* prefix) const {
     return starts_with(prefix, (int) strlen(prefix));
   }
-  bool starts_with(int prefix_char) const {
+  bool starts_with(char prefix_char) const {
     return contains_byte_at(0, prefix_char);
   }
   // Tests if the symbol ends with the given suffix.
@@ -221,7 +221,7 @@ class Symbol : public MetaspaceObj {
   bool ends_with(const char* suffix) const {
     return ends_with(suffix, (int) strlen(suffix));
   }
-  bool ends_with(int suffix_char) const {
+  bool ends_with(char suffix_char) const {
     return contains_byte_at(utf8_length() - 1, suffix_char);
   }
 

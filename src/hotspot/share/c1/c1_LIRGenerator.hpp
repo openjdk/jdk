@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     x->set_operand(opr);
     assert(opr == x->operand(), "must be");
     if (opr->is_virtual()) {
-      _instruction_for_operand.at_put_grow(opr->vreg_number(), x, NULL);
+      _instruction_for_operand.at_put_grow(opr->vreg_number(), x, nullptr);
     }
   }
   void  set_no_result(Value x)                     { assert(!x->has_uses(), "can't have use"); x->clear_operand(); }
@@ -289,11 +289,11 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
  public:
   void access_store_at(DecoratorSet decorators, BasicType type,
                        LIRItem& base, LIR_Opr offset, LIR_Opr value,
-                       CodeEmitInfo* patch_info = NULL, CodeEmitInfo* store_emit_info = NULL);
+                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr);
 
   void access_load_at(DecoratorSet decorators, BasicType type,
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
-                      CodeEmitInfo* patch_info = NULL, CodeEmitInfo* load_emit_info = NULL);
+                      CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* load_emit_info = nullptr);
 
   void access_load(DecoratorSet decorators, BasicType type,
                    LIR_Opr addr, LIR_Opr result);
@@ -343,7 +343,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void increment_counter(address counter, BasicType type, int step = 1);
   void increment_counter(LIR_Address* addr, int step = 1);
 
-  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = NULL);
+  void arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp, CodeEmitInfo* info = nullptr);
   // machine dependent.  returns true if it emitted code for the multiply
   bool strength_reduce_multiply(LIR_Opr left, jint constant, LIR_Opr result, LIR_Opr tmp);
 
@@ -355,7 +355,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void array_range_check          (LIR_Opr array, LIR_Opr index, CodeEmitInfo* null_check_info, CodeEmitInfo* range_check_info);
 
   void arithmetic_op_int  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp);
-  void arithmetic_op_long (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info = NULL);
+  void arithmetic_op_long (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info = nullptr);
   void arithmetic_op_fpu  (Bytecodes::Code code, LIR_Opr result, LIR_Opr left, LIR_Opr right, LIR_Opr tmp = LIR_OprFact::illegalOpr);
 
   void shift_op   (Bytecodes::Code code, LIR_Opr dst_reg, LIR_Opr value, LIR_Opr count, LIR_Opr tmp);
@@ -468,10 +468,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   SwitchRangeArray* create_lookup_ranges(TableSwitch* x);
   SwitchRangeArray* create_lookup_ranges(LookupSwitch* x);
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
-
-#ifdef JFR_HAVE_INTRINSICS
-  void do_getEventWriter(Intrinsic* x);
-#endif
 
   void do_RuntimeCall(address routine, Intrinsic* x);
 
@@ -620,13 +616,13 @@ class LIRItem: public CompilationResourceObj {
     _destroys_register = false;
     _gen = gen;
     _result = LIR_OprFact::illegalOpr;
-    set_instruction(NULL);
+    set_instruction(nullptr);
   }
 
   void set_instruction(Value value) {
     _value = value;
     _result = LIR_OprFact::illegalOpr;
-    if (_value != NULL) {
+    if (_value != nullptr) {
       _gen->walk(_value);
       _result = _value->operand();
     }
@@ -666,7 +662,7 @@ class LIRItem: public CompilationResourceObj {
     _destroys_register = true;
   }
 
-  bool is_constant() const { return value()->as_Constant() != NULL; }
+  bool is_constant() const { return value()->as_Constant() != nullptr; }
   bool is_stack()          { return result()->is_stack(); }
   bool is_register()       { return result()->is_register(); }
 

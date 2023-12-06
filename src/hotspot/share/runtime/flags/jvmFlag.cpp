@@ -450,20 +450,6 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   }
 }
 
-const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
-  switch (error) {
-    case JVMFlag::MISSING_NAME: return "MISSING_NAME";
-    case JVMFlag::MISSING_VALUE: return "MISSING_VALUE";
-    case JVMFlag::NON_WRITABLE: return "NON_WRITABLE";
-    case JVMFlag::OUT_OF_BOUNDS: return "OUT_OF_BOUNDS";
-    case JVMFlag::VIOLATES_CONSTRAINT: return "VIOLATES_CONSTRAINT";
-    case JVMFlag::INVALID_FLAG: return "INVALID_FLAG";
-    case JVMFlag::ERR_OTHER: return "ERR_OTHER";
-    case JVMFlag::SUCCESS: return "SUCCESS";
-    default: ShouldNotReachHere(); return "nullptr";
-  }
-}
-
 //----------------------------------------------------------------------
 // Build flagTable[]
 
@@ -593,10 +579,10 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
 }
 
 JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
-  float VMOptionsFuzzyMatchSimilarity = 0.7f;
+  double VMOptionsFuzzyMatchSimilarity = 0.7;
   JVMFlag* match = nullptr;
-  float score;
-  float max_score = -1;
+  double score;
+  double max_score = -1;
 
   for (JVMFlag* current = &flagTable[0]; current->_name != nullptr; current++) {
     score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);

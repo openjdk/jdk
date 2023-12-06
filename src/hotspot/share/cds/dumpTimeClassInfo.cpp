@@ -31,51 +31,6 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
-// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
-// See comments there about the need for making a deep copy.
-DumpTimeClassInfo::DumpTimeClassInfo(const DumpTimeClassInfo& src) {
-  assert(DynamicDumpSharedSpaces, "must be");
-
-  _klass = src._klass;
-  _nest_host = src._nest_host;
-  _failed_verification = src._failed_verification;
-  _is_archived_lambda_proxy = src._is_archived_lambda_proxy;
-  _has_checked_exclusion = src._has_checked_exclusion;
-  _id = src._id;
-  _clsfile_size = src._clsfile_size;
-  _clsfile_crc32 = src._clsfile_crc32;
-  _excluded = src._excluded;
-  _is_early_klass = src._is_early_klass;
-  _verifier_constraints = nullptr;
-  _verifier_constraint_flags = nullptr;
-  _loader_constraints = nullptr;
-
-  assert(src._enum_klass_static_fields == nullptr, "This should not happen with dynamic dump.");
-  _enum_klass_static_fields = nullptr;
-
-  {
-    int n = src.num_verifier_constraints();
-    if (n > 0) {
-      _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(n, mtClass);
-      _verifier_constraint_flags = new (mtClass) GrowableArray<char>(n, mtClass);
-      for (int i = 0; i < n; i++) {
-        _verifier_constraints->append(src._verifier_constraints->at(i));
-        _verifier_constraint_flags->append(src._verifier_constraint_flags->at(i));
-      }
-    }
-  }
-
-  {
-    int n = src.num_loader_constraints();
-    if (n > 0) {
-      _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(n, mtClass);
-      for (int i = 0; i < n; i++) {
-        _loader_constraints->append(src._loader_constraints->at(i));
-      }
-    }
-  }
-}
-
 DumpTimeClassInfo::~DumpTimeClassInfo() {
   if (_verifier_constraints != nullptr) {
     assert(_verifier_constraint_flags != nullptr, "must be");

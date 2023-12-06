@@ -22,10 +22,12 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_HPP
+
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -145,7 +147,6 @@ public:
     _loader_constraints = nullptr;
     _enum_klass_static_fields = nullptr;
   }
-  DumpTimeClassInfo(const DumpTimeClassInfo& src);
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 
@@ -218,7 +219,7 @@ public:
 
 template <typename T>
 inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Deterministic archive contents
     uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
     return primitive_hash<uintx>(delta);
@@ -272,4 +273,4 @@ private:
   template<typename Function> void iterate_all(Function function) const;
 };
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_HPP

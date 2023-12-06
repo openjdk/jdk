@@ -29,6 +29,7 @@ import sun.font.GlyphList;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  *   DrawGlyphList - loops for SolidTextRenderer pipe.
@@ -73,7 +74,7 @@ public class DrawGlyphList extends GraphicsPrimitive {
 
     // This instance is used only for lookup.
     static {
-        GraphicsPrimitiveMgr.registerGeneral(
+        GeneralPrimitives.register(
                                 new DrawGlyphList(null, null, null));
     }
 

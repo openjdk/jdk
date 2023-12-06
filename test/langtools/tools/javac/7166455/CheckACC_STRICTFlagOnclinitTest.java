@@ -104,4 +104,19 @@ public strictfp class CheckACC_STRICTFlagOnclinitTest {
         }
     }
 
+// this version of the code can be used when ClassFile API in not in a preview
+//    void check(String dir, String... fileNames) throws IOException{
+//        for (String fileName : fileNames) {
+//            ClassModel classFileToCheck = ClassFile.of().parse(new File(dir, fileName).toPath());
+//
+//            for (MethodModel method : classFileToCheck.methods()) {
+//                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
+//                    errors.add(String.format(offendingMethodErrorMessage,
+//                            method.methodName().stringValue(),
+//                            classFileToCheck.thisClass().asInternalName()));
+//                }
+//            }
+//        }
+//    }
+
 }

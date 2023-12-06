@@ -225,12 +225,7 @@ public:
   }
   void set_defined_by_cds_in_class_path(int idx) {
     assert(idx < max_index_for_defined_in_class_path(), "sanity");
-    int old_val = 0;
-    int new_val = 0;
-    do {
-      old_val = Atomic::load(&_defined_by_cds_in_class_path);
-      new_val = old_val | ((int)1 << idx);
-    } while (Atomic::cmpxchg(&_defined_by_cds_in_class_path, old_val, new_val) != old_val);
+    Atomic::fetch_then_or(&_defined_by_cds_in_class_path, ((int)1 << idx));
   }
 };
 

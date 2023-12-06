@@ -151,6 +151,10 @@ enum Ampere_CPU_Model {
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
 
+  static bool model_is(int cpu_model) {
+    return _model == cpu_model || _model2 == cpu_model;
+  }
+
   static bool is_zva_enabled() { return 0 <= _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
@@ -169,6 +173,8 @@ enum Ampere_CPU_Model {
   static const SpinWait& spin_wait_desc() { return _spin_wait; }
 
   static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
+
+  static bool supports_float16() { return true; }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)

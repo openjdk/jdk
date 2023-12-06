@@ -178,7 +178,7 @@ public class AquaTextFieldSearch {
         });
         b.addMouseListener(new MouseAdapter() {
             public void mousePressed(final MouseEvent e) {
-                c.requestFocusInWindow();
+                c.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
             }
         });
 
@@ -198,7 +198,7 @@ public class AquaTextFieldSearch {
             b.addMouseListener(new MouseAdapter() {
                 public void mousePressed(final MouseEvent e) {
                     ((JPopupMenu)findPopup).show(b, 8, b.getHeight() - 2);
-                    c.requestFocusInWindow();
+                    c.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
                     c.repaint();
                 }
             });

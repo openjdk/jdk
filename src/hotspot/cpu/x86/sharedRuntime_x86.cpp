@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_x86.inline.hpp"
 #ifdef COMPILER1
@@ -83,3 +84,18 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+  jdouble dx = (jdouble) x;
+  jdouble dy = (jdouble) y;
+
+  return (jfloat) (*addr)(dx, dy);
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
+  assert(StubRoutines::fmod() != nullptr, "");
+  jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+
+  return (*addr)(x, y);
+JRT_END

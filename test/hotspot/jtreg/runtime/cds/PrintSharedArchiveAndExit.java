@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,21 +43,23 @@ public class PrintSharedArchiveAndExit {
         // (1) With a valid archive
         opts = (new CDSOptions())
             .setUseVersion(false)
-            .addSuffix( "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+            .addSuffix("-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit", "-version");
         CDSTestUtils.run(opts)
             .assertNormalExit(output -> {
                 output.shouldContain("archive is valid");
+                output.shouldContain("[Ljava.lang.Object;");
                 output.shouldNotContain("java version"); // Should not print JVM version
             });
 
         opts = (new CDSOptions())
             .setUseVersion(false)
-            .addSuffix( "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
+            .addSuffix("-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit");
         CDSTestUtils.run(opts)
             .assertNormalExit(output -> {
                 output.shouldContain("archive is valid");
+                output.shouldContain("[Ljava.lang.Object;");
                 output.shouldNotContain("Usage:"); // Should not print JVM help message
             });
     }

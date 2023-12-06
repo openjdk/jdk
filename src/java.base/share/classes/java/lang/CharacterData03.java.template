@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,30 @@ class CharacterData03 extends CharacterData {
     boolean isIdentifierIgnorable(int ch) {
         int props = getProperties(ch);
         return ((props & $$maskIdentifierInfo) == $$valueIgnorable);
+    }
+
+    boolean isEmoji(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmoji) != 0;
+    }
+
+    boolean isEmojiPresentation(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiPresentation) != 0;
+    }
+
+    boolean isEmojiModifier(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifier) != 0;
+    }
+
+    boolean isEmojiModifierBase(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifierBase) != 0;
+    }
+
+    boolean isEmojiComponent(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiComponent) != 0;
+    }
+
+    boolean isExtendedPictographic(int ch) {
+        return (getPropertiesEx(ch) & $$maskExtendedPictographic) != 0;
     }
 
     int toLowerCase(int ch) {

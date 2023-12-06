@@ -148,10 +148,13 @@ class StubRoutines: AllStatic {
   static address _atomic_add_entry;
   static address _fence_entry;
 
-  static BufferBlob* _code1;                               // code buffer for initial routines
-  static BufferBlob* _code2;
-  static BufferBlob* _code3;                               // code buffer for all other routines
+  static BufferBlob* _initial_stubs_code;                  // code buffer for initial routines
+  static BufferBlob* _continuation_stubs_code;             // code buffer for continuation stubs
+  static BufferBlob* _compiler_stubs_code;                 // code buffer for C2 intrinsics
+  static BufferBlob* _final_stubs_code;                    // code buffer for all other routines
 
+  static address _array_sort;
+  static address _array_partition;
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
   static address _jbyte_arraycopy;
@@ -248,6 +251,12 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _fmod;
+
+  static address _f2hf;
+  static address _hf2f;
+
+  static address _method_entry_barrier;
 
   static address _cont_thaw;
   static address _cont_returnBarrier;
@@ -255,28 +264,36 @@ class StubRoutines: AllStatic {
 
   JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
   JFR_ONLY(static address _jfr_write_checkpoint;)
+  JFR_ONLY(static RuntimeStub* _jfr_return_lease_stub;)
+  JFR_ONLY(static address _jfr_return_lease;)
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
+  static address _upcall_stub_exception_handler;
+
  public:
   // Initialization/Testing
-  static void    initialize1();                            // must happen before universe::genesis
-  static void    initialize2();                            // must happen after  universe::genesis
-  static void    initializeContinuationStubs();            // must happen after  universe::genesis
+  static void    initialize_initial_stubs();               // must happen before universe::genesis
+  static void    initialize_continuation_stubs();          // must happen after  universe::genesis
+  static void    initialize_compiler_stubs();              // must happen after  universe::genesis
+  static void    initialize_final_stubs();                 // must happen after  universe::genesis
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
   static bool contains(address addr) {
     return
-      (_code1 != nullptr && _code1->blob_contains(addr)) ||
-      (_code2 != nullptr && _code2->blob_contains(addr)) ;
+      (_initial_stubs_code      != nullptr && _initial_stubs_code->blob_contains(addr))  ||
+      (_continuation_stubs_code != nullptr && _continuation_stubs_code->blob_contains(addr)) ||
+      (_compiler_stubs_code     != nullptr && _compiler_stubs_code->blob_contains(addr)) ||
+      (_final_stubs_code        != nullptr && _final_stubs_code->blob_contains(addr)) ;
   }
 
-  static RuntimeBlob* code1() { return _code1; }
-  static RuntimeBlob* code2() { return _code2; }
-  static RuntimeBlob* code3() { return _code3; }
+  static RuntimeBlob* initial_stubs_code()      { return _initial_stubs_code; }
+  static RuntimeBlob* continuation_stubs_code() { return _continuation_stubs_code; }
+  static RuntimeBlob* compiler_stubs_code()     { return _compiler_stubs_code; }
+  static RuntimeBlob* final_stubs_code()        { return _final_stubs_code; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
@@ -290,7 +307,7 @@ class StubRoutines: AllStatic {
   typedef void (*CallStub)(
     address   link,
     intptr_t* result,
-    BasicType result_type,
+    int       result_type, /* BasicType on 4 bytes */
     Method* method,
     address   entry_point,
     intptr_t* parameters,
@@ -364,6 +381,8 @@ class StubRoutines: AllStatic {
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
+  static address select_arraysort_function() { return _array_sort; }
+  static address select_array_partition_function() { return _array_partition; }
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }
@@ -417,6 +436,7 @@ class StubRoutines: AllStatic {
   static address dlog()                { return _dlog; }
   static address dlog10()              { return _dlog10; }
   static address dpow()                { return _dpow; }
+  static address fmod()                { return _fmod; }
   static address dsin()                { return _dsin; }
   static address dcos()                { return _dcos; }
   static address dlibm_reduce_pi04l()  { return _dlibm_reduce_pi04l; }
@@ -424,11 +444,37 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
+  // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
+  // methods which perform the same operations as the intrinsic version.
+  // They are used for constant folding in JIT compiler to ensure equivalence.
+  //
+  static address f2hf_adr()            { return _f2hf; }
+  static address hf2f_adr()            { return _hf2f; }
+
+  static jshort f2hf(jfloat x) {
+    assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    typedef jshort (*f2hf_stub_t)(jfloat x);
+    return ((f2hf_stub_t)_f2hf)(x);
+  }
+  static jfloat hf2f(jshort x) {
+    assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    typedef jfloat (*hf2f_stub_t)(jshort x);
+    return ((hf2f_stub_t)_hf2f)(x);
+  }
+
+  static address method_entry_barrier() { return _method_entry_barrier; }
+
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
+  JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+
+  static address upcall_stub_exception_handler() {
+    assert(_upcall_stub_exception_handler != nullptr, "not implemented");
+    return _upcall_stub_exception_handler;
+  }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

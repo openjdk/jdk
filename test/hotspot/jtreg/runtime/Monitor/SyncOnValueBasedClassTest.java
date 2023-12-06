@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import java.util.stream.*;
  * @requires vm.flagless
  * @requires vm.flavor != "zero"
  * @library /test/lib
- * @enablePreview
- * @run main/othervm/timeout=180000 --enable-preview SyncOnValueBasedClassTest
+ * @run main/othervm/timeout=180000 SyncOnValueBasedClassTest
  */
 
 public class SyncOnValueBasedClassTest {
@@ -63,7 +62,7 @@ public class SyncOnValueBasedClassTest {
 
     private static void generateTests() {
         initTestObjects();
-        String[] commonFatalTestsFlags = {"--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnValueBasedClasses=1"};
+        String[] commonFatalTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash", "-XX:DiagnoseSyncOnValueBasedClasses=1"};
         fatalTests = new String[specificFlags.length * testObjects.size()][];
         for (int i = 0; i < specificFlags.length; i++) {
             for (int j = 0; j < testObjects.size(); j++) {
@@ -73,7 +72,7 @@ public class SyncOnValueBasedClassTest {
                                           .toArray(String[]::new);
             }
         }
-        String[] commonLogTestsFlags = {"--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnValueBasedClasses=2"};
+        String[] commonLogTestsFlags = {"-XX:+UnlockDiagnosticVMOptions", "-XX:DiagnoseSyncOnValueBasedClasses=2"};
         logTests = new String[specificFlags.length][];
         for (int i = 0; i < specificFlags.length; i++) {
             logTests[i] = Stream.of(commonLogTestsFlags, specificFlags[i], new String[] {"SyncOnValueBasedClassTest$LogTest"})
@@ -85,14 +84,14 @@ public class SyncOnValueBasedClassTest {
     public static void main(String[] args) throws Exception {
         generateTests();
         for (int i = 0; i < fatalTests.length; i++) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(fatalTests[i]);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(fatalTests[i]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldContain("fatal error: Synchronizing on object");
             output.shouldNotContain("synchronization on value based class did not fail");
             output.shouldNotHaveExitValue(0);
         }
         for (int i = 0; i < logTests.length; i++) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(logTests[i]);
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(logTests[i]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
             checkOutput(output);
@@ -168,19 +167,19 @@ public class SyncOnValueBasedClassTest {
 
     // Very basic sanity tests to show things work for virtual threads too.
     private static void virtualThreadTests() throws Exception {
-        final String[] vtTest = { "--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash",
+        final String[] vtTest = { "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash",
                                   "", "SyncOnValueBasedClassTest$VTTest" };
         // Fatal test
-        vtTest[3] = "-XX:DiagnoseSyncOnValueBasedClasses=1";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=1";
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vtTest);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldContain("fatal error: Synchronizing on object");
         output.shouldNotContain("synchronization on value based class did not fail");
         output.shouldNotHaveExitValue(0);
 
         // Log test
-        vtTest[3] = "-XX:DiagnoseSyncOnValueBasedClasses=2";
-        pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=2";
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(vtTest);
         output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
         output.shouldContain("Synchronizing on object");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@ import java.io.FileDescriptor;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Defines extended socket options, beyond those defined in
@@ -221,6 +220,8 @@ public final class ExtendedSocketOptions {
      * by the sending and receiving nodes exclusively. Setting this option for
      * an IPv6 socket ensures that packets to be sent are never fragmented, in
      * which case, the local network MTU must be observed.
+     *
+     * @since 19
      */
     public static final SocketOption<Boolean> IP_DONTFRAGMENT =
         new ExtSocketOption<Boolean>("IP_DONTFRAGMENT", Boolean.class);
@@ -278,7 +279,7 @@ public final class ExtendedSocketOptions {
                 if (option == TCP_QUICKACK) {
                     setQuickAckOption(fd, (boolean) value);
                 } else if (option == TCP_KEEPCOUNT) {
-                    setTcpkeepAliveProbes(fd, (Integer) value);
+                    setTcpKeepAliveProbes(fd, (Integer) value);
                 } else if (option == IP_DONTFRAGMENT) {
                     setIpDontFragment(fd, (Boolean) value, isIPv6);
                 } else if (option == TCP_KEEPIDLE) {
@@ -308,7 +309,7 @@ public final class ExtendedSocketOptions {
                 if (option == TCP_QUICKACK) {
                     return getQuickAckOption(fd);
                 } else if (option == TCP_KEEPCOUNT) {
-                    return getTcpkeepAliveProbes(fd);
+                    return getTcpKeepAliveProbes(fd);
                 } else if (option == IP_DONTFRAGMENT) {
                     return getIpDontFragment(fd, isIPv6);
                 } else if (option == TCP_KEEPIDLE) {
@@ -344,9 +345,9 @@ public final class ExtendedSocketOptions {
         return platformSocketOptions.getQuickAck(fdAccess.get(fd));
     }
 
-    private static void setTcpkeepAliveProbes(FileDescriptor fd, int value)
+    private static void setTcpKeepAliveProbes(FileDescriptor fd, int value)
             throws SocketException {
-        platformSocketOptions.setTcpkeepAliveProbes(fdAccess.get(fd), value);
+        platformSocketOptions.setTcpKeepAliveProbes(fdAccess.get(fd), value);
     }
 
     private static void setTcpKeepAliveTime(FileDescriptor fd, int value)
@@ -364,8 +365,8 @@ public final class ExtendedSocketOptions {
         platformSocketOptions.setTcpKeepAliveIntvl(fdAccess.get(fd), value);
     }
 
-    private static int getTcpkeepAliveProbes(FileDescriptor fd) throws SocketException {
-        return platformSocketOptions.getTcpkeepAliveProbes(fdAccess.get(fd));
+    private static int getTcpKeepAliveProbes(FileDescriptor fd) throws SocketException {
+        return platformSocketOptions.getTcpKeepAliveProbes(fdAccess.get(fd));
     }
 
     private static boolean getIpDontFragment(FileDescriptor fd, boolean isIPv6) throws SocketException {
@@ -400,22 +401,13 @@ public final class ExtendedSocketOptions {
         }
 
         private static PlatformSocketOptions create() {
-            @SuppressWarnings("removal")
-            String osname = AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty("os.name");
-                        }
-                    });
-            if ("Linux".equals(osname)) {
-                return newInstance("jdk.net.LinuxSocketOptions");
-            } else if (osname.startsWith("Mac")) {
-                return newInstance("jdk.net.MacOSXSocketOptions");
-            } else if (osname.startsWith("Windows")) {
-                return newInstance("jdk.net.WindowsSocketOptions");
-            } else {
-                return new PlatformSocketOptions();
-            }
+            return switch (OperatingSystem.current()) {
+                case LINUX -> newInstance("jdk.net.LinuxSocketOptions");
+                case MACOS -> newInstance("jdk.net.MacOSXSocketOptions");
+                case WINDOWS -> newInstance("jdk.net.WindowsSocketOptions");
+                case AIX -> newInstance("jdk.net.AIXSocketOptions");
+                default -> new PlatformSocketOptions();
+            };
         }
 
         private static final PlatformSocketOptions instance = create();
@@ -448,7 +440,7 @@ public final class ExtendedSocketOptions {
             return false;
         }
 
-        void setTcpkeepAliveProbes(int fd, final int value) throws SocketException {
+        void setTcpKeepAliveProbes(int fd, final int value) throws SocketException {
             throw new UnsupportedOperationException("unsupported TCP_KEEPCNT option");
         }
 
@@ -472,7 +464,7 @@ public final class ExtendedSocketOptions {
             throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
         }
 
-        int getTcpkeepAliveProbes(int fd) throws SocketException {
+        int getTcpKeepAliveProbes(int fd) throws SocketException {
             throw new UnsupportedOperationException("unsupported TCP_KEEPCNT option");
         }
 

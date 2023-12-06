@@ -44,7 +44,7 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
+  if (in(0) && in(0)->is_top())  return nullptr;
 
   if (can_reshape) {
     Node* mem = phase->transform(in(MemNode::Memory));
@@ -56,7 +56,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return this;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -72,7 +72,7 @@ uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -80,7 +80,7 @@ Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 uint VectorizedHashCodeNode::match_edge(uint idx) const {
@@ -89,7 +89,7 @@ uint VectorizedHashCodeNode::match_edge(uint idx) const {
 }
 
 Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
@@ -109,7 +109,7 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -171,7 +171,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(compr, src->in(1));
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
@@ -227,7 +227,7 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new AndLNode(src->in(1), mask);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
@@ -244,12 +244,12 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
     if (opc == Op_CompressBits) {
       // Bit compression selects the source bits corresponding to true mask bits
-      // and lays them out contiguously at desitination bit poistions starting from
+      // and lays them out contiguously at destination bit positions starting from
       // LSB, remaining higher order bits are set to zero.
-      // Thus, it will always generates a +ve value i.e. sign bit set to 0 if
+      // Thus, it will always generate a +ve value i.e. sign bit set to 0 if
       // any bit of constant mask value is zero.
       lo = 0L;
-      hi = (1L << bitcount) - 1;
+      hi = (1UL << bitcount) - 1;
     } else {
       assert(opc == Op_ExpandBits, "");
       // Expansion sequentially reads source bits starting from LSB

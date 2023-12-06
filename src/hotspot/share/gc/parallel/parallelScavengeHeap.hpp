@@ -101,6 +101,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Allocate in oldgen and record the allocation with the size_policy.
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
+  void update_parallel_worker_threads_cpu_time();
+
  protected:
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
@@ -211,7 +213,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // will then attempt a full gc.  The second collects the entire heap; if
   // maximum_compaction is true, it will compact everything and clear all soft
   // references.
-  inline void invoke_scavenge();
+  inline bool invoke_scavenge();
 
   // Perform a full collection
   void do_full_collection(bool clear_all_soft_refs) override;

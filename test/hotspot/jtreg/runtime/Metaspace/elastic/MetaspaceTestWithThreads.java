@@ -77,10 +77,8 @@ public class MetaspaceTestWithThreads {
 
         context.checkStatistics();
 
-        if (Settings.settings().doesReclaim()) {
-            if (context.committedWords() > 0) {
-                throw new RuntimeException("Expected no committed words after purging empty metaspace context (was: " + context.committedWords() + ")");
-            }
+        if (context.committedWords() > 0) {
+            throw new RuntimeException("Expected no committed words after purging empty metaspace context (was: " + context.committedWords() + ")");
         }
     }
 

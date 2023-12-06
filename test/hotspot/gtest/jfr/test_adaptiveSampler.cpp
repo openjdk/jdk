@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ namespace {
       return c;
     }
     static jlong counter_to_millis(jlong c, bool is_os_time = false) {
-      return c * NANOS_PER_MILLISEC;
+      return c * (jlong)NANOS_PER_MILLISEC;
     }
     static jlong nanos_to_countertime(jlong c, bool as_os_time = false) {
       return c;
@@ -128,20 +128,20 @@ class JfrGTestAdaptiveSampling : public ::testing::Test {
       sample_sum += i * sample[i];
     }
 
-    double population_mean = population_sum / (double)population_size;
-    double sample_mean = sample_sum / (double)sample_size;
+    double population_mean = (double)population_sum / (double)population_size;
+    double sample_mean = (double)sample_sum / (double)sample_size;
 
     double population_variance = 0;
     double sample_variance = 0;
     for (int i = 0; i < distr_slots; i++) {
       double population_diff = i - population_mean;
-      population_variance = population[i] * population_diff * population_diff;
+      population_variance = (double)population[i] * population_diff * population_diff;
 
       double sample_diff = i - sample_mean;
-      sample_variance = sample[i] * sample_diff * sample_diff;
+      sample_variance = (double)sample[i] * sample_diff * sample_diff;
     }
-    population_variance = population_variance / (population_size - 1);
-    sample_variance = sample_variance / (sample_size - 1);
+    population_variance = population_variance / (double)(population_size - 1);
+    sample_variance = sample_variance / (double)(sample_size - 1);
     double population_stdev = sqrt(population_variance);
     double sample_stdev = sqrt(sample_variance);
 
@@ -227,7 +227,7 @@ void JfrGTestAdaptiveSampling::test(JfrGTestAdaptiveSampling::incoming inc, size
   }
 
   const size_t target_sample_size = sample_points_per_window * window_count;
-  EXPECT_NEAR(target_sample_size, sample_size, expected_sample_points * error_factor) << output;
+  EXPECT_NEAR((double)target_sample_size, (double)sample_size, (double)expected_sample_points * error_factor) << output;
   strcat(output, ", hit distribution");
   assertDistributionProperties(100, population, sample, population_size, sample_size, output);
 }

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
+#include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelInitLogger.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
@@ -35,10 +35,10 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -47,12 +47,13 @@
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -69,21 +70,17 @@ jint ParallelScavengeHeap::initialize() {
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
   initialize_reserved_region(heap_rs);
-
-  PSCardTable* card_table = new PSCardTable(heap_rs.region());
-  card_table->initialize();
-  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
-  barrier_set->initialize();
-  BarrierSet::set_barrier_set(barrier_set);
-
-  // Make up the generations
-  assert(MinOldSize <= OldSize && OldSize <= MaxOldSize, "Parameter check");
-  assert(MinNewSize <= NewSize && NewSize <= MaxNewSize, "Parameter check");
-
   // Layout the reserved space for the generations.
   ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
+
+  PSCardTable* card_table = new PSCardTable(heap_rs.region());
+  card_table->initialize(old_rs.base(), young_rs.base());
+
+  CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
+  barrier_set->initialize();
+  BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads
   _workers.initialize_workers();
@@ -131,6 +128,9 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
+  // Create CPU time counter
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+
   ParallelInitLogger::print();
 
   return JNI_OK;
@@ -151,8 +151,8 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                    "PS Old Gen",
                                    true /* support_usage_threshold */);
 
-  _young_manager = new GCMemoryManager("PS Scavenge", "end of minor GC");
-  _old_manager = new GCMemoryManager("PS MarkSweep", "end of major GC");
+  _young_manager = new GCMemoryManager("PS Scavenge");
+  _old_manager = new GCMemoryManager("PS MarkSweep");
 
   _old_manager->add_pool(_eden_pool);
   _old_manager->add_pool(_survivor_pool);
@@ -196,6 +196,7 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
+  update_parallel_worker_threads_cpu_time();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -549,8 +550,26 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
     return;
   }
 
-  VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
-  VMThread::execute(&op);
+  while (true) {
+    VM_ParallelGCSystemGC op(gc_count, full_gc_count, cause);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause) || op.full_gc_succeeded()) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      if (full_gc_count != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
@@ -576,7 +595,7 @@ public:
   // Claim the block and get the block index.
   size_t claim_and_get_block() {
     size_t block_index;
-    block_index = Atomic::fetch_and_add(&_claimed_index, 1u);
+    block_index = Atomic::fetch_then_add(&_claimed_index, 1u);
 
     PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
     size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;
@@ -628,7 +647,9 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
     // called from os::print_location by find or VMError
-    if (Debugging || VMError::is_error_reported())  return nullptr;
+    if (DebuggingContext::is_enabled() || VMError::is_error_reported()) {
+      return nullptr;
+    }
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
@@ -769,9 +790,9 @@ void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,
-                         page_size,
                          rs.base(),
-                         rs.size());
+                         rs.size(),
+                         page_size);
   }
 }
 
@@ -867,4 +888,24 @@ void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
 
 void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
   GCLocker::unlock_critical(thread);
+}
+
+void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads in GCTaskManager never terminate, so it
+    // is safe for VMThread to read their CPU times. If upstream changes this
+    // behavior, we should rethink if it is still safe.
+    gc_threads_do(&tttc);
+  }
+
+  CPUTimeCounters::publish_gc_total_cpu_time();
 }

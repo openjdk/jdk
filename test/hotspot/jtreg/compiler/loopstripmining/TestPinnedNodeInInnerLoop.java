@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8268672
  * @summary C2: assert(!loop->is_member(u_loop)) failed: can be in outer loop or out of both loops only
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestPinnedNodeInInnerLoop TestPinnedNodeInInnerLoop
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestPinnedNodeInInnerLoop::* TestPinnedNodeInInnerLoop
  *
  */
 

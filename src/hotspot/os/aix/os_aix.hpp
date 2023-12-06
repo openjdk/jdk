@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ class os::Aix {
   static int _extshm;
 
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
@@ -171,8 +172,11 @@ class os::Aix {
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
 
-  static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size);
+  static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc);
   static void* resolve_function_descriptor(void* p);
+
+  // Simulate the library search algorithm of dlopen() (in os::dll_load)
+  static int stat64x_via_LIBPATH(const char* path, struct stat64x* stat);
 };
 
 #endif // OS_AIX_OS_AIX_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class TestOnMetadata {
         AtomicBoolean fail = new AtomicBoolean();
         try (RecordingStream r = new RecordingStream()) {
             r.onMetadata(m -> {
-                EventType t = FlightRecorder.getFlightRecorder().getEventTypes().get(0);
+                EventType t = FlightRecorder.getFlightRecorder().getEventTypes().getFirst();
                 try {
                     m.getEventTypes().add(t);
                     System.out.println("Should not be able to modify getEventTypes()");

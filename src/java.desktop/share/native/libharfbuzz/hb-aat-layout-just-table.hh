@@ -48,7 +48,7 @@ struct ActionSubrecordHeader
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   HBUINT16      actionClass;    /* The JustClass value associated with this
@@ -65,14 +65,14 @@ struct DecompositionAction
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   ActionSubrecordHeader
                 header;
-  HBFixed       lowerLimit;     /* If the distance factor is less than this value,
+  F16DOT16      lowerLimit;     /* If the distance factor is less than this value,
                                  * then the ligature is decomposed. */
-  HBFixed       upperLimit;     /* If the distance factor is greater than this value,
+  F16DOT16      upperLimit;     /* If the distance factor is greater than this value,
                                  * then the ligature is decomposed. */
   HBUINT16      order;          /* Numerical order in which this ligature will
                                  * be decomposed; you may want infrequent ligatures
@@ -112,13 +112,13 @@ struct ConditionalAddGlyphAction
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   protected:
   ActionSubrecordHeader
                 header;
-  HBFixed       substThreshold; /* Distance growth factor (in ems) at which
+  F16DOT16      substThreshold; /* Distance growth factor (in ems) at which
                                  * this glyph is replaced and the growth factor
                                  * recalculated. */
   HBGlyphID16   addGlyph;       /* Glyph to be added as kashida. If this value is
@@ -137,7 +137,7 @@ struct DuctileGlyphAction
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   protected:
@@ -146,13 +146,13 @@ struct DuctileGlyphAction
   HBUINT32      variationAxis;  /* The 4-byte tag identifying the ductile axis.
                                  * This would normally be 0x64756374 ('duct'),
                                  * but you may use any axis the font contains. */
-  HBFixed       minimumLimit;   /* The lowest value for the ductility axis that
+  F16DOT16      minimumLimit;   /* The lowest value for the ductility axis that
                                  * still yields an acceptable appearance. Normally
                                  * this will be 1.0. */
-  HBFixed       noStretchValue; /* This is the default value that corresponds to
+  F16DOT16      noStretchValue; /* This is the default value that corresponds to
                                  * no change in appearance. Normally, this will
                                  * be 1.0. */
-  HBFixed       maximumLimit;   /* The highest value for the ductility axis that
+  F16DOT16      maximumLimit;   /* The highest value for the ductility axis that
                                  * still yields an acceptable appearance. */
   public:
   DEFINE_SIZE_STATIC (22);
@@ -163,7 +163,7 @@ struct RepeatedAddGlyphAction
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   protected:
@@ -271,14 +271,14 @@ struct JustWidthDeltaEntry
   };
 
   protected:
-  HBFixed       beforeGrowLimit;/* The ratio by which the advance width of the
+  F16DOT16      beforeGrowLimit;/* The ratio by which the advance width of the
                                  * glyph is permitted to grow on the left or top side. */
-  HBFixed       beforeShrinkLimit;
+  F16DOT16      beforeShrinkLimit;
                                 /* The ratio by which the advance width of the
                                  * glyph is permitted to shrink on the left or top side. */
-  HBFixed       afterGrowLimit; /* The ratio by which the advance width of the glyph
+  F16DOT16      afterGrowLimit; /* The ratio by which the advance width of the glyph
                                  * is permitted to shrink on the left or top side. */
-  HBFixed       afterShrinkLimit;
+  F16DOT16      afterShrinkLimit;
                                 /* The ratio by which the advance width of the glyph
                                  * is at most permitted to shrink on the right or
                                  * bottom side. */
@@ -294,7 +294,7 @@ struct WidthDeltaPair
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   protected:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.io.Serializable;
 
 /**
  * {@code Format} is an abstract base class for formatting locale-sensitive
- * information such as dates, messages, and numbers.
+ * information such as dates, messages, numbers, and lists.
  *
  * <p>
  * {@code Format} defines the programming interface for formatting
@@ -61,9 +61,9 @@ import java.io.Serializable;
  * <h2>Subclassing</h2>
  *
  * <p>
- * The Java Platform provides three specialized subclasses of {@code Format}--
- * {@code DateFormat}, {@code MessageFormat}, and
- * {@code NumberFormat}--for formatting dates, messages, and numbers,
+ * The Java Platform provides specialized subclasses of {@code Format}--
+ * {@code DateFormat}, {@code MessageFormat}, {@code NumberFormat}, and
+ * {@code ListFormat}--for formatting dates, messages, numbers, and lists
  * respectively.
  * <p>
  * Concrete subclasses must implement three methods:
@@ -128,6 +128,7 @@ import java.io.Serializable;
  * @see          java.text.NumberFormat
  * @see          java.text.DateFormat
  * @see          java.text.MessageFormat
+ * @see          java.text.ListFormat
  * @author       Mark Davis
  * @since 1.1
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class TestSnapshot {
         }
         try (Recording snapshot = recorder.takeSnapshot()) {
             Asserts.assertEquals(snapshot.getSize(), size);
-            Asserts.assertGreaterThanOrEqual(snapshot.getStartTime(), recordings.get(0).getStartTime());
+            Asserts.assertGreaterThanOrEqual(snapshot.getStartTime(), recordings.getFirst().getStartTime());
             Asserts.assertLessThanOrEqual(snapshot.getStopTime(), recordings.get(RECORDING_COUNT - 1).getStopTime());
             Asserts.assertGreaterThanOrEqual(snapshot.getDuration(), Duration.ZERO);
             assertStaticOptions(snapshot);
@@ -122,7 +122,7 @@ public class TestSnapshot {
                 List<RecordedEvent> events = Events.fromRecording(snapshot);
                 Events.hasEvents(events);
                 Asserts.assertEquals(events.size(), 1);
-                Asserts.assertEquals(events.get(0).getEventType().getName(), SimpleEvent.class.getName());
+                Asserts.assertEquals(events.getFirst().getEventType().getName(), SimpleEvent.class.getName());
             }
 
             r.stop();
@@ -162,7 +162,7 @@ public class TestSnapshot {
                 List<RecordedEvent> events = Events.fromRecording(snapshot);
                 Events.hasEvents(events);
                 Asserts.assertEquals(events.size(), 1);
-                Asserts.assertEquals(events.get(0).getEventType().getName(), SimpleEvent.class.getName());
+                Asserts.assertEquals(events.getFirst().getEventType().getName(), SimpleEvent.class.getName());
             }
         }
     }

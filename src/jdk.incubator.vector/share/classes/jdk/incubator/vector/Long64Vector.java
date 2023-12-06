@@ -639,14 +639,6 @@ final class Long64Vector extends LongVector {
 
         @Override
         @ForceInline
-        public Long64Mask eq(VectorMask<Long> mask) {
-            Objects.requireNonNull(mask);
-            Long64Mask m = (Long64Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Long64Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Long64Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -693,9 +685,9 @@ final class Long64Vector extends LongVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Long64Mask xor(VectorMask<Long> mask) {
+        public Long64Mask xor(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long64Mask m = (Long64Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Long64Mask.class, null, long.class, VLENGTH,
@@ -734,6 +726,16 @@ final class Long64Vector extends LongVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Long64Mask.class, long.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Long64Mask.class, long.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions

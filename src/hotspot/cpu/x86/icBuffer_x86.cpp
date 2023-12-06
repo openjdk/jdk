@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached
   // because
   // (1) the value is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
-  // assert(cached_value == NULL || cached_oop->is_perm(), "must be perm oop");
+  // assert(cached_value == nullptr || cached_oop->is_perm(), "must be perm oop");
   masm->lea(rax, AddressLiteral((address) cached_value, relocInfo::metadata_type));
   masm->jump(ExternalAddress(entry_point));
 }

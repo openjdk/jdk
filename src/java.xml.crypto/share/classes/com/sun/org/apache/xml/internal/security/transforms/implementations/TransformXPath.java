@@ -20,10 +20,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ */
 package com.sun.org.apache.xml.internal.security.transforms.implementations;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
 
 import javax.xml.transform.TransformerException;
 
@@ -33,10 +39,7 @@ import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import com.sun.org.apache.xml.internal.security.utils.XPathAPI;
-import com.sun.org.apache.xml.internal.security.utils.XPathFactory;
+import com.sun.org.apache.xml.internal.security.utils.*;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -52,8 +55,25 @@ import org.w3c.dom.Node;
  */
 public class TransformXPath extends TransformSpi {
 
-    private static final com.sun.org.slf4j.internal.Logger LOG =
-            com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXPath.class);
+    // Whether the here() XPath function is supported.
+    static final boolean HEREFUNC;
+
+    static {
+        @SuppressWarnings("removal")
+        String prop =
+                AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                        Security.getProperty("jdk.xml.dsig.hereFunctionSupported"));
+        if (prop == null) {
+            HEREFUNC = true; // default true
+        } else if (prop.equals("true")) {
+            HEREFUNC = true;
+        } else if (prop.equals("false")) {
+            HEREFUNC = false;
+        } else {
+            throw new IllegalArgumentException(
+                    "Invalid jdk.xml.dsig.hereFunctionSupported setting: " + prop);
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -112,7 +132,9 @@ public class TransformXPath extends TransformSpi {
     }
 
     protected XPathFactory getXPathFactory() {
-        return XPathFactory.newInstance();
+        return HEREFUNC
+                ? XPathFactory.newInstance()
+                : new JDKXPathFactory();
     }
 
     /**
@@ -140,20 +162,19 @@ public class TransformXPath extends TransformSpi {
         /**
          * @see com.sun.org.apache.xml.internal.security.signature.NodeFilter#isNodeInclude(org.w3c.dom.Node)
          */
-        public int isNodeInclude(Node currentNode) {
+        public int isNodeInclude(Node currentNode) throws TransformationException {
             try {
                 boolean include = xPathAPI.evaluate(currentNode, xpathnode, str, xpathElement);
                 if (include) {
                     return 1;
                 }
                 return 0;
-            } catch (TransformerException e) {
-                LOG.debug("Error evaluating XPath expression", e);
-                return 0;
+            } catch (TransformerException ex) {
+                throw new TransformationException(ex);
             }
         }
 
-        public int isNodeIncludeDO(Node n, int level) {
+        public int isNodeIncludeDO(Node n, int level) throws TransformationException {
             return isNodeInclude(n);
         }
 

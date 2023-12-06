@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.function.Function;
 /**
  * {@code Cleaner} manages a set of object references and corresponding cleaning actions.
  * <p>
- * Cleaning actions are {@link #register(Object object, Runnable action) registered}
+ * Cleaning actions are {@linkplain #register(Object object, Runnable action) registered}
  * to run after the cleaner is notified that the object has become
  * phantom reachable.
  * The cleaner uses {@link PhantomReference} and {@link ReferenceQueue} to be
@@ -87,7 +87,7 @@ import java.util.function.Function;
  * <pre>{@code
  * public class CleaningExample implements AutoCloseable {
  *        // A cleaner (preferably one shared within a library,
-          // but for the sake of example, a new one is created here)
+ *        // but for the sake of example, a new one is created here)
  *        private static final Cleaner cleaner = Cleaner.create();
  *
  *        // State class captures information necessary for cleanup.
@@ -162,9 +162,10 @@ public final class Cleaner {
      * to process the phantom reachable objects and to invoke cleaning actions.
      * The {@linkplain java.lang.Thread#getContextClassLoader context class loader}
      * of the thread is set to the
-     * {@link ClassLoader#getSystemClassLoader() system class loader}.
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader}.
      * The thread has no permissions, enforced only if a
-     * {@link java.lang.System#setSecurityManager(SecurityManager) SecurityManager is set}.
+     * {@linkplain java.lang.System#setSecurityManager(SecurityManager)
+     * {@code SecurityManager} is set}.
      * <p>
      * The cleaner terminates when it is phantom reachable and all of the
      * registered cleaning actions are complete.
@@ -184,9 +185,9 @@ public final class Cleaner {
      * Returns a new {@code Cleaner} using a {@code Thread} from the {@code ThreadFactory}.
      * <p>
      * A thread from the thread factory's {@link ThreadFactory#newThread(Runnable) newThread}
-     * method is set to be a {@link Thread#setDaemon(boolean) daemon thread}
+     * method is set to be a {@linkplain Thread#setDaemon(boolean) daemon thread}
      * and started to process phantom reachable objects and invoke cleaning actions.
-     * On each call the {@link ThreadFactory#newThread(Runnable) thread factory}
+     * On each call the {@linkplain ThreadFactory#newThread(Runnable) thread factory}
      * must provide a Thread that is suitable for performing the cleaning actions.
      * <p>
      * The cleaner terminates when it is phantom reachable and all of the
@@ -197,7 +198,7 @@ public final class Cleaner {
      * @return a new {@code Cleaner}
      *
      * @throws  IllegalThreadStateException  if the thread from the thread
-     *               factory was {@link Thread.State#NEW not a new thread}.
+     *               factory was {@linkplain Thread.State#NEW not a new thread}.
      * @throws  SecurityException  if the current thread is not allowed to
      *               create or start the thread.
      */

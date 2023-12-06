@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,13 @@
 
 int InlineCacheBuffer::ic_stub_code_size() {
   // 6: auipc + ld + auipc + jalr + address(2 * instruction_size)
-  // 5: auipc + ld + j + address(2 * instruction_size)
-  return (MacroAssembler::far_branches() ? 6 : 5) * NativeInstruction::instruction_size;
+  return 6 * NativeInstruction::instruction_size;
 }
 
 #define __ masm->
 
 void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point) {
-  assert_cond(code_begin != NULL && entry_point != NULL);
+  assert_cond(code_begin != nullptr && entry_point != nullptr);
   ResourceMark rm;
   CodeBuffer      code(code_begin, ic_stub_code_size());
   MacroAssembler* masm            = new MacroAssembler(&code);

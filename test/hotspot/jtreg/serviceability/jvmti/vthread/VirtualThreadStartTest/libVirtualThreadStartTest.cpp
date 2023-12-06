@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,16 @@ void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
     if (!can_support_vt_enabled) {
       fatal(jni, "Failed: expected ThreadStart instead of VirtualThreadStart event");
     }
-    printf("VirtualThreadStart event: %s\n", tname);
+    LOG("VirtualThreadStart event: %s\n", tname);
     started_thread_cnt++;
   }
   deallocate(jvmti, jni, (void*)tname);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_VirtualThreadStartTest_canSupportVirtualThreads(JNIEnv* jni, jclass clazz) {
+  LOG("can_support_virtual_threads: %d\n", can_support_vt_enabled);
+  return can_support_vt_enabled ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
@@ -116,8 +122,7 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
       return JNI_ERR;
     }
   }
-  printf("agent_init: can_support_virtual_threads capability: %d\n",
-         caps.can_support_virtual_threads);
+  LOG("agent_init: can_support_virtual_threads: %d\n", caps.can_support_virtual_threads);
 
   err = jvmti->SetEventCallbacks(&callbacks, (jint)sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {

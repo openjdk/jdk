@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,10 +104,10 @@ final class DCmdStop extends AbstractDCmd {
         return new Argument[] {
             new Argument("name",
                 "Recording name, e.g. \\\"My Recording\\\"",
-                "STRING", true, null, false),
+                "STRING", true, true, null, false),
             new Argument("filename",
                 "Copy recording data to file, e.g. \\\"" + exampleFilename() +  "\\\"",
-                "STRING", false, null, false)
+                "STRING", false, true, null, false)
         };
     }
 }

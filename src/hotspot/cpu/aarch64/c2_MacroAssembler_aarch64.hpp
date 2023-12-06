@@ -35,6 +35,11 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full description in macroAssembler_aarch64.cpp.
+  void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
+  void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
@@ -77,25 +82,25 @@
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
-                    FloatRegister src2, int cond, bool isQ);
+                    FloatRegister src2, Condition cond, bool isQ);
 
   void neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
                          Condition cond, bool isQ);
 
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
-                   FloatRegister zn, FloatRegister zm, int cond);
+                   FloatRegister zn, FloatRegister zm, Condition cond);
 
   void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
-                          FloatRegister src, BasicType src_bt);
+                          FloatRegister src, BasicType src_bt, bool is_unsigned = false);
 
   void neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes);
 
   void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
-                         FloatRegister src, SIMD_RegVariant src_size);
+                         FloatRegister src, SIMD_RegVariant src_size, bool is_unsigned = false);
 
   void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
                          FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);
@@ -103,7 +108,7 @@
   void sve_vmaskcast_extend(PRegister dst, PRegister src,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
-  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
   // Vector reduction

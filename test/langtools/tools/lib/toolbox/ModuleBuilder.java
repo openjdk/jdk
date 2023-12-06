@@ -23,7 +23,6 @@
 
 package toolbox;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -257,7 +256,7 @@ public class ModuleBuilder {
     /**
      * Writes the source files for the module to a specified directory,
      * and then compiles them to a given directory.
-     * @param srcDir the directory in which a directory will be created
+     * @param src the directory in which a directory will be created
      *  to contain the source files for the module
      * @param modules the directory in which a directory will be created
      *    to contain the compiled class files for the module
@@ -267,7 +266,7 @@ public class ModuleBuilder {
         Path moduleSrc = write(src);
         String mp = modulePath.stream()
                 .map(Path::toString)
-                .collect(Collectors.joining(File.pathSeparator));
+                .collect(Collectors.joining(ToolBox.pathSeparator));
         new JavacTask(tb)
                 .outdir(Files.createDirectories(modules.resolve(name)))
                 .options("--module-path", mp)

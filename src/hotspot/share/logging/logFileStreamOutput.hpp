@@ -87,7 +87,4 @@ class LogStderrOutput : public LogFileStreamOutput {
   }
 };
 
-extern LogStderrOutput* StderrLog;
-extern LogStdoutOutput* StdoutLog;
-
 #endif // SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP

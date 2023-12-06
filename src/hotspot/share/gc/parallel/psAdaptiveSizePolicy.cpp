@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "gc/parallel/psGCAdaptivePolicyCounters.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
@@ -167,22 +167,6 @@ void PSAdaptiveSizePolicy::major_collection_end(size_t amount_live,
   // the mutator runs.  Reset after the GC pause has been measured.
   _major_timer.reset();
   _major_timer.start();
-}
-
-// If the remaining free space in the old generation is less that
-// that expected to be needed by the next collection, do a full
-// collection now.
-bool PSAdaptiveSizePolicy::should_full_GC(size_t old_free_in_bytes) {
-
-  // A similar test is done in the scavenge's should_attempt_scavenge().  If
-  // this is changed, decide if that test should also be changed.
-  bool result = padded_average_promoted_in_bytes() > (float) old_free_in_bytes;
-  log_trace(gc, ergo)("%s after scavenge average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
-                      result ? "Full" : "No full",
-                      (size_t) average_promoted_in_bytes(),
-                      (size_t) padded_average_promoted_in_bytes(),
-                      old_free_in_bytes);
-  return result;
 }
 
 void PSAdaptiveSizePolicy::clear_generation_free_space_flags() {
@@ -349,7 +333,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_eden_space_size: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINTX_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 
@@ -526,7 +510,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_old_gen_free_space: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINTX_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 

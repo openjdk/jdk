@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,16 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
     fi
   fi
   AC_SUBST(RCFLAGS)
+])
+
+AC_DEFUN([FLAGS_SETUP_NMFLAGS],
+[
+  # On AIX, we need to set NM flag -X64 for processing 64bit object files
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    NMFLAGS="-X64"
+  fi
+
+  AC_SUBST(NMFLAGS)
 ])
 
 ################################################################################
