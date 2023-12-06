@@ -1199,24 +1199,30 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count = load_array_length(tgt);
 
   Node* result = nullptr;
+  bool do_intrinsic =
+      (StubRoutines::string_indexof() != nullptr) &&
+      ((ae == StrIntrinsicNode::LL) || (ae == StrIntrinsicNode::UU));
 
-  if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
-    // Divide src size by 2 if String is UTF16 encoded
-    src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
-  }
-  if (ae == StrIntrinsicNode::UU) {
-    // Divide substring size by 2 if String is UTF16 encoded
-    tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
+  if (!do_intrinsic) {
+    if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
+      // Divide src size by 2 if String is UTF16 encoded
+      src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
+    }
+    if (ae == StrIntrinsicNode::UU) {
+      // Divide substring size by 2 if String is UTF16 encoded
+      tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
+    }
   }
 
-  if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
-    Node* call = make_runtime_call(RC_LEAF,
-                                   OptoRuntime::string_IndexOf_Type(),
-                                   StubRoutines::string_indexof(), "stringIndexOf", TypePtr::BOTTOM,
-                                   src_start, src_count, tgt_start, tgt_count);
+  if (do_intrinsic) {
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::string_indexof(),
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
     result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   } else {
-    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, result_rgn, result_phi, ae);
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               result_rgn, result_phi, ae);
   }
   if (result != nullptr) {
     result_phi->init_req(3, result);
