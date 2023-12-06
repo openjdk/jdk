@@ -80,7 +80,7 @@ public class FieldWriter extends AbstractMemberWriter {
             Content fieldDetailsHeader = getFieldDetailsHeader(target);
             Content memberList = getMemberList();
             writer.addToTableOfContents(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;

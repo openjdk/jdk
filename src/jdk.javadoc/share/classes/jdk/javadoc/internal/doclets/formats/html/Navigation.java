@@ -549,7 +549,7 @@ public class Navigation {
         var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
 
         // Add the breadcrumb navigation links if present.
-        var ulBreadcrumbNav = HtmlTree.UL(HtmlStyle.subNavList);
+        var ulBreadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
         addSummaryLinks(ulBreadcrumbNav);
         subNavContent.addUnchecked(ulBreadcrumbNav);
 

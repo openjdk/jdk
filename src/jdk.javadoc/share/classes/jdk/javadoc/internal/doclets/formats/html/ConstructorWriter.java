@@ -103,7 +103,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
             writer.addToTableOfContents(HtmlIds.CONSTRUCTOR_DETAIL, contents.constructorDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;

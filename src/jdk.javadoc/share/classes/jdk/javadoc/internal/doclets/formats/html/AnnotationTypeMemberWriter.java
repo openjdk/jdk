@@ -91,7 +91,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
             writer.addToTableOfContents(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element member : members) {
                 currentMember = member;

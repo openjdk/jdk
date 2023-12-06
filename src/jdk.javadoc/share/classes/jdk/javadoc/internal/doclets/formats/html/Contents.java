@@ -182,6 +182,7 @@ public class Contents {
     public final Content summaryLabel;
     public final Content systemPropertiesLabel;
     public final Content systemPropertiesSummaryLabel;
+    public final Content tableOfContentsLabel;
     public final Content throws_;
     public final Content treeLabel;
     public final Content typeLabel;
@@ -256,7 +257,7 @@ public class Contents {
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
         helpSubNavLabel = getContent("doclet.Help_Sub_Nav");
-        hideSidebar = getContent("doclet.Hide_sidebar");
+        hideSidebar = getContent("doclet.hide_sidebar");
         hierarchyForAllPackages = getContent("doclet.Hierarchy_For_All_Packages");
         implementation = getContent("doclet.Implementation");
         implementingClassesLabel = getContent("doclet.Implementing_Classes");
@@ -326,7 +327,7 @@ public class Contents {
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
-        showSidebar = getContent("doclet.Show_sidebar");
+        showSidebar = getContent("doclet.show_sidebar");
         specificationLabel = getContent("doclet.Specification");
         specifiedByLabel = getContent("doclet.Specified_By");
         subclassesLabel = getContent("doclet.Subclasses");
@@ -334,6 +335,7 @@ public class Contents {
         summaryLabel = getContent("doclet.Summary");
         systemPropertiesLabel = getContent("doclet.systemProperties");
         systemPropertiesSummaryLabel = getContent("doclet.systemPropertiesSummary");
+        tableOfContentsLabel = getContent("doclet.table_of_contents");
         throws_ = getContent("doclet.Throws");
         treeLabel = getContent("doclet.Tree");
         typeLabel = getContent("doclet.Type");

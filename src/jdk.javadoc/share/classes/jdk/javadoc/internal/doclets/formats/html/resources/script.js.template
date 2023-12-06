@@ -241,34 +241,37 @@ document.addEventListener("readystatechange", (e) => {
         setTopMargin();
     }
     if (sessionStorage.getItem("sidebar") === "hidden") {
-        var outline = document.querySelector(".main-grid aside");
-        if (outline) outline.classList.add("hide-sidebar");
+        const sidebar = document.querySelector(".main-grid nav.toc");
+        if (sidebar) sidebar.classList.add("hide-sidebar");
     }
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
     // Make sure current element is visible in breadcrumb navigation on small displays
-    var subnav = document.querySelector("ul.sub-nav-list");
+    const subnav = document.querySelector("ol.sub-nav-list");
     if (subnav && subnav.lastElementChild) {
         subnav.lastElementChild.scrollIntoView({ behavior: "instant", inline: "start", block: "nearest" });
     }
     // Clone TOC sidebar to header for mobile navigation
-    var navbar = document.querySelector("div#navbar-top");
-    var sidebar = document.querySelector(".main-grid aside")
-    if (sidebar) {
-        sidebar = sidebar.cloneNode(true);
-        navbar.appendChild(sidebar);
+    const navbar = document.querySelector("div#navbar-top");
+    const sidebar = document.querySelector(".main-grid nav.toc");
+    const main = document.querySelector(".main-grid main");
+    const mainnav = navbar.querySelector("ol.nav-list");
+    const toggleButton = document.querySelector("button#navbar-toggle-button");
+    const toc = sidebar ? sidebar.cloneNode(true) : null;
+    if (toc) {
+        navbar.appendChild(toc);
     }
     document.querySelectorAll("input.filter-input").forEach(function(input) {
         input.removeAttribute("disabled");
         input.value = "";
         input.addEventListener("input", function(e) {
-            var pattern = input.value ? input.value.trim()
+            const pattern = input.value ? input.value.trim()
                 .replace(/[\[\]{}()*+?.\\^$|]/g, '\\$&')
                 .replace(/\s+/g, ".*") : "";
             input.nextElementSibling.style.display = pattern ? "inline" : "none";
-            var filter = new RegExp(pattern, "i");
-            input.parentNode.parentNode.querySelectorAll("ul.toc-list li").forEach((li) => {
+            const filter = new RegExp(pattern, "i");
+            input.parentNode.parentNode.querySelectorAll("ol.toc-list li").forEach((li) => {
                 if (filter.test(li.innerText)) {
                     li.removeAttribute("style");
                 } else {
@@ -283,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelectorAll("input.reset-button").forEach((button) => {
         button.removeAttribute("disabled");
         button.addEventListener("click", (e) => {
-            var input = button.previousElementSibling;
+            const input = button.previousElementSibling;
             input.value = "";
             input.dispatchEvent(new InputEvent("input"));
             input.focus();
@@ -296,14 +299,12 @@ document.addEventListener("DOMContentLoaded", function(e) {
         })
     });
     var expanded = false;
-    var mainnav = navbar.querySelector("ul.nav-list");
     var windowWidth;
-    var toggleButton = document.querySelector("button#navbar-toggle-button");
     function collapse() {
         if (expanded) {
             mainnav.removeAttribute("style");
-            if (sidebar) {
-                sidebar.removeAttribute("style");
+            if (toc) {
+                toc.removeAttribute("style");
             }
             toggleButton.classList.remove("expanded")
             toggleButton.setAttribute("aria-expanded", "false");
@@ -316,12 +317,12 @@ document.addEventListener("DOMContentLoaded", function(e) {
         mainnav.style.removeProperty("height");
         var maxHeight = window.innerHeight - subnav.offsetTop + 4;
         var expandedHeight = Math.min(maxHeight, mainnav.scrollHeight + 10);
-        if (sidebar) {
-            sidebar.style.display = "flex";
+        if (toc) {
+            toc.style.display = "flex";
             expandedHeight = Math.min(maxHeight,
-                Math.max(expandedHeight, sidebar.querySelector("div.toc-header").offsetHeight
-                                       + sidebar.querySelector("ul.toc-list").scrollHeight + 10));
-            sidebar.style.height = expandedHeight + "px";
+                Math.max(expandedHeight, toc.querySelector("div.toc-header").offsetHeight
+                                       + toc.querySelector("ol.toc-list").scrollHeight + 10));
+            toc.style.height = expandedHeight + "px";
         }
         mainnav.style.height = expandedHeight + "px";
         toggleButton.classList.add("expanded");
@@ -335,8 +336,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
             expand();
         }
     });
-    if (sidebar) {
-        sidebar.querySelectorAll("a").forEach((link) => {
+    if (toc) {
+        toc.querySelectorAll("a").forEach((link) => {
             link.addEventListener("click", collapse);
         });
     }
@@ -344,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         if (e.key === "Escape") collapse();
     });
     document.querySelector("main").addEventListener("click", collapse);
-    var searchInput = document.getElementById("search-input");
+    const searchInput = document.getElementById("search-input");
     if (searchInput) searchInput.addEventListener("focus", collapse);
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
@@ -359,8 +360,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 hdr.append(...template.content.childNodes);
             }
         });
-    var outline = document.querySelector(".main-grid aside");
-    var main = document.querySelector(".main-grid main");
     var sections;
     var scrollTimeout;
     var scrollTimeoutNeeded;
@@ -368,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     function initSectionData() {
         sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], div[id]"))
             .filter((e) => {
-                return outline.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
+                return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
             }).map((e) => {
                 return {
                     id: e.getAttribute("id"),
@@ -385,7 +384,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }, 50);
     }
     function handleScroll() {
-        if (!outline || !outline.offsetParent || outline.classList.contains("hide-sidebar")) {
+        if (!sidebar || !sidebar.offsetParent || sidebar.classList.contains("hide-sidebar")) {
             return;
         }
         if (scrollTimeout || scrollTimeoutNeeded) {
@@ -413,19 +412,19 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
     }
     function setSelected(hash) {
-        var prev = outline.querySelector("a.current-selection");
+        var prev = sidebar.querySelector("a.current-selection");
         if (prev)
             prev.classList.remove("current-selection");
         prevHash = hash;
         if (hash) {
-            var curr = outline.querySelector("ul.toc-list a[href=\"" + hash + "\"]");
+            var curr = sidebar.querySelector("ol.toc-list a[href=\"" + hash + "\"]");
             if (curr) {
                 curr.classList.add("current-selection");
                 curr.scrollIntoView({ behavior: "instant", block: "nearest" });
             }
         }
     }
-    if (outline) {
+    if (sidebar) {
         initSectionData();
         document.querySelectorAll("a[href^='#']").forEach((link) => {
             link.addEventListener("click", (e) => {
@@ -433,12 +432,12 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 setSelected(link.getAttribute("href"));
             })
         });
-        outline.querySelector("button.hide-sidebar").addEventListener("click", () => {
-            outline.classList.add("hide-sidebar");
+        sidebar.querySelector("button.hide-sidebar").addEventListener("click", () => {
+            sidebar.classList.add("hide-sidebar");
             sessionStorage.setItem("sidebar", "hidden");
         });
-        outline.querySelector("button.show-sidebar").addEventListener("click", () => {
-            outline.classList.remove("hide-sidebar");
+        sidebar.querySelector("button.show-sidebar").addEventListener("click", () => {
+            sidebar.classList.remove("hide-sidebar");
             sessionStorage.removeItem("sidebar");
             initSectionData();
             handleScroll();

@@ -111,7 +111,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
         this.typeElementsWithConstFields = new HashSet<>();
         this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
-        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
+        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
     protected void buildContents() {
         tocBuilder.add(links.createLink(DocLink.fragment(""),
                         Text.of(resources.getText("doclet.Constants_Summary"))))
-                .pushNested(HtmlTree.UL(HtmlStyle.tocList));
+                .pushNested(HtmlTree.OL(HtmlStyle.tocList));
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
@@ -157,7 +157,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        bodyContents.addSideContent(getSideBar(tocBuilder, true));
+        bodyContents.setSideContent(getSideBar(tocBuilder, true));
     }
 
     /**

@@ -74,7 +74,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                 : DocPaths.INDEX_ALL;
         indexLink = links.createLink(dp, resources.getText("doclet.Index"));
-        tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
+        tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
     }
 
     @Override
@@ -86,7 +86,7 @@ public class HelpWriter extends HtmlDocletWriter {
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.HELP))
                 .addMainContent(helpFileContent)
-                .addSideContent(getSideBar(tocBuilder, false))
+                .setSideContent(getSideBar(tocBuilder, false))
                 .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);
     }
@@ -105,7 +105,7 @@ public class HelpWriter extends HtmlDocletWriter {
     protected void addHelpFileContents(Content content) {
         var mainHeading = getContent("doclet.help.main_heading");
         tocBuilder.add(links.createLink(DocLink.fragment(""), mainHeading));
-        tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title, mainHeading))
                 .add(new HtmlTree(TagName.HR))
                 .add(getNavigationSection())
@@ -147,7 +147,7 @@ public class HelpWriter extends HtmlDocletWriter {
         content.add(navSection);
 
         tocBuilder.add(links.createLink(DocLink.fragment(HtmlIds.HELP_NAVIGATION.name()), navHeading));
-        tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
         HtmlTree section;
 
@@ -155,7 +155,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), PageMode.SEARCH);
             var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            var searchExamples = HtmlTree.UL(HtmlStyle.tocList);
+            var searchExamples = HtmlTree.OL(HtmlStyle.tocList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
@@ -197,7 +197,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
         tocBuilder.add(links.createLink(DocLink.fragment(HtmlIds.HELP_PAGES.name()), pageKindsHeading));
-        tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
         HtmlTree section;
 

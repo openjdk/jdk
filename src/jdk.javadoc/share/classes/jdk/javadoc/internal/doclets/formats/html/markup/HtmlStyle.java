@@ -148,6 +148,11 @@ public enum HtmlStyle {
     subNavList,
 
     /**
+     * The class for a {@code nav} element containing a table of contents.
+     */
+    toc,
+
+    /**
      * The class for the {@code div} element representing the header of the table of contents.
      */
     tocHeader,

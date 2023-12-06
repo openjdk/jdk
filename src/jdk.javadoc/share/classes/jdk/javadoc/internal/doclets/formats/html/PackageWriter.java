@@ -42,7 +42,6 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -98,7 +97,7 @@ public class PackageWriter extends HtmlDocletWriter {
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
+        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
         computePackageData();
     }
 
@@ -422,7 +421,7 @@ public class PackageWriter extends HtmlDocletWriter {
 
     protected void addPackageContent(Content packageContent) {
         bodyContents.addMainContent(packageContent);
-        bodyContents.addSideContent(getSideBar(tocBuilder, false));
+        bodyContents.setSideContent(getSideBar(tocBuilder, false));
     }
 
     protected void addPackageFooter() {

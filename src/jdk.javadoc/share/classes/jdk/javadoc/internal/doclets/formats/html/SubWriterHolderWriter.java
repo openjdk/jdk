@@ -25,22 +25,18 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.lang.reflect.Executable;
 import java.util.*;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
@@ -195,7 +191,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public void addClassContent(Content classContent) {
         bodyContents.addMainContent(classContent);
-        bodyContents.addSideContent(getSideBar(tocBuilder, true));
+        bodyContents.setSideContent(getSideBar(tocBuilder, true));
     }
 
     /**

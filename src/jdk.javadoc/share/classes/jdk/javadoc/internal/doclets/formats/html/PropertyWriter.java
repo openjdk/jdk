@@ -75,7 +75,7 @@ public class PropertyWriter extends AbstractMemberWriter {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
             writer.addToTableOfContents(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;

@@ -593,6 +593,13 @@ public class HtmlTree extends Content {
                 .put(HtmlAttr.DISABLED, "");
     }
 
+    /**
+     * Creates an HTML {@code INPUT} element with the given type
+     * and style. The element is marked as initially disabled.
+     * @param type
+     * @param style
+     * @return
+     */
     public static HtmlTree INPUT(String type, HtmlStyle style) {
         return new HtmlTree(TagName.INPUT)
                 .put(HtmlAttr.TYPE, type)
@@ -650,10 +657,6 @@ public class HtmlTree extends Content {
                 .put(HtmlAttr.TYPE, type)
                 .put(HtmlAttr.HREF, href)
                 .put(HtmlAttr.TITLE, title);
-    }
-
-    public static HtmlTree ASIDE(List<? extends Content> contents) {
-        return new HtmlTree(TagName.ASIDE).add(contents);
     }
 
     /**
@@ -726,6 +729,17 @@ public class HtmlTree extends Content {
     public static HtmlTree NOSCRIPT(Content body) {
         return new HtmlTree(TagName.NOSCRIPT)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code OL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree OL(HtmlStyle style) {
+        return new HtmlTree(TagName.OL)
+                .setStyle(style);
     }
 
     /**

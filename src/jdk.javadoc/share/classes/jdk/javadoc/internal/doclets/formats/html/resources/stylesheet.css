@@ -93,7 +93,7 @@ body {
     flex: 2.6 1 0;
     min-width: 240px
 }
-.main-grid aside {
+.main-grid nav.toc {
     background-color: var(--section-background-color);
     border-right: 1px solid var(--border-color);
     flex: 1 1 0;
@@ -106,7 +106,7 @@ body {
     font-family: var(--body-font-family);
     z-index: 1;
 }
-aside div.toc-header {
+nav.toc div.toc-header {
     padding: 15px;
     display: inline-flex;
     align-items: center;
@@ -119,24 +119,24 @@ aside div.toc-header {
     position: sticky;
     min-height: 20px;
 }
-aside > ul.toc-list {
+nav.toc > ol.toc-list {
     overflow: hidden auto;
     overscroll-behavior: contain;
 }
-.main-grid aside div.toc-header {
+.main-grid nav.toc div.toc-header {
     background-color: var(--section-background-color);
     border-right: 1px solid var(--border-color);
     top: var(--nav-height);
     z-index: 1;
     padding: 15px 20px;
 }
-.main-grid aside > ul.toc-list {
+.main-grid nav.toc > ol.toc-list {
     max-height: calc(100vh - var(--nav-height) - 100px);
     /* position: sticky;
     top: calc(var(--nav-height) + 52px); */
     padding-left: 12px;
 }
-.main-grid aside button {
+.main-grid nav.toc button {
     position: absolute;
     bottom: 16px;
     z-index: 3;
@@ -149,53 +149,53 @@ aside > ul.toc-list {
     padding: 6px 10px;
     white-space: nowrap;
 }
-.main-grid aside button.hide-sidebar {
+.main-grid nav.toc button.hide-sidebar {
     right: 0;
 }
-.main-grid aside button.show-sidebar {
+.main-grid nav.toc button.show-sidebar {
     left: 0;
     display: none;
 }
-.main-grid aside button span {
+.main-grid nav.toc button span {
     display: none;
 }
-.main-grid aside button:hover {
+.main-grid nav.toc button:hover {
     /* background-color: var(--subnav-background-color); */
     color: var(--body-text-color);
     border: 1px solid var(--subnav-background-color);
 }
-.main-grid aside button:active {
+.main-grid nav.toc button:active {
      background-color: var(--subnav-background-color);
      color: var(--link-color-active);
  }
-.main-grid aside button:hover span,
-.main-grid aside button:active span  {
+.main-grid nav.toc button:hover span,
+.main-grid nav.toc button:active span  {
     display: inline;
 }
-.main-grid aside button:hover {
+.main-grid nav.toc button:hover {
     box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
 }
-.main-grid aside.hide-sidebar {
+.main-grid nav.toc.hide-sidebar {
     min-width: revert;
     max-width: 28px;
 }
-.main-grid aside.hide-sidebar div.toc-header,
-.main-grid aside.hide-sidebar ul.toc-list,
-.main-grid aside.hide-sidebar button.hide-sidebar {
+.main-grid nav.toc.hide-sidebar div.toc-header,
+.main-grid nav.toc.hide-sidebar ol.toc-list,
+.main-grid nav.toc.hide-sidebar button.hide-sidebar {
     display: none;
 }
-.main-grid aside.hide-sidebar button.show-sidebar {
+.main-grid nav.toc.hide-sidebar button.show-sidebar {
     display: inline;
 }
-aside ul.toc-list {
+nav.toc ol.toc-list {
     list-style: none;
     padding-left: 8px;
     margin: 0;
 }
-aside ul.toc-list ul.toc-list {
+nav.toc ol.toc-list ol.toc-list {
     margin-left: 8px;
 }
-aside ul.toc-list li {
+nav.toc ol.toc-list li {
     margin: 0;
     font-size: var(--nav-font-size);
     overflow-x: hidden;
@@ -203,11 +203,11 @@ aside ul.toc-list li {
 a.current-selection {
     font-weight: bold;
 }
-aside a {
+nav.toc a {
     display: block;
     padding: 8px;
 }
-aside a.current-selection {
+nav.toc a.current-selection {
     background-color: var(--subnav-background-color);
 }
 input.filter-input {
@@ -360,12 +360,12 @@ hr {
     position:relative;
     /* box-sizing: border-box; */
 }
-.top-nav aside {
+.top-nav nav.toc {
     display: none;
     flex-direction: column;
 }
-.top-nav aside button.show-sidebar,
-.top-nav aside button.hide-sidebar {
+.top-nav nav.toc button.show-sidebar,
+.top-nav nav.toc button.hide-sidebar {
     display: none;
 }
 button#navbar-toggle-button {
@@ -391,7 +391,7 @@ div.sub-nav {
     font-size:var(--nav-font-size);
     height: var(--sub-nav-height);
 }
-.sub-nav-list {
+ol.sub-nav-list {
     flex: 1 1 90%;
     line-height: 1.8em;
     display: inline-flex;
@@ -403,17 +403,17 @@ div.sub-nav {
     white-space: nowrap;
     margin:0;
 }
-ul.sub-nav-list::-webkit-scrollbar {
+ol.sub-nav-list::-webkit-scrollbar {
     display: none;
 }
-ul.sub-nav-list li {
+ol.sub-nav-list li {
     list-style:none;
     scroll-snap-align: start;
 }
-ul.sub-nav-list a {
+ol.sub-nav-list a {
     padding: 3px;
 }
-ul.sub-nav-list a.current-selection {
+ol.sub-nav-list a.current-selection {
     background-color: var(--section-background-color);
     border-radius: 4px;
 }
@@ -1315,10 +1315,10 @@ table.striped > tbody > tr > th {
     }
 }
 @media screen and (max-width: 920px) {
-    .main-grid aside {
+    .main-grid nav.toc {
         display: none;
     }
-    .top-nav aside {
+    .top-nav nav.toc {
         display: none;
         position: absolute;
         top: var(--top-nav-height);
@@ -1328,20 +1328,20 @@ table.striped > tbody > tr > th {
         background-color: var(--section-background-color);
         box-sizing: border-box;
     }
-    .top-nav aside div.toc-header {
+    .top-nav nav.toc div.toc-header {
         padding: 6px 15px;
         font-size: 0.94em;
         background-color: var(--section-background-color);
         top: calc(var(--top-nav-height) + 10px);
     }
-    .top-nav aside ul.toc-list li {
+    .top-nav nav.toc ol.toc-list li {
         font-size: 1.04em;
     }
-    aside a:link, aside a:visited {
+    nav.toc a:link, nav.toc a:visited {
         text-decoration:none;
         color:var(--link-color);
     }
-    aside a[href]:hover, aside a[href]:focus {
+    nav.toc a[href]:hover, nav.toc a[href]:focus {
         text-decoration:none;
         color:var(--link-color-active);
     }
@@ -1379,7 +1379,7 @@ table.striped > tbody > tr > th {
     .top-nav div.nav-menu-button {
         flex: 1 1 auto;
     }
-    .sub-nav ul.sub-nav-list {
+    .sub-nav ol.sub-nav-list {
         margin-left: 4px;
         padding-left: 4px;
     }

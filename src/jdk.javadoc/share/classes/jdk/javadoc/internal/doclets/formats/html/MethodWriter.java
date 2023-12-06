@@ -102,7 +102,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             Content methodDetailsHeader = getMethodDetailsHeader(detailsList);
             Content memberList = writer.getMemberList();
             writer.addToTableOfContents(HtmlIds.METHOD_DETAIL, contents.methodDetailLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;

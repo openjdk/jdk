@@ -45,8 +45,6 @@ import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -165,7 +163,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
-        this.tocBuilder = new ListBuilder(HtmlTree.UL(HtmlStyle.tocList));
+        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
         computeModulesData();
     }
 
@@ -892,7 +890,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
-        bodyContents.addSideContent(getSideBar(tocBuilder, false));
+        bodyContents.setSideContent(getSideBar(tocBuilder, false));
     }
 
     protected void addModuleFooter() {

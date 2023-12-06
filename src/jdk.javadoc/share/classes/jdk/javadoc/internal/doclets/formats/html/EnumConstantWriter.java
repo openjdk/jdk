@@ -70,7 +70,7 @@ public class EnumConstantWriter extends AbstractMemberWriter {
             Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(target);
             Content memberList = getMemberList();
             writer.addToTableOfContents(HtmlIds.ENUM_CONSTANT_DETAIL, contents.enumConstantDetailLabel);
-            writer.tocBuilder.pushNested(HtmlTree.UL(HtmlStyle.tocList));
+            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;

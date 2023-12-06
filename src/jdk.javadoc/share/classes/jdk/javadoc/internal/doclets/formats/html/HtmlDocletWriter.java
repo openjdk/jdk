@@ -568,7 +568,9 @@ public abstract class HtmlDocletWriter {
      * @return a content builder
      */
     protected Content getSideBar(Content content, boolean hasFilterInput) {
-        var sidebar = new ContentBuilder();
+        var sidebar = HtmlTree.NAV()
+                .setStyle(HtmlStyle.toc)
+                .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.table_of_contents"));
         var sidebarHeader =  HtmlTree.DIV(HtmlStyle.tocHeader, contents.contentsHeading);
         if (hasFilterInput) {
             sidebarHeader.add(Entity.NO_BREAK_SPACE)
