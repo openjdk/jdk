@@ -188,7 +188,7 @@ import java.util.Objects;
  *       <td>{@link NumberFormat#getPercentInstance(Locale) NumberFormat.getPercentInstance}{@code (getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code compact_short}
- *       <td>{@link NumberFormat#getCompactNumberInstance(Locale, NumberFormat.Style)  NumberFormat.getCompactNumberInstance}{@code (getLocale(),} {@link NumberFormat.Style#SHORT})
+ *       <td>{@link NumberFormat#getCompactNumberInstance(Locale, NumberFormat.Style) NumberFormat.getCompactNumberInstance}{@code (getLocale(),} {@link NumberFormat.Style#SHORT})
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code compact_long}
  *       <td>{@link NumberFormat#getCompactNumberInstance(Locale, NumberFormat.Style) NumberFormat.getCompactNumberInstance}{@code (getLocale(),} {@link NumberFormat.Style#LONG})
@@ -289,11 +289,11 @@ import java.util.Objects;
  * </table>
  *
  * @apiNote For the <i>j_date</i> and <i>j_time</i> {@code FormatTypes} with a
- * <i>subformatPattern</i> {@code FormatStyle}, either {@code FormatType} will work with a
- * time, date, or date and time <i>subformatPattern</i>. As the same method is invoked
- * for both <i>j_date</i> and <i>j_time</i> when using a <i>subformatPattern</i>,
- * a <i>j_date</i> with a time only <i>subformatPattern</i> is equivalent to
- * <i>j_time</i> with the same <i>subformatPattern</i>. This behavior applies to
+ * <i>SubformatPattern</i> {@code FormatStyle}, either {@code FormatType} will work with a
+ * time, date, or date and time <i>SubformatPattern</i>. As the same method is invoked
+ * for both <i>j_date</i> and <i>j_time</i> when using a <i>SubformatPattern</i>,
+ * a <i>j_date</i> with a time only <i>SubformatPattern</i> is equivalent to
+ * <i>j_time</i> with the same <i>SubformatPattern</i>. This behavior applies to
  * the <i>date</i> and <i>time</i> {@code FormatTypes} as well.
  *
  * <h3>DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
@@ -302,8 +302,8 @@ import java.util.Objects;
  * constant field name can be used as a {@code FormatType}. There are no associated {@code FormatStyles}
  * for these {@code FormatTypes}. For example, the {@code FormatType} <i>iso_date_time</i>
  * returns {@link DateTimeFormatter#ISO_DATE_TIME}{@code .toFormat()}. Similar
- * to <i>j_time</i> and <i>j_date</i>, these {@code FormatTypes} should only be
- * used to format java.time objects.
+ * to <i>j_time</i> and <i>j_date</i>, these {@code FormatTypes} should not be used
+ * with {@link Date} and are intended to be used with the {@link java.time} package.
  *
  * <h3>Usage Information</h3>
  *
@@ -369,10 +369,10 @@ import java.util.Objects;
  * // objs now equals {new String("z")}
  * }
  *
- * <h3>Formatting java.time versus java.util.Date</h3>
+ * <h3>Formatting Time and Date</h3>
  *
- * MessageFormat provides patterns that support both {@link java.time} and
- * {@link Date} objects. Consider the 3 following examples,
+ * MessageFormat provides patterns that support both the {@link java.time} package
+ * and the {@link Date} type. Consider the 3 following examples,
  * with a date of 11/16/2023.
  *
  * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
@@ -582,7 +582,7 @@ public class MessageFormat extends Format {
                         case '}':
                             if (braceStack == 0) {
                                 part = SEG_RAW;
-                                // Set the Subformat
+                                // Set the subformat
                                 setFormatFromPattern(i, formatNumber, segments);
                                 formatNumber++;
                                 // throw away other segments

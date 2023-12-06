@@ -498,7 +498,7 @@ public abstract class DateFormat extends Format {
             this.value = value;
         }
 
-        public int getValue() {
+        int getValue() {
             return value;
         }
     }
