@@ -123,10 +123,16 @@ final class FieldBuilder {
             return true;
         }
 
+        if (fieldName.equals("stackTrace.topFrame.class")) {
+            configureTopFrameClassField();
+            return true;
+        }
+
         if (fieldName.equals("stackTrace.topFrame")) {
             configureTopFrameField();
             return true;
         }
+
         if (fieldName.equals("id") && field.type.getName().equals("jdk.ActiveSetting")) {
             configureEventTypeIdField();
             return true;
@@ -171,6 +177,20 @@ final class FieldBuilder {
         field.valueGetter = e -> {
             RecordedStackTrace t = e.getStackTrace();
             return t != null ? t.getFrames().getFirst() : null;
+        };
+        field.lexicalSort = true;
+    }
+
+    private void configureTopFrameClassField() {
+        field.alignLeft = true;
+        field.label = "Class";
+        field.dataType = "java.lang.Class";
+        field.valueGetter = e -> {
+            RecordedStackTrace t = e.getStackTrace();
+            if (t == null) {
+                return null;
+            }
+            return t.getFrames().getFirst().getMethod().getType();
         };
         field.lexicalSort = true;
     }
@@ -379,7 +399,7 @@ final class FieldBuilder {
             field.alignLeft = false;
             field.lexicalSort = false;
         }
-        if (aggregator == Aggregator.LIST) {
+        if (aggregator == Aggregator.LIST || aggregator == Aggregator.SET) {
             field.alignLeft = true;
             field.lexicalSort = true;
         }
@@ -392,6 +412,7 @@ final class FieldBuilder {
             case SUM -> "Total " + field.label;
             case UNIQUE -> "Unique Count " + field.label;
             case LIST -> field.label + "s";
+            case SET -> field.label + "s";
             case MISSING -> field.label;
             case DIFFERENCE -> "Difference " + field.label;
             case MEDIAN -> "Median " + field.label;
