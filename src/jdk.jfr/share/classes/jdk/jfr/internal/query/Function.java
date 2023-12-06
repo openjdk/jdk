@@ -30,7 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 abstract class Function {
@@ -50,7 +50,7 @@ abstract class Function {
         }
 
         if (aggregator == Aggregator.SET) {
-            return new Container(new HashSet<>());
+            return new Container(new LinkedHashSet<>());
         }
 
         if (aggregator == Aggregator.DIFFERENCE) {
@@ -382,7 +382,7 @@ abstract class Function {
     // **** UNIQUE ****
 
     private static final class Unique extends Function {
-        private final Set<Object> unique = new HashSet<>();
+        private final Set<Object> unique = new LinkedHashSet<>();
 
         @Override
         public void add(Object value) {
