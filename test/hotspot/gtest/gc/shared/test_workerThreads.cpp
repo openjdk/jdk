@@ -99,13 +99,9 @@ static uint expected_ids_bitset(int expected_workers) {
   return (1 << expected_workers) - 1;
 }
 
-static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller_runs, NumberSeq* stats) {
+static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller_runs) {
   ParallelTask task(num_workers, caller_runs);
-  {
-    jlong start = os::javaTimeNanos();
-    workers->run_task(&task);
-    stats->add(os::javaTimeNanos() - start);
-  }
+  workers->run_task(&task);
   EXPECT_EQ(num_workers, task.actual_workers());
   EXPECT_EQ(expected_ids_bitset(num_workers), task.actual_ids_bitset());
   if (!caller_runs) {
@@ -113,8 +109,15 @@ static void basic_run_with(WorkerThreads* workers, uint num_workers, bool caller
   }
 }
 
+static void perf_run_with(WorkerThreads* workers, bool caller_runs, NumberSeq* stats) {
+  PerfTask task(caller_runs);
+  jlong start = os::javaTimeNanos();
+  workers->run_task(&task);
+  stats->add(os::javaTimeNanos() - start);
+}
+
 TEST_VM(WorkerThreads, basic) {
-  static const int TRIES = 100000;
+  static const int TRIES = 1000;
   static const uint max_workers = os::processor_count();
   static const uint half_workers = max_workers / 2;
   static const uint min_workers = 1;
@@ -122,33 +125,47 @@ TEST_VM(WorkerThreads, basic) {
   WorkerThreads* workers = new WorkerThreads("test", max_workers);
   workers->initialize_workers();
 
-  NumberSeq seq_full, seq_full_caller, seq_half, seq_half_caller, seq_min, seq_min_caller;
-
   // Full parallelism
   workers->set_active_workers(max_workers);
   for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, max_workers, false, &seq_full);
-  }
-  for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, max_workers,   true, &seq_full_caller);
+    basic_run_with(workers, max_workers, false);
+    basic_run_with(workers, max_workers, true);
   }
 
   // Half parallelism
   workers->set_active_workers(half_workers);
   for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, half_workers, false, &seq_half);
-  }
-  for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, half_workers,  true, &seq_half_caller);
+    basic_run_with(workers, half_workers, false);
+    basic_run_with(workers, half_workers,  true);
   }
 
   // Min parallelism
   workers->set_active_workers(min_workers);
   for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, min_workers,  false, &seq_min);
+    basic_run_with(workers, min_workers,  false);
+    basic_run_with(workers, min_workers,   true);
+  }
+}
+
+TEST_VM(WorkerThreads, perf) {
+  static const int TRIES = 50000;
+  static const uint max_workers = os::processor_count();
+  static const uint half_workers = max_workers / 2;
+  static const uint min_workers = 1;
+
+  WorkerThreads* workers = new WorkerThreads("test", max_workers);
+  workers->initialize_workers();
+
+
+  // ---- Full parallelism
+  NumberSeq seq_full, seq_full_caller;
+
+  workers->set_active_workers(max_workers);
+  for (int t = 0; t < TRIES; t++) {
+    perf_run_with(workers, false, &seq_full);
   }
   for (int t = 0; t < TRIES; t++) {
-    basic_run_with(workers, min_workers,   true, &seq_min_caller);
+    perf_run_with(workers, true, &seq_full_caller);
   }
 
   tty->print_cr("Full:");
@@ -159,6 +176,18 @@ TEST_VM(WorkerThreads, basic) {
   seq_full_caller.dump();
   tty->cr();
 
+  // ---- Half parallelism
+
+  NumberSeq seq_half, seq_half_caller;
+
+  workers->set_active_workers(half_workers);
+  for (int t = 0; t < TRIES; t++) {
+    perf_run_with(workers, false, &seq_half);
+  }
+  for (int t = 0; t < TRIES; t++) {
+    perf_run_with(workers, true, &seq_half_caller);
+  }
+
   tty->print_cr("Half:");
   seq_half.dump();
   tty->cr();
@@ -166,6 +195,18 @@ TEST_VM(WorkerThreads, basic) {
   tty->print_cr("Half + caller runs:");
   seq_half_caller.dump();
   tty->cr();
+
+  // ---- Min parallelism
+
+  NumberSeq seq_min, seq_min_caller;
+
+  workers->set_active_workers(min_workers);
+  for (int t = 0; t < TRIES; t++) {
+    perf_run_with(workers, false, &seq_min);
+  }
+  for (int t = 0; t < TRIES; t++) {
+    perf_run_with(workers, true, &seq_min_caller);
+  }
 
   tty->print_cr("Min:");
   seq_min.dump();
