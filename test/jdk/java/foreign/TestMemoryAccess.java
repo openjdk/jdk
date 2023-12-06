@@ -87,7 +87,7 @@ public class TestMemoryAccess {
                 if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
-            } catch (IllegalArgumentException ex) {
+            } catch (UnsupportedOperationException ex) {
                 if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
@@ -121,7 +121,7 @@ public class TestMemoryAccess {
                 if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
-            } catch (IllegalArgumentException ex) {
+            } catch (UnsupportedOperationException ex) {
                 if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
@@ -185,7 +185,7 @@ public class TestMemoryAccess {
                 if (isRO) {
                     throw new AssertionError(); //not ok, memory should be immutable
                 }
-            } catch (IllegalArgumentException ex) {
+            } catch (UnsupportedOperationException ex) {
                 if (!isRO) {
                     throw new AssertionError(); //we should not have failed!
                 }
