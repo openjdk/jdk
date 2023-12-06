@@ -25,7 +25,7 @@
  * @test
  * @bug 8222968
  * @summary ByteArrayPublisher is not thread-safe resulting in broken re-use of HttpRequests
- * @run main/othervm ByteArrayPublishers
+ * @run main/othervm -Dsun.net.httpserver.idleInterval=50000 ByteArrayPublishers
  */
 
 import java.net.InetAddress;

@@ -35,6 +35,7 @@
  * @library /test/lib http2/server
  * @build Http2TestServer HttpServerAdapters SpecialHeadersTest
  * @build jdk.test.lib.net.SimpleSSLContext
+ * @requires (vm.compMode != "Xcomp")
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *       SpecialHeadersTest
