@@ -866,29 +866,40 @@ class TestClosureAtGrow : public TestClosure<E> {
     ASSERT_EQ(a->length(), 0);
 
     a->reserve(100);
+
+    for (int j = 1; j < 1000; j++) {
+      int new_len = j * 7;
+      a->at_grow(new_len - 1, value_factory<E>(j));
+      ASSERT_EQ(a->length(), new_len);
+      check_alive_elements_for_type<E>(new_len);
+
+      // Check elements
+      for (int k = 0; k < new_len; k++) {
+        EXPECT_EQ(a->at_grow(k, value_factory<E>(-1)), value_factory<E>(k / 7 + 1));
+      }
+      ASSERT_EQ(a->length(), new_len);
+    }
+
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
     int old_capacity = a->capacity();
-
-    a->at_grow(10, value_factory<E>(42));
-    ASSERT_EQ(a->length(), 11);
-    check_alive_elements_for_type<E>(11);
+    a->at_grow(old_capacity - 1, value_factory<E>(0));
+    ASSERT_EQ(a->length(), old_capacity);
     ASSERT_EQ(a->capacity(), old_capacity);
+    check_alive_elements_for_type<E>(old_capacity);
 
-    // Check elements
-    for (int i = 0; i < 10; i++) {
-      EXPECT_EQ(a->at(i), value_factory<E>(42));
-    }
+    for (int j = 1; j < 1000; j++) {
+      int target = j * 77;
+      a->at_put_grow(target, value_factory<E>(target), value_factory<E>(-2));
+      int new_length = MAX2(target + 1, old_capacity);
+      ASSERT_EQ(a->length(), new_length);
 
-    int new_len = 2 * old_capacity;
-    a->at_grow(new_len - 1, value_factory<E>(666));
-    ASSERT_EQ(a->length(), new_len);
-    check_alive_elements_for_type<E>(new_len);
-
-    // Check elements
-    for (int i = 0; i < 10; i++) {
-      EXPECT_EQ(a->at(i), value_factory<E>(42));
-    }
-    for (int i = 10; i < new_len; i++) {
-      EXPECT_EQ(a->at(i), value_factory<E>(666));
+      // // Check elements
+      // for (int k = 0; k =< new_length; k++) {
+      //   EXPECT_EQ(a->at_grow(k, value_factory<E>(-1)), value_factory<E>(k / 7 + 1));
+      // }
     }
 
     // TODO
