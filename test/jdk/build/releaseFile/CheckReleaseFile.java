@@ -47,10 +47,10 @@ public class CheckReleaseFile {
         System.out.println("JDK Path : " + jdkPath);
         System.out.println("Runtime Name : " + runtime);
 
-        readReleaseFile(Path.of(jdkPath));
+        checkReleaseFile(Path.of(jdkPath));
     }
 
-    private static void readReleaseFile(Path javaHome) throws IOException {
+    private static void checkReleaseFile(Path javaHome) throws IOException {
         String source = null;
         String runtimeVersion = null;
 
