@@ -104,6 +104,9 @@ public final class SunNativeProvider extends Provider {
                                         // Full path needed, DLL is in jre/bin
                                         StaticProperty.javaHome() + "\\bin\\sspi_bridge.dll",
                                 };
+                                case AIX -> new String[]{
+                                        "/opt/freeware/lib64/libgssapi_krb5.so",
+                                };
                                 default -> new String[0];
                             };
                         } else {

@@ -47,10 +47,8 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @bug 8130360 8183310
  * @summary Test security provider in different combination of modular option
  *          defined with(out) service description.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.module
+ * @enablePreview
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
  *        jdk.test.lib.util.ModuleInfoWriter

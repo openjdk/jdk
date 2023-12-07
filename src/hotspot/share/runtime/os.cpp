@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -39,10 +40,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.inline.hpp"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/nmtPreInit.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -63,11 +69,6 @@
 #include "runtime/vm_version.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/mallocHeader.inline.hpp"
-#include "services/memTracker.inline.hpp"
-#include "services/nmtPreInit.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
@@ -630,7 +631,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
-    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // No need to fill with 0 because CDS static dumping doesn't use these
     // early allocations.
     return rc;
   }
@@ -661,7 +662,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
     ::memset(inner_ptr, 0, size);
   } else {
@@ -1809,7 +1810,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
 }
 
 char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
-  char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
+  char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
@@ -1817,7 +1818,6 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
     log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
                  SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
   }
-
   return result;
 }
 
@@ -1873,10 +1873,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
-#define ARGSFMT " range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMT "range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
 #define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
 
-  log_trace(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
+  log_debug(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
 
   assert(is_power_of_2(alignment), "alignment invalid (" ARGSFMT ")", ARGSFMTARGS);
   assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
@@ -1986,7 +1986,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     const unsigned candidate_offset = points[i];
     char* const candidate = lo_att + candidate_offset * alignment_adjusted;
     assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-    result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    result = SimulateFullAddressSpace ? nullptr : os::pd_attempt_reserve_memory_at(candidate, bytes, false);
     if (!result) {
       log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
     }
@@ -2004,6 +2004,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
   return result;
 #undef ARGSFMT

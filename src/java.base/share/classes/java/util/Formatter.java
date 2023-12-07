@@ -56,6 +56,7 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
@@ -2048,6 +2049,11 @@ public final class Formatter implements Closeable, Flushable {
     // Use grouping separator from cached DecimalFormatSymbols.
     private static char getGroupingSeparator(Locale locale) {
         return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
+    }
+
+    // Use minus sign from cached DecimalFormatSymbols.
+    private static char getMinusSign(Locale locale) {
+        return locale == null ? '-' : getDecimalFormatSymbols(locale).getMinusSign();
     }
 
     private Appendable a;
@@ -4490,7 +4496,20 @@ public final class Formatter implements Closeable, Flushable {
                 }
                 case DateTime.ISO_STANDARD_DATE: { // 'F' (%Y-%m-%d)
                     char sep = '-';
-                    print(fmt, sb, t, DateTime.YEAR_4, l).append(sep);
+                    ChronoField yearField;
+                    if (t.query(TemporalQueries.chronology()) instanceof IsoChronology) {
+                        yearField = ChronoField.YEAR;
+                    } else {
+                        yearField = ChronoField.YEAR_OF_ERA;
+                    }
+                    int year = t.get(yearField);
+                    if (year < 0) {
+                        sb.append(getMinusSign(l));
+                        year = -year;
+                    } else if (year > 9999) {
+                        sb.append('+');
+                    }
+                    sb.append(localizedMagnitude(fmt, null, year, Flags.ZERO_PAD, 4, l)).append(sep);
                     print(fmt, sb, t, DateTime.MONTH, l).append(sep);
                     print(fmt, sb, t, DateTime.DAY_OF_MONTH_0, l);
                     break;

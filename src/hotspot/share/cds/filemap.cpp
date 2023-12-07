@@ -45,13 +45,14 @@
 #include "classfile/vmSymbols.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -63,7 +64,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/classpathStream.hpp"
@@ -162,8 +162,8 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
 
-    const char* default_base_archive_name = Arguments::get_default_shared_archive_path();
-    const char* current_base_archive_name = Arguments::GetSharedArchivePath();
+    const char* default_base_archive_name = CDSConfig::default_archive_path();
+    const char* current_base_archive_name = CDSConfig::static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -194,12 +194,12 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   set_base_archive_name_offset((unsigned int)base_archive_name_offset);
   set_base_archive_name_size((unsigned int)base_archive_name_size);
   set_common_app_classpath_prefix_size((unsigned int)common_app_classpath_prefix_size);
-  set_magic(DynamicDumpSharedSpaces ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
+  set_magic(CDSConfig::is_dumping_dynamic_archive() ? CDS_DYNAMIC_ARCHIVE_MAGIC : CDS_ARCHIVE_MAGIC);
   set_version(CURRENT_CDS_ARCHIVE_VERSION);
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(Arguments::GetSharedArchivePath());
+    copy_base_archive_name(CDSConfig::static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -213,7 +213,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
-  _use_full_module_graph = MetaspaceShared::use_full_module_graph();
+  _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -235,7 +235,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _mapped_base_address = (char*)SharedBaseAddress;
   _allow_archiving_with_java_agent = AllowArchivingWithJavaAgent;
 
-  if (!DynamicDumpSharedSpaces) {
+  if (!CDSConfig::is_dumping_dynamic_archive()) {
     set_shared_path_table(info->_shared_path_table);
   }
 }
@@ -291,7 +291,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
-  st->print_cr("- use_full_module_graph           %d", _use_full_module_graph);
+  st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
   st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
 }
 
@@ -397,23 +397,25 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
       log_warning(cds)("directory is not empty: %s", name);
       ok = false;
     }
-  } else if ((has_timestamp() && _timestamp != st.st_mtime) ||
-             _filesize != st.st_size) {
-    ok = false;
-    if (PrintSharedArchiveAndExit) {
-      log_warning(cds)(_timestamp != st.st_mtime ?
-                                 "Timestamp mismatch" :
-                                 "File size mismatch");
-    } else {
-      const char* bad_jar_msg = "A jar file is not the one used while building the shared archive file:";
-      log_warning(cds)("%s %s", bad_jar_msg, name);
-      if (!log_is_enabled(Info, cds)) {
-        log_warning(cds)("%s %s", bad_jar_msg, name);
-      }
-      if (_timestamp != st.st_mtime) {
-        log_warning(cds)("%s timestamp has changed.", name);
+  } else {
+    bool size_differs = _filesize != st.st_size;
+    bool time_differs = has_timestamp() && _timestamp != st.st_mtime;
+    if (time_differs || size_differs) {
+      ok = false;
+      if (PrintSharedArchiveAndExit) {
+        log_warning(cds)(time_differs ? "Timestamp mismatch" : "File size mismatch");
       } else {
-        log_warning(cds)("%s size has changed.", name);
+        const char* bad_file_msg = "This file is not the one used while building the shared archive file:";
+        log_warning(cds)("%s %s", bad_file_msg, name);
+        if (!log_is_enabled(Info, cds)) {
+          log_warning(cds)("%s %s", bad_file_msg, name);
+        }
+        if (time_differs) {
+          log_warning(cds)("%s timestamp has changed.", name);
+        }
+        if (size_differs) {
+          log_warning(cds)("%s size has changed.", name);
+        }
       }
     }
   }
@@ -916,7 +918,7 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
 
 bool FileMapInfo::check_module_paths() {
   const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = Arguments::num_archives(rp);
+  int num_paths = CDSConfig::num_archives(rp);
   if (num_paths != header()->num_module_paths()) {
     return false;
   }
@@ -932,7 +934,7 @@ bool FileMapInfo::validate_shared_path_table() {
 
   // Load the shared path table info from the archive header
   _shared_path_table = header()->shared_path_table();
-  if (DynamicDumpSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive()) {
     // Only support dynamic dumping with the usage of the default CDS archive
     // or a simple base archive.
     // If the base layer archive contains additional path component besides
@@ -942,13 +944,13 @@ bool FileMapInfo::validate_shared_path_table() {
     // to include the application path and stored in the top layer archive.
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
     if (header()->app_class_paths_start_index() > 1) {
-      DynamicDumpSharedSpaces = false;
+      CDSConfig::disable_dumping_dynamic_archive();
       log_warning(cds)(
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
       if (!check_module_paths()) {
-        DynamicDumpSharedSpaces = false;
+        CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
       }
@@ -1248,7 +1250,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 
   const char* base = file_helper.base_archive_name();
   if (base == nullptr) {
-    *base_archive_name = Arguments::get_default_shared_archive_path();
+    *base_archive_name = CDSConfig::default_archive_path();
   } else {
     *base_archive_name = os::strdup_check_oom(base);
   }
@@ -1523,7 +1525,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   } else if (HeapShared::is_heap_region(region)) {
     assert(HeapShared::can_write(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
-    assert(!DynamicDumpSharedSpaces, "must be");
+    assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
     requested_base = (char*)ArchiveHeapWriter::requested_address();
     if (UseCompressedOops) {
       mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
@@ -1968,7 +1970,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    MetaspaceShared::disable_full_module_graph();
+    CDSConfig::disable_loading_full_module_graph();
   }
 }
 
@@ -2272,8 +2274,8 @@ bool FileMapInfo::initialize() {
     } else {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
-        DynamicDumpSharedSpaces = true;
-        ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
+        CDSConfig::enable_dumping_dynamic_archive();
+        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
       }
       return false;
     }
@@ -2387,9 +2389,9 @@ bool FileMapHeader::validate() {
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
-  if (!_use_full_module_graph) {
-    MetaspaceShared::disable_full_module_graph();
-    log_info(cds)("full module graph: disabled because archive was created without full module graph");
+  if (is_static() && !_has_full_module_graph) {
+    // Only the static archive can contain the full module graph.
+    CDSConfig::disable_loading_full_module_graph("archive was created without full module graph");
   }
 
   return true;
