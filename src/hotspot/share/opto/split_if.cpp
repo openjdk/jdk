@@ -737,6 +737,4 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
-
-  C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
 }
