@@ -22,13 +22,16 @@
  */
 
 #include <sleef.h>
+#include <vect_math.h>
 
 #define DEFINE_VECTOR_MATH_UNARY(op, type) \
+VMATH_EXPORT                               \
 type op##advsimd(type input) {             \
   return Sleef_##op##advsimd(input);       \
 }
 
 #define DEFINE_VECTOR_MATH_BINARY(op, type)   \
+VMATH_EXPORT                                  \
 type op##advsimd(type input1, type input2) {  \
   return Sleef_##op##advsimd(input1, input2); \
 }
