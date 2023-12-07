@@ -340,7 +340,7 @@ void VirtualMemoryView::merge_mapped(OffsetRegionStorage& ranges) {
     // Take an explicit copy, this is necessary because
     // the push might invalidate the reference and then SIGSEGV.
     const TrackedOffsetRange potential_range = ranges.at(i);
-    const Range potential_physical{potential_range.physical_address, potential_range.end()};
+    const Range potential_physical{potential_range.physical_address, potential_range.size};
     if (merging_range.end() >=
         potential_range.start // There's overlap, known because of pre-condition
         && _stack_storage->get(merging_range.stack_idx)
