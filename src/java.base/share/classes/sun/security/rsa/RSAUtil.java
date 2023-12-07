@@ -183,7 +183,7 @@ public class RSAUtil {
      * Encode the digest without the NULL params, return the to-be-signed data.
      * This is only used by SunRsaSign.
      */
-    public static byte[] encodeSignatureWithoutNULL(ObjectIdentifier oid, byte[] digest) {
+    static byte[] encodeSignatureWithoutNULL(ObjectIdentifier oid, byte[] digest) {
         DerOutputStream out = new DerOutputStream();
         out.write(DerValue.tag_Sequence, new DerOutputStream().putOID(oid));
         out.putOctetString(digest);
