@@ -277,7 +277,7 @@
                                                                             \
   develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
-          range(0, max_jint)                                                \
+          range(0, 1*M)                                                     \
                                                                             \
   develop(bool, TraceFPUStack, false,                                       \
           "Trace emulation of the FPU stack (intel only)")                  \

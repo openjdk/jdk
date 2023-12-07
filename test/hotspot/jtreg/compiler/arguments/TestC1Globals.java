@@ -23,31 +23,11 @@
 
 /**
  * @test
- * @bug 8318817
- * @requires vm.debug
- * @summary Test flag with large value
- *
- * @run main/othervm -XX:NMethodSizeLimit=351658240
- *                   compiler.arguments.TestC1Globals
- */
-
-/**
- * @test
- * @bug 8318817
- * @requires vm.debug
- * @summary Test flag with large value
- *
- * @run main/othervm -XX:NMethodSizeLimit=224001703
- *                   compiler.arguments.TestC1Globals
- */
-
-/**
- * @test
  * @bug 8316653
  * @requires vm.debug
- * @summary Test flag with max value
+ * @summary Test flag with max value.
  *
- * @run main/othervm -XX:NMethodSizeLimit=2147483647
+ * @run main/othervm -XX:NMethodSizeLimit=1M
  *                   compiler.arguments.TestC1Globals
  */
 
@@ -56,36 +36,21 @@
  * @bug 8318817
  * @requires vm.debug
  * @requires os.family == "linux"
- * @summary Test flag with large value combined with transparent huge pages on
+ * @summary Test flag with max value combined with transparent huge pages on
  *          Linux.
  *
- * @run main/othervm -XX:NMethodSizeLimit=351658240
+ * @run main/othervm -XX:NMethodSizeLimit=1M
  *                   -XX:+UseTransparentHugePages
  *                   compiler.arguments.TestC1Globals
- *
- */
-
-/**
- * @test
- * @bug 8318817
- * @requires vm.debug
- * @requires os.family == "linux"
- * @summary Test flag with large value combined with transparent huge pages on
- *          Linux.
- *
- * @run main/othervm -XX:NMethodSizeLimit=224001703
- *                   -XX:+UseTransparentHugePages
- *                   compiler.arguments.TestC1Globals
- *
  */
 
 /**
  * @test
  * @bug 8320682
  * @requires vm.debug
- * @summary Test flag with large value and specific compilation.
+ * @summary Test flag with max value and specific compilation.
  *
- * @run main/othervm -XX:NMethodSizeLimit=224001703
+ * @run main/othervm -XX:NMethodSizeLimit=1M
  *                   -XX:CompileOnly=java.util.HashMap::putMapEntries
  *                   -Xcomp
  *                   compiler.arguments.TestC1Globals
