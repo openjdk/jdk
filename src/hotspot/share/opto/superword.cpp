@@ -3874,6 +3874,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const MemNode* align_to_ref = _align_to_ref;
   assert(align_to_ref != nullptr, "align_to_ref must be set");
   assert(lp()->is_main_loop(), "can only do alignment for main loop");
+
+  // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = lp()->pre_loop_end()->limit()->as_Opaque1();
 
   // Current pre-loop limit.
@@ -3964,12 +3966,12 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // We chose an aw that is the maximal possible vector width for the type of
   // align_to_ref.
-  int aw       = vector_width_in_bytes(align_to_ref);
-  int stride   = iv_stride();
-  int scale    = align_to_ref_p.scale_in_bytes();
-  int offset   = align_to_ref_p.offset_in_bytes();
-  Node* base   = align_to_ref_p.adr();
-  Node* invar  = align_to_ref_p.invar();
+  const int aw       = vector_width_in_bytes(align_to_ref);
+  const int stride   = iv_stride();
+  const int scale    = align_to_ref_p.scale_in_bytes();
+  const int offset   = align_to_ref_p.offset_in_bytes();
+  Node* base         = align_to_ref_p.adr();
+  Node* invar        = align_to_ref_p.invar();
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -4008,7 +4010,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
          scale  != 0 && is_power_of_2(abs(scale))  &&
          abs(scale) < aw, "otherwise we cannot affect alignment with pre-loop");
 
-  int V = aw / abs(scale);
+  const int V = aw / abs(scale);
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -4017,7 +4019,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
 
   // 1: Compute pm_E
-  bool is_minus = scale * stride > 0;
+  const bool is_minus = scale * stride > 0;
 
   // 1.1: offset
   Node* pm_E = _igvn.intcon(is_minus ? -offset : offset);
