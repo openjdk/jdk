@@ -281,7 +281,8 @@ public class ConfigFileTest {
         ex.setMasterFile(filesMgr.newMasterFile());
         ex.setExtraFile(extraFile, Executor.ExtraMode.HTTP_SERVED, true);
         ex.assertError("InternalError: Cannot resolve '" + file0.fileName +
-                "' relative path when included from a URL properties file");
+                "' relative path when included from a non-regular " +
+                "properties file (e.g. HTTP served file)");
     }
 
     static void testCannotIncludeCycles(Executor ex, FilesManager filesMgr)

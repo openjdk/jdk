@@ -177,7 +177,7 @@ public final class Security {
             Path path;
             try {
                 path = Path.of(propFile);
-                if (!path.toFile().exists()) {
+                if (!Files.exists(path)) {
                     return new FileNotFoundException(propFile);
                 }
             } catch (InvalidPathException e) {
@@ -234,7 +234,8 @@ public final class Security {
                     if (currentPath == null) {
                         throw new InternalError("Cannot resolve '" +
                                 expPropFile + "' relative path when included " +
-                                "from a URL properties file");
+                                "from a non-regular properties file " +
+                                "(e.g. HTTP served file)");
                     }
                     path = currentPath.resolveSibling(path);
                 }
@@ -247,9 +248,13 @@ public final class Security {
 
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
-            path = path.toRealPath();
-            if (path.toFile().isDirectory()) {
+            boolean isRegularFile = Files.isRegularFile(path);
+            if (isRegularFile) {
+                path = path.toRealPath();
+            } else if (Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
+            } else {
+                path = path.toAbsolutePath();
             }
             if (activePaths.contains(path)) {
                 throw new InternalError("Cyclic include of '" + path + "'");
@@ -257,7 +262,7 @@ public final class Security {
             try (InputStream is = Files.newInputStream(path)) {
                 reset(mode);
                 Path previousPath = currentPath;
-                currentPath = path;
+                currentPath = isRegularFile ? path : null;
                 activePaths.add(path);
                 try {
                     debugLoad(true, path);
