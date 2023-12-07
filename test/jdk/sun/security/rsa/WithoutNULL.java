@@ -24,7 +24,8 @@
 /**
  * @test
  * @bug 8320597
- * @summary RSA signature verification fails on signed data that does not encode params correctly
+ * @summary Verify RSA signature with omitted digest params (should be encoded as NULL)
+ * for backward compatibility
  */
 import java.security.KeyFactory;
 import java.security.Signature;
