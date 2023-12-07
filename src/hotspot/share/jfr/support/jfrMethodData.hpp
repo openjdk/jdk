@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  *
  */
 
-#ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
-#define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
+#ifndef SHARE_JFR_SUPPORT_JFRMETHODDATA_HPP
+#define SHARE_JFR_SUPPORT_JFRMETHODDATA_HPP
 
-#include "jfr/utilities/jfrAllocation.hpp"
+#include "memory/allocation.hpp"
 
-class JfrCheckpointWriter;
+class Method;
+class JavaThread;
 
-class JfrTypeSet : AllStatic {
+class JfrMethodData : AllStatic {
  public:
-  static void clear(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer);
-  static size_t serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint);
-  static size_t on_unloading_classes(JfrCheckpointWriter* writer);
+  static bool mark_deprecated_call_site(Method* method, int bci, JavaThread* jt);
 };
 
-#endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESET_HPP
+#endif // SHARE_JFR_SUPPORT_JFRMETHODDATA_HPP
