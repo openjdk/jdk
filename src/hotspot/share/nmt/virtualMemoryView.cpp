@@ -27,6 +27,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/virtualMemoryView.hpp"
 #include "runtime/os.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
 uint32_t VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
@@ -169,19 +170,32 @@ void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& sp
 }
 
 void VirtualMemoryView::register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
-  // Small optimization: Is the next commit overlapping with the last one? Then we don't need to push.
+  NativeCallStackStorage::StackIndex idx = _stack_storage->push(stack);
+  // Small optimization: While the next commit overlapping with the last one we can merge without pushing.
   if (storage.length() > 0) {
-    TrackedRange& range = storage.at(storage.length() - 1);
-    if ((overlaps(range, Range{base_addr, size})
-         || adjacent(range, Range{base_addr, size}))
+    int i = 1;
+    int len = storage.length();
+    TrackedRange base_range{base_addr, size, idx, flag};
+    TrackedRange& range = storage.at(len - i);
+
+    // Do the merging repeatedly.
+    while ((overlaps(range, base_range)
+         || adjacent(range, base_range))
         && _stack_storage->get(range.stack_idx).equals(stack)
         && range.flag == flag) {
-      range.start = MIN2(base_addr, range.start);
-      range.size = MAX2(base_addr+size, range.end()) - range.start;
+      base_range.start = MIN2(base_addr, range.start);
+      base_range.size = MAX2(base_addr+size, range.end()) - range.start;
+      i++;
+      range = storage.at(len - i);
+    }
+    // Did we merge any?
+    if (i > 1) {
+      storage.remove_range(len - i+1, len);
+      storage.push(base_range);
       return;
     }
+    // Otherwise pass onto regular case.
   }
-  NativeCallStackStorage::StackIndex idx = _stack_storage->push(stack);
   storage.push(TrackedRange{base_addr, size, idx, flag});
 
   sort_regions(storage);
