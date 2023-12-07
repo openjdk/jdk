@@ -145,7 +145,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
   size_t bucket = get_bucket(cur_idx);
   if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-    if (!_growable) {
+    if (!_should_grow) {
       // Prefer to restart the CM.
       return nullptr;
     }
@@ -171,7 +171,7 @@ G1CMMarkStack::ChunkAllocator::ChunkAllocator() :
   _max_capacity(0),
   _capacity(0),
   _num_buckets(0),
-  _growable(false),
+  _should_grow(false),
   _buckets(nullptr),
   _size(0)
 { }
@@ -211,9 +211,6 @@ void G1CMMarkStack::ChunkAllocator::expand() {
     log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
                   old_capacity, new_capacity);
   }
-  // We reset without regard for the outcome of the expansion attempt.
-  // Expand is called in preparation for restart.
-  reset();
 }
 
 G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
@@ -232,10 +229,7 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
-  if (new_capacity > _max_capacity) {
-    log_debug(gc)("Cannot expand overflow mark stack beyond the max_capacity" SIZE_FORMAT " chunks.", _max_capacity);
-    return false;
-  }
+  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity" SIZE_FORMAT " chunks.", _max_capacity);
 
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
@@ -1718,7 +1712,7 @@ void G1ConcurrentMark::weak_refs_work() {
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
 
     // Prefer to grow the stack until the max capacity.
-    _global_mark_stack.grow_incrementally();
+    _global_mark_stack.set_should_grow();
 
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,

@@ -137,11 +137,34 @@ private:
   };
 
   class ChunkAllocator {
+    // The chunk allocator relies on a growable array data structure that allows resizing without the
+    // need to copy existing items. The fundamental approach involves organizing the array into chunks,
+    // essentially creating an "array of arrays"; referred to as buckets in this implementation. To
+    // facilitate efficient indexing, the size of the first chunk is set to a power of 2. This choice
+    // allows for quick conversion of an array index into a bucket index and the corresponding offset
+    // within the bucket. Additionally, each new chunk added to the growable array doubles the capacity of
+    // the growable array.
+    //
+    // Illustration of the Growable Array data structure.
+    //
+    //        +----+        +----+----+
+    //        |    |------->|    |    |
+    //        +----+        +----+----+
+    //        |    |        +----+----+
+    //        |    |------->|    |    |
+    //        +----+        +----+----+
+    //        |    |        +-----+-----+-----+-----+
+    //        |    |------->|     |     |     |     |
+    //        +----+        +-----+-----+-----+-----+
+    //        |    |        +-----+-----+-----+-----+-----+-----+-----+----+
+    //        |    |------->|     |     |     |     |     |     |     |    |
+    //        +----+        +-----+-----+-----+-----+-----+-----+-----+----+
+    //
     size_t _min_capacity;
     size_t _max_capacity;
     size_t _capacity;
     size_t _num_buckets;
-    bool _growable;
+    bool _should_grow;
     TaskQueueEntryChunk* volatile* _buckets;
     char _pad0[DEFAULT_CACHE_LINE_SIZE];
     volatile size_t _size;
@@ -184,11 +207,11 @@ private:
 
     void reset() {
       _size = 0;
-      _growable = false;
+      _should_grow = false;
     }
 
-    void grow_incrementally() {
-      _growable = true;
+    void set_should_grow() {
+      _should_grow = true;
     }
 
     size_t capacity() const { return _capacity; }
@@ -251,8 +274,8 @@ private:
 
   size_t capacity() const  { return _chunk_allocator.capacity(); }
 
-  void grow_incrementally() {
-    _chunk_allocator.grow_incrementally();
+  void set_should_grow() {
+    _chunk_allocator.set_should_grow();
   }
 
   // Expand the stack, typically in response to an overflow condition
