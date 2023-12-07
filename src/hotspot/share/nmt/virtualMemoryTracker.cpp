@@ -479,7 +479,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
 
   VirtualMemorySummary::record_released_memory(rgn->size(), rgn->flag());
   result =  _reserved_regions->remove(*rgn);
-  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _resvered_regions %s" ,
+  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _reserved_regions %s" ,
                 backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
