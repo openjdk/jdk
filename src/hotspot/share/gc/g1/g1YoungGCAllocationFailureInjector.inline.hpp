@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,30 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
-#define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
+#ifndef SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
+#define SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP
 
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 
-#if EVAC_FAILURE_INJECTOR
+#if ALLOCATION_FAILURE_INJECTOR
 
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter, uint region_idx) {
-  if (!_inject_evacuation_failure_for_current_gc) {
+inline bool G1YoungGCAllocationFailureInjector::allocation_should_fail(size_t& counter, uint region_idx) {
+  if (!_inject_allocation_failure_for_current_gc) {
     return false;
   }
-  if (!_evac_failure_regions.at(region_idx)) {
+  if (!_allocation_failure_regions.at(region_idx)) {
     return false;
   }
-  if (++counter < G1EvacuationFailureALotCount) {
+  if (++counter < G1GCAllocationFailureALotCount) {
     return false;
   }
   counter = 0;
   return true;
 }
 
-#endif  // #if EVAC_FAILURE_INJECTOR
+#endif  // #if ALLOCATION_FAILURE_INJECTOR
 
-#endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
+#endif /* SHARE_GC_G1_G1YOUNGGCALLOCATIONFAILUREINJECTOR_INLINE_HPP */

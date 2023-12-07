@@ -34,6 +34,7 @@ class JfrCheckpointWriter;
 class JfrChunkWriter;
 
 class JfrStackTraceRepository : public JfrCHeapObj {
+  friend class JfrDeprecatedEdge;
   friend class JfrRecorder;
   friend class JfrRecorderService;
   friend class JfrThreadSampleClosure;
@@ -63,6 +64,8 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
   static void clear_leak_profiler();
+
+  static traceid next_id();
 
   traceid add_trace(const JfrStackTrace& stacktrace);
   static traceid add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace);

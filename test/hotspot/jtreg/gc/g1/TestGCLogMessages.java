@@ -275,12 +275,12 @@ public class TestGCLogMessages {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
                                                                              "-Xmx32M",
                                                                              "-Xmn16M",
-                                                                             "-XX:+G1EvacuationFailureALot",
-                                                                             "-XX:G1EvacuationFailureALotCount=100",
-                                                                             "-XX:G1EvacuationFailureALotInterval=1",
+                                                                             "-XX:+G1GCAllocationFailureALot",
+                                                                             "-XX:G1GCAllocationFailureALotCount=100",
+                                                                             "-XX:G1GCAllocationFailureALotInterval=1",
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-Xlog:gc+phases=debug",
-                                                                             GCTestWithEvacuationFailure.class.getName());
+                                                                             GCTestWithAllocationFailure.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.DEBUG);
@@ -292,7 +292,7 @@ public class TestGCLogMessages {
                                                               "-Xms32M",
                                                               "-XX:+UnlockDiagnosticVMOptions",
                                                               "-Xlog:gc+phases=trace",
-                                                              GCTestWithEvacuationFailure.class.getName());
+                                                              GCTestWithAllocationFailure.class.getName());
 
         output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.TRACE);
@@ -346,17 +346,17 @@ public class TestGCLogMessages {
         }
     }
 
-    static class GCTestWithEvacuationFailure {
+    static class GCTestWithAllocationFailure {
         private static byte[] garbage;
         private static byte[] largeObject;
-        private static Object[] holder = new Object[200]; // Must be larger than G1EvacuationFailureALotCount
+        private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
         public static void main(String [] args) {
             largeObject = new byte[16*1024*1024];
             System.out.println("Creating garbage");
             // Create 16 MB of garbage. This should result in at least one GC,
             // (Heap size is 32M, we use 17MB for the large object above)
-            // which is larger than G1EvacuationFailureALotInterval.
+            // which is larger than G1GCAllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
                 holder[i % holder.length] = new byte[1024];
             }
