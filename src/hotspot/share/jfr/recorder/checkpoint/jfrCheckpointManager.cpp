@@ -39,6 +39,7 @@
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
@@ -66,30 +67,24 @@ JfrCheckpointManager& JfrCheckpointManager::instance() {
   return *_instance;
 }
 
-JfrCheckpointManager* JfrCheckpointManager::create(JfrChunkWriter& cw) {
+JfrCheckpointManager* JfrCheckpointManager::create() {
   assert(_instance == nullptr, "invariant");
-  _instance = new JfrCheckpointManager(cw);
+  _instance = new JfrCheckpointManager();
   return _instance;
 }
 
 void JfrCheckpointManager::destroy() {
-  assert(_instance != nullptr, "invariant");
-  delete _instance;
-  _instance = nullptr;
+  JfrTypeManager::destroy();
+  JfrTraceIdLoadBarrier::destroy();
 }
 
-JfrCheckpointManager::JfrCheckpointManager(JfrChunkWriter& cw) :
+JfrCheckpointManager::JfrCheckpointManager() :
   _global_mspace(nullptr),
   _thread_local_mspace(nullptr),
   _virtual_thread_local_mspace(nullptr),
-  _chunkwriter(cw) {}
+  _chunkwriter(nullptr) {}
 
-JfrCheckpointManager::~JfrCheckpointManager() {
-  JfrTraceIdLoadBarrier::destroy();
-  JfrTypeManager::destroy();
-  delete _global_mspace;
-  delete _thread_local_mspace;
-}
+JfrCheckpointManager::~JfrCheckpointManager() {}
 
 static const size_t global_buffer_prealloc_count = 2;
 static const size_t global_buffer_size = 512 * K;
@@ -100,7 +95,10 @@ static const size_t thread_local_buffer_size = 256;
 static const size_t virtual_thread_local_buffer_prealloc_count = 0;
 static const size_t virtual_thread_local_buffer_size = 4 * K;
 
-bool JfrCheckpointManager::initialize() {
+// We expose an early initialization routine to support class unloading
+// even though the full JFR system is not yet started. It requires
+// backing of global buffers should it write a class unload type set blob.
+bool JfrCheckpointManager::initialize_early() {
   assert(_global_mspace == nullptr, "invariant");
   _global_mspace =  create_mspace<JfrCheckpointMspace, JfrCheckpointManager>(global_buffer_size, 0, 0, false, this); // post-pone preallocation
   if (_global_mspace == nullptr) {
@@ -131,7 +129,19 @@ bool JfrCheckpointManager::initialize() {
                                                                                         virtual_thread_local_buffer_prealloc_count)) {
     return false;
   }
+  return true;
+}
+
+// The instance is already created and so we only complete the setup of additional subsystems.
+bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
+  assert(cw != nullptr, "invariant");
+  _chunkwriter = cw;
   return JfrTypeManager::initialize() && JfrTraceIdLoadBarrier::initialize();
+}
+
+JfrChunkWriter& JfrCheckpointManager::chunkwriter() {
+  assert(_chunkwriter != nullptr, "invariant");
+  return *_chunkwriter;
 }
 
 #ifdef ASSERT
@@ -502,7 +512,7 @@ void JfrCheckpointManager::end_epoch_shift() {
 
 size_t JfrCheckpointManager::write() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
-  WriteOperation wo(_chunkwriter);
+  WriteOperation wo(chunkwriter());
   MutexedWriteOperation mwo(wo);
   _thread_local_mspace->iterate(mwo, true); // previous epoch list
   assert(_global_mspace->free_list_is_empty(), "invariant");
@@ -510,7 +520,7 @@ size_t JfrCheckpointManager::write() {
   WriteReleaseOperation wro(&mwo, &ro);
   process_live_list(wro, _global_mspace, true); // previous epoch list
   // Do virtual thread local list last. Careful, the vtlco destructor writes to chunk.
-  VirtualThreadLocalCheckpointOperation vtlco(_chunkwriter);
+  VirtualThreadLocalCheckpointOperation vtlco(chunkwriter());
   VirtualThreadLocalWriteOperation vtlwo(vtlco);
   _virtual_thread_local_mspace->iterate(vtlwo, true); // previous epoch list
   return wo.processed() + vtlco.processed();
@@ -534,7 +544,7 @@ size_t JfrCheckpointManager::clear() {
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
   assert(thread != nullptr, "invariant");
-  JfrCheckpointWriter writer(true, thread, STATICS);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread, true /* header */, STATICS);
   JfrTypeManager::write_static_types(writer);
   return writer.used_size();
 }
@@ -545,7 +555,7 @@ size_t JfrCheckpointManager::write_threads(JavaThread* thread) {
   ThreadInVMfromNative transition(thread);
   ResourceMark rm(thread);
   HandleMark hm(thread);
-  JfrCheckpointWriter writer(true, thread, THREADS);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread, true /* header */, THREADS);
   JfrTypeManager::write_threads(writer);
   return writer.used_size();
 }
@@ -566,13 +576,26 @@ void JfrCheckpointManager::on_rotation() {
 
 void JfrCheckpointManager::clear_type_set() {
   assert(!JfrRecorder::is_recording(), "invariant");
-  JavaThread* t = JavaThread::current();
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(t));
+  JavaThread* thread = JavaThread::current();
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread));
   // can safepoint here
-  ThreadInVMfromNative transition(t);
-  MutexLocker cld_lock(ClassLoaderDataGraph_lock);
-  MutexLocker module_lock(Module_lock);
-  JfrTypeSet::clear();
+  ThreadInVMfromNative transition(thread);
+  MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
+  // Marks leakp. Place prepare_type_set before writer construction.
+  JfrDeprecationManager::prepare_type_set(thread);
+  JfrCheckpointWriter leakp_writer(true /* prev epoch */, thread);
+  JfrCheckpointWriter writer(true /* prev epoch */, thread);
+  {
+    MutexLocker module_lock(Module_lock);
+    JfrTypeSet::clear(&writer, &leakp_writer);
+  }
+  JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
+  // We placed a blob in the Deprecated subsystem by moving the information
+  // from the leakp writer. For the real writer, the data will not be
+  // committed, because the JFR system is yet to be started.
+  // Therefore, the writer is cancelled before its destructor is run,
+  // to avoid writing unnecessary information into the checkpoint system.
+  writer.cancel();
 }
 
 void JfrCheckpointManager::write_type_set() {
@@ -582,16 +605,19 @@ void JfrCheckpointManager::write_type_set() {
     // can safepoint here
     ThreadInVMfromNative transition(thread);
     MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
-    MutexLocker module_lock(thread, Module_lock);
-    if (LeakProfiler::is_running()) {
-      JfrCheckpointWriter leakp_writer(true, thread);
-      JfrCheckpointWriter writer(true, thread);
+    // Marks leakp. Place prepare_type_set before writer construction.
+    JfrDeprecationManager::prepare_type_set(thread);
+    JfrCheckpointWriter leakp_writer(true /* prev epoch */, thread);
+    JfrCheckpointWriter writer(true /* prev epoch */, thread);
+    {
+      MutexLocker module_lock(thread, Module_lock);
       JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
-      ObjectSampleCheckpoint::on_type_set(leakp_writer);
-    } else {
-      JfrCheckpointWriter writer(true, thread);
-      JfrTypeSet::serialize(&writer, nullptr, false, false);
     }
+    if (LeakProfiler::is_running()) {
+      ObjectSampleCheckpoint::on_type_set(leakp_writer);
+    }
+    // Place this call after ObjectSampleCheckpoint::on_type_set.
+    JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
   }
   write();
 }
@@ -603,6 +629,7 @@ void JfrCheckpointManager::on_unloading_classes() {
   if (LeakProfiler::is_running()) {
     ObjectSampleCheckpoint::on_type_set_unload(writer);
   }
+  JfrDeprecationManager::on_type_set_unload(writer);
 }
 
 static size_t flush_type_set(Thread* thread) {
@@ -626,14 +653,14 @@ size_t JfrCheckpointManager::flush_type_set() {
     }
   }
   if (_new_checkpoint.is_signaled_with_reset()) {
-    WriteOperation wo(_chunkwriter);
+    WriteOperation wo(chunkwriter());
     MutexedWriteOperation mwo(wo);
     _thread_local_mspace->iterate(mwo); // current epoch list
     assert(_global_mspace->free_list_is_empty(), "invariant");
     assert(_global_mspace->live_list_is_nonempty(), "invariant");
     process_live_list(mwo, _global_mspace); // current epoch list
     // Do virtual thread local list last. Careful, the vtlco destructor writes to chunk.
-    VirtualThreadLocalCheckpointOperation vtlco(_chunkwriter);
+    VirtualThreadLocalCheckpointOperation vtlco(chunkwriter());
     VirtualThreadLocalWriteOperation vtlwo(vtlco);
     _virtual_thread_local_mspace->iterate(vtlwo); // current epoch list
   }

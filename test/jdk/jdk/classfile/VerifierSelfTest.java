@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Verifier.
+ * @summary Testing ClassFile Verifier.
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
@@ -33,10 +33,10 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {
@@ -51,7 +51,7 @@ class VerifierSelfTest {
                     .flatMap(p -> p)
                     .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
                         try {
-                            Classfile.of().parse(path).verify(null);
+                            ClassFile.of().verify(path);
                         } catch (IOException e) {
                             throw new AssertionError(e);
                         }
@@ -59,9 +59,9 @@ class VerifierSelfTest {
     }
 
     @Test
-    void testFailedDump() throws IOException {
+    void testFailed() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var cc = Classfile.of(Classfile.ClassHierarchyResolverOption.of(
+        var cc = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                 className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
         var classModel = cc.parse(path);
         byte[] brokenClassBytes = cc.transform(classModel,
@@ -79,13 +79,8 @@ class VerifierSelfTest {
                         clb.with(cle);
                 });
         StringBuilder sb = new StringBuilder();
-        if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
+        if (ClassFile.of().verify(brokenClassBytes).isEmpty()) {
             throw new AssertionError("expected verification failure");
-        }
-        String output = sb.toString();
-        if (!output.contains("- method name: ")) {
-            System.out.println(output);
-            throw new AssertionError("failed method not dumped to output");
         }
     }
 }
