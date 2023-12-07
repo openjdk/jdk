@@ -111,21 +111,25 @@ bool G1CMMarkStack::initialize() {
 
   size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
 
-  max_capacity = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
-  size_t initial_chunk_capacity = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t max_num_chunks = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t initial_num_chunks = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
-  initial_chunk_capacity = round_up_power_of_2(initial_chunk_capacity);
-  max_capacity = MAX2(initial_chunk_capacity, max_capacity);
+  initial_num_chunks = round_up_power_of_2(initial_num_chunks);
+  max_num_chunks = MAX2(initial_num_chunks, max_num_chunks);
 
-  FLAG_SET_ERGO(MarkStackSizeMax, (max_capacity * TaskEntryChunkSizeInVoidStar));
-  FLAG_SET_ERGO(MarkStackSize, (initial_chunk_capacity * TaskEntryChunkSizeInVoidStar));
+  size_t limit = (INT_MAX - 1);
+  max_capacity = MIN2((max_num_chunks * TaskEntryChunkSizeInVoidStar), limit);
+  initial_capacity = MIN2((initial_num_chunks * TaskEntryChunkSizeInVoidStar), limit);
+
+  FLAG_SET_ERGO(MarkStackSizeMax, max_capacity);
+  FLAG_SET_ERGO(MarkStackSize, initial_capacity);
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 
   log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
-                initial_chunk_capacity, max_capacity);
+                initial_num_chunks, max_capacity);
 
-  return _chunk_allocator.initialize(initial_chunk_capacity, max_capacity);
+  return _chunk_allocator.initialize(initial_num_chunks, max_num_chunks);
 }
 
 G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_chunk() {
@@ -140,7 +144,6 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
   }
 
   size_t bucket = get_bucket(cur_idx);
-
   if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
     if (!_growable) {
       // Prefer to restart the CM.
@@ -149,7 +152,8 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-      size_t new_capacity = bucket_size(bucket) * 2;
+      // Double capacity if possible
+      size_t new_capacity = MIN2((bucket_size(bucket) * 2), _max_capacity);
       if (!reserve(new_capacity)) {
         return nullptr;
       }
@@ -177,7 +181,7 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
 
   _min_capacity = initial_capacity;
   _max_capacity = max_capacity;
-  _num_buckets  = get_bucket(_max_capacity);
+  _num_buckets  = get_bucket(_max_capacity) + 1;
 
   _buckets = NEW_C_HEAP_ARRAY(TaskQueueEntryChunk*, _num_buckets, mtGC);
 
@@ -195,6 +199,10 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
 }
 
 void G1CMMarkStack::ChunkAllocator::expand() {
+  if (_capacity == _max_capacity) {
+    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
+    return;
+  }
   size_t old_capacity = _capacity;
   // Double capacity if possible
   size_t new_capacity = MIN2(old_capacity * 2, _max_capacity);
@@ -229,14 +237,22 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
     return false;
   }
 
-  size_t highest_bucket = get_bucket(new_capacity);
+  size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
+
   for (; i <= highest_bucket; i++) {
     if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
     }
 
     size_t bucket_capacity = bucket_size(i);
+
+    // Trim bucket size so that we do not exceed the _max_capacity
+    bucket_capacity = (_capacity + bucket_capacity) <= _max_capacity ?
+                      bucket_capacity :
+                      _max_capacity - _capacity;
+
+
     TaskQueueEntryChunk* bucket_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(bucket_capacity, mtGC);
 
     if (bucket_base == nullptr) {
