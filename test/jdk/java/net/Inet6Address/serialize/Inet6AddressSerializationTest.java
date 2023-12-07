@@ -189,7 +189,7 @@ public class Inet6AddressSerializationTest {
                     continue;
                 }
             }
-            // skipp awdl and llw interfaces on macosx
+            // skip awdl and llw interfaces on macosx
             if (Platform.isOSX()) {
                 if((dName != null) &&
                         ((dName.contains("awdl")) || (dName.contains("llw")))) {
