@@ -42,6 +42,7 @@ class ClassUnloadingContext : public CHeapObj<mtGC> {
   using NMethodSet = GrowableArrayCHeap<nmethod*, mtGC>;
   NMethodSet** _unlinked_nmethods;
 
+  bool _unregister_nmethods_during_purge;
   bool _lock_codeblob_free_separately;
 
 public:
@@ -49,10 +50,14 @@ public:
 
   // Num_nmethod_unlink_workers configures the maximum numbers of threads unlinking
   //     nmethods.
+  // unregister_nmethods_during_purge determines whether unloaded nmethods should
+  //     be unregistered from the garbage collector during purge. If not, ,the caller
+  //     is responsible to do that later.
   // lock_codeblob_free_separately determines whether freeing the code blobs takes
   //     the CodeCache_lock during the whole operation (=false) or per code blob
   //     free operation (=true).
   ClassUnloadingContext(uint num_nmethod_unlink_workers,
+                        bool unregister_nmethods_during_purge,
                         bool lock_codeblob_free_separately);
   ~ClassUnloadingContext();
 

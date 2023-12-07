@@ -2489,6 +2489,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   GCTraceTime(Debug, gc, phases) debug(description, timer);
 
   ClassUnloadingContext ctx(workers()->active_workers(),
+                            false /* unregister_nmethods_during_purge */,
                             false /* lock_codeblob_free_separately */);
   {
     CodeCache::UnlinkingScope scope(is_alive);

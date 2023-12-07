@@ -1769,6 +1769,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ref_processor()->start_discovery(maximum_heap_compaction);
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
                               false /* lock_codeblob_free_separately */);
 
     marking_phase(&_gc_tracer);
