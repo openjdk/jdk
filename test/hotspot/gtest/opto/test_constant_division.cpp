@@ -30,6 +30,7 @@
 
 #undef assert
 
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
 template <class T>
