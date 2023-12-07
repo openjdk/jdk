@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.util.Objects;
 
 /*
  * Represents a key to a specific file on Windows
@@ -47,7 +48,7 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return dwVolumeSerialNumber + nFileIndexHigh + nFileIndexLow;
+        return Objects.hash(dwVolumeSerialNumber, nFileIndexHigh, nFileIndexLow);
     }
 
     @Override
