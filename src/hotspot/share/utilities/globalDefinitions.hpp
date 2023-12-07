@@ -28,7 +28,6 @@
 #include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/javaArithmetic.hpp"
 #include "utilities/macros.hpp"
 
 // Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
@@ -304,6 +303,16 @@ inline jdouble jdouble_cast(jlong x);
 #define CONST64(x)  (x ## LL)
 #define UCONST64(x) (x ## ULL)
 
+const jlong min_jlong = CONST64(0x8000000000000000);
+const jlong max_jlong = CONST64(0x7fffffffffffffff);
+
+//-------------------------------------------
+// Constant for jdouble
+const jlong min_jlongDouble = CONST64(0x0000000000000001);
+const jdouble min_jdouble = jdouble_cast(min_jlongDouble);
+const jlong max_jlongDouble = CONST64(0x7fefffffffffffff);
+const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
+
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;
@@ -429,6 +438,8 @@ const uintx max_uintx = (uintx)-1;
 // max_intx             0x7FFFFFFF      0x7FFFFFFFFFFFFFFF
 // max_uintx            0xFFFFFFFF      0xFFFFFFFFFFFFFFFF
 
+typedef unsigned int uint;   NEEDS_CLEANUP
+
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
 
@@ -495,6 +506,13 @@ extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
 
+// Additional Java basic types
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
+
 // Unsigned byte types for os and stream.hpp
 
 // Unsigned one, two, four and eight byte quantities used for describing
@@ -505,10 +523,28 @@ typedef jushort u2;
 typedef juint   u4;
 typedef julong  u8;
 
+const jubyte  max_jubyte  = (jubyte)-1;  // 0xFF       largest jubyte
+const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
+const juint   max_juint   = (juint)-1;   // 0xFFFFFFFF largest juint
+const julong  max_julong  = (julong)-1;  // 0xFF....FF largest julong
+
 typedef jbyte  s1;
 typedef jshort s2;
 typedef jint   s4;
 typedef jlong  s8;
+
+const jbyte min_jbyte = -(1 << 7);       // smallest jbyte
+const jbyte max_jbyte = (1 << 7) - 1;    // largest jbyte
+const jshort min_jshort = -(1 << 15);    // smallest jshort
+const jshort max_jshort = (1 << 15) - 1; // largest jshort
+
+const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
+const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
+
+const jint min_jintFloat = (jint)(0x00000001);
+const jfloat min_jfloat = jfloat_cast(min_jintFloat);
+const jint max_jintFloat = (jint)(0x7f7fffff);
+const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
@@ -1134,6 +1170,131 @@ template<class T> static void swap(T& a, T& b) {
 template<typename T, size_t N> char (&array_size_impl(T (&)[N]))[N];
 
 #define ARRAY_SIZE(array) sizeof(array_size_impl(array))
+
+//----------------------------------------------------------------------------------------------------
+// Sum and product which can never overflow: they wrap, just like the
+// Java operations.  Note that we don't intend these to be used for
+// general-purpose arithmetic: their purpose is to emulate Java
+// operations.
+
+// The goal of this code to avoid undefined or implementation-defined
+// behavior.  The use of an lvalue to reference cast is explicitly
+// permitted by Lvalues and rvalues [basic.lval].  [Section 3.10 Para
+// 15 in C++03]
+#define JAVA_INTEGER_OP(OP, NAME, TYPE, UNSIGNED_TYPE)  \
+inline TYPE NAME (TYPE in1, TYPE in2) {                 \
+  UNSIGNED_TYPE ures = static_cast<UNSIGNED_TYPE>(in1); \
+  ures OP ## = static_cast<UNSIGNED_TYPE>(in2);         \
+  return reinterpret_cast<TYPE&>(ures);                 \
+}
+
+JAVA_INTEGER_OP(+, java_add, jint, juint)
+JAVA_INTEGER_OP(-, java_subtract, jint, juint)
+JAVA_INTEGER_OP(*, java_multiply, jint, juint)
+JAVA_INTEGER_OP(+, java_add, jlong, julong)
+JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
+JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
+
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
+
+#undef JAVA_INTEGER_OP
+
+// Provide integer shift operations with Java semantics.  No overflow
+// issues - left shifts simply discard shifted out bits.  No undefined
+// behavior for large or negative shift quantities; instead the actual
+// shift distance is the argument modulo the lhs value's size in bits.
+// No undefined or implementation defined behavior for shifting negative
+// values; left shift discards bits, right shift sign extends.  We use
+// the same safe conversion technique as above for java_add and friends.
+#define JAVA_INTEGER_SHIFT_OP(OP, NAME, TYPE, XTYPE)    \
+inline TYPE NAME (TYPE lhs, jint rhs) {                 \
+  const uint rhs_mask = (sizeof(TYPE) * 8) - 1;         \
+  STATIC_ASSERT(rhs_mask == 31 || rhs_mask == 63);      \
+  XTYPE xres = static_cast<XTYPE>(lhs);                 \
+  xres OP ## = (rhs & rhs_mask);                        \
+  return reinterpret_cast<TYPE&>(xres);                 \
+}
+
+JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jint, juint)
+JAVA_INTEGER_SHIFT_OP(<<, java_shift_left, jlong, julong)
+
+// For signed shift right, assume C++ implementation >> sign extends.
+//
+// C++14 5.8/3: In the description of "E1 >> E2" it says "If E1 has a signed type
+// and a negative value, the resulting value is implementation-defined."
+//
+// However, C++20 7.6.7/3 further defines integral arithmetic, as part of
+// requiring two's-complement behavior.
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0907r3.html
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1236r1.html
+// The corresponding C++20 text is "Right-shift on signed integral types is an
+// arithmetic right shift, which performs sign-extension."
+//
+// As discussed in the two's complement proposal, all known modern C++ compilers
+// already behave that way. And it is unlikely any would go off and do something
+// different now, with C++20 tightening things up.
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jint, jint)
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right, jlong, jlong)
+// For >>> use C++ unsigned >>.
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jint, juint)
+JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
+
+#undef JAVA_INTEGER_SHIFT_OP
+
+//----------------------------------------------------------------------------------------------------
+// The goal of this code is to provide saturating operations for int/uint.
+// Checks overflow conditions and saturates the result to min_jint/max_jint.
+#define SATURATED_INTEGER_OP(OP, NAME, TYPE1, TYPE2) \
+inline int NAME (TYPE1 in1, TYPE2 in2) {             \
+  jlong res = static_cast<jlong>(in1);               \
+  res OP ## = static_cast<jlong>(in2);               \
+  if (res > max_jint) {                              \
+    res = max_jint;                                  \
+  } else if (res < min_jint) {                       \
+    res = min_jint;                                  \
+  }                                                  \
+  return static_cast<int>(res);                      \
+}
+
+SATURATED_INTEGER_OP(+, saturated_add, int, int)
+SATURATED_INTEGER_OP(+, saturated_add, int, uint)
+SATURATED_INTEGER_OP(+, saturated_add, uint, int)
+SATURATED_INTEGER_OP(+, saturated_add, uint, uint)
+
+#undef SATURATED_INTEGER_OP
+
+// Taken from rom section 8-2 of Henry S. Warren, Jr., Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
+  const uint64_t x1 = x >> 32u;
+  const uint64_t x2 = x & 0xFFFFFFFF;
+  const uint64_t y1 = y >> 32u;
+  const uint64_t y2 = y & 0xFFFFFFFF;
+  const uint64_t z2 = x2 * y2;
+  const uint64_t t = x1 * y2 + (z2 >> 32u);
+  uint64_t z1 = t & 0xFFFFFFFF;
+  const uint64_t z0 = t >> 32u;
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + (z1 >> 32u);
+}
+
+// Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
+// Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
+inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
+  const jlong x1 = java_shift_right((jlong)x, 32);
+  const jlong x2 = x & 0xFFFFFFFF;
+  const jlong y1 = java_shift_right((jlong)y, 32);
+  const jlong y2 = y & 0xFFFFFFFF;
+
+  const uint64_t z2 = (uint64_t)x2 * y2;
+  const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
+  int64_t z1 = t & 0xFFFFFFFF;
+  const int64_t z0 = java_shift_right((jlong)t, 32);
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + java_shift_right((jlong)z1, 32);
+}
 
 // Dereference vptr
 // All C++ compilers that we know of have the vtbl pointer in the first

@@ -27,7 +27,6 @@
 #include <type_traits>
 #include "utilities/powerOfTwo.hpp"
 
-
 // Compute magic multiplier and shift constant for converting a 32/64 bit
 // division by constant into a multiply/shift series.
 
