@@ -43,7 +43,9 @@ import java.util.List;
 
 public class TestScopedValue {
 
-    protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
+    private static long tieredStopAtLevel = (long)WHITE_BOX.getVMFlag("TieredStopAtLevel");
 
     static ScopedValue<MyDouble> sv = ScopedValue.newInstance();
     static final ScopedValue<MyDouble> svFinal = ScopedValue.newInstance();
@@ -57,7 +59,7 @@ public class TestScopedValue {
                 "testFastPath11", "testFastPath12", "testFastPath13","testFastPath14",
                 "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9");
         for (String test : tests) {
-            TestFramework.runWithFlags("--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
+            TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
         }
     }
 
@@ -81,7 +83,14 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath1");
+        forceCompilation("testFastPath1");
+    }
+
+    private static void forceCompilation(String name, Class<?>... parameterTypes) throws NoSuchMethodException {
+        if (tieredStopAtLevel < CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+            return;
+        }
+        Method m = TestScopedValue.class.getDeclaredMethod(name, parameterTypes);
         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
         if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
             throw new RuntimeException("should be compiled");
@@ -114,11 +123,7 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath2");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath2");
     }
 
     @Test
@@ -142,11 +147,7 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath3");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath3");
     }
 
     // Split if test but it doesn't trigger at this point
@@ -213,11 +214,7 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath5");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath5");
     }
 
     @Test
@@ -237,11 +234,7 @@ public class TestScopedValue {
                         testFastPath6();
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath6");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath6");
     }
 
     static Object testFastPath7Field;
@@ -273,11 +266,7 @@ public class TestScopedValue {
                         testFastPath7Helper(9, null);
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath7");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath7");
     }
 
     @Test
@@ -312,11 +301,7 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath8", boolean[].class);
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath8", boolean[].class);
     }
 
     @Test
@@ -352,11 +337,7 @@ public class TestScopedValue {
                         }
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath9", boolean[].class);
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath9", boolean[].class);
     }
 
     @Test
@@ -387,11 +368,7 @@ public class TestScopedValue {
                         testFastPath10(allFalse);
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath10", boolean[].class);
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath10", boolean[].class);
     }
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
@@ -420,11 +397,7 @@ public class TestScopedValue {
                         testFastPath11(allFalse);
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath11", boolean[].class);
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath11", boolean[].class);
     }
 
     @Test
@@ -446,11 +419,7 @@ public class TestScopedValue {
                         testFastPath12();
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath12");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath12");
     }
 
     @Test
@@ -487,11 +456,7 @@ public class TestScopedValue {
                         testFastPath13Inlined(0);
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath13");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath13");
     }
 
     @Test
@@ -512,11 +477,7 @@ public class TestScopedValue {
                         testFastPath14();
                     }
                 });
-        Method m = TestScopedValue.class.getDeclaredMethod("testFastPath14");
-        WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-            throw new RuntimeException("should be compiled");
-        }
+        forceCompilation("testFastPath14");
     }
 
     @Test

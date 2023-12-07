@@ -889,8 +889,8 @@ public:
             assert(bol->is_Bool(), "");
             Node* cmp = bol->in(1);
             assert(cmp->Opcode() == Op_CmpP, "");
-            Node* in1 = cmp->in(1);
-            Node* in2 = cmp->in(2);
+            Node* in1 = cmp->in(1)->uncast();
+            Node* in2 = cmp->in(2)->uncast();
             if (in1->is_Proj() && in1->in(0)->is_Call() &&
                 in1->in(0)->as_CallJava()->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache) {
               assert(in2->bottom_type() == TypePtr::NULL_PTR, "");

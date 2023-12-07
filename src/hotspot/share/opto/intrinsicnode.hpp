@@ -355,7 +355,7 @@ public:
     return TypeInstPtr::BOTTOM;
   }
 
-  void verify() const PRODUCT_RETURN;
+  void verify() const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OPTO_INTRINSICNODE_HPP

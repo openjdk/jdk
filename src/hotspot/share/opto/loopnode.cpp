@@ -4491,7 +4491,9 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  C->set_has_scoped_value_get_nodes(_scoped_value_get_nodes.size() > 0);
+  if (do_split_ifs) {
+    C->set_has_scoped_value_get_nodes(_scoped_value_get_nodes.size() > 0);
+  }
 
   // clear out the dead code after build_loop_late
   while (_deadlist.size()) {
@@ -4726,7 +4728,6 @@ bool PhaseIdealLoop::expand_scoped_value_get_nodes() {
       }
       lazy_replace(get_result->control_out(), get_result->in(ScopedValueGetResultNode::Control));
       progress = true;
-      Node* top_of_stack = _scoped_value_get_nodes.pop();
       remove_scoped_value_get_at(i-1);
     }
   }

@@ -374,7 +374,7 @@ public:
     return _profile_data[i]._cnt;
   }
 
-  void verify() const PRODUCT_RETURN;
+  void verify() const NOT_DEBUG_RETURN;
 
   virtual bool depends_only_on_test() const {
     return false;
