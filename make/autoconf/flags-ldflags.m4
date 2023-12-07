@@ -92,7 +92,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # libjvm.so has gotten too large for normal TOC size; compile with qpic=large and link with bigtoc
     BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r -bbigtoc"
 
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
     BASIC_LDFLAGS="-nologo -opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf=8 -subsystem:windows"
@@ -157,7 +157,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   fi
 
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
-    if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+    if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
       BASIC_LDFLAGS="$BASIC_LDFLAGS -pdbaltpath:%_PDB%"
       # PATHMAP_FLAGS is setup in flags-cflags.m4.
       FILE_MACRO_LDFLAGS="${PATHMAP_FLAGS}"
@@ -196,7 +196,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
       $1_CPU_LDFLAGS="${$1_CPU_LDFLAGS} -Wl,--hash-style=gnu"
     fi
 
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
     if test "x${OPENJDK_$1_CPU_BITS}" = "x32"; then
       $1_CPU_EXECUTABLE_LDFLAGS="-stack:327680"
     elif test "x${OPENJDK_$1_CPU_BITS}" = "x64"; then
@@ -208,7 +208,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_CPU_DEP],
   fi
 
   # JVM_VARIANT_PATH depends on if this is build or target...
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
     $1_LDFLAGS_JDK_LIBPATH="-libpath:\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base"
   else
     $1_LDFLAGS_JDK_LIBPATH="-L\$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \

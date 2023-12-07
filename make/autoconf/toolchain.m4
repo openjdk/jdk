@@ -35,19 +35,19 @@
 m4_include([toolchain_microsoft.m4])
 
 # All valid toolchains, regardless of platform (used by help.m4)
-VALID_TOOLCHAINS_all="gcc clang xlc microsoft mscl"
+VALID_TOOLCHAINS_all="gcc clang xlc microsoft clcl"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
 VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc clang"
-VALID_TOOLCHAINS_windows="microsoft mscl"
+VALID_TOOLCHAINS_windows="microsoft clcl"
 
 # Toolchain descriptions
 TOOLCHAIN_DESCRIPTION_clang="clang/LLVM"
 TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
-TOOLCHAIN_DESCRIPTION_mscl="clang/LLVM for Windows"
+TOOLCHAIN_DESCRIPTION_clcl="clang/LLVM for Windows"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
@@ -55,7 +55,7 @@ TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
 TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
-TOOLCHAIN_MINIMUM_VERSION_mscl=""
+TOOLCHAIN_MINIMUM_VERSION_clcl=""
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -311,7 +311,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl"
-  TOOLCHAIN_CC_BINARY_mscl="clang-cl"
+  TOOLCHAIN_CC_BINARY_clcl="clang-cl"
   TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
   if test "x$OPENJDK_TARGET_OS" = xaix; then
@@ -321,7 +321,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   fi
   TOOLCHAIN_CXX_BINARY_gcc="g++"
   TOOLCHAIN_CXX_BINARY_microsoft="cl"
-  TOOLCHAIN_CXX_BINARY_mscl="clang-cl"
+  TOOLCHAIN_CXX_BINARY_clcl="clang-cl"
   TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
 
   # Use indirect variable referencing
@@ -385,7 +385,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
   # some siutations in later configure checks.
-  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft" -a "x$TOOLCHAIN_TYPE" != "xmscl"; then
+  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft" -a "x$TOOLCHAIN_TYPE" != "xclcl"; then
     PATH="$OLD_PATH"
   fi
 
@@ -463,7 +463,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/^.* \(@<:@1-9@:>@<:@0-9@:>@*\.@<:@0-9.@:>@*\)@<:@^0-9.@:>@.*$/\1/'`
-  elif test  "x$TOOLCHAIN_TYPE" = xclang -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test  "x$TOOLCHAIN_TYPE" = xclang -o "x$TOOLCHAIN_TYPE" = xclcl; then
     # clang --version output typically looks like
     #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
     #    clang version 3.3 (tags/RELEASE_33/final)
@@ -586,7 +586,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_LD_VERSION],
     # Extract version number
     [ LINKER_VERSION_NUMBER=`$ECHO $LINKER_VERSION_STRING | \
         $SED -e 's/.* \([0-9][0-9]*\(\.[0-9][0-9]*\)*\).*/\1/'` ]
-  elif test  "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test  "x$TOOLCHAIN_TYPE" = xclcl; then
     # lld-link --version
     # First line typically looks something like:
     #   LLD 14.0.5
@@ -702,8 +702,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
-   elif test "x$TOOLCHAIN_TYPE" = xmscl; then
-    # In the Microsoft toolchain we have a separate LD command "link".
+   elif test "x$TOOLCHAIN_TYPE" = xclcl; then
+    # In the clang-cl toolchain we have a separate LD command "lld-link".
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, lld-link)
     LDCXX="$LD"
   else
@@ -730,7 +730,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   # Setup the assembler (AS)
   #
-  if test "x$TOOLCHAIN_TYPE" != xmicrosoft -a "x$TOOLCHAIN_TYPE" != xmscl; then
+  if test "x$TOOLCHAIN_TYPE" != xmicrosoft -a "x$TOOLCHAIN_TYPE" != xclcl; then
     AS="$CC -c"
   else
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
@@ -749,7 +749,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
-  elif test "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test "x$TOOLCHAIN_TYPE" = xclcl; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, llvm-lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
@@ -795,7 +795,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     fi
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
     # Setup the manifest tool (MT)
     UTIL_LOOKUP_TOOLCHAIN_PROGS(MT, mt)
     # Setup the resource compiler (RC)
@@ -876,7 +876,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
           # Corresponds to --with-sysroot
           BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_SYSROOT])
 
-          if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+          if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
             BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_VS_INCLUDE])
             BASIC_EVAL_BUILD_DEVKIT_VARIABLE([BUILD_DEVKIT_VS_LIB])
           fi
@@ -897,7 +897,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
 
         BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
 
-        if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+        if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
           # For historical reasons, paths are separated by ; in devkit.info
           BUILD_VS_INCLUDE="${BUILD_DEVKIT_VS_INCLUDE//;/:}"
           BUILD_VS_LIB="${BUILD_DEVKIT_VS_LIB//;/:}"
@@ -906,7 +906,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
         fi
       fi
     else
-      if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+      if test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
         # If we got no devkit, we need to go hunting for the proper env
         TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE($OPENJDK_BUILD_CPU, [$TOOLCHAIN_VERSION])
         TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV($OPENJDK_BUILD_CPU, BUILD_)
@@ -941,7 +941,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_LD, link, [$VS_PATH])
       TOOLCHAIN_VERIFY_LINK_BINARY(BUILD_LD)
       BUILD_LDCXX="$BUILD_LD"
-    elif test "x$TOOLCHAIN_TYPE" = xmscl; then
+    elif test "x$TOOLCHAIN_TYPE" = xclcl; then
       UTIL_REQUIRE_PROGS(BUILD_CC, clang-cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, clang-cl, [$VS_PATH])
 
@@ -1052,7 +1052,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     else
       HOTSPOT_TOOLCHAIN_TYPE=gcc
     fi
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xmscl; then
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft -o "x$TOOLCHAIN_TYPE" = xclcl; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi
   AC_SUBST(HOTSPOT_TOOLCHAIN_TYPE)

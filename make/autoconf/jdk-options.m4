@@ -416,7 +416,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
            test "x$TOOLCHAIN_TYPE" = "xclang" ||
-           test "x$TOOLCHAIN_TYPE" = "xmscl" ||
+           test "x$TOOLCHAIN_TYPE" = "xclcl" ||
            test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
@@ -427,7 +427,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       IF_ENABLED: [
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
            test "x$TOOLCHAIN_TYPE" = "xclang" ||
-           test "x$TOOLCHAIN_TYPE" = "xmscl"; then
+           test "x$TOOLCHAIN_TYPE" = "xclcl"; then
           # ASan is simply incompatible with gcc -Wstringop-truncation. See
           # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
           # It's harmless to be suppressed in clang as well.
