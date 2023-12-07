@@ -220,6 +220,10 @@ public class AquaKeyBindings {
             "KP_UP", "aquaSelectPrevious",
             "DOWN", "aquaSelectNext",
             "KP_DOWN", "aquaSelectNext",
+            "alt DOWN", "aquaOpenPopupOrhighlightLast",
+            "alt KP_DOWN", "aquaOpenPopupOrhighlightLast",
+            "alt UP", "aquaOpenPopupOrhighlightFirst",
+            "alt KP_UP", "aquaOpenPopupOrhighlightFirst",
             "SPACE", "aquaSpacePressed" // "spacePopup"
         }));
     }
