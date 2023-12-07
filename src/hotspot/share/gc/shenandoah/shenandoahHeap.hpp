@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
+#include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
@@ -246,6 +247,8 @@ public:
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
 
+  inline ShenandoahMmuTracker* mmu_tracker() { return &_mmu_tracker; };
+
 // ---------- GC state machinery
 //
 // GC state describes the important parts of collector state, that may be
@@ -290,6 +293,11 @@ private:
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
   size_t _gc_no_progress_count;
+
+  
+  double* _gc_historical_utilization;
+  double* _gc_historical_duration;
+  size_t _gc_history_first;;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
@@ -387,6 +395,8 @@ private:
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*    _phase_timings;
+
+  ShenandoahMmuTracker       _mmu_tracker;
 
   ShenandoahControlThread*   control_thread()          { return _control_thread;    }
 
@@ -522,9 +532,10 @@ private:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
+  bool gc_overhead_exceeds_limit();
 
 public:
-  HeapWord* allocate_memory(ShenandoahAllocRequest& request);
+  HeapWord* allocate_memory(ShenandoahAllocRequest& request, bool* gc_overhead_limit_was_exceeded = nullptr);
   HeapWord* mem_allocate(size_t size, bool* what) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
@@ -543,7 +554,8 @@ public:
   void labs_make_parsable();
   void tlabs_retire(bool resize);
   void gclabs_retire(bool resize);
-
+  void report_gc_utilization(double utilization, double duration);
+  
 // ---------- Marking support
 //
 private:

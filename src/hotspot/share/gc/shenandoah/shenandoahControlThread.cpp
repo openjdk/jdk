@@ -401,6 +401,10 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
   }
+  if (!heap->cancelled_gc()) {
+    ShenandoahMmuTracker* mmu_tracker = heap->mmu_tracker();
+    mmu_tracker->record_global(get_gc_id());
+  }
 }
 
 bool ShenandoahControlThread::check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point) {

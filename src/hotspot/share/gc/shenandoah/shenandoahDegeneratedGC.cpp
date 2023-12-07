@@ -48,7 +48,9 @@ ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point) :
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   vmop_degenerated();
+  heap->mmu_tracker()->record_degenerated(GCId::current());
   return true;
 }
 

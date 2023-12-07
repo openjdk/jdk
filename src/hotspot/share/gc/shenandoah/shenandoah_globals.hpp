@@ -334,6 +334,14 @@
   product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
+  product(uint, ShenandoahGCTimeLimit, 75, EXPERIMENTAL,                    \
+          "The percentage of CPU consumed by GC at which GC considers "     \
+          "itself to have exceeded the reasonable threshold.  This "        \
+          "replaces GCTimeLimit.  The denominator is calculated from "      \
+          "authorized ParallelGCThreads as a fraction of total available "  \
+          "CPU cores.")                                                     \
+          range(0, 100)                                                     \
+                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \

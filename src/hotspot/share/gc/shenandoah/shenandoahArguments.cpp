@@ -54,6 +54,7 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
 #endif
+
   if (UseLargePages) {
     size_t large_page_size = os::large_page_size();
     if ((align_up(MaxHeapSize, large_page_size) / large_page_size) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
@@ -67,6 +68,11 @@ void ShenandoahArguments::initialize() {
   // storage allocation code NUMA-aware.
   if (FLAG_IS_DEFAULT(UseNUMA)) {
     FLAG_SET_DEFAULT(UseNUMA, true);
+  }
+
+  // We use this as the time period for tracking minimum mutator utilization (MMU).
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, 5000);
   }
 
   // Set up default number of concurrent threads. We want to have cycles complete fast
@@ -167,6 +173,11 @@ void ShenandoahArguments::initialize() {
   if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
+
+  uint active_processors = os::initial_active_processor_count();
+  GCTimeLimit = (ShenandoahGCTimeLimit * ParallelGCThreads) / active_processors;
+  log_info(gc)("GCTimeLimit set to %u based on ShenandoahGCTimeLimit: %u, ParallelGCThreads: %u, active_processors: %u)",
+               GCTimeLimit, ShenandoahGCTimeLimit, ParallelGCThreads, active_processors);
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {

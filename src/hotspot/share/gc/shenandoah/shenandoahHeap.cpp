@@ -440,6 +440,9 @@ jint ShenandoahHeap::initialize() {
 
   ShenandoahInitLogger::print();
 
+  _gc_historical_utilization = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
+  _gc_historical_duration = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
+
   return JNI_OK;
 }
 
@@ -505,6 +508,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _regions(nullptr),
   _update_refs_iterator(this),
   _gc_no_progress_count(0),
+  _gc_history_first(0),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
@@ -544,7 +548,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
 
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread",
-                                                ParallelGCThreads);
+                                                     ParallelGCThreads);
     _safepoint_workers->initialize_workers();
   }
 }
@@ -647,6 +651,8 @@ public:
 
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
+  _mmu_tracker.initialize();
+
   MutexLocker ml(Threads_lock);
 
   ShenandoahInitWorkerGCLABClosure init_gclabs;
@@ -860,7 +866,27 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
   return res;
 }
 
-HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
+void ShenandoahHeap::report_gc_utilization(double utilization, double duration) {
+  _gc_historical_utilization[_gc_history_first] = utilization;
+  _gc_historical_duration[_gc_history_first] = duration;
+  _gc_history_first++;
+  if (_gc_history_first >= GCOverheadLimitThreshold) {
+    _gc_history_first = 0;
+  }
+}
+
+bool ShenandoahHeap::gc_overhead_exceeds_limit() {
+  double weighted_sum = 0.0;
+  double total_duration = 0.0;
+  for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
+    weighted_sum = _gc_historical_utilization[i] * _gc_historical_duration[i];
+    total_duration += _gc_historical_duration[i];
+  }
+  uint weighted_avg = (uint) ((total_duration > 0)? 100 * weighted_sum / total_duration: 0.0);
+  return (weighted_avg > GCTimeLimit);
+}
+
+HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_overhead_limit_was_exceeded) {
   intptr_t pacer_epoch = 0;
   bool in_new_region = false;
   HeapWord* result = nullptr;
@@ -885,6 +911,11 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     size_t original_count = shenandoah_policy()->full_gc_count();
     while (result == nullptr
         && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+
+      if (gc_overhead_exceeds_limit()) {
+        *gc_overhead_limit_was_exceeded = true;
+        break;
+      }
       control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region);
     }
@@ -936,9 +967,9 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size,
-                                        bool*  gc_overhead_limit_was_exceeded) {
+                                       bool*  gc_overhead_limit_was_exceeded) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
-  return allocate_memory(req);
+  return allocate_memory(req, gc_overhead_limit_was_exceeded);
 }
 
 MetaWord* ShenandoahHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
