@@ -27,7 +27,6 @@
 #include "unittest.hpp"
 
 // TODO:
-//       Add more types E, and check ctor dtor counts etc
 //       Talk about value factory
 
 // TODO go through GA and GACH and see what ops are not tested yet
@@ -72,16 +71,36 @@ private:
   int _x;
   int _y;
 public:
+  // On purpose, we have no default constructor:
+  // Point()
+  // This is to test that it is not needed for
+  // GrowableArray.
   Point(int x, int y) : _x(x), _y(y) {}
-  Point() : _x(0), _y(0) {} // TODO remove?
   bool operator==(const Point& other) const {
+    return _x == other._x && _y == other._y;
+  }
+};
+
+class PointWithDefault {
+private:
+  int _x;
+  int _y;
+public:
+  PointWithDefault(int x, int y) : _x(x), _y(y + 1) {}
+  PointWithDefault() : PointWithDefault(0, 0) {}
+  bool operator==(const PointWithDefault& other) const {
     return _x == other._x && _y == other._y;
   }
 };
 
 template<>
 Point value_factory<Point>(int i) {
-  return Point(i, -i);
+  return Point(i, i+1);
+}
+
+template<>
+PointWithDefault value_factory<PointWithDefault>(int i) {
+  return PointWithDefault(i, i+1);
 }
 
 template<>
@@ -190,6 +209,8 @@ public:
   // forwarding to underlying array with allocation
   virtual void append(const E& e) = 0;
   virtual void reserve(int new_capacity) = 0;
+  virtual E at_grow(int i, const E& fill) = 0;
+  virtual void at_put_grow (int i, const E& e, const E& fill) = 0;
 
   // Only defined for CHeap:
   virtual void clear_and_deallocate() {
@@ -245,6 +266,13 @@ public:
   }
   virtual void reserve(int new_capacity) override final {
     _array->reserve(new_capacity);
+  }
+
+  virtual E at_grow(int i, const E& fill) override final {
+    return _array->at_grow(i, fill);
+  }
+  virtual void at_put_grow (int i, const E& e, const E& fill) override final {
+    _array->at_put_grow(i, e, fill);
   }
 };
 
@@ -406,6 +434,13 @@ public:
   }
   virtual void clear_and_deallocate() override final {
     _array->clear_and_deallocate();
+  }
+
+  virtual E at_grow(int i, const E& fill) override final {
+    return _array->at_grow(i, fill);
+  }
+  virtual void at_put_grow (int i, const E& e, const E& fill) override final {
+    _array->at_put_grow(i, e, fill);
   }
 };
 
@@ -823,6 +858,64 @@ class TestClosureFindFromEndIf : public TestClosure<E> {
   };
 };
 
+template<typename E>
+class TestClosureAtGrow : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    a->reserve(100);
+    int old_capacity = a->capacity();
+
+    a->at_grow(10, value_factory<E>(42));
+    ASSERT_EQ(a->length(), 11);
+    check_alive_elements_for_type<E>(11);
+    ASSERT_EQ(a->capacity(), old_capacity);
+
+    // Check elements
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(a->at(i), value_factory<E>(42));
+    }
+
+    int new_len = 2 * old_capacity;
+    a->at_grow(new_len - 1, value_factory<E>(666));
+    ASSERT_EQ(a->length(), new_len);
+    check_alive_elements_for_type<E>(new_len);
+
+    // Check elements
+    for (int i = 0; i < 10; i++) {
+      EXPECT_EQ(a->at(i), value_factory<E>(42));
+    }
+    for (int i = 10; i < new_len; i++) {
+      EXPECT_EQ(a->at(i), value_factory<E>(666));
+    }
+
+    // TODO
+    // at_grow
+    // at_put_grow
+  };
+};
+
+template<typename E>
+class TestClosureAtGrowDefault : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    a->reserve(100);
+    int old_capacity = a->capacity();
+
+    a->at_grow(10, E()); // simulate default argument
+    ASSERT_EQ(a->length(), 11);
+
+    // TODO
+    // at_grow
+    // at_put_grow
+  };
+};
+
 // TODO
 // template<typename E>
 // class TestClosureCopy : public TestClosure<E> {
@@ -943,6 +1036,18 @@ protected:
     TestClosureFindFromEndIf<E> test;
     run_test_modify<E,do_cheap,do_arena>(&test);
   }
+
+  template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_at_grow() {
+    TestClosureAtGrow<E> test;
+    run_test_modify<E,do_cheap,do_arena>(&test);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_at_grow_default() {
+    TestClosureAtGrowDefault<E> test;
+    run_test_modify<E,do_cheap,do_arena>(&test);
+  }
 };
 
 TEST_VM_F(GrowableArrayTest, append_int) {
@@ -955,6 +1060,10 @@ TEST_VM_F(GrowableArrayTest, append_ptr) {
 
 TEST_VM_F(GrowableArrayTest, append_point) {
   run_test_append<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, append_point_with_default) {
+  run_test_append<PointWithDefault,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, append_ctor_dtor) {
@@ -973,6 +1082,10 @@ TEST_VM_F(GrowableArrayTest, clear_point) {
   run_test_clear<Point,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, clear_point_with_default) {
+  run_test_clear<PointWithDefault,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, clear_ctor_dtor) {
   run_test_clear<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
@@ -987,6 +1100,10 @@ TEST_VM_F(GrowableArrayTest, iterator_ptr) {
 
 TEST_VM_F(GrowableArrayTest, iterator_point) {
   run_test_iterator<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, iterator_point_with_default) {
+  run_test_iterator<PointWithDefault,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_ctor_dtor) {
@@ -1005,6 +1122,10 @@ TEST_VM_F(GrowableArrayTest, capacity_point) {
   run_test_capacity<Point,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, capacity_point_with_default) {
+  run_test_capacity<PointWithDefault,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
   run_test_capacity<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
@@ -1021,8 +1142,50 @@ TEST_VM_F(GrowableArrayTest, find_if_point) {
   run_test_find_if<Point,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, find_if_point_with_default) {
+  run_test_find_if<PointWithDefault,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
   run_test_find_if<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_int) {
+  run_test_at_grow<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_ptr) {
+  run_test_at_grow<int*,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_point) {
+  run_test_at_grow<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_point_with_default) {
+  run_test_at_grow<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_ctor_dtor) {
+  run_test_at_grow<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_default_int) {
+  run_test_at_grow_default<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_default_ptr) {
+  run_test_at_grow_default<int*,true,true>();
+}
+
+// Point: default not implemented, so cannot test!
+
+TEST_VM_F(GrowableArrayTest, at_grow_default_point_with_default) {
+  run_test_at_grow_default<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, at_grow_default_ctor_dtor) {
+  run_test_at_grow_default<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 #ifdef ASSERT
