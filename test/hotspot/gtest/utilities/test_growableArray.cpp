@@ -37,8 +37,6 @@
 
 // TODO assignment operator and copy constructor
 
-// TODO check for trivial destructor with arena / resource area
-
 // We have a list of each:
 //  - ModifyClosure
 //  - TestClosure
@@ -799,8 +797,8 @@ class TestClosureFindFromEndIf : public TestClosure<E> {
 // Test fixture to work with TEST_VM_F
 class GrowableArrayTest : public ::testing::Test {
 protected:
-  template<typename E>
-  static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
+  template<typename E, bool do_arena, ENABLE_IF(do_arena)>
+  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify) {
     AllocatorClosureStackResourceArea<E> allocator_s_r;
     allocator_s_r.dispatch(modify, test);
 
@@ -818,7 +816,15 @@ protected:
 
     AllocatorClosureArenaArena<E> allocator_a_a;
     allocator_a_a.dispatch(modify, test);
+  }
 
+  template<typename E, bool do_arena, ENABLE_IF(!do_arena)>
+  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify) {
+    // not enabled
+  }
+
+  template<typename E, bool do_cheap, ENABLE_IF(do_cheap)>
+  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify) {
     AllocatorClosureStackCHeap<E> allocator_s_c;
     allocator_s_c.dispatch(modify, test);
 
@@ -832,136 +838,147 @@ protected:
     allocator_c_c_nt.dispatch(modify, test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, ENABLE_IF(!do_cheap)>
+  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify) {
+    // not enabled
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
+    run_test_modify_allocate_arena<E, do_arena>(test, modify);
+    run_test_modify_allocate_cheap<E, do_cheap>(test, modify);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_modify(TestClosure<E>* test) {
     ModifyClosureEmpty<E> modify_empty;
-    run_test_modify_allocate<E>(test, &modify_empty);
+    run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_empty);
 
     ModifyClosureAppend<E> modify_append;
-    run_test_modify_allocate<E>(test, &modify_append);
+    run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_append);
 
     ModifyClosureClear<E> modify_clear;
-    run_test_modify_allocate<E>(test, &modify_clear);
+    run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_clear);
 
     ModifyClosureClearAndDeallocate<E> modify_deallocate;
-    run_test_modify_allocate<E>(test, &modify_deallocate);
+    run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_deallocate);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_append() {
     TestClosureAppend<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_clear() {
     TestClosureClear<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_iterator() {
     TestClosureIterator<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_capacity() {
     TestClosureCapacity<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_find_if() {
     TestClosureFindIf<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 
-  template<typename E>
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_find_from_end_if() {
     TestClosureFindFromEndIf<E> test;
-    run_test_modify<E>(&test);
+    run_test_modify<E,do_cheap,do_arena>(&test);
   }
 };
 
 TEST_VM_F(GrowableArrayTest, append_int) {
-  run_test_append<int>();
+  run_test_append<int,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, append_ptr) {
-  run_test_append<int*>();
+  run_test_append<int*,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, append_point) {
-  run_test_append<Point>();
+  run_test_append<Point,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, append_ctor_dtor) {
-  run_test_append<CtorDtor>();
+  run_test_append<CtorDtor,true,false>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_int) {
-  run_test_clear<int>();
+  run_test_clear<int,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_ptr) {
-  run_test_clear<int*>();
+  run_test_clear<int*,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_point) {
-  run_test_clear<Point>();
+  run_test_clear<Point,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_ctor_dtor) {
-  run_test_clear<CtorDtor>();
+  run_test_clear<CtorDtor,true,false>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_int) {
-  run_test_iterator<int>();
+  run_test_iterator<int,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_ptr) {
-  run_test_iterator<int*>();
+  run_test_iterator<int*,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_point) {
-  run_test_iterator<Point>();
+  run_test_iterator<Point,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_ctor_dtor) {
-  run_test_iterator<CtorDtor>();
+  run_test_iterator<CtorDtor,true,false>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_int) {
-  run_test_capacity<int>();
+  run_test_capacity<int,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_ptr) {
-  run_test_capacity<int*>();
+  run_test_capacity<int*,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_point) {
-  run_test_capacity<Point>();
+  run_test_capacity<Point,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
-  run_test_capacity<CtorDtor>();
+  run_test_capacity<CtorDtor,true,false>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_int) {
-  run_test_find_if<int>();
+  run_test_find_if<int,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_ptr) {
-  run_test_find_if<int*>();
+  run_test_find_if<int*,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_point) {
-  run_test_find_if<Point>();
+  run_test_find_if<Point,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
-  run_test_find_if<CtorDtor>();
+  run_test_find_if<CtorDtor,true,false>();
 }
 
 #ifdef ASSERT

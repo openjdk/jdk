@@ -188,7 +188,6 @@ class BitMap {
   BitMap(bm_word_t* map, idx_t size_in_bits) : _map(map), _size(size_in_bits) {
     verify_size(size_in_bits);
   }
-  ~BitMap() {}
 
  public:
   // Pretouch the entire range of memory this BitMap covers.
