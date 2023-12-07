@@ -304,16 +304,28 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
   // Get index out of bytecode pointer
-  get_index_at_bcp(index, bcp_offset, cache /* as tmp */, sizeof(u2));
-  mov(cache, sizeof(ResolvedMethodEntry));
-  mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+  assert_different_registers(cache, index);
 
-  // load constant pool cache pointer
-  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
-  // Get address of method entries array
-  ldr(cache, Address(cache, ConstantPoolCache::method_entries_offset()));
-  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
-  add(cache, cache, index);
+  get_index_at_bcp(index, bcp_offset, cache /* as tmp */, sizeof(u2));
+
+  if (is_power_of_2(sizeof(ResolvedMethodEntry))) {
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+    // Get address of method entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
+    add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+    add(cache, cache, AsmOperand(index, lsl, log2i_exact(sizeof(ResolvedMethodEntry))));
+  }
+  else {
+    mov(cache, sizeof(ResolvedMethodEntry));
+    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+
+    // load constant pool cache pointer
+    ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+    // Get address of method entries array
+    ldr(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
+    add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+    add(cache, cache, index);
+  }
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is
