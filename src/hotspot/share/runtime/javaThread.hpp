@@ -317,6 +317,7 @@ class JavaThread: public Thread {
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
+  bool                  _is_in_critical_section;         // thread is in a locking critical section
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -647,6 +648,9 @@ private:
   void set_is_in_VTMS_transition(bool val);
   void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
 
+  bool is_in_critical_section() const            { return _is_in_critical_section; }
+  void toggle_is_in_critical_section()           { _is_in_critical_section = !_is_in_critical_section; };
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
@@ -811,6 +815,7 @@ private:
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
   static ByteSize is_in_tmp_VTMS_transition_offset() { return byte_offset_of(JavaThread, _is_in_tmp_VTMS_transition); }
+  static ByteSize is_in_critical_section_offset()    { return byte_offset_of(JavaThread, _is_in_critical_section); }
 #endif
 
   // Returns the jni environment for this thread

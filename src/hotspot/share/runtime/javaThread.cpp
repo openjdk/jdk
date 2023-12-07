@@ -440,6 +440,7 @@ JavaThread::JavaThread() :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
+  _is_in_critical_section(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
