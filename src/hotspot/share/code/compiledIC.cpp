@@ -364,6 +364,10 @@ bool CompiledIC::is_call_to_interpreted() const {
 
 bool CompiledIC::set_to_clean(bool in_use) {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
+  if (TraceInlineCacheClearing) {
+    tty->print_cr("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
+    print();
+  }
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
 
   address entry = _call->get_resolve_call_stub(is_optimized());

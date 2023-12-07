@@ -873,6 +873,9 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, TraceInvocationCounterOverflow, false,                   \
           "Trace method invocation counter overflow")                       \
                                                                             \
+  develop(bool, TraceInlineCacheClearing, false,                            \
+          "Trace clearing of inline caches in nmethods")                    \
+                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
