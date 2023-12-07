@@ -47,7 +47,7 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return dwVolumeSerialNumber + nFileIndexHigh + nFileIndexLow; 
+        return dwVolumeSerialNumber + nFileIndexHigh + nFileIndexLow;
     }
 
     @Override
