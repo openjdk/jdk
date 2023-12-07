@@ -140,7 +140,7 @@ class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
 // usage by types and memory used by tracking itself.
-class MallocMemorySnapshot : public AnyObj {
+class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
  private:
