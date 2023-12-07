@@ -22,13 +22,16 @@
  */
 
 #include <sleef.h>
+#include <vect_math.h>
 
 #define DEFINE_VECTOR_MATH_UNARY_SVE(op, type) \
+VMATH_EXPORT                                   \
 type op##sve(type input) {                     \
   return Sleef_##op##sve(input);               \
 }
 
 #define DEFINE_VECTOR_MATH_BINARY_SVE(op, type) \
+VMATH_EXPORT                                    \
 type op##sve(type input1, type input2) {        \
   return Sleef_##op##sve(input1, input2);       \
 }
