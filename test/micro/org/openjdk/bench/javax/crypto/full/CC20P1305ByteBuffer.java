@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
+ */
+package org.openjdk.bench.javax.crypto.full;
+
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
+
+import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+
+/**
+ * This performance tests runs ChaCha20-Poly1305 encryption and decryption
+ * using heap and direct ByteBuffers for input and output buffers with single
+ * and multi-part operations.
  */
 
-#ifndef SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
-#define SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+public class CC20P1305ByteBuffer extends ByteBufferBase {
 
-#include "memory/allocation.hpp"
-#include "utilities/exceptions.hpp"
+    public static final int IV_MODULO = 12;
 
-class CallInfo;
-class ciKlass;
-class ciMethod;
-class GraphBuilder;
-class Parse;
+    public AlgorithmParameterSpec getNewSpec() {
+        iv_index = (iv_index + 1) % IV_MODULO;
+        return new IvParameterSpec(iv, iv_index, IV_MODULO);
+    }
 
-class JfrResolution : AllStatic {
- public:
-  static void on_runtime_resolution(const CallInfo & info, TRAPS);
-  static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
-  static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
-  static void on_jvmci_resolution(const Method* caller, const Method* target, TRAPS);
-};
-
-#endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
-
+    @Setup
+    public void setup() throws Exception {
+        init("ChaCha20-Poly1305/None/NoPadding", keyLength);
+    }
+}

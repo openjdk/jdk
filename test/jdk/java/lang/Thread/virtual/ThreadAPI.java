@@ -23,7 +23,7 @@
 
 /*
  * @test id=default
- * @bug 8284161 8286788
+ * @bug 8284161 8286788 8321270
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open
  * @library /test/lib
@@ -1189,6 +1189,36 @@ class ThreadAPI {
             thread.join();
         }
         assertEquals(List.of("A", "A", "B"), list);
+    }
+
+    /**
+     * Test that Thread.yield does not consume the thread's parking permit.
+     */
+    @Test
+    void testYield3() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            LockSupport.unpark(Thread.currentThread());
+            Thread.yield();
+            LockSupport.park();  // should not park
+        });
+        thread.join();
+    }
+
+    /**
+     * Test that Thread.yield does not make available the thread's parking permit.
+     */
+    @Test
+    void testYield4() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            Thread.yield();
+            LockSupport.park();  // should park
+        });
+        try {
+            await(thread, Thread.State.WAITING);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
     }
 
     /**

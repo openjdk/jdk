@@ -2407,20 +2407,26 @@ public class Types {
     }
     // where
         private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
+            @SuppressWarnings("fallthrough")
             private Type combineMetadata(final Type s,
                                          final Type t) {
                 if (t.getMetadata().nonEmpty()) {
-                    switch (s.getKind()) {
-                        case OTHER:
-                        case UNION:
-                        case INTERSECTION:
-                        case PACKAGE:
-                        case EXECUTABLE:
-                        case NONE:
-                        case VOID:
-                        case ERROR:
+                    switch (s.getTag()) {
+                        case CLASS:
+                            if (s instanceof UnionClassType ||
+                                s instanceof IntersectionClassType) {
+                                return s;
+                            }
+                            //fall-through
+                        case BYTE, CHAR, SHORT, LONG, FLOAT, INT, DOUBLE, BOOLEAN,
+                             ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
+                            return s.dropMetadata(Annotations.class);
+                        case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
+                             NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
+                             UNINITIALIZED_OBJECT:
                             return s;
-                        default: return s.dropMetadata(Annotations.class);
+                        default:
+                            throw new AssertionError(s.getTag().name());
                     }
                 } else {
                     return s;
