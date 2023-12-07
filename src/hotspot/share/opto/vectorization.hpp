@@ -263,4 +263,298 @@ class VectorElementSizeStats {
   }
 };
 
+// When alignment is required, we must adjust the pre-loop iteration count pre_iter.
+// We find the set of pre_iter which guarantee alignment:
+//
+// TODO restate this a bit with since I changed the new proof!
+//
+//   pre_iter = pre_r + pre_q * m  (for any m >= 0)
+//
+// Such that the address is aligned for any main_iter >= 0:
+//
+//   adr = base + offset + invar + scale * init
+//                               + scale * pre_stride * pre_iter
+//                               + scale * main_stride * main_iter
+//
+// Two simplifying restrictions:
+//   1. In the presence of variable init, all solutions must have the same scale.
+//   2. In the presence of an invariant, all solutions must have the same invariant
+//      and the same scale.
+//
+// A solution can be:
+//   1. Invalid with a failure reason.
+//   2. Trivial (any pre-loop limit guarantees alignment).
+//   3. Constrained (r, q, mem_ref, alignment_width, scale, invar)
+//        Where scale is 0 if no scale dependency,
+//        and invar is nullptr if no invar dependency.
+class AlignmentSolution {
+private:
+  bool _valid = false;
+  const char* _reason = nullptr;
+  bool _trivial = true;
+  int _r = 0;
+  int _q = 1;
+  const MemNode* _mem_ref = nullptr;
+  int _alignment_width = 0;
+  Node const* _invar_dependency = nullptr;
+  int _scale_dependency = 0;
+
+public:
+  // Invalid solution.
+  AlignmentSolution(const char* reason) :
+      _valid(false),
+      _reason(reason),
+      _trivial(false),
+      _r(0),
+      _q(1),
+      _mem_ref(nullptr),
+      _alignment_width(1),
+      _invar_dependency(nullptr),
+      _scale_dependency(0) {
+    assert(!is_trivial() && !is_valid(), "must be invalid");
+  }
+
+  // Trivial Solution.
+  AlignmentSolution() :
+      _valid(true),
+      _reason(nullptr),
+      _trivial(true),
+      _r(0),
+      _q(1),
+      _mem_ref(nullptr),
+      _alignment_width(1),
+      _invar_dependency(nullptr),
+      _scale_dependency(0) {
+    assert(is_trivial() && is_valid(), "must be trivial");
+  }
+
+  // Constrained solution.
+  AlignmentSolution(const int r,
+                    const int q,
+                    const MemNode* mem_ref,
+                    int alignment_width,
+                    const Node* invar_dependency,
+                    int scale_dependency) :
+      _valid(true),
+      _reason(nullptr),
+      _trivial(false),
+      _r(r),
+      _q(q),
+      _mem_ref(mem_ref),
+      _alignment_width(alignment_width),
+      _invar_dependency(invar_dependency),
+      _scale_dependency(scale_dependency) {
+    assert(q > 1 && is_power_of_2(q), "q must be power of 2");
+    assert(0 <= r && r < q, "r must be in modulo space of q");
+    assert(!is_trivial() && is_valid(), "must be constrained");
+    assert(_mem_ref != nullptr &&
+           _mem_ref->memory_size() <= _alignment_width,
+           "must have mem_ref and alignment_width");
+    assert(alignment_width > 0 &&
+           is_power_of_2(alignment_width),
+           "alignment_width must be power of 2");
+  }
+
+  bool is_valid() const   { return _valid; }
+  bool is_trivial() const { return _trivial; }
+
+  const char* reason() const {
+    assert(!is_valid(), "only invalid has reason");
+    return _reason;
+  }
+
+  int r() const {
+    assert(is_valid(), "only valid has solution");
+    return _r;
+  }
+
+  int q() const {
+    assert(is_valid(), "only valid has solution");
+    return _q;
+  }
+
+  const MemNode* mem_ref() const {
+    assert(is_valid(), "valid and not trivial");
+    return _mem_ref;
+  }
+
+  int alignment_width() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _alignment_width;
+  }
+
+  const Node* invar_dependency() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _invar_dependency;
+  }
+
+  int scale_dependency() const {
+    assert(is_valid() && !is_trivial(), "valid and not trivial");
+    return _scale_dependency;
+  }
+
+  AlignmentSolution filter(const AlignmentSolution& other) const {
+    // Solution invalid if either is invalid.
+    if (!is_valid() || !other.is_valid()) {
+      return AlignmentSolution("invalid solution input to filter");
+    }
+    AlignmentSolution s1 = *this;
+    AlignmentSolution s2 = other;
+
+    // If one is trivial, return the other.
+    if (s1.is_trivial()) { return s2; }
+    if (s2.is_trivial()) { return s1; }
+
+    // Combine two constrained solutions.
+    if (s1.invar_dependency() != s2.invar_dependency()) {
+      return AlignmentSolution("invar not identical");
+    }
+    if (s1.scale_dependency() != s2.scale_dependency()) {
+      return AlignmentSolution("different scale dependency (init / invar)");
+    }
+    // Make s2 the bigger modulo space
+    if (s1.q() > s2.q()) {
+      swap(s1, s2);
+    }
+    assert(s1.q() <= s2.q(), "s1 is a smaller modulo space than s2");
+    // Subset check:
+    if (mod(s2.r(), s1.q()) != s1.r()) {
+      // neither is subset of the other -> no intersection
+      return AlignmentSolution("empty intersection (r and q)");
+    }
+    // Now we know: "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
+    return s2; // return the subset
+  }
+
+  void print() {
+    if (is_valid()) {
+      if (is_trivial()) {
+        tty->print_cr("pre_iter >= 0 (trivial)");
+      } else {
+        tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% alignment_width(%d),",
+                    r(), q(), mem_ref()->_idx, alignment_width());
+        tty->print(" scale = %d, ", scale_dependency());
+        if (invar_dependency() == nullptr) {
+          tty->print_cr("no invar");
+        } else {
+          tty->print_cr("invar[%d]", invar_dependency()->_idx);
+        }
+      }
+    } else {
+      tty->print_cr("no solution: %s", reason());
+    }
+  }
+
+  // Compute modulo and ensure that we get a positive remainder
+  static int mod(int i, int q) {
+    assert(q >= 1, "modulo value must be large enough");
+    int r = i % q;
+    r = (r >= 0) ? r : r + q;
+    assert(0 <= r && r < q, "remainder must fit in modulo space");
+    return r;
+  }
+};
+
+// TODO description
+class AlignmentSolver {
+private:
+  const MemNode* _mem_ref;       // first element
+  const uint     _vector_length; // number of elements in vector
+  const int      _element_size;
+  const int      _vector_width;  // in bytes
+
+  // All vector loads and stores need to be memory aligned. The alignment width (aw) in
+  // principle is the vector_width. But when vector_width > ObjectAlignmentInBytes this is
+  // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
+  // aligned. For example, the relative offset between two arrays is only guaranteed to
+  // be divisible by ObjectAlignmentInBytes.
+  const int      _aw;
+
+  // We analyze the address of mem_ref. The idea is to disassemble it into a linear
+  // expression, where we can use the constant factors as the basis for ensuring the
+  // alignment of vector memory accesses.
+  //
+  // The Simple form of the address is disassembled by VPointer into:
+  //
+  //   adr = base + offset + invar + scale * iv
+  //
+  // Where the iv can be written as:
+  //
+  //   iv = init + pre_stride * pre_iter + main_stride * main_iter
+  //
+  // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
+  // main_iter:   number of main-loop iterations (main_iter >= 0)
+  //
+  const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
+  const int      _offset;
+  const Node*    _invar;
+  const int      _invar_factor;   // known constant factor of invar
+  const int      _scale;
+  const Node*    _init_node;      // value of iv before pre-loop
+  const int      _pre_stride;     // address increment per pre-loop iteration
+  const int      _main_stride;    // address increment per main-loop iteration
+
+  DEBUG_ONLY( const bool _is_trace; );
+
+public:
+  AlignmentSolver(const MemNode* mem_ref,
+                  const uint vector_length,
+                  const Node* base,
+                  const int offset,
+                  const Node* invar,
+                  const int invar_factor,
+                  const int scale,
+                  const Node* init_node,
+                  const int pre_stride,
+                  const int main_stride
+                  DEBUG_ONLY( COMMA const bool is_trace)
+                  ) :
+      _mem_ref(           mem_ref),
+      _vector_length(     vector_length),
+      _element_size(      mem_ref->memory_size()),
+      _vector_width(      _vector_length * _element_size),
+      _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
+      _base(              base),
+      _offset(            offset),
+      _invar(             invar),
+      _invar_factor(      invar_factor),
+      _scale(             scale),
+      _init_node(         init_node),
+      _pre_stride(        pre_stride),
+      _main_stride(       main_stride)
+      DEBUG_ONLY( COMMA _is_trace(is_trace) )
+  {
+    assert(_mem_ref != nullptr &&
+           (_mem_ref->is_Load() || _mem_ref->is_Store()),
+           "only load or store vectors allowed");
+  }
+
+  AlignmentSolution solve() const;
+
+private:
+#ifdef ASSERT
+  bool is_trace() const { return _is_trace; }
+  void trace_start_solve() const;
+  void trace_reshaped_form(const int C_const,
+                           const int C_const_init,
+                           const int C_invar,
+                           const int C_init,
+                           const int C_pre,
+                           const int C_main) const;
+  void trace_main_iteration_alignment(const int C_const,
+                                      const int C_invar,
+                                      const int C_init,
+                                      const int C_pre,
+                                      const int C_main,
+                                      const int C_main_mod_aw) const;
+  void trace_init_and_invar_alignment(const int C_invar,
+                                      const int C_init,
+                                      const int C_pre,
+                                      const int C_invar_mod_abs_C_pre,
+                                      const int C_init_mod_abs_C_pre) const;
+
+
+#endif
+};
+
 #endif // SHARE_OPTO_VECTORIZATION_HPP

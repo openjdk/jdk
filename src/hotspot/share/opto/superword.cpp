@@ -1609,7 +1609,7 @@ void SuperWord::combine_packs() {
 }
 
 #ifndef PRODUCT
-void print_icon_or_idx(const Node* n) {
+void print_icon_or_idx_xxx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");
   } else if (n->is_ConI()) {
@@ -1636,7 +1636,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   const int vector_width  = pack_size * element_size;
   const int aw            = MIN2(vector_width, ObjectAlignmentInBytes); // alignment_width
 
-  CountedLoopEndNode* pre_end = lp()->pre_loop_end();
+  const CountedLoopEndNode* pre_end = lp()->pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
   const int pre_stride    = pre_end->stride_con();
   const int unroll_factor = _lp->unrolled_count();
@@ -1650,6 +1650,20 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   const Node* base        = mem_ref_p.base();
   const Node* invar       = mem_ref_p.invar();
   const int invar_factor  = mem_ref_p.invar_factor();
+
+  // TODO clean up args above
+  AlignmentSolver solver(pack->at(0)->as_Mem(),
+                         pack->size(),
+                         mem_ref_p.base(),
+                         mem_ref_p.offset_in_bytes(),
+                         mem_ref_p.invar(),
+                         mem_ref_p.invar_factor(),
+                         mem_ref_p.scale_in_bytes(),
+                         pre_end->init_trip(),
+                         pre_end->stride_con(),
+                         iv_stride()
+                         DEBUG_ONLY(COMMA is_trace_align_vector()));
+  solver.solve();
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
@@ -1674,15 +1688,15 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    print_icon_or_idx(init_node);
+    print_icon_or_idx_xxx(init_node);
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   pre_stride, main_stride);
 
     // adr = base + offset + invar + scale * iv
     tty->print("  adr = base");
-    print_icon_or_idx(base);
+    print_icon_or_idx_xxx(base);
     tty->print(" + offset(%d) + invar", offset);
-    print_icon_or_idx(invar);
+    print_icon_or_idx_xxx(invar);
     tty->print_cr(" + scale(%d) * iv", scale);
   }
 #endif

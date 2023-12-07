@@ -702,5 +702,274 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
     print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
   }
 }
+#endif
 
+AlignmentSolution AlignmentSolver::solve() const {
+  DEBUG_ONLY( trace_start_solve(); )
+
+  // Out of simplicity: non power-of-2 stride not supported.
+  if (!is_power_of_2(abs(_pre_stride))) {
+    return AlignmentSolution("non power-of-2 stride not supported");
+  }
+  assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
+  assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
+
+  // Out of simplicity: non power-of-2 scale not supported.
+  if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
+    return AlignmentSolution("non power-of-2 scale not supported");
+  }
+
+  // We analyze the address of mem_ref. The idea is to disassemble it into a linear
+  // expression, where we can use the constant factors as the basis for ensuring the
+  // alignment of vector memory accesses.
+  //
+  // The Simple form of the address is disassembled by VPointer into:
+  //
+  //   adr = base + offset + invar + scale * iv
+  //
+  // Where the iv can be written as:
+  //
+  //   iv = init + pre_stride * pre_iter + main_stride * main_iter
+  //
+  // init:        value before pre-loop
+  // pre_stride:  increment per pre-loop iteration
+  // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
+  // main_stride: increment per main-loop iteration (= pre_stride * unroll_factor)
+  // main_iter:   number of main-loop iterations (main_iter >= 0)
+  //
+  // In the following, we restate the simple form of the address expression, by first
+  // expanding the iv variable. In a second step, we reshape the expression again, and
+  // state it as a linear expression, consisting of 6 terms.
+  //
+  //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
+  //          -----------           ------------------------                  -----------------------   ------------------
+  //   adr =  base               =  base                                   =  base                      (base % aw = 0)
+  //        + offset              + offset                                  + C_const                   (sum of constant terms)
+  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
+  //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
+  //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
+  //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
+  //
+  // We describe the 6 terms:
+  //   1) The "base" of the address is the address of a Java object (e.g. array),
+  //      and hence can be assumed to already be aw-aligned (base % aw = 0).
+  //   2) The "C_const" term is the sum of all constant terms. This is "offset",
+  //      plus "init" if it is constant.
+  //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
+  //      and variable term. If there is no invariant, then "C_invar" is zero.
+  //   4) The "C_init * var_init" is the factorization of "scale * init" into a
+  //      constant and a variable term. If "init" is constant, then "C_init" is
+  //      zero, and "C_const" accounts for "init" instead.
+  //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
+  //      during the "pre_iter" pre-loop iterations. This term can be adjusted
+  //      by changing the pre-loop limit, which defines how many pre-loop iterations
+  //      are executed. This allows us to adjust the alignment of the main-loop
+  //      memory reference.
+  //   6) The "C_main * main_iter" term represents how much the iv is increased
+  //      during "main_iter" main-loop iterations.
+
+  // Attribute init either to C_const or to C_init term.
+  const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
+  const int C_init =       _init_node->is_ConI() ? 0                                : _scale;
+
+  // Set C_invar depending on if invar is present
+  const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
+
+  const int C_const = _offset + C_const_init * _scale;
+  const int C_pre = _scale * _pre_stride;
+  const int C_main = _scale * _main_stride;
+
+  DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
+
+  // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0.
+  // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
+  //
+  //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
+  //
+  // Alignment must be maintained over all main-loop iterations, i.e. for any main_iter >= 0, we require:
+  //
+  //   C_main % aw = 0                                                                                           (2*)
+  //
+  const int C_main_mod_aw = AlignmentSolution::mod(C_main, _aw);
+
+  DEBUG_ONLY( trace_main_iteration_alignment(C_const, C_invar, C_init, C_pre, C_main, C_main_mod_aw); )
+
+  if (C_main_mod_aw != 0) {
+    return AlignmentSolution("EQ(2*) not satisfied (cannot align across main-loop iterations)");
+  }
+
+  // In what follows, we need to show that the C_const, init and invar terms can be aligned by
+  // adjusting the pre-loop limit (pre_iter). We decompose pre_iter:
+  //
+  //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
+  //
+  // where pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are defined as the number of
+  // pre-loop iterations required to align the C_const, init and invar terms individually.
+  // Hence, we can rewrite:
+  //
+  //     (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
+  //   = ( C_const             + C_pre * pre_iter_C_const
+  //     + C_invar * var_invar + C_pre * pre_iter_C_invar
+  //     + C_init  * var_init  + C_pre * pre_iter_C_init ) % aw
+  //   = 0                                                                       (3)
+  //
+  // We strengthen the constraints by splitting the equation into 3 equations, where the C_const,
+  // init, and invar term are aligned individually:
+  //
+  //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4a)
+  //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
+  //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4c)
+  //
+  // We can only guarantee solutions to (4a) and (4b) if:
+  //
+  //   C_init  % abs(C_pre) = 0                                                  (5a*)
+  //   C_invar % abs(C_pre) = 0                                                  (5b*)
+  //
+  // Which means there are X and Y such that:
+  //
+  //   C_init  = C_pre * X       (X = 0 if C_init  = 0, else X = C_init  / C_pre)
+  //   C_invar = C_pre * Y       (Y = 0 if C_invar = 0, else Y = C_invar / C_pre)
+  //
+  //   (C_init    * var_init  + C_pre * pre_iter_C_init ) % aw =
+  //   (C_pre * X * var_init  + C_pre * pre_iter_C_init ) % aw =
+  //   (C_pre * (X * var_init  + pre_iter_C_init)       ) % aw = 0
+  //
+  //   (C_invar   * var_invar + C_pre * pre_iter_C_invar) % aw =
+  //   (C_pre * Y * var_invar + C_pre * pre_iter_C_invar) % aw =
+  //   (C_pre * (Y * var_invar + pre_iter_C_invar)      ) % aw = 0
+  //
+  // And hence, we know that there are solutions for pre_iter_C_init and pre_iter_C_invar,
+  // based on X, Y, var_init, and var_invar. We call them:
+  //
+  //   pre_iter_C_init  = alignment_init (X * var_init)
+  //   pre_iter_C_invar = alignment_invar(Y * var_invar)
+  //
+  const int C_init_mod_abs_C_pre  = AlignmentSolution::mod(C_init,  abs(C_pre));
+  const int C_invar_mod_abs_C_pre = AlignmentSolution::mod(C_invar, abs(C_pre));
+
+  DEBUG_ONLY( trace_init_and_invar_alignment(C_invar, C_init, C_pre, C_invar_mod_abs_C_pre, C_init_mod_abs_C_pre); )
+
+
+
+
+  // TODO continue
+  return AlignmentSolution("TOOD remove me");
+}
+
+#ifdef ASSERT
+void print_icon_or_idx(const Node* n) {
+  if (n == nullptr) {
+    tty->print("(0)");
+  } else if (n->is_ConI()) {
+    jint val = n->as_ConI()->get_int();
+    tty->print("(%d)", val);
+  } else {
+    tty->print("[%d]", n->_idx);
+  }
+}
+
+void AlignmentSolver::trace_start_solve() const {
+  if (is_trace()) {
+    tty->print(" vector mem_ref:");
+    _mem_ref->dump();
+    tty->print_cr("  vector_width = vector_length(%d) * element_size(%d) = %d",
+                  _vector_length, _element_size, _vector_width);
+    tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
+                  _vector_width, ObjectAlignmentInBytes, _aw);
+
+    if (!_init_node->is_ConI()) {
+      tty->print("  init:");
+      _init_node->dump();
+    }
+
+    if (_invar != nullptr) {
+      tty->print("  invar:");
+      _invar->dump();
+    }
+
+    tty->print_cr("  invar_factor = %d", _invar_factor);
+
+    // iv = init + pre_iter * pre_stride + main_iter * main_stride
+    tty->print("  iv = init");
+    print_icon_or_idx(_init_node);
+    tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
+                  _pre_stride, _main_stride);
+
+    // adr = base + offset + invar + scale * iv
+    tty->print("  adr = base");
+    print_icon_or_idx(_base);
+    tty->print(" + offset(%d) + invar", _offset);
+    print_icon_or_idx(_invar);
+    tty->print_cr(" + scale(%d) * iv", _scale);
+  }
+}
+
+void AlignmentSolver::trace_reshaped_form(const int C_const,
+                                          const int C_const_init,
+                                          const int C_invar,
+                                          const int C_init,
+                                          const int C_pre,
+                                          const int C_main) const
+{
+  if (is_trace()) {
+    tty->print("      = base[%d] + ", _base->_idx);
+    tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * main_iter",
+                  C_const, C_invar, C_init,  C_pre, C_main);
+    if (_init_node->is_ConI()) {
+      tty->print_cr("  init is constant:");
+      tty->print_cr("    C_const_init = %d", C_const_init);
+      tty->print_cr("    C_init = %d", C_init);
+    } else {
+      tty->print_cr("  init is variable:");
+      tty->print_cr("    C_const_init = %d", C_const_init);
+      tty->print_cr("    C_init = abs(scale)= %d", C_init);
+    }
+    if (_invar != nullptr) {
+      tty->print_cr("  invariant present:");
+      tty->print_cr("    C_invar = abs(invar_factor) = %d", C_invar);
+    } else {
+      tty->print_cr("  no invariant:");
+      tty->print_cr("    C_invar = %d", C_invar);
+    }
+    tty->print_cr("  C_const = offset(%d) + scale(%d) * C_const_init(%d) = %d",
+                  _offset, _scale, C_const_init, C_const);
+    tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
+                  _scale, _pre_stride, C_pre);
+    tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",
+                  _scale, _main_stride, C_main);
+  }
+}
+
+void AlignmentSolver::trace_main_iteration_alignment(const int C_const,
+                                                     const int C_invar,
+                                                     const int C_init,
+                                                     const int C_pre,
+                                                     const int C_main,
+                                                     const int C_main_mod_aw) const
+{
+  if (is_trace()) {
+    tty->print("  EQ(1  ): (C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
+                  C_const, C_invar, C_init);
+    tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * main_iter) %% aw(%d) = 0",
+                  C_pre, C_main, _aw);
+    tty->print_cr(" (given base aligned -> align rest)");
+    tty->print("  EQ(2* ): C_main(%d) %% aw(%d) = %d = 0",
+               C_main, _aw, C_main_mod_aw);
+    tty->print_cr(" (alignment across iterations)");
+  }
+}
+
+void AlignmentSolver::trace_init_and_invar_alignment(const int C_invar,
+                                                     const int C_init,
+                                                     const int C_pre,
+                                                     const int C_invar_mod_abs_C_pre,
+                                                     const int C_init_mod_abs_C_pre) const
+{
+  if (is_trace()) {
+    tty->print_cr("  EQ(5a*): C_init(%d) %% abs(C_pre(%d)) = %d = 0   (if false: cannot align init)",
+                  C_init, C_pre, C_init_mod_abs_C_pre);
+    tty->print_cr("  EQ(5b*): C_invar(%d) %% abs(C_pre(%d)) = %d = 0  (if false: cannot align invar)",
+                  C_invar, C_pre, C_invar_mod_abs_C_pre);
+  }
+}
 #endif
